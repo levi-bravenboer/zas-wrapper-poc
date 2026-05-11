@@ -1,0 +1,39 @@
+$schema: "https://moonrepo.dev/schemas/project.json"
+
+layer: "application"
+language: "python"
+stack: "backend"
+
+project:
+  name: "backend"
+  description: "FastAPI FHIR gateway + MCP host."
+
+fileGroups:
+  sources:
+    - "main.py"
+    - "app/**/*.py"
+    - "pyproject.toml"
+  tests:
+    - "tests/**/*.py"
+
+tasks:
+  dev:
+    command: "uv run fastapi dev main.py"
+    preset: "server"
+
+  build:
+    command: "uv sync --frozen"
+    inputs:
+      - "pyproject.toml"
+      - "uv.lock"
+
+  test:
+    command: "uv run pytest -q"
+
+  lint:
+    command: "uv run ruff check"
+
+  format:
+    command: "uv run ruff format"
+    options:
+      cache: false
