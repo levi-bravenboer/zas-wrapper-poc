@@ -1,0 +1,15 @@
+$schema: "https://moonrepo.dev/schemas/toolchain.json"
+
+# Node toolchain — used by apps/orchestrator.
+node:
+  version: "22.13.0"
+  packageManager: "npm"
+  addEnginesConstraint: true
+  syncProjectWorkspaceDependencies: false
+
+# Python toolchain — used by apps/backend (managed end-to-end by uv).
+python:
+  version: "3.13.1"
+  packageManager: "uv"
+  uv:
+    version: "latest"

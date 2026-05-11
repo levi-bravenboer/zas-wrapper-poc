@@ -1,0 +1,6 @@
+$schema: "https://moonrepo.dev/schemas/tasks.json"
+
+# No abstract workspace tasks yet — each project declares its own.
+# Add shared task contracts here once Node and Python projects share
+# enough surface to benefit (e.g. a common `ci` aggregator).
+tasks: {}
