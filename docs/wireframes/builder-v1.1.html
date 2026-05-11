@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathway Builder · v1.1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #ececec;
+      --line-2: #e0e0e0;
+      --ink: #0a0a0a;
+      --ink-2: #525252;
+      --muted: #8a8a8a;
+      --accent: #0a0a0a;
+      --hover: #f5f5f5;
+      --selected: #0a0a0a;
+      --lane-1: #fcfcfc;
+      --lane-2: #f7f7f7;
+      --chip-luscii: #0f766e;
+      --chip-hix: #9333ea;
+      --chip-manual: #b45309;
+      --chip-system: #525252;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink); background: var(--bg);
+      font-size: 13px; font-feature-settings: "cv02","cv03","cv04","cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    body { display: grid; grid-template-rows: 52px 1fr; height: 100vh; }
+
+    /* HEADER */
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 20px; background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    .logo {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--ink); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px; letter-spacing: -.5px;
+    }
+    .crumbs { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .crumbs .sep { opacity: .4; }
+    .crumbs .here { color: var(--ink); font-weight: 500; }
+    .version-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 8px; border-radius: 5px; background: var(--hover);
+      font-size: 11px; color: var(--ink-2); font-weight: 500;
+    }
+    .version-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+    .spacer { flex: 1; }
+    .actions { display: flex; gap: 6px; align-items: center; }
+    .btn {
+      border: 1px solid var(--line-2); background: var(--panel); color: var(--ink);
+      padding: 6px 12px; border-radius: 7px; cursor: pointer; font: inherit; font-size: 13px;
+      font-weight: 500; transition: background .12s;
+    }
+    .btn:hover { background: var(--hover); }
+    .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .btn.ghost { border-color: transparent; }
+    .btn.ghost:hover { background: var(--hover); }
+    .icon-btn {
+      width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 7px; cursor: pointer; color: var(--ink-2);
+    }
+    .icon-btn:hover { background: var(--hover); color: var(--ink); }
+
+    /* MAIN */
+    main { display: grid; grid-template-columns: 1fr; overflow: hidden; }
+
+    /* DOCK (floating block picker) */
+    .dock-wrap {
+      position: absolute; left: 0; right: 0;
+      bottom: 24px;
+      display: flex; justify-content: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .dock {
+      pointer-events: auto;
+      display: flex; align-items: center; gap: 2px;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,.04),
+        0 8px 24px rgba(0,0,0,.08),
+        0 24px 48px rgba(0,0,0,.06);
+    }
+    .dock .tile {
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 9px; cursor: grab;
+      color: var(--ink); position: relative;
+      transition: background .12s, transform .12s;
+    }
+    .dock .tile:hover { background: var(--hover); transform: translateY(-1px); }
+    .dock .tile .glyph {
+      width: 22px; height: 22px; border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+    }
+    .glyph.luscii { background: #ccfbf1; color: var(--chip-luscii); }
+    .glyph.hix { background: #f3e8ff; color: var(--chip-hix); }
+    .glyph.manual { background: #fef3c7; color: var(--chip-manual); }
+    .glyph.system { background: #e5e5e5; color: var(--chip-system); }
+    .glyph.plain { background: var(--hover); color: var(--ink); }
+    .glyph.dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
+    .glyph.diamond::after { content: ""; width: 10px; height: 10px; background: var(--ink); transform: rotate(45deg); }
+    .dock .sep {
+      width: 1px; height: 22px; background: var(--line); margin: 0 4px;
+      flex-shrink: 0;
+    }
+    .dock .tile .tip {
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 4px 8px; border-radius: 5px;
+      white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: opacity .12s;
+    }
+    .dock .tile:hover .tip { opacity: 1; }
+    .dock .more {
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 9px; cursor: pointer; color: var(--ink-2);
+      font-size: 16px; font-weight: 600;
+    }
+    .dock .more:hover { background: var(--hover); color: var(--ink); }
+    .dock .search-tile {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 12px 0 10px; height: 38px;
+      border-radius: 9px; cursor: text;
+      color: var(--muted); font-size: 12px;
+    }
+    .dock .search-tile:hover { background: var(--hover); }
+    .dock .search-tile .kbd {
+      font-size: 10px; color: var(--muted);
+      border: 1px solid var(--line-2); border-radius: 4px;
+      padding: 1px 5px; background: var(--bg);
+    }
+
+    /* CANVAS */
+    section.canvas-wrap {
+      position: relative; overflow: hidden;
+      background:
+        radial-gradient(circle at 1px 1px, #e8e8e8 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    .canvas-scroll {
+      position: absolute; inset: 0;
+      overflow: auto;
+    }
+    .canvas-bar {
+      position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px;
+      background: rgba(250,250,250,.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .canvas-bar .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; background: var(--panel);
+      border: 1px solid var(--line-2); font-size: 12px; color: var(--ink-2);
+    }
+    .canvas-bar .pill::before {
+      content: ""; width: 6px; height: 6px; border-radius: 50%; background: #16a34a;
+    }
+    .canvas-bar .pill.warn::before { background: #f59e0b; }
+    .canvas-bar .meta { font-size: 12px; color: var(--muted); }
+    .canvas-bar .right { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+    .zoom { display: inline-flex; align-items: center; background: var(--panel); border: 1px solid var(--line-2); border-radius: 7px; overflow: hidden; }
+    .zoom button { background: transparent; border: 0; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 12px; color: var(--ink-2); }
+    .zoom button:hover { background: var(--hover); color: var(--ink); }
+    .zoom .level { padding: 4px 8px; font-size: 12px; color: var(--ink); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+
+    .canvas {
+      position: relative;
+      display: flex; gap: 0;
+      min-width: 1700px; min-height: 560px;
+      padding: 28px 32px 32px;
+    }
+    .lane-rail {
+      width: 110px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+    }
+    .lane-rail .header-slot {
+      height: 36px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 0 0 4px;
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .8px;
+    }
+    .lane-rail .lbl {
+      height: 140px;
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 14px 0 0 4px;
+      font-size: 11px; font-weight: 600; color: var(--ink-2);
+      text-transform: uppercase; letter-spacing: .8px;
+    }
+    .lane-rail .lbl .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--ink);
+      margin-top: 5px; flex-shrink: 0;
+    }
+    .lane-rail .lbl.patient .dot { background: #f59e0b; }
+    .lane-rail .lbl.zas .dot { background: #3b82f6; }
+    .lane-rail .lbl.extern .dot { background: #ec4899; }
+    .lane-field {
+      flex: 1; position: relative;
+      min-height: 540px;
+    }
+    .lane-stripe {
+      position: absolute; left: 0; right: 0; height: 140px;
+      border-top: 1px solid var(--line);
+    }
+    .lane-stripe.alt { background: rgba(0,0,0,.012); }
+
+    /* PHASE BANDS */
+    .phase-band {
+      position: absolute; top: 4px; height: 28px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 12px;
+      font-size: 10px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase;
+      border-radius: 8px;
+      border: 1px dashed transparent;
+    }
+    .phase-band::before {
+      content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    }
+    .phase-band.p1 {
+      background: rgba(245, 158, 11, .10);
+      color: #92400e;
+      border-color: rgba(245, 158, 11, .25);
+    }
+    .phase-band.p2 {
+      background: rgba(59, 130, 246, .10);
+      color: #1e40af;
+      border-color: rgba(59, 130, 246, .25);
+    }
+    .phase-band.p3 {
+      background: rgba(22, 163, 74, .10);
+      color: #166534;
+      border-color: rgba(22, 163, 74, .25);
+    }
+
+    /* NODES */
+    .node {
+      position: absolute;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      width: 184px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 4px 12px rgba(0,0,0,.025);
+      cursor: pointer;
+      transition: transform .12s, box-shadow .12s, border-color .12s;
+      z-index: 2;
+    }
+    .node:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+    }
+    .node.selected {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+    }
+    .node .head {
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .node .name {
+      font-size: 13px; font-weight: 600; color: var(--ink);
+      flex: 1 1 auto; min-width: 0; line-height: 1.3;
+      overflow-wrap: break-word;
+    }
+    .node .chip {
+      font-size: 10px; font-weight: 600;
+      padding: 2px 7px; border-radius: 4px;
+      letter-spacing: .2px;
+      flex-shrink: 0; white-space: nowrap;
+      align-self: flex-start;
+      line-height: 1.4;
+    }
+    .chip.luscii { background: #ccfbf1; color: var(--chip-luscii); }
+    .chip.hix { background: #f3e8ff; color: var(--chip-hix); }
+    .chip.manual { background: #fef3c7; color: var(--chip-manual); }
+    .chip.system { background: #f5f5f5; color: var(--chip-system); }
+    .node .meta {
+      margin-top: 4px; font-size: 11px; color: var(--muted);
+      display: flex; gap: 6px; align-items: center;
+    }
+
+    /* Circle / diamond variants */
+    .node.start, .node.end {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      padding: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .node.start { background: #16a34a; border-color: #16a34a; }
+    .node.start::after { content: ""; width: 0; height: 0; border-left: 7px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }
+    .node.end { background: var(--ink); border-color: var(--ink); }
+    .node.end::after { content: ""; width: 10px; height: 10px; background: #fff; border-radius: 2px; }
+    .node.end.stop { background: #b91c1c; border-color: #b91c1c; }
+    .node.end.stop::after {
+      content: "✕"; width: auto; height: auto; background: transparent;
+      color: #fff; font-size: 13px; font-weight: 700; line-height: 1;
+      border-radius: 0;
+    }
+
+    .node.diamond {
+      width: 80px; height: 80px; padding: 0;
+      border-radius: 0; border: 0;
+      background: var(--panel);
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: none;
+      filter:
+        drop-shadow(0 0 .5px var(--line-2))
+        drop-shadow(0 0 .5px var(--line-2))
+        drop-shadow(0 1px 2px rgba(0,0,0,.03))
+        drop-shadow(0 4px 10px rgba(0,0,0,.04));
+    }
+    .node.diamond .inner {
+      font-size: 11px; font-weight: 600; text-align: center;
+      line-height: 1.2; color: var(--ink);
+      max-width: 56px;
+    }
+    .node.diamond:hover { transform: translateY(-1px); }
+    .node.diamond.selected {
+      filter:
+        drop-shadow(0 0 .5px var(--ink))
+        drop-shadow(0 0 .5px var(--ink))
+        drop-shadow(0 1px 2px rgba(0,0,0,.03))
+        drop-shadow(0 4px 10px rgba(0,0,0,.06));
+    }
+
+    .node.parallel {
+      width: 44px; height: 44px; padding: 0;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: var(--ink); font-size: 16px;
+    }
+    .node.parallel::after { content: "‖"; line-height: 1; }
+
+    /* SVG WIRES */
+    svg.wires {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; overflow: visible;
+      z-index: 1;
+    }
+    svg.wires path {
+      stroke: #b0b0b0; stroke-width: 1.5; fill: none;
+      stroke-linejoin: round; stroke-linecap: round;
+      marker-end: url(#arrow);
+    }
+    svg.wires path.dashed { stroke-dasharray: 4 4; }
+    svg.wires path.loopback {
+      stroke: #b45309; stroke-width: 1.5; stroke-dasharray: 6 4;
+      marker-end: url(#arrow-amber);
+    }
+    svg.wires text {
+      font-size: 10px; font-family: 'Inter', sans-serif; font-weight: 700;
+      letter-spacing: .4px; fill: var(--muted);
+    }
+    svg.wires text.lbl-yes { fill: #16a34a; }
+    svg.wires text.lbl-no { fill: #b91c1c; }
+    svg.wires text.lbl-retry { fill: #b45309; }
+
+    /* Time markers */
+    .time-marker {
+      position: absolute; top: 40px; bottom: 0;
+      width: 0; border-left: 1px dashed rgba(0,0,0,.08);
+      pointer-events: none;
+    }
+    .time-marker .tag {
+      position: absolute; top: -2px; left: 4px;
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      background: rgba(250,250,250,.85);
+      padding: 1px 6px; border-radius: 4px;
+    }
+
+    /* DIALOG */
+    dialog.node-dialog {
+      width: 480px; max-width: calc(100vw - 48px);
+      max-height: calc(100vh - 80px);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0;
+      background: var(--panel);
+      box-shadow:
+        0 4px 8px rgba(0,0,0,.06),
+        0 24px 48px rgba(0,0,0,.16),
+        0 48px 96px rgba(0,0,0,.10);
+      color: var(--ink);
+      overflow: hidden;
+      z-index: 10000;
+    }
+    dialog.node-dialog::backdrop {
+      background: rgba(15,15,15,.32);
+      backdrop-filter: blur(2px);
+    }
+    dialog.node-dialog:not([open]) { display: none; }
+    .dlg-head {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .dlg-head .icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    .dlg-head .icon.luscii { background: #ccfbf1; color: var(--chip-luscii); }
+    .dlg-head .icon.hix { background: #f3e8ff; color: var(--chip-hix); }
+    .dlg-head .icon.manual { background: #fef3c7; color: var(--chip-manual); }
+    .dlg-head .titles { flex: 1; min-width: 0; }
+    .dlg-head .sel-type {
+      font-size: 11px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: .5px; font-weight: 600;
+    }
+    .dlg-head .sel-name {
+      font-size: 18px; font-weight: 600; margin: 2px 0 0;
+      letter-spacing: -.3px; line-height: 1.2;
+    }
+    .dlg-head .close {
+      width: 30px; height: 30px; border: 0; background: transparent; cursor: pointer;
+      border-radius: 7px; color: var(--muted); font-size: 18px; line-height: 1;
+      flex-shrink: 0;
+    }
+    .dlg-head .close:hover { background: var(--hover); color: var(--ink); }
+    .dlg-tabs {
+      display: flex; gap: 0; padding: 0 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .dlg-tabs .tab {
+      padding: 10px 0; margin-right: 18px; font-size: 13px; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      margin-bottom: -1px; font-weight: 500;
+    }
+    .dlg-tabs .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+    .dlg-body {
+      padding: 16px 20px 8px;
+      max-height: 56vh; overflow-y: auto;
+    }
+    .dlg-foot {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--line);
+      background: #fafafa;
+    }
+    .dlg-foot .spacer { flex: 1; }
+    .dlg-foot .danger {
+      color: #b91c1c; background: transparent; border: 0; cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 500;
+      padding: 6px 8px; border-radius: 7px;
+    }
+    .dlg-foot .danger:hover { background: #fef2f2; }
+
+    .tabs {
+      display: flex; gap: 2px; margin: 22px 0 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .tab {
+      padding: 8px 0; margin-right: 16px; font-size: 13px; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      margin-bottom: -1px; font-weight: 500;
+    }
+    .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+    .field { margin-top: 16px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--ink-2);
+      margin-bottom: 6px; letter-spacing: .2px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 1px solid var(--line-2); border-radius: 7px;
+      padding: 8px 10px; font: inherit; font-size: 13px;
+      background: var(--panel); color: var(--ink);
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(0,0,0,.06);
+    }
+    .field .hint { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .callout {
+      margin-top: 18px; padding: 12px 14px;
+      border: 1px solid var(--line-2); border-radius: 8px;
+      background: var(--lane-2);
+      font-size: 12px; line-height: 1.5; color: var(--ink-2);
+    }
+    .callout b { color: var(--ink); display: block; font-size: 12px; margin-bottom: 4px; font-weight: 600; }
+
+    .check {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--ink-2); padding: 6px 0;
+    }
+    .check::before { content: "✓"; color: #16a34a; font-weight: 700; }
+
+    /* Tiny SVG icons via mask isn't needed — keep clean */
+    .lane-area .annot {
+      position: absolute; top: 6px; right: 16px;
+      font-size: 10px; color: var(--muted);
+      background: rgba(255,255,255,.8); padding: 3px 8px; border-radius: 999px;
+      border: 1px solid var(--line);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Z</div>
+    <div class="crumbs">
+      <span>Algemeen</span>
+      <span class="sep">/</span>
+      <span class="here">Telegeneeskunde proces</span>
+    </div>
+    <span class="version-chip">v0.4 · draft</span>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="btn ghost">Test run</button>
+      <button class="btn ghost">Versies</button>
+      <button class="btn">Opslaan</button>
+      <button class="btn primary">Publiceren</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="canvas-wrap">
+      <div class="canvas-scroll">
+        <div class="canvas-bar">
+          <span class="pill">Validator OK</span>
+          <span class="meta">13 nodes · 3 fasen · 1 loopback</span>
+          <span class="meta" style="color:#b45309;">Tijd: dag 0 → dag +4</span>
+          <div class="right">
+            <div class="zoom">
+              <button>−</button>
+              <span class="level">100%</span>
+              <button>+</button>
+            </div>
+            <button class="btn ghost">Fit</button>
+          </div>
+        </div>
+
+        <div class="canvas">
+        <div class="lane-rail">
+          <div class="header-slot">Fase</div>
+          <div class="lbl patient"><span class="dot"></span>Patiënt</div>
+          <div class="lbl zas"><span class="dot"></span>Zorgverlener</div>
+          <div class="lbl extern"><span class="dot"></span>ZAS EPD</div>
+        </div>
+
+        <div class="lane-field" style="min-width: 1500px;">
+          <!-- phase bands -->
+          <div class="phase-band p1" style="left:80px; width:484px;">Initiatie</div>
+          <div class="phase-band p2" style="left:600px; width:600px;">Patiënt onboarding</div>
+          <div class="phase-band p3" style="left:1210px; width:240px;">Klinische review</div>
+
+          <!-- time markers -->
+          <div class="time-marker" style="left:80px;"><span class="tag">dag 0</span></div>
+          <div class="time-marker" style="left:600px;"><span class="tag">dag +1</span></div>
+          <div class="time-marker" style="left:1210px;"><span class="tag">dag +4</span></div>
+
+          <!-- lane stripes -->
+          <div class="lane-stripe" style="top:36px;"></div>
+          <div class="lane-stripe alt" style="top:176px;"></div>
+          <div class="lane-stripe" style="top:316px;"></div>
+
+          <svg class="wires" viewBox="0 0 1500 540" preserveAspectRatio="xMinYMin meet">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#b8b8b8" />
+              </marker>
+              <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#b45309" />
+              </marker>
+            </defs>
+
+            <!-- Start → Opstarten zorgpad -->
+            <path d="M 46 246 H 80" />
+            <!-- Opstarten → Controleren persoonsgegevens -->
+            <path d="M 264 246 H 280" />
+            <!-- Controleren → Diamond Gegevens OK? -->
+            <path d="M 464 246 H 480" />
+            <!-- Diamond NEE → Aanpassen in EPD (down to EPD lane) -->
+            <path d="M 520 286 V 356" />
+            <text x="525" y="324" class="lbl-no">NEE</text>
+            <!-- Loopback: Aanpassen → terug naar Controleren -->
+            <path d="M 428 386 H 372 V 276" class="loopback" />
+            <text x="320" y="332" class="lbl-retry">↻ refresh</text>
+            <!-- Diamond JA → Informeren patiënt (up to patient lane) -->
+            <path d="M 560 246 V 106 H 600" />
+            <text x="566" y="200" class="lbl-yes">JA</text>
+            <!-- Informeren → Opvragen IC -->
+            <path d="M 784 106 H 800" />
+            <!-- Opvragen IC → Diamond IC -->
+            <path d="M 984 106 H 1000" />
+            <!-- Diamond IC JA → Vragenlijsten -->
+            <path d="M 1080 106 H 1210" />
+            <text x="1088" y="100" class="lbl-yes">JA</text>
+            <!-- Diamond IC NEE → Stopgezet -->
+            <path d="M 1040 146 V 184" />
+            <text x="1048" y="170" class="lbl-no">NEE</text>
+            <!-- Vragenlijsten → Goedkeuren zorgpad (down to ZV lane) -->
+            <path d="M 1302 136 V 216" />
+            <!-- Goedkeuren → Wegschrijven data (down to EPD lane, dashed = data) -->
+            <path d="M 1302 276 V 356" class="dashed" />
+            <!-- Goedkeuren → End OK -->
+            <path d="M 1394 246 H 1410" />
+          </svg>
+
+          <!-- ZV LANE -->
+          <div class="node start" style="left:10px; top:228px;"></div>
+
+          <div class="node" style="left:80px; top:216px;">
+            <div class="head">
+              <span class="name">Opstarten zorgpad</span>
+              <span class="chip hix">HiX</span>
+            </div>
+            <div class="meta">trigger: agenda / operatiecode</div>
+          </div>
+
+          <div class="node" style="left:280px; top:216px;">
+            <div class="head">
+              <span class="name">Controleren gegevens</span>
+              <span class="chip manual">Manueel</span>
+            </div>
+            <div class="meta">zorgverlener · secretariaat</div>
+          </div>
+
+          <div class="node diamond" style="left:480px; top:206px;">
+            <div class="inner">Gegevens<br/>in orde?</div>
+          </div>
+
+          <div class="node" style="left:1210px; top:216px;">
+            <div class="head">
+              <span class="name">Goedkeuren zorgpad</span>
+              <span class="chip manual">Gate</span>
+            </div>
+            <div class="meta">expert · escalatie indien NEE</div>
+          </div>
+
+          <div class="node end" style="left:1410px; top:228px;" title="Zorgpad afgerond"></div>
+
+          <!-- PATIËNT LANE -->
+          <div class="node" style="left:600px; top:76px;">
+            <div class="head">
+              <span class="name">Informeren patiënt</span>
+              <span class="chip luscii">Push</span>
+            </div>
+            <div class="meta">start-bericht via app + email</div>
+          </div>
+
+          <div class="node" style="left:800px; top:76px;">
+            <div class="head">
+              <span class="name">Opvragen informed consent</span>
+              <span class="chip luscii">Luscii</span>
+            </div>
+            <div class="meta">digitaal IC + e-sign optie</div>
+          </div>
+
+          <div class="node diamond" style="left:1000px; top:66px;">
+            <div class="inner">IC<br/>gegeven?</div>
+          </div>
+
+          <div class="node end stop" style="left:1022px; top:184px;" title="Zorgpad stopgezet"></div>
+
+          <div class="node selected" style="left:1210px; top:76px;">
+            <div class="head">
+              <span class="name">Invullen vragenlijsten</span>
+              <span class="chip luscii">Luscii</span>
+            </div>
+            <div class="meta">reminder dagelijks · 3d window</div>
+          </div>
+
+          <!-- EPD LANE -->
+          <div class="node" style="left:428px; top:356px;">
+            <div class="head">
+              <span class="name">Aanpassen gegevens in EPD</span>
+              <span class="chip hix">HiX</span>
+            </div>
+            <div class="meta">refresh persoonsgegevens</div>
+          </div>
+
+          <div class="node" style="left:1210px; top:356px;">
+            <div class="head">
+              <span class="name">Wegschrijven data in EPD</span>
+              <span class="chip hix">HiX</span>
+            </div>
+            <div class="meta">gestructureerd · FHIR Observation</div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <!-- /canvas-scroll -->
+
+      <!-- floating dock -->
+      <div class="dock-wrap">
+        <div class="dock" role="toolbar" aria-label="Block picker">
+          <div class="search-tile" title="Zoek blok">
+            <span style="font-size:13px;">⌕</span>
+            <span>Zoek blok</span>
+            <span class="kbd">/</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="tile" draggable="true">
+            <span class="glyph plain">▶</span>
+            <span class="tip">Trigger · afspraak gepland</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph luscii">Q</span>
+            <span class="tip">Vragenlijst (Luscii)</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph luscii">M</span>
+            <span class="tip">Thuismeting (Luscii)</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph luscii">V</span>
+            <span class="tip">Video consult (Luscii)</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="tile" draggable="true">
+            <span class="glyph hix">T</span>
+            <span class="tip">Taak in werklijst (HiX)</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph hix">A</span>
+            <span class="tip">Afspraak inplannen (HiX)</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph hix">O</span>
+            <span class="tip">Order (HiX)</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="tile" draggable="true">
+            <span class="glyph system">⏱</span>
+            <span class="tip">Timer</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph diamond"></span>
+            <span class="tip">Beslissing</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph system">‖</span>
+            <span class="tip">Parallel split</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph manual">↻</span>
+            <span class="tip">Loopback / retry</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="tile" draggable="true">
+            <span class="glyph plain">✉</span>
+            <span class="tip">Email</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph plain">⚡</span>
+            <span class="tip">Push notificatie</span>
+          </div>
+          <div class="tile" draggable="true">
+            <span class="glyph dot"></span>
+            <span class="tip">Einde</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="more" title="Meer blokken">+</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <dialog class="node-dialog" id="node-dialog">
+    <div class="dlg-head">
+      <div class="icon luscii">Q</div>
+      <div class="titles">
+        <div class="sel-type">Patiënt · Vragenlijst</div>
+        <h2 class="sel-name">Invullen vragenlijsten</h2>
+      </div>
+      <button class="close" aria-label="Sluiten" onclick="document.getElementById('node-dialog').close()">✕</button>
+    </div>
+
+    <div class="dlg-tabs">
+      <div class="tab active">Algemeen</div>
+      <div class="tab">Data</div>
+      <div class="tab">SLA</div>
+      <div class="tab">Audit</div>
+    </div>
+
+    <div class="dlg-body">
+      <div class="field">
+        <label>Naam</label>
+        <input value="Gezondheidsmeter" />
+      </div>
+
+      <div class="field">
+        <label>Programma</label>
+        <select><option>ONCO-GM-v3 — gezondheidsmeter</option><option>ONCO-GM-v2 (legacy)</option></select>
+        <div class="hint">22 items · NL/FR · gevalideerd Q1 2026</div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Levering</label>
+          <select><option>Push + email</option><option>Alleen push</option></select>
+        </div>
+        <div class="field">
+          <label>Taal</label>
+          <select><option>NL (auto)</option><option>FR</option></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Response window</label>
+        <input value="48 uur" />
+        <div class="hint">Reminder na 24u · alert zorgverlener na 48u</div>
+      </div>
+
+      <div class="callout">
+        <b>Output</b>
+        Antwoorden → FHIR Observation in HiX. Trigger-condities beschikbaar in volgende beslissing.
+      </div>
+
+      <div class="callout">
+        <b>Compliance</b>
+        <div class="check">Informed consent vereist</div>
+        <div class="check">Auditlog actief</div>
+        <div class="check">FHIR BE-profiel PROM</div>
+      </div>
+    </div>
+
+    <div class="dlg-foot">
+      <button class="danger">Verwijderen</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" onclick="document.getElementById('node-dialog').close()">Annuleren</button>
+      <button class="btn primary">Opslaan</button>
+    </div>
+  </dialog>
+
+  <script>
+    document.querySelectorAll('.node').forEach(n => {
+      n.addEventListener('click', () => {
+        const dlg = document.getElementById('node-dialog');
+        if (typeof dlg.showModal === 'function') dlg.showModal();
+        else dlg.setAttribute('open', '');
+      });
+    });
+  </script>
+</body>
+</html>
