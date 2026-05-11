@@ -1,0 +1,41 @@
+$schema: "https://moonrepo.dev/schemas/project.json"
+
+layer: "application"
+language: "typescript"
+stack: "frontend"
+
+project:
+  name: "orchestrator"
+  description: "Clinician composer + SMART-on-FHIR launch surface."
+
+fileGroups:
+  sources:
+    - "src/**/*"
+    - "index.html"
+    - "vite.config.ts"
+    - "tsconfig*.json"
+  tests:
+    - "src/**/*.test.{ts,tsx}"
+    - "tests/**/*"
+
+tasks:
+  dev:
+    command: "npm run dev"
+    preset: "server"
+
+  build:
+    command: "npm run build"
+    deps:
+      - "~:typecheck"
+    outputs:
+      - "dist"
+
+  typecheck:
+    command: "npx tsc -b --noEmit"
+
+  lint:
+    command: "npm run lint"
+
+  preview:
+    command: "npm run preview"
+    preset: "server"
