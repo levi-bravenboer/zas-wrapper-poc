@@ -1,0 +1,46 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Logs
+*.log
+logs/
+
+# Env files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Build artefacts (per-app gitignores cover most; this is the safety net)
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Moon
+.moon/cache
+.moon/docker
+
+# Playwright
+.playwright-mcp/
+playwright-report/
+test-results/
