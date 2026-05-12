@@ -1,0 +1,57 @@
+:root {
+  /* Surfaces (light theme only) */
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f7f8fa;
+  --color-surface-3: #eef0f4;
+
+  /* Text */
+  --color-text-1: #0e1116;
+  --color-text-2: #4a5260;
+  --color-text-3: #7a8493;
+  --color-text-inverse: #ffffff;
+
+  /* Brand + intent */
+  --color-brand: #0c5cff;
+  --color-brand-fg: #ffffff;
+  --color-brand-soft: #e6edff;
+  --color-success: #138a47;
+  --color-warning: #b45c00;
+  --color-danger: #c92a2a;
+  --color-info: #0c5cff;
+
+  /* Borders */
+  --color-border-1: #e1e4ea;
+  --color-border-2: #c8cdd6;
+
+  /* Focus ring */
+  --color-focus-ring: #0c5cff;
+
+  /* Spacing scale (multiples of 4) */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(14, 17, 22, 0.05);
+  --shadow-md: 0 4px 12px rgba(14, 17, 22, 0.08);
+  --shadow-lg: 0 12px 32px rgba(14, 17, 22, 0.12);
+}
