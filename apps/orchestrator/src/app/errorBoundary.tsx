@@ -37,7 +37,7 @@ function ErrorFallback({ onReset }: { onReset: () => void }) {
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="max-w-md space-y-4 text-center">
         <h1 className="text-xl font-semibold">{t('errorBoundary.title')}</h1>
-        <p className="text-[var(--color-text-2)]">{t('errorBoundary.description')}</p>
+        <p className="text-muted-foreground">{t('errorBoundary.description')}</p>
         <Button onClick={onReset}>{t('errorBoundary.retry')}</Button>
       </div>
     </div>

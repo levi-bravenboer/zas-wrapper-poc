@@ -15,7 +15,7 @@ export function FormMessage({
   return (
     <p
       role="alert"
-      className={cn('text-sm text-[var(--color-danger)]', className)}
+      className={cn('text-sm text-destructive', className)}
       {...props}
     >
       {children}
@@ -27,5 +27,5 @@ export function FormDescription({
   className,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-sm text-[var(--color-text-3)]', className)} {...props} />
+  return <p className={cn('text-sm text-muted-foreground', className)} {...props} />
 }
