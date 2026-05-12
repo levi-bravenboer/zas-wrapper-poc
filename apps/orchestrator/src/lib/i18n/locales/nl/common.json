@@ -1,0 +1,14 @@
+{
+  "errorBoundary": {
+    "title": "Er ging iets mis",
+    "description": "Onze app reageerde niet zoals verwacht. Probeer het opnieuw.",
+    "retry": "Opnieuw proberen"
+  },
+  "appShell": {
+    "welcome": "Welkom",
+    "placeholderDescription": "De inhoud van dit scherm volgt in een latere wijziging."
+  },
+  "toasts": {
+    "genericError": "Er ging iets mis. Probeer het opnieuw."
+  }
+}
