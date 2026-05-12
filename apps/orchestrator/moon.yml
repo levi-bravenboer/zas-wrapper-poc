@@ -13,10 +13,12 @@ fileGroups:
     - "src/**/*"
     - "index.html"
     - "vite.config.ts"
+    - "vitest.config.ts"
+    - "playwright.config.ts"
     - "tsconfig*.json"
   tests:
     - "src/**/*.test.{ts,tsx}"
-    - "tests/**/*"
+    - "tests-e2e/**/*"
 
 tasks:
   dev:
@@ -36,6 +38,18 @@ tasks:
   lint:
     command: "npm run lint"
 
+  format:
+    command: "npm run format"
+
   preview:
     command: "npm run preview"
     preset: "server"
+
+  test:
+    command: "npm run test"
+
+  test-e2e:
+    command: "npm run test:e2e"
+
+  typegen:
+    command: "npm run typegen"
