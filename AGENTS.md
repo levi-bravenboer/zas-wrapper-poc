@@ -75,9 +75,10 @@ Bug fixes that do not introduce or alter behaviour can skip the proposal step bu
 ### Frontend (`apps/orchestrator`)
 
 - TypeScript strict. No `any` without a `// reason` next to it.
-- React 19 idioms: server-component-friendly code, no class components, no legacy refs.
-- Styling via the repo design system once published; until then, scoped CSS modules or Tailwind utilities are acceptable.
-- See `apps/orchestrator/AGENTS.md` for commands and conventions.
+- React 19 idioms: function components only, no class components, no legacy refs.
+- Stack: TanStack Router/Query/Form, Zod, openapi-fetch (typed from backend OpenAPI), Tailwind v4 + shadcn/ui, i18next (`nl`), Vitest + Playwright + MSW.
+- Module isolation enforced by ESLint `no-restricted-paths`; no barrel `index.ts`; `@/*` is the only path alias.
+- See `apps/orchestrator/AGENTS.md` for folder rules, casing table, coding rules, agentic testing workflow, and per-task moon commands. ADRs live under `apps/orchestrator/docs/adr/`.
 
 ### Backend (`apps/backend`)
 
