@@ -42,6 +42,7 @@ src/
     __tests__/    integration tests for module flows
   components/
     ui/         shadcn primitives (Button, Input, Label, Form, Card, Toast, Icon)
+    layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
   lib/
@@ -96,6 +97,14 @@ src/
 - Validate at boundaries: HTTP payloads, SMART query params, env.
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
+
+## Router context and guards
+
+- The router is a singleton constructed in `src/app/router.ts`. Its `context` exposes `{ queryClient }` so route loaders and guards can hit the React Query cache without prop drilling.
+- The root route is `createRootRouteWithContext<RouterContext>()` so every child route gets `context.queryClient` strictly typed.
+- Auth guards MUST read the session via `requireSession(context.queryClient)` from `modules/auth/guard.ts`. This wraps `ensureQueryData` on `authKeys.me()` with a 60 s stale time — fresh navigations skip the network, stale ones refetch once.
+- Never call `fetchSession()` directly from a route. Never read auth state from `window.location` or component-level effects.
+- Imperative navigation outside React (e.g. inside a mutation `onSuccess`) goes through `router.navigate(...)` imported from `app/router.ts`. In tests, `vi.mock('@/app/router', ...)` to assert calls.
 
 ## Agentic testing workflow
 

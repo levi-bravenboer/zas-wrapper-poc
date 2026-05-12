@@ -7,11 +7,8 @@ import { Toaster } from '@/components/ui/Toaster'
 import { i18n } from '@/lib/i18n'
 
 import { RootErrorBoundary } from './errorBoundary'
-import { createQueryClient } from './queryClient'
-import { createAppRouter } from './router'
-
-const queryClient = createQueryClient()
-const router = createAppRouter()
+import { queryClient } from './queryClient'
+import { router } from './router'
 
 export function Providers(): React.ReactElement {
   return (

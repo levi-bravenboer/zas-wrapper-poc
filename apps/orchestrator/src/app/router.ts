@@ -2,15 +2,15 @@ import { createRouter } from '@tanstack/react-router'
 
 import { routeTree } from '@/routeTree.gen'
 
-export function createAppRouter() {
-  return createRouter({
-    routeTree,
-    defaultPreload: 'intent',
-    context: { session: undefined },
-  })
-}
+import { queryClient } from './queryClient'
 
-export type AppRouter = ReturnType<typeof createAppRouter>
+export const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+  context: { queryClient },
+})
+
+export type AppRouter = typeof router
 
 declare module '@tanstack/react-router' {
   interface Register {

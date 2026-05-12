@@ -2,9 +2,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import * as React from 'react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { server } from '@/mocks/server'
+
+vi.mock('@/app/router', () => ({
+  router: { navigate: vi.fn() },
+}))
+
+import { router } from '@/app/router'
 
 import { useLogin, useLogout, useSession } from './hooks'
 
@@ -88,15 +94,22 @@ describe('useLogin', () => {
 })
 
 describe('useLogout', () => {
-  it('clears the session cache on success', async () => {
+  const navigateMock = router.navigate as ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    navigateMock.mockClear()
+  })
+
+  it('clears the session cache and navigates to /login on success', async () => {
     server.use(http.post(`${baseUrl}/auth/logout`, () => new HttpResponse(null, { status: 204 })))
 
     const { result } = renderHook(() => useLogout(), { wrapper })
     await result.current.mutateAsync()
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/login', replace: true })
   })
 
-  it('throws on a non-2xx response', async () => {
+  it('throws on a non-2xx response and does not navigate', async () => {
     server.use(
       http.post(`${baseUrl}/auth/logout`, () =>
         HttpResponse.json({ detail: 'fail' }, { status: 500 }),
@@ -105,5 +118,6 @@ describe('useLogout', () => {
 
     const { result } = renderHook(() => useLogout(), { wrapper })
     await expect(result.current.mutateAsync()).rejects.toThrow()
+    expect(navigateMock).not.toHaveBeenCalled()
   })
 })
