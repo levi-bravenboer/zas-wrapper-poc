@@ -1,0 +1,5 @@
+import { createQueryKeys } from '@/lib/query/keys'
+
+export const authKeys = createQueryKeys('auth', (scope) => ({
+  me: () => [scope, 'me'] as const,
+}))
