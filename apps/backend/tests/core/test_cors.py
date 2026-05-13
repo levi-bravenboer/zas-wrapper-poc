@@ -1,16 +1,15 @@
 from fastapi.testclient import TestClient
 from pydantic import AnyHttpUrl, SecretStr
 
-from app.core.settings import Settings
 from app.main import create_app
+from tests._settings import build_settings
 
 DEV_ORIGIN = "http://localhost:5173"
 UNKNOWN_ORIGIN = "http://evil.example.com"
 
 
 def _build_client(origins: list[str]) -> TestClient:
-    settings = Settings(
-        _env_file=None,
+    settings = build_settings(
         cors_origins=[AnyHttpUrl(o) for o in origins],
         session_secret_key=SecretStr("test-secret"),
     )

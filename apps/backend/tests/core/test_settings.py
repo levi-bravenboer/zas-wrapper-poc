@@ -1,12 +1,13 @@
 import pytest
 from pydantic import SecretStr
 
-from app.core.settings import DEFAULT_SESSION_SECRET, Settings
+from app.core.settings import DEFAULT_SESSION_SECRET
 from app.main import InsecureProductionConfigError, _check_production_safety
+from tests._settings import build_settings
 
 
 def test_settings_load_defaults() -> None:
-    settings = Settings(_env_file=None)
+    settings = build_settings()
     assert settings.env == "dev"
     assert settings.session_cookie_name == "BACKEND_SESSION"
     assert settings.hix_mode == "stub"
@@ -20,7 +21,7 @@ def test_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BACKEND_SESSION_SECRET_KEY", "super-secret-value")
     monkeypatch.setenv("BACKEND_HIX_MODE", "stub")
 
-    settings = Settings(_env_file=None)
+    settings = build_settings()
 
     assert settings.env == "production"
     assert [str(o) for o in settings.cors_origins] == ["https://app.example.com/"]
@@ -28,10 +29,9 @@ def test_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_production_guard_rejects_default_secret() -> None:
-    settings = Settings(
-        _env_file=None,
+    settings = build_settings(
         env="production",
-        cors_origins=["https://app.example.com"],  # type: ignore[arg-type]
+        cors_origins=["https://app.example.com"],
         session_secret_key=SecretStr(DEFAULT_SESSION_SECRET),
     )
     with pytest.raises(InsecureProductionConfigError):
@@ -39,8 +39,7 @@ def test_production_guard_rejects_default_secret() -> None:
 
 
 def test_production_guard_rejects_empty_origins() -> None:
-    settings = Settings(
-        _env_file=None,
+    settings = build_settings(
         env="production",
         cors_origins=[],
         session_secret_key=SecretStr("ok-secret"),
@@ -50,10 +49,9 @@ def test_production_guard_rejects_empty_origins() -> None:
 
 
 def test_production_guard_passes_when_safe() -> None:
-    settings = Settings(
-        _env_file=None,
+    settings = build_settings(
         env="production",
-        cors_origins=["https://app.example.com"],  # type: ignore[arg-type]
+        cors_origins=["https://app.example.com"],
         session_secret_key=SecretStr("ok-secret"),
     )
     _check_production_safety(settings)

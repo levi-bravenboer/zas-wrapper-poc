@@ -72,10 +72,10 @@
 
 ## 9. Typecheck task
 
-- [ ] 9.1 Add `pyright` to dev deps; `uv sync`
-- [ ] 9.2 Configure `[tool.pyright]` in `pyproject.toml` — `include = ["app", "tests"]`, `typeCheckingMode = "basic"`, `pythonVersion = "3.13"`
-- [ ] 9.3 Add `backend:typecheck` task to `apps/backend/moon.yml` running `uv run pyright`
-- [ ] 9.4 Fix all reported type issues in the new code
+- [x] 9.1 Add `pyright` to dev deps; `uv sync`
+- [x] 9.2 Configure `[tool.pyright]` in `pyproject.toml` — `include = ["app", "tests"]`, `typeCheckingMode = "basic"`, `pythonVersion = "3.13"`
+- [x] 9.3 Add `backend:typecheck` task to `apps/backend/moon.yml` running `uv run pyright`
+- [x] 9.4 Fix all reported type issues in the new code
 
 ## 10. Testing foundation
 

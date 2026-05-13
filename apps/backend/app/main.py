@@ -41,13 +41,12 @@ def _error_response(status_code: int, payload: ErrorResponse) -> JSONResponse:
 
 
 def _http_exception_to_error_response(exc: HTTPException) -> ErrorResponse:
-    detail = exc.detail
+    detail: Any = exc.detail
     if isinstance(detail, dict) and "code" in detail and "message" in detail:
-        details_field: dict[str, Any] | None = detail.get("details")
         return ErrorResponse(
             code=str(detail["code"]),
             message=str(detail["message"]),
-            details=details_field,
+            details=detail.get("details"),
         )
     message = detail if isinstance(detail, str) else "HTTP error"
     return ErrorResponse(

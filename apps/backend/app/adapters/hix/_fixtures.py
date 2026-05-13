@@ -7,8 +7,12 @@ from datetime import date
 from app.schemas.fhir import Patient
 
 _PATIENTS: dict[str, Patient] = {
-    "demo-1": Patient(id="demo-1", name="Demo Patient One", birthdate=date(1980, 1, 1), gender="female"),
-    "demo-2": Patient(id="demo-2", name="Demo Patient Two", birthdate=date(1975, 6, 15), gender="male"),
+    "demo-1": Patient(
+        id="demo-1", name="Demo Patient One", birthdate=date(1980, 1, 1), gender="female"
+    ),
+    "demo-2": Patient(
+        id="demo-2", name="Demo Patient Two", birthdate=date(1975, 6, 15), gender="male"
+    ),
 }
 
 

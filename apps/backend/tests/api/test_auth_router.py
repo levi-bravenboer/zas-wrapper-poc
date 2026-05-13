@@ -3,12 +3,12 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from app.core.settings import Settings
 from app.main import create_app
+from tests._settings import build_settings
 
 
 def _client() -> TestClient:
-    settings = Settings(_env_file=None, session_secret_key=SecretStr("test-secret"))
+    settings = build_settings(session_secret_key=SecretStr("test-secret"))
     return TestClient(create_app(settings))
 
 

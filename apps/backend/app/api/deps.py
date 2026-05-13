@@ -31,10 +31,14 @@ def get_current_user(
         raise AppError(code="auth.unauthenticated", status_code=401, message="No session cookie.")
     user_id = signer.unsign(cookie)
     if user_id is None:
-        raise AppError(code="auth.unauthenticated", status_code=401, message="Invalid session cookie.")
+        raise AppError(
+            code="auth.unauthenticated", status_code=401, message="Invalid session cookie."
+        )
     user = auth_service.get_user(user_id)
     if user is None:
-        raise AppError(code="auth.unauthenticated", status_code=401, message="Session user not found.")
+        raise AppError(
+            code="auth.unauthenticated", status_code=401, message="Session user not found."
+        )
     return user
 
 

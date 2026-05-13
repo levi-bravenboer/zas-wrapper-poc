@@ -44,3 +44,9 @@ tasks:
       - "@group(sources)"
     outputs:
       - "openapi.json"
+
+  typecheck:
+    command: "uv run pyright"
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"
