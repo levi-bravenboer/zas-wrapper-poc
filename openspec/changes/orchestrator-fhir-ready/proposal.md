@@ -1,3 +1,7 @@
+**Tier**: [mvp]
+
+**Status**: dormant — out of current tier window (`[poc]`). Proposal is preserved for the MVP FHIR work but **must not be implemented now**. Tracked under `BL-026`. Promote by re-reading against `openspec/scope.md` when the `[mvp]` window opens.
+
 ## Why
 
 The backend `backend-setup` change adopts `fhir.resources` (R4) as the canonical internal model, exposes thinner view-model DTOs to the orchestrator, namespaces error codes under FHIR `OperationOutcome.issue.code`, and ships a Bundle-compatible pagination shape. The orchestrator needs a small set of mirror-side conventions so that:

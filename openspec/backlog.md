@@ -186,10 +186,10 @@ Note: Add `status: open | promoted | dropped` to each entry. Skipped at PoC beca
 Note: Section 12 of `backend-setup` introduced FHIR-shaped domain artifacts (fhir.resources types, `PatientSummary`, view-model DTOs, search-param models, FHIR-verb HiX adapter, `/patients/{id}` route) that the new PoC scope flags as out-of-tier. Follow-up change reviews each artifact and decides keep / narrow / revert. Concrete artifact list lives in `openspec/changes/define-poc-scope/tasks.md` § 6.1. **Caveat**: section 12 work-in-progress was lost during a rebase; follow-up needs to either re-implement or skip the section-12 work entirely depending on the keep/narrow/revert decision.
 
 ### BL-026 — Re-tier `orchestrator-fhir-ready` change
-- Tier: [poc]
+- Tier: [mvp]
 - Source: define-poc-scope change, Q13 decision
 
-Note: Pre-existing change. No tier tag. Read against new `scope.md` and either add tier to `proposal.md` or move to backlog. Likely `[mvp]` given PoC has no FHIR.
+Note: Pre-existing change. Re-tiered to `[mvp]` on 2026-05-13 — PoC has no FHIR per `openspec/scope.md`. Change folder kept (design work preserved) but tagged dormant in `proposal.md`. Promote when `[mvp]` window opens; re-read against `scope.md` first.
 
 ### BL-027 — Re-tier `dev-data-seeding` change
 - Tier: [poc]
