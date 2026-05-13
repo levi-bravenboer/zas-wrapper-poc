@@ -44,3 +44,9 @@ __pycache__/
 .playwright-mcp/
 playwright-report/
 test-results/
+
+# Worktrees
+.worktrees/
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock
