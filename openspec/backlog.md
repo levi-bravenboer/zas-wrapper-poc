@@ -239,44 +239,44 @@ Note: Which pathway powers the June demo? Holter (cardiology), Rugrevalidatie (r
 
 Note: "No real patient data" is now a project-wide invariant. Consider a CI lint that scans fixtures + screenshots for RRN-shaped strings, real-looking names from a heuristic list. Out of PoC scope but should not be forgotten.
 
-### BL-035 — User + auth domain (F1)
+### BL-035 — F1 user + auth domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: Backend `users` table, `UserRepository`, `AuthService` (`hash_password`, `verify_password`, `SessionSigner`), `LoginRequest`/`SessionUser` schemas, `POST /auth/login` / `GET /auth/me` / `POST /auth/logout`, alembic baseline + bootstrap-admin data migration, `CurrentUserDep`. Orchestrator side already exists in `modules/auth/`. Own worktree + change.
+Note: F1 backend domain lands as its own `[poc]` change in its own worktree. Shape (tables, services, routes, schemas) is designed inside that change — not pre-decided here. Orchestrator `modules/auth/` already exists; the change wires it to the new backend surface.
 
-### BL-036 — Pathway domain (F3)
+### BL-036 — F3 pathway domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: `Pathway { id, name, owner_id, blocks: JSON, ... }` + repository, block discriminated union (`appointment`, `decision`, `milestone`, `email`, `hix_task`, `luscii_care_path`), `PathwayService` CRUD + `load_blocks`, `GET/POST/PUT /pathways*` routes, alembic migration. Orchestrator `modules/pathway/` + composer skeleton route lands with this. Own worktree + change.
+Note: F3 backend domain lands as its own `[poc]` change in its own worktree. Shape is designed inside that change. Orchestrator pathway module + composer skeleton land with the same change.
 
-### BL-037 — Patient domain (F4)
+### BL-037 — F4 patient domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: `Patient { id, display_name, birthdate, ... }` + repository, `PatientService` (list with pathway+status filters, detail joins enrollment+pathway+runtime), `GET /patients`, `GET /patients/{id}`, `POST /patients/{id}/enroll`. Orchestrator `modules/patient/` + `patienten.tsx` + detail route. Own worktree + change.
+Note: F4 backend domain + orchestrator patients-overview land as their own `[poc]` change in their own worktree. Shape is designed inside that change.
 
-### BL-038 — Enrollment + task runtime (F5 / F6)
+### BL-038 — F5 / F6 enrollment + task runtime
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: `PathwayEnrollment` + `Task` models, partial unique index on `(patient_id) WHERE completed_at IS NULL`, `EnrollmentService` (`enroll_patient`, `advance_enrollment`), `TaskService` (`list_pending_tasks`, `complete_task`), `GET /tasks` + `POST /tasks/{id}/complete`. Orchestrator `modules/task/` + `taken.tsx` inbox + patient-view pathway viz. Depends on BL-036 + BL-037. Own worktree + change.
+Note: F5 + F6 backend runtime + orchestrator task inbox + patient-view pathway viz land as their own `[poc]` change in their own worktree. Shape is designed inside that change. Depends on BL-036 + BL-037.
 
-### BL-039 — Admin domain (F8)
+### BL-039 — F8 admin domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: Reuses `User` from BL-035. `AdminService.assign_role` with self-demotion guard, `GET /users` + `POST /users/{id}/role` (admin-only), `AdminUserDep`. Orchestrator `modules/admin/` + `instellingen.tsx`. Depends on BL-035. Own worktree + change.
+Note: F8 backend admin surface + orchestrator `instellingen.tsx` land as their own `[poc]` change in their own worktree. Shape is designed inside that change. Depends on BL-035.
 
-### BL-040 — Dashboard counts (F2)
+### BL-040 — F2 dashboard counts
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: `DashboardService.summary(caregiver_id)` aggregates from PatientRepository + TaskRepository + PathwayRepository (no own model), `GET /dashboard/summary`. Orchestrator wires three count cards on `DashboardPage` with drill-down nav. Depends on BL-036 + BL-037 + BL-038. Own worktree + change.
+Note: F2 backend aggregation + orchestrator dashboard wiring land as their own `[poc]` change in their own worktree. Shape is designed inside that change. Depends on BL-036 + BL-037 + BL-038.
 
 ### BL-041 — Seed data + MSW handlers
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
-Note: Alembic data migration (or `seed` CLI) seeding: 1 admin, 2 caregivers, 5 synthetic patients, 2 sample pathways (one with `luscii_care_path` block carrying static JSON), 1 enrollment per patient, a few pending tasks. Orchestrator `src/mocks/handlers/` mirrors every endpoint so Playwright runs without a live backend. Depends on BL-035..BL-040. Own worktree + change.
+Note: Seed-data strategy + orchestrator MSW handlers land as their own `[poc]` change in their own worktree once domain shapes stabilise. Depends on BL-035..BL-040.
