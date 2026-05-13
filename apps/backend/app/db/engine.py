@@ -22,9 +22,7 @@ def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSessi
     return async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
 
 
-async def get_session(
-    request: Request, settings: SettingsDep
-) -> AsyncIterator[AsyncSession]:
+async def get_session(request: Request, settings: SettingsDep) -> AsyncIterator[AsyncSession]:
     """Request-scoped session with auto-commit/rollback unit-of-work semantics.
 
     Commits on successful handler return; rolls back on any raised exception.
