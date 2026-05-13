@@ -4,13 +4,13 @@
 # Last matching rule wins. Listed users must approve PRs touching the path
 # when "Require review from Code Owners" is enabled on main.
 #
-# Replace placeholder handles with real GitHub usernames or @org/team slugs
-# before enabling the ruleset.
+# Replace placeholder handles (@DESIGNER_1, @DEVELOPER_1) with real GitHub
+# usernames before flipping the rulesets to Active.
 
-# Default — everything owned by developers
-*                          @levi-bravenboer @DEV_USER_1 @DEV_USER_2
+# Default — everything owned by developers + levi
+*                          @levi-bravenboer @DEVELOPER_1
 
 # Designer-editable zones — both teams own so either side can approve
-/docs/                     @DESIGNER_1 @DESIGNER_2 @levi-bravenboer @DEV_USER_1
-/openspec/                 @DESIGNER_1 @DESIGNER_2 @levi-bravenboer @DEV_USER_1
-/apps/orchestrator/        @DESIGNER_1 @DESIGNER_2 @levi-bravenboer @DEV_USER_1
+/docs/                     @DESIGNER_1 @levi-bravenboer @DEVELOPER_1
+/openspec/                 @DESIGNER_1 @levi-bravenboer @DEVELOPER_1
+/apps/orchestrator/        @DESIGNER_1 @levi-bravenboer @DEVELOPER_1
