@@ -1,23 +1,16 @@
 """HiX adapter Protocol.
 
-This is the FHIR-facing seam: HiX speaks SMART-on-FHIR R4 in production, so the
-Protocol mirrors that vocabulary (read / search / create) even while the PoC
-serves stub fixtures. Section 12 of `backend-setup` swaps the placeholder
-`Patient` model below for `fhir.resources` types and adds search/create.
+PoC scope (`openspec/scope.md`) excludes live HiX and any FHIR-shaped surface;
+the Protocol is narrowed to a reachability probe. FHIR verbs return at `[mvp]`
+via the future `hix-fhir-proxy` change.
 """
 
 from __future__ import annotations
 
 from typing import Protocol
 
-from app.schemas.fhir import Patient
-
 
 class HixClient(Protocol):
     async def ping(self) -> None:
         """Cheap reachability probe. Raises on failure; caught by readiness registry."""
-        ...
-
-    async def get_patient(self, reference: str) -> Patient:
-        """Placeholder until §12 introduces `read(resource_type, resource_id)`."""
         ...

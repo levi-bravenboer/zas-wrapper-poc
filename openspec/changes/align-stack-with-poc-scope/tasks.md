@@ -1,12 +1,12 @@
 ## 1. Backend cleanup (BL-025 narrow)
 
-- [ ] 1.1 Delete `apps/backend/app/schemas/fhir.py` and remove every import of it from the app + tests
-- [ ] 1.2 Narrow `apps/backend/app/adapters/hix/protocol.py` to `async def ping() -> None` only; drop `get_patient` and the `from app.schemas.fhir import Patient` import
-- [ ] 1.3 Update `apps/backend/app/adapters/hix/stub.py` to match the narrowed Protocol; remove the `get_patient` implementation and its fixture wiring
-- [ ] 1.4 Delete `apps/backend/app/adapters/hix/_fixtures.py`
-- [ ] 1.5 Delete `apps/backend/tests/fixtures/fhir.py` and update `apps/backend/tests/adapters/test_hix_stub.py` to assert only the `ping()` contract
-- [ ] 1.6 Slim `apps/backend/AGENTS.md` "FHIR-Readiness Rules" to a one-paragraph pointer ("FHIR rules apply at `[mvp]`; see `openspec/scope.md`")
-- [ ] 1.7 Run `moon run backend:typecheck` + `moon run backend:test` — green before commit
+- [x] 1.1 Delete `apps/backend/app/schemas/fhir.py` and remove every import of it from the app + tests
+- [x] 1.2 Narrow `apps/backend/app/adapters/hix/protocol.py` to `async def ping() -> None` only; drop `get_patient` and the `from app.schemas.fhir import Patient` import
+- [x] 1.3 Update `apps/backend/app/adapters/hix/stub.py` to match the narrowed Protocol; remove the `get_patient` implementation and its fixture wiring
+- [x] 1.4 Delete `apps/backend/app/adapters/hix/_fixtures.py`
+- [x] 1.5 Delete `apps/backend/tests/fixtures/fhir.py` and update `apps/backend/tests/adapters/test_hix_stub.py` to assert only the `ping()` contract
+- [x] 1.6 Slim `apps/backend/AGENTS.md` "FHIR-Readiness Rules" to a one-paragraph pointer ("FHIR rules apply at `[mvp]`; see `openspec/scope.md`")
+- [x] 1.7 Run `moon run backend:typecheck` + `moon run backend:test` — green before commit
 - [ ] 1.8 Commit: `chore(backend): narrow hix adapter to ping and drop fhir placeholders`
 
 ## 2. Persistence foundation
