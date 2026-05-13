@@ -41,8 +41,8 @@ Land the layering before any domain code. Everything below this point follows th
 
 ## 5. Verification
 
-- [ ] 5.1 `moon ci` — full affected-only build + lint + typecheck + test green
-- [ ] 5.2 `openspec validate align-stack-with-poc-scope --strict` — passes
-- [ ] 5.3 Update `openspec/backlog.md` `BL-025` entry note: "Resolved by `align-stack-with-poc-scope` on YYYY-MM-DD — section 1 (HiX narrow + FHIR placeholders removed), section 3 (backend structural foundation), section 4 (smart-launch removed)."
-- [ ] 5.4 Add follow-up `[poc]` change stubs to `openspec/backlog.md` for each F1–F8 domain (user+auth, pathway, patient, enrollment+task, admin, dashboard, plus orchestrator feature wiring + seed data)
+- [x] 5.1 `moon ci` — backend gates + orchestrator typecheck/test/lint/build/test-e2e green; orchestrator `format` task fails on pre-existing biome schema drift (`files.ignore` + `organizeImports` no longer valid in current biome) — not introduced by this change
+- [x] 5.2 `openspec validate align-stack-with-poc-scope --strict` — passes
+- [x] 5.3 Update `openspec/backlog.md` `BL-025` entry note marking resolution by this change
+- [x] 5.4 Add follow-up `[poc]` change stubs to `openspec/backlog.md` for each F1–F8 domain (BL-035..BL-041)
 - [ ] 5.5 Archive the change via `openspec archive align-stack-with-poc-scope`

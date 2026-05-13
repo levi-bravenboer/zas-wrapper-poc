@@ -183,7 +183,7 @@ Note: Add `status: open | promoted | dropped` to each entry. Skipped at PoC beca
 - Tier: [poc]
 - Source: define-poc-scope change, section 6 of tasks.md
 
-Note: Section 12 of `backend-setup` introduced FHIR-shaped domain artifacts (fhir.resources types, `PatientSummary`, view-model DTOs, search-param models, FHIR-verb HiX adapter, `/patients/{id}` route) that the new PoC scope flags as out-of-tier. Follow-up change reviews each artifact and decides keep / narrow / revert. Concrete artifact list lives in `openspec/changes/define-poc-scope/tasks.md` § 6.1. **Caveat**: section 12 work-in-progress was lost during a rebase; follow-up needs to either re-implement or skip the section-12 work entirely depending on the keep/narrow/revert decision.
+Note: Section 12 of `backend-setup` introduced FHIR-shaped domain artifacts (fhir.resources types, `PatientSummary`, view-model DTOs, search-param models, FHIR-verb HiX adapter, `/patients/{id}` route) that the new PoC scope flags as out-of-tier. **Resolved** by `align-stack-with-poc-scope` on 2026-05-13 — section 1 narrowed HiX to `ping()` and removed FHIR placeholders; section 3 added the structural foundation (persistence, repositories layer, UoW session, layered AGENTS.md); section 4 removed orchestrator smart-launch.
 
 ### BL-026 — Re-tier `orchestrator-fhir-ready` change
 - Tier: [mvp]
@@ -238,3 +238,45 @@ Note: Which pathway powers the June demo? Holter (cardiology), Rugrevalidatie (r
 - Source: define-poc-scope, hard constraint
 
 Note: "No real patient data" is now a project-wide invariant. Consider a CI lint that scans fixtures + screenshots for RRN-shaped strings, real-looking names from a heuristic list. Out of PoC scope but should not be forgotten.
+
+### BL-035 — User + auth domain (F1)
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: Backend `users` table, `UserRepository`, `AuthService` (`hash_password`, `verify_password`, `SessionSigner`), `LoginRequest`/`SessionUser` schemas, `POST /auth/login` / `GET /auth/me` / `POST /auth/logout`, alembic baseline + bootstrap-admin data migration, `CurrentUserDep`. Orchestrator side already exists in `modules/auth/`. Own worktree + change.
+
+### BL-036 — Pathway domain (F3)
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: `Pathway { id, name, owner_id, blocks: JSON, ... }` + repository, block discriminated union (`appointment`, `decision`, `milestone`, `email`, `hix_task`, `luscii_care_path`), `PathwayService` CRUD + `load_blocks`, `GET/POST/PUT /pathways*` routes, alembic migration. Orchestrator `modules/pathway/` + composer skeleton route lands with this. Own worktree + change.
+
+### BL-037 — Patient domain (F4)
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: `Patient { id, display_name, birthdate, ... }` + repository, `PatientService` (list with pathway+status filters, detail joins enrollment+pathway+runtime), `GET /patients`, `GET /patients/{id}`, `POST /patients/{id}/enroll`. Orchestrator `modules/patient/` + `patienten.tsx` + detail route. Own worktree + change.
+
+### BL-038 — Enrollment + task runtime (F5 / F6)
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: `PathwayEnrollment` + `Task` models, partial unique index on `(patient_id) WHERE completed_at IS NULL`, `EnrollmentService` (`enroll_patient`, `advance_enrollment`), `TaskService` (`list_pending_tasks`, `complete_task`), `GET /tasks` + `POST /tasks/{id}/complete`. Orchestrator `modules/task/` + `taken.tsx` inbox + patient-view pathway viz. Depends on BL-036 + BL-037. Own worktree + change.
+
+### BL-039 — Admin domain (F8)
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: Reuses `User` from BL-035. `AdminService.assign_role` with self-demotion guard, `GET /users` + `POST /users/{id}/role` (admin-only), `AdminUserDep`. Orchestrator `modules/admin/` + `instellingen.tsx`. Depends on BL-035. Own worktree + change.
+
+### BL-040 — Dashboard counts (F2)
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: `DashboardService.summary(caregiver_id)` aggregates from PatientRepository + TaskRepository + PathwayRepository (no own model), `GET /dashboard/summary`. Orchestrator wires three count cards on `DashboardPage` with drill-down nav. Depends on BL-036 + BL-037 + BL-038. Own worktree + change.
+
+### BL-041 — Seed data + MSW handlers
+- Tier: [poc]
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+
+Note: Alembic data migration (or `seed` CLI) seeding: 1 admin, 2 caregivers, 5 synthetic patients, 2 sample pathways (one with `luscii_care_path` block carrying static JSON), 1 enrollment per patient, a few pending tasks. Orchestrator `src/mocks/handlers/` mirrors every endpoint so Playwright runs without a live backend. Depends on BL-035..BL-040. Own worktree + change.
