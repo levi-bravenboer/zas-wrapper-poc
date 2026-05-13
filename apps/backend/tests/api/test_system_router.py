@@ -31,11 +31,11 @@ def test_health_returns_health_response_shape() -> None:
     assert payload["started_at"]
 
 
-def test_ready_returns_ready_with_no_checks_registered() -> None:
+def test_ready_returns_ready_when_all_adapter_pings_succeed() -> None:
     client = _client()
     response = client.get("/ready")
     assert response.status_code == 200
-    assert response.json() == {"status": "ready", "checks": {}}
+    assert response.json() == {"status": "ready", "checks": {"hix": "ok", "luscii": "ok"}}
 
 
 def test_ready_returns_503_when_check_fails() -> None:

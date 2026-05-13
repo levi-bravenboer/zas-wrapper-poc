@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import __version__
+from app.adapters import build_hix_client, build_luscii_client
 from app.api import register_routers
 from app.core.errors import AppError, ErrorResponse
 from app.core.logging import configure_logging
@@ -88,6 +89,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.started_at = datetime.now(timezone.utc)
     app.state.readiness = ReadinessRegistry()
+
+    hix_client = build_hix_client(settings)
+    luscii_client = build_luscii_client(settings)
+    app.state.hix_client = hix_client
+    app.state.luscii_client = luscii_client
+    app.state.readiness.register("hix", hix_client.ping)
+    app.state.readiness.register("luscii", luscii_client.ping)
 
     app.add_middleware(
         CORSMiddleware,

@@ -41,14 +41,14 @@
 
 ## 6. External adapters
 
-- [ ] 6.1 Create `app/adapters/__init__.py` exposing the adapter registry
-- [ ] 6.2 Create `app/adapters/hix/protocol.py` defining `class HixClient(Protocol)` with `async def ping() -> None` and placeholder `async def get_patient(reference: str) -> Patient` (Patient = stub Pydantic model in `app/schemas/fhir.py` for now)
-- [ ] 6.3 Create `app/adapters/hix/stub.py` implementing `HixStubClient(HixClient)` — `ping()` is a no-op, `get_patient` returns a fixture from `app/adapters/hix/_fixtures.py`
-- [ ] 6.4 Create `app/adapters/luscii/protocol.py` defining `class LusciiClient(Protocol)` with `async def ping() -> None`
-- [ ] 6.5 Create `app/adapters/luscii/stub.py` implementing `LusciiStubClient`
-- [ ] 6.6 Add `get_hix_client(settings: SettingsDep) -> HixClient` and `get_luscii_client(settings: SettingsDep) -> LusciiClient` factories returning the right impl per `settings.<vendor>_mode`
-- [ ] 6.7 Register adapter pings with the readiness probe via a small `ReadinessRegistry` in `app/core/readiness.py`
-- [ ] 6.8 Tests: `tests/adapters/test_hix_stub.py`, `tests/adapters/test_luscii_stub.py` cover the stub contract; `tests/api/test_system_router.py` overrides `get_hix_client` with a stub that raises in `ping()` to assert 503
+- [x] 6.1 Create `app/adapters/__init__.py` exposing the adapter registry
+- [x] 6.2 Create `app/adapters/hix/protocol.py` defining `class HixClient(Protocol)` with `async def ping() -> None` and placeholder `async def get_patient(reference: str) -> Patient` (Patient = stub Pydantic model in `app/schemas/fhir.py` for now)
+- [x] 6.3 Create `app/adapters/hix/stub.py` implementing `HixStubClient(HixClient)` — `ping()` is a no-op, `get_patient` returns a fixture from `app/adapters/hix/_fixtures.py`
+- [x] 6.4 Create `app/adapters/luscii/protocol.py` defining `class LusciiClient(Protocol)` with `async def ping() -> None`
+- [x] 6.5 Create `app/adapters/luscii/stub.py` implementing `LusciiStubClient`
+- [x] 6.6 Add `get_hix_client(settings: SettingsDep) -> HixClient` and `get_luscii_client(settings: SettingsDep) -> LusciiClient` factories returning the right impl per `settings.<vendor>_mode`
+- [x] 6.7 Register adapter pings with the readiness probe via a small `ReadinessRegistry` in `app/core/readiness.py`
+- [x] 6.8 Tests: `tests/adapters/test_hix_stub.py`, `tests/adapters/test_luscii_stub.py` cover the stub contract; `tests/api/test_system_router.py` overrides `get_hix_client` with a stub that raises in `ping()` to assert 503
 
 ## 7. Auth stub
 
