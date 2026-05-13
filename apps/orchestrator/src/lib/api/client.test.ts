@@ -33,12 +33,14 @@ describe('api client 401 retry', () => {
     expect(res.status).toBe(401)
     // Now exercise via api client middleware
     type Healthz = { ok: boolean }
-    const middlewareRes = await (api as unknown as {
-      GET: (
-        url: string,
-        opts?: Record<string, unknown>,
-      ) => Promise<{ response: Response; data?: Healthz }>
-    }).GET('/healthz')
+    const middlewareRes = await (
+      api as unknown as {
+        GET: (
+          url: string,
+          opts?: Record<string, unknown>,
+        ) => Promise<{ response: Response; data?: Healthz }>
+      }
+    ).GET('/healthz')
 
     expect(count).toBeGreaterThanOrEqual(2)
     expect(probed).toBe(true)
@@ -55,9 +57,11 @@ describe('api client 401 retry', () => {
     )
 
     type Healthz = { ok: boolean }
-    const res = await (api as unknown as {
-      GET: (url: string) => Promise<{ response: Response; data?: Healthz }>
-    }).GET('/healthz')
+    const res = await (
+      api as unknown as {
+        GET: (url: string) => Promise<{ response: Response; data?: Healthz }>
+      }
+    ).GET('/healthz')
 
     expect(count).toBe(1)
     expect(res.response.status).toBe(200)
@@ -73,9 +77,11 @@ describe('api client 401 retry', () => {
     )
 
     type Me = { id: string }
-    const res = await (api as unknown as {
-      GET: (url: string) => Promise<{ response: Response; data?: Me }>
-    }).GET('/auth/me')
+    const res = await (
+      api as unknown as {
+        GET: (url: string) => Promise<{ response: Response; data?: Me }>
+      }
+    ).GET('/auth/me')
 
     expect(count).toBe(1)
     expect(res.response.status).toBe(401)

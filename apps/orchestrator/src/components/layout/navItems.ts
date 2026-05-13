@@ -1,12 +1,7 @@
 import { Home, ListTodo, Settings, Users, Workflow } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type NavRoute =
-  | '/dashboard'
-  | '/taken'
-  | '/zorgpaden'
-  | '/patienten'
-  | '/instellingen'
+export type NavRoute = '/dashboard' | '/taken' | '/zorgpaden' | '/patienten' | '/instellingen'
 
 export type NavItem = {
   to: NavRoute

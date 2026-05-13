@@ -13,13 +13,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores([
-    'dist',
-    'coverage',
-    'playwright-report',
-    'test-results',
-    'src/routeTree.gen.ts',
-  ]),
+  globalIgnores(['dist', 'coverage', 'playwright-report', 'test-results', 'src/routeTree.gen.ts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -41,7 +35,9 @@ export default defineConfig([
       },
     },
     settings: {
-      'import-x/resolver-next': [createTypeScriptImportResolver({ project: './tsconfig.app.json' })],
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({ project: './tsconfig.app.json' }),
+      ],
     },
     rules: {
       // stylistic owned by Biome
@@ -96,11 +92,7 @@ export default defineConfig([
   },
   {
     // i18n: ban literal user-facing strings in component files
-    files: [
-      'src/components/**/*.tsx',
-      'src/modules/**/components/**/*.tsx',
-      'src/routes/**/*.tsx',
-    ],
+    files: ['src/components/**/*.tsx', 'src/modules/**/components/**/*.tsx', 'src/routes/**/*.tsx'],
     plugins: { i18next },
     rules: {
       'i18next/no-literal-string': [

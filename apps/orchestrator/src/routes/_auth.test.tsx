@@ -16,9 +16,7 @@ function makeContext() {
 describe('_auth beforeLoad', () => {
   it('throws a redirect to /login when no session', async () => {
     server.use(
-      http.get(`${baseUrl}/auth/me`, () =>
-        HttpResponse.json({ detail: 'no' }, { status: 401 }),
-      ),
+      http.get(`${baseUrl}/auth/me`, () => HttpResponse.json({ detail: 'no' }, { status: 401 })),
     )
 
     const beforeLoad = AuthRoute.options.beforeLoad

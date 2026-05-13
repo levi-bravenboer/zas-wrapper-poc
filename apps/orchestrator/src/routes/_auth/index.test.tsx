@@ -8,9 +8,7 @@ describe('/_auth/ root index', () => {
     if (!beforeLoad) throw new Error('beforeLoad missing')
 
     await expect(
-      Promise.resolve().then(() =>
-        beforeLoad({} as NonNullable<Parameters<typeof beforeLoad>[0]>),
-      ),
+      Promise.resolve().then(() => beforeLoad({} as NonNullable<Parameters<typeof beforeLoad>[0]>)),
     ).rejects.toMatchObject({ options: { to: '/dashboard' } })
   })
 })

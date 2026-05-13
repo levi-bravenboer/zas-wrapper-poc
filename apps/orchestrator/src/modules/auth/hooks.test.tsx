@@ -41,9 +41,7 @@ describe('useSession', () => {
 
   it('returns null on 401', async () => {
     server.use(
-      http.get(`${baseUrl}/auth/me`, () =>
-        HttpResponse.json({ detail: 'no' }, { status: 401 }),
-      ),
+      http.get(`${baseUrl}/auth/me`, () => HttpResponse.json({ detail: 'no' }, { status: 401 })),
     )
 
     const { result } = renderHook(() => useSession(), { wrapper })
@@ -53,9 +51,7 @@ describe('useSession', () => {
 
   it('errors on a 500 response', async () => {
     server.use(
-      http.get(`${baseUrl}/auth/me`, () =>
-        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
-      ),
+      http.get(`${baseUrl}/auth/me`, () => HttpResponse.json({ detail: 'boom' }, { status: 500 })),
     )
 
     const { result } = renderHook(() => useSession(), { wrapper })
@@ -87,9 +83,7 @@ describe('useLogin', () => {
     )
 
     const { result } = renderHook(() => useLogin(), { wrapper })
-    await expect(
-      result.current.mutateAsync({ username: 'l', password: 'p' }),
-    ).rejects.toThrow()
+    await expect(result.current.mutateAsync({ username: 'l', password: 'p' })).rejects.toThrow()
   })
 })
 

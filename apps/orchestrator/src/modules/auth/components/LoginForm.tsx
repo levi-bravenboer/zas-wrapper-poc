@@ -62,7 +62,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           <form.Field
             name="username"
             validators={{
-              onChange: ({ value }) => (value.length === 0 ? t('login.errors.required') : undefined),
+              onChange: ({ value }) =>
+                value.length === 0 ? t('login.errors.required') : undefined,
             }}
           >
             {(field) => (
@@ -84,7 +85,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           <form.Field
             name="password"
             validators={{
-              onChange: ({ value }) => (value.length === 0 ? t('login.errors.required') : undefined),
+              onChange: ({ value }) =>
+                value.length === 0 ? t('login.errors.required') : undefined,
             }}
           >
             {(field) => (
