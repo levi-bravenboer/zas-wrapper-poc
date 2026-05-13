@@ -1,8 +1,17 @@
+import '@/modules'
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { Providers } from '@/app/providers'
+import { getFeatures } from '@/platform/embed/defineFeature'
 import '@/styles/globals.css'
+
+if (import.meta.env.PROD && getFeatures().length === 0) {
+  throw new Error(
+    'Feature registry is empty at boot — ensure each feature module is re-exported from @/modules.',
+  )
+}
 
 const container = document.getElementById('root')
 if (!container) {
