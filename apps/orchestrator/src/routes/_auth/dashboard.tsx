@@ -9,7 +9,7 @@ function DashboardPage() {
   const { t } = useTranslation('nav')
   return (
     <section className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-semibold">{t('dashboard')}</h1>
+      <h1 className="text-5xl font-bold tracking-tight">{t('dashboard')}</h1>
       <p className="mt-2 text-muted-foreground">{t('placeholder')}</p>
     </section>
   )

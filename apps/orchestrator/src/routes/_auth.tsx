@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { AppLayout } from '@/components/layout/AppLayout'
 import { requireSession } from '@/modules/auth/guard'
+import { AppShell } from '@/platform/embed/AppShell'
 
 export const Route = createFileRoute('/_auth')({
   beforeLoad: async ({ context, location }) => {
@@ -14,5 +14,5 @@ export const Route = createFileRoute('/_auth')({
     }
     return { session }
   },
-  component: AppLayout,
+  component: AppShell,
 })

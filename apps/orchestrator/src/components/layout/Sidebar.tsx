@@ -1,23 +1,44 @@
 import { Link } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/style/cn'
+import { getFeaturesForSurface } from '@/platform/embed/defineFeature'
 
-import { navItems } from './navItems'
+import { hardWiredNavItems, type NavItem } from './navItems'
+
+function useResolvedNavItems(): readonly NavItem[] {
+  return useMemo(() => {
+    const featureItems: NavItem[] = []
+    for (const feature of getFeaturesForSurface('app')) {
+      if (feature.nav) {
+        featureItems.push({
+          to: feature.path,
+          labelKey: feature.titleKey,
+          icon: feature.nav.icon,
+          order: feature.nav.order ?? 100,
+        })
+      }
+    }
+    return [...hardWiredNavItems, ...featureItems].toSorted((a, b) => a.order - b.order)
+  }, [])
+}
 
 export function Sidebar() {
   const { t } = useTranslation('nav')
+  const items = useResolvedNavItems()
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col gap-1 border-r border-border bg-card p-3">
       <nav aria-label="primary" className="flex flex-col gap-1">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon
           const label = t(item.labelKey.replace(/^nav\./, ''))
           return (
             <Link
               key={item.to}
-              to={item.to}
+              // Reason: NavItem.to is `string` for registry interop; TanStack Link wants typed routes.
+              to={item.to as never}
               activeProps={{
                 'aria-current': 'page',
                 className: 'bg-accent text-accent-foreground',

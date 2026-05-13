@@ -1,8 +1,9 @@
 {
   "dashboard": "Dashboard",
-  "taken": "Taken",
-  "zorgpaden": "Zorgpaden",
-  "patienten": "Mijn patiënten",
-  "instellingen": "Instellingen",
-  "placeholder": "Deze sectie is nog niet gevuld. Komt eraan."
+  "tasks": "Taken",
+  "pathways": "Zorgpaden",
+  "patients": "Mijn patiënten",
+  "settings": "Instellingen",
+  "placeholder": "Deze sectie is nog niet gevuld. Komt eraan.",
+  "loading": "Bezig met laden…"
 }

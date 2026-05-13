@@ -12,13 +12,13 @@ import { describe, expect, it } from 'vitest'
 
 import { i18n } from '@/lib/i18n'
 
-import { AppLayout } from './AppLayout'
-import { navItems } from './navItems'
+import { MenuLayout } from './MenuLayout'
+import { hardWiredNavItems } from './navItems'
 
 function mount(initialPath: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const rootRoute = createRootRoute({ component: AppLayout })
-  const children = navItems.map((item) =>
+  const rootRoute = createRootRoute({ component: MenuLayout })
+  const children = hardWiredNavItems.map((item) =>
     createRoute({
       getParentRoute: () => rootRoute,
       path: item.to,
@@ -38,12 +38,12 @@ function mount(initialPath: string) {
   )
 }
 
-describe('AppLayout', () => {
+describe('MenuLayout', () => {
   it('renders sidebar plus the active route content', async () => {
-    mount('/zorgpaden')
+    mount('/pathways')
 
     expect(await screen.findByRole('navigation', { name: 'primary' })).toBeInTheDocument()
-    expect(screen.getByTestId('page-/zorgpaden')).toBeInTheDocument()
+    expect(screen.getByTestId('page-/pathways')).toBeInTheDocument()
     expect(screen.queryByTestId('page-/dashboard')).not.toBeInTheDocument()
   })
 })

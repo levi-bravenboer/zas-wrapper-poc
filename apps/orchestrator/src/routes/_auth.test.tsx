@@ -27,12 +27,12 @@ describe('_auth beforeLoad', () => {
     await expect(
       beforeLoad({
         context: makeContext(),
-        location: { href: '/zorgpaden' },
+        location: { href: '/pathways' },
       } as Parameters<typeof beforeLoad>[0]),
     ).rejects.toMatchObject({
       options: {
         to: '/login',
-        search: { redirect: '/zorgpaden' },
+        search: { redirect: '/pathways' },
       },
     })
   })

@@ -1,23 +1,19 @@
-import { Home, ListTodo, Settings, Users, Workflow } from 'lucide-react'
+import { Home, Settings, Users, Workflow } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export type NavRoute =
-  | '/dashboard'
-  | '/taken'
-  | '/zorgpaden'
-  | '/patienten'
-  | '/instellingen'
-
 export type NavItem = {
-  to: NavRoute
-  labelKey: `nav.${string}`
-  icon: LucideIcon
+  readonly to: string
+  readonly labelKey: `nav.${string}`
+  readonly icon: LucideIcon
+  readonly order: number
 }
 
-export const navItems: readonly NavItem[] = [
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: Home },
-  { to: '/taken', labelKey: 'nav.taken', icon: ListTodo },
-  { to: '/zorgpaden', labelKey: 'nav.zorgpaden', icon: Workflow },
-  { to: '/patienten', labelKey: 'nav.patienten', icon: Users },
-  { to: '/instellingen', labelKey: 'nav.instellingen', icon: Settings },
+// Hard-wired nav entries. Each one will migrate into a feature module under
+// `modules/<id>/` (registered via `defineFeature`) in step 7. Until then the
+// Sidebar merges these with the feature registry, sorting by `order`.
+export const hardWiredNavItems: readonly NavItem[] = [
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: Home, order: 10 },
+  { to: '/pathways', labelKey: 'nav.pathways', icon: Workflow, order: 30 },
+  { to: '/patients', labelKey: 'nav.patients', icon: Users, order: 40 },
+  { to: '/settings', labelKey: 'nav.settings', icon: Settings, order: 50 },
 ]
