@@ -21,6 +21,7 @@ Before implementing tasks:
 2. Verify the change's `proposal.md` carries a `**Tier**:` line. If missing, ask the author to add one (or move the idea to `openspec/backlog.md`).
 3. If `scope.md` has drifted such that the change is no longer in-tier, PAUSE and propose a scope edit (or a re-tier of the change) before writing code.
 4. If a task uncovers out-of-tier work during implementation, add a `BL-NNN` entry to `openspec/backlog.md` and continue with the original task. Do NOT silently expand the change.
+5. **MDR check.** If a task could push us toward an MDR medical device (clinical decision logic, diagnostic output, automated dosing, anything labelled/used as a medical device, interpreting Luscii measurements ourselves), STOP. Log the case in `openspec/mdr-watchlist.md` and pause for a non-MDR alternative before coding.
 
 **Steps**
 

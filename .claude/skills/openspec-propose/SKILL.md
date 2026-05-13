@@ -30,6 +30,7 @@ Before scaffolding any change:
 2. Read `openspec/backlog.md` to check if the idea is already parked as `BL-NNN`. If yes, mention the ID in the proposal and update the entry's note to "Promoted to `changes/<name>/` on YYYY-MM-DD".
 3. If the proposed work is out-of-tier (e.g. user wants `[mvp]` work while in PoC), STOP. Add a `BL-NNN` entry to `openspec/backlog.md` with title, tier, source, one-paragraph note. Do NOT create a change folder.
 4. Every generated `proposal.md` MUST include a `**Tier**: [poc] | [mvp] | [product]` line near the top.
+5. **MDR check.** If the proposed work could push us toward an MDR medical device (clinical decision logic, diagnostic output, automated dosing, anything labelled/used as a medical device, interpreting Luscii measurements ourselves), STOP. Add a case to `openspec/mdr-watchlist.md` and surface a non-MDR alternative before scaffolding.
 
 **Steps**
 
