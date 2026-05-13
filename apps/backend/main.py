@@ -1,17 +1,9 @@
-from fastapi import FastAPI
+"""Thin entrypoint — the real FastAPI app lives in `app/main.py`.
 
-app = FastAPI(
-    title="ZAS Wrapper Backend",
-    version="0.1.0",
-    description="FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
-)
+This module exists so `uv run fastapi dev main.py` still works at the repo root.
+All routes, factories, and configuration are in the `app/` package.
+"""
 
+from app.main import app
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.get("/")
-def root() -> dict[str, str]:
-    return {"name": app.title, "version": app.version}
+__all__ = ["app"]

@@ -1,11 +1,11 @@
 ## 1. Layout migration
 
-- [ ] 1.1 Create `apps/backend/app/` package with `__init__.py`, `main.py` exposing `create_app()` and `app = create_app()`
-- [ ] 1.2 Move existing `/` and `/health` route handlers into `app/api/routers/system_router.py`
-- [ ] 1.3 Reduce `apps/backend/main.py` to `from app.main import app` plus a docstring pointing at `app/main.py`
-- [ ] 1.4 Update `apps/backend/moon.yml` `fileGroups.sources` to include `app/**/*.py` (already present per AGENTS.md — confirm)
-- [ ] 1.5 Update `apps/backend/tests/test_health.py` to import from the new path; rename to `tests/api/test_system_router.py`
-- [ ] 1.6 Verify `uv run fastapi dev main.py` boots and serves `/health`; `uv run pytest -q` stays green
+- [x] 1.1 Create `apps/backend/app/` package with `__init__.py`, `main.py` exposing `create_app()` and `app = create_app()`
+- [x] 1.2 Move existing `/` and `/health` route handlers into `app/api/routers/system_router.py`
+- [x] 1.3 Reduce `apps/backend/main.py` to `from app.main import app` plus a docstring pointing at `app/main.py`
+- [x] 1.4 Update `apps/backend/moon.yml` `fileGroups.sources` to include `app/**/*.py` (already present per AGENTS.md — confirm)
+- [x] 1.5 Update `apps/backend/tests/test_health.py` to import from the new path; rename to `tests/api/test_system_router.py`
+- [x] 1.6 Verify `uv run fastapi dev main.py` boots and serves `/health`; `uv run pytest -q` stays green
 
 ## 2. Settings & environment
 
