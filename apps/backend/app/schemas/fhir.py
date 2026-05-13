@@ -25,3 +25,26 @@ class Patient(BaseModel):
     resource_type: Literal["Patient"] = Field(default="Patient", alias="resourceType")
 
     model_config = {"populate_by_name": True}
+
+
+class Observation(BaseModel):
+    """Placeholder Observation resource. Replaced by `fhir.resources` in §12."""
+
+    id: str
+    subject_reference: str
+    code: str
+    value: float | None = None
+    resource_type: Literal["Observation"] = Field(default="Observation", alias="resourceType")
+
+    model_config = {"populate_by_name": True}
+
+
+class Encounter(BaseModel):
+    """Placeholder Encounter resource. Replaced by `fhir.resources` in §12."""
+
+    id: str
+    subject_reference: str
+    status: Literal["planned", "in-progress", "finished", "cancelled"] = "planned"
+    resource_type: Literal["Encounter"] = Field(default="Encounter", alias="resourceType")
+
+    model_config = {"populate_by_name": True}

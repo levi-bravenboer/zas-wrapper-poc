@@ -56,6 +56,9 @@ Discuss the move in an OpenSpec proposal — do not split silently.
 - One test file per route / module under `tests/`, mirroring the source tree.
 - Use FastAPI `TestClient` for integration-style tests; reach for unit tests when logic is pure.
 - Fixtures with real-looking FHIR data live under `tests/fixtures/`. Never commit data from real patients.
+- Common fixtures (`settings`, `app`, `client`, `authed_client`) live in `tests/conftest.py`. Prefer them over hand-rolled `TestClient` setup in new tests.
+- For time-sensitive code, use `freezegun.freeze_time(...)`. Wrap the smallest scope that needs the frozen clock; never leave it freezing across whole modules.
+- Cookie-aware helpers live in `tests/utils/cookies.py`. `TestClient` already shares a cookie jar; reach for the helpers only when forging or clearing specific cookies.
 
 ## Quality Gates
 

@@ -79,11 +79,11 @@
 
 ## 10. Testing foundation
 
-- [ ] 10.1 Create `tests/conftest.py` with fixtures: `settings` (test Settings override), `app` (built via `create_app()` with overridden deps), `client: TestClient`, `authed_client: TestClient` (logs in once + returns the client)
-- [ ] 10.2 Create `tests/fixtures/__init__.py` + `tests/fixtures/fhir.py` with synthetic `Patient`, `Observation`, `Encounter` factories (no real-looking names, no real MRNs)
-- [ ] 10.3 Create `tests/utils/__init__.py` + `tests/utils/cookies.py` helper for cookie-aware client construction
-- [ ] 10.4 Add `freezegun` to dev deps for time-sensitive tests; document its use in `apps/backend/AGENTS.md`
-- [ ] 10.5 Update `pyproject.toml` `[tool.pytest.ini_options]` — `testpaths = ["tests"]`, `pythonpath = ["."]`, `addopts = "-ra --strict-markers"`
+- [x] 10.1 Create `tests/conftest.py` with fixtures: `settings` (test Settings override), `app` (built via `create_app()` with overridden deps), `client: TestClient`, `authed_client: TestClient` (logs in once + returns the client)
+- [x] 10.2 Create `tests/fixtures/__init__.py` + `tests/fixtures/fhir.py` with synthetic `Patient`, `Observation`, `Encounter` factories (no real-looking names, no real MRNs)
+- [x] 10.3 Create `tests/utils/__init__.py` + `tests/utils/cookies.py` helper for cookie-aware client construction
+- [x] 10.4 Add `freezegun` to dev deps for time-sensitive tests; document its use in `apps/backend/AGENTS.md`
+- [x] 10.5 Update `pyproject.toml` `[tool.pytest.ini_options]` — `testpaths = ["tests"]`, `pythonpath = ["."]`, `addopts = "-ra --strict-markers"`
 
 ## 11. Docs
 
