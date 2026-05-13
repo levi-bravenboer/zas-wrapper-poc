@@ -63,6 +63,30 @@ Spec-driven development through **OpenSpec**:
 
 Bug fixes that do not introduce or alter behaviour can skip the proposal step but still record the fix in the relevant spec/changelog when behaviour is clarified.
 
+## OpenSpec File Map
+
+| File / Folder | What it is | When to read |
+| --- | --- | --- |
+| `openspec/project.md` | Long-lived project context: pitch, stakeholders, integrated systems, hard constraints, conventions. | Onboarding. Confirming who owns what. |
+| `openspec/scope.md` | Living PoC scope ledger: in-scope features (`F1`..`Fn`), out-of-scope list, mocks table, PoC → MVP delta. Every line tier-tagged. | **Before proposing any change. Before starting any task. After pulling main.** |
+| `openspec/roadmap.md` | Tier progression (PoC → MVP → Product). Current-tier flag + per-tier theme / exit criteria / highlights / non-goals. | Confirming what tier comes next or what closes the current one. |
+| `openspec/backlog.md` | Parking lot for out-of-tier findings, deferred work. Stable IDs `BL-NNN`. | Before proposing — check if your idea is already parked. |
+| `openspec/changes/<name>/` | Active change proposal. `proposal.md` MUST cite tier. | Working on or reviewing the change. |
+| `openspec/changes/archive/` | Shipped changes, frozen. Audit trail. | Tracing a past decision. |
+| `openspec/specs/` | Current capabilities (post-archive). | Understanding what currently exists. |
+| `openspec/AGENTS.md` | Rules for working inside `openspec/` (full map + usage examples + promotion path). | Touching anything under `openspec/`. |
+
+## Scope Discipline
+
+Four rules. No exceptions.
+
+1. **Every `proposal.md` MUST cite a tier** — exactly one of `[poc]`, `[mvp]`, `[product]` — in a `**Tier**:` line near the top. Out-of-tier work goes to `openspec/backlog.md`, not into a change folder.
+2. **Re-read `openspec/scope.md` before starting tasks.** Scope drifts. If your task no longer matches scope, pause and propose a scope edit before implementing.
+3. **New findings that aren't actionable now → `openspec/backlog.md`.** Add an entry with the next `BL-NNN` ID, tier, source, and a one-paragraph note. Do not create a change folder. Do not silently add to the active change.
+4. **MDR check.** We are never an MDR medical device. If a proposal or implementation could push us toward MDR (clinical decision logic, diagnostic output, automated dosing, anything used or labelled as a medical device, interpreting Luscii measurements ourselves), **stop**, log the case in `openspec/mdr-watchlist.md`, and surface a non-MDR alternative before proceeding.
+
+Full openspec rules + usage examples: `openspec/AGENTS.md`.
+
 ## Coding Standards
 
 ### General

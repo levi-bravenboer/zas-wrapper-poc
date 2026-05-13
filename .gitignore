@@ -50,3 +50,9 @@ test-results/
 
 # Claude Code runtime
 .claude/scheduled_tasks.lock
+
+# Local sandbox tooling (per-host VM/container setup, not portable)
+tools/sandbox/
+openspec/changes/agent-sandbox-spike/
+openspec/changes/dev-sandbox-skills/
+.sandbox-slug

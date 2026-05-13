@@ -14,7 +14,6 @@ export class RootErrorBoundary extends React.Component<React.PropsWithChildren, 
 
   override componentDidCatch(error: Error, info: React.ErrorInfo): void {
     if (import.meta.env.DEV) {
-       
       console.error('Root boundary caught error:', error, info)
     }
   }

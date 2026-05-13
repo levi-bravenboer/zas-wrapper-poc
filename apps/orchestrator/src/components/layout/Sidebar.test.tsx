@@ -61,7 +61,9 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Zorgpaden' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Mijn patiënten' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Instellingen' })).toBeInTheDocument()
-    expect(screen.getAllByRole('link')).toHaveLength(hardWiredNavItems.length + FEATURE_PATHS.length)
+    expect(screen.getAllByRole('link')).toHaveLength(
+      hardWiredNavItems.length + FEATURE_PATHS.length,
+    )
   })
 
   it('marks only the active route with aria-current', async () => {

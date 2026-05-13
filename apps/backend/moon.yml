@@ -37,3 +37,16 @@ tasks:
     command: "uv run ruff format"
     options:
       cache: false
+
+  openapi:
+    command: "uv run python -m app.openapi"
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - "openapi.json"
+
+  typecheck:
+    command: "uv run pyright"
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"

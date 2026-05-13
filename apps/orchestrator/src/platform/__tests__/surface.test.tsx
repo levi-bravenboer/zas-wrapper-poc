@@ -1,12 +1,7 @@
 import { render, renderHook, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import {
-  useIsEmbed,
-  useIsSmart,
-  useSurface,
-  useSurfaceBasePath,
-} from '@/platform/surface/hooks'
+import { useIsEmbed, useIsSmart, useSurface, useSurfaceBasePath } from '@/platform/surface/hooks'
 import { SURFACES } from '@/platform/surface/registry'
 import { SurfaceProvider } from '@/platform/surface/SurfaceProvider'
 

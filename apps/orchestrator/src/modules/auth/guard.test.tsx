@@ -32,9 +32,7 @@ describe('requireSession', () => {
 
   it('returns null on 401', async () => {
     server.use(
-      http.get(`${baseUrl}/auth/me`, () =>
-        HttpResponse.json({ detail: 'no' }, { status: 401 }),
-      ),
+      http.get(`${baseUrl}/auth/me`, () => HttpResponse.json({ detail: 'no' }, { status: 401 })),
     )
     const qc = makeClient()
 

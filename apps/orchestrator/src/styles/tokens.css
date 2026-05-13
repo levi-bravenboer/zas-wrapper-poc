@@ -43,12 +43,12 @@
   --shadow-md: 0 4px 12px oklch(0.17 0.01 250 / 0.08);
   --shadow-lg: 0 12px 32px oklch(0.17 0.01 250 / 0.12);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 @layer base {
-  [data-theme='dark'] {
+  [data-theme="dark"] {
     --color-background: oklch(0.17 0.01 250);
     --color-foreground: oklch(0.98 0.005 250);
 

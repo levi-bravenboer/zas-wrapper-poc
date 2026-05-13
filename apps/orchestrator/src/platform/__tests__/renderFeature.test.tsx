@@ -2,10 +2,7 @@ import { render, screen } from '@testing-library/react'
 import type Client from 'fhirclient/lib/Client'
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  FhirDepsProvider,
-  OrchestratorDepsProvider,
-} from '@/platform/embed/deps'
+import { FhirDepsProvider, OrchestratorDepsProvider } from '@/platform/embed/deps'
 import type { FhirDeps } from '@/platform/embed/depsContext'
 import { renderFeature } from '@/platform/embed/renderFeature'
 import type { FeatureSpec } from '@/platform/embed/types'

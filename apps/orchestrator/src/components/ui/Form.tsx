@@ -13,11 +13,7 @@ export function FormMessage({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   if (!children) return null
   return (
-    <p
-      role="alert"
-      className={cn('text-sm text-destructive', className)}
-      {...props}
-    >
+    <p role="alert" className={cn('text-sm text-destructive', className)} {...props}>
       {children}
     </p>
   )

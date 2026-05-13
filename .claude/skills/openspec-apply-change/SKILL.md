@@ -13,6 +13,16 @@ Implement tasks from an OpenSpec change.
 
 **Input**: Optionally specify a change name. If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
 
+**Scope check (do this first)**
+
+Before implementing tasks:
+
+1. Read `openspec/scope.md` and confirm the change's tier still matches the current tier window. Scope drifts; assumptions from a week ago may be wrong.
+2. Verify the change's `proposal.md` carries a `**Tier**:` line. If missing, ask the author to add one (or move the idea to `openspec/backlog.md`).
+3. If `scope.md` has drifted such that the change is no longer in-tier, PAUSE and propose a scope edit (or a re-tier of the change) before writing code.
+4. If a task uncovers out-of-tier work during implementation, add a `BL-NNN` entry to `openspec/backlog.md` and continue with the original task. Do NOT silently expand the change.
+5. **MDR check.** If a task could push us toward an MDR medical device (clinical decision logic, diagnostic output, automated dosing, anything labelled/used as a medical device, interpreting Luscii measurements ourselves), STOP. Log the case in `openspec/mdr-watchlist.md` and pause for a non-MDR alternative before coding.
+
 **Steps**
 
 1. **Select the change**

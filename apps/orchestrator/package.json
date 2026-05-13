@@ -83,5 +83,12 @@
     "workerDirectory": [
       "public"
     ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "msw",
+      "unrs-resolver"
+    ]
   }
 }
