@@ -1,6 +1,8 @@
 # AGENTS.md — apps/orchestrator
 
-Frontend app: clinician composer + SMART-on-FHIR launch surface. Inherits all rules from the root `AGENTS.md`; this file overrides where it differs.
+Frontend app: clinician composer surface. Inherits all rules from the root `AGENTS.md`; this file overrides where it differs.
+
+> **PoC entry point**: `/login` is the only entry. SMART-on-FHIR launch returns at `[mvp]` via the future `hix-smart-launch` change.
 
 > **Before implementing any task, re-read `openspec/scope.md` to confirm in-tier** (`[poc]` for PoC work). Out-of-tier ideas go to `openspec/backlog.md`. Full openspec rules: `openspec/AGENTS.md`. The FHIR-Readiness Rules section below mirrors the backend's future state; PoC scope excludes live FHIR — treat the rules as seam preservation, not a current build target.
 
@@ -51,7 +53,7 @@ src/
     api/        openapi-fetch client + schema.d.ts
     query/      createQueryKeys helper
     form/       TanStack Form + Zod adapters
-    fhir/       SMART helpers
+    fhir/       FHIR-ready helpers (returns at `[mvp]`)
     i18n/       i18next bootstrap + locales/nl/<ns>.json
     style/      cn()
     utils/
@@ -77,11 +79,11 @@ src/
 | --- | --- | --- |
 | Component file + export | PascalCase, named export | `LoginForm.tsx` → `export function LoginForm()` |
 | Hook | camelCase, `use` prefix | `useSession.ts` |
-| Module folder | lowercase / kebab-case | `auth/`, `smart-launch/` |
+| Module folder | lowercase / kebab-case | `auth/`, `pathway/` |
 | Route file | TanStack convention, kebab segments | `routes/_auth/index.tsx` |
 | Zod schema | PascalCase + `Schema` suffix | `LoginRequestSchema` |
 | Inferred type | matches schema, no suffix | `type LoginRequest = z.infer<typeof LoginRequestSchema>` |
-| Constants | SCREAMING_SNAKE_CASE in `constants.ts` | `LAUNCH_LANDING_PATH` |
+| Constants | SCREAMING_SNAKE_CASE in `constants.ts` | `DEFAULT_LANDING_PATH` |
 | Env var | `VITE_` prefix for client-exposed | `VITE_API_BASE_URL` |
 | Query key | camelCase factory + tuple | `authKeys.me()` |
 | Event prop | `on*` | `onSubmit` |
@@ -99,7 +101,7 @@ src/
 - All HTTP through `lib/api/client.ts`. Never raw `fetch` in modules outside `api.ts`.
 - All server reads via `useQuery`; writes via `useMutation`. No `useState` for server data, no `useEffect` for fetching.
 - All forms via TanStack Form + Zod resolver.
-- Validate at boundaries: HTTP payloads, SMART query params, env.
+- Validate at boundaries: HTTP payloads, route search params, env.
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
 
@@ -155,10 +157,10 @@ Paste the final summary line of each command into the completion message.
 - Use synthetic FHIR fixtures (no real patient data).
 - Treat flake as a bug — quarantine with `.skip` + tracking issue in the same PR.
 
-## SMART-on-FHIR notes
+## PHI handling
 
-- Launch flow lives behind `/launch` (stub today). Never log launch tokens or `state` parameters.
 - Treat all FHIR payloads as PHI. No real patient data in fixtures, screenshots, or test data.
+- SMART-on-FHIR launch is `[mvp]`. PoC has no `/launch` route and no launch-token handling — `/login` is the only entry point.
 
 ## FHIR-Readiness Rules
 
@@ -177,13 +179,13 @@ src/lib/fhir/
   types.ts        # re-exports fhir4.* from @types/fhir
   references.ts   # parseReference / formatReference / Zod schema
   codes.ts        # IssueType, issueTypeOf, codeToI18nKey
-  <smart helpers> # existing SMART-on-FHIR launch utilities
+  # SMART-on-FHIR launch helpers return at `[mvp]`
 ```
 
 ### Modules + query keys
 
 - A module centred on **one FHIR resource** is named `modules/<lowercase-resource>/` — `modules/patient/`, `modules/observation/`, `modules/careplan/`.
-- Modules not centred on a single FHIR resource keep orchestrator-domain names — `modules/auth/`, `modules/smart-launch/`, `modules/tasks/`, `modules/pathway-composer/`.
+- Modules not centred on a single FHIR resource keep orchestrator-domain names — `modules/auth/`, `modules/pathway/`, `modules/task/`, `modules/admin/`.
 - Query-key factories for FHIR-centred modules emit `["fhir", "<ResourceType>", …]` with the **capitalised** FHIR type string. Example: `patientKeys.detail(id) -> ["fhir", "Patient", id]`. This lets a future `/fhir/Patient/{id}` mutation invalidate the exact cache slice.
 
 ### References + IDs

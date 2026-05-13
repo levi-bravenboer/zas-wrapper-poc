@@ -6,7 +6,7 @@ stack: "frontend"
 
 project:
   name: "orchestrator"
-  description: "Clinician composer + SMART-on-FHIR launch surface."
+  description: "Clinician composer surface."
 
 fileGroups:
   sources:

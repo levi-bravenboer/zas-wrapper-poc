@@ -48,7 +48,7 @@ apps/orchestrator/
 ├── src/
 │   ├── app/                  # provider tree, router, error boundary, query client
 │   ├── routes/               # TanStack Router file-based routes (default-export allowed here)
-│   ├── modules/              # vertical slices (auth/, smart-launch/, …)
+│   ├── modules/              # vertical slices (auth/, …)
 │   │   └── <name>/
 │   │       ├── api.ts
 │   │       ├── hooks.ts
@@ -66,7 +66,7 @@ apps/orchestrator/
 │   │   ├── api/              # openapi-fetch client + generated schema.d.ts
 │   │   ├── query/            # createQueryKeys helper, QueryClient config lives in app/
 │   │   ├── form/             # TanStack Form + Zod adapters
-│   │   ├── fhir/             # SMART helpers
+│   │   ├── fhir/             # FHIR-ready helpers (returns at [mvp])
 │   │   ├── i18n/             # i18next bootstrap + nl locale
 │   │   ├── style/            # cn() helper
 │   │   └── utils/
@@ -94,7 +94,6 @@ apps/orchestrator/
 | Path             | Auth | Component               | Notes                                                      |
 | ---------------- | ---- | ----------------------- | ---------------------------------------------------------- |
 | `/login`         | no   | `LoginForm`             | Reads `?redirect` to restore intended destination          |
-| `/launch`        | no   | SMART launch stub       | Validates `iss` + `launch`, stores context, redirects      |
 | `/`              | yes  | redirect → `/dashboard` | `_auth/index.tsx` `beforeLoad` redirect, no UI             |
 | `/dashboard`     | yes  | `DashboardPage`         | Real content lands here first                              |
 | `/taken`         | yes  | `SectionPlaceholder`    | Placeholder until tasks module ships                       |

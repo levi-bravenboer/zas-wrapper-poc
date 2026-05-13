@@ -32,12 +32,12 @@ Land the layering before any domain code. Everything below this point follows th
 
 ## 4. Orchestrator cleanup (smart-launch removal)
 
-- [ ] 4.1 Delete `apps/orchestrator/src/modules/smart-launch/` (entire directory + tests)
-- [ ] 4.2 Delete `apps/orchestrator/src/routes/launch.tsx`
-- [ ] 4.3 Remove `/launch` references from `apps/orchestrator/src/app/router.ts`, README/docs, and any imports
-- [ ] 4.4 Update `apps/orchestrator/AGENTS.md`: drop SMART-launch references; note `/login` is the only entry point in PoC
-- [ ] 4.5 Run `moon run orchestrator:typecheck` + `moon run orchestrator:test` — green
-- [ ] 4.6 Commit: `chore(orchestrator): remove smart-launch module and route`
+- [x] 4.1 Delete `apps/orchestrator/src/modules/smart-launch/` (entire directory + tests)
+- [x] 4.2 Delete `apps/orchestrator/src/routes/launch.tsx`
+- [x] 4.3 Remove `/launch` references from `apps/orchestrator/src/app/router.ts`, README/docs, and any imports
+- [x] 4.4 Update `apps/orchestrator/AGENTS.md`: drop SMART-launch references; note `/login` is the only entry point in PoC
+- [x] 4.5 Run `moon run orchestrator:typecheck` + `moon run orchestrator:test` — green
+- [x] 4.6 Commit: `chore(orchestrator): remove smart-launch module and route`
 
 ## 5. Verification
 
