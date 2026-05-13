@@ -1,0 +1,16 @@
+# CODEOWNERS — folder ownership for review enforcement
+#
+# Syntax: <path>  <owner1> <owner2> ...
+# Last matching rule wins. Listed users must approve PRs touching the path
+# when "Require review from Code Owners" is enabled on main.
+#
+# Replace placeholder handles with real GitHub usernames or @org/team slugs
+# before enabling the ruleset.
+
+# Default — everything owned by developers
+*                          @levi-bravenboer @DEV_USER_1 @DEV_USER_2
+
+# Designer-editable zones — both teams own so either side can approve
+/docs/                     @DESIGNER_1 @DESIGNER_2 @levi-bravenboer @DEV_USER_1
+/openspec/                 @DESIGNER_1 @DESIGNER_2 @levi-bravenboer @DEV_USER_1
+/apps/orchestrator/        @DESIGNER_1 @DESIGNER_2 @levi-bravenboer @DEV_USER_1
