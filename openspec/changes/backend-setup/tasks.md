@@ -25,19 +25,19 @@
 
 ## 4. Errors & logging
 
-- [ ] 4.1 Create `app/core/errors.py` with `ErrorResponse(BaseModel)` (`code: str`, `message: str`, `details: dict | None = None`) and a base `AppError(Exception)` with `code`, `status_code`, `message`, `details`
-- [ ] 4.2 Add exception handlers in `app/main.py` for `HTTPException`, `RequestValidationError`, and `AppError`, all returning `ErrorResponse` JSON
-- [ ] 4.3 Create `app/core/logging.py` configuring `logging.config.dictConfig` — JSON formatter in `production`, human formatter otherwise; install on `create_app()` startup
-- [ ] 4.4 Add `log_fhir_ref(resource_type: str, resource_id: str) -> str` helper in `app/core/logging.py`; document as the only sanctioned way to mention FHIR resources in logs
-- [ ] 4.5 Add `tests/core/test_errors.py` covering: `HTTPException` mapped to `ErrorResponse`, validation error mapped to `ErrorResponse` with field-level `details`, custom `AppError` subclass mapped correctly
+- [x] 4.1 Create `app/core/errors.py` with `ErrorResponse(BaseModel)` (`code: str`, `message: str`, `details: dict | None = None`) and a base `AppError(Exception)` with `code`, `status_code`, `message`, `details`
+- [x] 4.2 Add exception handlers in `app/main.py` for `HTTPException`, `RequestValidationError`, and `AppError`, all returning `ErrorResponse` JSON
+- [x] 4.3 Create `app/core/logging.py` configuring `logging.config.dictConfig` — JSON formatter in `production`, human formatter otherwise; install on `create_app()` startup
+- [x] 4.4 Add `log_fhir_ref(resource_type: str, resource_id: str) -> str` helper in `app/core/logging.py`; document as the only sanctioned way to mention FHIR resources in logs
+- [x] 4.5 Add `tests/core/test_errors.py` covering: `HTTPException` mapped to `ErrorResponse`, validation error mapped to `ErrorResponse` with field-level `details`, custom `AppError` subclass mapped correctly
 
 ## 5. Health & readiness
 
-- [ ] 5.1 Define `HealthResponse(BaseModel)` (`status: Literal["ok"]`, `version: str`, `started_at: datetime`) in `app/schemas/health.py`
-- [ ] 5.2 Define `ReadinessResponse(BaseModel)` (`status: Literal["ready", "not_ready"]`, `checks: dict[str, Literal["ok", "fail"]]`)
-- [ ] 5.3 Move `/health` into `system_router.py`, return `HealthResponse`; record `started_at` once at app startup
-- [ ] 5.4 Add `/ready` to `system_router.py`; iterate registered adapter pings; return 200 + `ready` if all ok, else 503 + `not_ready`
-- [ ] 5.5 Update `tests/api/test_system_router.py` with cases for `/health` and `/ready` (all-ok, one-fail)
+- [x] 5.1 Define `HealthResponse(BaseModel)` (`status: Literal["ok"]`, `version: str`, `started_at: datetime`) in `app/schemas/health.py`
+- [x] 5.2 Define `ReadinessResponse(BaseModel)` (`status: Literal["ready", "not_ready"]`, `checks: dict[str, Literal["ok", "fail"]]`)
+- [x] 5.3 Move `/health` into `system_router.py`, return `HealthResponse`; record `started_at` once at app startup
+- [x] 5.4 Add `/ready` to `system_router.py`; iterate registered adapter pings; return 200 + `ready` if all ok, else 503 + `not_ready`
+- [x] 5.5 Update `tests/api/test_system_router.py` with cases for `/health` and `/ready` (all-ok, one-fail)
 
 ## 6. External adapters
 
