@@ -109,3 +109,5 @@ Effect: designer push (direct or via PR branch) touching restricted paths is rej
 3. Smoke test from a designer-style account (or temp collaborator).
 4. Flip both rulesets to **Active**.
 5. Announce in team channel; share this doc.
+
+<!-- bypass smoke test -->
