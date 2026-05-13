@@ -37,3 +37,10 @@ tasks:
     command: "uv run ruff format"
     options:
       cache: false
+
+  openapi:
+    command: "uv run python -m app.openapi"
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - "openapi.json"

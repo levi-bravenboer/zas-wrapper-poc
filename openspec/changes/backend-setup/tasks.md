@@ -63,12 +63,12 @@
 
 ## 8. OpenAPI contract polish
 
-- [ ] 8.1 Audit every route — set `operation_id="<snake_case_verb_noun>"`, `response_model=<Model>`, `responses={4xx/5xx: {"model": ErrorResponse}}` where applicable
-- [ ] 8.2 In `create_app()`, set `FastAPI(title="ZAS Wrapper Backend", version=..., servers=[{"url": settings.public_url}] if settings.public_url else None)`
-- [ ] 8.3 Group routers in `app/api/__init__.py` with explicit `tags`: `auth`, `health`, `fhir` (placeholder), `luscii` (placeholder)
-- [ ] 8.4 Add `app/openapi.py` `__main__` block writing `apps/backend/openapi.json` for offline orchestrator typegen
-- [ ] 8.5 Add `backend:openapi` task in `apps/backend/moon.yml` running `uv run python -m app.openapi`
-- [ ] 8.6 Commit a baseline `apps/backend/openapi.json` after the audit so frontend typegen can run without the dev server
+- [x] 8.1 Audit every route — set `operation_id="<snake_case_verb_noun>"`, `response_model=<Model>`, `responses={4xx/5xx: {"model": ErrorResponse}}` where applicable
+- [x] 8.2 In `create_app()`, set `FastAPI(title="ZAS Wrapper Backend", version=..., servers=[{"url": settings.public_url}] if settings.public_url else None)`
+- [x] 8.3 Group routers in `app/api/__init__.py` with explicit `tags`: `auth`, `health`, `fhir` (placeholder), `luscii` (placeholder)
+- [x] 8.4 Add `app/openapi.py` `__main__` block writing `apps/backend/openapi.json` for offline orchestrator typegen
+- [x] 8.5 Add `backend:openapi` task in `apps/backend/moon.yml` running `uv run python -m app.openapi`
+- [x] 8.6 Commit a baseline `apps/backend/openapi.json` after the audit so frontend typegen can run without the dev server
 
 ## 9. Typecheck task
 

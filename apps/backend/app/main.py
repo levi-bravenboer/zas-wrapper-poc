@@ -82,11 +82,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _check_production_safety(settings)
     configure_logging(settings)
 
-    app = FastAPI(
-        title="ZAS Wrapper Backend",
-        version=__version__,
-        description="FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
-    )
+    fastapi_kwargs: dict[str, Any] = {
+        "title": "ZAS Wrapper Backend",
+        "version": __version__,
+        "description": "FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
+    }
+    if settings.public_url is not None:
+        fastapi_kwargs["servers"] = [{"url": str(settings.public_url).rstrip("/")}]
+    app = FastAPI(**fastapi_kwargs)
     app.state.settings = settings
     app.state.started_at = datetime.now(timezone.utc)
     app.state.readiness = ReadinessRegistry()

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Response, status
 
 from app.schemas.health import HealthResponse, ReadinessResponse, RootResponse
 
-router = APIRouter(tags=["system"])
+router = APIRouter(tags=["health"])
 
 
 @router.get("/", operation_id="get_root_metadata", response_model=RootResponse)
