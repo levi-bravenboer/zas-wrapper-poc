@@ -52,14 +52,14 @@
 
 ## 7. Auth stub
 
-- [ ] 7.1 Add `itsdangerous` runtime dep; `uv sync`
-- [ ] 7.2 Create `app/schemas/auth.py` with `LoginRequest(username: str, password: str)` and `SessionUser(id: str, username: str, display_name: str)`
-- [ ] 7.3 Create `app/services/auth_service.py` with `authenticate(username, password) -> SessionUser | None` against an in-memory `_USERS = {"clinician": SessionUser(id="u-1", username="clinician", display_name="Demo Clinician")}` and a paired password map. Document `# POC ONLY` banner at the top
-- [ ] 7.4 Create `app/core/security.py` with `SessionSigner` wrapping `itsdangerous.URLSafeTimedSerializer`, methods `sign(user_id: str) -> str` and `unsign(token: str, max_age_seconds: int = 60*60*8) -> str | None`
-- [ ] 7.5 Create `app/api/routers/auth_router.py` exposing `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`. Cookie attributes: `httponly=True`, `samesite="lax"`, `secure=settings.env == "production"`, `path="/"`
-- [ ] 7.6 Add `CurrentUserDep = Annotated[SessionUser, Depends(get_current_user)]` dependency that reads + verifies the cookie, raises `AppError(code="auth.unauthenticated", status_code=401)` on miss
-- [ ] 7.7 Mount `auth_router` in `app/api/__init__.py` with `prefix="/auth"`, `tags=["auth"]`
-- [ ] 7.8 Tests: `tests/api/test_auth_router.py` covers login success (cookie set), login failure (401 + `auth.invalid_credentials`), `/me` with cookie, `/me` without cookie (401), `/me` with tampered cookie (401), logout clears cookie
+- [x] 7.1 Add `itsdangerous` runtime dep; `uv sync`
+- [x] 7.2 Create `app/schemas/auth.py` with `LoginRequest(username: str, password: str)` and `SessionUser(id: str, username: str, display_name: str)`
+- [x] 7.3 Create `app/services/auth_service.py` with `authenticate(username, password) -> SessionUser | None` against an in-memory `_USERS = {"clinician": SessionUser(id="u-1", username="clinician", display_name="Demo Clinician")}` and a paired password map. Document `# POC ONLY` banner at the top
+- [x] 7.4 Create `app/core/security.py` with `SessionSigner` wrapping `itsdangerous.URLSafeTimedSerializer`, methods `sign(user_id: str) -> str` and `unsign(token: str, max_age_seconds: int = 60*60*8) -> str | None`
+- [x] 7.5 Create `app/api/routers/auth_router.py` exposing `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`. Cookie attributes: `httponly=True`, `samesite="lax"`, `secure=settings.env == "production"`, `path="/"`
+- [x] 7.6 Add `CurrentUserDep = Annotated[SessionUser, Depends(get_current_user)]` dependency that reads + verifies the cookie, raises `AppError(code="auth.unauthenticated", status_code=401)` on miss
+- [x] 7.7 Mount `auth_router` in `app/api/__init__.py` with `prefix="/auth"`, `tags=["auth"]`
+- [x] 7.8 Tests: `tests/api/test_auth_router.py` covers login success (cookie set), login failure (401 + `auth.invalid_credentials`), `/me` with cookie, `/me` without cookie (401), `/me` with tampered cookie (401), logout clears cookie
 
 ## 8. OpenAPI contract polish
 
