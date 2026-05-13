@@ -87,9 +87,9 @@
 
 ## 11. Docs
 
-- [ ] 11.1 Update `apps/backend/AGENTS.md` — replace the "Layout" section with the new tree; add "Layer Rules", "Naming Conventions", "Coding Rules", and "Testing" sections aligned with this proposal
-- [ ] 11.2 Update `apps/backend/README.md` with: bootstrap order (`uv sync`, copy `.env.example`, `uv run fastapi dev main.py`), commands table, and a short architecture note pointing at `openspec/specs/`
-- [ ] 11.3 Document the `# POC ONLY` banner convention in `AGENTS.md`
+- [x] 11.1 Update `apps/backend/AGENTS.md` — replace the "Layout" section with the new tree; add "Layer Rules", "Naming Conventions", "Coding Rules", and "Testing" sections aligned with this proposal
+- [x] 11.2 Update `apps/backend/README.md` with: bootstrap order (`uv sync`, copy `.env.example`, `uv run fastapi dev main.py`), commands table, and a short architecture note pointing at `openspec/specs/`
+- [x] 11.3 Document the `# POC ONLY` banner convention in `AGENTS.md`
 
 ## 12. FHIR-ready domain layer
 

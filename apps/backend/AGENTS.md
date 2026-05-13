@@ -24,31 +24,61 @@ uv run ruff check --fix       # lint + autofix
 
 ## Layout
 
-Current shape (small surface):
-
 ```
 apps/backend/
-├── main.py            # FastAPI app entry — routes inline while the API is small
-├── pyproject.toml     # deps + tool config (pytest pythonpath, ruff)
-├── tests/
-│   └── test_health.py
-└── uv.lock
+├── app/
+│   ├── adapters/             # external integrations (hix, luscii); Protocol + stub per vendor
+│   ├── api/
+│   │   ├── deps.py           # dependency factories (CurrentUserDep, ...)
+│   │   └── routers/          # FastAPI routers grouped by tag
+│   ├── core/                 # settings, errors, logging, readiness, security
+│   ├── fhir/                 # mappers, search-param models, codes helper (lands in §12)
+│   ├── schemas/              # Pydantic request/response models
+│   │   └── view/             # orchestrator-facing DTOs
+│   ├── services/             # business logic
+│   ├── main.py               # create_app() factory
+│   └── openapi.py            # offline OpenAPI exporter
+├── main.py                   # thin entrypoint (`from app.main import app`)
+├── openapi.json              # baseline schema for orchestrator typegen
+├── tests/                    # mirrors app/ tree; conftest + fixtures + utils
+├── pyproject.toml
+├── uv.lock
+├── .env.example
+├── moon.yml
+└── README.md
 ```
 
-When the API grows beyond ~150 lines or two domains:
+Keep `main.py` (repo-root level inside `apps/backend/`) as a thin re-export. All new code lands inside the `app/` package.
 
-- Convert to `app/` package with `app/__init__.py` exposing `app` and `app/routers/*` per domain.
-- Move shared dependencies (FHIR client, settings, db) into `app/core/`.
-- Keep `main.py` as a thin entrypoint.
+## Layer Rules
 
-Discuss the move in an OpenSpec proposal — do not split silently.
+| Layer | May import | Must not import |
+| --- | --- | --- |
+| `app/api/routers/*` | `app.schemas.view.*`, `app.schemas.*`, `app.services.*`, adapters via `Depends` | `app.adapters.*` directly (without `Depends`), `fhir.resources` except through `app.schemas.fhir` |
+| `app/services/*` | `app.fhir.*`, `app.adapters.*` (via DI), `fhir.resources` | `fastapi.*`, `app.api.*` |
+| `app/fhir/mappers/*` | `fhir.resources`, `app.schemas.view.*` | `fastapi.*`, `app.services.*`, `app.adapters.*` |
+| `app/adapters/<vendor>/*` | `app.core.errors`, `fhir.resources`, vendor SDK types | `app.api.*`, `app.services.*` |
+| `app/core/*` | stdlib, third-party libs | `app.api.*`, `app.adapters.*`, `app.services.*` |
 
-## Conventions
+The seam between layers is one-directional: routers → services → adapters; mappers translate `fhir.resources` → view DTOs at the router boundary.
 
-- **Type hints required** on all public functions and route handlers.
+## Naming Conventions
+
+- **Files**: snake_case, singular module names (`patient_router.py`, `auth_service.py`, `session_signer.py`).
+- **Router files**: `<domain>_router.py`. Export a module-level `router = APIRouter(tags=[...])`.
+- **Operation IDs**: `<verb>_<noun>[_<qualifier>]` snake_case, e.g. `get_patient_summary`, `post_auth_login`. Match these between backend and the generated orchestrator client.
+- **Error codes**: `<fhir-issue-type>.<domain>.<reason>`. Built via `app.fhir.codes.code(...)`, never hand-formatted.
+- **Pydantic models**: PascalCase singular (`SessionUser`, `PatientSummary`). View-model DTOs end in `Summary`, `Row`, or `View`.
+- **Dependencies**: `Annotated[T, Depends(get_*)]` aliased as `<Name>Dep` (`SettingsDep`, `CurrentUserDep`, `HixClientDep`).
+
+## Coding Rules
+
+- **Type hints required** on all public functions, route handlers, and dependency factories.
 - **Pydantic v2** models for request / response payloads. Reuse models across routes; do not duplicate field definitions.
-- **Settings**: use `pydantic-settings` once env config is needed. Do not read `os.environ` directly in route code.
-- **Logging**: standard `logging` module via `app.core.logging` (when introduced). No `print()` in committed code.
+- **Settings**: read via `SettingsDep`. Never read `os.environ` directly in route or service code.
+- **Logging**: structured via `app.core.logging`. No `print()`. Log FHIR resources through `log_fhir_ref(resource_type, resource_id)` only — never full payloads.
+- **Errors**: subclass `AppError` for domain-specific failures; set class-level `code`, `status_code`, `message`. Raising `HTTPException` is fine for ad-hoc cases but `AppError` is preferred when the failure has a stable code.
+- **POC ONLY banner**: any module that contains throwaway scaffolding (in-memory user stores, hard-coded fixtures, demo credentials, mock issuer claims) MUST start with a `# POC ONLY` comment line explaining what would replace it. The banner makes it obvious which files need to be replaced before any non-PoC deployment — see `app/services/auth_service.py` for the canonical example.
 - **PHI**: treat all FHIR payloads as patient data. Never log full payloads — log resource type + id only.
 
 ## Testing
