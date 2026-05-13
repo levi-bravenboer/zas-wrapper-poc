@@ -9,19 +9,19 @@
 
 ## 2. Settings & environment
 
-- [ ] 2.1 Add `pydantic-settings` to `apps/backend/pyproject.toml` runtime deps; `uv sync`
-- [ ] 2.2 Create `app/core/settings.py` with `Settings(BaseSettings)` exposing: `env` (`dev` | `test` | `production`), `cors_origins: list[AnyHttpUrl]`, `session_secret_key: SecretStr`, `session_cookie_name: str = "BACKEND_SESSION"`, `public_url: AnyHttpUrl | None`, `hix_mode: Literal["stub", "live"] = "stub"`, `luscii_mode: Literal["stub", "live"] = "stub"`
-- [ ] 2.3 Configure `Settings.model_config = SettingsConfigDict(env_prefix="BACKEND_", env_file=".env", extra="forbid")`
-- [ ] 2.4 Expose `get_settings()` `@lru_cache` factory + `SettingsDep = Annotated[Settings, Depends(get_settings)]`
-- [ ] 2.5 Add `apps/backend/.env.example` documenting every env var with a safe default
-- [ ] 2.6 Add a startup check in `create_app()`: when `env == "production"` and `cors_origins` is empty or `session_secret_key` is the default, raise on boot
-- [ ] 2.7 Write `tests/core/test_settings.py` covering load-from-env, default fallback, and production guard
+- [x] 2.1 Add `pydantic-settings` to `apps/backend/pyproject.toml` runtime deps; `uv sync`
+- [x] 2.2 Create `app/core/settings.py` with `Settings(BaseSettings)` exposing: `env` (`dev` | `test` | `production`), `cors_origins: list[AnyHttpUrl]`, `session_secret_key: SecretStr`, `session_cookie_name: str = "BACKEND_SESSION"`, `public_url: AnyHttpUrl | None`, `hix_mode: Literal["stub", "live"] = "stub"`, `luscii_mode: Literal["stub", "live"] = "stub"`
+- [x] 2.3 Configure `Settings.model_config = SettingsConfigDict(env_prefix="BACKEND_", env_file=".env", extra="forbid")`
+- [x] 2.4 Expose `get_settings()` `@lru_cache` factory + `SettingsDep = Annotated[Settings, Depends(get_settings)]`
+- [x] 2.5 Add `apps/backend/.env.example` documenting every env var with a safe default
+- [x] 2.6 Add a startup check in `create_app()`: when `env == "production"` and `cors_origins` is empty or `session_secret_key` is the default, raise on boot
+- [x] 2.7 Write `tests/core/test_settings.py` covering load-from-env, default fallback, and production guard
 
 ## 3. CORS
 
-- [ ] 3.1 Wire `fastapi.middleware.cors.CORSMiddleware` in `create_app()` with `allow_origins=settings.cors_origins`, `allow_credentials=True`, `allow_methods=["*"]`, `allow_headers=["*"]`, `expose_headers=["Content-Type"]`
-- [ ] 3.2 Default dev `cors_origins` in `.env.example` to `http://localhost:5173`
-- [ ] 3.3 Add `tests/core/test_cors.py` asserting preflight from the dev origin succeeds and from an unknown origin fails
+- [x] 3.1 Wire `fastapi.middleware.cors.CORSMiddleware` in `create_app()` with `allow_origins=settings.cors_origins`, `allow_credentials=True`, `allow_methods=["*"]`, `allow_headers=["*"]`, `expose_headers=["Content-Type"]`
+- [x] 3.2 Default dev `cors_origins` in `.env.example` to `http://localhost:5173`
+- [x] 3.3 Add `tests/core/test_cors.py` asserting preflight from the dev origin succeeds and from an unknown origin fails
 
 ## 4. Errors & logging
 
