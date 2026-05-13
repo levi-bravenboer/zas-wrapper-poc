@@ -2,6 +2,8 @@
 
 Backend app: FHIR gateway, MCP host, integration glue for HiX / Luscii. Inherits all rules from the root `AGENTS.md`; this file overrides where it differs.
 
+> **Before implementing any task, re-read `openspec/scope.md` to confirm in-tier** (`[poc]` for PoC work). Out-of-tier ideas go to `openspec/backlog.md`. Full openspec rules: `openspec/AGENTS.md`. The FHIR-Readiness Rules section below describes the original `[mvp]+` target; PoC scope excludes live FHIR — treat that section as the future state to preserve seams for, not the PoC build target. Re-scope decision tracked as `BL-025`.
+
 ## Stack
 
 - Python 3.13 (managed by `uv`)

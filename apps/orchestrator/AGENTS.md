@@ -2,6 +2,8 @@
 
 Frontend app: clinician composer + SMART-on-FHIR launch surface. Inherits all rules from the root `AGENTS.md`; this file overrides where it differs.
 
+> **Before implementing any task, re-read `openspec/scope.md` to confirm in-tier** (`[poc]` for PoC work). Out-of-tier ideas go to `openspec/backlog.md`. Full openspec rules: `openspec/AGENTS.md`. The FHIR-Readiness Rules section below mirrors the backend's future state; PoC scope excludes live FHIR — treat the rules as seam preservation, not a current build target.
+
 ## Stack
 
 - React 19.2

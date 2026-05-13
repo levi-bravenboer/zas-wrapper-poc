@@ -22,6 +22,15 @@ When ready to implement, run /opsx:apply
 
 **Input**: The user's request should include a change name (kebab-case) OR a description of what they want to build.
 
+**Scope check (do this first)**
+
+Before scaffolding any change:
+
+1. Read `openspec/scope.md` and confirm the proposed work is in the current tier window (`[poc]` today).
+2. Read `openspec/backlog.md` to check if the idea is already parked as `BL-NNN`. If yes, mention the ID in the proposal and update the entry's note to "Promoted to `changes/<name>/` on YYYY-MM-DD".
+3. If the proposed work is out-of-tier (e.g. user wants `[mvp]` work while in PoC), STOP. Add a `BL-NNN` entry to `openspec/backlog.md` with title, tier, source, one-paragraph note. Do NOT create a change folder.
+4. Every generated `proposal.md` MUST include a `**Tier**: [poc] | [mvp] | [post-mvp]` line near the top.
+
 **Steps**
 
 1. **If no clear input provided, ask what they want to build**
