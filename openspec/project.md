@@ -30,6 +30,7 @@ Additional apps (e.g. patient app shell, additional services) will land in `apps
 - Spec-driven development through OpenSpec: every behavioural change starts as a proposal in `openspec/changes/`, gets reviewed, then archived once shipped.
 - Frontend and backend communicate over typed HTTP contracts (OpenAPI generated from FastAPI).
 - Integration with external systems (HiX, Luscii) is isolated behind backend adapters.
+- **FHIR-ready by construction**: the backend uses `fhir.resources` (R4) as the canonical internal model for any clinical concept. PoC routes expose thinner view-model DTOs, derived from FHIR types by pure mappers under `app/fhir/mappers/`. The orchestrator mirrors this with FHIR-shaped reference helpers, OperationOutcome-aligned error codes, and `@types/fhir` for any FHIR-shaped code paths. Full FHIR endpoint compliance is additive (new routes, same mappers in reverse) — not a structural rewrite.
 
 ### Testing Strategy
 
