@@ -8,7 +8,7 @@ Parking lot for findings, ideas, and deferred work that is **not actionable as a
 
 ```
 ### BL-NNN — Short title
-- Tier: [poc] | [mvp] | [post-mvp]
+- Tier: [poc] | [mvp] | [product]
 - Source: where it came from (RFP doc, conversation, code review, etc.)
 
 Note: one paragraph describing what this is and why it's parked here.
@@ -17,7 +17,7 @@ Note: one paragraph describing what this is and why it's parked here.
 **Tier values.**
 - `[poc]` — should be in PoC but isn't yet (rare; usually a missed-from-scope finding).
 - `[mvp]` — needed for first paying release.
-- `[post-mvp]` — wishlist; might never ship.
+- `[product]` — productised expansion + polish after MVP.
 
 **Graduation rule.** A backlog item becomes a real change when its tier matches the current scope window AND a stakeholder commits to the work. At that point: create `openspec/changes/<name>/`, cite the `BL-NNN` ID in `proposal.md`, and update this entry to note it has been promoted (don't delete — kept as audit trail).
 
@@ -34,13 +34,13 @@ Note: one paragraph describing what this is and why it's parked here.
 Note: PoC uses no HiX integration. MVP requires SMART-on-FHIR launch + FHIR R4 read/write + adapter Protocol wired to live HiX endpoints.
 
 ### BL-002 — Raw `/fhir/*` passthrough routes
-- Tier: [post-mvp]
+- Tier: [product]
 - Source: backend-setup change
 
 Note: Once the HiX adapter is live, expose raw FHIR endpoints (`/fhir/Patient/{id}` etc.) for callers that want unmediated access. Layered on top of the same adapter, no duplication.
 
 ### BL-003 — FHIR `CapabilityStatement`
-- Tier: [post-mvp]
+- Tier: [product]
 - Source: backend-setup change
 
 Note: When `/fhir/*` lands, publish a `CapabilityStatement` resource at `/fhir/metadata` advertising supported resources + interactions. Discovery for downstream consumers.
@@ -64,10 +64,10 @@ Note: PoC uses a flat `ErrorResponse` with FHIR-aligned error codes. MVP should 
 Note: FHIR-conformant write endpoints need optimistic concurrency via `ETag` / `If-Match` headers. Out of scope for PoC since no write endpoints face HiX. Required when real HiX writes land.
 
 ### BL-007 — MCP server host
-- Tier: [post-mvp]
+- Tier: [product]
 - Source: openspec/project.md, agentic-research
 
-Note: Backend is meant to host an MCP server for agentic tooling. Not in PoC scope. Track as `post-mvp` until product clarity on which capabilities are MCP-exposed.
+Note: Backend is meant to host an MCP server for agentic tooling. Not in PoC scope. Track as `product` until product clarity on which capabilities are MCP-exposed.
 
 ### BL-008 — Luscii Vitals embed contract
 - Tier: [mvp]
@@ -122,7 +122,7 @@ Note: Patient view of Pathway Orchestrator delivery channel TBD: email link, HiX
 Note: Video appointments part of pathways. Delivery mechanism (provider, embedding) TBD.
 
 ### BL-016 — Auto interpreter booking
-- Tier: [post-mvp]
+- Tier: [product]
 - Source: RFP working doc
 
 Note: When patient's language is not spoken by the caregiver, auto-book an interpreter slot. Nice-to-have, not MVP-critical.
@@ -152,7 +152,7 @@ Note: Pathway block types beyond the PoC builder's vocabulary. Each likely needs
 Note: Who can see which patient, which pathway, which task. PoC has none. Define ACL model before any external caregiver flow ships.
 
 ### BL-021 — Carepath Builder naming
-- Tier: [post-mvp]
+- Tier: [product]
 - Source: RFP working doc TBD
 
 Note: "Pathway Designer" vs "Carepath Builder" vs other naming. Cosmetic but needs settling for marketing + UI strings.
@@ -174,7 +174,7 @@ Note: From the patient view, patient can activate their enrollment (consent + Lu
 Note: Extend `openspec change validate` (or pre-commit) to fail when `proposal.md` lacks a tier line. Human enforcement first; automation later. Cheap if `openspec` CLI is extensible.
 
 ### BL-024 — Backlog item status field
-- Tier: [post-mvp]
+- Tier: [product]
 - Source: define-poc-scope change, Q9 decision
 
 Note: Add `status: open | promoted | dropped` to each entry. Skipped at PoC because promoted items move to `changes/` (status is implicit). Reconsider if backlog grows past ~50 entries.
@@ -201,7 +201,7 @@ Note: Pre-existing change. No tier tag. Read against new `scope.md` and either a
 - Tier: [poc]
 - Source: define-poc-scope change, Q13 decision; user note "dev experience"
 
-Note: Pre-existing change. Developer-experience work (agent sandbox prototype). Re-tier — `[poc]` if it accelerates PoC build, else `[post-mvp]`.
+Note: Pre-existing change. Developer-experience work (agent sandbox prototype). Re-tier — `[poc]` if it accelerates PoC build, else `[product]`.
 
 ### BL-029 — Re-tier `dev-sandbox-skills` change
 - Tier: [poc]

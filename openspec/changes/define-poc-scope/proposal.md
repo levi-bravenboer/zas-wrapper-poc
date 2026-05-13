@@ -13,7 +13,7 @@ This change pauses the apply loop and introduces a scoping safety net so the nex
 Four artifacts. Each owns one concern, no overlap:
 
 1. **`openspec/project.md` (expand)** — long-lived: project idea, stakeholders, integrated systems, hard constraints.
-2. **`openspec/scope.md` (new)** — living scope ledger: PoC in-scope, PoC out-of-scope, what's mocked, PoC → MVP delta per feature. Every line carries a tier tag (`[poc]`, `[mvp]`, `[post-mvp]`).
+2. **`openspec/scope.md` (new)** — living scope ledger: PoC in-scope, PoC out-of-scope, what's mocked, PoC → MVP delta per feature. Every line carries a tier tag (`[poc]`, `[mvp]`, `[product]`).
 3. **`openspec/backlog.md` (new)** — append-only parking lot: findings, ideas, debt notes that aren't actionable yet but must not be lost. Each entry has a tier + source + note + stable `BL-NNN` ID.
 4. **Agent rules (update `AGENTS.md`, `apps/backend/AGENTS.md`, `apps/orchestrator/AGENTS.md`, new `openspec/AGENTS.md`)** — file map + scope-discipline rule: every change proposal cites its tier; out-of-tier work goes to `backlog.md`, not an active change folder; implementers re-read `scope.md` before starting tasks.
 

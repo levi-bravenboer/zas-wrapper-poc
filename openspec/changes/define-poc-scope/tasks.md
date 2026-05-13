@@ -6,7 +6,7 @@
 ## 2. Scope ledger
 
 - [x] 2.1 Create `openspec/scope.md` with sections: Project Idea, PoC In-Scope (bulleted, each with one-line acceptance + feature ID `Fn`), PoC Out-of-Scope (explicit "no for now" list), PoC Mocks (table: mock → real thing for MVP), PoC → MVP Delta (table: feature | PoC state | MVP delta | MVP blocker)
-- [x] 2.2 Tag every line with `[poc]`, `[mvp]`, or `[post-mvp]`
+- [x] 2.2 Tag every line with `[poc]`, `[mvp]`, or `[product]`
 - [x] 2.3 Add a top-of-file "How to read this" block: who updates it, when, how it interacts with `changes/` and `backlog.md`
 
 ## 3. Backlog
@@ -23,7 +23,7 @@
 
 ## 5. Agent documentation — drift safety net
 
-- [x] 5.1 In root `AGENTS.md`, add a "Scope Discipline" rule: every change proposal MUST cite its tier (`[poc]`, `[mvp]`, `[post-mvp]`) in `proposal.md`; out-of-tier work goes to `backlog.md`, not an active change folder; implementers re-read `scope.md` before starting tasks
+- [x] 5.1 In root `AGENTS.md`, add a "Scope Discipline" rule: every change proposal MUST cite its tier (`[poc]`, `[mvp]`, `[product]`) in `proposal.md`; out-of-tier work goes to `backlog.md`, not an active change folder; implementers re-read `scope.md` before starting tasks
 - [x] 5.2 Update the existing openspec skill commands (`.claude/skills/openspec-propose`, `.claude/skills/openspec-apply-change`) docs to mention the tier check
 - [x] 5.3 Add a one-line reminder to `apps/backend/AGENTS.md` and `apps/orchestrator/AGENTS.md`: "Before implementing any task, re-read `openspec/scope.md` to confirm in-tier."
 

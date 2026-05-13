@@ -90,6 +90,7 @@ Additional apps (e.g. patient app shell, additional services) will land in `apps
 ## OpenSpec Layout
 
 - `openspec/scope.md` — living PoC scope ledger (features, mocks, PoC → MVP delta). **Read before proposing or implementing.**
+- `openspec/roadmap.md` — tier progression PoC → MVP → Product. Current-tier flag + exit criteria.
 - `openspec/backlog.md` — parking lot for out-of-tier findings (`BL-NNN`).
 - `openspec/changes/` — active proposals (each cites a tier).
 - `openspec/changes/archive/` — shipped changes, frozen audit trail.

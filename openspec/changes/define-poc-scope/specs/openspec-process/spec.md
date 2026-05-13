@@ -4,12 +4,12 @@
 
 ### Requirement: Tier-tagged change proposals
 
-Every active change proposal under `openspec/changes/<name>/proposal.md` SHALL cite exactly one tier — `[poc]`, `[mvp]`, or `[post-mvp]` — on a `**Tier**:` line near the top of the file. Out-of-tier work SHALL be recorded in `openspec/backlog.md` as a `BL-NNN` entry instead of being opened as an active change.
+Every active change proposal under `openspec/changes/<name>/proposal.md` SHALL cite exactly one tier — `[poc]`, `[mvp]`, or `[product]` — on a `**Tier**:` line near the top of the file. Out-of-tier work SHALL be recorded in `openspec/backlog.md` as a `BL-NNN` entry instead of being opened as an active change.
 
 #### Scenario: Proposal cites a tier
 
 - **WHEN** an author runs `/opsx:propose` to create a new change
-- **THEN** the generated `proposal.md` includes a `**Tier**: [poc] | [mvp] | [post-mvp]` line near the top
+- **THEN** the generated `proposal.md` includes a `**Tier**: [poc] | [mvp] | [product]` line near the top
 - **AND** the proposal references any `BL-NNN` backlog item it promotes
 
 #### Scenario: Proposal omits the tier

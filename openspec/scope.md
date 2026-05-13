@@ -12,11 +12,12 @@ This file is the **living scope ledger** for the ZAS PoC. It answers:
 
 **When to read it.** Before proposing any OpenSpec change. Before implementing any task. After pulling main, if you weren't paying attention while it was being edited.
 
-**Tier tags.** Every line carries a tier: `[poc]` (in PoC demo), `[mvp]` (first paying release), `[post-mvp]` (later). No tag = bug.
+**Tier tags.** Every line carries a tier: `[poc]` (in PoC demo), `[mvp]` (first paying release), `[product]` (later). No tag = bug.
 
 **Relation to other files.**
 - `openspec/project.md` — the world (long-lived). Stakeholders, integrated systems, hard constraints.
 - `openspec/scope.md` — **this file**. What we are and aren't building right now.
+- `openspec/roadmap.md` — tier progression (PoC → MVP → Product). Current-tier flag, per-tier exit criteria, sequencing.
 - `openspec/backlog.md` — parking lot for findings, deferred ideas, MVP+ details. Out-of-tier work goes here, not into a change folder.
 - `openspec/changes/` — active change proposals. Every proposal cites its tier; out-of-tier proposals belong in `backlog.md` until promoted.
 

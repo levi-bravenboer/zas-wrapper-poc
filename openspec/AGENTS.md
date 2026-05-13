@@ -8,6 +8,7 @@ Rules for working inside `openspec/`. The artifacts here are the project's livin
 |---|---|---|---|
 | `project.md` | Long-lived project context: pitch, stakeholders (tiered), integrated systems, hard constraints, conventions. | Joining the project. Onboarding any new agent. Confirming who owns what. | Stakeholders, systems, or constraints change. Conventions shift. |
 | `scope.md` | Living **PoC scope ledger**: in-scope features (with IDs `F1`..`Fn`), out-of-scope list, mocks table, PoC → MVP delta. Every line tier-tagged. | Before proposing any OpenSpec change. Before starting any task. After pulling main. | Adding / removing a feature. Re-tiering a feature. Updating a mock or delta. Always part of the same PR as the change that motivates the edit. |
+| `roadmap.md` | Tier-progression view: PoC → MVP → Product. Current-tier flag at top; per-tier theme, exit criteria, highlights, non-goals. Cross-links `BL-NNN` and `Fn` IDs. | Confirming what tier comes next. Checking exit criteria for the current tier. | A tier's exit criteria shift, a major item lands or moves, current-tier flag changes. |
 | `backlog.md` | Parking lot for findings, ideas, deferred work. Stable IDs `BL-NNN`. Each entry: tier + source + note. | Before proposing — check if your idea is already parked. When promoting an item to an active change. | New finding from code review, RFP doc, conversation. Deferred work that isn't a change yet. |
 | `changes/<name>/` | Active OpenSpec change proposal. Contains `proposal.md` (MUST cite tier), `design.md` (optional), `tasks.md`, `specs/`. | Working on the change. Reviewing it. Following a `BL-NNN` → change promotion. | Creating a new change via `/opsx:propose`. Updating tasks as work progresses. |
 | `changes/archive/` | Shipped changes, frozen. Audit trail. | Looking up why a past decision was made. Tracing a feature back to its proposal. | After `/opsx:archive` only. Never edit by hand. |
@@ -18,7 +19,7 @@ Rules for working inside `openspec/`. The artifacts here are the project's livin
 
 Three rules. No exceptions.
 
-1. **Every `proposal.md` MUST cite a tier** — exactly one of `[poc]`, `[mvp]`, `[post-mvp]` — in a `**Tier**:` line near the top. Out-of-tier work goes to `backlog.md`, not into a change folder.
+1. **Every `proposal.md` MUST cite a tier** — exactly one of `[poc]`, `[mvp]`, `[product]` — in a `**Tier**:` line near the top. Out-of-tier work goes to `backlog.md`, not into a change folder.
 2. **Re-read `scope.md` before starting tasks.** Scope drifts; assumptions from a week ago may be wrong. If your task no longer matches scope, pause and propose a scope edit before implementing.
 3. **New findings that aren't actionable now → `backlog.md`.** Add an entry with the next `BL-NNN` ID, tier, source, and a one-paragraph note. Do not create a change folder for it. Do not "just add it to the current change".
 
