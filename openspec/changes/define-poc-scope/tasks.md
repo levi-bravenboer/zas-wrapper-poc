@@ -76,5 +76,5 @@
 ## 7. Verification
 
 - [x] 7.1 `openspec change validate define-poc-scope --strict` — passes
-- [ ] 7.2 Read-aloud test: someone unfamiliar can open `openspec/scope.md` + `openspec/project.md` and answer "what is the PoC?" in under two minutes — **owner: user**, manual
+- [x] 7.2 Read-aloud test: someone unfamiliar can open `openspec/scope.md` + `openspec/project.md` and answer "what is the PoC?" in under two minutes — **owner: user**, manual. Friction points found and fixed: builder framing (not clinical), care-pathway vs clinical care path defined upfront, June 2026 deadline + demo content in scope.md, stakeholder split (Organizations / PoC Users), redundant `[poc]` tags dropped, F7 surface fixed to `F1`–`F8`, "External Dependencies" section removed (duplicated Integrated Systems), MDR-never invariant added + `openspec/mdr-watchlist.md` seeded.
 - [x] 7.3 No application code touched in this change. Backend pytest unaffected; orchestrator build unaffected.

@@ -25,24 +25,32 @@ This file is the **living scope ledger** for the ZAS PoC. It answers:
 
 ## Project Idea
 
-Care-pathway operating layer for ZAS Antwerpen. Pathway Designer composes pathways; Pathway Orchestrator runs them with Luscii clinical care paths as sub-flows; embeds in HiX with two-way task sync (post-PoC). PoC validates the composer + caregiver web app spine end-to-end with mocked HiX / Luscii / auth.
+Care-pathway **orchestration builder** for ZAS Antwerpen. We are a builder, not a clinician: hospitals author their own pathways with our tool, composing operational workflow steps (send email, create HiX task, schedule appointment, branch on a decision, milestone, embed a Luscii clinical care path as a sub-flow). We do not encode clinical reasoning — that lives in Luscii's clinical care paths, which we treat as opaque sub-flow blocks. PoC validates the composer + caregiver web app spine end-to-end with mocked HiX / Luscii / auth.
+
+**June 2026 demo target.** Composer + caregiver web app driven over hospital-authored demo content (Rugrevalidatie + one more), fully mocked backends. The demo content is examples a hospital could build with the tool — we don't own the clinical domain.
+
+**Vocabulary.**
+- **Care pathway** — our composition: operational workflow steps a hospital wires together (manual + technical).
+- **Clinical care path** — Luscii's clinical sub-flow. Opaque block to us; mocked as static JSON in PoC.
 
 **Product shape note.** PoC ships Designer + Orchestrator as a single web app. Splitting into separate apps is `[mvp]`.
+
+**Hard invariant — never an MDR medical device.** See `openspec/project.md` Important Constraints + `openspec/mdr-watchlist.md`. Holter (and any medical-device territory) is **out of PoC and MVP scope**.
 
 ---
 
 ## PoC In-Scope
 
-Each item has a stable feature ID (`F1`..`Fn`), a tier tag, and a one-line acceptance criterion. IDs are referenced by `openspec/changes/` and `openspec/backlog.md`.
+Everything in this list is `[poc]` by definition. Each item has a stable feature ID (`F1`..`Fn`) and a one-line acceptance criterion. IDs are referenced by `openspec/changes/` and `openspec/backlog.md`.
 
-- **`F1` Login** `[poc]` — Caregiver signs in with a hard-coded username + password; session cookie is set; protected routes redirect when unauthenticated.
-- **`F2` Dashboard** `[poc]` — Logged-in caregiver lands on a dashboard showing summary cards for their patients + pending tasks. Demo: counts + one-click drill-down.
-- **`F3` Carepath builder** `[poc]` — Designer composes a care pathway from blocks (appointments, decisions, **Luscii clinical care path** as a single block, milestones) and saves it; saved pathways are listed and re-openable. Saved-in-builder = enrollable (no separate publish step in PoC).
-- **`F4` Patients overview** `[poc]` — Caregiver sees a list of all patients enrolled in any pathway, filterable by pathway + status; clicking a row opens the patient view.
-- **`F5` Patient view** `[poc]` — Single patient page shows the patient's current care pathway, current step, completed + upcoming steps, and the Luscii clinical care path block (rendered from static JSON in PoC, no live Luscii) as part of the pathway visualization. Every patient in the PoC is in exactly one pathway we composed.
-- **`F6` Task view** `[poc]` — Caregiver sees an inbox of tasks across all their patients (not just one). Tasks can be marked complete; completing updates the patient's pathway state.
-- **`F7` Pathway model + backend** `[poc]` — Backend exposes the API surface for `F1`–`F6`: auth, pathway definitions, patient enrollment, task list, task completion. Persisted in our own DB. Care pathway = our composition; Clinical care path = Luscii sub-flow (mocked in PoC).
-- **`F8` Admin (minimal)** `[poc]` — A bootstrapped admin can list users and assign caregiver role. No multi-tool admin work in PoC.
+- **`F1` Login** — Caregiver signs in with a hard-coded username + password; session cookie is set; protected routes redirect when unauthenticated.
+- **`F2` Dashboard** — Logged-in caregiver lands on a dashboard showing summary cards for their patients + pending tasks. Demo: counts + one-click drill-down.
+- **`F3` Carepath builder** — Designer composes a care pathway from blocks (appointments, decisions, **Luscii clinical care path** as a single block, milestones) and saves it; saved pathways are listed and re-openable. Saved-in-builder = enrollable (no separate publish step in PoC).
+- **`F4` Patients overview** — Caregiver sees a list of all patients enrolled in any pathway, filterable by pathway + status; clicking a row opens the patient view.
+- **`F5` Patient view** — Single patient page shows the patient's current care pathway, current step, completed + upcoming steps, and the Luscii clinical care path block (rendered from static JSON in PoC, no live Luscii) as part of the pathway visualization. Every patient in the PoC is in exactly one pathway we composed.
+- **`F6` Task view** — Caregiver sees an inbox of tasks across all their patients (not just one). Tasks can be marked complete; completing updates the patient's pathway state.
+- **`F7` Pathway model + backend** — Backend exposes the API surface for `F1`–`F8`: auth, pathway definitions, patient enrollment, task list, task completion. Persisted in our own DB. Care pathway = our composition; Clinical care path = Luscii sub-flow (mocked in PoC).
+- **`F8` Admin (minimal)** — A bootstrapped admin can list users and assign caregiver role. No multi-tool admin work in PoC.
 
 ---
 
