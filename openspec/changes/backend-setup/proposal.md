@@ -1,3 +1,7 @@
+**Tier**: [poc]
+
+> **Scope note (added during archive prep).** Section 12 ("FHIR-ready domain layer") and the `fhir-ready-domain` capability are **deferred** under [BL-025](../../backlog.md). The new `openspec/scope.md` excludes live FHIR from the PoC; the keep / narrow / revert decision for FHIR-shaped artifacts lives in the follow-up change. Bullets below that reference FHIR-shaped HiX verbs, `fhir.resources` runtime dep, or `app/fhir/` modules describe the *original* proposal; only sections 1–11 land in this change.
+
 ## Why
 
 `apps/backend/` is a minimal FastAPI scaffold today: a single `main.py` exposing `/` and `/health`, no settings layer, no CORS, no auth endpoints, no adapter pattern, no error model. The orchestrator app-shell change already assumes three auth routes (`POST /auth/login`, `GET /auth/me`, `POST /auth/logout`) returning a cookie session, plus a stable `/openapi.json` for typegen. Without those, the frontend stays glued to MSW handlers and HiX/Luscii integration has no place to land.
@@ -104,7 +108,7 @@ Backend follows PEP 8. Where it overlaps with frontend, the wire format wins (HT
 - `external-adapters`: `HixClient` + `LusciiClient` as `Protocol`s with in-memory stubs, registered via `Depends`. Stub `ping()` for readiness probe.
 - `openapi-contract`: tagged routers, `operation_id` per route, `response_model` per route, `servers` from settings, `apps/backend/openapi.json` regenerable via moon task.
 - `testing-foundation`: `tests/` mirrors `app/`, `conftest.py` with `client` + `authed_client` fixtures, `tests/fixtures/` synthetic data, dependency override pattern for adapter stubs.
-- `fhir-ready-domain`: `fhir.resources` (R4) as the canonical internal model, `app/fhir/` package with `mappers/` (FHIR ↔ view-model), `search.py` (typed search filters), `codes.py` (OperationOutcome issue-type vocabulary). View-model DTOs under `app/schemas/view/`. FHIR-shaped Reference objects across module boundaries. `ErrorResponse.code` namespaced under FHIR `IssueType`. Pagination shape Bundle-compatible. Adapter Protocols FHIR-verb-shaped when the source is FHIR.
+- ~~`fhir-ready-domain`~~ — **deferred to BL-025**. See scope note at top.
 
 ### Modified Capabilities
 

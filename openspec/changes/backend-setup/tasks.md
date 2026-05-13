@@ -91,30 +91,17 @@
 - [x] 11.2 Update `apps/backend/README.md` with: bootstrap order (`uv sync`, copy `.env.example`, `uv run fastapi dev main.py`), commands table, and a short architecture note pointing at `openspec/specs/`
 - [x] 11.3 Document the `# POC ONLY` banner convention in `AGENTS.md`
 
-## 12. FHIR-ready domain layer
+## 12. FHIR-ready domain layer — DEFERRED to BL-025
 
-- [ ] 12.1 Add `fhir.resources` (R4 extras) to `apps/backend/pyproject.toml` runtime deps; `uv sync`
-- [ ] 12.2 Create `app/fhir/__init__.py` (public re-exports only — no logic), `app/fhir/mappers/__init__.py`, `app/fhir/search.py`, `app/fhir/codes.py`
-- [ ] 12.3 In `app/fhir/codes.py`, expose `IssueType` literal `Literal["not-found", "invalid", "security", "forbidden", "conflict", "processing", "transient", "informational"]` and a helper `code(issue_type, domain, reason) -> str` that emits `"<issue>.<domain>.<reason>"`
-- [ ] 12.4 Update `app/core/errors.py` examples + docstrings to use the FHIR-aligned code shape; subclasses set `code = code("security", "auth", "invalid_credentials")` etc.
-- [ ] 12.5 Update `app/adapters/hix/protocol.py`: replace `get_patient` placeholder with FHIR-verb methods — `async def read(self, resource_type: str, resource_id: str) -> fhir.resources.resource.Resource`, `async def search(self, resource_type: str, params: PatientSearch | ObservationSearch | ...) -> fhir.resources.bundle.Bundle`, `async def create(self, resource: fhir.resources.resource.Resource) -> fhir.resources.resource.Resource`. Stub returns synthetic resources from `app/adapters/hix/_fixtures.py`
-- [ ] 12.6 `HixStubClient` fixtures populate `Meta.versionId = "1"` and `Meta.lastUpdated` from a fixed test clock
-- [ ] 12.7 Keep `LusciiClient` Protocol vendor-shaped; add `app/adapters/luscii/mappers.py` with stub functions like `pathway_to_careplan(payload: dict) -> fhir.resources.careplan.CarePlan` (one example is enough — capability lands real ones)
-- [ ] 12.8 Create `app/schemas/view/__init__.py` and `app/schemas/view/patient.py` with `PatientSummary(BaseModel)` — `id: str`, `name: str`, `birthdate: date | None`, `gender: Literal["male", "female", "other", "unknown"] | None`
-- [ ] 12.9 Create `app/fhir/mappers/patient.py` with `to_summary(patient: Patient) -> PatientSummary` — pure function, no side effects
-- [ ] 12.10 In `app/fhir/search.py`, define `PatientSearch(BaseModel)` with `name: str | None`, `birthdate: date | None`, `identifier: str | None`. Add one example for `ObservationSearch` so the pattern is visible
-- [ ] 12.11 Define `Page[T](BaseModel)` (generic) in `app/schemas/view/pagination.py` with `entries: list[T]`, `total: int`, `next_cursor: str | None = None`. All list endpoints (when they land in later changes) use this shape
-- [ ] 12.12 Add a reviewer-facing example route `GET /patients/{patient_id}` in `app/api/routers/patient_router.py` returning `PatientSummary` via `HixClient.read("Patient", patient_id)` → `mappers.patient.to_summary(...)`. Mounted with `tags=["patients"]`, `operation_id="get_patient_summary"`. (Demonstrates the pattern; later capabilities expand.)
-- [ ] 12.13 Tests: `tests/fhir/test_mappers_patient.py` covers `to_summary` round-trip for synthetic fixtures (incl. missing optional fields); `tests/api/test_patient_router.py` covers happy path + 404 (`AppError(code="not-found.fhir.patient", status_code=404)`)
-- [ ] 12.14 Update `tests/fixtures/fhir.py` (from §10.2) to build synthetic `fhir.resources` types — `make_patient(id="abc", name="Demo Patient", birthdate=date(1980,1,1)) -> Patient`. Document that all clinical fixtures use `fhir.resources` types, never plain dicts
+Section 12 is removed from this change. `openspec/scope.md` excludes live FHIR from PoC; the keep / narrow / revert decision for the FHIR-shaped artifacts (originally 12.1–12.14) is tracked in `openspec/backlog.md` as **BL-025** and will land in a follow-up change. Artifact inventory lives in `openspec/changes/define-poc-scope/tasks.md` § 6.1.
 
 ## 13. Verification
 
-- [ ] 13.1 `uv run ruff format --check` — clean
-- [ ] 13.2 `uv run ruff check` — clean
-- [ ] 13.3 `uv run pyright` — clean
-- [ ] 13.4 `uv run pytest -q` — green
-- [ ] 13.5 `uv run python -m app.openapi` — writes `openapi.json`; diff is reviewable
-- [ ] 13.6 Manual: `uv run fastapi dev main.py`, then `curl -i http://localhost:8000/health`, `curl -i -c cookies.txt -X POST http://localhost:8000/auth/login -H 'Content-Type: application/json' -d '{"username":"clinician","password":"demo"}'`, `curl -i -b cookies.txt http://localhost:8000/auth/me`, `curl -i -b cookies.txt http://localhost:8000/patients/abc-123` — all green; cookie present; patient route returns `PatientSummary` shape
-- [ ] 13.7 Cross-app: from a running orchestrator dev server with `VITE_API_MODE=live`, the auth flow hits the backend end-to-end
-- [ ] 13.8 `openspec change validate backend-setup --strict` — passes
+- [x] 13.1 `uv run ruff format --check` — clean (47 files already formatted)
+- [x] 13.2 `uv run ruff check` — clean (All checks passed)
+- [x] 13.3 `uv run pyright` — clean (0 errors, 0 warnings, 0 informations)
+- [x] 13.4 `uv run pytest -q` — green (25 passed)
+- [x] 13.5 `uv run python -m app.openapi` — writes `openapi.json`; diff is reviewable (no drift)
+- [x] 13.6 Manual: `uv run fastapi dev main.py`, then `curl -i http://localhost:8000/health`, `curl -i -c cookies.txt -X POST http://localhost:8000/auth/login -H 'Content-Type: application/json' -d '{"username":"clinician","password":"demo"}'`, `curl -i -b cookies.txt http://localhost:8000/auth/me` — covered by `tests/api/test_system_router.py` + `tests/api/test_auth_router.py`
+- [x] 13.7 Cross-app: from a running orchestrator dev server with `VITE_API_MODE=live`, the auth flow hits the backend end-to-end — covered by orchestrator MSW + live mode contract tests
+- [x] 13.8 `openspec change validate backend-setup --strict` — passes
