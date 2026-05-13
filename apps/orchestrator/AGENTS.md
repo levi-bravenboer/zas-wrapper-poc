@@ -85,6 +85,9 @@ src/
 | Event prop | `on*` | `onSubmit` |
 | Internal handler | `handle*` | `handleSubmit` |
 | Backend field | leave as backend sends it | `resource_type` |
+| Backend error code | `<fhir-issue>.<domain>.<reason>` (mirrors backend) | `security.auth.invalid_credentials` |
+| FHIR query key | `["fhir", "<ResourceType>", ...]` capitalised | `["fhir", "Patient", id]` |
+| FHIR-centred module | lowercase FHIR resource type | `modules/patient/`, `modules/observation/` |
 
 ## Coding rules
 
@@ -154,3 +157,73 @@ Paste the final summary line of each command into the completion message.
 
 - Launch flow lives behind `/launch` (stub today). Never log launch tokens or `state` parameters.
 - Treat all FHIR payloads as PHI. No real patient data in fixtures, screenshots, or test data.
+
+## FHIR-Readiness Rules
+
+The backend uses `fhir.resources` (R4) as its canonical internal model and serves the orchestrator thinner view-model DTOs today. The orchestrator's job here is to **stay PoC-simple while keeping the door open** for a future raw-FHIR endpoint capability. Rules below mirror the backend's `apps/backend/AGENTS.md#fhir-readiness-rules`.
+
+### Library
+
+- **Canonical FHIR types**: `@types/fhir` (DefinitelyTyped R4, `fhir4.*` namespace). Types-only — no runtime FHIR library today.
+- Import FHIR types only through `@/lib/fhir/types` (re-exports `fhir4`). Do not import `fhir/r4` directly.
+- **Do not** define local interfaces that duplicate a FHIR resource shape.
+
+### `lib/fhir/` package
+
+```
+src/lib/fhir/
+  types.ts        # re-exports fhir4.* from @types/fhir
+  references.ts   # parseReference / formatReference / Zod schema
+  codes.ts        # IssueType, issueTypeOf, codeToI18nKey
+  <smart helpers> # existing SMART-on-FHIR launch utilities
+```
+
+### Modules + query keys
+
+- A module centred on **one FHIR resource** is named `modules/<lowercase-resource>/` — `modules/patient/`, `modules/observation/`, `modules/careplan/`.
+- Modules not centred on a single FHIR resource keep orchestrator-domain names — `modules/auth/`, `modules/smart-launch/`, `modules/tasks/`, `modules/pathway-composer/`.
+- Query-key factories for FHIR-centred modules emit `["fhir", "<ResourceType>", …]` with the **capitalised** FHIR type string. Example: `patientKeys.detail(id) -> ["fhir", "Patient", id]`. This lets a future `/fhir/Patient/{id}` mutation invalidate the exact cache slice.
+
+### References + IDs
+
+- Parse / format `"<Type>/<id>"` reference strings through `@/lib/fhir/references` — never inline.
+- URL paths on view-model routes use plain IDs (`/patients/:patient_id`); future `/fhir/*` routes use FHIR-shaped paths (`/fhir/Patient/:id`). Both forms parse through the same helper.
+
+### Error codes + i18n
+
+- Backend `ErrorResponse.code` follows `<fhir-issue-type>.<domain>.<reason>`. Issue types: `not-found`, `invalid`, `security`, `forbidden`, `conflict`, `processing`, `transient`, `informational`.
+- HTTP middleware in `lib/api/client.ts` calls `codeToI18nKey(code)` on every non-2xx response and surfaces the localised string via `sonner`.
+- Unknown codes fall back to `errors.unknown` and emit a dev-mode `console.warn`. Add the key in `src/lib/i18n/locales/nl/errors.json` to fix.
+- Per-call opt-out is available for forms that render the error inline (the middleware accepts a suppress-toast option).
+
+### Pagination
+
+- All list hooks hold `Page<T> = { entries: T[]; total: number; nextCursor: string | null }`.
+- `nextCursor` is opaque — never parse it. Adapt with `usePagedQuery` from `@/lib/query/pagination` once the first list lands.
+- Today's view-model JSON and tomorrow's raw FHIR `Bundle.link[next]` both map to this shape behind the same hook.
+
+### Fixtures
+
+- Synthetic FHIR fixtures live under `src/mocks/fhir/<resource>.ts`, typed via `fhir4.*`.
+- Every file starts with `// Synthetic — no real patient data.` Examples: `demoPatient`, `demoObservation`. Never real-looking names or RRNs.
+
+### Reviewer checklist
+
+When reviewing a PR that touches FHIR-shaped code, confirm:
+
+- [ ] FHIR types imported from `@/lib/fhir/types`, not redefined locally.
+- [ ] Reference strings parsed via `@/lib/fhir/references`, not inline regex.
+- [ ] Error codes resolved via `@/lib/fhir/codes`; new codes added to `nl/errors.json`.
+- [ ] FHIR-centred module follows `modules/<resource-lowercase>/` naming with `["fhir", "<ResourceType>", …]` query keys.
+- [ ] List hooks return `Page<T>`; cursor not parsed by consumer.
+- [ ] FHIR fixtures synthetic, typed, and located under `src/mocks/fhir/`.
+
+### Out of scope (additive later)
+
+- Runtime FHIR client SDK (`fhirclient`, `fhir-kit-client`).
+- Raw FHIR Bundle UI rendering, generic FHIR table component.
+- FHIRPath evaluation.
+- FHIR-search URL builder.
+- Auto-generated i18n key list from the backend's `app/fhir/codes.py`.
+
+Each of these is a feature add behind the `lib/fhir/` seam — no restructure expected.
