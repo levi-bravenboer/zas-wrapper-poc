@@ -6,7 +6,16 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignore": ["dist", "node_modules", "src/routeTree.gen.ts", "coverage", "playwright-report"]
+    "includes": [
+      "**",
+      "!dist",
+      "!node_modules",
+      "!src/routeTree.gen.ts",
+      "!src/lib/api/schema.d.ts",
+      "!public/mockServiceWorker.js",
+      "!coverage",
+      "!playwright-report"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -28,10 +37,20 @@
       "trailingCommas": "none"
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "linter": {
     "enabled": false
   },
-  "organizeImports": {
-    "enabled": true
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   }
 }
