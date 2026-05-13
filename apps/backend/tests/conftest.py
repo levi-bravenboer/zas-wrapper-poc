@@ -78,13 +78,6 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 @pytest.fixture
-def authed_client(client: TestClient) -> TestClient:
-    response = client.post("/auth/login", json={"username": "clinician", "password": "demo"})
-    assert response.status_code == 200, response.text
-    return client
-
-
-@pytest.fixture
 async def db_session(db_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     factory = async_sessionmaker(db_engine, expire_on_commit=False, autoflush=False)
     async with factory() as session:

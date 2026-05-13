@@ -14,7 +14,6 @@ from app.api import register_routers
 from app.core.errors import AppError, ErrorResponse
 from app.core.logging import configure_logging
 from app.core.readiness import ReadinessRegistry
-from app.core.security import SessionSigner
 from app.core.settings import DEFAULT_SESSION_SECRET, Settings, get_settings
 from app.db.engine import create_engine, create_session_factory
 
@@ -100,8 +99,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.luscii_client = luscii_client
     app.state.readiness.register("hix", hix_client.ping)
     app.state.readiness.register("luscii", luscii_client.ping)
-
-    app.state.session_signer = SessionSigner(settings.session_secret_key.get_secret_value())
 
     db_engine = create_engine(settings)
     app.state.db_engine = db_engine
