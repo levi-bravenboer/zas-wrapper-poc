@@ -1,0 +1,7 @@
+{
+  "launching": "Bezig met starten van SMART-launch…",
+  "launch_failed": "SMART-launch mislukt",
+  "exchanging": "Bezig met inloggen…",
+  "exchange_failed": "Inloggen via EPD mislukt",
+  "retry": "Probeer opnieuw"
+}

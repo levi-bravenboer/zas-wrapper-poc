@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next'
 import auth from './locales/nl/auth.json'
 import common from './locales/nl/common.json'
 import nav from './locales/nl/nav.json'
+import smart from './locales/nl/smart.json'
 
 export type SupportedLocale = 'nl' | 'fr' | 'en'
 
@@ -13,9 +14,9 @@ void i18next.use(initReactI18next).init({
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: 'common',
-  ns: ['common', 'auth', 'nav'],
+  ns: ['common', 'auth', 'nav', 'smart'],
   resources: {
-    nl: { common, auth, nav },
+    nl: { common, auth, nav, smart },
   },
   interpolation: { escapeValue: false },
   returnNull: false,

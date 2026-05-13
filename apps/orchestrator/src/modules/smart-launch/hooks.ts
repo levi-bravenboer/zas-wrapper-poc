@@ -1,6 +1,5 @@
-import type { LaunchSearch } from './schemas'
-import { useLaunchStore } from './store'
+import { useLaunchStore, type LaunchContext } from './store'
 
-export function useLaunchContext(): LaunchSearch | null {
+export function useLaunchContext(): LaunchContext | null {
   return useLaunchStore((s) => s.context)
 }
