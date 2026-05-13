@@ -191,23 +191,23 @@ Note: Section 12 of `backend-setup` introduced FHIR-shaped domain artifacts (fhi
 
 Note: Pre-existing change. Re-tiered to `[mvp]` on 2026-05-13 — PoC has no FHIR per `openspec/scope.md`. Change folder kept (design work preserved) but tagged dormant in `proposal.md`. Promote when `[mvp]` window opens; re-read against `scope.md` first.
 
-### BL-027 — Re-tier `dev-data-seeding` change
+### BL-027 — Seed dev/demo data
 - Tier: [poc]
 - Source: define-poc-scope change, Q13 decision
 
-Note: Pre-existing change. No tier tag. Read against new `scope.md` and either add tier or backlog. Likely `[poc]` (seeded fake patients are explicitly part of PoC mocks).
+Note: Re-tier task obsolete — original `dev-data-seeding` change folder lost in rebase (2026-05-13). Concept preserved here. Seeded fake patients + pathways + tasks are explicit PoC mocks (`scope.md` PoC Mocks). Author a fresh `[poc]` change when backend models stabilise enough to fixture against.
 
-### BL-028 — Re-tier `agent-sandbox-spike` change
-- Tier: [poc]
+### BL-028 — Agent sandbox spike
+- Tier: [product]
 - Source: define-poc-scope change, Q13 decision; user note "dev experience"
 
-Note: Pre-existing change. Developer-experience work (agent sandbox prototype). Re-tier — `[poc]` if it accelerates PoC build, else `[product]`.
+Note: Re-tier task obsolete — original `agent-sandbox-spike` change folder lost in rebase (2026-05-13). Concept preserved here. Developer-experience prototype, no PoC dependency. Park at `[product]` unless a concrete PoC blocker surfaces.
 
-### BL-029 — Re-tier `dev-sandbox-skills` change
-- Tier: [poc]
+### BL-029 — Dev sandbox skills
+- Tier: [product]
 - Source: define-poc-scope change, Q13 decision
 
-Note: Pre-existing change. Developer-experience adjacent. Re-tier or move to backlog after reading proposal.
+Note: Re-tier task obsolete — original `dev-sandbox-skills` change folder lost in rebase (2026-05-13). Concept preserved here. Developer-experience adjacent. Park at `[product]`; revisit if a PoC use case emerges.
 
 ### BL-030 — Patient app shape decision
 - Tier: [mvp]
