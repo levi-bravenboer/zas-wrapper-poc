@@ -41,8 +41,8 @@ Land the layering before any domain code. Everything below this point follows th
 
 ## 5. Verification
 
-- [x] 5.1 `moon ci` — backend gates + orchestrator typecheck/test/lint/build/test-e2e green; orchestrator `format` task fails on pre-existing biome schema drift (`files.ignore` + `organizeImports` no longer valid in current biome) — not introduced by this change
+- [x] 5.1 `moon ci` — all 13 tasks green (after migrating `apps/orchestrator/biome.json` to the v2 schema: `files.includes` with negations, `assist.actions.source.organizeImports`, `css.parser.tailwindDirectives`; reformatted 15 files with the new config)
 - [x] 5.2 `openspec validate align-stack-with-poc-scope --strict` — passes
 - [x] 5.3 Update `openspec/backlog.md` `BL-025` entry note marking resolution by this change
 - [x] 5.4 Add follow-up `[poc]` change stubs to `openspec/backlog.md` for each F1–F8 domain (BL-035..BL-041)
-- [ ] 5.5 Archive the change via `openspec archive align-stack-with-poc-scope`
+- [x] 5.5 Archive the change via `openspec archive align-stack-with-poc-scope`
