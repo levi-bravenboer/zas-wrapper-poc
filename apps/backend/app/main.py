@@ -16,6 +16,7 @@ from app.core.logging import configure_logging
 from app.core.readiness import ReadinessRegistry
 from app.core.security import SessionSigner
 from app.core.settings import DEFAULT_SESSION_SECRET, Settings, get_settings
+from app.db.engine import create_engine, create_session_factory
 
 
 class InsecureProductionConfigError(RuntimeError):
@@ -101,6 +102,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.readiness.register("luscii", luscii_client.ping)
 
     app.state.session_signer = SessionSigner(settings.session_secret_key.get_secret_value())
+
+    db_engine = create_engine(settings)
+    app.state.db_engine = db_engine
+    app.state.session_factory = create_session_factory(db_engine)
 
     app.add_middleware(
         CORSMiddleware,

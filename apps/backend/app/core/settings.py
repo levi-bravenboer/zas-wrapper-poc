@@ -10,6 +10,9 @@ AdapterMode = Literal["stub", "live"]
 
 DEFAULT_SESSION_SECRET = "change-me-in-production"
 DEFAULT_DEV_ORIGINS: list[AnyHttpUrl] = [AnyHttpUrl("http://localhost:5173")]
+DEFAULT_DATABASE_URL = "sqlite+aiosqlite:///./poc.db"
+DEFAULT_BOOTSTRAP_ADMIN_USERNAME = "admin"
+DEFAULT_BOOTSTRAP_ADMIN_PASSWORD = "change-me-in-production"
 
 
 class Settings(BaseSettings):
@@ -27,6 +30,9 @@ class Settings(BaseSettings):
     public_url: AnyHttpUrl | None = None
     hix_mode: AdapterMode = "stub"
     luscii_mode: AdapterMode = "stub"
+    database_url: str = DEFAULT_DATABASE_URL
+    bootstrap_admin_username: str = DEFAULT_BOOTSTRAP_ADMIN_USERNAME
+    bootstrap_admin_password: SecretStr = SecretStr(DEFAULT_BOOTSTRAP_ADMIN_PASSWORD)
 
 
 @lru_cache

@@ -7,16 +7,16 @@
 - [x] 1.5 Delete `apps/backend/tests/fixtures/fhir.py` and update `apps/backend/tests/adapters/test_hix_stub.py` to assert only the `ping()` contract
 - [x] 1.6 Slim `apps/backend/AGENTS.md` "FHIR-Readiness Rules" to a one-paragraph pointer ("FHIR rules apply at `[mvp]`; see `openspec/scope.md`")
 - [x] 1.7 Run `moon run backend:typecheck` + `moon run backend:test` — green before commit
-- [ ] 1.8 Commit: `chore(backend): narrow hix adapter to ping and drop fhir placeholders`
+- [x] 1.8 Commit: `chore(backend): narrow hix adapter to ping and drop fhir placeholders`
 
 ## 2. Persistence foundation
 
-- [ ] 2.1 Add `sqlalchemy[asyncio]>=2`, `aiosqlite`, `alembic` to `apps/backend/pyproject.toml` runtime deps
-- [ ] 2.2 Add `BACKEND_DATABASE_URL` setting to `app/core/settings.py` (default `sqlite+aiosqlite:///./poc.db`)
-- [ ] 2.3 Add `BACKEND_BOOTSTRAP_ADMIN_USERNAME` / `BACKEND_BOOTSTRAP_ADMIN_PASSWORD` settings (dev defaults, never real)
-- [ ] 2.4 Create `app/db/__init__.py`, `app/db/engine.py` (engine + session factory), `app/db/base.py` (DeclarativeBase)
-- [ ] 2.5 Create `alembic.ini` + `apps/backend/alembic/` skeleton with async env.py wired to the engine
-- [ ] 2.6 Wire `pytest` fixture in `tests/conftest.py` to use `sqlite+aiosqlite:///:memory:` per session and run `alembic upgrade head` on session start
+- [x] 2.1 Add `sqlalchemy[asyncio]>=2`, `aiosqlite`, `alembic` to `apps/backend/pyproject.toml` runtime deps
+- [x] 2.2 Add `BACKEND_DATABASE_URL` setting to `app/core/settings.py` (default `sqlite+aiosqlite:///./poc.db`)
+- [x] 2.3 Add `BACKEND_BOOTSTRAP_ADMIN_USERNAME` / `BACKEND_BOOTSTRAP_ADMIN_PASSWORD` settings (dev defaults, never real)
+- [x] 2.4 Create `app/db/__init__.py`, `app/db/engine.py` (engine + session factory), `app/db/base.py` (DeclarativeBase)
+- [x] 2.5 Create `alembic.ini` + `apps/backend/alembic/` skeleton with async env.py wired to the engine
+- [x] 2.6 Wire `pytest` fixture in `tests/conftest.py` to use `sqlite+aiosqlite:///:memory:` per session and run `alembic upgrade head` on session start
 - [ ] 2.7 Commit: `feat(backend): add sqlalchemy alembic persistence foundation`
 
 ## 3. Domain models + baseline migration
