@@ -97,10 +97,10 @@ apps/orchestrator/
 | `/launch`        | no   | SMART launch stub       | Validates `iss` + `launch`, stores context, redirects      |
 | `/`              | yes  | redirect → `/dashboard` | `_auth/index.tsx` `beforeLoad` redirect, no UI             |
 | `/dashboard`     | yes  | `DashboardPage`         | Real content lands here first                              |
-| `/taken`         | yes  | `SectionPlaceholder`    | Placeholder until tasks module ships                       |
-| `/zorgpaden`     | yes  | `SectionPlaceholder`    | Pathway composer entry point                               |
-| `/patienten`     | yes  | `SectionPlaceholder`    | Patient list entry point                                   |
-| `/instellingen`  | yes  | `SectionPlaceholder`    | Settings entry point                                       |
+| `/tasks`         | yes  | `SectionPlaceholder`    | Placeholder until tasks module ships                       |
+| `/pathways`      | yes  | `SectionPlaceholder`    | Pathway composer entry point                               |
+| `/patients`      | yes  | `SectionPlaceholder`    | Patient list entry point                                   |
+| `/settings`      | yes  | `SectionPlaceholder`    | Settings entry point                                       |
 
 All authed routes mount `AppLayout` (sidebar + main content) via `_auth.tsx`.
 

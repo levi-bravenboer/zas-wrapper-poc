@@ -68,6 +68,6 @@ Before claiming a task complete:
 
 ## External Integrations
 
-- **HiX FHIR**: stub behind an adapter from day one. Tests run against fixtures, never the live HiX sandbox.
+- **HiX FHIR**: stub behind an adapter from day one. Tests run against fixtures, never the live HiX sandbox. **PoC scope:** adapter returns static fixtures only — no live calls, no resource zod validation, no pagination helpers yet. Real wiring + conventions land in a follow-on `fhir-integration` openspec change. Until then, do not invent adapter patterns; ask if a task seems to require real FHIR I/O.
 - **Luscii API**: same pattern. Document the contract in `openspec/specs/` when stable.
 - **MCP**: planned via the official Python SDK. Land as a separate FastAPI sub-app or standalone process once scoped.

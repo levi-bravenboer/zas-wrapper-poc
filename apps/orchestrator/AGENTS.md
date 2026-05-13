@@ -152,5 +152,17 @@ Paste the final summary line of each command into the completion message.
 
 ## SMART-on-FHIR notes
 
-- Launch flow lives behind `/launch` (stub today). Never log launch tokens or `state` parameters.
+- Launch flow lives behind `/launch` + `/launch/callback`. Uses `fhirclient` PKCE under the hood. Never log launch tokens, the `state` parameter, or any `Authorization` header.
 - Treat all FHIR payloads as PHI. No real patient data in fixtures, screenshots, or test data.
+
+## FHIR adapter conventions — TBD (PoC stubs only)
+
+- PoC scope: feature FHIR adapters (`modules/*/adapters/fhir.ts`) return **static stub data**. No `client.request(...)`, no zod resource schemas, no `mapFhirTask`-style helpers yet — see openspec change `multi-surface-feature-framework` and its deferred tasks 4.6–4.8.
+- Until the follow-on `fhir-integration` change lands, do **not** invent FHIR adapter patterns. If a task requires hitting a real EHR, stop and ask — that's a scope shift, not a small task.
+- Surface-level discipline still applies: pages consume the port (`tasksPort.use()`), never `client` directly. The port abstraction guarantees stubs can be swapped for a real adapter later without page changes.
+- When the integration change lands, this section will be replaced with adapter conventions + a `new-feature` skill walkthrough. Don't pre-empt it here.
+
+## TanStack Router dependency pairing
+
+- `@tanstack/router-plugin` and `@tanstack/router-generator` must move together. The plugin re-exports the generator; the standalone `scripts/gen-route-tree.mjs` consumes the generator directly. A version skew between them risks divergence in the generated `routeTree.gen.ts` shape.
+- When bumping either, bump both in the same change: `pnpm up @tanstack/router-plugin @tanstack/router-generator` and regenerate the route tree (`node scripts/gen-route-tree.mjs`).

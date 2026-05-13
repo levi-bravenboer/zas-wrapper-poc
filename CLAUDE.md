@@ -18,6 +18,10 @@ Where this file is silent, `AGENTS.md` rules apply.
 - **`pencil` MCP** is available for `.pen` design files. Never read `.pen` files with `Read` / `Grep`; always use the pencil tools.
 - **`context7` MCP** is available for up-to-date library documentation. Prefer it over web search when checking framework APIs (React 19, FastAPI, Vite 8, etc.).
 
+## Worktree directory
+
+- Always create git worktrees under `.worktrees/<branch-name>` in this repo. Directory is gitignored.
+
 ## Behavioural Reminders
 
 - Honour the user's global `~/.claude/CLAUDE.md` rules: semantic commits, no AI attribution, no pushing without permission, lowercase after colon, one-liner messages ≤72 chars, present tense.
