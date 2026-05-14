@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- Radix primitive pass-throughs are stable identities, not hot-reloadable components */
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import * as React from 'react'

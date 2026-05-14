@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- Radix primitive pass-throughs are stable identities, not hot-reloadable components */
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'

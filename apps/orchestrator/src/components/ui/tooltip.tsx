@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- Radix primitive pass-throughs are stable identities, not hot-reloadable components */
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import * as React from 'react'
 
