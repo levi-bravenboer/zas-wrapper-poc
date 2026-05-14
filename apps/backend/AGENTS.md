@@ -43,6 +43,32 @@ moon run backend:openapi                    # export openapi.json (native)
 
 Direct `uv` invocation is fine for host-side static checks if you need ad-hoc flags; the moon task is just a thin wrapper.
 
+### Running tests
+
+Always run through `moon`, never `pytest` / `docker compose` directly. Everything after `--` passes through to pytest in the ephemeral `zas_backend_test` container.
+
+```bash
+# Full suite
+moon run backend:test
+
+# Single test file
+moon run backend:test -- tests/services/pathway/test_pathway_service.py
+
+# Single test node
+moon run backend:test -- tests/services/pathway/test_pathway_service.py::test_resolves_block
+
+# Filter by keyword expression
+moon run backend:test -- -k "pathway and not slow"
+
+# One domain end-to-end
+moon run backend:test -- tests/services/pathway/
+
+# Verbose + last-failure rerun
+moon run backend:test -- -vv --lf
+```
+
+The `test_runner` container rebuilds on every invocation; cold runs take longer than `pytest` on the host. That cost is intentional — agents MUST NOT bypass it by running `pytest` directly against the host or `backend:shell`.
+
 ## Layout
 
 Layer-by-type at the top, **domain split inside every layer**. Every feature owns a folder under each layer it touches; a domain MAY skip layers it does not need.
