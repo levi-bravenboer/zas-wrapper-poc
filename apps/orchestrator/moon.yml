@@ -21,6 +21,14 @@ fileGroups:
     - "tests-e2e/**/*"
 
 tasks:
+  install:
+    command: "npm install"
+    inputs:
+      - "package.json"
+      - "package-lock.json"
+    options:
+      cache: false
+
   dev:
     command: "npm run dev"
     preset: "server"

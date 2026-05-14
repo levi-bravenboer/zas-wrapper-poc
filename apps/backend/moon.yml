@@ -17,26 +17,72 @@ fileGroups:
     - "tests/**/*.py"
 
 tasks:
-  dev:
-    command: "uv run fastapi dev main.py"
-    preset: "server"
-
-  build:
-    command: "uv sync --frozen"
+  install:
+    command: "uv sync"
     inputs:
       - "pyproject.toml"
       - "uv.lock"
+    options:
+      cache: false
+
+  dev:
+    command: "docker compose up --build backend"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    preset: "server"
+    options:
+      cache: false
+      runInCI: false
 
   test:
-    command: "uv run pytest -q"
+    command: "docker compose run --rm --build test_runner"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml:../../docker-compose.test.yml"
+    options:
+      cache: false
+
+  shell:
+    command: "docker compose exec backend bash"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
+      runInCI: false
+
+  psql:
+    command: "docker compose exec db psql -U zas -d zas"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
+      runInCI: false
+
+  migrate:
+    command: "docker compose exec backend uv run alembic upgrade head"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
+
+  makemigration:
+    command: "docker compose exec backend uv run alembic revision --autogenerate -m"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
+      runInCI: false
 
   lint:
     command: "uv run ruff check"
 
   format:
-    command: "uv run ruff format"
-    options:
-      cache: false
+    command: "uv run ruff format --check"
+
+  typecheck:
+    command: "uv run pyright"
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"
 
   openapi:
     command: "uv run python -m app.openapi"
@@ -44,9 +90,3 @@ tasks:
       - "@group(sources)"
     outputs:
       - "openapi.json"
-
-  typecheck:
-    command: "uv run pyright"
-    inputs:
-      - "@group(sources)"
-      - "@group(tests)"
