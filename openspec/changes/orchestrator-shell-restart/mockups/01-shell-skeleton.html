@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Shell skeleton — A vs B</title>
+<style>
+  :root {
+    --teal: #266b5e;
+    --teal-soft: #cfede8;
+    --teal-subtle: #f1f8f7;
+    --teal-pressed: #08453c;
+    --bg: #fafaf9;
+    --surface-1: #ffffff;
+    --surface-2: #f4f4f3;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --fg: #1c1917;
+    --fg-muted: #57534e;
+    --fg-subtle: #78716c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 24px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--fg-muted); margin: 0 0 24px 0; font-size: 13px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-1);
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .mockup-label {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mockup-label .key { color: var(--teal); font-family: 'Geist Mono Variable', monospace; }
+  .mockup-body { height: 480px; display: flex; }
+
+  /* Sidebar */
+  .sb {
+    width: 220px;
+    background: var(--surface-1);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 14px 10px;
+    gap: 14px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px;
+  }
+  .brand-mark {
+    width: 24px; height: 24px;
+    background: var(--teal);
+    border-radius: 6px;
+    display: grid; place-items: center;
+    color: white; font-weight: 700; font-size: 12px;
+    font-family: 'Geist Mono Variable', monospace;
+  }
+  .brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; }
+  .nav-group { display: flex; flex-direction: column; gap: 2px; }
+  .nav-section-label {
+    padding: 6px 10px 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--fg-subtle);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    cursor: default;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--fg); }
+  .nav-item.active { background: var(--teal-soft); color: var(--teal-pressed); font-weight: 500; }
+  .nav-item .ico {
+    width: 16px; height: 16px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px; opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .nav-item.active .ico { opacity: 1; }
+  .sb-spacer { flex: 1; }
+  .user-card {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--surface-2);
+  }
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: white;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+    font-family: 'Geist Mono Variable', monospace;
+  }
+  .user-meta { font-size: 12px; line-height: 1.2; }
+  .user-name { font-weight: 500; color: var(--fg); }
+  .user-role { color: var(--fg-subtle); font-size: 11px; }
+
+  /* Main area */
+  .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+  .topbar {
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-1);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+  }
+  .crumb { font-size: 13px; color: var(--fg-muted); }
+  .crumb b { color: var(--fg); font-weight: 500; }
+  .topbar-spacer { flex: 1; }
+  .search-stub {
+    height: 28px; width: 180px;
+    background: var(--surface-2);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    padding: 0 10px;
+    display: flex; align-items: center;
+    font-size: 12px; color: var(--fg-subtle);
+  }
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .content {
+    flex: 1;
+    padding: 24px;
+    overflow: auto;
+  }
+  .page-title-inline {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px 0;
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--fg-muted);
+    margin: 0 0 20px 0;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .stat-label { font-size: 11px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 22px; font-weight: 600; margin-top: 4px; letter-spacing: -0.01em; }
+  .stat-delta { font-size: 11px; color: var(--teal); margin-top: 2px; }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .pc-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--surface-1);
+  }
+  .pc-block h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .pc-block ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--fg-muted); }
+  .pc-block li { margin-bottom: 4px; }
+  .pc-block.pros h3 { color: var(--teal-pressed); }
+
+  .footer-note {
+    margin-top: 32px;
+    padding: 16px;
+    background: var(--teal-subtle);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--teal-pressed);
+    border: 1px solid var(--teal-soft);
+  }
+</style>
+</head>
+<body>
+  <h1>Shell skeleton — first decision</h1>
+  <p class="subtitle">Both feature the left sidebar; question is whether a topbar adds value when dashboard is the only entry and nav grows to 5-15 items.</p>
+
+  <div class="split">
+    <!-- A: Sidebar only -->
+    <div class="mockup">
+      <div class="mockup-label"><span>A · Sidebar only (Linear-style)</span><span class="key">no topbar</span></div>
+      <div class="mockup-body">
+        <aside class="sb">
+          <div class="brand">
+            <div class="brand-mark">Z</div>
+            <div class="brand-name">ZAS Orchestrator</div>
+          </div>
+          <div class="nav-group">
+            <div class="nav-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="nav-section-label">Coming soon</div>
+          <div class="nav-group" style="opacity: 0.5;">
+            <div class="nav-item"><div class="ico"></div>Patiënten</div>
+            <div class="nav-item"><div class="ico"></div>Zorgpaden</div>
+            <div class="nav-item"><div class="ico"></div>Taken</div>
+            <div class="nav-item"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="sb-spacer"></div>
+          <div class="user-card">
+            <div class="avatar">DR</div>
+            <div class="user-meta">
+              <div class="user-name">Dr. Vermeulen</div>
+              <div class="user-role">Caregiver · ZAS</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main">
+          <div class="content">
+            <h2 class="page-title-inline">Dashboard</h2>
+            <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+            <div class="card-grid">
+              <div class="stat-card"><div class="stat-label">Patiënten</div><div class="stat-value">24</div><div class="stat-delta">+2 deze week</div></div>
+              <div class="stat-card"><div class="stat-label">Open taken</div><div class="stat-value">7</div><div class="stat-delta">3 vandaag</div></div>
+              <div class="stat-card"><div class="stat-label">Zorgpaden</div><div class="stat-value">4</div><div class="stat-delta">actief</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B: Sidebar + topbar -->
+    <div class="mockup">
+      <div class="mockup-label"><span>B · Sidebar + thin topbar</span><span class="key">48px chrome</span></div>
+      <div class="mockup-body">
+        <aside class="sb">
+          <div class="brand">
+            <div class="brand-mark">Z</div>
+            <div class="brand-name">ZAS Orchestrator</div>
+          </div>
+          <div class="nav-group">
+            <div class="nav-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="nav-section-label">Coming soon</div>
+          <div class="nav-group" style="opacity: 0.5;">
+            <div class="nav-item"><div class="ico"></div>Patiënten</div>
+            <div class="nav-item"><div class="ico"></div>Zorgpaden</div>
+            <div class="nav-item"><div class="ico"></div>Taken</div>
+            <div class="nav-item"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="sb-spacer"></div>
+          <div class="user-card" style="background: transparent; padding: 4px 8px;">
+            <div class="avatar">DR</div>
+            <div class="user-meta">
+              <div class="user-name">Dr. Vermeulen</div>
+              <div class="user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main">
+          <div class="topbar">
+            <span class="crumb"><b>Dashboard</b></span>
+            <div class="topbar-spacer"></div>
+            <div class="search-stub">Zoeken… ⌘K</div>
+            <div class="icon-btn"></div>
+            <div class="icon-btn"></div>
+          </div>
+          <div class="content">
+            <h2 class="page-title-inline">Dashboard</h2>
+            <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+            <div class="card-grid">
+              <div class="stat-card"><div class="stat-label">Patiënten</div><div class="stat-value">24</div><div class="stat-delta">+2 deze week</div></div>
+              <div class="stat-card"><div class="stat-label">Open taken</div><div class="stat-value">7</div><div class="stat-delta">3 vandaag</div></div>
+              <div class="stat-card"><div class="stat-label">Zorgpaden</div><div class="stat-value">4</div><div class="stat-delta">actief</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pros-cons">
+    <div class="pc-block pros">
+      <h3>A · Sidebar only</h3>
+      <ul>
+        <li>Less chrome, more page real estate</li>
+        <li>Page header lives inside the content area — uniform with detail pages</li>
+        <li>Search/cmd-k can be triggered globally without a visible bar</li>
+        <li>Linear-flavor restraint reads as deliberate</li>
+        <li>Mobile collapse simpler (one panel to slide)</li>
+      </ul>
+    </div>
+    <div class="pc-block pros">
+      <h3>B · Sidebar + topbar</h3>
+      <ul>
+        <li>Persistent search field visible</li>
+        <li>Breadcrumb slot for deep pages (patient → task)</li>
+        <li>Slot for user menu / notifications / theme later</li>
+        <li>Familiar to HiX users (similar chrome)</li>
+        <li>Sticky context when scrolling long pages</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Click a mockup in the browser to record your choice, or just tell me in the terminal. Both can also be combined (e.g. topbar appears only on detail pages).
+  </div>
+</body>
+</html>

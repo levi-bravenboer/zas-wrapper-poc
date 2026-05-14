@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Glass sidebar — safe / bold / cool</title>
+<style>
+  :root {
+    --teal: #266b5e;
+    --teal-soft: #cfede8;
+    --teal-subtle: #f1f8f7;
+    --teal-pressed: #08453c;
+    --teal-bright: #34a08c;
+    --teal-glow: rgba(38, 107, 94, 0.18);
+    --bg: #fafaf9;
+    --surface-1: #ffffff;
+    --surface-2: #f4f4f3;
+    --surface-3: #ebeae8;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --fg: #1c1917;
+    --fg-muted: #57534e;
+    --fg-subtle: #8a847e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    background: #f6f5f3;
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 24px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--fg-muted); margin: 0 0 24px 0; font-size: 13px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-1);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .mockup-label {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .mockup-label .key { color: var(--teal); font-family: 'Geist Mono Variable', monospace; }
+  .mockup-body { height: 560px; display: flex; position: relative; overflow: hidden; }
+
+  .page-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px 0; }
+  .page-sub { font-size: 12px; color: var(--fg-muted); margin: 0 0 16px 0; }
+  .ph-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; height: 70px; margin-bottom: 10px; }
+  .ph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ph-cell { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; height: 90px; padding: 12px; }
+  .ph-stat-l { font-size: 10px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ph-stat-v { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
+  .ph-stat-d { font-size: 10px; color: var(--teal); margin-top: 2px; }
+
+  .brand-mark-grad { background: linear-gradient(135deg, var(--teal), var(--teal-pressed)); }
+
+  /* shared sidebar bits */
+  .sb-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
+  .sb-brand-mark { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: white; font-weight: 700; font-size: 13px; font-family: 'Geist Mono Variable', monospace; box-shadow: 0 2px 6px var(--teal-glow); }
+  .sb-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; }
+  .sb-brand-sub { font-size: 10px; color: var(--fg-subtle); }
+  .sb-search { padding: 7px 10px; border-radius: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .kbd { font-family: 'Geist Mono Variable', monospace; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
+  .section-l { font-size: 10px; color: var(--fg-subtle); padding: 8px 10px 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; }
+  .nav-group { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
+  .avatar { width: 30px; height: 30px; border-radius: 8px; background: var(--teal); color: white; display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'Geist Mono Variable', monospace; }
+
+  /* ============ F · SAFE GLASS ============ */
+  .f-body {
+    background: linear-gradient(180deg, #f7f6f4 0%, #ecebe8 100%);
+    padding: 14px;
+    gap: 14px;
+  }
+  .f-sb {
+    width: 232px;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(231, 229, 228, 0.8);
+    border-radius: 14px;
+    padding: 14px 10px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+  }
+  .f-search { background: rgba(255,255,255,0.6); border: 1px solid var(--border); color: var(--fg-subtle); margin: 0 2px; }
+  .f-search .kbd { background: white; border: 1px solid var(--border); color: var(--fg-subtle); }
+  .f-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+  .f-item .ico { width: 14px; height: 14px; border-radius: 3px; background: currentColor; opacity: 0.5; }
+  .f-item.active {
+    background: white;
+    color: var(--fg);
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px var(--border);
+  }
+  .f-item.active .ico { background: var(--teal); opacity: 1; }
+  .f-item.muted { opacity: 0.5; }
+  .f-spacer { flex: 1; }
+  .f-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.5); border: 1px solid var(--border); }
+  .f-user-name { font-size: 12px; font-weight: 500; }
+  .f-user-role { font-size: 10px; color: var(--fg-subtle); }
+  .f-main { flex: 1; padding: 14px 18px; overflow: hidden; }
+
+  /* ============ G · BOLD GLASS ============ */
+  .g-body {
+    background:
+      radial-gradient(ellipse at top left, rgba(38,107,94,0.18) 0%, transparent 45%),
+      radial-gradient(ellipse at bottom right, rgba(207,237,232,0.5) 0%, transparent 50%),
+      linear-gradient(180deg, #fafaf9 0%, #f1efed 100%);
+    padding: 16px;
+    gap: 16px;
+  }
+  .g-sb {
+    width: 236px;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 18px;
+    padding: 16px 12px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    box-shadow:
+      0 12px 32px rgba(38,107,94,0.08),
+      0 1px 0 rgba(255,255,255,0.6) inset;
+  }
+  .g-search { background: rgba(255,255,255,0.5); border: 1px solid rgba(231,229,228,0.5); color: var(--fg-muted); margin: 0 2px; }
+  .g-search .kbd { background: rgba(255,255,255,0.7); border: 1px solid var(--border); color: var(--fg-muted); }
+  .g-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    position: relative;
+  }
+  .g-item .ico { width: 14px; height: 14px; border-radius: 4px; background: currentColor; opacity: 0.55; }
+  .g-item.active {
+    background: linear-gradient(135deg, rgba(38,107,94,0.95), rgba(8,69,60,0.95));
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(38,107,94,0.25);
+  }
+  .g-item.active .ico { background: white; opacity: 1; }
+  .g-item.muted { opacity: 0.55; }
+  .g-spacer { flex: 1; }
+  .g-user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
+    border: 1px solid rgba(255,255,255,0.7);
+    backdrop-filter: blur(8px);
+  }
+  .g-main { flex: 1; padding: 14px 18px; overflow: hidden; }
+
+  /* ============ H · COOL / NEW GLASS ============ */
+  .h-body {
+    background: #f4f3f1;
+    padding: 0;
+    position: relative;
+  }
+  .h-body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 25%, rgba(52,160,140,0.35) 0%, transparent 35%),
+      radial-gradient(circle at 85% 75%, rgba(38,107,94,0.28) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(207,237,232,0.6) 0%, transparent 50%);
+    filter: blur(40px);
+    z-index: 0;
+  }
+  .h-body::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px);
+    background-size: 24px 24px;
+    z-index: 0;
+    opacity: 0.4;
+  }
+  .h-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    padding: 16px;
+    gap: 16px;
+  }
+  .h-sb {
+    width: 232px;
+    background: rgba(255,255,255,0.32);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 20px;
+    padding: 14px 10px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+    box-shadow:
+      0 16px 40px rgba(0,0,0,0.06),
+      0 0 0 1px rgba(255,255,255,0.3) inset,
+      0 -1px 0 rgba(0,0,0,0.04) inset;
+  }
+  .h-brand-mark {
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    box-shadow:
+      0 2px 8px var(--teal-glow),
+      0 0 0 1px rgba(255,255,255,0.4) inset;
+    border-radius: 9px;
+  }
+  .h-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.7);
+    font-size: 10px;
+    color: var(--teal-pressed);
+    font-weight: 500;
+  }
+  .h-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal-bright); box-shadow: 0 0 6px var(--teal-bright); }
+  .h-search {
+    background: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.6);
+    color: var(--fg-muted);
+    margin: 0 2px;
+    padding: 8px 12px;
+    border-radius: 10px;
+  }
+  .h-search .kbd { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.6); color: var(--fg-muted); }
+  .h-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    position: relative;
+    transition: all .2s;
+  }
+  .h-item .ico {
+    width: 16px; height: 16px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.6);
+    display: grid; place-items: center;
+  }
+  .h-item .ico::after { content: ''; width: 7px; height: 7px; border-radius: 2px; background: currentColor; opacity: 0.6; }
+  .h-item.active {
+    background: rgba(255,255,255,0.7);
+    color: var(--teal-pressed);
+    font-weight: 500;
+    box-shadow:
+      0 4px 12px rgba(38,107,94,0.12),
+      0 0 0 1px rgba(255,255,255,0.8) inset;
+  }
+  .h-item.active .ico {
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    border-color: transparent;
+    box-shadow: 0 2px 6px var(--teal-glow);
+  }
+  .h-item.active .ico::after { background: white; opacity: 1; }
+  .h-item.muted { opacity: 0.6; }
+  .h-spacer { flex: 1; }
+  .h-user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.45);
+    border: 1px solid rgba(255,255,255,0.6);
+    backdrop-filter: blur(10px);
+  }
+  .h-avatar {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    color: white; display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+    font-family: 'Geist Mono Variable', monospace;
+    box-shadow: 0 2px 8px var(--teal-glow), 0 0 0 1px rgba(255,255,255,0.5) inset;
+  }
+  .h-user-name { font-size: 12px; font-weight: 600; }
+  .h-user-role { font-size: 10px; color: var(--fg-subtle); }
+  .h-main { flex: 1; padding: 14px 18px; overflow: hidden; }
+  .h-main .ph-card, .h-main .ph-cell {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.7);
+    backdrop-filter: blur(8px);
+  }
+  .h-page-title { color: var(--fg); }
+  .h-pill-tag {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.7);
+    font-size: 10px;
+    color: var(--teal-pressed);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 22px;
+  }
+  .pc {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--surface-1);
+  }
+  .pc h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--teal-pressed); }
+  .pc ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--fg-muted); }
+  .pc li { margin-bottom: 3px; }
+  .pc .tag { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--teal-soft); color: var(--teal-pressed); margin-bottom: 6px; font-weight: 500; }
+</style>
+</head>
+<body>
+  <h1>Glass sidebar — three intensities</h1>
+  <p class="subtitle">Same anatomy (brand, ⌘K search, active + 4 dimmed items, user). Difference is how loud the glass effect is and how the page background supports it.</p>
+
+  <div class="grid3">
+
+    <!-- F · SAFE -->
+    <div class="mockup">
+      <div class="mockup-label"><span>F · Safe glass</span><span class="key">subtle</span></div>
+      <div class="mockup-body f-body">
+        <aside class="f-sb">
+          <div class="sb-brand">
+            <div class="sb-brand-mark brand-mark-grad">Z</div>
+            <div>
+              <div class="sb-brand-name">ZAS Orchestrator</div>
+              <div class="sb-brand-sub">v0.1 · poc</div>
+            </div>
+          </div>
+          <div class="sb-search f-search"><span>Zoeken</span><span class="kbd">⌘K</span></div>
+          <div class="section-l">Werkruimte</div>
+          <div class="nav-group">
+            <div class="f-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="section-l">Soon</div>
+          <div class="nav-group">
+            <div class="f-item muted"><div class="ico"></div>Patiënten</div>
+            <div class="f-item muted"><div class="ico"></div>Zorgpaden</div>
+            <div class="f-item muted"><div class="ico"></div>Taken</div>
+            <div class="f-item muted"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="f-spacer"></div>
+          <div class="f-user">
+            <div class="avatar">DV</div>
+            <div>
+              <div class="f-user-name">Dr. Vermeulen</div>
+              <div class="f-user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="f-main">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- G · BOLD -->
+    <div class="mockup">
+      <div class="mockup-label"><span>G · Bold glass</span><span class="key">tinted bg</span></div>
+      <div class="mockup-body g-body">
+        <aside class="g-sb">
+          <div class="sb-brand">
+            <div class="sb-brand-mark brand-mark-grad">Z</div>
+            <div>
+              <div class="sb-brand-name">ZAS Orchestrator</div>
+              <div class="sb-brand-sub">v0.1 · poc</div>
+            </div>
+          </div>
+          <div class="sb-search g-search"><span>Zoeken</span><span class="kbd">⌘K</span></div>
+          <div class="section-l">Werkruimte</div>
+          <div class="nav-group">
+            <div class="g-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="section-l">Soon</div>
+          <div class="nav-group">
+            <div class="g-item muted"><div class="ico"></div>Patiënten</div>
+            <div class="g-item muted"><div class="ico"></div>Zorgpaden</div>
+            <div class="g-item muted"><div class="ico"></div>Taken</div>
+            <div class="g-item muted"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="g-spacer"></div>
+          <div class="g-user">
+            <div class="avatar">DV</div>
+            <div>
+              <div class="f-user-name">Dr. Vermeulen</div>
+              <div class="f-user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="g-main">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- H · COOL / NEW -->
+    <div class="mockup">
+      <div class="mockup-label"><span>H · Aurora glass</span><span class="key">very new</span></div>
+      <div class="mockup-body h-body">
+        <div class="h-inner">
+          <aside class="h-sb">
+            <div class="sb-brand">
+              <div class="sb-brand-mark h-brand-mark">Z</div>
+              <div style="flex:1">
+                <div class="sb-brand-name">ZAS Orchestrator</div>
+                <div class="h-pill"><span class="dot"></span>Online</div>
+              </div>
+            </div>
+            <div class="sb-search h-search"><span>Zoeken</span><span class="kbd">⌘K</span></div>
+            <div class="section-l">Werkruimte</div>
+            <div class="nav-group">
+              <div class="h-item active"><div class="ico"></div>Dashboard</div>
+            </div>
+            <div class="section-l">Soon</div>
+            <div class="nav-group">
+              <div class="h-item muted"><div class="ico"></div>Patiënten</div>
+              <div class="h-item muted"><div class="ico"></div>Zorgpaden</div>
+              <div class="h-item muted"><div class="ico"></div>Taken</div>
+              <div class="h-item muted"><div class="ico"></div>Designer</div>
+            </div>
+            <div class="h-spacer"></div>
+            <div class="h-user">
+              <div class="h-avatar">DV</div>
+              <div>
+                <div class="h-user-name">Dr. Vermeulen</div>
+                <div class="h-user-role">Caregiver · ZAS</div>
+              </div>
+            </div>
+          </aside>
+          <div class="h-main">
+            <span class="h-pill-tag">Vandaag · woensdag</span>
+            <h2 class="page-title h-page-title">Dashboard</h2>
+            <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+            <div class="ph-grid">
+              <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+            </div>
+            <div style="height:10px"></div>
+            <div class="ph-card"></div>
+            <div class="ph-card"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pros-cons">
+    <div class="pc">
+      <span class="tag">F · Safe</span>
+      <h3>Subtle</h3>
+      <ul>
+        <li>Soft neutral gradient page bg, no color cast</li>
+        <li>White-card active state with hairline shadow</li>
+        <li>Reads as "modern light Notion-ish"</li>
+        <li>Cheapest to ship, fewest edge cases</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">G · Bold</span>
+      <h3>Tinted backdrop</h3>
+      <ul>
+        <li>Page bg has teal-tinted radial gradients (top-left + bottom-right)</li>
+        <li>Active item: full teal gradient pill, white text</li>
+        <li>Sidebar reads as a floating panel hovering over content</li>
+        <li>Risk: gradients can fight with content; needs measurement</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">H · Aurora</span>
+      <h3>Very new</h3>
+      <ul>
+        <li>Aurora mesh background (multi-radial teal blooms + dot grid)</li>
+        <li>Strong glass: 24px blur, saturated, inset highlight</li>
+        <li>Active item = white-glass pill; icons in tiny rounded glass tiles</li>
+        <li>"Online" pill, pill-shaped date tag, gradient brand mark</li>
+        <li>Risk: most expensive look to keep consistent across pages</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>
