@@ -1,52 +1,41 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import AsyncIterator, Iterator
-from pathlib import Path
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import StaticPool
 
 from app.core.settings import Settings
+from app.db.base import Base
 from app.main import create_app
 from tests._settings import build_settings
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-_BACKEND_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _apply_migrations(connection: Connection) -> None:
-    config = Config(str(_BACKEND_ROOT / "alembic.ini"))
-    config.attributes["connection"] = connection
-    command.upgrade(config, "head")
+# Inside the `zas_backend_test` container, compose injects this via env.
+# Locally (host-driven `pytest` runs against a side-channel DB) the same URL
+# resolves via the published `5433` port on the test_db container.
+DEFAULT_TEST_DATABASE_URL = "postgresql+asyncpg://zas:zas@test_db:5432/zas_test"
+TEST_DATABASE_URL = os.getenv("BACKEND_DATABASE_URL", DEFAULT_TEST_DATABASE_URL)
 
 
 @pytest.fixture(scope="session")
 def db_engine() -> Iterator[AsyncEngine]:
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-        future=True,
-    )
+    engine = create_async_engine(TEST_DATABASE_URL, future=True, pool_pre_ping=True)
 
-    async def _migrate() -> None:
+    async def _bootstrap() -> None:
         async with engine.begin() as conn:
-            await conn.run_sync(_apply_migrations)
+            await conn.run_sync(Base.metadata.create_all)
 
-    asyncio.run(_migrate())
+    asyncio.run(_bootstrap())
     try:
         yield engine
     finally:

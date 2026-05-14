@@ -65,13 +65,18 @@ export type DialogTitleProps = React.ComponentPropsWithoutRef<typeof DialogPrimi
 export function DialogTitle({ className, ...props }: DialogTitleProps) {
   return (
     <DialogPrimitive.Title
-      className={cn('text-lg font-semibold leading-tight tracking-tight text-foreground', className)}
+      className={cn(
+        'text-lg font-semibold leading-tight tracking-tight text-foreground',
+        className,
+      )}
       {...props}
     />
   )
 }
 
-export type DialogDescriptionProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+export type DialogDescriptionProps = React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Description
+>
 
 export function DialogDescription({ className, ...props }: DialogDescriptionProps) {
   return (

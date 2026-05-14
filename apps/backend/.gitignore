@@ -9,6 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Local SQLite databases (PoC default lives at ./poc.db)
+# Stale local SQLite artefacts (PoC now runs Postgres in docker)
 *.db
 *.db-journal

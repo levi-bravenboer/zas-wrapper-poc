@@ -2,7 +2,9 @@ $schema: "https://moonrepo.dev/schemas/workspace.json"
 
 # Discover projects from these globs. Add packages/ when shared libs land.
 projects:
-  - "apps/*"
+  zas-root: "."
+  backend: "apps/backend"
+  orchestrator: "apps/orchestrator"
 
 vcs:
   defaultBranch: "main"

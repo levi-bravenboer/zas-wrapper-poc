@@ -1,41 +1,43 @@
 @theme {
   /* Surfaces — Linear-tight neutral scale */
-  --color-background:        oklch(1 0 0);                    /* #ffffff — base canvas */
-  --color-surface-1:         oklch(0.985 0.003 175);          /* #f9fafb — neutral surface */
-  --color-surface-2:         oklch(0.97 0.01 175);            /* #f1f8f7 — teal-tinted subtle surface */
-  --color-foreground:        oklch(0.21 0.04 265);            /* #101828 — ink */
-  --color-foreground-muted:  oklch(0.50 0.02 265);            /* derived from #101828 — secondary text */
-  --color-muted-foreground:  var(--color-foreground-muted);   /* alias for shadcn template compatibility */
+  --color-background: oklch(1 0 0); /* #ffffff — base canvas */
+  --color-surface-1: oklch(0.985 0.003 175); /* #f9fafb — neutral surface */
+  --color-surface-2: oklch(0.97 0.01 175); /* #f1f8f7 — teal-tinted subtle surface */
+  --color-foreground: oklch(0.21 0.04 265); /* #101828 — ink */
+  --color-foreground-muted: oklch(0.5 0.02 265); /* derived from #101828 — secondary text */
+  --color-muted-foreground: var(
+    --color-foreground-muted
+  ); /* alias for shadcn template compatibility */
 
   /* Surface roles (kept for shadcn templates that consume these names) */
-  --color-card:              var(--color-background);
-  --color-card-foreground:   var(--color-foreground);
-  --color-popover:           var(--color-background);
+  --color-card: var(--color-background);
+  --color-card-foreground: var(--color-foreground);
+  --color-popover: var(--color-background);
   --color-popover-foreground: var(--color-foreground);
-  --color-muted:             var(--color-surface-2);
+  --color-muted: var(--color-surface-2);
 
   /* Brand — ZAS teal scale */
-  --color-primary:           oklch(0.46 0.07 175);            /* #266b5e — ZAS primary teal */
-  --color-primary-hover:     oklch(0.40 0.07 175);            /* derived from #266b5e — hover state */
-  --color-primary-pressed:   oklch(0.34 0.06 175);            /* #08453c — ZAS deep teal */
-  --color-primary-foreground: oklch(1 0 0);                   /* #ffffff — on-primary text */
-  --color-primary-soft:      oklch(0.93 0.04 175);            /* #cfede8 — ZAS mint surface */
-  --color-primary-subtle:    oklch(0.97 0.01 175);            /* #f1f8f7 — ZAS palest teal surface */
-  --color-accent-mint:       oklch(0.78 0.08 175);            /* #6fc7b6 — ZAS mint accent */
+  --color-primary: oklch(0.46 0.07 175); /* #266b5e — ZAS primary teal */
+  --color-primary-hover: oklch(0.4 0.07 175); /* derived from #266b5e — hover state */
+  --color-primary-pressed: oklch(0.34 0.06 175); /* #08453c — ZAS deep teal */
+  --color-primary-foreground: oklch(1 0 0); /* #ffffff — on-primary text */
+  --color-primary-soft: oklch(0.93 0.04 175); /* #cfede8 — ZAS mint surface */
+  --color-primary-subtle: oklch(0.97 0.01 175); /* #f1f8f7 — ZAS palest teal surface */
+  --color-accent-mint: oklch(0.78 0.08 175); /* #6fc7b6 — ZAS mint accent */
 
   /* Status */
-  --color-destructive:           oklch(0.60 0.22 30);         /* #ef4123 — ZAS destructive */
+  --color-destructive: oklch(0.6 0.22 30); /* #ef4123 — ZAS destructive */
   --color-destructive-foreground: oklch(1 0 0);
-  --color-warning:               oklch(0.75 0.18 65);         /* #ff9800 — ZAS warning */
-  --color-warning-foreground:    oklch(0.21 0.04 265);        /* derived from #101828 */
-  --color-success:               oklch(0.55 0.10 175);        /* derived from #266b5e — teal-aligned success */
-  --color-success-foreground:    oklch(1 0 0);
+  --color-warning: oklch(0.75 0.18 65); /* #ff9800 — ZAS warning */
+  --color-warning-foreground: oklch(0.21 0.04 265); /* derived from #101828 */
+  --color-success: oklch(0.55 0.1 175); /* derived from #266b5e — teal-aligned success */
+  --color-success-foreground: oklch(1 0 0);
 
   /* Borders */
-  --color-border:        oklch(0.91 0.005 265);               /* #d0d5dd — neutral border */
-  --color-border-strong: oklch(0.82 0.01 265);                /* derived from #d0d5dd — stronger divider */
-  --color-input:         var(--color-border);
-  --color-ring:          var(--color-primary);                /* derived from #266b5e — focus ring */
+  --color-border: oklch(0.91 0.005 265); /* #d0d5dd — neutral border */
+  --color-border-strong: oklch(0.82 0.01 265); /* derived from #d0d5dd — stronger divider */
+  --color-input: var(--color-border);
+  --color-ring: var(--color-primary); /* derived from #266b5e — focus ring */
 
   /* Radii — Linear-tight */
   --radius-xs: 0.25rem;
@@ -47,24 +49,24 @@
   --shadow-xs: 0 1px 0 oklch(0.21 0.04 265 / 0.04);
   --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
   --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
-  --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.10);
+  --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
 
   /* Typography — Geist with system fallback */
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Type scale — Linear-flavour, denser body baseline */
-  --font-size-xs:   0.75rem;     /* 12 */
-  --font-size-sm:   0.8125rem;   /* 13 */
-  --font-size-base: 0.875rem;    /* 14 — Linear body baseline */
-  --font-size-md:   1rem;        /* 16 */
-  --font-size-lg:   1.125rem;    /* 18 */
-  --font-size-xl:   1.25rem;     /* 20 */
-  --font-size-2xl:  1.5rem;      /* 24 */
-  --font-size-3xl:  1.875rem;    /* 30 */
+  --font-size-xs: 0.75rem; /* 12 */
+  --font-size-sm: 0.8125rem; /* 13 */
+  --font-size-base: 0.875rem; /* 14 — Linear body baseline */
+  --font-size-md: 1rem; /* 16 */
+  --font-size-lg: 1.125rem; /* 18 */
+  --font-size-xl: 1.25rem; /* 20 */
+  --font-size-2xl: 1.5rem; /* 24 */
+  --font-size-3xl: 1.875rem; /* 30 */
 
-  --leading-tight:  1.25;
-  --leading-snug:   1.4;
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
   --leading-normal: 1.55;
 
   --tracking-tight: -0.011em;

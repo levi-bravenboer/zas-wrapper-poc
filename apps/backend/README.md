@@ -6,46 +6,63 @@ Stack: **Python 3.13** + **FastAPI 0.136** (`fastapi[standard]`) + **uv** + **py
 
 ## Requirements
 
-- `uv` — `curl -LsSf https://astral.sh/uv/install.sh | sh`. `uv` installs the pinned Python (3.13, see `.python-version`) automatically.
+- `uv` — `curl -LsSf https://astral.sh/uv/install.sh | sh`. Installs the pinned Python (3.13) automatically.
+- `docker compose` v2.22+ — used by `moon run backend:dev` / `:test`. See repo-root README for OrbStack install on macOS.
 
 ## Bootstrap
 
+The backend runs in docker under the `zas_backend` container during dev. The host needs `uv` installed only so editor LSPs (Pylance, ruff-lsp) and the native static-check tasks work.
+
 ```bash
-uv sync                       # install deps from pyproject + uv.lock
-cp .env.example .env          # configure local env (CORS origins, session secret, adapter modes)
-uv run fastapi dev main.py    # http://localhost:8000 with autoreload
+# From repo root:
+moon run :doctor              # verify host prereqs (compose v2.22+, node, python, uv, moon)
+moon run :install             # uv sync + npm install (host-side)
+moon run :up                  # boots zas_db + zas_backend + vite
 ```
 
-Defaults boot with `BACKEND_ENV=dev`, CORS open to `http://localhost:5173`, and HiX + Luscii adapters in `stub` mode. `production` boot refuses to start if `BACKEND_SESSION_SECRET_KEY` is still the placeholder or `BACKEND_CORS_ORIGINS` is empty.
+Defaults inside `zas_backend`: `BACKEND_ENV=dev`, CORS open to `http://localhost:5173`, HiX + Luscii adapters in `stub` mode, log level `INFO`. `production` boot refuses to start if `BACKEND_SESSION_SECRET_KEY` is the placeholder or `BACKEND_CORS_ORIGINS` is empty.
+
+Host-side env defaults live in `.env.example` and assume the dev DB on `localhost:5434` (host port; container-internal stays `5432`). Inside the container, compose overrides `BACKEND_DATABASE_URL` to `postgresql+asyncpg://zas:zas@db:5432/zas`.
+
+## Auto-migrate on boot
+
+`zas_backend`'s entrypoint runs `alembic upgrade head` before uvicorn starts. A broken revision halts boot — uvicorn never binds its container-internal `:8000` (host `:18000`), and `moon run :up` exits non-zero with the alembic error in the compose log. Run `moon run backend:make-migration "<msg>"` then `moon run backend:migrate` to add new revisions manually.
+
+## Ports
+
+| Container | Host port | Purpose |
+| --- | --- | --- |
+| `zas_db` | `5434` | dev Postgres |
+| `zas_test_db` | `5433` | test Postgres (tmpfs, ephemeral) |
+| `zas_backend` | `18000` | FastAPI |
+
+Fixed mappings. Dev DB binds host `5434` (not Postgres default `5432`) so it coexists with other local Postgres instances. Container-internal port is `5432`; only the host-side mapping changes.
 
 ## Commands
-
-Direct:
-
-| Command | What it does |
-| --- | --- |
-| `uv sync` | install / refresh deps |
-| `uv run fastapi dev main.py` | dev server with autoreload |
-| `uv run fastapi run main.py` | production-style server |
-| `uv run pytest -q` | tests |
-| `uv run pyright` | type check |
-| `uv run ruff check` | lint |
-| `uv run ruff format` | format |
-| `uv run python -m app.openapi` | export `openapi.json` for orchestrator typegen |
 
 Through moon (preferred):
 
 ```bash
-moon run backend:dev
-moon run backend:build        # uv sync --frozen
-moon run backend:test
-moon run backend:lint
-moon run backend:format
-moon run backend:typecheck
-moon run backend:openapi
+moon run backend:dev                        # docker compose up (just the backend service)
+moon run backend:test                       # full pytest suite, ephemeral test_db, zero env config
+moon run backend:test -- -k <pattern>       # subset (args pass through to pytest)
+moon run backend:shell                      # bash inside zas_backend
+moon run backend:psql                       # interactive psql against zas_db
+moon run backend:migrate                    # alembic upgrade head
+moon run backend:make-migration "<message>" # alembic revision --autogenerate
+moon run backend:install                    # host uv sync (idempotent)
 ```
 
-Interactive API docs: <http://localhost:8000/docs> while `dev` is running.
+Native (run on host via `uv` — no docker round-trip; editor LSPs invoke the same binaries):
+
+```bash
+moon run backend:lint                       # ruff check
+moon run backend:format                     # ruff format --check
+moon run backend:typecheck                  # pyright
+moon run backend:openapi                    # export openapi.json
+```
+
+Interactive API docs: <http://localhost:18000/docs> while `:up` is running.
 
 ## Architecture
 

@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
 
 const STUB_USER = {
   id: 'user_demo',

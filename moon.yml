@@ -1,0 +1,64 @@
+$schema: "https://moonrepo.dev/schemas/project.json"
+
+project:
+  name: "zas-root"
+  description: "Root orchestration for the zas-wrapper monorepo."
+
+tasks:
+  doctor:
+    command: "bash scripts/doctor.sh"
+    options:
+      cache: false
+      runInCI: false
+
+  install:
+    deps:
+      - "backend:install"
+      - "orchestrator:install"
+    options:
+      cache: false
+
+  stack:
+    command: "docker compose up --build --watch"
+    env:
+      COMPOSE_FILE: "docker-compose.yml"
+    preset: "server"
+    options:
+      cache: false
+      runInCI: false
+
+  down:
+    command: "docker compose down --remove-orphans"
+    env:
+      COMPOSE_FILE: "docker-compose.yml:docker-compose.test.yml"
+    options:
+      cache: false
+      runInCI: false
+
+  reset:
+    command: "docker compose down -v --remove-orphans"
+    env:
+      COMPOSE_FILE: "docker-compose.yml:docker-compose.test.yml"
+    options:
+      cache: false
+      runInCI: false
+
+  up:
+    deps:
+      - "~:stack"
+      - "orchestrator:dev"
+    options:
+      cache: false
+      runInCI: false
+      persistent: true
+
+  ci:
+    deps:
+      - "backend:test"
+      - "backend:typecheck"
+      - "backend:lint"
+      - "backend:format"
+      - "orchestrator:test"
+      - "orchestrator:typecheck"
+      - "orchestrator:lint"
+      - "orchestrator:format"

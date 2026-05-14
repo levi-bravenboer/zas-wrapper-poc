@@ -1,6 +1,6 @@
 import { type LoginRequest, sessionUserSchema, type SessionUser } from './schemas'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
 
 export class AuthError extends Error {
   readonly status: number

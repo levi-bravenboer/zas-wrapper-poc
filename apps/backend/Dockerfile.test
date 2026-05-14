@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1.7
+FROM zas_backend:dev
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+CMD ["uv", "run", "pytest", "-q"]

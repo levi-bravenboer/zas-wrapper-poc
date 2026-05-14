@@ -19,7 +19,7 @@ def _build_client(origins: list[str]) -> TestClient:
 def test_cors_allows_known_origin_preflight() -> None:
     client = _build_client([DEV_ORIGIN])
     response = client.options(
-        "/health",
+        "/healthz",
         headers={
             "Origin": DEV_ORIGIN,
             "Access-Control-Request-Method": "GET",
@@ -33,7 +33,7 @@ def test_cors_allows_known_origin_preflight() -> None:
 def test_cors_rejects_unknown_origin_preflight() -> None:
     client = _build_client([DEV_ORIGIN])
     response = client.options(
-        "/health",
+        "/healthz",
         headers={
             "Origin": UNKNOWN_ORIGIN,
             "Access-Control-Request-Method": "GET",

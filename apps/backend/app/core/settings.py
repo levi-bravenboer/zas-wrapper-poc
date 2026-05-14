@@ -10,7 +10,7 @@ AdapterMode = Literal["stub", "live"]
 
 DEFAULT_SESSION_SECRET = "change-me-in-production"
 DEFAULT_DEV_ORIGINS: list[AnyHttpUrl] = [AnyHttpUrl("http://localhost:5173")]
-DEFAULT_DATABASE_URL = "sqlite+aiosqlite:///./poc.db"
+DEFAULT_DATABASE_URL = "postgresql+asyncpg://zas:zas@localhost:5434/zas"
 
 
 class Settings(BaseSettings):

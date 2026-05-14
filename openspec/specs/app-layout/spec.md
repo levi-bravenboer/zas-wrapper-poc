@@ -10,7 +10,7 @@ TBD - created by archiving change backend-setup. Update Purpose after archive.
 #### Scenario: Dev server boots via the factory
 
 - **WHEN** a developer runs `uv run fastapi dev main.py` from `apps/backend/`
-- **THEN** the server starts, `app.main.create_app()` is invoked once, and `/health` returns 200
+- **THEN** the server starts, `app.main.create_app()` is invoked once, and `/healthz` returns 200
 
 #### Scenario: Test app built with overrides
 

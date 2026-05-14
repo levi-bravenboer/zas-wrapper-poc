@@ -35,6 +35,32 @@ moon run orchestrator:typegen
 
 Type-check only: `npx tsc -b --noEmit`.
 
+### Running tests
+
+Always run through `moon`, never `vitest` / `playwright` directly. Args after `--` pass through to the underlying runner.
+
+```bash
+# Full vitest suite
+moon run orchestrator:test
+
+# Single file
+moon run orchestrator:test -- src/modules/auth/__tests__/login.test.tsx
+
+# Filter by test name (substring, regex)
+moon run orchestrator:test -- -t "invalid credentials"
+
+# Full Playwright suite
+moon run orchestrator:test-e2e
+
+# Single E2E spec
+moon run orchestrator:test-e2e -- tests-e2e/login.spec.ts
+
+# Single E2E by title
+moon run orchestrator:test-e2e -- -g "logs in"
+```
+
+Watch mode is not run by agents — CI / verification flow expects a single deterministic run.
+
 ## Folder rules
 
 ```
