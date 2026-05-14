@@ -30,6 +30,21 @@ The `design-system` spec gates `src/components/ui/` to a closed list. Extend the
 - [ ] 2.3 Confirm `_auth/index.tsx` still redirects `/` → `/dashboard`.
 - [ ] 2.4 Run `moon run orchestrator:typecheck` — fix any stale imports referring to removed routes.
 
+## 2.5 Audit: foundation vs mockups + best practice
+
+Before building the shell, verify everything landed in sections 0–2 matches the locked mockups and follows shadcn / Tailwind v4 / project conventions. Output of this audit is a written findings list (commit message body or short note appended below) plus any follow-up tickets carved into this tasks list.
+
+- [ ] 2.5.1 Cross-check `src/styles/tokens.css` glass / aurora / active-gradient values against `design.md` D2 exactly. Flag drift in colour, blur, saturation, shadow.
+- [ ] 2.5.2 Diff aurora `body::before` + `.glass` utilities against `03-glass-variants.html` (G) and `05-bold-glass-treatments.html`. Confirm visual parity (open dev server, eyeball).
+- [ ] 2.5.3 Verify shadcn primitives added in section 0 (`alert`, `breadcrumb`, `command`, `sheet`, `sidebar`) are unmodified vendor code — no accidental local edits beyond the documented `button` icon size + `dialog` `showCloseButton` extensions.
+- [ ] 2.5.4 Confirm sidebar CSS variable aliases (`--sidebar*` → ZAS palette) feed every shadcn `Sidebar` slot correctly — no leftover `hsl(...)` defaults referenced.
+- [ ] 2.5.5 Audit `components.json` aliases vs actual folder layout (`@/components`, `@/components/ui`, `@/lib`, `@/hooks`, `@/lib/style/cn`). Fix any mismatch so future `pnpm dlx shadcn@latest add` lands files in the right place without manual moves.
+- [ ] 2.5.6 Confirm `apps/orchestrator/AGENTS.md` closed primitive set + casing exception line stays in sync with `src/components/ui/` filesystem.
+- [ ] 2.5.7 Confirm no `dark:` Tailwind variants, no `.dark` selector, no `@custom-variant dark` exist anywhere in `src/` (light-only rule).
+- [ ] 2.5.8 Confirm Tailwind v4 token surface — every new token consumed via `var(--*)` or `@theme` bridge; no Tailwind v3 `theme.extend` patterns.
+- [ ] 2.5.9 Run `moon run orchestrator:lint orchestrator:typecheck orchestrator:test orchestrator:build` clean. Quote each summary line in the audit note.
+- [ ] 2.5.10 List gaps + best-practice deviations. Either fix in this section or carve a follow-up sub-task into the section that owns the affected surface.
+
 ## 3. Sidebar shell (built on shadcn `Sidebar` block)
 
 The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ our 64px), mobile drawer via `Sheet`, keyboard shortcut (`SidebarTrigger`), state provider, tooltip-on-collapsed, persistence cookie. Override only what conflicts with our locks.
