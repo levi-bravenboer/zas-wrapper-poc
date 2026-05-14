@@ -56,6 +56,9 @@ tasks:
   test:
     command: "npm run test"
 
+  test-coverage:
+    command: "npm run test:coverage"
+
   test-e2e:
     command: "npm run test:e2e"
 

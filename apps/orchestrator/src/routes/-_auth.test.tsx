@@ -6,7 +6,7 @@ import { server } from '@/mocks/server'
 
 import { Route as AuthRoute } from './_auth'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
 
 function makeContext() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
