@@ -3,22 +3,7 @@ import type { fhirclient } from 'fhirclient/lib/types'
 import { create } from 'zustand'
 
 import type { LaunchSearch } from './schemas'
-
-export type SmartCtx = {
-  readonly patient?: { readonly id: string; readonly reference: string }
-  readonly encounter?: { readonly id: string; readonly reference: string }
-  readonly user?: { readonly id: string; readonly reference: string }
-}
-
-export type LaunchContext = {
-  readonly iss: string
-  readonly launch: string
-  readonly surface: 'smart' | 'embed'
-  readonly returnPath: string | null
-  readonly client: Client | null
-  readonly token: fhirclient.TokenResponse | null
-  readonly ctx: SmartCtx
-}
+import type { LaunchContext, SmartCtx } from './types'
 
 type LaunchState = {
   context: LaunchContext | null

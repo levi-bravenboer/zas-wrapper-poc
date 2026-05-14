@@ -1,7 +1,7 @@
 import type Client from 'fhirclient/lib/Client'
 import { createContext } from 'react'
 
-import type { SmartCtx } from '@/modules/smart-launch/store'
+import type { SmartCtx } from '@/modules/smart-launch/types'
 
 export type OrchestratorDeps = { readonly api: unknown }
 export type FhirDeps = { readonly client: Client; readonly ctx: SmartCtx }
