@@ -11,7 +11,7 @@ import { render, type RenderResult } from '@testing-library/react'
 import * as React from 'react'
 import { I18nextProvider } from 'react-i18next'
 
-import { Toaster } from '@/components/ui/Toaster'
+import { Toaster } from '@/components/ui/toaster'
 import { i18n } from '@/lib/i18n'
 
 type RenderOptions = {

@@ -3,8 +3,8 @@ import { RouterProvider } from '@tanstack/react-router'
 import * as React from 'react'
 import { I18nextProvider } from 'react-i18next'
 
-import { Toaster } from '@/components/ui/Toaster'
-import { TooltipProvider } from '@/components/ui/Tooltip'
+import { Toaster } from '@/components/ui/toaster'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { i18n } from '@/lib/i18n'
 
 import { RootErrorBoundary } from './errorBoundary'
