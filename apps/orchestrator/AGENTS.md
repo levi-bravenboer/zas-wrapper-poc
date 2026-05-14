@@ -73,7 +73,7 @@ src/
     components/   module-internal components
     __tests__/    integration tests for module flows
   components/
-    ui/         shadcn primitives — closed set: Avatar, Badge, Button, Card, Checkbox, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Skeleton, Switch, Tabs, Textarea, Toast, Toaster, Tooltip. Adding outside this set requires an OpenSpec change.
+    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Tabs, Textarea, Toast, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
     layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
@@ -106,6 +106,7 @@ src/
 | Thing | Casing | Example |
 | --- | --- | --- |
 | Component file + export | PascalCase, named export | `LoginForm.tsx` → `export function LoginForm()` |
+| `components/ui/*` file | lowercase / kebab (shadcn CLI), PascalCase export | `dropdown-menu.tsx` → `export function DropdownMenu()` |
 | Hook | camelCase, `use` prefix | `useSession.ts` |
 | Module folder | lowercase / kebab-case | `auth/`, `pathway/` |
 | Route file | TanStack convention, kebab segments | `routes/_auth/index.tsx` |

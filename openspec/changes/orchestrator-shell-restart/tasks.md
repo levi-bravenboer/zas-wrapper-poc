@@ -6,12 +6,15 @@
 
 The `design-system` spec gates `src/components/ui/` to a closed list. Extend the baseline once here so later steps consume primitives without re-gating:
 
-- [ ] 0.1 Add `Sidebar` block via `pnpm dlx shadcn@latest add sidebar` — pulls `Sheet`, `Skeleton` reuse, keyboard shortcut helper.
-- [ ] 0.2 Add `Breadcrumb` via shadcn CLI.
-- [ ] 0.3 Add `Alert` via shadcn CLI.
-- [ ] 0.4 Add `Command` via shadcn CLI — pulls `cmdk` dep.
-- [ ] 0.5 Update `design-system` primitive baseline list in this change's spec delta to include the five new primitives.
-- [ ] 0.6 Confirm no other new runtime deps land (`pnpm install --frozen-lockfile` after, audit `package.json` diff).
+- [x] 0.1 Add `Sidebar` block via `pnpm dlx shadcn@latest add sidebar` — pulls `Sheet`, `Skeleton` reuse, keyboard shortcut helper.
+- [x] 0.2 Add `Breadcrumb` via shadcn CLI.
+- [x] 0.3 Add `Alert` via shadcn CLI.
+- [x] 0.4 Add `Command` via shadcn CLI — pulls `cmdk` dep.
+- [x] 0.5 Update `design-system` primitive baseline list in this change's spec delta to include the five new primitives.
+- [x] 0.6 Confirm no other new runtime deps land (`pnpm install --frozen-lockfile` after, audit `package.json` diff). Final adds: `cmdk` + `radix-ui` umbrella.
+- [x] 0.7 Rename existing `ui/*` to lowercase + add `components.json` so shadcn CLI resolves aliases.
+- [x] 0.8 Extend `button` with `icon` size + extend `dialog` with `showCloseButton` prop (required by `command` + `sidebar`).
+- [x] 0.9 Add eslint override for `src/components/ui/**` + `src/hooks/use-mobile.ts` (vendor code — relax project-stricter rules).
 
 ## 1. Tokens + global aesthetic
 
