@@ -90,7 +90,7 @@ src/
   styles/       tokens.css + globals.css
   test/         setup.ts + renderWithProviders.tsx
   mocks/        handlers/ + server.ts + browser.ts
-  types/        cross-module ambient types
+  types/        ambient declarations (*.d.ts) + cross-module shared types organised by domain (types/<domain>/)
 ```
 
 ### Hard rules
@@ -121,6 +121,34 @@ src/
 | Backend error code | `<fhir-issue>.<domain>.<reason>` (mirrors backend) | `security.auth.invalid_credentials` |
 | FHIR query key | `["fhir", "<ResourceType>", ...]` capitalised | `["fhir", "Patient", id]` |
 | FHIR-centred module | lowercase FHIR resource type | `modules/patient/`, `modules/observation/` |
+
+## Typing rules
+
+Pick the **lowest tier that fits**. Promote up only when the type genuinely needs the wider scope.
+
+1. **OpenAPI-generated first.** If the backend exposes it, import from `lib/api/schema.d.ts`. Never hand-roll a type that openapi-typescript already emits.
+   ```ts
+   import type { components } from '@/lib/api/schema'
+   type User = components['schemas']['User']
+   ```
+   Re-run `moon run orchestrator:typegen` when the backend contract changes.
+
+2. **Zod-inferred for boundaries.** For runtime-validated payloads (route search, HTTP bodies, env) define the schema in `<module>/schemas.ts` and infer the type: `type LoginRequest = z.infer<typeof LoginRequestSchema>`.
+
+3. **Co-located when single-consumer.** Component props, hook return shapes, file-local discriminated unions live in the same `.tsx`/`.ts`. Export only if a sibling imports.
+
+4. **Module-shared in `<module>/types.ts`.** Used by 2+ files within one feature/platform module. Lives next to its owner: `modules/tasks/types.ts`, `platform/embed/types.ts`.
+
+5. **Cross-module shared in `types/<domain>/`.** Only when a type is consumed by 2+ unrelated modules and has no single owner. Group by domain: `types/auth/`, `types/feature/`, `types/surface/`. One file per concern, named exports, no barrels.
+
+6. **Ambient declarations in `types/*.d.ts`.** Module augmentation only — `css.d.ts` for `React.CSSProperties` `--*` keys, `fontsource.d.ts` for asset imports. Never domain types here.
+
+### Cast rules
+
+- No `any` without a one-line `// reason:` comment.
+- No `as unknown as X` / `as never` outside fundamental boundaries: variance erasure (heterogeneous registries), class-instance stubs in test fixtures, third-party library quirks. Each cast carries a comment explaining why TS cannot express it.
+- Prefer `satisfies` over `as` for shape constraints with literal-narrowing.
+- Prefer type guards (`function isX(v): v is X`) over assertion casts at runtime boundaries.
 
 ## Coding rules
 
