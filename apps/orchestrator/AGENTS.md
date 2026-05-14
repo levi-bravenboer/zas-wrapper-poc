@@ -14,6 +14,8 @@ Frontend app: clinician composer surface. Inherits all rules from the root `AGEN
 - TanStack Router (file-based) + TanStack Query v5 + TanStack Form
 - Zod, openapi-fetch + openapi-typescript
 - Tailwind v4 (`@tailwindcss/vite`) + shadcn/ui primitives + lucide-react + sonner
+- Brand: ZAS Antwerpen teal (`#266b5e`) primary, Linear-flavour restraint (light theme only, single accent, tight neutrals)
+- Typography: Geist Variable + Geist Mono Variable, self-hosted via `@fontsource-variable/geist*` (no Google Fonts CDN)
 - i18next + react-i18next (single `nl` locale)
 - Vitest + Testing Library + jsdom + MSW + Playwright
 - Biome (format + import sort) + ESLint 10 flat config
@@ -45,7 +47,7 @@ src/
     components/   module-internal components
     __tests__/    integration tests for module flows
   components/
-    ui/         shadcn primitives (Button, Input, Label, Form, Card, Toast, Icon)
+    ui/         shadcn primitives — closed set: Avatar, Badge, Button, Card, Checkbox, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Skeleton, Switch, Tabs, Textarea, Toast, Toaster, Tooltip. Adding outside this set requires an OpenSpec change.
     layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
