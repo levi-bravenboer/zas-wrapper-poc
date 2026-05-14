@@ -9,7 +9,7 @@ TBD - created by archiving change backend-setup. Update Purpose after archive.
 
 #### Scenario: Always 200 while the process runs
 
-- **WHEN** any client GETs `/health`
+- **WHEN** any client GETs `/healthz`
 - **THEN** the response is 200 with `status == "ok"`, the deployed version, and the process start timestamp
 
 ### Requirement: Readiness endpoint

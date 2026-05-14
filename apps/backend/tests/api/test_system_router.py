@@ -23,7 +23,7 @@ def test_root_returns_metadata() -> None:
 
 def test_health_returns_health_response_shape() -> None:
     client = _client()
-    response = client.get("/health")
+    response = client.get("/healthz")
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "ok"

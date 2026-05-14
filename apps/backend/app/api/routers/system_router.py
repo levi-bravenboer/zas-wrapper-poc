@@ -15,7 +15,7 @@ def root(request: Request) -> RootResponse:
     return RootResponse(name=app.title, version=app.version)
 
 
-@router.get("/health", operation_id="get_health", response_model=HealthResponse)
+@router.get("/healthz", operation_id="get_health", response_model=HealthResponse)
 def health(request: Request) -> HealthResponse:
     started_at: datetime = request.app.state.started_at
     return HealthResponse(version=request.app.version, started_at=started_at)

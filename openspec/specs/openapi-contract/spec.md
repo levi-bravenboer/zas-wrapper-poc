@@ -23,7 +23,7 @@ Every route SHALL declare `response_model=<PydanticModel>`. `dict[str, str]` ad-
 
 #### Scenario: Health response is typed
 
-- **WHEN** `/health` is generated into the OpenAPI document
+- **WHEN** `/healthz` is generated into the OpenAPI document
 - **THEN** the success response schema is `HealthResponse` (not `object`)
 
 ### Requirement: Error responses declared
