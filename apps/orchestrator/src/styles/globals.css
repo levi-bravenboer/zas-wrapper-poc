@@ -63,7 +63,22 @@
 }
 
 @layer utilities {
-  /* Opt-in glass surface. Budget: at most two stacked .glass layers per route. */
+  /* Opt-in glass surfaces. Four tiers map to mockup placements. Budget: at most
+     two stacked .glass layers per route (do not nest blurred surfaces). */
+  .glass-xs {
+    background: var(--glass-panel);
+    backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-sm {
+    background: var(--glass-panel);
+    backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+  }
+
   .glass {
     background: var(--glass-panel);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -74,8 +89,8 @@
 
   .glass-strong {
     background: var(--glass-panel-strong);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass);
   }

@@ -77,7 +77,11 @@
   --glass-panel: rgba(255, 255, 255, 0.55);
   --glass-panel-strong: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.7);
+  /* Blur tiers — match mockup placements: 8px badge, 14px subtle, 20px panel, 24px strong */
+  --glass-blur-xs: 8px;
+  --glass-blur-sm: 14px;
   --glass-blur: 20px;
+  --glass-blur-strong: 24px;
   --glass-saturate: 180%;
 
   --shadow-glass:
