@@ -26,7 +26,10 @@ export type AvatarImageProps = React.ComponentPropsWithoutRef<typeof AvatarPrimi
 
 export function AvatarImage({ className, ...props }: AvatarImageProps) {
   return (
-    <AvatarPrimitive.Image className={cn('aspect-square h-full w-full object-cover', className)} {...props} />
+    <AvatarPrimitive.Image
+      className={cn('aspect-square h-full w-full object-cover', className)}
+      {...props}
+    />
   )
 }
 
