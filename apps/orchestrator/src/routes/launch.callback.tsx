@@ -67,7 +67,7 @@ function LaunchCallbackPage() {
                 `/launch?iss=${encodeURIComponent(ctx.iss)}&launch=${encodeURIComponent(ctx.launch)}&surface=${ctx.surface}`,
               )
             }}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-surface-2"
           >
             {t('retry')}
           </button>
