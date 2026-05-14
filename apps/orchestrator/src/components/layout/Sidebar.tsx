@@ -37,8 +37,7 @@ export function Sidebar() {
           return (
             <Link
               key={item.to}
-              // Reason: NavItem.to is `string` for registry interop; TanStack Link wants typed routes.
-              to={item.to as never}
+              to={item.to}
               activeProps={{
                 'aria-current': 'page',
                 className: 'bg-primary-soft text-primary',

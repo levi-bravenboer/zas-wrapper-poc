@@ -40,7 +40,7 @@ export function renderWithProviders(
   return render(
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router as never} />
+        <RouterProvider router={router} />
         <Toaster />
       </QueryClientProvider>
     </I18nextProvider>,

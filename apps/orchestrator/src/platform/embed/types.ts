@@ -33,6 +33,26 @@ type SmartRequirement<S extends SurfaceTuple> = 'smart' extends S[number]
     ? { readonly smart: SmartBlock }
     : { readonly smart?: never }
 
+// Storage-shape with relaxed adapters/surfaces/smart. Registry holds these
+// erased to AnyFeatureSpec because Port<P> is invariant in P (the Provider
+// takes value: P contravariantly) so a heterogeneous Map of FeatureSpec<P>
+// values cannot be typed without erasure. Mount components narrow via the
+// surface guard; missing adapter is a misuse of the surface contract.
+/* eslint-disable @typescript-eslint/no-explicit-any -- erasure boundary */
+export type AnyAdapter = (deps: any) => any
+export type AnyFeatureSpec = {
+  readonly id: string
+  readonly path: `/${string}`
+  readonly titleKey: `nav.${string}`
+  readonly page: ComponentType
+  readonly port: Port<any>
+  readonly surfaces: SurfaceTuple
+  readonly adapters: Readonly<Record<string, AnyAdapter>>
+  readonly nav?: { readonly icon: LucideIcon; readonly order?: number }
+  readonly smart?: SmartBlock
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 export type FeatureSpec<P = unknown, S extends SurfaceTuple = SurfaceTuple> = {
   readonly id: string
   readonly path: `/${string}`
