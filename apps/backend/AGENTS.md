@@ -154,6 +154,7 @@ The seam is one-directional: `router → service → repository → db.models`. 
 - **Error codes**: `<issue-type>.<domain>.<reason>` (issue type from the FHIR `IssueType` vocabulary: `not-found`, `invalid`, `security`, `forbidden`, `conflict`, `processing`, `transient`, `informational`). Set on `AppError` subclasses defined in `app/services/errors.py`.
 - **Pydantic models**: PascalCase singular (`SessionUser`, `PatientSummary`). View-model DTOs end in `Summary`, `Row`, or `View`.
 - **Dependencies**: `Annotated[T, Depends(get_*)]` aliased as `<Name>Dep` (`SettingsDep`, `SessionDep`, `PathwayServiceDep`, `HixClientDep`).
+- **Shared enums**: any enum referenced by both `app/db/models/*` and `app/schemas/*` (i.e. it crosses the ORM ↔ Pydantic seam) MUST live under `app/core/enums/<domain>.py` and be re-exported from `app/core/enums/__init__.py`. The module MUST be stdlib-only (no `pydantic`, no `sqlalchemy`, no `app.*` imports) so both layers can import it without breaking the layer rules. Use `enum.StrEnum`. Domain-private enums that never leave one layer stay co-located with that layer.
 
 ## Coding Rules
 
@@ -163,6 +164,8 @@ The seam is one-directional: `router → service → repository → db.models`. 
 - **Logging**: structured via `app.core.logging`. No `print()`. Never log full clinical payloads — use `log_fhir_ref(resource_type, resource_id)` for resource references.
 - **Errors**: subclass `AppError` for domain-specific failures; set class-level `code`, `status_code`, `message`. Raising `HTTPException` is fine for ad-hoc cases but `AppError` is preferred when the failure has a stable code.
 - **POC ONLY banner**: any module that contains throwaway scaffolding (in-memory user stores, hard-coded fixtures, demo credentials, mock issuer claims) MUST start with a `# POC ONLY` comment line explaining what would replace it. The banner makes it obvious which files need to be replaced before any non-PoC deployment — see `app/services/auth_service.py` for the canonical example.
+- **Postgres-native enums**: ORM columns backed by an `enum.StrEnum` MUST map via `sa.Enum(MyEnum, name="<snake_name>", native_enum=True, create_constraint=True)` so the value set is enforced in the database. `apps/backend/alembic/env.py` MUST `import alembic_postgresql_enum  # noqa: F401` at the top — the package side-effect-registers autogen hooks that emit correct `CREATE TYPE` / `DROP TYPE` / `ALTER TYPE ADD VALUE` ops. Adding a new value to an existing enum requires a hand-edited revision (the autogen handles the boilerplate, but `ALTER TYPE ... ADD VALUE` must run outside a transaction).
+- **Seed data via CLI, not Alembic**: Alembic revisions MUST contain DDL only. No `op.bulk_insert`, no `op.execute("INSERT ...")`. Every seed (bootstrap tenant, bootstrap users, fixture data) MUST be implemented as a Typer subcommand under `app/cli/` and invoked via `python -m app.cli <name>` / `moon run backend:<name>`. The umbrella `seed-all` chains every seed in dependency order. Seeds MUST be idempotent — re-running is a no-op when rows are already present.
 - **PHI**: treat all clinical payloads as patient data. Never log full payloads — log resource type + id only.
 
 ## Testing
