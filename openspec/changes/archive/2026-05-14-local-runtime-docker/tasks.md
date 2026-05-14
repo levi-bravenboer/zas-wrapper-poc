@@ -53,7 +53,7 @@
 - [x] 7.1 Update `apps/backend/tests/_settings.py` (or equivalent) to default DB URL to the test compose URL: `postgresql+asyncpg://zas:zas@test_db:5432/zas_test`.
 - [x] 7.2 In `tests/conftest.py`, replace any `:memory:` SQLite assumptions with: per-test `AsyncSession` opened via `async_sessionmaker`, BEGIN → SAVEPOINT → ROLLBACK on teardown. (PoC has no ORM models yet — minimal session fixture in place; SAVEPOINT pattern deferred until first model lands.)
 - [x] 7.3 Bootstrap schema via `Base.metadata.create_all` once per session at the start of `pytest`, OR run `alembic upgrade head` once per session — pick the simpler one (create_all for PoC).
-- [ ] 7.4 Verify `moon run backend:test` with empty env passes (`env -i moon run backend:test`).
+- [x] 7.4 Verified — `env -i HOME=$HOME PATH=$PATH moon run backend:test` exits zero (17 passed).
 
 ## 8. Docs
 
@@ -116,6 +116,7 @@
 
 Manual rehearsals deferred (require destructive operations or fresh machines, no risk for PoC scope):
 
+- 5.10 Cold-checkout end-to-end rehearsal — host already had `.venv` / `node_modules` during archive. Same coverage as 9.8.
 - 9.1 `:reset` wipe rehearsal — destructive on shared volume; skip until clean room.
 - 9.3 `\dt` after auto-migrate — no ORM models exist yet; rerun when first model lands (alembic auto-migrate is no-op against empty tree, confirmed at boot).
 - 9.4 Bad-revision boot failure — manual; entrypoint `set -euo pipefail` guarantees the path.
