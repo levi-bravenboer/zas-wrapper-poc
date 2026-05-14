@@ -14,7 +14,7 @@ services:
       POSTGRES_PASSWORD: zas
       POSTGRES_DB: zas
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - zas_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -36,7 +36,7 @@ services:
       BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: INFO
     ports:
-      - "8000:8000"
+      - "18000:8000"
     develop:
       watch:
         - path: ./apps/backend

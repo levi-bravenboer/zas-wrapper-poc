@@ -14,7 +14,7 @@ import { router } from '@/app/router'
 
 import { useLogin, useLogout, useSession } from './hooks'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })

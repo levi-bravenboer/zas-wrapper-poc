@@ -2,7 +2,7 @@ import createClient, { type Middleware } from 'openapi-fetch'
 
 import type { paths } from './schema'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
 
 let retryLock: Promise<void> | null = null
 

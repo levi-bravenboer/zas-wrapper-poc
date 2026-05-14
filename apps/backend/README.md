@@ -22,21 +22,21 @@ moon run :up                  # boots zas_db + zas_backend + vite
 
 Defaults inside `zas_backend`: `BACKEND_ENV=dev`, CORS open to `http://localhost:5173`, HiX + Luscii adapters in `stub` mode, log level `INFO`. `production` boot refuses to start if `BACKEND_SESSION_SECRET_KEY` is the placeholder or `BACKEND_CORS_ORIGINS` is empty.
 
-Host-side env defaults live in `.env.example` and assume the dev DB on `localhost:5432`. Inside the container, compose overrides `BACKEND_DATABASE_URL` to `postgresql+asyncpg://zas:zas@db:5432/zas`.
+Host-side env defaults live in `.env.example` and assume the dev DB on `localhost:5434` (host port; container-internal stays `5432`). Inside the container, compose overrides `BACKEND_DATABASE_URL` to `postgresql+asyncpg://zas:zas@db:5432/zas`.
 
 ## Auto-migrate on boot
 
-`zas_backend`'s entrypoint runs `alembic upgrade head` before uvicorn starts. A broken revision halts boot — uvicorn never binds `:8000`, and `moon run :up` exits non-zero with the alembic error in the compose log. Run `moon run backend:make-migration "<msg>"` then `moon run backend:migrate` to add new revisions manually.
+`zas_backend`'s entrypoint runs `alembic upgrade head` before uvicorn starts. A broken revision halts boot — uvicorn never binds its container-internal `:8000` (host `:18000`), and `moon run :up` exits non-zero with the alembic error in the compose log. Run `moon run backend:make-migration "<msg>"` then `moon run backend:migrate` to add new revisions manually.
 
 ## Ports
 
 | Container | Host port | Purpose |
 | --- | --- | --- |
-| `zas_db` | `5432` | dev Postgres |
+| `zas_db` | `5434` | dev Postgres |
 | `zas_test_db` | `5433` | test Postgres (tmpfs, ephemeral) |
-| `zas_backend` | `8000` | FastAPI |
+| `zas_backend` | `18000` | FastAPI |
 
-Fixed mappings. If `5432` collides with a host Postgres, stop it (`brew services stop postgresql`) before `moon run :up`.
+Fixed mappings. Dev DB binds host `5434` (not Postgres default `5432`) so it coexists with other local Postgres instances. Container-internal port is `5432`; only the host-side mapping changes.
 
 ## Commands
 
@@ -62,7 +62,7 @@ moon run backend:typecheck                  # pyright
 moon run backend:openapi                    # export openapi.json
 ```
 
-Interactive API docs: <http://localhost:8000/docs> while `:up` is running.
+Interactive API docs: <http://localhost:18000/docs> while `:up` is running.
 
 ## Architecture
 

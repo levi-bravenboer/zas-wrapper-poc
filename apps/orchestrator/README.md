@@ -17,13 +17,13 @@ Stack: **React 19.2** + **Vite 8** (Rolldown) + **TypeScript 6** + **TanStack Ro
 nvm use
 cd apps/orchestrator
 npm install --legacy-peer-deps
-npm run typegen          # regenerates src/lib/api/schema.d.ts from http://localhost:8000/openapi.json
+npm run typegen          # regenerates src/lib/api/schema.d.ts from http://localhost:18000/openapi.json
 npm run dev              # http://localhost:5173 — MSW mock by default (VITE_API_MODE=mock)
 ```
 
 Copy `.env.example` → `.env` if you need to point at a different backend or disable mocks (`VITE_API_MODE=live`).
 
-The orchestrator stays native (Vite HMR). It reaches the docker-hosted backend on `http://localhost:8000` via the published port — no docker network rewriting needed. Boot the full stack from repo root with `moon run :up`.
+The orchestrator stays native (Vite HMR). It reaches the docker-hosted backend on `http://localhost:18000` (container-internal `:8000`) via the published port — no docker network rewriting needed. Boot the full stack from repo root with `moon run :up`.
 
 ## Commands
 

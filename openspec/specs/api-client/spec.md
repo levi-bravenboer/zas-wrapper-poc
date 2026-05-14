@@ -19,7 +19,7 @@ The orchestrator SHALL consume the FastAPI backend through `openapi-fetch` typed
 
 ### Requirement: Typegen task
 
-A moon task `orchestrator:typegen` SHALL regenerate `src/lib/api/schema.d.ts` from a running backend at `http://localhost:8000/openapi.json` (configurable via env). The generated file MUST be committed so fresh clones build offline.
+A moon task `orchestrator:typegen` SHALL regenerate `src/lib/api/schema.d.ts` from a running backend at `http://localhost:18000/openapi.json` (configurable via env). The generated file MUST be committed so fresh clones build offline.
 
 #### Scenario: Local regeneration
 
