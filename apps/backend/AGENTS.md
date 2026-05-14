@@ -18,7 +18,7 @@ The backend runs in docker via compose during dev/test; static checks (lint, for
 - **In container (`zas_backend`)**: dev server, tests, alembic, psql. Compose `develop.watch` syncs source from host. Auto-migrate on entrypoint.
 - **On host (via `uv`)**: ruff, pyright, openapi exporter — anything an editor LSP also calls. Editor / CLI / CI parity matters here.
 
-Onboarding: `moon run :doctor` → `moon run :bootstrap` → `moon run :up` (run from repo root). See repo-root `README.md` for prereqs and `apps/backend/README.md` for the full per-task table.
+Onboarding: `moon run :doctor` → `moon run :install` → `moon run :up` (run from repo root). See repo-root `README.md` for prereqs and `apps/backend/README.md` for the full per-task table.
 
 Any new docker resource (container, volume, network, built image) MUST be prefixed `zas_`. Future changes touching `docker-compose*.yml` MUST extend this rule.
 
@@ -33,7 +33,7 @@ moon run backend:test -- -k <pattern>       # passthrough args
 moon run backend:shell                      # bash inside zas_backend
 moon run backend:psql                       # psql -U zas -d zas
 moon run backend:migrate                    # alembic upgrade head
-moon run backend:makemigration "<message>"  # autogenerate revision
+moon run backend:make-migration "<message>" # autogenerate revision
 moon run backend:install                    # host uv sync
 moon run backend:lint                       # ruff check (native)
 moon run backend:format                     # ruff format --check (native)

@@ -8,7 +8,7 @@ The backend SHALL run against Postgres 17 in every dev and test execution. SQLit
 
 #### Scenario: Dev DB is Postgres
 
-- **WHEN** a developer runs `moon run :dev`
+- **WHEN** a developer runs `moon run :stack`
 - **THEN** a Postgres 17 container named `zas_db` starts on host port `5432` and the backend connects to it via `postgresql+asyncpg://zas:zas@db:5432/zas`
 
 #### Scenario: aiosqlite removed
@@ -22,12 +22,12 @@ Every docker artefact SHALL be named with the `zas_` prefix or live under the `z
 
 #### Scenario: Containers prefixed
 
-- **WHEN** `docker ps` runs after `moon run :dev`
+- **WHEN** `docker ps` runs after `moon run :stack`
 - **THEN** every running container in the stack has a name starting with `zas_` (`zas_db`, `zas_backend`, …)
 
 #### Scenario: Volumes + network prefixed
 
-- **WHEN** `docker volume ls` and `docker network ls` run after `moon run :dev`
+- **WHEN** `docker volume ls` and `docker network ls` run after `moon run :stack`
 - **THEN** dev data volume is named `zas_pgdata` and the network is `zas_net`
 
 ### Requirement: Fixed ports, no auto-assignment
@@ -36,7 +36,7 @@ Host ports SHALL be fixed per service. Compose MUST NOT use the random-port form
 
 #### Scenario: Dev DB binds 5432
 
-- **WHEN** `moon run :dev` boots the stack on a host with port `5432` free
+- **WHEN** `moon run :stack` boots the stack on a host with port `5432` free
 - **THEN** `zas_db` binds host `5432` → container `5432`, accessible via `psql -h localhost -p 5432 -U zas zas`
 
 #### Scenario: Test DB binds 5433
@@ -46,21 +46,21 @@ Host ports SHALL be fixed per service. Compose MUST NOT use the random-port form
 
 #### Scenario: Backend API binds 8000
 
-- **WHEN** `moon run :dev` boots and `zas_backend` is healthy
+- **WHEN** `moon run :stack` boots and `zas_backend` is healthy
 - **THEN** `curl http://localhost:8000/healthz` returns `200`
 
 ### Requirement: Backend runs in container during dev
 
-The backend SHALL execute inside the `zas_backend` container during `moon run :dev`. Source synchronisation MUST use the compose `develop.watch` block (compose v2.22+), not a raw bind mount, with `action: sync` for source files and `action: rebuild` for `uv.lock`, `pyproject.toml`, and `Dockerfile`. The `ignore` list MUST exclude `.venv/`, `__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.mypy_cache/`, and `*.db`. The `:dev` task SHALL invoke compose with `up --watch` so the watcher runs alongside the stack.
+The backend SHALL execute inside the `zas_backend` container during `moon run :stack`. Source synchronisation MUST use the compose `develop.watch` block (compose v2.22+), not a raw bind mount, with `action: sync` for source files and `action: rebuild` for `uv.lock`, `pyproject.toml`, and `Dockerfile`. The `ignore` list MUST exclude `.venv/`, `__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.mypy_cache/`, and `*.db`. The `:stack` task SHALL invoke compose with `up --watch` so the watcher runs alongside the stack.
 
 #### Scenario: Edit-reload loop works
 
-- **WHEN** a developer edits `apps/backend/app/main.py` while `moon run :dev` is running
+- **WHEN** a developer edits `apps/backend/app/main.py` while `moon run :stack` is running
 - **THEN** compose syncs the changed file into `zas_backend`, uvicorn's reloader detects the change, and the next request serves the new code
 
 #### Scenario: Image rebuild on lock change
 
-- **WHEN** `apps/backend/uv.lock` changes while `moon run :dev` is running
+- **WHEN** `apps/backend/uv.lock` changes while `moon run :stack` is running
 - **THEN** compose watches the file, triggers `action: rebuild` automatically, and the container restarts with fresh deps without a manual `compose up --build`
 
 #### Scenario: Ignore list keeps caches out of container
@@ -70,7 +70,7 @@ The backend SHALL execute inside the `zas_backend` container during `moon run :d
 
 ### Requirement: Minimum compose version documented
 
-The repo `README.md` SHALL document `docker compose` v2.22 or newer as a hard requirement, with a one-line note that `develop.watch` is the reason. `moon run :dev` MUST surface a clear error if the installed compose CLI is too old — either via a preflight check or via the native compose error.
+The repo `README.md` SHALL document `docker compose` v2.22 or newer as a hard requirement, with a one-line note that `develop.watch` is the reason. `moon run :stack` MUST surface a clear error if the installed compose CLI is too old — either via a preflight check or via the native compose error.
 
 #### Scenario: README states minimum compose version
 
@@ -108,30 +108,30 @@ The orchestrator (Vite + React) SHALL run on the host via `npm run dev` / `moon 
 #### Scenario: Doctor is referenced in onboarding
 
 - **WHEN** a contributor follows the repo-root `README.md` quick-start
-- **THEN** the very first command is `moon run :doctor`, before `moon run :bootstrap` and `moon run :up`
+- **THEN** the very first command is `moon run :doctor`, before `moon run :install` and `moon run :up`
 
-### Requirement: Bootstrap host workspace via moon
+### Requirement: Install host workspace via moon
 
-`moon run :bootstrap` SHALL prepare the host workspace so editor LSPs and native moon tasks (`backend:lint`, `:format`, `:typecheck`, `orchestrator:dev`) work without further commands. The task SHALL run `uv sync` inside `apps/backend/` and `npm install` (or `pnpm install` per existing convention) inside `apps/orchestrator/`. The task MUST be idempotent.
+`moon run :install` SHALL prepare the host workspace so editor LSPs and native moon tasks (`backend:lint`, `:format`, `:typecheck`, `orchestrator:dev`) work without further commands. The task SHALL run `uv sync` inside `apps/backend/` and `npm install` (or `pnpm install` per existing convention) inside `apps/orchestrator/`. The task MUST be idempotent.
 
-#### Scenario: Bootstrap installs backend host deps
+#### Scenario: Install populates backend host deps
 
-- **WHEN** a contributor runs `moon run :bootstrap` on a fresh checkout
+- **WHEN** a contributor runs `moon run :install` on a fresh checkout
 - **THEN** `apps/backend/.venv` is created via `uv sync` and Pylance / ruff-lsp pick it up automatically
 
-#### Scenario: Bootstrap installs orchestrator host deps
+#### Scenario: Install populates orchestrator host deps
 
-- **WHEN** the same `moon run :bootstrap` invocation completes
+- **WHEN** the same `moon run :install` invocation completes
 - **THEN** `apps/orchestrator/node_modules` exists and `moon run orchestrator:dev` starts vite without further install steps
 
-#### Scenario: Bootstrap is idempotent
+#### Scenario: Install is idempotent
 
-- **WHEN** `moon run :bootstrap` runs a second time with no upstream changes
+- **WHEN** `moon run :install` runs a second time with no upstream changes
 - **THEN** both `uv sync` and `npm install` report no-op (or near no-op) and the task exits zero quickly
 
 ### Requirement: Single command to boot everything
 
-`moon run :up` SHALL boot the full dev stack: Postgres in docker, backend in docker, orchestrator natively. The composite task wires `~:dev` (docker stack) plus `orchestrator:dev` (native) as parallel deps.
+`moon run :up` SHALL boot the full dev stack: Postgres in docker, backend in docker, orchestrator natively. The composite task wires `~:stack` (docker stack) plus `orchestrator:dev` (native) as parallel deps.
 
 #### Scenario: One-command boot
 
@@ -192,7 +192,7 @@ The orchestrator (Vite + React) SHALL run on the host via `npm run dev` / `moon 
 
 ### Requirement: Alembic migrations via moon
 
-`moon run backend:migrate` SHALL apply the current head migration to `zas_db`. `moon run backend:makemigration "<message>"` SHALL generate a new autogenerated revision against the live schema. Both delegate to `alembic` inside `zas_backend`.
+`moon run backend:migrate` SHALL apply the current head migration to `zas_db`. `moon run backend:make-migration "<message>"` SHALL generate a new autogenerated revision against the live schema. Both delegate to `alembic` inside `zas_backend`.
 
 #### Scenario: Migrate applies head
 
@@ -201,7 +201,7 @@ The orchestrator (Vite + React) SHALL run on the host via `npm run dev` / `moon 
 
 #### Scenario: Autogenerate sees live schema
 
-- **WHEN** a model class is added in `app/db/models/` and `moon run backend:makemigration "add foo"` runs
+- **WHEN** a model class is added in `app/db/models/` and `moon run backend:make-migration "add foo"` runs
 - **THEN** alembic generates a new revision file under `apps/backend/alembic/versions/` with the expected `op.create_table(...)` for the new model
 
 ### Requirement: Moon tasks use COMPOSE_FILE env over inline -f flags
@@ -215,7 +215,7 @@ Every docker-delegating moon task SHALL set the compose file list via the `COMPO
 
 #### Scenario: Moon task command stays short
 
-- **WHEN** a contributor inspects any docker-delegating task (`dev`, `test`, `shell`, `psql`, `migrate`, `makemigration`)
+- **WHEN** a contributor inspects any docker-delegating task (`dev`, `test`, `shell`, `psql`, `migrate`, `make-migration`)
 - **THEN** the `command:` value is a bare `docker compose <verb> …` invocation that fits on one line
 
 ### Requirement: Static checks stay native
@@ -238,7 +238,7 @@ Postgres services SHALL declare a `pg_isready`-based healthcheck. The backend se
 
 #### Scenario: Backend waits for DB
 
-- **WHEN** `moon run :dev` starts a fresh stack
+- **WHEN** `moon run :stack` starts a fresh stack
 - **THEN** `zas_backend` does not run uvicorn until `pg_isready` against `zas_db` succeeds; logs show the DB healthy line before the backend "started server process" line
 
 #### Scenario: Test runner waits for test DB
@@ -271,7 +271,7 @@ The backend Dockerfile SHALL use a BuildKit cache mount for the uv dependency ca
 
 #### Scenario: Re-sync hits cache
 
-- **WHEN** a developer adds a new dependency and re-runs `moon run :dev`
+- **WHEN** a developer adds a new dependency and re-runs `moon run :stack`
 - **THEN** the `uv sync --frozen` layer reuses the cached wheels from the prior build, and the image build completes in single-digit seconds for typical small dependency adds
 
 ### Requirement: `.env.example` documents Postgres + container defaults

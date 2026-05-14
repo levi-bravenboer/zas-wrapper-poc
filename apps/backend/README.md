@@ -16,7 +16,7 @@ The backend runs in docker under the `zas_backend` container during dev. The hos
 ```bash
 # From repo root:
 moon run :doctor              # verify host prereqs (compose v2.22+, node, python, uv, moon)
-moon run :bootstrap           # uv sync + npm install (host-side)
+moon run :install             # uv sync + npm install (host-side)
 moon run :up                  # boots zas_db + zas_backend + vite
 ```
 
@@ -26,7 +26,7 @@ Host-side env defaults live in `.env.example` and assume the dev DB on `localhos
 
 ## Auto-migrate on boot
 
-`zas_backend`'s entrypoint runs `alembic upgrade head` before uvicorn starts. A broken revision halts boot — uvicorn never binds `:8000`, and `moon run :up` exits non-zero with the alembic error in the compose log. Run `moon run backend:makemigration "<msg>"` then `moon run backend:migrate` to add new revisions manually.
+`zas_backend`'s entrypoint runs `alembic upgrade head` before uvicorn starts. A broken revision halts boot — uvicorn never binds `:8000`, and `moon run :up` exits non-zero with the alembic error in the compose log. Run `moon run backend:make-migration "<msg>"` then `moon run backend:migrate` to add new revisions manually.
 
 ## Ports
 
@@ -49,7 +49,7 @@ moon run backend:test -- -k <pattern>       # subset (args pass through to pytes
 moon run backend:shell                      # bash inside zas_backend
 moon run backend:psql                       # interactive psql against zas_db
 moon run backend:migrate                    # alembic upgrade head
-moon run backend:makemigration "<message>"  # alembic revision --autogenerate
+moon run backend:make-migration "<message>" # alembic revision --autogenerate
 moon run backend:install                    # host uv sync (idempotent)
 ```
 

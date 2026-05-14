@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Preflight host check for zas-wrapper.
-# Verifies every prerequisite needed by `moon run :bootstrap` + `moon run :up`.
+# Verifies every prerequisite needed by `moon run :install` + `moon run :up`.
 
 set -uo pipefail
 
@@ -65,4 +65,4 @@ if [ "$FAIL" -gt 0 ]; then
     exit 1
 fi
 
-green "==> all prerequisites satisfied — ready to run moon run :bootstrap and moon run :up"
+green "==> all prerequisites satisfied — ready to run moon run :install and moon run :up"

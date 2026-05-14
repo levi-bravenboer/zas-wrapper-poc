@@ -39,7 +39,7 @@ Replace Docker Desktop with [OrbStack](https://orbstack.dev). Bind-mount filesys
 
 ```bash
 moon run :doctor       # verify host has the right versions + tooling
-moon run :bootstrap    # uv sync + npm install (host-side, so editor LSPs work)
+moon run :install      # uv sync + npm install (host-side, so editor LSPs work)
 moon run :up           # boots zas_db + zas_backend (docker) + vite dev (native)
 ```
 
@@ -74,7 +74,7 @@ Onboarding:
 
 ```bash
 moon run :doctor              # host preflight
-moon run :bootstrap           # host deps (uv sync + npm install)
+moon run :install             # host deps (uv sync + npm install)
 ```
 
 Lifecycle:
@@ -83,7 +83,7 @@ Lifecycle:
 moon run :up                  # full stack (db + backend + vite)
 moon run :down                # stop containers, keep volumes
 moon run :reset               # stop + drop zas_pgdata
-moon run :dev                 # docker stack only (no vite)
+moon run :stack               # docker stack only (no vite)
 moon run orchestrator:dev     # vite only
 ```
 
@@ -104,7 +104,7 @@ Database:
 ```bash
 moon run backend:psql                       # interactive psql against zas_db
 moon run backend:migrate                    # alembic upgrade head
-moon run backend:makemigration "<message>"  # alembic revision --autogenerate
+moon run backend:make-migration "<message>"  # alembic revision --autogenerate
 ```
 
 ## Workflow

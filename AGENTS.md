@@ -53,7 +53,7 @@ Per-project `moon.yml` declares the canonical task surface (`build`, `test`, `li
 
 ## Local Runtime
 
-One-command boot: `moon run :up`. Onboarding flow on a fresh checkout is `moon run :doctor` → `moon run :bootstrap` → `moon run :up`. See `README.md` for prereqs (incl. `docker compose` v2.22+ and OrbStack on macOS) and `apps/backend/AGENTS.md` for backend-container specifics.
+One-command boot: `moon run :up`. Onboarding flow on a fresh checkout is `moon run :doctor` → `moon run :install` → `moon run :up`. See `README.md` for prereqs (incl. `docker compose` v2.22+ and OrbStack on macOS) and `apps/backend/AGENTS.md` for backend-container specifics.
 
 The dev DB (`zas_db`) and the backend (`zas_backend`) run in docker via `docker-compose.yml`. The orchestrator runs natively (Vite HMR). Test runs use `docker-compose.test.yml` overlay with an ephemeral `zas_test_db` on tmpfs.
 

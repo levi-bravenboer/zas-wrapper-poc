@@ -2,7 +2,7 @@
 
 ## Goals
 
-1. **One-command up:** `moon run :dev` boots db + backend (containerised) and orchestrator (native).
+1. **One-command up:** `moon run :stack` boots db + backend (containerised) and orchestrator (native).
 2. **One-command tests:** `moon run backend:test` runs full pytest suite with no env vars set by the caller.
 3. **Postgres parity:** every dev / test query hits Postgres, never SQLite.
 4. **Stable naming:** every docker artefact prefixed `zas_` for grep-ability and to avoid collisions with other repos on the same host.
@@ -29,7 +29,7 @@ Frontend (Vite dev server) stays on host port `5173`. Reflected via `vite.config
 
 Two compose files at repo root:
 
-- **`docker-compose.yml`** — default for `moon run :dev`. Services: `db`, `backend`.
+- **`docker-compose.yml`** — default for `moon run :stack`. Services: `db`, `backend`.
 - **`docker-compose.test.yml`** — overlay for `moon run backend:test`. Services: `test_db`, `test_runner`. Pulled in via `-f docker-compose.yml -f docker-compose.test.yml`.
 
 Both files set `name: zas` so the compose project name is fixed (powers the `zas_*` container naming via compose's `<project>_<service>` convention; explicit `container_name:` overrides where needed).
@@ -300,7 +300,7 @@ tasks:
     env:
       COMPOSE_FILE: "../../docker-compose.yml"
 
-  makemigration:
+  make-migration:
     command: "docker compose exec backend uv run alembic revision --autogenerate -m"
     env:
       COMPOSE_FILE: "../../docker-compose.yml"
@@ -323,7 +323,7 @@ tasks:
   up:
     command: "noop"
     deps:
-      - "~:dev"             # boots docker stack (db + backend)
+      - "~:stack"           # boots docker stack (db + backend)
       - "orchestrator:dev"  # native vite
 ```
 
@@ -353,7 +353,7 @@ This change drops SQLite entirely.
 
 1. Delete any local `apps/backend/*.db` files.
 2. Delete `apps/backend/alembic/versions/*` (regenerate against Postgres). The PoC has no prod data — schema-only migration is fine.
-3. After `moon run :dev`, run `moon run backend:makemigration "initial"` then `moon run backend:migrate`.
+3. After `moon run :stack`, run `moon run backend:make-migration "initial"` then `moon run backend:migrate`.
 4. Update `apps/backend/.env.example` with Postgres URL.
 
 ## Ports + collisions

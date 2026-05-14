@@ -9,7 +9,7 @@ PoC backend now ships SQLAlchemy 2.x + Alembic on top of `aiosqlite`. We want **
 - **Postgres in docker** for dev + test (two separate containers, different ports).
 - **Backend in docker** (Shape 2) — Python image with `uv sync --frozen`, mounted source, `uvicorn --reload`. Tradeoff: HMR over bind-mount is slower than native, accepted for reproducibility.
 - **Frontend stays native** — Vite HMR keeps host filesystem speed.
-- **Moon tasks orchestrate everything** — `moon run :dev`, `moon run :down`, `moon run backend:test` work end-to-end without touching docker CLI.
+- **Moon tasks orchestrate everything** — `moon run :stack`, `moon run :down`, `moon run backend:test` work end-to-end without touching docker CLI.
 - **Fixed ports + `zas_` prefix** on every container, volume, network, image.
 - **Single test entrypoint** — `moon run backend:test` invokes a compose-run that mounts source, starts ephemeral test DB, runs pytest with baked env. No per-shell env exports.
 

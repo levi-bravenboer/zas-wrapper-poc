@@ -11,14 +11,14 @@ tasks:
       cache: false
       runInCI: false
 
-  bootstrap:
+  install:
     deps:
       - "backend:install"
       - "orchestrator:install"
     options:
       cache: false
 
-  dev:
+  stack:
     command: "docker compose up --build --watch"
     env:
       COMPOSE_FILE: "docker-compose.yml"
@@ -45,7 +45,7 @@ tasks:
 
   up:
     deps:
-      - "~:dev"
+      - "~:stack"
       - "orchestrator:dev"
     options:
       cache: false
