@@ -12,9 +12,9 @@
 
 | Resource | Name | Port |
 |---|---|---|
-| Dev DB container | `zas_db` | `5432:5432` |
+| Dev DB container | `zas_db` | `5434:5432` |
 | Test DB container | `zas_test_db` | `5433:5432` |
-| Backend container | `zas_backend` | `8000:8000` |
+| Backend container | `zas_backend` | `18000:8000` |
 | Backend test runner | `zas_backend_test` | — (ephemeral) |
 | Compose project | `zas` | — |
 | Network | `zas_net` | — |
@@ -48,7 +48,7 @@ services:
       POSTGRES_PASSWORD: zas
       POSTGRES_DB: zas
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - zas_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -70,7 +70,7 @@ services:
       BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: INFO
     ports:
-      - "8000:8000"
+      - "18000:8000"
     develop:
       watch:
         - path: ./apps/backend
@@ -331,8 +331,8 @@ tasks:
 
 ## Settings + alembic
 
-- `Settings.database_url` default flips from `sqlite+aiosqlite:///./zas_poc.db` to `postgresql+asyncpg://zas:zas@localhost:5432/zas` (host-local convenience for native runs).
-- Inside containers, env overrides via compose (`db:5432` not `localhost:5432`).
+- `Settings.database_url` default flips from `sqlite+aiosqlite:///./zas_poc.db` to `postgresql+asyncpg://zas:zas@localhost:5434/zas` (host-local convenience for native runs; host port `5434` avoids colliding with other local Postgres instances on `5432`).
+- Inside containers, env overrides via compose (`db:5432` — container-internal port stays the Postgres default).
 - `alembic.ini` `sqlalchemy.url` removed in favour of reading `BACKEND_DATABASE_URL` in `alembic/env.py`.
 - Existing single migration regenerated against Postgres dialect — SQLite-specific column types (e.g. `Boolean` constant integer) compile fine in Postgres; verify on first migration run.
 
@@ -358,9 +358,9 @@ This change drops SQLite entirely.
 
 ## Ports + collisions
 
-Fixed ports collide with whatever else dev runs on `:5432` / `:8000`. Document in README:
+Dev DB binds host `5434` (not Postgres default `5432`) and backend binds host `18000` (not container-internal `8000`) so the stack coexists with other local Postgres / FastAPI instances. Container-internal ports stay `5432` / `8000`; only host-side mapping shifts. Test DB binds `5433`, vite `5173`.
 
-> If host `5432` is occupied (e.g. Postgres.app), stop it: `brew services stop postgresql`. Compose intentionally binds to fixed ports — change here, not in env, if you must.
+> If host `5434` (or `5433`, `18000`, `5173`) is occupied, find the listener with `lsof -nP -iTCP:<port> -sTCP:LISTEN` and stop it. Compose intentionally binds to fixed ports — change the mapping in `docker-compose.yml` if a collision is permanent, not via env.
 
 No automatic port detection / shifting. Predictability > flexibility for PoC.
 

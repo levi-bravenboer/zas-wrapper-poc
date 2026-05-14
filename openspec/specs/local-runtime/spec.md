@@ -1,7 +1,8 @@
-# local-runtime Specification Delta
+# local-runtime Specification
 
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change local-runtime-docker. Update Purpose after archive.
+## Requirements
 ### Requirement: Postgres for dev + test
 
 The backend SHALL run against Postgres 17 in every dev and test execution. SQLite SHALL NOT be supported as a backend persistence target. The PoC adopts Postgres parity from day one so migrations, query shapes, and adapter idioms match `[mvp]` and prod.
@@ -9,7 +10,7 @@ The backend SHALL run against Postgres 17 in every dev and test execution. SQLit
 #### Scenario: Dev DB is Postgres
 
 - **WHEN** a developer runs `moon run :stack`
-- **THEN** a Postgres 17 container named `zas_db` starts on host port `5432` and the backend connects to it via `postgresql+asyncpg://zas:zas@db:5432/zas`
+- **THEN** a Postgres 17 container named `zas_db` starts on host port `5434` (container-internal `5432`) and the backend connects to it via `postgresql+asyncpg://zas:zas@db:5432/zas`
 
 #### Scenario: aiosqlite removed
 
@@ -34,20 +35,20 @@ Every docker artefact SHALL be named with the `zas_` prefix or live under the `z
 
 Host ports SHALL be fixed per service. Compose MUST NOT use the random-port form (`"5432"` alone) — every port mapping uses the explicit `"HOST:CONTAINER"` form. Port collisions surface as boot failures, not silent auto-shifting.
 
-#### Scenario: Dev DB binds 5432
+#### Scenario: Dev DB binds 5434
 
-- **WHEN** `moon run :stack` boots the stack on a host with port `5432` free
-- **THEN** `zas_db` binds host `5432` → container `5432`, accessible via `psql -h localhost -p 5432 -U zas zas`
+- **WHEN** `moon run :stack` boots the stack on a host with port `5434` free
+- **THEN** `zas_db` binds host `5434` → container `5432`, accessible via `psql -h localhost -p 5434 -U zas zas`. Host port `5434` (not Postgres default `5432`) lets the stack coexist with other local Postgres instances.
 
 #### Scenario: Test DB binds 5433
 
 - **WHEN** `moon run backend:test` runs while the dev stack is also up
-- **THEN** the test DB container `zas_test_db` binds host `5433` and does not conflict with `zas_db` on `5432`
+- **THEN** the test DB container `zas_test_db` binds host `5433` and does not conflict with `zas_db` on `5434`
 
-#### Scenario: Backend API binds 8000
+#### Scenario: Backend API binds 18000
 
 - **WHEN** `moon run :stack` boots and `zas_backend` is healthy
-- **THEN** `curl http://localhost:8000/healthz` returns `200`
+- **THEN** `curl http://localhost:18000/healthz` returns `200` via the host-mapped port (container-internal `:8000`)
 
 ### Requirement: Backend runs in container during dev
 
@@ -88,7 +89,7 @@ The orchestrator (Vite + React) SHALL run on the host via `npm run dev` / `moon 
 
 #### Scenario: Frontend calls containerised backend
 
-- **WHEN** a Vite dev page calls `http://localhost:8000/healthz`
+- **WHEN** a Vite dev page calls `http://localhost:18000/healthz`
 - **THEN** the request reaches `zas_backend` via the published port mapping; no docker network rewriting needed
 
 ### Requirement: Preflight host check via moon
@@ -276,7 +277,7 @@ The backend Dockerfile SHALL use a BuildKit cache mount for the uv dependency ca
 
 ### Requirement: `.env.example` documents Postgres + container defaults
 
-`apps/backend/.env.example` SHALL document `BACKEND_DATABASE_URL` with the host-side URL (`postgresql+asyncpg://zas:zas@localhost:5432/zas`) and explain that the in-container override is set by compose. The file MUST also list `BACKEND_HIX_MODE`, `BACKEND_LUSCII_MODE`, and `BACKEND_LOG_LEVEL` with default values.
+`apps/backend/.env.example` SHALL document `BACKEND_DATABASE_URL` with the host-side URL (`postgresql+asyncpg://zas:zas@localhost:5434/zas`) and explain that the in-container override is set by compose. The file MUST also list `BACKEND_HIX_MODE`, `BACKEND_LUSCII_MODE`, and `BACKEND_LOG_LEVEL` with default values.
 
 #### Scenario: Onboarding from `.env.example`
 
@@ -300,3 +301,4 @@ The root `README.md` (and/or repo onboarding doc) SHALL recommend [OrbStack](htt
 
 - **WHEN** a new macOS contributor reads the repo README to set up locally
 - **THEN** they encounter a "macOS: install OrbStack" note before the `moon run :up` instructions, with a single-line rationale (faster bind-mount FS events) and the OrbStack install link
+
