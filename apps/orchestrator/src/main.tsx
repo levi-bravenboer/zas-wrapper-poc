@@ -7,10 +7,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { Providers } from '@/app/providers'
+import { env } from '@/config/env'
 import { getFeatures } from '@/platform/embed/defineFeature'
 import '@/styles/globals.css'
 
-if (import.meta.env.PROD && getFeatures().length === 0) {
+if (env.PROD && getFeatures().length === 0) {
   throw new Error(
     'Feature registry is empty at boot — ensure each feature module is re-exported from @/modules.',
   )
@@ -22,7 +23,7 @@ if (!container) {
 }
 
 async function bootstrap(): Promise<void> {
-  if (import.meta.env.VITE_API_MODE === 'mock') {
+  if (env.API_MODE === 'mock') {
     const { startMockWorker } = await import('@/mocks/browser')
     await startMockWorker()
   }

@@ -4,17 +4,17 @@ import { HttpResponse, http } from 'msw'
 import * as React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { server } from '@/mocks/server'
-
 vi.mock('@/app/router', () => ({
   router: { navigate: vi.fn() },
 }))
 
 import { router } from '@/app/router'
+import { env } from '@/config/env'
+import { server } from '@/mocks/server'
 
 import { useLogin, useLogout, useSession } from './hooks'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+const baseUrl = env.API_BASE_URL
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -88,7 +88,7 @@ describe('useLogin', () => {
 })
 
 describe('useLogout', () => {
-  const navigateMock = router.navigate as ReturnType<typeof vi.fn>
+  const navigateMock = vi.mocked(router.navigate)
 
   beforeEach(() => {
     navigateMock.mockClear()

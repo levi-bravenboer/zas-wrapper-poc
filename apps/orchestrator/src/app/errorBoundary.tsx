@@ -2,6 +2,7 @@ import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { env } from '@/config/env'
 
 type State = { error: Error | null }
 
@@ -13,7 +14,7 @@ export class RootErrorBoundary extends React.Component<React.PropsWithChildren, 
   }
 
   override componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    if (import.meta.env.DEV) {
+    if (env.DEV) {
       console.error('Root boundary caught error:', error, info)
     }
   }

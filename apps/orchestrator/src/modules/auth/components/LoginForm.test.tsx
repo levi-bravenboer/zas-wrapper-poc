@@ -3,12 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
+import { env } from '@/config/env'
 import { server } from '@/mocks/server'
 import { renderWithProviders } from '@/test/renderWithProviders'
 
 import { LoginForm } from './LoginForm'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+const baseUrl = env.API_BASE_URL
 
 describe('LoginForm', () => {
   it('shows validation errors when fields are empty', async () => {
