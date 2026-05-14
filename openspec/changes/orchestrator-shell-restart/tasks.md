@@ -18,10 +18,10 @@ The `design-system` spec gates `src/components/ui/` to a closed list. Extend the
 
 ## 1. Tokens + global aesthetic
 
-- [ ] 1.1 Add glass + aurora + active-gradient tokens to `src/styles/tokens.css` (see `design.md` D2).
-- [ ] 1.2 Add aurora `body::before` layer in `src/styles/globals.css`.
-- [ ] 1.3 Add `.glass` utility class (opt-in `backdrop-filter`) in `src/styles/globals.css`.
-- [ ] 1.4 Verify no `dark:` Tailwind variants land alongside these tokens (light-only rule still holds).
+- [x] 1.1 Add glass + aurora + active-gradient tokens to `src/styles/tokens.css` (see `design.md` D2).
+- [x] 1.2 Add aurora `body::before` layer in `src/styles/globals.css`.
+- [x] 1.3 Add `.glass` utility class (opt-in `backdrop-filter`) in `src/styles/globals.css`. Also added `.glass-strong` for the brighter panel variant.
+- [x] 1.4 Verify no `dark:` Tailwind variants land alongside these tokens (light-only rule still holds). Removed shadcn-injected `@custom-variant dark` + `.dark` block. Sidebar tokens now map to ZAS palette.
 
 ## 2. Routing narrowing
 
