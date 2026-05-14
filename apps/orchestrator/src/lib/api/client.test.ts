@@ -1,11 +1,12 @@
 import { HttpResponse, http } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { env } from '@/config/env'
 import { server } from '@/mocks/server'
 
-import { api } from './client'
+import { api, retryOn401Logic } from './client'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+const baseUrl = env.API_BASE_URL
 
 describe('api client 401 retry', () => {
   afterEach(() => server.resetHandlers())
@@ -28,19 +29,10 @@ describe('api client 401 retry', () => {
       }),
     )
 
-    // openapi-fetch's typed surface won't know /healthz; use raw GET to exercise middleware
-    const res = await fetch(`${baseUrl}/healthz`, { credentials: 'include' })
-    expect(res.status).toBe(401)
-    // Now exercise via api client middleware
-    type Healthz = { ok: boolean }
-    const middlewareRes = await (
-      api as unknown as {
-        GET: (
-          url: string,
-          opts?: Record<string, unknown>,
-        ) => Promise<{ response: Response; data?: Healthz }>
-      }
-    ).GET('/healthz')
+    const raw = await fetch(`${baseUrl}/healthz`, { credentials: 'include' })
+    expect(raw.status).toBe(401)
+
+    const middlewareRes = await api.GET('/healthz')
 
     expect(count).toBeGreaterThanOrEqual(2)
     expect(probed).toBe(true)
@@ -56,34 +48,63 @@ describe('api client 401 retry', () => {
       }),
     )
 
-    type Healthz = { ok: boolean }
-    const res = await (
-      api as unknown as {
-        GET: (url: string) => Promise<{ response: Response; data?: Healthz }>
-      }
-    ).GET('/healthz')
+    const res = await api.GET('/healthz')
 
     expect(count).toBe(1)
     expect(res.response.status).toBe(200)
   })
 
-  it('does not retry a 401 on /auth/me itself', async () => {
+  it('does not retry when the failing request itself targets /auth/me', async () => {
+    const response = new Response(JSON.stringify({ detail: 'no' }), { status: 401 })
+    const request = new Request(`${baseUrl}/auth/me`)
+
+    const retried = await retryOn401Logic(response, request)
+
+    expect(retried).toBeUndefined()
+  })
+
+  it('does not retry when the request was already retried (x-retry header set)', async () => {
+    const response = new Response(JSON.stringify({ detail: 'no' }), { status: 401 })
+    const request = new Request(`${baseUrl}/healthz`, {
+      headers: { 'x-retry': '1' },
+    })
+
+    const retried = await retryOn401Logic(response, request)
+
+    expect(retried).toBeUndefined()
+  })
+
+  it('passes through non-401 responses without action', async () => {
+    const response = new Response(JSON.stringify({ ok: true }), { status: 200 })
+    const request = new Request(`${baseUrl}/healthz`)
+
+    const retried = await retryOn401Logic(response, request)
+
+    expect(retried).toBeUndefined()
+  })
+
+  it('coalesces concurrent 401s into a single /auth/me probe', async () => {
+    let probes = 0
     let count = 0
     server.use(
       http.get(`${baseUrl}/auth/me`, () => {
+        probes++
+        return HttpResponse.json({ id: 'u', email: 'x@y.z', displayName: 'X', roles: [] })
+      }),
+      http.get(`${baseUrl}/healthz`, ({ request }) => {
         count++
-        return HttpResponse.json({ detail: 'no' }, { status: 401 })
+        if (request.headers.get('x-retry') === '1') {
+          return HttpResponse.json({ ok: true })
+        }
+        return HttpResponse.json({ detail: 'unauthorized' }, { status: 401 })
       }),
     )
 
-    type Me = { id: string }
-    const res = await (
-      api as unknown as {
-        GET: (url: string) => Promise<{ response: Response; data?: Me }>
-      }
-    ).GET('/auth/me')
+    const [a, b] = await Promise.all([api.GET('/healthz'), api.GET('/healthz')])
 
-    expect(count).toBe(1)
-    expect(res.response.status).toBe(401)
+    expect(a.response.status).toBe(200)
+    expect(b.response.status).toBe(200)
+    expect(probes).toBe(1)
+    expect(count).toBeGreaterThanOrEqual(4)
   })
 })
