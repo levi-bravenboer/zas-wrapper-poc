@@ -41,11 +41,11 @@ export function Sidebar() {
               to={item.to as never}
               activeProps={{
                 'aria-current': 'page',
-                className: 'bg-accent text-accent-foreground',
+                className: 'bg-primary-soft text-primary',
               }}
               className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors',
-                'hover:bg-muted hover:text-foreground',
+                'hover:bg-surface-2 hover:text-foreground',
               )}
             >
               <Icon className="size-4" aria-hidden="true" />
