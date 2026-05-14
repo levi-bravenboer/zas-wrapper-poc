@@ -1,0 +1,42 @@
+# Test overlay for the zas-wrapper monorepo.
+# Pulled in alongside docker-compose.yml via COMPOSE_FILE in moon tasks.
+
+name: zas
+
+services:
+  test_db:
+    image: postgres:17-alpine
+    container_name: zas_test_db
+    environment:
+      POSTGRES_USER: zas
+      POSTGRES_PASSWORD: zas
+      POSTGRES_DB: zas_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zas -d zas_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks: [zas_net]
+
+  test_runner:
+    image: zas_backend:test
+    container_name: zas_backend_test
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile.test
+    environment:
+      BACKEND_DATABASE_URL: postgresql+asyncpg://zas:zas@test_db:5432/zas_test
+      BACKEND_HIX_MODE: stub
+      BACKEND_LUSCII_MODE: stub
+      BACKEND_LOG_LEVEL: WARNING
+    volumes:
+      - ./apps/backend:/app
+      - /app/.venv
+    depends_on:
+      test_db:
+        condition: service_healthy
+    networks: [zas_net]

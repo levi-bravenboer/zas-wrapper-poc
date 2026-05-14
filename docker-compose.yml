@@ -1,0 +1,77 @@
+# Dev stack for the zas-wrapper monorepo.
+# Host-side env defaults live in apps/backend/.env.example;
+# this file overrides them for the in-container backend.
+# Required: docker compose v2.22+ (uses develop.watch).
+
+name: zas
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: zas_db
+    environment:
+      POSTGRES_USER: zas
+      POSTGRES_PASSWORD: zas
+      POSTGRES_DB: zas
+    ports:
+      - "5432:5432"
+    volumes:
+      - zas_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zas -d zas"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    networks: [zas_net]
+
+  backend:
+    image: zas_backend:dev
+    container_name: zas_backend
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    environment:
+      BACKEND_DATABASE_URL: postgresql+asyncpg://zas:zas@db:5432/zas
+      BACKEND_HIX_MODE: stub
+      BACKEND_LUSCII_MODE: stub
+      BACKEND_LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    develop:
+      watch:
+        - path: ./apps/backend
+          target: /app
+          action: sync
+          ignore:
+            - .venv/
+            - __pycache__/
+            - .pytest_cache/
+            - .ruff_cache/
+            - .mypy_cache/
+            - "*.db"
+        - path: ./apps/backend/uv.lock
+          action: rebuild
+        - path: ./apps/backend/pyproject.toml
+          action: rebuild
+        - path: ./apps/backend/Dockerfile
+          action: rebuild
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "python -c \"import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz').status == 200 else 1)\""
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks: [zas_net]
+
+volumes:
+  zas_pgdata:
+    name: zas_pgdata
+
+networks:
+  zas_net:
+    name: zas_net
