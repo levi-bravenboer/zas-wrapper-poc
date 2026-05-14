@@ -2,7 +2,7 @@
 
 POC/MVP for **ZAS Telegeneeskunde** (procurement ref. 2026-0015). Reaktor Health consortium with Luscii Healthtech + NewWave Care. June demo target: SMART-on-FHIR launch from HiX → pathway composer → Holter / Rugrevalidatie end-to-end.
 
-Full project context lives in [`openspec/project.md`](./openspec/project.md). Multi-agent coding rules live in [`AGENTS.md`](./AGENTS.md).
+Full project context lives in [`openspec/project.md`](./openspec/project.md). Multi-agent coding rules live in [`AGENTS.md`](./AGENTS.md). Per-app `AGENTS.md` files override these inside their respective folders.
 
 ## Layout
 
@@ -10,41 +10,101 @@ Full project context lives in [`openspec/project.md`](./openspec/project.md). Mu
 zas-wrapper/
 ├── .moon/                # moonrepo workspace + toolchain
 ├── apps/
-│   ├── orchestrator/     # React 19 + Vite 8 + TS 6 — clinician composer
-│   └── backend/          # FastAPI + uv + Python 3.13 — FHIR gateway, MCP host
+│   ├── orchestrator/     # React 19 + Vite 8 + TS 6 — clinician composer (native vite)
+│   └── backend/          # FastAPI + uv + Python 3.13 — FHIR gateway, MCP host (docker)
+├── docker-compose.yml    # dev stack: zas_db + zas_backend
+├── docker-compose.test.yml # test overlay: zas_test_db + zas_backend_test
+├── moon.yml              # root orchestration tasks (:up, :down, :doctor, …)
+├── scripts/doctor.sh     # host preflight check
 ├── docs/
-│   ├── research/         # research notes (agentic, HiX, Luscii)
-│   ├── wireframes/       # builder HTML + transcription
-│   ├── screenshots/      # design exploration
-│   └── setup.md          # historical layout doc (superseded)
 ├── openspec/             # spec-driven change proposals + specs
-├── AGENTS.md             # canonical agent instructions
-├── CLAUDE.md             # Claude Code addenda
+├── AGENTS.md
+├── CLAUDE.md
 └── README.md
 ```
 
 ## Prerequisites
 
-- **Node** `22.13+` — `nvm use` picks it up from `.nvmrc`.
-- **Python** `3.13` — pinned in `apps/backend/.python-version`, installed automatically by `uv`.
+- **`docker compose` v2.22+** — `develop.watch` source-sync requires it. Verify with `docker compose version`.
+- **Node** `22+` — `nvm use` picks it up from `.nvmrc`.
+- **Python** `3.13` — installed automatically by `uv`.
 - **uv** — `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 - **moon** — `curl -fsSL https://moonrepo.dev/install/moon.sh | bash`.
 
-## Quickstart
+### macOS: install OrbStack
+
+Replace Docker Desktop with [OrbStack](https://orbstack.dev). Bind-mount filesystem events fire near-native instead of the polled Docker-for-Mac shim; uvicorn `--reload` over docker becomes usable. Drop-in replacement, no compose-file changes.
+
+## Quick start
 
 ```bash
-# Install JS deps
-cd apps/orchestrator && npm install && cd -
+moon run :doctor       # verify host has the right versions + tooling
+moon run :bootstrap    # uv sync + npm install (host-side, so editor LSPs work)
+moon run :up           # boots zas_db + zas_backend (docker) + vite dev (native)
+```
 
-# Install Python deps + Python runtime
-cd apps/backend && uv sync && cd -
+After `:up`:
 
-# Run everything via moon
-moon run orchestrator:dev      # http://localhost:5173
-moon run backend:dev           # http://localhost:8000
-moon run :build                # all build tasks
-moon run :test                 # all test tasks
-moon ci                        # affected-only build + lint + test
+- Backend: <http://localhost:8000> (auto-reload on backend file edits via compose `watch`)
+- Backend healthcheck: <http://localhost:8000/healthz>
+- Vite: <http://localhost:5173>
+- Postgres: `psql -h localhost -p 5432 -U zas zas` (or `moon run backend:psql`)
+
+Teardown:
+
+```bash
+moon run :down       # stop containers, keep zas_pgdata volume
+moon run :reset      # stop containers AND wipe zas_pgdata
+```
+
+## Ports
+
+| Service | Container | Host port |
+| --- | --- | --- |
+| Dev Postgres | `zas_db` | `5432` |
+| Test Postgres | `zas_test_db` | `5433` |
+| Backend API | `zas_backend` | `8000` |
+| Vite dev server | (native, host) | `5173` |
+
+Ports are fixed (no auto-shifting). If `5432` is taken by a host Postgres (e.g. Postgres.app, `brew services postgresql`), stop the host service before `moon run :up`.
+
+## Common commands
+
+Onboarding:
+
+```bash
+moon run :doctor              # host preflight
+moon run :bootstrap           # host deps (uv sync + npm install)
+```
+
+Lifecycle:
+
+```bash
+moon run :up                  # full stack (db + backend + vite)
+moon run :down                # stop containers, keep volumes
+moon run :reset               # stop + drop zas_pgdata
+moon run :dev                 # docker stack only (no vite)
+moon run orchestrator:dev     # vite only
+```
+
+Tests + checks:
+
+```bash
+moon run backend:test         # full pytest suite in ephemeral test_runner container
+moon run backend:test -- -k <pattern>   # subset
+moon run backend:lint         # native, ruff
+moon run backend:format       # native, ruff --check
+moon run backend:typecheck    # native, pyright
+moon run orchestrator:test    # vitest
+moon run :ci                  # all gates in one
+```
+
+Database:
+
+```bash
+moon run backend:psql                       # interactive psql against zas_db
+moon run backend:migrate                    # alembic upgrade head
+moon run backend:makemigration "<message>"  # alembic revision --autogenerate
 ```
 
 ## Workflow

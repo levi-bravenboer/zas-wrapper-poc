@@ -23,6 +23,8 @@ npm run dev              # http://localhost:5173 — MSW mock by default (VITE_A
 
 Copy `.env.example` → `.env` if you need to point at a different backend or disable mocks (`VITE_API_MODE=live`).
 
+The orchestrator stays native (Vite HMR). It reaches the docker-hosted backend on `http://localhost:8000` via the published port — no docker network rewriting needed. Boot the full stack from repo root with `moon run :up`.
+
 ## Commands
 
 Always prefer **moon** — it caches + only runs affected tasks:

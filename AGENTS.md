@@ -51,6 +51,16 @@ moon query projects              # introspect graph
 
 Per-project `moon.yml` declares the canonical task surface (`build`, `test`, `lint`, `typecheck`, `dev`, …). Always prefer `moon run …` over invoking `npm` / `uv` directly so caching and affected-detection stay correct.
 
+## Local Runtime
+
+One-command boot: `moon run :up`. Onboarding flow on a fresh checkout is `moon run :doctor` → `moon run :bootstrap` → `moon run :up`. See `README.md` for prereqs (incl. `docker compose` v2.22+ and OrbStack on macOS) and `apps/backend/AGENTS.md` for backend-container specifics.
+
+The dev DB (`zas_db`) and the backend (`zas_backend`) run in docker via `docker-compose.yml`. The orchestrator runs natively (Vite HMR). Test runs use `docker-compose.test.yml` overlay with an ephemeral `zas_test_db` on tmpfs.
+
+### Naming rule for docker resources
+
+Every container, volume, network, and built image MUST be prefixed `zas_`. Any future change touching `docker-compose*.yml` or adding services MUST extend this rule (and document it in its proposal).
+
 ## Workflow
 
 Spec-driven development through **OpenSpec**:

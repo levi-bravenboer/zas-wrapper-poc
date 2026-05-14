@@ -11,18 +11,37 @@ Backend app: FHIR gateway, MCP host, integration glue for HiX / Luscii. Inherits
 - Pytest 9 with FastAPI `TestClient` (via `httpx`)
 - Ruff for lint + format
 
+## Local runtime
+
+The backend runs in docker via compose during dev/test; static checks (lint, format, typecheck) run on the host via `uv`. The boundary is deliberate:
+
+- **In container (`zas_backend`)**: dev server, tests, alembic, psql. Compose `develop.watch` syncs source from host. Auto-migrate on entrypoint.
+- **On host (via `uv`)**: ruff, pyright, openapi exporter — anything an editor LSP also calls. Editor / CLI / CI parity matters here.
+
+Onboarding: `moon run :doctor` → `moon run :bootstrap` → `moon run :up` (run from repo root). See repo-root `README.md` for prereqs and `apps/backend/README.md` for the full per-task table.
+
+Any new docker resource (container, volume, network, built image) MUST be prefixed `zas_`. Future changes touching `docker-compose*.yml` MUST extend this rule.
+
 ## Commands
 
-Run from `apps/backend/`:
+Through moon (preferred):
 
 ```bash
-uv sync                       # install / refresh deps from pyproject + uv.lock
-uv run fastapi dev main.py    # dev server with autoreload
-uv run fastapi run main.py    # production-style server
-uv run pytest -q              # tests
-uv run ruff format            # format
-uv run ruff check --fix       # lint + autofix
+moon run backend:dev                        # docker compose up backend
+moon run backend:test                       # pytest in ephemeral zas_backend_test
+moon run backend:test -- -k <pattern>       # passthrough args
+moon run backend:shell                      # bash inside zas_backend
+moon run backend:psql                       # psql -U zas -d zas
+moon run backend:migrate                    # alembic upgrade head
+moon run backend:makemigration "<message>"  # autogenerate revision
+moon run backend:install                    # host uv sync
+moon run backend:lint                       # ruff check (native)
+moon run backend:format                     # ruff format --check (native)
+moon run backend:typecheck                  # pyright (native)
+moon run backend:openapi                    # export openapi.json (native)
 ```
+
+Direct `uv` invocation is fine for host-side static checks if you need ad-hoc flags; the moon task is just a thin wrapper.
 
 ## Layout
 
@@ -124,7 +143,7 @@ The seam is one-directional: `router → service → repository → db.models`. 
 
 - **Mirror src tree exactly**: `tests/services/pathway/test_pathway_service.py` mirrors `app/services/pathway/pathway_service.py`, etc. Running `pytest tests/services/pathway/` exercises one domain end-to-end.
 - Conftest cascades: shared fixtures in `tests/conftest.py`, layer-shared in `tests/services/conftest.py`, domain-shared in `tests/services/pathway/conftest.py`.
-- Use FastAPI `TestClient` for router-layer tests; service tests get the `db_session` fixture and exercise the real session; repository tests assert SQL behaviour against the `:memory:` engine. Override DI with `app.dependency_overrides` when a router test needs to stub a service.
+- Use FastAPI `TestClient` for router-layer tests; service tests get the `db_session` fixture and exercise the real session; repository tests assert SQL behaviour against the live `zas_test_db` Postgres container (tmpfs, recreated per compose run). Override DI with `app.dependency_overrides` when a router test needs to stub a service.
 - Fixtures with synthetic clinical data live under `tests/fixtures/`. Never commit data from real patients.
 - Common fixtures (`settings`, `app`, `client`, `db_session`) live in `tests/conftest.py`. Prefer them over hand-rolled `TestClient` setup in new tests.
 - For time-sensitive code, use `freezegun.freeze_time(...)`. Wrap the smallest scope that needs the frozen clock; never leave it freezing across whole modules.
