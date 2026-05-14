@@ -71,3 +71,25 @@
 
   --tracking-tight: -0.011em;
 }
+
+/* Bold-glass surface tokens — opt-in via .glass utility (see globals.css) */
+:root {
+  --glass-panel: rgba(255, 255, 255, 0.55);
+  --glass-panel-strong: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+
+  --shadow-glass:
+    0 12px 32px rgba(38, 107, 94, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset;
+
+  /* Aurora background — painted once on body::before, shared across routes */
+  --gradient-aurora:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(38, 107, 94, 0.2) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(207, 237, 232, 0.55) 0%, transparent 55%),
+    linear-gradient(180deg, #fafaf9 0%, #f1efed 100%);
+
+  /* Active-item pill gradient — primary → pressed */
+  --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+}
