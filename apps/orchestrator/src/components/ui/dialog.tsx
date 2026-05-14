@@ -26,9 +26,16 @@ export function DialogOverlay({ className, ...props }: DialogOverlayProps) {
   )
 }
 
-export type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+export type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+  showCloseButton?: boolean
+}
 
-export function DialogContent({ className, children, ...props }: DialogContentProps) {
+export function DialogContent({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}: DialogContentProps) {
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -44,9 +51,11 @@ export function DialogContent({ className, children, ...props }: DialogContentPr
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
-          <X className="h-4 w-4" />
-        </DialogPrimitive.Close>
+        {showCloseButton ? (
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-xs text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
+            <X className="h-4 w-4" />
+          </DialogPrimitive.Close>
+        ) : null}
       </DialogPrimitive.Content>
     </DialogPortal>
   )
