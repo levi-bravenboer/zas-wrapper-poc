@@ -25,10 +25,13 @@ The `design-system` spec gates `src/components/ui/` to a closed list. Extend the
 
 ## 2. Routing narrowing
 
-- [ ] 2.1 Delete `src/routes/_auth/taken.tsx`, `zorgpaden.tsx`, `patienten.tsx`, `instellingen.tsx` if present.
-- [ ] 2.2 Keep `src/routes/_auth/dashboard.tsx` as the single section route.
-- [ ] 2.3 Confirm `_auth/index.tsx` still redirects `/` → `/dashboard`.
-- [ ] 2.4 Run `moon run orchestrator:typecheck` — fix any stale imports referring to removed routes.
+- [x] 2.1 Delete `src/routes/_auth/{tasks,pathways,patients,settings}.tsx` (English names, not the Dutch placeholders the original task listed). 4 files removed.
+- [x] 2.2 Keep `src/routes/_auth/dashboard.tsx` as the single webapp section route.
+- [x] 2.3 Confirm `_auth/index.tsx` still redirects `/` → `/dashboard` (`-index.test.tsx` covers).
+- [x] 2.4 Regenerated `routeTree.gen.ts` via `scripts/gen-route-tree.mjs`. Typecheck + lint + test clean.
+- [x] 2.5 Keep `embed.tsx` + `s.tsx` shell layouts + their `tasks.tsx` route files as live reference for the three-shell pattern (`AppShell` / `EmbedShell` / `SmartShell`). Decided over full prune so future `[mvp]` SMART launch + HiX iframe surfaces don't need to rebuild the shells from scratch.
+- [x] 2.6 Keep `routes/launch.tsx` + `launch.callback.tsx` (SMART-on-FHIR PKCE entry) for the same reason.
+- [ ] 2.7 Stale nav-link cleanup in `navItems.ts` — deferred to section 3.10 (sidebar rebuild owns it).
 
 ## 2.5 Audit: foundation vs mockups + best practice
 
