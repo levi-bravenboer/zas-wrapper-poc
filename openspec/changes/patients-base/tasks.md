@@ -86,14 +86,25 @@
 - [x] 10.3 Added `tests/api/test_patients_openapi_contract.py` asserting all 5 routes + `PatientListResponse`/`PatientRead` refs + 204 on delete
 - [x] 10.4 Generated client diff staged for a dedicated commit alongside the backend regeneration (single regen pair: `openapi.json` + `schema.d.ts`, +345 LOC in the client)
 
-## 11. Docs, follow-ups, verification
+## 11. Orchestrator patients overview UI (F4)
 
-- [ ] 11.1 At archive time: capability docs land at `openspec/specs/patients-base/` (deferred to archive step — `openspec-archive-change` skill handles the move)
-- [x] 11.2 Added a `2026-05-15 — patients-base scope check` entry to `openspec/mdr-watchlist.md` confirming the row stores identifiers + demographics + sync metadata only; re-verify on any future column addition
-- [x] 11.3 Filed follow-up `BL-051 — AUTH-HARDEN sweep` in `openspec/backlog.md` (renumbered after merging origin/main which had already claimed BL-042..BL-045 for auth-compliance gaps)
-- [x] 11.4 Filed follow-up `BL-052 — Patient identifier column encryption` in `openspec/backlog.md` (gated by `BL-034`)
-- [x] 11.5 Filed follow-up `BL-053 — Patient-level ACL wiring on require_patient_access` in `openspec/backlog.md` (deepens `BL-020` for patients)
-- [x] 11.6 Filed follow-up `BL-054 — Patient names / addresses / telecoms child tables` in `openspec/backlog.md` (lands alongside the HiX adapter, BL-001)
-- [x] 11.7 `moon run backend:format` / `:lint` / `:typecheck` / `:test` all green (`backend:test` → 144 passed in 12.97s)
-- [x] 11.8 `moon run orchestrator:typecheck` green; `moon run orchestrator:build` fails for environment reasons (Node 20.18 < required 20.19 + missing `@rolldown/binding-darwin-arm64` native binding); blocker is unrelated to this change (cf. commit `4b02bd2`) — re-run on a clean install before merging
-- [x] 11.9 `npx openspec validate patients-base --strict` → `Change 'patients-base' is valid`
+- [ ] 11.1 Add `src/modules/patient/api.ts` exporting the list query-key helper (`paginatedQueryKey('/patients', state)`) and a `softDeletePatient(id)` mutation that calls `DELETE /patients/{id}` and invalidates the `patients` key
+- [ ] 11.2 Add `src/modules/patient/components/PatientsColumns.tsx` with `patientColumns: ColumnDef<PatientRead>[]` (Naam sticky, INSZ pill, Geboortedatum, Geslacht, Organisatie lookup, Bijgewerkt), `patientFilters: DataTableFilter<PatientRead>[]` (birth-date range + organisation select bound to `GET /organisations`), and a `patientRowActions(p)` factory exposing the destructive `Verwijderen` action
+- [ ] 11.3 Add `src/modules/patient/types.ts` re-exporting `PatientRead` from the generated `lib/api/schema` as `PatientRow` (keeps the rest of the module schema-free)
+- [ ] 11.4 Add `src/routes/_auth/patients/index.tsx` as a thin composer wiring `useRouteSearchTableState` + `usePaginatedQuery<PatientRead>('/patients', state)` into `<DataTable<PatientRead>>` with `realtimeTopic="patients"`, `selectable={false}`, the imports from §11.2, and the row-click navigator to `/_auth/patients/$patientId`
+- [ ] 11.5 Add `src/routes/_auth/patients/$patientId/index.tsx` as a placeholder ("Detailpagina komt binnenkort") so row clicks never 404 before F5 lands
+- [ ] 11.6 Add `src/i18n/locales/nl/patients.json` with all user-visible keys (page header, filter labels, kebab actions, empty / error / loading copy); zero inline Dutch literals in `.tsx`
+- [ ] 11.7 File follow-up `BL-NNN — Create-patient dialog (POST /patients) for the overview` in `openspec/backlog.md` (deferred from this change to keep the PR scope tight; overview header ships without a create action)
+- [ ] 11.8 `moon run orchestrator:typecheck` / `:lint` / `:test -- src/modules/patient src/routes/_auth/patients` all green; quote the result in the PR description
+
+## 12. Docs, follow-ups, verification
+
+- [ ] 12.1 At archive time: capability docs land at `openspec/specs/patients-base/` (deferred to archive step — `openspec-archive-change` skill handles the move)
+- [x] 12.2 Added a `2026-05-15 — patients-base scope check` entry to `openspec/mdr-watchlist.md` confirming the row stores identifiers + demographics + sync metadata only; re-verify on any future column addition
+- [x] 12.3 Filed follow-up `BL-051 — AUTH-HARDEN sweep` in `openspec/backlog.md` (renumbered after merging origin/main which had already claimed BL-042..BL-045 for auth-compliance gaps)
+- [x] 12.4 Filed follow-up `BL-052 — Patient identifier column encryption` in `openspec/backlog.md` (gated by `BL-034`)
+- [x] 12.5 Filed follow-up `BL-053 — Patient-level ACL wiring on require_patient_access` in `openspec/backlog.md` (deepens `BL-020` for patients)
+- [x] 12.6 Filed follow-up `BL-054 — Patient names / addresses / telecoms child tables` in `openspec/backlog.md` (lands alongside the HiX adapter, BL-001)
+- [x] 12.7 `moon run backend:format` / `:lint` / `:typecheck` / `:test` all green (`backend:test` → 144 passed in 12.97s)
+- [x] 12.8 `moon run orchestrator:typecheck` green; `moon run orchestrator:build` fails for environment reasons (Node 20.18 < required 20.19 + missing `@rolldown/binding-darwin-arm64` native binding); blocker is unrelated to this change (cf. commit `4b02bd2`) — re-run on a clean install before merging
+- [x] 12.9 `npx openspec validate patients-base --strict` → `Change 'patients-base' is valid`

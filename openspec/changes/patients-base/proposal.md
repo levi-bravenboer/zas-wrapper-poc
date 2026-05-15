@@ -14,6 +14,7 @@ This change depends on `organisations-base` (chain change #1) being merged: `pat
 - Add HiX adapter seam at `app/adapters/hix/patients.py` — stub raising `NotImplementedError` so the MVP wiring point is reserved and import-tested.
 - Add `Gender`, `PatientSource` enums in `app/core/enums/patient.py` aligned with FHIR R4 codes.
 - Generate OpenAPI contract entries for new endpoints; refresh frontend client.
+- Ship the orchestrator patients overview screen at `/_auth/patients` (PoC feature `F4`): a thin route composer that wires `useRouteSearchTableState` + `usePaginatedQuery<PatientRead>('/patients', state)` into `<DataTable<PatientRead>>`, per `apps/orchestrator/AGENTS.md` §25. Columns Naam (sticky) / INSZ / Geboortedatum / Geslacht / Organisatie / Bijgewerkt; filters birth-date range + organisation select; search on family/given name; destructive `Verwijderen` row action calling `DELETE /patients/{id}`. Detail route is stubbed as a placeholder so row clicks never 404; the real F5 detail view ships in a later change. Create-patient dialog is deferred via a backlog entry.
 
 Visibility on `GET /patients` in this change is **tenant-scope only** (caregivers + admins in the tenant see all patients in the tenant). Care-team-based row filtering for caregivers lands in `care-teams-base` (chain change #3) as a MODIFIED requirement.
 
@@ -30,7 +31,7 @@ Visibility on `GET /patients` in this change is **tenant-scope only** (caregiver
 ## Impact
 
 - **Chain prerequisite**: `organisations-base` MUST be merged first.
-- **Code**: `apps/backend/app/models/patient.py`, `app/models/patient_identifier.py`, `app/schemas/patient/patient.py`, `app/core/enums/patient.py`, `app/api/routers/patient/patient_router.py`, `app/services/patient/`, `app/adapters/hix/patients.py`, Alembic revision under `alembic/versions/`, `scripts/seed_patients.py`.
+- **Code**: `apps/backend/app/models/patient.py`, `app/models/patient_identifier.py`, `app/schemas/patient/patient.py`, `app/core/enums/patient.py`, `app/api/routers/patient/patient_router.py`, `app/services/patient/`, `app/adapters/hix/patients.py`, Alembic revision under `alembic/versions/`, `scripts/seed_patients.py`. Orchestrator: `apps/orchestrator/src/modules/patient/` (api, columns, types), `src/routes/_auth/patients/index.tsx` + `$patientId/index.tsx` placeholder, `src/i18n/locales/nl/patients.json`.
 - **APIs**: 5 new endpoints under `/patients`. OpenAPI regen + orchestrator client regen.
 - **DB**: 2 new tables, 2 new enum types (`gender`, `patient_source`), partial unique indexes on `(patient_id, system, value)` and `(tenant_id, external_system, external_ref)`.
 - **Dependencies**: no new runtime deps. `fhir.resources` deliberately NOT introduced (BL-025 still deferred).
