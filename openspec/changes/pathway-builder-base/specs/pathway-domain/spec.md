@@ -2,7 +2,7 @@
 
 ### Requirement: Pathway definition aggregate
 
-The backend SHALL persist a pathway definition as an aggregate identified by a stable UUID. The aggregate root is the `pathway` row; child entities (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_field_resolution`, `pathway_block_luscii_extension`, `pathway_timing_value`) cascade-delete with the root. The aggregate SHALL hold a human-friendly `name`. Every aggregate table SHALL inherit `TenantOwnedEntity` (from `apps/backend/app/db/base.py`) so `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`, and audit FKs come from the base class. The pathway has no design-time entry block — execution start is picked at enrollment (F4, separate change). Concrete storage is relational with one purposeful jsonb (`pathway_block.config`) per Naming Conventions & Schema Exceptions in `design.md`.
+The backend SHALL persist a pathway definition as an aggregate identified by a stable UUID. The aggregate root is the `pathway` row; child entities (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_field_resolution`, `pathway_timing_value`) cascade-delete with the root. The aggregate SHALL hold a human-friendly `name`. Every aggregate table SHALL inherit `TenantOwnedEntity` (from `apps/backend/app/db/base.py`) so `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`, and audit FKs come from the base class. The pathway has no design-time entry block — execution start is picked at enrollment (F4, separate change). Concrete storage is relational with one purposeful jsonb (`pathway_block.config`) per Naming Conventions & Schema Exceptions in `design.md`.
 
 #### Scenario: Persist and reload a pathway
 
@@ -216,11 +216,17 @@ The backend SHALL treat any persisted pathway definition as enrollable. There SH
 - **THEN** the pathway appears in `GET /pathways` with no draft/published flag
 - **AND** there is no `publish` endpoint exposed
 
-### Requirement: Luscii clinical-path block is opaque
+### Requirement: Luscii clinical-path block is reference-only
 
-The `luscii-clinical-path` block SHALL store its opaque payload in a dedicated `pathway_block_luscii_extension` table (one row per Luscii block) with the payload as `text` (NOT jsonb). The backend SHALL NOT interpret, evaluate, or transform the payload. Live Luscii Builder API integration is out of PoC scope.
+The `luscii-clinical-path` block SHALL carry NO Luscii-specific column or table. Its catalogue `config_schema` SHALL define reference fields only (at minimum `luscii_path_id`; optional `luscii_path_url`) — never the Luscii payload itself. The backend SHALL validate the reference shape via the catalogue's `config_schema` like any other block type and SHALL NOT fetch, parse, or mirror Luscii clinical content. Live Luscii Builder API integration is deferred to MVP.
 
-#### Scenario: Luscii block round-trips byte-equivalent
+#### Scenario: Luscii block stores only reference fields
 
-- **WHEN** a pathway is saved with a `luscii-clinical-path` block whose extension payload is an arbitrary string
-- **THEN** `GET /pathways/{id}` returns the same payload byte-for-byte for that block
+- **WHEN** a pathway is saved with a `luscii-clinical-path` block whose `config` carries `luscii_path_id`
+- **THEN** `GET /pathways/{id}` returns the same `luscii_path_id` in the block's `config`
+- **AND** no separate Luscii table or column exists in the schema
+
+#### Scenario: Reject Luscii block missing required reference
+
+- **WHEN** a client submits a `luscii-clinical-path` block whose `config` omits `luscii_path_id`
+- **THEN** the backend rejects the request with a 422 validation error citing the missing field

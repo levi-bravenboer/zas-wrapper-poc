@@ -255,21 +255,15 @@ Alternatives rejected:
 
 ## Naming Conventions & Schema Exceptions
 
-**Convention.** Every pathway-domain table is prefixed `pathway_`. This includes shared/lookup tables (`pathway_timing_value`) and catalogue tables (`pathway_lane_kind`) so other domains (e.g. tenant-base, user-base, future enrollment) can never collide on a generic name like `lane_kind` or `timing_value`. Junction/extension tables encode the relationship explicitly (`pathway_block_luscii_extension`).
+**Convention.** Every pathway-domain table is prefixed `pathway_`. This includes shared/lookup tables (`pathway_timing_value`) and catalogue tables (`pathway_lane_kind`) so other domains (e.g. tenant-base, user-base, future enrollment) can never collide on a generic name like `lane_kind` or `timing_value`.
 
 **Exception 1 — `pathway_block.config jsonb`.** Block-type-specific config is intentionally a single jsonb column. It's validated at the app boundary by Pydantic against the per-type `config_schema` returned by `GET /pathway-blocks` (D2). Reasons it earns the exception: the schema is already authoritative and lives in code; per-type relational tables would multiply with every block type added; the catalogue already documents shape. This is the ONLY jsonb in the schema.
 
-**Exception 2 — `pathway_block_luscii_extension.payload text`.** The Luscii clinical-path payload is opaque by contract (we do not interpret it; MDR-relevant). Stored as text in a dedicated extension table rather than on `pathway_block` so the generic table stays clean and the extension only exists for blocks that actually use it. Not jsonb — we never query into it.
-
-```
-pathway_block_luscii_extension
-  block_id uuid PK FK -> pathway_block ON DELETE CASCADE
-  payload text NOT NULL              -- opaque, round-tripped byte-for-byte
-```
+**MDR / Luscii note.** The `luscii-clinical-path` block type carries NO Luscii-specific column or table. Its `config` jsonb stores reference fields only (e.g. `luscii_path_id`, optional `luscii_path_url`) — never the Luscii payload itself. Backend validates the reference shape via `config_schema` and never fetches, parses, or mirrors Luscii clinical content. Live Luscii Builder API integration is deferred to MVP; nothing in the schema couples to it.
 
 **YAGNI drops** during the audit: `pathway_lane_kind.is_system`, `pathway_phase.color_token`, `pathway.last_edited_at` (replaced by inherited `updated_at` from `Entity`). `created_at`, `updated_at`, `created_by`, `updated_by` come from the repo base classes (D15) for free — keep them everywhere.
 
-**Final table count: 11.** `pathway_lane_kind`, `pathway_timing_value`, `pathway`, `pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_block_luscii_extension`, `pathway_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_field_resolution`.
+**Final table count: 10.** `pathway_lane_kind`, `pathway_timing_value`, `pathway`, `pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_field_resolution`.
 
 ## Risks / Trade-offs
 

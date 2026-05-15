@@ -9,14 +9,13 @@
 ### 1b. Domain + persistence
 
 - [ ] 1.4 Create `apps/backend/.../pathway/` module (domain entities, repository, Pydantic schemas)
-- [ ] 1.5 Add DB migration for the 11 canonical tables (per `design.md` D15 / Naming Conventions & Schema Exceptions). Every per-pathway table inherits `TenantOwnedEntity` (id, tenant_id, audit FKs, timestamps, soft delete). `pathway_lane_kind` inherits plain `Entity`:
+- [ ] 1.5 Add DB migration for the 10 canonical tables (per `design.md` D15 / Naming Conventions & Schema Exceptions). Every per-pathway table inherits `TenantOwnedEntity` (id, tenant_id, audit FKs, timestamps, soft delete). `pathway_lane_kind` inherits plain `Entity`:
   - `pathway_lane_kind` (catalogue, seeded `patient`/`caregiver`/`system`/`external`)
   - `pathway_timing_value` (shared, `kind` ∈ (`fixed`, `enrollment`) — runtime kind parked in MVP delta; CHECK enforces column-set per kind)
   - `pathway` (aggregate root; no entry_block_id — enrollment picks the start)
   - `pathway_phase` (per-pathway, ordered, optional `template_id` soft pointer)
   - `pathway_lane` (per-pathway, FK to `pathway_lane_kind`, `is_default` flag, `(pathway_id, ord)` unique)
   - `pathway_block` (FK to phase + lane, `config jsonb` — Exception 1, optional `duration_value_id`, `x`/`y` int)
-  - `pathway_block_luscii_extension` (PK = block_id, opaque `payload text` — Exception 2)
   - `pathway_branch` (decision-block branches, ordered; ownership validated app-side against catalogue's branching flag per D19)
   - `pathway_edge` (FKs source/target block, optional `source_branch_id`, optional `delay_value_id`; UNIQUE `(source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT` per D20)
   - `pathway_time_marker` (presentation-only, FK to `pathway_timing_value`)
@@ -42,8 +41,8 @@
 
 ### 1d. Fixtures + tests
 
-- [ ] 1.21 Seed one Rugrevalidatie-shaped pathway (phases via templates, lanes via defaults, fixed + enrollment timing values, one Luscii block) via migration or seed task
-- [ ] 1.22 Pytest coverage: aggregate validation (unknown block type, unknown phase, unknown lane), timing CHECK enforcement (`fixed` + `enrollment` + rejection of `runtime`), branch/edge consistency (mismatched `source_branch_id`, branch on non-branching block per D19, duplicate edge rejection per D20), lane materialization, field-resolution path validation, Luscii payload byte-equivalent round-trip, soft-delete behavior, each REST endpoint
+- [ ] 1.21 Seed one Rugrevalidatie-shaped pathway (phases via templates, lanes via defaults, fixed + enrollment timing values, one `luscii-clinical-path` block carrying a reference-only config) via migration or seed task
+- [ ] 1.22 Pytest coverage: aggregate validation (unknown block type, unknown phase, unknown lane), timing CHECK enforcement (`fixed` + `enrollment` + rejection of `runtime`), branch/edge consistency (mismatched `source_branch_id`, branch on non-branching block per D19, duplicate edge rejection per D20), lane materialization, field-resolution path validation, `luscii-clinical-path` config validated as reference-only (no payload mirroring), soft-delete behavior, each REST endpoint
 - [ ] 1.23 Update `apps/backend/AGENTS.md` with a `Pathway domain` section + MDR reminder (block-catalogue additions must clear `mdr-watchlist.md`)
 
 ### 1e. Phase 1 review gate
