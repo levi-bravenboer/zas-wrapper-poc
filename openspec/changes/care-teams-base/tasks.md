@@ -1,6 +1,6 @@
 ## 0. Chain prerequisite
 
-- [ ] 0.1 Verify `organisations-base` AND `patients-base` are applied to the branch this implementation rebases onto; bail if not (see `openspec/changes/CHAIN.md`)
+- [x] 0.1 Verify `organisations-base` AND `patients-base` are applied to the branch this implementation rebases onto; bail if not (see `openspec/changes/CHAIN.md`)
 
 ## 1. Enums
 
@@ -64,21 +64,21 @@
 
 ## 8. Seed
 
-- [ ] 8.1 Create `scripts/seed_care_teams.py` — for each seeded patient, create one active CareTeam + one open participant (caregiver as primary)
-- [ ] 8.2 Idempotent: lookup before insert via `(patient_id, status='active')` for team and `(care_team_id, user_id, period_end IS NULL)` for participant
-- [ ] 8.3 Wire into `scripts/seed_all.py` AFTER `seed_patients.py`
+- [x] 8.1 Create `scripts/seed_care_teams.py` — for each seeded patient, create one active CareTeam + one open participant (caregiver as primary)
+- [x] 8.2 Idempotent: lookup before insert via `(patient_id, status='active')` for team and `(care_team_id, user_id, period_end IS NULL)` for participant
+- [x] 8.3 Wire into `scripts/seed_all.py` AFTER `seed_patients.py`
 
 ## 9. Integration tests
 
-- [ ] 9.1 `tests/api/test_care_teams_list.py`: returns teams + embedded participants; cross-tenant patient → 404; caregiver outside team → 404
-- [ ] 9.2 `tests/api/test_care_teams_create.py`: caregiver creates team with self as participant; admin creates team for any patient in tenant
-- [ ] 9.3 `tests/api/test_care_teams_participants.py`: assign, change role (asserts two rows after PATCH), unassign (asserts period_end set, row preserved)
-- [ ] 9.4 `tests/api/test_care_teams_authz.py`: cross-tenant user assignment rejected; non-admin cannot bypass `require_patient_access`
-- [ ] 9.5 `tests/db/test_care_team_participant_uniqueness.py`: two concurrent open rows for same (team, user) rejected; repeat over closed periods OK
-- [ ] 9.6 `tests/db/test_care_team_history.py`: close+reopen produces exactly two rows with correct period sequence
-- [ ] 9.7 `tests/api/test_patients_visibility.py`: admin sees all; caregiver sees only patients with open participant row; caregiver does NOT see patient absent membership even if same org subtree; patient with zero care teams invisible to caregivers
-- [ ] 9.8 `tests/services/test_visibility_predicate.py`: `visible_patient_ids_for` returns expected sets across combinations
-- [ ] 9.9 `tests/source/test_auth_harden_markers.py`: extend existing test to also cover `care_team_router.py`
+- [x] 9.1 `tests/api/test_care_teams_list.py`: returns teams + embedded participants; cross-tenant patient → 404; caregiver outside team → 404
+- [x] 9.2 `tests/api/test_care_teams_create.py`: caregiver creates team with self as participant; admin creates team for any patient in tenant
+- [x] 9.3 `tests/api/test_care_teams_participants.py`: assign, change role (asserts two rows after PATCH), unassign (asserts period_end set, row preserved)
+- [x] 9.4 `tests/api/test_care_teams_authz.py`: cross-tenant user assignment rejected; non-admin cannot bypass `require_patient_access`
+- [x] 9.5 `tests/db/test_care_team_participant_uniqueness.py`: two concurrent open rows for same (team, user) rejected; repeat over closed periods OK
+- [x] 9.6 `tests/db/test_care_team_history.py`: close+reopen produces exactly two rows with correct period sequence
+- [x] 9.7 `tests/api/test_patients_visibility.py`: admin sees all; caregiver sees only patients with open participant row; caregiver does NOT see patient absent membership even if same org subtree; patient with zero care teams invisible to caregivers
+- [x] 9.8 `tests/services/test_visibility_predicate.py`: `visible_patient_ids_for` returns expected sets across combinations
+- [x] 9.9 `tests/source/test_auth_harden_markers.py`: extend existing test to also cover `care_team_router.py`
 
 ## 10. OpenAPI + frontend client
 
