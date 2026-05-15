@@ -141,3 +141,6 @@ def require_role(role: Role) -> Callable[[SessionUser], SessionUser]:
         return current_user
 
     return _guard
+
+
+AdminUserDep = Annotated[SessionUser, Depends(require_role(Role.ADMIN))]

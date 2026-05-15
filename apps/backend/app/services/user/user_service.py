@@ -13,14 +13,22 @@ class UserService:
     def __init__(self, repo: UserRepository) -> None:
         self._repo = repo
 
-    async def list_in_tenant(self, tenant_id: UUID, *, active: bool | None = None) -> list[User]:
-        return await self._repo.list_in_tenant(tenant_id, active=active)
-
-    async def assign_role(self, actor: SessionUser, target_user_id: UUID, role: Role) -> User:
+    async def get(self, actor: SessionUser, target_user_id: UUID) -> User:
         user = await self._repo.get_by_id(target_user_id)
         if user is None:
             raise UserNotFoundError()
         if user.tenant_id != actor.tenant_id:
             raise CrossTenantAccessError()
+        return user
+
+    async def assign_role(self, actor: SessionUser, target_user_id: UUID, role: Role) -> User:
+        user = await self.get(actor, target_user_id)
         user.role = role
+        return await self._repo.update(user)
+
+    async def set_active(
+        self, actor: SessionUser, target_user_id: UUID, *, is_active: bool
+    ) -> User:
+        user = await self.get(actor, target_user_id)
+        user.is_active = is_active
         return await self._repo.update(user)
