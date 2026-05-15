@@ -1,21 +1,26 @@
 name: setup-orchestrator
-description: Install Node (from .nvmrc) and run npm ci for apps/orchestrator.
+description: Install Node (from .nvmrc) + pnpm and run pnpm install for apps/orchestrator.
 
 runs:
   using: composite
   steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 9.15.1
+        run_install: false
+
     - uses: actions/setup-node@v4
       with:
         node-version-file: .nvmrc
-        cache: npm
-        cache-dependency-path: apps/orchestrator/package-lock.json
+        cache: pnpm
+        cache-dependency-path: apps/orchestrator/pnpm-lock.yaml
 
-    - name: npm ci
+    - name: pnpm install
       shell: bash
-      run: npm ci
+      run: pnpm install --frozen-lockfile
       working-directory: apps/orchestrator
 
     - name: generate route tree
       shell: bash
-      run: npx tsr generate
+      run: pnpm exec tsr generate
       working-directory: apps/orchestrator

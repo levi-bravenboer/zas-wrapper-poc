@@ -14,7 +14,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'npm run dev -- --port 4173 --strictPort',
+    command: 'pnpm exec vite --port 4173 --strictPort',
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     env: { VITE_API_MODE: 'mock' },

@@ -1,0 +1,97 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(moon run :doctor)",
+      "Bash(moon run :install)",
+      "Bash(moon run :up)",
+      "Bash(moon run :down)",
+      "Bash(moon run :reset)",
+      "Bash(moon run :stack)",
+      "Bash(moon run :ci)",
+
+      "Bash(moon run backend:test)",
+      "Bash(moon run backend:test --*)",
+      "Bash(moon run backend:test-host)",
+      "Bash(moon run backend:test-host --*)",
+      "Bash(moon run backend:lint)",
+      "Bash(moon run backend:lint --*)",
+      "Bash(moon run backend:typecheck)",
+      "Bash(moon run backend:typecheck --*)",
+      "Bash(moon run backend:format)",
+      "Bash(moon run backend:format --*)",
+      "Bash(moon run backend:openapi)",
+      "Bash(moon run backend:migrate)",
+      "Bash(moon run backend:install)",
+      "Bash(moon run backend:seed)",
+      "Bash(moon run backend:seed-tenant)",
+      "Bash(moon run backend:seed-users)",
+
+      "Bash(moon run orchestrator:test)",
+      "Bash(moon run orchestrator:test --*)",
+      "Bash(moon run orchestrator:test-coverage)",
+      "Bash(moon run orchestrator:test-e2e)",
+      "Bash(moon run orchestrator:test-e2e --*)",
+      "Bash(moon run orchestrator:typecheck)",
+      "Bash(moon run orchestrator:lint)",
+      "Bash(moon run orchestrator:lint --*)",
+      "Bash(moon run orchestrator:format)",
+      "Bash(moon run orchestrator:build)",
+      "Bash(moon run orchestrator:typegen)",
+      "Bash(moon run orchestrator:install)",
+      "Bash(moon run orchestrator:preview)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(git branch -D*)",
+      "Bash(rm -rf*)",
+      "Bash(rm -fr*)",
+      "Bash(docker compose down --volumes*)",
+      "Bash(docker compose down -v*)",
+      "Bash(moon run backend:make-migration*)",
+      "Bash(alembic downgrade*)",
+      "Bash(alembic upgrade*)",
+      "Bash(psql*)",
+      "Bash(dropdb*)",
+      "Bash(createdb*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh release*)",
+      "Bash(gh pr close*)"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(wget * | bash)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-bash-rewrite.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-verify-reminder.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

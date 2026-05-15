@@ -70,7 +70,7 @@ Replace Docker Desktop with [OrbStack](https://orbstack.dev). Bind-mount filesys
 
 ```bash
 moon run :doctor       # verify host has the right versions + tooling
-moon run :install      # uv sync + npm install (host-side, so editor LSPs work)
+moon run :install      # uv sync + pnpm install (host-side, so editor LSPs work)
 moon run :up           # boots zas_db + zas_backend (docker) + vite dev (native)
 ```
 
@@ -138,7 +138,7 @@ Onboarding:
 
 ```bash
 moon run :doctor              # host preflight
-moon run :install             # host deps (uv sync + npm install)
+moon run :install             # host deps (uv sync + pnpm install)
 ```
 
 Lifecycle:
