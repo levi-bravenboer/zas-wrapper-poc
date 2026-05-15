@@ -29,7 +29,7 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 async def authed_admin(async_client: AsyncClient, seeded_zas_users: list[User]) -> User:
     admin = next(u for u in seeded_zas_users if u.role is Role.ADMIN)
     response = await async_client.post(
-        "/auth/login", json={"email": ADMIN_EMAIL, "password": _PASSWORD}
+        "/auth/login/password", json={"email": ADMIN_EMAIL, "password": _PASSWORD}
     )
     assert response.status_code == 200
     return admin
