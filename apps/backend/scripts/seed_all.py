@@ -15,12 +15,16 @@ from collections.abc import Awaitable, Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from scripts._db import run_script
+from scripts.seed_organisations import seed_organisations
 from scripts.seed_tenant import seed_zas_tenant
 from scripts.seed_users import seed_users
 
 SeedStep = Callable[[AsyncSession], Awaitable[object]]
 
-SEED_STEPS: list[SeedStep] = [seed_zas_tenant, seed_users]
+# Order matters: tenant → users (admin self-FK breaks audit-FK cycle;
+# organisation_id is NULL at this point) → organisations (audit hook stamps
+# created_by=admin; back-fills users.organisation_id at the end).
+SEED_STEPS: list[SeedStep] = [seed_zas_tenant, seed_users, seed_organisations]
 
 
 async def _seed(session: AsyncSession) -> None:

@@ -2,7 +2,8 @@
 `Base.metadata`. Alembic's `env.py` imports this package for autogenerate.
 """
 
+from app.db.models.organisation import Organisation
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
-__all__ = ["Tenant", "User"]
+__all__ = ["Organisation", "Tenant", "User"]
