@@ -282,3 +282,9 @@ Note: F2 backend aggregation + orchestrator dashboard wiring land as their own `
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
 Note: Seed-data strategy + orchestrator MSW handlers land as their own `[poc]` change in their own worktree once domain shapes stabilise. Depends on BL-035..BL-040.
+
+### BL-042 — Multi-pod realtime broadcaster
+- Tier: [mvp]
+- Source: add-datatable-base change (§8 backend docs)
+
+Note: `add-datatable-base` ships an in-memory `RealtimePubSub` in `app/realtime/pubsub.py` that fans `after_commit` events out to SSE subscribers on `GET /events`. The bus is process-local — events published on pod A are invisible to subscribers on pod B. PoC runs single-pod so this is fine. MVP horizontal scale needs a shared broker (Redis pub/sub, NATS, or Postgres `LISTEN`/`NOTIFY`) sitting behind the same `RealtimePubSub` interface so any pod's `after_commit` reaches every subscriber regardless of which pod accepted the SSE connection. Keep the publish/subscribe seam stable so swapping the transport is a single-module change.

@@ -149,6 +149,25 @@ The seam is one-directional: `router → service → repository → db.models`. 
 - Services and repositories MUST NOT call `session.commit()` themselves. Use `await session.flush()` if an INSERT-generated id is needed mid-request.
 - `async with session.begin_nested()` is the escape hatch for partial-atomicity savepoints inside a service method.
 
+### List endpoints
+
+Paged list endpoints share one query envelope (`ListQuery` in `app/schemas/_list/list_query.py`) and one response envelope (`Page[T]` in `app/schemas/_list/page.py`). Concrete repositories subclass `BaseListRepository[T]` from `app/repositories/base.py` and declare `orderable_fields`, `filterable_fields`, and `searchable_fields` as class attributes; `await repo.list_page(query)` returns a fully-shaped `Page[T]` without hand-rolled SQL. Centralising pagination, search, ordering, and filtering here keeps every domain consistent and lets the orchestrator's typed client treat lists as one shape.
+
+Route handlers stay thin:
+
+```python
+async def list_x(query: ListQueryParamsDep, repo: XRepoDep) -> Page[XRead]:
+    return await repo.list_page(query)
+```
+
+Filters use bracket-key query strings so a single param namespace covers equality and operator forms: `filter[name]=alice`, `filter[name][contains]=al`, `filter[id][in]=...&filter[id][in]=...`. The `ListQueryParamsDep` parser maps these onto the repository's declared `filterable_fields`; unknown fields or operators raise a 422 before hitting the repo.
+
+### Realtime
+
+Realtime fan-out is single-pod only. `app/realtime/pubsub.py` is an in-memory async pub/sub; SSE subscribers connect to `GET /events` (cookie-auth, tenant-scoped, `include_in_schema=False` so it does not leak into the typed client). Events publish on `after_commit` — never on rollback — so subscribers see only durable state. Soft-delete emits `action="upsert"` (the row still exists with `deleted_at` set); hard delete emits `action="delete"`.
+
+A model opts in by declaring `__realtime_resource__: ClassVar[str | None]` on the `Entity` subclass; setting it to `None` skips emission entirely (sensitive rows, audit-only tables). Multi-pod productisation is tracked as `BL-042 — Multi-pod realtime broadcaster` (tier `[mvp]`) — the in-memory bus must be replaced with a shared broker before more than one backend pod can run.
+
 ## Naming Conventions
 
 - **Files**: snake_case. Pattern inside a domain folder is `<domain>_<layer>.py` (`pathway_router.py`, `pathway_service.py`, `pathway_repository.py`). When a single domain outgrows one file per layer, add concern-named siblings (`pathway/blocks.py`, `pathway/runtime.py`) and keep them inside the same domain folder.
