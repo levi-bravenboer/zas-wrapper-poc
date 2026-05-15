@@ -51,7 +51,7 @@ async def test_list_patients_family_name_prefix(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     del seeded_zas_patients
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get(
         "/patients", params={"filter[family_name][contains]": "janss"}
     )
@@ -64,7 +64,7 @@ async def test_list_patients_given_name_prefix(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     del seeded_zas_patients
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get("/patients", params={"filter[given_name][contains]": "sve"})
     assert response.status_code == 200
     givens = {row["given_name"] for row in response.json()["items"]}
@@ -76,7 +76,7 @@ async def test_list_patients_birth_date_exact(
 ) -> None:
     target = next(p for p in seeded_zas_patients if p.given_name == "Sven")
     assert target.birth_date is not None
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get(
         "/patients", params={"filter[birth_date]": target.birth_date.isoformat()}
     )
@@ -90,7 +90,7 @@ async def test_list_patients_identifier_short_circuits(
 ) -> None:
     target = seeded_zas_patients[0]
     insz = next(i for i in target.identifiers if i.system == INSZ_SYSTEM)
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get(
         "/patients",
         params={
@@ -107,7 +107,7 @@ async def test_list_patients_and_filter_combination(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     target = next(p for p in seeded_zas_patients if p.given_name == "Sven")
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get(
         "/patients",
         params={
@@ -124,7 +124,7 @@ async def test_list_patients_search_q(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     target = next(p for p in seeded_zas_patients if p.given_name == "Sven")
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get("/patients", params={"q": "Sven"})
     assert response.status_code == 200
     ids = {row["id"] for row in response.json()["items"]}
@@ -163,7 +163,7 @@ async def test_list_patients_rejects_unknown_filter_field(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     del seeded_zas_patients
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.get("/patients", params={"filter[gender]": "male"})
     assert response.status_code == 422
 
@@ -201,7 +201,7 @@ async def test_patch_demographics_succeeds(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     target = seeded_zas_patients[0]
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.patch(f"/patients/{target.id}", json={"given_name": "Renamed"})
     assert response.status_code == 200
     assert response.json()["given_name"] == "Renamed"
@@ -211,7 +211,7 @@ async def test_patch_with_identifiers_returns_422(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     target = seeded_zas_patients[0]
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.patch(
         f"/patients/{target.id}",
         json={"identifiers": [{"system": INSZ_SYSTEM, "value": _valid_insz()}]},
@@ -226,7 +226,7 @@ async def test_soft_delete_returns_204_then_404(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     target = seeded_zas_patients[0]
-    await _login(async_client, CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
     delete = await async_client.delete(f"/patients/{target.id}")
     assert delete.status_code == 204
     follow_up = await async_client.get(f"/patients/{target.id}")
