@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next'
 
 import auth from './locales/nl/auth.json'
 import common from './locales/nl/common.json'
+import dashboard from './locales/nl/dashboard.json'
 import nav from './locales/nl/nav.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
@@ -21,9 +22,9 @@ void i18next.use(initReactI18next).init({
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: 'common',
-  ns: ['common', 'auth', 'nav', 'shell', 'smart', 'states'],
+  ns: ['common', 'auth', 'dashboard', 'nav', 'shell', 'smart', 'states'],
   resources: {
-    nl: { common, auth, nav, shell, smart, states },
+    nl: { common, auth, dashboard, nav, shell, smart, states },
   },
   interpolation: { escapeValue: false },
   returnNull: false,

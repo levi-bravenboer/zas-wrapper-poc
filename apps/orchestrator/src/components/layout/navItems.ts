@@ -11,5 +11,5 @@ export type NavItem = {
 // PoC ships a single hard-wired nav entry. Additional sections re-enter the
 // nav by registering as features (`defineFeature({ nav: { icon, order } })`).
 export const hardWiredNavItems: readonly NavItem[] = [
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: Home, order: 10 },
+  { to: '/', labelKey: 'nav.dashboard', icon: Home, order: 10 },
 ]

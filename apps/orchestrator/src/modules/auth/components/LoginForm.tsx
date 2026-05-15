@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { type FormEvent, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -5,16 +6,27 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { authKeys } from '@/modules/auth/keys'
+import type { SessionUser } from '@/modules/auth/schemas'
 
 // PoC placeholder: validation + mutation + cookie round-trip land under BL-035
-// (see openspec/backlog.md). Submit unconditionally navigates to /dashboard.
+// (see openspec/backlog.md). Submit unconditionally navigates to /.
 export function LoginForm(): ReactElement {
   const { t } = useTranslation('auth')
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault()
-    void navigate({ to: '/dashboard' })
+    // TEMP: seed session cache so guard lets / render without backend.
+    // Remove once BL-035 wires real auth (or backend is running locally).
+    queryClient.setQueryData<SessionUser>(authKeys.me(), {
+      id: 'poc',
+      email: 'poc@local.test',
+      displayName: 'PoC User',
+      roles: [],
+    })
+    void navigate({ to: '/' })
   }
 
   return (

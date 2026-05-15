@@ -23,12 +23,12 @@ describe('_auth beforeLoad', () => {
     await expect(
       authBeforeLoad({
         context: makeContext(),
-        location: { href: '/dashboard' },
+        location: { href: '/' },
       }),
     ).rejects.toMatchObject({
       options: {
         to: '/login',
-        search: { redirect: '/dashboard' },
+        search: { redirect: '/' },
       },
     })
   })
@@ -47,7 +47,7 @@ describe('_auth beforeLoad', () => {
 
     const result = await authBeforeLoad({
       context: makeContext(),
-      location: { href: '/dashboard' },
+      location: { href: '/' },
     })
 
     expect(result).toMatchObject({ session: { id: 'u1' } })

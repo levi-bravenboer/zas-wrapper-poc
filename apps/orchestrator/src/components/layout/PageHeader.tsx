@@ -63,7 +63,7 @@ export function PageHeader({
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/dashboard">{t('header.crumb.home')}</Link>
+                <Link to="/">{t('header.crumb.home')}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             {crumbs.map((crumb) => (
