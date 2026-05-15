@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathway Builder · Time + Phases canvas variants</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #ececec;
+      --line-2: #e0e0e0;
+      --ink: #0a0a0a;
+      --ink-2: #525252;
+      --muted: #8a8a8a;
+      --hover: #f5f5f5;
+
+      /* lane kinds */
+      --lane-patient:   #2563eb;
+      --lane-caregiver: #b45309;
+      --lane-system:    #475569;
+      --lane-external:  #0f766e;
+
+      /* phase tints (4 phases of heup OK) */
+      --phase-1: #fef3c7;   /* Pre-op  */
+      --phase-2: #fee2e2;   /* Operatie */
+      --phase-3: #dcfce7;   /* Herstel */
+      --phase-4: #dbeafe;   /* Nazorg  */
+      --phase-1-d: #d97706;
+      --phase-2-d: #dc2626;
+      --phase-3-d: #15803d;
+      --phase-4-d: #2563eb;
+
+      /* resolution lifecycle pill colors */
+      --res-fixed:      #525252;  /* slate */
+      --res-enrollment: #b45309;  /* amber */
+      --res-runtime:    #7c3aed;  /* purple */
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink); background: var(--bg);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { padding-bottom: 60px; }
+
+    .topbar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 24px; background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .topbar .logo {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--ink); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .topbar h1 { margin: 0; font-size: 15px; }
+    .topbar .pill {
+      font-size: 11px; padding: 3px 8px; border-radius: 5px;
+      background: var(--hover); color: var(--ink-2); font-weight: 600;
+    }
+
+    /* legend strip — same example everywhere, key lives once at top */
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 18px;
+      padding: 12px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      font-size: 11.5px; color: var(--ink-2);
+    }
+    .legend .item { display: flex; align-items: center; gap: 6px; }
+    .legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+    .legend .pill {
+      font-size: 10px; padding: 1px 6px; border-radius: 3px;
+      font-weight: 600; color: #fff;
+    }
+    .legend .pill.fixed      { background: var(--res-fixed); }
+    .legend .pill.enrollment { background: var(--res-enrollment); }
+    .legend .pill.runtime    { background: var(--res-runtime); }
+
+    .variant {
+      margin: 28px 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .variant > .vhead {
+      padding: 14px 18px;
+      background: var(--hover);
+      border-bottom: 1px solid var(--line);
+    }
+    .variant > .vhead h2 {
+      margin: 0 0 4px; font-size: 14px; font-weight: 700;
+    }
+    .variant > .vhead p {
+      margin: 0; font-size: 12px; color: var(--muted);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      background:
+        radial-gradient(circle at 1px 1px, #e8e8e8 1px, transparent 0);
+      background-size: 24px 24px;
+      overflow-x: auto;
+    }
+    .canvas {
+      position: relative;
+      min-height: 480px;
+      min-width: 1180px;
+    }
+
+    /* ============ block visual (shared across variants) ============ */
+    .block {
+      position: absolute;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      padding: 8px 11px 9px;
+      width: 175px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .block .head {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+    }
+    .block .name { font-weight: 600; font-size: 12.5px; line-height: 1.2; }
+    .block .integ {
+      font-size: 9px; padding: 1px 5px; border-radius: 3px;
+      font-weight: 600; text-transform: uppercase;
+      color: #fff; background: var(--muted);
+    }
+    .block .integ.hix    { background: #9333ea; }
+    .block .integ.luscii { background: #0f766e; }
+    .block .meta {
+      font-size: 10.5px; color: var(--muted); margin-top: 2px;
+    }
+    .block .pills {
+      display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;
+    }
+    .block .pills .p {
+      font-size: 9.5px; padding: 1px 5px; border-radius: 3px;
+      font-weight: 600; color: #fff;
+      display: inline-flex; align-items: center; gap: 3px;
+    }
+    .block .pills .p.fixed      { background: var(--res-fixed); }
+    .block .pills .p.enrollment { background: var(--res-enrollment); }
+    .block .pills .p.runtime    { background: var(--res-runtime); }
+
+    /* lane rail (shared across variants) */
+    .lane-rail {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 110px;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      display: flex; flex-direction: column;
+      z-index: 2;
+    }
+    .lane-rail .lane {
+      flex: 1;
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 12px;
+      font-size: 11.5px; font-weight: 600; color: var(--ink-2);
+      border-bottom: 1px solid var(--line);
+    }
+    .lane-rail .lane:last-child { border-bottom: 0; }
+    .lane-rail .lane .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .lane-rail .lane .dot.patient   { background: var(--lane-patient); }
+    .lane-rail .lane .dot.caregiver { background: var(--lane-caregiver); }
+    .lane-rail .lane .dot.system    { background: var(--lane-system); }
+    .lane-rail .lane .dot.external  { background: var(--lane-external); }
+
+    /* horizontal swimlane stripes shared */
+    .lane-stripe {
+      position: absolute;
+      left: 110px; right: 0;
+      height: 110px;
+      border-bottom: 1px solid var(--line);
+    }
+    .lane-stripe.alt { background: rgba(0,0,0,.012); }
+
+    /* edges (manhattan) — using divs is cheating, use SVG layer */
+    svg.edges {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    svg.edges path { fill: none; stroke: #94a3b8; stroke-width: 1.5; }
+    svg.edges path.dataflow { stroke: var(--res-runtime); stroke-dasharray: 4 3; }
+
+    /* ===================================================================
+       VARIANT A — phase bands top + day axis above lanes
+       =================================================================== */
+    .va .phase-bands {
+      position: absolute; left: 110px; right: 0; top: 0;
+      height: 30px;
+      display: flex;
+      z-index: 3;
+    }
+    .va .phase-bands .band {
+      border-right: 1px solid var(--line);
+      padding: 6px 10px;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .va .phase-bands .band:last-child { border-right: 0; }
+    .va .phase-bands .band .dur {
+      font-size: 9.5px; font-weight: 500; color: var(--muted);
+      text-transform: none; letter-spacing: 0;
+    }
+    .va .phase-bands .band.p1 { background: var(--phase-1); color: var(--phase-1-d); }
+    .va .phase-bands .band.p2 { background: var(--phase-2); color: var(--phase-2-d); }
+    .va .phase-bands .band.p3 { background: var(--phase-3); color: var(--phase-3-d); }
+    .va .phase-bands .band.p4 { background: var(--phase-4); color: var(--phase-4-d); }
+
+    .va .day-axis {
+      position: absolute; left: 110px; right: 0; top: 30px;
+      height: 22px;
+      border-bottom: 1px solid var(--line);
+      background: #fcfcfc;
+    }
+    .va .day-axis .tick {
+      position: absolute; top: 0; bottom: 0;
+      border-left: 1px dashed var(--line);
+      font-size: 9.5px; color: var(--muted);
+      padding-left: 4px;
+      display: flex; align-items: center;
+    }
+    .va .lane-stripes-wrap { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; }
+    .va .lane-rail { top: 52px; }
+
+    /* ===================================================================
+       VARIANT B — phase color tint as block background, no top band
+       =================================================================== */
+    .vb .day-axis {
+      position: absolute; left: 110px; right: 0; top: 0;
+      height: 26px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .vb .day-axis .tick {
+      position: absolute; top: 0; bottom: 0;
+      border-left: 1px dashed var(--line);
+      font-size: 9.5px; color: var(--muted);
+      padding-left: 4px;
+      display: flex; align-items: center;
+    }
+    .vb .lane-stripes-wrap { position: absolute; left: 0; right: 0; top: 26px; bottom: 0; }
+    .vb .lane-rail { top: 26px; }
+    .vb .block.p1 { border-left: 4px solid var(--phase-1-d); background: linear-gradient(to right, var(--phase-1) 0%, var(--phase-1) 8px, #fff 8px); }
+    .vb .block.p2 { border-left: 4px solid var(--phase-2-d); background: linear-gradient(to right, var(--phase-2) 0%, var(--phase-2) 8px, #fff 8px); }
+    .vb .block.p3 { border-left: 4px solid var(--phase-3-d); background: linear-gradient(to right, var(--phase-3) 0%, var(--phase-3) 8px, #fff 8px); }
+    .vb .block.p4 { border-left: 4px solid var(--phase-4-d); background: linear-gradient(to right, var(--phase-4) 0%, var(--phase-4) 8px, #fff 8px); }
+
+    /* ===================================================================
+       VARIANT C — phases as floating section frames over lanes
+       =================================================================== */
+    .vc .phase-frames {
+      position: absolute; left: 110px; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .vc .phase-frames .frame {
+      position: absolute; top: 0; bottom: 0;
+      border-left: 2px dashed var(--line-2);
+    }
+    .vc .phase-frames .frame .lbl {
+      position: sticky; top: 8px;
+      display: inline-flex; gap: 6px; align-items: center;
+      padding: 4px 8px; margin: 8px;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 6px;
+      font-size: 11px; font-weight: 700;
+    }
+    .vc .phase-frames .frame.p1 .lbl { color: var(--phase-1-d); border-color: var(--phase-1-d); }
+    .vc .phase-frames .frame.p2 .lbl { color: var(--phase-2-d); border-color: var(--phase-2-d); }
+    .vc .phase-frames .frame.p3 .lbl { color: var(--phase-3-d); border-color: var(--phase-3-d); }
+    .vc .phase-frames .frame.p4 .lbl { color: var(--phase-4-d); border-color: var(--phase-4-d); }
+    .vc .phase-frames .frame .dur {
+      font-size: 9.5px; font-weight: 500; color: var(--muted);
+    }
+    .vc .lane-stripes-wrap { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+
+    /* notes column appended below each variant */
+    .vnotes {
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      background: #fafafa;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      font-size: 12px; color: var(--ink-2); line-height: 1.55;
+    }
+    .vnotes h4 {
+      margin: 0 0 6px; font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .4px; font-weight: 700;
+    }
+    .vnotes ul { margin: 0; padding-left: 16px; }
+    .vnotes .pro { color: #15803d; }
+    .vnotes .con { color: #b91c1c; }
+
+    /* common: position helpers tied to day axis (1 day = 50px) */
+    /* x = 110 (rail) + day_offset_relative_to_min * 50 + axis_pad */
+    /* Pre-op spans -14..0 (14d), Operatie 0..1, Herstel 1..7, Nazorg 7..16 */
+    /* total span = 30d → 30 * 50 = 1500px, but compress for fit */
+    /* Use 30px per day, offset start at -14 */
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="logo">Z</div>
+    <h1>Pathway · Heup OK · Time + Phase canvas variants</h1>
+    <span class="pill">3 variants · same data</span>
+  </div>
+
+  <div class="legend">
+    <div class="item"><span class="swatch" style="background: var(--phase-1);"></span><span>Pre-op (14d)</span></div>
+    <div class="item"><span class="swatch" style="background: var(--phase-2);"></span><span>Operatie (1d)</span></div>
+    <div class="item"><span class="swatch" style="background: var(--phase-3);"></span><span>Herstel (7d)</span></div>
+    <div class="item"><span class="swatch" style="background: var(--phase-4);"></span><span>Nazorg (∞)</span></div>
+    <div class="item" style="margin-left: 16px;"><span class="pill fixed">⏱ Fixed</span><span>design-time</span></div>
+    <div class="item"><span class="pill enrollment">👤 Enrollment</span><span>caregiver fills at t=0</span></div>
+    <div class="item"><span class="pill runtime">⚡ Runtime</span><span>resolved by upstream block</span></div>
+  </div>
+
+  <!-- ===================== VARIANT A ===================== -->
+  <div class="variant va">
+    <div class="vhead">
+      <h2>A · Phase bands top + day axis</h2>
+      <p>Bands sit above lanes. Day numbers under bands (-14 → +16). Block X-position implies day. Most BPMN-like, matches builder-v1.1.</p>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas" style="height: 502px;">
+
+        <div class="phase-bands">
+          <div class="band p1" style="width: 420px;">Pre-op <span class="dur">· 14d · –14 → 0</span></div>
+          <div class="band p2" style="width: 30px;">OK <span class="dur">·1d</span></div>
+          <div class="band p3" style="width: 180px;">Herstel <span class="dur">· 7d · 1 → 7</span></div>
+          <div class="band p4" style="width: 440px;">Nazorg <span class="dur">· open · 7 →</span></div>
+        </div>
+
+        <div class="day-axis">
+          <div class="tick" style="left: 0px;">−14</div>
+          <div class="tick" style="left: 210px;">−7</div>
+          <div class="tick" style="left: 420px;">0 · OK</div>
+          <div class="tick" style="left: 450px;">+1</div>
+          <div class="tick" style="left: 600px;">+5</div>
+          <div class="tick" style="left: 630px;">+7</div>
+          <div class="tick" style="left: 780px;">+12</div>
+          <div class="tick" style="left: 930px;">+17</div>
+        </div>
+
+        <div class="lane-rail">
+          <div class="lane"><span class="dot patient"></span>Patiënt</div>
+          <div class="lane"><span class="dot caregiver"></span>Zorgverlener</div>
+          <div class="lane"><span class="dot system"></span>Systeem</div>
+          <div class="lane"><span class="dot external"></span>Extern</div>
+        </div>
+
+        <div class="lane-stripes-wrap">
+          <div class="lane-stripe"     style="top: 0; left:110px;"></div>
+          <div class="lane-stripe alt" style="top: 110px; left:110px;"></div>
+          <div class="lane-stripe"     style="top: 220px; left:110px;"></div>
+          <div class="lane-stripe alt" style="top: 330px; left:110px;"></div>
+        </div>
+
+        <!-- blocks -->
+        <!-- Patiënt lane top: y=72 (52 axis + 20 lane padding) -->
+        <div class="block" style="left: 130px; top: 80px;">
+          <div class="head"><span class="name">Vragenlijst voor OK</span><span class="integ luscii">Luscii</span></div>
+          <div class="meta">luscii.questionnaire</div>
+          <div class="pills">
+            <span class="p enrollment">👤 due_at</span>
+          </div>
+        </div>
+
+        <!-- Caregiver lane: intake gesprek, fixed -->
+        <div class="block" style="left: 280px; top: 195px;">
+          <div class="head"><span class="name">Intake gesprek</span><span class="integ hix">HiX</span></div>
+          <div class="meta">hix.appointment</div>
+          <div class="pills">
+            <span class="p enrollment">👤 slot</span>
+            <span class="p fixed">⏱ −7d</span>
+          </div>
+        </div>
+
+        <!-- System lane: OK rapport at day 0 -->
+        <div class="block" style="left: 420px; top: 305px;">
+          <div class="head"><span class="name">OK rapport</span><span class="integ hix">HiX</span></div>
+          <div class="meta">hix.observation</div>
+          <div class="pills">
+            <span class="p fixed">⏱ day 0</span>
+          </div>
+        </div>
+
+        <!-- Patient lane Herstel: Pijn vragenlijst day +5 -->
+        <div class="block" style="left: 600px; top: 80px;">
+          <div class="head"><span class="name">Pijn vragenlijst</span><span class="integ luscii">Luscii</span></div>
+          <div class="meta">decision · 3 branches</div>
+          <div class="pills">
+            <span class="p fixed">⏱ +5d</span>
+          </div>
+        </div>
+
+        <!-- System lane Nazorg: timer +30d -->
+        <div class="block" style="left: 720px; top: 305px;">
+          <div class="head"><span class="name">Wacht 30d</span></div>
+          <div class="meta">timer</div>
+          <div class="pills">
+            <span class="p fixed">⏱ 30d</span>
+          </div>
+        </div>
+
+        <!-- Caregiver lane Nazorg: follow-up afspraak runtime-resolved date -->
+        <div class="block" style="left: 920px; top: 195px;">
+          <div class="head"><span class="name">Follow-up afspraak</span><span class="integ hix">HiX</span></div>
+          <div class="meta">hix.appointment</div>
+          <div class="pills">
+            <span class="p runtime">⚡ slot</span>
+            <span class="p enrollment">👤 doctor</span>
+          </div>
+        </div>
+
+        <!-- edges (svg layer above stripes, below blocks doesn't matter visually here) -->
+        <svg class="edges" viewBox="0 0 1180 502" preserveAspectRatio="none">
+          <!-- vragenlijst → intake -->
+          <path d="M 305 100 L 320 100 L 320 215 L 280 215" />
+          <!-- intake → OK rapport -->
+          <path d="M 455 215 L 470 215 L 470 325 L 420 325" />
+          <!-- OK rapport → pijn vragenlijst -->
+          <path d="M 595 325 L 610 325 L 610 100 L 600 100" />
+          <!-- pijn → wacht 30d -->
+          <path d="M 775 100 L 790 100 L 790 325 L 720 325" />
+          <!-- wacht → follow-up -->
+          <path d="M 895 325 L 910 325 L 910 215 L 920 215" />
+          <!-- DATA-FLOW: pijn answer → follow-up slot (runtime) -->
+          <path class="dataflow" d="M 690 130 C 700 170, 950 170, 1000 195" />
+        </svg>
+
+      </div>
+    </div>
+
+    <div class="vnotes">
+      <div>
+        <h4>How time reads</h4>
+        <ul>
+          <li>Phase = chapter band (spans width = duration in days)</li>
+          <li>Day = X-position derived from cumulative timing</li>
+          <li>Pill = lifecycle of that block's time field</li>
+          <li>Dashed purple = data-flow edge (runtime field source)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Trade-offs</h4>
+        <ul>
+          <li class="pro">+ Time + phase visible at a glance</li>
+          <li class="pro">+ Day axis is the spatial anchor — drag block, day updates</li>
+          <li class="con">− Day-derived-from-X couples logic to layout (drag = data change)</li>
+          <li class="con">− Open-ended phases (Nazorg ∞) hard to size</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== VARIANT B ===================== -->
+  <div class="variant vb">
+    <div class="vhead">
+      <h2>B · Phase tint on block + day axis only</h2>
+      <p>No top band. Block carries its phase as a colored left edge. Layout decoupled from time; day axis is reference, not authority.</p>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas" style="height: 488px;">
+
+        <div class="day-axis">
+          <div class="tick" style="left: 0px;">−14</div>
+          <div class="tick" style="left: 210px;">−7</div>
+          <div class="tick" style="left: 420px;">0 · OK</div>
+          <div class="tick" style="left: 450px;">+1</div>
+          <div class="tick" style="left: 600px;">+5</div>
+          <div class="tick" style="left: 780px;">+12</div>
+          <div class="tick" style="left: 930px;">+17</div>
+        </div>
+
+        <div class="lane-rail">
+          <div class="lane"><span class="dot patient"></span>Patiënt</div>
+          <div class="lane"><span class="dot caregiver"></span>Zorgverlener</div>
+          <div class="lane"><span class="dot system"></span>Systeem</div>
+          <div class="lane"><span class="dot external"></span>Extern</div>
+        </div>
+
+        <div class="lane-stripes-wrap">
+          <div class="lane-stripe"     style="top: 0; left:110px;"></div>
+          <div class="lane-stripe alt" style="top: 110px; left:110px;"></div>
+          <div class="lane-stripe"     style="top: 220px; left:110px;"></div>
+          <div class="lane-stripe alt" style="top: 330px; left:110px;"></div>
+        </div>
+
+        <div class="block p1" style="left: 130px; top: 50px;">
+          <div class="head"><span class="name">Vragenlijst voor OK</span><span class="integ luscii">Luscii</span></div>
+          <div class="meta">phase: Pre-op</div>
+          <div class="pills">
+            <span class="p enrollment">👤 due_at</span>
+          </div>
+        </div>
+
+        <div class="block p1" style="left: 280px; top: 165px;">
+          <div class="head"><span class="name">Intake gesprek</span><span class="integ hix">HiX</span></div>
+          <div class="meta">phase: Pre-op</div>
+          <div class="pills">
+            <span class="p enrollment">👤 slot</span>
+            <span class="p fixed">⏱ −7d</span>
+          </div>
+        </div>
+
+        <div class="block p2" style="left: 420px; top: 275px;">
+          <div class="head"><span class="name">OK rapport</span><span class="integ hix">HiX</span></div>
+          <div class="meta">phase: Operatie</div>
+          <div class="pills">
+            <span class="p fixed">⏱ day 0</span>
+          </div>
+        </div>
+
+        <div class="block p3" style="left: 600px; top: 50px;">
+          <div class="head"><span class="name">Pijn vragenlijst</span><span class="integ luscii">Luscii</span></div>
+          <div class="meta">phase: Herstel</div>
+          <div class="pills">
+            <span class="p fixed">⏱ +5d</span>
+          </div>
+        </div>
+
+        <div class="block p4" style="left: 720px; top: 275px;">
+          <div class="head"><span class="name">Wacht 30d</span></div>
+          <div class="meta">phase: Nazorg</div>
+          <div class="pills"><span class="p fixed">⏱ 30d</span></div>
+        </div>
+
+        <div class="block p4" style="left: 920px; top: 165px;">
+          <div class="head"><span class="name">Follow-up afspraak</span><span class="integ hix">HiX</span></div>
+          <div class="meta">phase: Nazorg</div>
+          <div class="pills">
+            <span class="p runtime">⚡ slot</span>
+            <span class="p enrollment">👤 doctor</span>
+          </div>
+        </div>
+
+        <svg class="edges" viewBox="0 0 1180 488" preserveAspectRatio="none">
+          <path d="M 305 70 L 320 70 L 320 185 L 280 185" />
+          <path d="M 455 185 L 470 185 L 470 295 L 420 295" />
+          <path d="M 595 295 L 610 295 L 610 70 L 600 70" />
+          <path d="M 775 70 L 790 70 L 790 295 L 720 295" />
+          <path d="M 895 295 L 910 295 L 910 185 L 920 185" />
+          <path class="dataflow" d="M 690 100 C 700 140, 950 140, 1000 165" />
+        </svg>
+
+      </div>
+    </div>
+
+    <div class="vnotes">
+      <div>
+        <h4>How time reads</h4>
+        <ul>
+          <li>Phase = colored stripe on block edge + label in meta</li>
+          <li>Day = X-position aligned to ruler (visual hint, not authoritative)</li>
+          <li>Block carries its own phase explicitly — drag freely, phase stays</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Trade-offs</h4>
+        <ul>
+          <li class="pro">+ Layout decoupled from data (no surprise drags)</li>
+          <li class="pro">+ Phases not sized — open-ended phases work fine</li>
+          <li class="pro">+ Block always knows its phase even if axis hidden</li>
+          <li class="con">− Phase boundaries less visible (no big band)</li>
+          <li class="con">− Author must explicitly set phase on each block</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== VARIANT C ===================== -->
+  <div class="variant vc">
+    <div class="vhead">
+      <h2>C · Phase columns + day chips on blocks</h2>
+      <p>Phases as vertical column frames (collapsible). No day axis line — every block carries its day chip. Less spatial, more semantic.</p>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas" style="height: 470px;">
+
+        <div class="lane-rail">
+          <div class="lane"><span class="dot patient"></span>Patiënt</div>
+          <div class="lane"><span class="dot caregiver"></span>Zorgverlener</div>
+          <div class="lane"><span class="dot system"></span>Systeem</div>
+          <div class="lane"><span class="dot external"></span>Extern</div>
+        </div>
+
+        <div class="phase-frames">
+          <div class="frame p1" style="left: 0; width: 380px;">
+            <span class="lbl">Pre-op <span class="dur">14d</span></span>
+          </div>
+          <div class="frame p2" style="left: 380px; width: 130px;">
+            <span class="lbl">OK <span class="dur">1d</span></span>
+          </div>
+          <div class="frame p3" style="left: 510px; width: 220px;">
+            <span class="lbl">Herstel <span class="dur">7d</span></span>
+          </div>
+          <div class="frame p4" style="left: 730px; width: 340px;">
+            <span class="lbl">Nazorg <span class="dur">open</span></span>
+          </div>
+        </div>
+
+        <div class="lane-stripes-wrap">
+          <div class="lane-stripe"     style="top: 0; left:110px;"></div>
+          <div class="lane-stripe alt" style="top: 110px; left:110px;"></div>
+          <div class="lane-stripe"     style="top: 220px; left:110px;"></div>
+          <div class="lane-stripe alt" style="top: 330px; left:110px;"></div>
+        </div>
+
+        <div class="block" style="left: 130px; top: 30px;">
+          <div class="head"><span class="name">Vragenlijst voor OK</span><span class="integ luscii">Luscii</span></div>
+          <div class="meta">luscii.questionnaire</div>
+          <div class="pills">
+            <span class="p enrollment">👤 due_at</span>
+          </div>
+        </div>
+
+        <div class="block" style="left: 240px; top: 145px;">
+          <div class="head"><span class="name">Intake gesprek</span><span class="integ hix">HiX</span></div>
+          <div class="meta">hix.appointment</div>
+          <div class="pills">
+            <span class="p enrollment">👤 slot</span>
+            <span class="p fixed">⏱ −7d</span>
+          </div>
+        </div>
+
+        <div class="block" style="left: 400px; top: 255px;">
+          <div class="head"><span class="name">OK rapport</span><span class="integ hix">HiX</span></div>
+          <div class="meta">hix.observation</div>
+          <div class="pills">
+            <span class="p fixed">⏱ day 0</span>
+          </div>
+        </div>
+
+        <div class="block" style="left: 540px; top: 30px;">
+          <div class="head"><span class="name">Pijn vragenlijst</span><span class="integ luscii">Luscii</span></div>
+          <div class="meta">decision</div>
+          <div class="pills">
+            <span class="p fixed">⏱ +5d</span>
+          </div>
+        </div>
+
+        <div class="block" style="left: 760px; top: 255px;">
+          <div class="head"><span class="name">Wacht 30d</span></div>
+          <div class="meta">timer</div>
+          <div class="pills"><span class="p fixed">⏱ 30d</span></div>
+        </div>
+
+        <div class="block" style="left: 900px; top: 145px;">
+          <div class="head"><span class="name">Follow-up afspraak</span><span class="integ hix">HiX</span></div>
+          <div class="meta">hix.appointment</div>
+          <div class="pills">
+            <span class="p runtime">⚡ slot</span>
+            <span class="p enrollment">👤 doctor</span>
+          </div>
+        </div>
+
+        <svg class="edges" viewBox="0 0 1180 470" preserveAspectRatio="none">
+          <path d="M 305 50 L 320 50 L 320 165 L 240 165" />
+          <path d="M 415 165 L 430 165 L 430 275 L 400 275" />
+          <path d="M 575 275 L 590 275 L 590 50 L 540 50" />
+          <path d="M 715 50 L 730 50 L 730 275 L 760 275" />
+          <path d="M 935 275 L 950 275 L 950 165 L 900 165" />
+          <path class="dataflow" d="M 630 80 C 660 120, 920 120, 980 145" />
+        </svg>
+
+      </div>
+    </div>
+
+    <div class="vnotes">
+      <div>
+        <h4>How time reads</h4>
+        <ul>
+          <li>Phase = vertical column with floating label</li>
+          <li>Day = read off block pill, not the canvas</li>
+          <li>Blocks live inside phase columns (sticky during scroll)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Trade-offs</h4>
+        <ul>
+          <li class="pro">+ Open-ended phases collapse cleanly</li>
+          <li class="pro">+ Lane × phase reads as a grid</li>
+          <li class="pro">+ Sticky phase labels during scroll</li>
+          <li class="con">− No global day reference — only per-block</li>
+          <li class="con">− "Where is day 5?" requires scanning pills</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

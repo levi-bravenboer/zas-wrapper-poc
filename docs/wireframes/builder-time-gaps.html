@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathway Builder · Variable gaps between blocks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #ececec;
+      --line-2: #e0e0e0;
+      --ink: #0a0a0a;
+      --ink-2: #525252;
+      --muted: #8a8a8a;
+      --hover: #f5f5f5;
+
+      --phase-1: #fef3c7;
+      --phase-1-d: #d97706;
+
+      --res-fixed:      #525252;
+      --res-enrollment: #b45309;
+      --res-runtime:    #7c3aed;
+
+      --range: #fff7ed;
+      --range-d: #b45309;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink); background: var(--bg);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { padding-bottom: 60px; }
+
+    .topbar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 24px; background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .topbar .logo {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--ink); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .topbar h1 { margin: 0; font-size: 15px; }
+    .topbar .pill {
+      font-size: 11px; padding: 3px 8px; border-radius: 5px;
+      background: var(--hover); color: var(--ink-2); font-weight: 600;
+    }
+
+    .scenario {
+      padding: 14px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px; color: var(--ink-2); line-height: 1.55;
+    }
+    .scenario b { color: var(--ink); }
+    .scenario code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      background: var(--hover); padding: 1px 5px; border-radius: 3px;
+      font-size: 11px;
+    }
+
+    .variant {
+      margin: 28px 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .variant > .vhead {
+      padding: 14px 18px;
+      background: var(--hover);
+      border-bottom: 1px solid var(--line);
+    }
+    .variant > .vhead h2 { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
+    .variant > .vhead p { margin: 0; font-size: 12px; color: var(--muted); }
+
+    .canvas-wrap {
+      position: relative;
+      background:
+        radial-gradient(circle at 1px 1px, #e8e8e8 1px, transparent 0);
+      background-size: 24px 24px;
+      overflow-x: auto;
+    }
+    .canvas {
+      position: relative;
+      min-height: 280px;
+      min-width: 1180px;
+    }
+
+    .phase-bands {
+      position: absolute; left: 0; right: 0; top: 0;
+      height: 28px;
+      display: flex;
+      z-index: 3;
+    }
+    .phase-bands .band {
+      padding: 6px 10px;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--phase-1); color: var(--phase-1-d);
+      border-right: 1px solid var(--line);
+    }
+    .phase-bands .band .dur {
+      font-size: 9.5px; font-weight: 500; color: var(--phase-1-d); opacity: .8;
+    }
+
+    .day-axis {
+      position: absolute; left: 0; right: 0; top: 28px;
+      height: 22px;
+      border-bottom: 1px solid var(--line);
+      background: #fcfcfc;
+    }
+    .day-axis .tick {
+      position: absolute; top: 0; bottom: 0;
+      border-left: 1px dashed var(--line);
+      font-size: 9.5px; color: var(--muted);
+      padding-left: 4px;
+      display: flex; align-items: center;
+    }
+
+    .canvas-body {
+      position: absolute; left: 0; right: 0; top: 50px; bottom: 0;
+    }
+
+    .block {
+      position: absolute;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      padding: 8px 11px 9px;
+      width: 175px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+      z-index: 2;
+    }
+    .block .head {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+    }
+    .block .name { font-weight: 600; font-size: 12.5px; line-height: 1.2; }
+    .block .meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+    .block .pills {
+      display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;
+    }
+    .block .pills .p {
+      font-size: 9.5px; padding: 1px 5px; border-radius: 3px;
+      font-weight: 600; color: #fff;
+    }
+    .block .pills .p.fixed      { background: var(--res-fixed); }
+    .block .pills .p.enrollment { background: var(--res-enrollment); }
+
+    .block.shifty {
+      border-color: var(--range-d);
+      border-style: dashed;
+    }
+    .block.shifty::after {
+      content: "may shift";
+      position: absolute; top: -8px; right: 8px;
+      background: var(--panel);
+      border: 1px solid var(--range-d);
+      color: var(--range-d);
+      font-size: 9px; padding: 0 5px; border-radius: 3px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+    }
+
+    /* gap pill on edge */
+    .gap {
+      position: absolute;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px; font-weight: 700;
+      color: var(--ink-2);
+      z-index: 3;
+    }
+    .gap.fixed      { color: var(--res-fixed); }
+    .gap.enrollment { color: var(--res-enrollment); border-color: var(--res-enrollment); background: var(--range); }
+    .gap .lbl { font-size: 9px; font-weight: 500; color: var(--muted); }
+
+    /* range bracket for parameterized downstream */
+    .range-bracket {
+      position: absolute;
+      background: var(--range);
+      border: 1px dashed var(--range-d);
+      border-radius: 6px;
+      z-index: 1;
+    }
+    .range-bracket .rb-lbl {
+      position: absolute; top: -10px; left: 8px;
+      background: var(--panel);
+      border: 1px solid var(--range-d);
+      color: var(--range-d);
+      font-size: 9px; padding: 1px 5px; border-radius: 3px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+    }
+
+    /* edges */
+    svg.edges {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    svg.edges path { fill: none; stroke: #94a3b8; stroke-width: 1.5; }
+
+    .vnotes {
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      background: #fafafa;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      font-size: 12px; color: var(--ink-2); line-height: 1.55;
+    }
+    .vnotes h4 {
+      margin: 0 0 6px; font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .4px; font-weight: 700;
+    }
+    .vnotes ul { margin: 0; padding-left: 16px; }
+    .vnotes .pro { color: #15803d; }
+    .vnotes .con { color: #b91c1c; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="logo">Z</div>
+    <h1>Variable gap between blocks · 3 layout sub-variants</h1>
+    <span class="pill">A1 · A2 · A3</span>
+  </div>
+
+  <div class="scenario">
+    <b>Scenario:</b> 3 blocks chained inside one phase.
+    <code>B1</code> takes 3 days (fixed) · <code>B2</code> triggers <b>X days after B1</b> (X = enrollment-set, default 0) · <code>B3</code> triggers 4 days after <code>B2</code> (fixed). <br/>
+    Problem: <code>B3</code>'s day is unknowable at design-time. How do we render it on a day-axis canvas?
+  </div>
+
+  <!-- ===================== A1 — gap pills on edges ===================== -->
+  <div class="variant">
+    <div class="vhead">
+      <h2>A1 · Gap pills on edges, downstream marked "may shift"</h2>
+      <p>Each edge carries a pill showing the gap (fixed days or 👤 enrollment). Downstream blocks positioned by <i>default</i> values, dashed border + "may shift" tag.</p>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas" style="height: 240px;">
+
+        <div class="phase-bands">
+          <div class="band" style="width: 100%;">Pre-op <span class="dur">· 14d (Pre-op fits B1+B2+B3 in default config)</span></div>
+        </div>
+
+        <div class="day-axis">
+          <div class="tick" style="left: 30px;">day 0</div>
+          <div class="tick" style="left: 180px;">+3</div>
+          <div class="tick" style="left: 280px;">+5 (default)</div>
+          <div class="tick" style="left: 480px;">+9</div>
+          <div class="tick" style="left: 680px;">+12</div>
+          <div class="tick" style="left: 880px;">+14</div>
+        </div>
+
+        <div class="canvas-body">
+
+          <div class="block" style="left: 30px; top: 70px;">
+            <div class="head"><span class="name">B1 · Intake</span></div>
+            <div class="meta">manual.gate</div>
+            <div class="pills">
+              <span class="p fixed">⏱ 3d duration</span>
+            </div>
+          </div>
+
+          <div class="block shifty" style="left: 290px; top: 70px;">
+            <div class="head"><span class="name">B2 · Vragenlijst</span></div>
+            <div class="meta">luscii.questionnaire</div>
+            <div class="pills">
+              <span class="p enrollment">👤 +Xd after B1</span>
+            </div>
+          </div>
+
+          <div class="block shifty" style="left: 540px; top: 70px;">
+            <div class="head"><span class="name">B3 · Bevestiging</span></div>
+            <div class="meta">email.send</div>
+            <div class="pills">
+              <span class="p fixed">⏱ +4d after B2</span>
+            </div>
+          </div>
+
+          <!-- gap pills sit on edges -->
+          <div class="gap fixed"      style="left: 220px; top: 100px;">⏱ +3d</div>
+          <div class="gap enrollment" style="left: 470px; top: 100px;">👤 +Xd <span class="lbl">(default 0)</span></div>
+          <div class="gap fixed"      style="left: 715px; top: 100px;">⏱ +4d</div>
+
+          <svg class="edges" viewBox="0 0 1180 240" preserveAspectRatio="none">
+            <path d="M 205 110 L 290 110" />
+            <path d="M 465 110 L 540 110" />
+            <path d="M 715 110 L 715 110" />
+          </svg>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="vnotes">
+      <div>
+        <h4>How it reads</h4>
+        <ul>
+          <li>Edge gap pills declare the timing relationship between adjacent blocks</li>
+          <li>Downstream blocks live at their <i>default</i> day position</li>
+          <li>Dashed border + "may shift" tag on any block whose actual day depends on an enrollment-set upstream gap</li>
+          <li>Day axis shows default layout — re-renders when caregiver enters values at enrollment</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Trade-offs</h4>
+        <ul>
+          <li class="pro">+ Clear: each gap shown where it belongs (on the edge)</li>
+          <li class="pro">+ Downstream blocks visibly tagged as variable</li>
+          <li class="pro">+ Day axis still useful (defaults)</li>
+          <li class="con">− Author must give a default for every enrollment-gap (or canvas can't position B3)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== A2 — range bracket downstream ===================== -->
+  <div class="variant">
+    <div class="vhead">
+      <h2>A2 · Range bracket · downstream lives in a min–max zone</h2>
+      <p>Author declares a range for the parameterizable gap (e.g., 0–7d). Downstream blocks render inside a tinted range bracket showing all possible day positions.</p>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas" style="height: 240px;">
+
+        <div class="phase-bands">
+          <div class="band" style="width: 100%;">Pre-op <span class="dur">· 14d (with B2 gap range 0–7d, downstream span = 4–11d)</span></div>
+        </div>
+
+        <div class="day-axis">
+          <div class="tick" style="left: 30px;">day 0</div>
+          <div class="tick" style="left: 180px;">+3</div>
+          <div class="tick" style="left: 280px;">+5</div>
+          <div class="tick" style="left: 480px;">+9</div>
+          <div class="tick" style="left: 680px;">+12</div>
+          <div class="tick" style="left: 880px;">+14</div>
+        </div>
+
+        <div class="canvas-body">
+
+          <div class="block" style="left: 30px; top: 70px;">
+            <div class="head"><span class="name">B1 · Intake</span></div>
+            <div class="meta">manual.gate</div>
+            <div class="pills">
+              <span class="p fixed">⏱ 3d duration</span>
+            </div>
+          </div>
+
+          <!-- B2 range bracket: min day +3, max day +10 -->
+          <div class="range-bracket" style="left: 215px; top: 60px; width: 285px; height: 120px;">
+            <span class="rb-lbl">B2 zone · day +3 → +10</span>
+          </div>
+
+          <div class="block" style="left: 230px; top: 70px;">
+            <div class="head"><span class="name">B2 · Vragenlijst</span></div>
+            <div class="meta">luscii.questionnaire</div>
+            <div class="pills">
+              <span class="p enrollment">👤 +0..7d after B1</span>
+            </div>
+          </div>
+
+          <!-- B3 range bracket: min +7, max +14 -->
+          <div class="range-bracket" style="left: 415px; top: 60px; width: 485px; height: 120px;">
+            <span class="rb-lbl">B3 zone · day +7 → +14</span>
+          </div>
+
+          <div class="block" style="left: 700px; top: 70px;">
+            <div class="head"><span class="name">B3 · Bevestiging</span></div>
+            <div class="meta">email.send</div>
+            <div class="pills">
+              <span class="p fixed">⏱ +4d after B2</span>
+            </div>
+          </div>
+
+          <svg class="edges" viewBox="0 0 1180 240" preserveAspectRatio="none">
+            <path d="M 205 110 L 230 110" />
+            <path d="M 405 110 L 700 110" />
+          </svg>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="vnotes">
+      <div>
+        <h4>How it reads</h4>
+        <ul>
+          <li>Author declares min/max for parameterizable gaps (e.g., <code>0..7d</code>)</li>
+          <li>Downstream blocks render inside a tinted range bracket showing all possible days</li>
+          <li>Block positioned at midpoint or min — the bracket carries the truth</li>
+          <li>Phase duration check derives from cumulative max</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Trade-offs</h4>
+        <ul>
+          <li class="pro">+ Honest about uncertainty</li>
+          <li class="pro">+ Phase fit visible (does max range still fit in phase duration?)</li>
+          <li class="pro">+ Constrains caregiver at enrollment to the declared range</li>
+          <li class="con">− Author must declare min/max (more authoring work)</li>
+          <li class="con">− Brackets stack visually (phases full of variable blocks = busy canvas)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== A3 — relative chains, no global day ===================== -->
+  <div class="variant">
+    <div class="vhead">
+      <h2>A3 · Relative chains · drop the global day axis inside chains</h2>
+      <p>Day axis applies to phase boundaries only. Within a chain, blocks placed by visual flow + gap pills carry the relative timing. No "global day" claim made about variable blocks.</p>
+    </div>
+
+    <div class="canvas-wrap">
+      <div class="canvas" style="height: 240px;">
+
+        <div class="phase-bands">
+          <div class="band" style="width: 100%;">Pre-op <span class="dur">· 14d max</span></div>
+        </div>
+
+        <div class="day-axis">
+          <div class="tick" style="left: 30px;">phase start (day 0)</div>
+          <div class="tick" style="left: 880px;">phase end (day +14)</div>
+        </div>
+
+        <div class="canvas-body">
+
+          <div class="block" style="left: 30px; top: 70px;">
+            <div class="head"><span class="name">B1 · Intake</span></div>
+            <div class="meta">manual.gate</div>
+            <div class="pills">
+              <span class="p fixed">⏱ 3d duration</span>
+            </div>
+          </div>
+
+          <div class="gap fixed" style="left: 220px; top: 100px;">⏱ +3d</div>
+
+          <div class="block" style="left: 290px; top: 70px;">
+            <div class="head"><span class="name">B2 · Vragenlijst</span></div>
+            <div class="meta">luscii.questionnaire</div>
+            <div class="pills">
+              <span class="p enrollment">👤 +Xd after B1</span>
+            </div>
+          </div>
+
+          <div class="gap enrollment" style="left: 480px; top: 100px;">👤 +Xd</div>
+
+          <div class="block" style="left: 540px; top: 70px;">
+            <div class="head"><span class="name">B3 · Bevestiging</span></div>
+            <div class="meta">email.send</div>
+            <div class="pills">
+              <span class="p fixed">⏱ +4d after B2</span>
+            </div>
+          </div>
+
+          <div class="gap fixed" style="left: 730px; top: 100px;">⏱ +4d</div>
+
+          <svg class="edges" viewBox="0 0 1180 240" preserveAspectRatio="none">
+            <path d="M 205 110 L 290 110" />
+            <path d="M 465 110 L 540 110" />
+            <path d="M 715 110 L 730 110" />
+          </svg>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="vnotes">
+      <div>
+        <h4>How it reads</h4>
+        <ul>
+          <li>Day axis only marks phase boundaries — not absolute block positions</li>
+          <li>Gap pills carry the truth between blocks</li>
+          <li>Position = visual flow only, not data</li>
+          <li>"What day is B3 on?" answered at enrollment by walking the chain</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Trade-offs</h4>
+        <ul>
+          <li class="pro">+ Honest — never lies about absolute days</li>
+          <li class="pro">+ No "may shift" tags needed everywhere</li>
+          <li class="pro">+ Less authoring (no defaults, no min/max required)</li>
+          <li class="con">− Loses the "day +5 means this" visual quick-read</li>
+          <li class="con">− Phase fit harder to eyeball</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

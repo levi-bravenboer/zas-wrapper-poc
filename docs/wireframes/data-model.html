@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathway data model — locked shape</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111a2e;
+      --panel-2: #15203a;
+      --border: #233152;
+      --ink: #e6ecff;
+      --ink-dim: #9aa6c7;
+      --accent: #6aa6ff;
+      --green: #6cd29c;
+      --amber: #f1c570;
+      --rose: #ff8aa1;
+      --purple: #b89dff;
+      --cyan: #79e2d4;
+      --shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 32px rgba(0, 0, 0, 0.45);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 40px 96px;
+      background: radial-gradient(ellipse at top, #15203a 0%, var(--bg) 65%);
+      color: var(--ink);
+      font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+    h2 { font-size: 15px; margin: 28px 0 10px; color: var(--ink); letter-spacing: 0.02em; text-transform: uppercase; font-weight: 600; }
+    h3 { font-size: 13px; margin: 0 0 6px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+    .lede { color: var(--ink-dim); margin: 0 0 20px; max-width: 88ch; }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 6px 0 26px; }
+    .legend span {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--panel); border: 1px solid var(--border);
+      font-size: 12px; color: var(--ink-dim);
+    }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .grid { display: grid; gap: 14px; }
+    .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .table {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+    .table.aggregate { border-left-color: var(--accent); }
+    .table.catalogue { border-left-color: var(--green); }
+    .table.shared { border-left-color: var(--amber); }
+    .table.code { border-left-color: var(--purple); border-style: dashed; }
+    .table.extension { border-left-color: var(--rose); }
+    .table .name {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-weight: 600; color: var(--ink); margin-bottom: 8px;
+      font-family: -apple-system, system-ui, sans-serif; font-size: 13px;
+    }
+    .table .name small { color: var(--ink-dim); font-weight: 400; font-size: 11px; }
+    .table ul { margin: 0; padding-left: 0; list-style: none; }
+    .table li { padding: 2px 0; color: var(--ink); }
+    .table li .col { color: var(--ink); }
+    .table li .type { color: var(--ink-dim); font-size: 11.5px; margin-left: 6px; }
+    .table li .pk { color: var(--accent); font-weight: 600; margin-left: 6px; font-size: 10.5px; }
+    .table li .fk { color: var(--cyan); font-size: 10.5px; margin-left: 6px; }
+    .table li .check { color: var(--amber); font-size: 10.5px; margin-left: 6px; }
+    .table li .nn { color: var(--rose); font-size: 10.5px; margin-left: 4px; }
+    .table .note {
+      margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+      color: var(--ink-dim); font-family: -apple-system, system-ui, sans-serif; font-size: 12px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 24px; }
+    .stat {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .stat .num { font-size: 22px; font-weight: 700; }
+    .stat .label { font-size: 11.5px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+    .decision {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 8px 12px; margin: 4px 0;
+      font-size: 12.5px; color: var(--ink-dim);
+    }
+    .decision b { color: var(--ink); font-weight: 600; }
+    .erd {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+      overflow: auto;
+    }
+    svg { display: block; width: 100%; height: auto; }
+    .rules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .rule {
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+      font-size: 12.5px; color: var(--ink-dim);
+    }
+    .rule b { color: var(--ink); }
+    code.inline {
+      font-family: var(--mono); background: var(--panel-2);
+      border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px;
+      font-size: 12px; color: var(--cyan);
+    }
+    .timing-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-left: 3px solid var(--amber);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .timing-card h4 { margin: 0 0 8px; font-size: 13px; color: var(--ink); }
+    .timing-card .when { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--amber); margin-bottom: 8px; }
+    .timing-card pre { margin: 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Pathway data model</h1>
+  <p class="lede">Eleven tables. Relational with one purposeful jsonb (<code class="inline">pathway_block.config</code>) and one opaque text payload (<code class="inline">pathway_block_luscii_extension.payload</code>). Every domain table is prefixed <code class="inline">pathway_</code> so cross-domain collisions cannot happen.</p>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--accent)"></i> Aggregate (per-pathway, cascade-delete)</span>
+    <span><i class="swatch" style="background:var(--green)"></i> Catalogue (system, seeded)</span>
+    <span><i class="swatch" style="background:var(--amber)"></i> Shared value table</span>
+    <span><i class="swatch" style="background:var(--rose)"></i> Extension (per-block-type)</span>
+    <span><i class="swatch" style="background:var(--purple); opacity:.7"></i> Code-side catalogue (no DB row)</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">11</div><div class="label">Tables total</div></div>
+    <div class="stat"><div class="num">1</div><div class="label">jsonb (block.config)</div></div>
+    <div class="stat"><div class="num">1</div><div class="label">DB catalogue (lane_kind)</div></div>
+    <div class="stat"><div class="num">2</div><div class="label">Code catalogues (block, phase template)</div></div>
+  </div>
+
+  <h2>Locked decisions on this shape</h2>
+  <div class="grid cols-2">
+    <div class="decision"><b>D1</b> — Pathway = aggregate root + 10 cascade-delete child tables. Not a JSONB graph blob.</div>
+    <div class="decision"><b>D2</b> — Block-type catalogue is server-owned code; <code class="inline">GET /pathway-blocks</code> returns it.</div>
+    <div class="decision"><b>D9 + D10</b> — Lanes: <code class="inline">pathway_lane_kind</code> catalogue + per-pathway <code class="inline">pathway_lane</code> instances. Block always FKs a real lane row.</div>
+    <div class="decision"><b>D11</b> — Phases per pathway, ordered, optional duration. Not navigable. Loopback = derived from edge target's lower-ord phase.</div>
+    <div class="decision"><b>D12</b> — Time on <code class="inline">block.duration</code> + <code class="inline">edge.delay</code> via shared <code class="inline">pathway_timing_value</code>. Tri-kind: fixed / enrollment / runtime. CHECK-constrained, no JSONB.</div>
+    <div class="decision"><b>D13</b> — Block cards fixed-width (~175px). Smart time tape deferred post-PoC; data shape preserves seam.</div>
+    <div class="decision"><b>D14</b> — Phase templates live in code (mirror D2). <code class="inline">pathway_phase.template_id</code> = soft pointer, no FK.</div>
+    <div class="decision"><b>Naming exception</b> — <code class="inline">pathway_block.config</code> is the ONLY jsonb. Validated at the app boundary against the catalogue's per-type <code class="inline">config_schema</code>.</div>
+  </div>
+
+  <h2>Catalogues (system / code)</h2>
+  <div class="grid cols-3">
+    <div class="table catalogue">
+      <div class="name">pathway_lane_kind <small>seeded migration</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">text</span><span class="pk">PK</span></li>
+        <li><span class="col">label_i18n</span><span class="type">text</span><span class="nn">NN</span></li>
+        <li><span class="col">color_token</span><span class="type">text</span></li>
+        <li><span class="col">icon</span><span class="type">text</span></li>
+        <li><span class="col">default_ord</span><span class="type">int</span><span class="nn">NN</span></li>
+      </ul>
+      <div class="note">Seeded: <code class="inline">patient</code>, <code class="inline">caregiver</code>, <code class="inline">system</code>, <code class="inline">external</code>. Adding a kind = seed migration row.</div>
+    </div>
+    <div class="table code">
+      <div class="name">block_type catalogue <small>code, no DB row</small></div>
+      <ul>
+        <li><span class="col">type</span><span class="type">text (kebab)</span></li>
+        <li><span class="col">label</span><span class="type">text</span></li>
+        <li><span class="col">default_lane_kind_id</span><span class="type">text</span></li>
+        <li><span class="col">config_schema</span><span class="type">JSON Schema</span></li>
+      </ul>
+      <div class="note">Served by <code class="inline">GET /pathway-blocks</code>. Validates each <code class="inline">pathway_block.config</code> at the app boundary. PoC types: appointment, decision, milestone, timer, luscii-clinical-path.</div>
+    </div>
+    <div class="table code">
+      <div class="name">phase_template catalogue <small>code, no DB row</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">text</span></li>
+        <li><span class="col">label</span><span class="type">text</span></li>
+        <li><span class="col">default_ord</span><span class="type">int</span></li>
+        <li><span class="col">default_duration_days</span><span class="type">int?</span></li>
+      </ul>
+      <div class="note">Served by <code class="inline">GET /pathway-phase-templates</code>. Seeds <code class="inline">pathway_phase</code> on +Add. Soft pointer only — renames don't break existing pathways.</div>
+    </div>
+  </div>
+
+  <h2>Shared value table</h2>
+  <div class="table shared">
+    <div class="name">pathway_timing_value <small>shared by block.duration and edge.delay</small></div>
+    <ul>
+      <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+      <li><span class="col">kind</span><span class="type">text</span><span class="nn">NN</span><span class="check">CHECK in (fixed, enrollment, runtime)</span></li>
+      <li><span class="col">fixed_days</span><span class="type">int?</span></li>
+      <li><span class="col">enrollment_default_days</span><span class="type">int?</span></li>
+      <li><span class="col">enrollment_min_days</span><span class="type">int?</span></li>
+      <li><span class="col">enrollment_max_days</span><span class="type">int?</span></li>
+      <li><span class="col">runtime_source_block_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_block</span></li>
+      <li><span class="col">runtime_source_output</span><span class="type">text?</span></li>
+    </ul>
+    <div class="note">CHECK enforces exactly one column-set populated per <code class="inline">kind</code>. <b>No jsonb.</b> Referenced by <code class="inline">pathway_block.duration_value_id</code>, <code class="inline">pathway_edge.delay_value_id</code>, <code class="inline">pathway_phase.duration_value_id</code>, <code class="inline">pathway_time_marker.value_id</code>.</div>
+  </div>
+
+  <h2>Tri-kind timing semantics</h2>
+  <div class="grid cols-3">
+    <div class="timing-card">
+      <div class="when">design-time</div>
+      <h4>fixed</h4>
+      <pre>{ kind: "fixed",
+  fixed_days: 3 }</pre>
+      <div class="note" style="border:none;padding-top:6px;">Author picks the value in the builder. Locked once the pathway is saved.</div>
+    </div>
+    <div class="timing-card">
+      <div class="when">enrollment-time</div>
+      <h4>enrollment</h4>
+      <pre>{ kind: "enrollment",
+  enrollment_default_days: 2,
+  enrollment_min_days: 0,
+  enrollment_max_days: 7 }</pre>
+      <div class="note" style="border:none;padding-top:6px;">Caregiver picks at enrollment, bounded by min/max. Default pre-fills the wizard.</div>
+    </div>
+    <div class="timing-card">
+      <div class="when">runtime</div>
+      <h4>runtime</h4>
+      <pre>{ kind: "runtime",
+  runtime_source_block_id: &lt;uuid&gt;,
+  runtime_source_output: "duration_days" }</pre>
+      <div class="note" style="border:none;padding-top:6px;">Read from an upstream block's output at execution. Source must be in the same pathway.</div>
+    </div>
+  </div>
+
+  <h2>Pathway aggregate (cascade-delete with root)</h2>
+  <div class="grid cols-3">
+    <div class="table aggregate">
+      <div class="name">pathway <small>aggregate root</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">name</span><span class="type">text</span><span class="nn">NN</span></li>
+        <li><span class="col">entry_block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block</span></li>
+        <li><span class="col">last_edited_at</span><span class="type">timestamptz</span></li>
+      </ul>
+      <div class="note">Single row per pathway. <code class="inline">entry_block_id</code> validated against own block set on save.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_phase</div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
+        <li><span class="col">template_id</span><span class="type">text?</span><span class="check">soft pointer — no FK</span></li>
+        <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
+        <li><span class="col">ord</span><span class="type">int</span><span class="nn">NN</span></li>
+        <li><span class="col">duration_value_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_timing_value</span></li>
+      </ul>
+      <div class="note">UNIQUE (pathway_id, ord). Loopback = edge whose target sits in lower ord. Not a navigable canvas.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_lane</div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
+        <li><span class="col">pathway_lane_kind_id</span><span class="type">text</span><span class="fk">FK → pathway_lane_kind</span></li>
+        <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
+        <li><span class="col">ord</span><span class="type">int</span><span class="nn">NN</span></li>
+        <li><span class="col">is_default</span><span class="type">bool</span><span class="nn">NN</span></li>
+      </ul>
+      <div class="note">UNIQUE (pathway_id, ord). Default lanes materialized on first block placement of that kind. Custom lanes added by author.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_block <small>node on canvas</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
+        <li><span class="col">phase_id</span><span class="type">uuid</span><span class="fk">FK → pathway_phase</span><span class="nn">NN</span></li>
+        <li><span class="col">lane_id</span><span class="type">uuid</span><span class="fk">FK → pathway_lane</span><span class="nn">NN</span></li>
+        <li><span class="col">type</span><span class="type">text</span><span class="check">∈ block-type catalogue</span></li>
+        <li><span class="col">label</span><span class="type">text</span></li>
+        <li><span class="col">duration_value_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_timing_value</span></li>
+        <li><span class="col">config</span><span class="type">jsonb</span><span class="check">Exception 1 — validated vs config_schema</span></li>
+        <li><span class="col">x</span> <span class="type">int</span> · <span class="col">y</span> <span class="type">int</span></li>
+      </ul>
+      <div class="note">The one purposeful jsonb. Per-type relational tables would multiply with every new block; the catalogue already documents shape.</div>
+    </div>
+
+    <div class="table extension">
+      <div class="name">pathway_block_luscii_extension</div>
+      <ul>
+        <li><span class="col">block_id</span><span class="type">uuid</span><span class="pk">PK + FK CASCADE</span></li>
+        <li><span class="col">payload</span><span class="type">text</span><span class="check">Exception 2 — opaque, byte-equivalent round-trip</span></li>
+      </ul>
+      <div class="note">Only exists for blocks of type <code class="inline">luscii-clinical-path</code>. MDR-relevant: backend never interprets.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_branch <small>decision-block branches</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block CASCADE</span></li>
+        <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
+        <li><span class="col">ord</span><span class="type">int</span><span class="nn">NN</span></li>
+      </ul>
+      <div class="note">First-class entity. Edges leaving a decision block carry <code class="inline">source_branch_id</code> to disambiguate.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_edge <small>connector</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
+        <li><span class="col">source_block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block</span><span class="nn">NN</span></li>
+        <li><span class="col">target_block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block</span><span class="nn">NN</span></li>
+        <li><span class="col">source_branch_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_branch</span></li>
+        <li><span class="col">delay_value_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_timing_value</span></li>
+      </ul>
+      <div class="note">One edge model handles forward, branch, and loopback uniformly. Branch must belong to <code class="inline">source_block_id</code>.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_time_marker <small>presentation only</small></div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
+        <li><span class="col">value_id</span><span class="type">uuid</span><span class="fk">FK → pathway_timing_value</span></li>
+        <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
+      </ul>
+      <div class="note">Vertical day-marker on the canvas (e.g. "Surgery + 30d"). Does not affect routing.</div>
+    </div>
+
+    <div class="table aggregate">
+      <div class="name">pathway_block_field_resolution</div>
+      <ul>
+        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block CASCADE</span></li>
+        <li><span class="col">field_path</span><span class="type">text</span><span class="check">must exist in block's config_schema</span></li>
+        <li><span class="col">source_kind</span><span class="type">text</span><span class="check">∈ (enrollment, runtime)</span></li>
+        <li><span class="col">source_block_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_block</span></li>
+        <li><span class="col">source_output</span><span class="type">text?</span></li>
+      </ul>
+      <div class="note">Per-field override: marks which <code class="inline">config</code> fields are filled at enrollment vs runtime instead of design-time.</div>
+    </div>
+  </div>
+
+  <h2>How the tables connect</h2>
+  <div class="erd">
+    <svg viewBox="0 0 1200 580" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, Menlo, monospace" font-size="11">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#79e2d4" />
+        </marker>
+        <marker id="arr-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6aa6ff" opacity="0.7" />
+        </marker>
+        <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#f1c570" />
+        </marker>
+        <marker id="arr-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#b89dff" />
+        </marker>
+        <marker id="arr-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ff8aa1" />
+        </marker>
+      </defs>
+
+      <!-- LEFT: catalogues -->
+      <rect x="20" y="20" width="190" height="50" rx="8" fill="#15203a" stroke="#6cd29c" stroke-width="2"/>
+      <text x="115" y="42" fill="#e6ecff" text-anchor="middle">pathway_lane_kind</text>
+      <text x="115" y="58" fill="#9aa6c7" text-anchor="middle" font-size="10">catalogue (DB)</text>
+
+      <rect x="20" y="100" width="190" height="50" rx="8" fill="#15203a" stroke="#b89dff" stroke-width="2" stroke-dasharray="4 3"/>
+      <text x="115" y="122" fill="#e6ecff" text-anchor="middle">block_type catalogue</text>
+      <text x="115" y="138" fill="#9aa6c7" text-anchor="middle" font-size="10">code (no DB row)</text>
+
+      <rect x="20" y="180" width="190" height="50" rx="8" fill="#15203a" stroke="#b89dff" stroke-width="2" stroke-dasharray="4 3"/>
+      <text x="115" y="202" fill="#e6ecff" text-anchor="middle">phase_template catalogue</text>
+      <text x="115" y="218" fill="#9aa6c7" text-anchor="middle" font-size="10">code (no DB row)</text>
+
+      <!-- LEFT: shared timing -->
+      <rect x="20" y="330" width="190" height="50" rx="8" fill="#15203a" stroke="#f1c570" stroke-width="2"/>
+      <text x="115" y="352" fill="#e6ecff" text-anchor="middle">pathway_timing_value</text>
+      <text x="115" y="368" fill="#9aa6c7" text-anchor="middle" font-size="10">shared (CHECK)</text>
+
+      <!-- TOP: aggregate root -->
+      <rect x="500" y="20" width="210" height="60" rx="10" fill="#15203a" stroke="#6aa6ff" stroke-width="2.5"/>
+      <text x="605" y="44" fill="#e6ecff" text-anchor="middle" font-weight="600">pathway</text>
+      <text x="605" y="62" fill="#9aa6c7" text-anchor="middle" font-size="10">aggregate root · entry_block_id</text>
+
+      <!-- ROW 2: phase, lane, time_marker -->
+      <rect x="270" y="130" width="180" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
+      <text x="360" y="152" fill="#e6ecff" text-anchor="middle">pathway_phase</text>
+      <text x="360" y="168" fill="#9aa6c7" text-anchor="middle" font-size="10">ordered chapters</text>
+
+      <rect x="510" y="130" width="180" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
+      <text x="600" y="152" fill="#e6ecff" text-anchor="middle">pathway_lane</text>
+      <text x="600" y="168" fill="#9aa6c7" text-anchor="middle" font-size="10">per-pathway rails</text>
+
+      <rect x="750" y="130" width="200" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
+      <text x="850" y="152" fill="#e6ecff" text-anchor="middle">pathway_time_marker</text>
+      <text x="850" y="168" fill="#9aa6c7" text-anchor="middle" font-size="10">presentation only</text>
+
+      <!-- CENTER: pathway_block -->
+      <rect x="490" y="240" width="240" height="74" rx="12" fill="#15203a" stroke="#6aa6ff" stroke-width="2.5"/>
+      <text x="610" y="264" fill="#e6ecff" text-anchor="middle" font-weight="600">pathway_block</text>
+      <text x="610" y="280" fill="#9aa6c7" text-anchor="middle" font-size="10">type ∈ catalogue · lane_id NN · phase_id NN</text>
+      <text x="610" y="298" fill="#79e2d4" text-anchor="middle" font-size="10">config jsonb (Exception 1)</text>
+
+      <!-- RIGHT: luscii extension -->
+      <rect x="980" y="240" width="200" height="74" rx="10" fill="#15203a" stroke="#ff8aa1" stroke-width="2"/>
+      <text x="1080" y="264" fill="#e6ecff" text-anchor="middle">pathway_block_luscii</text>
+      <text x="1080" y="280" fill="#e6ecff" text-anchor="middle">_extension</text>
+      <text x="1080" y="298" fill="#9aa6c7" text-anchor="middle" font-size="10">opaque payload (text)</text>
+
+      <!-- ROW 4: branch, edge, field_resolution -->
+      <rect x="270" y="370" width="180" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
+      <text x="360" y="392" fill="#e6ecff" text-anchor="middle">pathway_branch</text>
+      <text x="360" y="408" fill="#9aa6c7" text-anchor="middle" font-size="10">decision sub-rows</text>
+
+      <rect x="500" y="440" width="220" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
+      <text x="610" y="462" fill="#e6ecff" text-anchor="middle">pathway_edge</text>
+      <text x="610" y="478" fill="#9aa6c7" text-anchor="middle" font-size="10">source / target / branch / delay</text>
+
+      <rect x="770" y="370" width="240" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
+      <text x="890" y="392" fill="#e6ecff" text-anchor="middle">pathway_block_field_resolution</text>
+      <text x="890" y="408" fill="#9aa6c7" text-anchor="middle" font-size="10">per-field overrides</text>
+
+      <!-- CASCADE edges from pathway -->
+      <path d="M560 80 C 480 100 410 110 380 130" fill="none" stroke="#6aa6ff" stroke-width="1.5" marker-end="url(#arr-dim)" opacity="0.85"/>
+      <path d="M605 80 L 605 130" fill="none" stroke="#6aa6ff" stroke-width="1.5" marker-end="url(#arr-dim)" opacity="0.85"/>
+      <path d="M650 80 C 750 100 810 110 840 130" fill="none" stroke="#6aa6ff" stroke-width="1.5" marker-end="url(#arr-dim)" opacity="0.85"/>
+      <path d="M620 80 C 620 160 620 200 615 240" fill="none" stroke="#6aa6ff" stroke-width="1.5" marker-end="url(#arr-dim)" opacity="0.85"/>
+      <path d="M585 80 C 540 160 530 300 545 440" fill="none" stroke="#6aa6ff" stroke-width="1.2" marker-end="url(#arr-dim)" opacity="0.6"/>
+
+      <!-- block -> phase -->
+      <path d="M510 252 C 430 230 400 200 405 180" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="412" y="220" fill="#79e2d4" font-size="10">phase_id</text>
+
+      <!-- block -> lane -->
+      <path d="M610 240 L 610 180" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="618" y="215" fill="#79e2d4" font-size="10">lane_id</text>
+
+      <!-- lane -> lane_kind -->
+      <path d="M510 154 C 360 130 260 70 210 50" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="320" y="98" fill="#79e2d4" font-size="10">pathway_lane_kind_id</text>
+
+      <!-- block.type validated by code catalogue -->
+      <path d="M495 280 C 350 220 260 180 210 130" fill="none" stroke="#b89dff" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr-purple)"/>
+      <text x="280" y="200" fill="#b89dff" font-size="10">type + config validated</text>
+
+      <!-- phase.template_id soft pointer -->
+      <path d="M285 156 C 250 175 225 195 215 210" fill="none" stroke="#b89dff" stroke-width="1" stroke-dasharray="2 3" marker-end="url(#arr-purple)"/>
+      <text x="222" y="190" fill="#b89dff" font-size="10">template_id (soft)</text>
+
+      <!-- phase.duration_value_id -> timing -->
+      <path d="M310 180 C 250 230 200 290 175 330" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)"/>
+
+      <!-- block.duration_value_id -> timing -->
+      <path d="M490 290 C 370 320 240 340 210 350" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)"/>
+      <text x="320" y="332" fill="#f1c570" font-size="10">duration_value_id</text>
+
+      <!-- edge.delay_value_id -> timing -->
+      <path d="M500 462 C 360 450 240 400 210 370" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)"/>
+      <text x="300" y="430" fill="#f1c570" font-size="10">delay_value_id</text>
+
+      <!-- time_marker.value_id -> timing -->
+      <path d="M750 158 C 520 180 280 200 210 340" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)" opacity="0.7"/>
+      <text x="510" y="200" fill="#f1c570" font-size="10">value_id</text>
+
+      <!-- timing.runtime_source_block_id -> block (cyclic ok) -->
+      <path d="M170 330 C 200 250 380 230 490 260" fill="none" stroke="#f1c570" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr-amber)" opacity="0.7"/>
+      <text x="280" y="248" fill="#f1c570" font-size="10">runtime_source_block_id</text>
+
+      <!-- branch -> block -->
+      <path d="M450 380 C 530 340 570 320 590 314" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="500" y="340" fill="#79e2d4" font-size="10">block_id</text>
+
+      <!-- edge -> source/target block -->
+      <path d="M610 440 L 610 314" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="618" y="380" fill="#79e2d4" font-size="10">source / target_block_id</text>
+
+      <!-- edge -> branch (optional) -->
+      <path d="M520 440 C 470 420 440 410 430 420" fill="none" stroke="#79e2d4" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arr)"/>
+      <text x="445" y="438" fill="#79e2d4" font-size="10">source_branch_id?</text>
+
+      <!-- field_resolution -> block -->
+      <path d="M775 380 C 740 340 720 320 720 314" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="745" y="350" fill="#79e2d4" font-size="10">block_id</text>
+
+      <!-- luscii_ext -> block (PK + FK) -->
+      <path d="M980 276 L 730 276" fill="none" stroke="#ff8aa1" stroke-width="1.5" marker-end="url(#arr-rose)"/>
+      <text x="850" y="268" fill="#ff8aa1" font-size="10">block_id (PK + FK)</text>
+
+      <!-- legend bottom -->
+      <g transform="translate(20, 520)">
+        <rect x="0" y="0" width="14" height="3" fill="#6aa6ff"/>
+        <text x="20" y="5" fill="#9aa6c7">CASCADE (aggregate)</text>
+        <rect x="180" y="0" width="14" height="3" fill="#79e2d4"/>
+        <text x="200" y="5" fill="#9aa6c7">FK (relational)</text>
+        <rect x="340" y="0" width="14" height="3" fill="#f1c570"/>
+        <text x="360" y="5" fill="#9aa6c7">FK to timing value</text>
+        <rect x="520" y="0" width="14" height="3" fill="#b89dff"/>
+        <text x="540" y="5" fill="#9aa6c7">code-catalogue lookup / soft pointer</text>
+        <rect x="800" y="0" width="14" height="3" fill="#ff8aa1"/>
+        <text x="820" y="5" fill="#9aa6c7">extension (per block type)</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2>Validation rules at the app boundary</h2>
+  <div class="rules">
+    <div class="rule"><b>entry_block_id</b> must reference a block that belongs to the same pathway.</div>
+    <div class="rule"><b>pathway_block.type</b> must exist in the block-type catalogue.</div>
+    <div class="rule"><b>pathway_block.config</b> must conform to the catalogue's per-type <code class="inline">config_schema</code> (Pydantic on save, rjsf on input).</div>
+    <div class="rule"><b>pathway_block.lane_id</b> NOT NULL — every block sits on exactly one real lane row.</div>
+    <div class="rule"><b>pathway_block.phase_id</b> NOT NULL and must reference a phase of the same pathway.</div>
+    <div class="rule"><b>pathway_timing_value</b> CHECK enforces exactly one column-set populated per kind. Contradictions surface as 422.</div>
+    <div class="rule"><b>runtime_source_block_id</b> on a timing value must reference a block in the same pathway.</div>
+    <div class="rule"><b>pathway_edge.source_branch_id</b>, when set, must belong to <code class="inline">source_block_id</code>.</div>
+    <div class="rule"><b>pathway_block_field_resolution.field_path</b> must exist in the block's <code class="inline">config_schema</code>.</div>
+    <div class="rule"><b>UNIQUE (pathway_id, ord)</b> on both <code class="inline">pathway_phase</code> and <code class="inline">pathway_lane</code>.</div>
+    <div class="rule"><b>Cascade-delete</b> from <code class="inline">pathway</code> through every aggregate child table on pathway delete.</div>
+    <div class="rule"><b>Luscii payload</b> round-trips byte-equivalent. Backend never interprets.</div>
+  </div>
+</body>
+</html>

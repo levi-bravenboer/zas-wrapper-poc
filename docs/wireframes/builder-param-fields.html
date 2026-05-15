@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathway Builder · Parameterizable fields (3 variants)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #ececec;
+      --line-2: #e0e0e0;
+      --ink: #0a0a0a;
+      --ink-2: #525252;
+      --muted: #8a8a8a;
+      --hover: #f5f5f5;
+      --accent: #2563eb;
+      --param: #b45309;
+      --fixed: #525252;
+      --good: #15803d;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink); background: var(--bg);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
+
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 24px; background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    .logo {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--ink); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .crumbs { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+    .crumbs .here { color: var(--ink); font-weight: 500; }
+    .pill {
+      font-size: 11px; padding: 3px 8px; border-radius: 5px;
+      background: var(--hover); color: var(--ink-2); font-weight: 600;
+    }
+
+    main {
+      padding: 28px 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      overflow: auto;
+      align-items: start;
+    }
+
+    .variant {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .variant > header {
+      background: var(--hover);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+      display: block;
+    }
+    .variant > header h2 {
+      margin: 0 0 4px; font-size: 14px; font-weight: 700;
+    }
+    .variant > header p {
+      margin: 0; font-size: 12px; color: var(--muted);
+    }
+    .variant .body {
+      padding: 16px;
+      display: flex; flex-direction: column;
+      gap: 16px;
+    }
+
+    /* tiny canvas block sample */
+    .mini-canvas {
+      background:
+        radial-gradient(circle at 1px 1px, #e8e8e8 1px, transparent 0);
+      background-size: 16px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      min-height: 90px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .block {
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      padding: 9px 11px;
+      min-width: 180px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .block .head {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 4px;
+    }
+    .block .name { font-weight: 600; font-size: 12.5px; }
+    .block .chip {
+      font-size: 9px; padding: 1px 6px; border-radius: 4px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
+      color: #fff; background: var(--muted);
+    }
+    .block .meta {
+      font-size: 11px; color: var(--muted);
+      display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+    }
+    .block .meta .tpill {
+      background: var(--hover); padding: 1px 5px; border-radius: 3px;
+      color: var(--ink-2);
+    }
+    .block .meta .tpill.param {
+      background: #fff7ed; color: var(--param); border: 1px dashed var(--param);
+    }
+
+    /* side panel form */
+    .form {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .form .form-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 600; font-size: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .form .form-head .small {
+      font-size: 10px; color: var(--muted); font-weight: 500;
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    .form .field {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .form .field:last-child { border-bottom: 0; }
+    .form .field label {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .form .field input[type="text"],
+    .form .field input[type="number"],
+    .form .field select {
+      width: 100%; box-sizing: border-box;
+      padding: 6px 8px; font-size: 12px;
+      border: 1px solid var(--line-2); border-radius: 5px;
+      font-family: inherit;
+      background: #fff;
+    }
+    .form .field input.disabled {
+      background: #fafafa; color: var(--muted); cursor: not-allowed;
+    }
+    .form .field .help {
+      margin-top: 4px; font-size: 10.5px; color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* toggles */
+    .toggle {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .3px;
+      cursor: pointer;
+    }
+    .toggle .seg {
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--hover); color: var(--muted);
+      border: 1px solid transparent;
+    }
+    .toggle .seg.active.fixed { background: #f1f5f9; color: var(--fixed); border-color: var(--line-2); }
+    .toggle .seg.active.param { background: #fff7ed; color: var(--param); border-color: var(--param); }
+
+    .lock-btn {
+      cursor: pointer; font-size: 12px; line-height: 1;
+      padding: 3px 5px; border-radius: 4px;
+      border: 1px solid var(--line-2);
+      background: #fff;
+    }
+    .lock-btn.fixed { color: var(--fixed); }
+    .lock-btn.param { color: var(--param); border-color: var(--param); background: #fff7ed; }
+
+    .checkbox-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0; font-size: 12px;
+    }
+    .checkbox-row input[type="checkbox"] { margin: 0; }
+    .checkbox-row .field-name { font-weight: 500; }
+    .checkbox-row .desc { color: var(--muted); font-size: 11px; }
+
+    .panel-tab {
+      display: flex; border-bottom: 1px solid var(--line);
+    }
+    .panel-tab .tab {
+      flex: 1; padding: 8px 10px; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .panel-tab .tab.active {
+      color: var(--ink); border-bottom-color: var(--ink);
+    }
+
+    /* shared notes block */
+    .vnote {
+      font-size: 11.5px; line-height: 1.55; color: var(--ink-2);
+      padding: 10px 12px;
+      background: #fafafa;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+    }
+    .vnote h4 {
+      margin: 0 0 6px; font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .4px;
+      font-weight: 700;
+    }
+    .vnote ul { margin: 0; padding-left: 16px; }
+    .vnote code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      background: var(--hover); padding: 1px 4px; border-radius: 3px;
+      font-size: 10.5px;
+    }
+    .vnote .tradeoffs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .vnote .pro { color: var(--good); }
+    .vnote .con { color: #b91c1c; }
+
+    /* sentinel preview */
+    .stored {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 10.5px;
+      background: #fafafa;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--ink);
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    .stored .k { color: #6366f1; }
+    .stored .s { color: #15803d; }
+    .stored .p { color: var(--param); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Z</div>
+    <div class="crumbs">
+      <span>Algemeen</span>
+      <span style="opacity:.4;">/</span>
+      <span class="here">Telegeneeskunde proces</span>
+      <span style="opacity:.4;">/</span>
+      <span class="here">Bevestiging mailen</span>
+    </div>
+    <span class="pill">Variant compare · Param fields</span>
+  </header>
+
+  <main>
+
+    <!-- ============ VARIANT A ============ -->
+    <div class="variant">
+      <header>
+        <h2>A · Inline toggle per field</h2>
+        <p>Each field has Fixed ↔ Per-patient toggle. Active mode highlighted.</p>
+      </header>
+      <div class="body">
+
+        <div class="mini-canvas">
+          <div class="block">
+            <div class="head">
+              <span class="name">Bevestiging mailen</span>
+              <span class="chip">Email</span>
+            </div>
+            <div class="meta">
+              <span class="tpill">⏱ +1d</span>
+              <span class="tpill param">⏱ ? per patient</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form">
+          <div class="form-head">
+            <span>email.send · config</span>
+            <span class="small">2 fields</span>
+          </div>
+
+          <div class="field">
+            <label>
+              <span>delay_after_previous</span>
+              <span class="toggle">
+                <span class="seg active fixed">Fixed</span>
+                <span class="seg">Per patient</span>
+              </span>
+            </label>
+            <input type="text" value="1d" />
+            <div class="help">Vast in pathway. Engine wacht 1 dag na vorige stap.</div>
+          </div>
+
+          <div class="field">
+            <label>
+              <span>send_at_time</span>
+              <span class="toggle">
+                <span class="seg">Fixed</span>
+                <span class="seg active param">Per patient</span>
+              </span>
+            </label>
+            <input type="text" class="disabled" value="— set at enrollment —" disabled />
+            <div class="help">Caregiver vult dit per patiënt in bij enrollment.</div>
+          </div>
+        </div>
+
+        <div class="vnote">
+          <h4>Stored shape (jsonb)</h4>
+<div class="stored">{
+  <span class="k">"delay_after_previous"</span>: <span class="s">"1d"</span>,
+  <span class="k">"send_at_time"</span>: { <span class="k">"$param"</span>: <span class="p">true</span> }
+}</div>
+        </div>
+
+        <div class="vnote">
+          <h4>Trade-offs</h4>
+          <div class="tradeoffs">
+            <div>
+              <div class="pro">+ Local, in-context</div>
+              <div class="pro">+ Sentinel makes JSON self-describing</div>
+            </div>
+            <div>
+              <div class="con">− Toggle clutter on every field</div>
+              <div class="con">− `$param` sentinel needs schema doc</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ VARIANT B ============ -->
+    <div class="variant">
+      <header>
+        <h2>B · Two-tab side panel</h2>
+        <p>Tab 1 = pathway defaults. Tab 2 = checkbox list of fields the caregiver fills at enrollment.</p>
+      </header>
+      <div class="body">
+
+        <div class="mini-canvas">
+          <div class="block">
+            <div class="head">
+              <span class="name">Bevestiging mailen</span>
+              <span class="chip">Email</span>
+            </div>
+            <div class="meta">
+              <span class="tpill">⏱ +1d</span>
+              <span class="tpill param">1 ? per patient</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form" style="padding:0;">
+          <div class="panel-tab">
+            <div class="tab active">Defaults</div>
+            <div class="tab">Per patient (1)</div>
+          </div>
+
+          <div class="form-head" style="border-bottom:1px solid var(--line);">
+            <span>email.send · config</span>
+            <span class="small">tab: defaults</span>
+          </div>
+          <div class="field">
+            <label><span>delay_after_previous</span></label>
+            <input type="text" value="1d" />
+          </div>
+          <div class="field">
+            <label><span>send_at_time</span></label>
+            <input type="text" class="disabled" value="— deferred to enrollment —" disabled />
+            <div class="help">Marked "per patient" in the next tab.</div>
+          </div>
+          <div class="field" style="background:#fafafa;">
+            <label style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;">Tab 2 preview</label>
+            <div class="checkbox-row">
+              <input type="checkbox" />
+              <span class="field-name">delay_after_previous</span>
+              <span class="desc">— ask caregiver?</span>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" checked />
+              <span class="field-name">send_at_time</span>
+              <span class="desc">— ask caregiver?</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vnote">
+          <h4>Stored shape</h4>
+<div class="stored">{
+  <span class="k">"config"</span>: {
+    <span class="k">"delay_after_previous"</span>: <span class="s">"1d"</span>,
+    <span class="k">"send_at_time"</span>: <span class="s">null</span>
+  },
+  <span class="k">"parameterized_fields"</span>: [<span class="s">"send_at_time"</span>]
+}</div>
+        </div>
+
+        <div class="vnote">
+          <h4>Trade-offs</h4>
+          <div class="tradeoffs">
+            <div>
+              <div class="pro">+ Clear separation</div>
+              <div class="pro">+ Easy "what's enrollment-asked" list</div>
+            </div>
+            <div>
+              <div class="con">− 2 places to look</div>
+              <div class="con">− Two columns on `pathway_block` to keep in sync</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ VARIANT C ============ -->
+    <div class="variant">
+      <header>
+        <h2>C · Lock icon per field</h2>
+        <p>All fields show value. Tiny lock toggle: 🔒 fixed ↔ 🟠 deferred. Compact.</p>
+      </header>
+      <div class="body">
+
+        <div class="mini-canvas">
+          <div class="block">
+            <div class="head">
+              <span class="name">Bevestiging mailen</span>
+              <span class="chip">Email</span>
+            </div>
+            <div class="meta">
+              <span class="tpill">⏱ +1d 🔒</span>
+              <span class="tpill param">⏱ +? 🟠</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form">
+          <div class="form-head">
+            <span>email.send · config</span>
+            <span class="small">🔒 fixed · 🟠 per patient</span>
+          </div>
+
+          <div class="field">
+            <label>
+              <span>delay_after_previous</span>
+              <span class="lock-btn fixed" title="Click to defer">🔒</span>
+            </label>
+            <input type="text" value="1d" />
+          </div>
+
+          <div class="field">
+            <label>
+              <span>send_at_time</span>
+              <span class="lock-btn param" title="Click to fix">🟠</span>
+            </label>
+            <input type="text" value="08:00" />
+            <div class="help">🟠 = caregiver may override at enrollment. Default <code>08:00</code> applies if they skip.</div>
+          </div>
+        </div>
+
+        <div class="vnote">
+          <h4>Stored shape</h4>
+<div class="stored">{
+  <span class="k">"config"</span>: {
+    <span class="k">"delay_after_previous"</span>: <span class="s">"1d"</span>,
+    <span class="k">"send_at_time"</span>: <span class="s">"08:00"</span>
+  },
+  <span class="k">"parameterizable"</span>: {
+    <span class="k">"send_at_time"</span>: <span class="p">true</span>
+  }
+}</div>
+        </div>
+
+        <div class="vnote">
+          <h4>Trade-offs</h4>
+          <div class="tradeoffs">
+            <div>
+              <div class="pro">+ Always shows a default value (engine fallback)</div>
+              <div class="pro">+ Tiny visual footprint</div>
+              <div class="pro">+ Two-state, no 3rd "deferred + null"</div>
+            </div>
+            <div>
+              <div class="con">− Lock icon = subtle, may miss</div>
+              <div class="con">− "default + override" semantic ≠ "required at enrollment"</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>
