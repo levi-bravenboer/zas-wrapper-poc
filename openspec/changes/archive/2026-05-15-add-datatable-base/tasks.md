@@ -315,4 +315,4 @@
   - `feat(orchestrator): add data-table i18n namespace`
   - `chore(orchestrator): add eslint rules for table + tanstack import boundaries`
   - `docs(orchestrator): codify list and datatable conventions`
-- [ ] 29.3 Open PR (title: `feat: add datatable + list-query + realtime invalidation base`)
+- [x] 29.3 PR merged — datatable + list-query + realtime invalidation base shipped on `main`

@@ -1,0 +1,276 @@
+# patients-base Specification
+
+## Purpose
+TBD - created by archiving change patients-base. Update Purpose after archive.
+## Requirements
+### Requirement: Patient is a clinical subject, never an authenticatable identity
+
+The `patients` table SHALL represent a clinical subject only. Patients SHALL NOT authenticate against our system, HiX-embedded surfaces, or any other login pathway exposed by this codebase. The `patients` table SHALL NOT carry credential columns (`password_hash`, `auth_provider_sub`, `session_*`, `last_login_at`, or equivalents). Identity for login lives exclusively in `users`. Any future patient-facing surface SHALL be introduced as a separate capability with its own auth entity — the `patients` row stays clinical-subject-only.
+
+#### Scenario: Patients table has no credential or login columns
+
+- **WHEN** the `patients` table schema is inspected after migration
+- **THEN** no column named `password_hash`, `auth_provider_sub`, `session_token`, `session_id`, `last_login_at`, or `mfa_*` MUST exist on the table
+
+#### Scenario: Patient ID is never accepted by auth routes
+
+- **WHEN** any `/auth/*` route receives a request body
+- **THEN** that route's request schema MUST NOT reference `Patient` or `patient_id` in any field
+
+### Requirement: Patient shape conforms to FHIR R4 Patient
+
+The patient entity (columns + identifier rows + API search parameters) SHALL conform structurally to FHIR R4 `Patient`. Specifically: gender values SHALL use the FHIR `administrative-gender` value set (`male|female|other|unknown`); identifier `system` values SHALL be URI-formatted (URN OID or URL) matching FHIR `Identifier.system` semantics; date-of-birth SHALL be `birth_date` (date-only, no timezone) per FHIR `Patient.birthDate`; list-search parameters SHALL be named to map 1:1 to FHIR `Patient` search params (`family`→`family_name`, `given`→`given_name`, `birthdate`→`birth_date`, `identifier`→`identifier`). The capability SHALL NOT depend on the `fhir.resources` library; FHIR is the shape contract, not the wire format.
+
+#### Scenario: Gender column rejects non-FHIR codes
+
+- **WHEN** an insert or update attempts to set `gender` to a value outside `{male, female, other, unknown}`
+- **THEN** the database enum check MUST reject it
+
+#### Scenario: Identifier system is URI-formatted
+
+- **WHEN** a `patient_identifiers` row is created via API
+- **THEN** the `system` value MUST start with `urn:` or `http:` or `https:` (URI-formatted), validated at the schema layer
+
+### Requirement: Patients table persists tenant-scoped patient entities
+
+The backend SHALL persist a `patients` table where each row represents a patient belonging to exactly one tenant. `Patient` SHALL inherit `TenantOwnedEntity`, so each row carries the inherited columns (`id`, `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by`, `tenant_id`) plus patient-specific columns (`primary_organisation_id`, `given_name`, `family_name`, `birth_date`, `gender`, `source`, `external_system`, `external_ref`, `external_version`, `last_synced_at`). The `primary_organisation_id` column SHALL be a NOT NULL FK to `organisations.id` (on delete RESTRICT). The referenced organisation MUST belong to the same tenant as the patient row (enforced at service layer). All non-identifier patient queries SHALL be tenant-scoped through the inherited `tenant_id` filter.
+
+#### Scenario: Table created by migration
+
+- **WHEN** a fresh database is migrated to head (after `organisations-base`)
+- **THEN** a `patients` table exists with columns `id` (UUID, primary key, not null), `tenant_id` (UUID, not null, references `tenants.id`, on delete RESTRICT), `primary_organisation_id` (UUID, not null, references `organisations.id`, on delete RESTRICT), `created_by` (UUID, not null, references `users.id`, on delete RESTRICT), `updated_by` (UUID, not null, references `users.id`, on delete RESTRICT), `deleted_by` (UUID, nullable, references `users.id`, on delete RESTRICT), `given_name` (varchar 255, not null), `family_name` (varchar 255, not null), `birth_date` (date, nullable), `gender` (enum `gender`, not null), `source` (enum `patient_source`, not null, default `'local'`), `external_system` (varchar 64, nullable), `external_ref` (varchar 255, nullable), `external_version` (varchar 64, nullable), `last_synced_at` (timestamptz, nullable), `created_at` (timestamptz, not null, default `now()`), `updated_at` (timestamptz, not null, default `now()`), `deleted_at` (timestamptz, nullable)
+
+#### Scenario: Primary organisation must be same-tenant
+
+- **WHEN** a write attempts to set `primary_organisation_id` to an organisation row whose `tenant_id` differs from the patient's `tenant_id`
+- **THEN** the service layer MUST raise a domain error and the write MUST NOT persist
+
+#### Scenario: External-ref uniqueness is tenant-scoped and ignores soft-deleted rows
+
+- **WHEN** the migration runs
+- **THEN** a partial unique index exists on `(tenant_id, external_system, external_ref)` with predicate `external_ref IS NOT NULL AND deleted_at IS NULL`
+
+#### Scenario: Audit fields auto-filled by hook on patient insert
+
+- **WHEN** an authenticated caregiver's request inserts a patient and `session.info[SESSION_ACTOR_KEY]` is set to the caregiver's `SessionUser`
+- **THEN** the patient row's `tenant_id`, `created_by`, and `updated_by` MUST be stamped by the audit hook to the caregiver's `tenant_id` / `id` — the API handler MUST NOT set those fields explicitly
+
+#### Scenario: Tenant isolation hides cross-tenant rows
+
+- **WHEN** a caregiver in tenant A issues `GET /api/v1/patients/{id}` for a patient row whose `tenant_id` is tenant B
+- **THEN** the API MUST respond `404 Not Found` (not `403`) to avoid existence disclosure
+
+### Requirement: Gender enum is a single canonical FHIR-aligned value
+
+The backend SHALL define exactly one Python `Gender` enum at `app/core/enums/patient.py` with values `male`, `female`, `other`, `unknown` (string-valued via `StrEnum`), re-exported from `app/core/enums/__init__.py`. These values MUST match FHIR R4 administrative-gender codes verbatim. This enum MUST be the source of truth for the `gender` column type (`sa.Enum(Gender, name="gender", native_enum=True, create_constraint=True)`) and for every Pydantic `gender` field in `app/schemas/`.
+
+#### Scenario: ORM model imports Gender from core
+
+- **WHEN** the `Patient` ORM model declares its `gender` column
+- **THEN** it MUST import `Gender` from `app.core.enums.patient` and pass it to `sa.Enum(...)`
+
+#### Scenario: Pydantic schemas import Gender from core
+
+- **WHEN** a Pydantic schema types a `gender` field
+- **THEN** it MUST import `Gender` from `app.core.enums.patient`
+
+#### Scenario: Postgres enum type created by migration
+
+- **WHEN** the migration runs on a fresh database
+- **THEN** a Postgres enum type `gender` exists with exactly the values `('male', 'female', 'other', 'unknown')` in that order
+
+### Requirement: Patient source enum captures row authority
+
+The backend SHALL define a `PatientSource` enum at `app/core/enums/patient.py` with values `local`, `hix`, `luscii` (string-valued via `StrEnum`), persisted as Postgres enum type `patient_source`. The `source` column on `patients` SHALL NOT be nullable and SHALL default to `local`. Rows with `source != 'local'` SHALL have `external_system` and `external_ref` populated; rows with `source == 'local'` MAY leave `external_ref` null.
+
+#### Scenario: Default source is local
+
+- **WHEN** a row is inserted via the API without an explicit `source` value
+- **THEN** the row's `source` MUST be persisted as `'local'`
+
+#### Scenario: HiX-sourced row carries external linkage
+
+- **WHEN** a row is upserted by the HiX adapter (MVP) with `source='hix'`
+- **THEN** the database MUST require `external_system='hix'` AND `external_ref IS NOT NULL` for that row (enforced by adapter contract; PoC validator stub)
+
+### Requirement: Patient identifiers persist in a dedicated child table
+
+The backend SHALL persist a `patient_identifiers` table where each row links one identifier value to one patient. Columns: `id` (UUID, PK), `patient_id` (UUID, not null, references `patients.id`, on delete CASCADE), `system` (varchar 255, not null), `value` (varchar 255, not null), `use` (varchar 32, not null, default `'official'`), `created_at` (timestamptz, not null, default `now()`), `updated_at` (timestamptz, not null, default `now()`), `deleted_at` (timestamptz, nullable). Tenant scope SHALL be inherited transitively through the `patient_id` foreign key; identifier rows MUST NOT be queried in isolation from `patients`. A partial unique index `(patient_id, system, value) WHERE deleted_at IS NULL` SHALL prevent duplicate identifiers per patient.
+
+#### Scenario: Identifier rows cascade delete on hard patient delete
+
+- **WHEN** a `patients` row is hard-deleted (test-only path)
+- **THEN** all matching `patient_identifiers` rows MUST be deleted by the FK CASCADE
+
+#### Scenario: Same identifier reusable across patients
+
+- **WHEN** two `patient_identifiers` rows have identical `(system, value)` but different `patient_id`
+- **THEN** both inserts MUST succeed (uniqueness is per-patient, not global)
+
+#### Scenario: INSZ identifier uses Belgian OID system
+
+- **WHEN** an INSZ identifier is created via API or seed
+- **THEN** its `system` MUST equal `urn:oid:2.16.840.1.113883.2.8.4.1.1` and its `value` MUST pass Mod-97 checksum validation
+
+#### Scenario: Identifier query path enforces tenant scope through join
+
+- **WHEN** the API lists identifiers for a patient
+- **THEN** the underlying SQL MUST join `patient_identifiers` to `patients` and filter by `patients.tenant_id = :current_tenant`
+
+### Requirement: Patients API exposes tenant-scoped CRUD for authenticated caregivers and admins
+
+The backend SHALL expose under `/patients` exactly these routes: `GET /patients` (list), `GET /patients/{id}` (read), `POST /patients` (create), `PATCH /patients/{id}` (update demographics), `DELETE /patients/{id}` (soft delete). All routes SHALL require an authenticated user matching `require_role(Role.ADMIN, Role.CAREGIVER)`. All routes SHALL be tenant-scoped via the session actor's `tenant_id`. Cross-tenant reads SHALL return `404`, never `403`. Every route handler that applies an auth guard SHALL carry an `# AUTH-HARDEN` source comment so future hardening passes are grep-able.
+
+#### Scenario: Unauthenticated request rejected
+
+- **WHEN** an unauthenticated request calls any `/patients` route
+- **THEN** the API MUST respond `401 Unauthorized`
+
+#### Scenario: List response includes identifiers
+
+- **WHEN** a caregiver calls `GET /patients`
+- **THEN** each patient in the response body MUST include an `identifiers` array with `{system, value, use}` entries, eagerly loaded
+
+#### Scenario: PATCH cannot mutate identifiers in PoC
+
+- **WHEN** a `PATCH /patients/{id}` request body contains an `identifiers` field
+- **THEN** the API MUST respond `422 Unprocessable Entity` with a clear message indicating identifier mutation is not supported in PoC
+
+#### Scenario: DELETE soft-deletes and stamps deleted_by
+
+- **WHEN** a caregiver issues `DELETE /patients/{id}`
+- **THEN** the row's `deleted_at` MUST be set to `now()`, `deleted_by` MUST be set to the caregiver's `id`, and subsequent `GET /patients/{id}` MUST return `404`
+
+#### Scenario: AUTH-HARDEN marker present on every guarded route
+
+- **WHEN** any source-level scan of `app/api/routers/patient/patient_router.py` runs
+- **THEN** every route handler that applies a role or session guard MUST carry an `# AUTH-HARDEN` comment within its function body or as a leading guard-line comment
+
+### Requirement: Patients list supports FHIR-aligned discrete search parameters
+
+The `GET /patients` route SHALL ride on the shared `ListQuery` envelope (`page`, `page_size`, `q`, `order_by`, `order`, bracket-key `filter[<field>][<op>]=<value>`) introduced by `add-datatable-base`, and SHALL expose the FHIR `Patient` search dimensions through that envelope as follows:
+
+- Pagination via `page` (int, default 1) and `page_size` (int, default 25, max 100); response envelope is `Page[PatientRead]` with `items`, `page`, `page_size`, `total`, `total_pages`.
+- `filter[family_name][contains]=<value>` — case-insensitive substring on `patients.family_name` (FHIR `family`).
+- `filter[given_name][contains]=<value>` — case-insensitive substring on `patients.given_name` (FHIR `given`).
+- `filter[birth_date]=<ISO date>` (or `[gte]`/`[lte]`) — equality / range on `patients.birth_date` (FHIR `birthdate`).
+- `filter[primary_organisation_id][eq|in]=<uuid>` — scoping by primary organisation.
+- `q=<value>` — free-text search across `family_name`/`given_name` via `searchable_fields`.
+- `identifier=<value>` — a flat router query param (NOT a `filter[...]` key) that short-circuits the rest of the query with an exact match on `patient_identifiers.value` joined through `patient_id` within the caller's tenant.
+
+When `identifier` is provided, it SHALL short-circuit all other filters and `q` (return the at-most-one matching row). When `identifier` is absent, the `filter[...]` entries SHALL be AND-combined and intersected with `q`. All matches SHALL be tenant-scoped via the session actor's `tenant_id` enforced by `BaseListRepository._tenant_predicate`. Filter field names align with FHIR R4 `Patient` search (`family`, `given`, `birthdate`, `identifier`) so MVP HiX adapter wiring is a direct mapping.
+
+#### Scenario: Identifier short-circuits other filters
+
+- **WHEN** `GET /patients?identifier=<value>&filter[family_name][contains]=zzz` is called and a patient in the caller's tenant has that identifier value
+- **THEN** the response MUST contain that patient regardless of the `family_name` mismatch
+
+#### Scenario: Multiple filters AND together
+
+- **WHEN** `GET /patients?filter[family_name][contains]=jans&filter[birth_date]=1985-03-12` is called
+- **THEN** the response MUST contain only patients whose `family_name` contains `jans` AND whose `birth_date` equals `1985-03-12`
+
+#### Scenario: Search never crosses tenant boundary
+
+- **WHEN** `GET /patients?identifier=<value>` is called and a patient with that identifier exists in a different tenant
+- **THEN** the response MUST be empty
+
+#### Scenario: Default pagination size applied
+
+- **WHEN** `GET /patients` is called with no `page_size` param and the tenant has more than 25 patients
+- **THEN** the response MUST contain at most 25 items and MUST report `page=1`, `page_size=25`, the correct `total`, and a `total_pages` consistent with `ceil(total / page_size)`
+
+#### Scenario: Unknown filter field is rejected
+
+- **WHEN** `GET /patients?filter[gender]=male` is called (gender is intentionally not in `PatientRepository.filterable_fields`)
+- **THEN** the response MUST be `422 Unprocessable Entity` from the shared `ListQuery` validator
+
+### Requirement: HiX patient adapter module reserves the MVP wiring point
+
+The backend SHALL provide a module at `app/adapters/hix/patients.py` exposing class `HixPatientAdapter` with methods `fetch(external_ref: str)` and `upsert_from_hix(payload)`. Both methods SHALL raise `NotImplementedError("HiX patient adapter is MVP scope")` in PoC. The module SHALL be importable and covered by an import-test.
+
+#### Scenario: Adapter module is importable
+
+- **WHEN** `from app.adapters.hix.patients import HixPatientAdapter` is executed in any test
+- **THEN** the import MUST succeed without side effects
+
+#### Scenario: Adapter methods raise NotImplementedError in PoC
+
+- **WHEN** `HixPatientAdapter().fetch("x")` or `HixPatientAdapter().upsert_from_hix({})` is called
+- **THEN** the call MUST raise `NotImplementedError` with the message `"HiX patient adapter is MVP scope"`
+
+### Requirement: Orchestrator exposes a patients overview screen built on `DataTable<T>`
+
+The orchestrator SHALL ship `/_auth/patients` as the canonical caregiver/admin patients overview, satisfying PoC feature `F4` (Patients overview). The page SHALL compose `<DataTable<PatientRead>>` per `apps/orchestrator/AGENTS.md` §25 (Lists & DataTable) — no ad-hoc `<table>`, no hand-rolled `useQuery` wrappers, no inline filter / column / action defs in the route file. Data fetching SHALL go through `usePaginatedQuery('/patients', state)` and ride the shared `ListQuery` + `Page[T]` envelope (`page`, `page_size`, `q`, `order_by`, `order`, `filter[<field>][<op>]`). User-visible Dutch strings SHALL live under the `patients` i18n namespace.
+
+The page SHALL render the following columns (left-to-right; first column sticky):
+
+1. **Naam** — `"${family_name}, ${given_name}"`, `sortKey: "family_name"`, sticky.
+2. **INSZ** — pill rendering the value of the identifier whose `system === INSZ_SYSTEM`; absent → em-dash. Not sortable, not filterable.
+3. **Geboortedatum** — `dd MMM yyyy` (locale `nl-NL`), `sortKey: "birth_date"`.
+4. **Geslacht** — short badge (`M` / `V` / `X` / `?` for `male` / `female` / `other` / `unknown`). Not sortable.
+5. **Organisatie** — name resolved via `GET /organisations` lookup, keyed off `primary_organisation_id`. Not sortable.
+6. **Bijgewerkt** — `dd MMM HH:mm` (locale `nl-NL`), `sortKey: "updated_at"`.
+
+The page SHALL expose:
+
+- **Search** (`q`): placeholder `"Zoek op naam of voornaam…"`, matches backend `searchable_fields = (family_name, given_name)`.
+- **Filter — geboortedatum** (`filter[birth_date][gte]` / `[lte]`): date-range picker.
+- **Filter — organisatie** (`filter[primary_organisation_id][eq]`): single-select bound to the tenant-scoped `GET /organisations` list.
+- **Default sort**: `family_name asc` (matches `PatientRepository.default_order`).
+- **Row click**: navigate `/_auth/patients/$patientId`. The detail route SHALL be scaffolded as a placeholder ("Detailpagina komt binnenkort") in this change so row clicks never 404; the real F5 detail view ships in a later change.
+- **Row actions** (kebab): a single `Verwijderen` action calling `DELETE /patients/{id}` behind a destructive confirm dialog. Visible to caregivers and admins.
+- **Bulk actions**: none. `selectable={false}`.
+- **State persistence**: `useRouteSearchTableState` (URL-driven). MUST NOT be combined with `useLocalTableState`.
+- **Realtime**: `realtimeTopic="patients"` (matches `Patient.__realtime_resource__`); the global `RealtimeInvalidationProvider` drives invalidation, no per-table subscription.
+
+The route SHALL be guarded by the existing `Role.ADMIN | Role.CAREGIVER` requirement at the router level; unauthenticated users land back on the login screen via the auth router context. The page MUST NOT surface tenant identity in any user-visible copy (tenants are an implementation detail, not a user-facing concept).
+
+#### Scenario: Page composes `DataTable<PatientRead>` against `/patients`
+
+- **WHEN** a caregiver loads `/_auth/patients`
+- **THEN** the page MUST render `<DataTable<PatientRead>>` populated from `usePaginatedQuery<PatientRead>('/patients', state)`, where `state` is produced by `useRouteSearchTableState`, and MUST NOT use a raw `<table>` element nor a bespoke `useQuery` call to `/patients`
+
+#### Scenario: Default sort matches backend default_order
+
+- **WHEN** the page loads with no `order_by` in the URL
+- **THEN** the request to `/patients` MUST omit `order_by`, and the rendered list MUST be ordered by `family_name asc` (delegated to `PatientRepository.default_order`)
+
+#### Scenario: Filters and search map onto the shared envelope
+
+- **WHEN** the caregiver picks an organisation in the filter dropdown, sets a birth-date range, and types `"jans"` in the search box
+- **THEN** the next `/patients` request MUST carry `filter[primary_organisation_id][eq]=<uuid>`, `filter[birth_date][gte]=<iso>`, `filter[birth_date][lte]=<iso>`, and `q=jans` (URL-encoded), and MUST NOT carry any non-FHIR-aligned query keys
+
+#### Scenario: Row click routes to the detail placeholder
+
+- **WHEN** a caregiver clicks a patient row
+- **THEN** the orchestrator MUST navigate to `/_auth/patients/$patientId` with the row's `id`, and that route MUST render a placeholder screen ("Detailpagina komt binnenkort") without throwing a 404
+
+#### Scenario: Soft-delete row action removes the row after confirm
+
+- **WHEN** a caregiver opens the row kebab, selects `Verwijderen`, and confirms the destructive dialog
+- **THEN** the orchestrator MUST call `DELETE /patients/{id}`, invalidate the `patients` query key on success (also triggered by the realtime `patients` topic), and the soft-deleted row MUST disappear from subsequent paginated responses
+
+#### Scenario: No tenant copy is rendered
+
+- **WHEN** any user inspects the page header, empty state, error state, or filter labels
+- **THEN** no string MUST contain the word "tenant" (Dutch or English); tenant scoping is enforced server-side and intentionally invisible to caregivers
+
+### Requirement: Seed script generates synthetic patients only
+
+The backend SHALL provide `scripts/seed_patients.py` that inserts a fixed set of synthetic patients into the default demo tenant. The script SHALL use a fixed PRNG seed for determinism, MUST generate Mod-97-checksum-valid but fictional INSZ values, and MUST NOT contain or fetch any real patient data from any source. The file SHALL carry a header comment stating "SYNTHETIC ONLY — see openspec/project.md no-PHI invariant."
+
+#### Scenario: Re-running seed is idempotent
+
+- **WHEN** `seed_patients.py` is run twice against the same database
+- **THEN** the second run MUST NOT create duplicate rows (uniqueness enforced via `(tenant_id, external_system, external_ref)` partial index using a deterministic `external_ref` per seeded patient)
+
+#### Scenario: All seeded INSZ values pass Mod-97 validation
+
+- **WHEN** the seed script runs
+- **THEN** every inserted INSZ identifier value MUST satisfy the Belgian rijksregisternummer Mod-97 checksum
+
+#### Scenario: Caregiver actor stamps audit fields during seed
+
+- **WHEN** the seed script runs after `seed_users.py` has bootstrapped the demo caregiver
+- **THEN** the script MUST set `session.info[SESSION_ACTOR_KEY]` to the demo caregiver's `SessionUser` so that audit hooks stamp `created_by`, `updated_by`, and `tenant_id` correctly

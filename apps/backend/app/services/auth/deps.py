@@ -132,11 +132,19 @@ async def get_current_user(
 CurrentUserDep = Annotated[SessionUser, Depends(get_current_user)]
 
 
-def require_role(role: Role) -> Callable[[SessionUser], SessionUser]:
-    """Return a Depends-compatible callable that enforces `current_user.role == role`."""
+def require_role(*roles: Role) -> Callable[[SessionUser], SessionUser]:
+    """Return a Depends-compatible callable that enforces `current_user.role`
+    is one of `roles`. Empty `roles` is a wiring bug — raise immediately so
+    the misconfiguration surfaces at import / first request, not silently
+    permits everyone.
+    """
+
+    if not roles:
+        raise ValueError("require_role requires at least one Role")
+    allowed: frozenset[Role] = frozenset(roles)
 
     def _guard(current_user: CurrentUserDep) -> SessionUser:
-        if current_user.role is not role:
+        if current_user.role not in allowed:
             raise ForbiddenRoleError()
         return current_user
 

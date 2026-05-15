@@ -6,6 +6,7 @@ import common from './locales/nl/common.json'
 import dashboard from './locales/nl/dashboard.json'
 import dataTable from './locales/nl/data-table.json'
 import nav from './locales/nl/nav.json'
+import patients from './locales/nl/patients.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
 import states from './locales/nl/states.json'
@@ -24,9 +25,9 @@ void i18next.use(initReactI18next).init({
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: 'common',
-  ns: ['common', 'auth', 'dashboard', 'data-table', 'nav', 'shell', 'smart', 'states', 'users'],
+  ns: ['common', 'auth', 'dashboard', 'data-table', 'nav', 'patients', 'shell', 'smart', 'states', 'users'],
   resources: {
-    nl: { common, auth, dashboard, 'data-table': dataTable, nav, shell, smart, states, users },
+    nl: { common, auth, dashboard, 'data-table': dataTable, nav, patients, shell, smart, states, users },
   },
   interpolation: { escapeValue: false },
   returnNull: false,

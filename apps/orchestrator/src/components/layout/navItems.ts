@@ -1,4 +1,4 @@
-import { Home, Users } from 'lucide-react'
+import { HeartPulse, Home, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export type NavItem = {
@@ -14,4 +14,5 @@ export type NavItem = {
 export const hardWiredNavItems: readonly NavItem[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: Home, order: 10 },
   { to: '/users', labelKey: 'nav.users', icon: Users, order: 20 },
+  { to: '/patients', labelKey: 'nav.patients', icon: HeartPulse, order: 30 },
 ]

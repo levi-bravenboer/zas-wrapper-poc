@@ -5,4 +5,4 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _autoclean_tenants(clean_tenants: None) -> None:
-    """Wipe `users` + `tenants` around every DB constraint test."""
+    """Wipe `organisations` + `users` + `tenants` around every db-level test."""
