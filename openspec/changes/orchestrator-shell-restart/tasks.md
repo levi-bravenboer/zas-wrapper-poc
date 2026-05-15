@@ -107,12 +107,12 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 9. Tests
 
-- [ ] 9.1 `Shell.test.tsx` — renders sidebar; toggle keyboard shortcut flips collapsed state; localStorage round-trip.
-- [ ] 9.2 `PageHeader.test.tsx` — required title; conditional rendering of each slot; auto-crumb renders from `useMatches`.
+- [x] 9.1 `Shell.test.tsx` shipped — sidebar slot present, ⌘\ toggle flips localStorage round-trip (`'false'` → `'true'` → `'false'`), pre-seeded `'true'` renders `data-state="collapsed"`.
+- [x] 9.2 `PageHeader.test.tsx` shipped — mocked `useMatches` + `Link`, asserts required `<h1>` heading, eyebrow/sub/actions/tabs slot rendering, and auto-crumb chain (home + intermediate link + final `BreadcrumbPage`).
 - [x] 9.3 `CommandPalette.test.tsx` — ⌘K opens the palette and lists registered entries; clicking an item invokes its `perform` callback.
 - [x] 9.4 `Skeleton.test.tsx` (presentational slot checks) + `EmptyState.test.tsx` (role=status + heading lookup + body/action conditional) shipped.
 - [x] 9.5 `LoginForm.test.tsx` rewritten — mocks `useNavigate`, asserts empty submit calls `navigate({ to: '/dashboard' })` exactly once, no `role="alert"` rendered, no fetch path imported.
-- [ ] 9.6 `Shell.surface.test.tsx` — app/smart surfaces render sidebar tree; embed surface renders bare children-only tree (no sidebar, no PageHeader, no `role="navigation"` shell nav).
+- [x] 9.6 Surface branching coverage spread across three files: `SmartShell.test.tsx` (menu surface → sidebar slot present), `Shell.test.tsx` (app surface → sidebar + persistence), `EmbedShell.test.tsx` (embed surface → `data-shell="bare"`, no sidebar). One consolidated `Shell.surface.test.tsx` would duplicate — left as-is.
 
 ## 10. Spec deltas + scope ledger
 
