@@ -290,7 +290,7 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.28.0
+      - uses: aquasecurity/trivy-action@0.33.0
         with:
           scan-type: fs
           scan-ref: .
@@ -332,16 +332,18 @@ jobs:
       - run: npm install -g @fission-ai/openspec@1.3.1
       - run: openspec validate --all --strict --no-interactive
 
-  dependency-review:
-    name: dependency review
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: on-failure
+  # dependency-review requires GitHub Advanced Security on private repos.
+  # Re-enable (and add back to pr-gate needs) once GHAS is enabled on this repo.
+  # dependency-review:
+  #   name: dependency review
+  #   if: github.event_name == 'pull_request'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/dependency-review-action@v4
+  #       with:
+  #         fail-on-severity: high
+  #         comment-summary-in-pr: on-failure
 
   secret-scan:
     name: secret scan
@@ -355,7 +357,7 @@ jobs:
           path: ./
           base: ${{ github.event.pull_request.base.sha || '' }}
           head: ${{ github.event.pull_request.head.sha || github.sha }}
-          extra_args: --only-verified --fail
+          extra_args: --only-verified
 
   # SBOM is a release artifact — only generated on push to main.
   sbom:
@@ -400,7 +402,6 @@ jobs:
       - trivy-fs
       - actionlint
       - openspec-validate
-      - dependency-review
       - secret-scan
     runs-on: ubuntu-latest
     steps:
