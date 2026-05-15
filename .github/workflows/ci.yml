@@ -175,7 +175,9 @@ jobs:
       - name: export locked prod deps
         run: uv export --frozen --no-dev --no-hashes --format requirements-txt -o requirements.ci.txt
       - name: pip-audit
-        run: uvx --from pip-audit pip-audit --strict --disable-pip -r requirements.ci.txt
+        # --disable-pip requires hashed requirements; use --no-deps instead so
+        # pip-audit audits exactly the locked set without resolving transitively.
+        run: uvx --from pip-audit pip-audit --strict --no-deps -r requirements.ci.txt
 
   # ╔══════════════════════════════════════════════════════════════════════╗
   # ║ orchestrator                                                         ║
@@ -287,23 +289,19 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v4
       - uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
           scan-ref: .
-          format: sarif
-          output: trivy-fs.sarif
+          format: table
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
-      - if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-fs.sarif
-          category: trivy-fs
+      # SARIF upload to GitHub code scanning requires Advanced Security on
+      # private repos. Re-enable once GHAS is on (also restore the
+      # security-events: write permission above and the format/output args).
 
   # ╔══════════════════════════════════════════════════════════════════════╗
   # ║ repo-wide / workflow / supply-chain                                  ║
