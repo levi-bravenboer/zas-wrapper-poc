@@ -47,7 +47,7 @@ function MenuShell(): ReactElement {
     <SidebarProvider open={open} onOpenChange={setOpen}>
       <CommandPaletteProvider>
         <AppSidebar />
-        <SidebarInset data-shell="menu">
+        <SidebarInset data-shell="menu" className="bg-transparent">
           <RouteCommandsRegistry />
           <CommandPalette />
           <Outlet />

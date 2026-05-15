@@ -21,20 +21,9 @@
     line-height: var(--leading-snug);
     font-feature-settings: "ss01";
     color: var(--color-foreground);
-    background: var(--color-background);
+    background: var(--gradient-aurora) fixed;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-  }
-
-  /* Aurora background — fixed full-viewport layer, no filter cost (static radials).
-     Shared across every route; components opt into .glass on top of this. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background: var(--gradient-aurora);
   }
 
   h1,
@@ -59,6 +48,17 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
+  }
+}
+
+@layer base {
+  @keyframes shimmer {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: calc(200px + 100%) 0;
+    }
   }
 }
 
@@ -93,6 +93,19 @@
     -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass);
+  }
+
+  /* Shimmer skeleton — matches mockup 10. Use on placeholder elements. */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(228, 226, 222, 0.55) 0%,
+      rgba(255, 255, 255, 0.95) 50%,
+      rgba(228, 226, 222, 0.55) 100%
+    );
+    background-size: 200px 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.4s ease-in-out infinite;
   }
 }
 
