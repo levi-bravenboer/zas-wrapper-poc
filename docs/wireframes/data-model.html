@@ -129,7 +129,7 @@
 </head>
 <body>
   <h1>Pathway data model</h1>
-  <p class="lede">Eleven tables. Relational with one purposeful jsonb (<code class="inline">pathway_block.config</code>) and one opaque text payload (<code class="inline">pathway_block_luscii_extension.payload</code>). Every domain table is prefixed <code class="inline">pathway_</code> so cross-domain collisions cannot happen.</p>
+  <p class="lede">Eleven tables. Relational with one purposeful jsonb (<code class="inline">pathway_block.config</code>) and one opaque text payload (<code class="inline">pathway_block_luscii_extension.payload</code>). Every per-pathway table inherits <code class="inline">TenantOwnedEntity</code> from the repo base — <code class="inline">id</code>, <code class="inline">tenant_id</code>, <code class="inline">created_at</code> / <code class="inline">updated_at</code> / <code class="inline">deleted_at</code>, and audit FKs come for free.</p>
 
   <div class="legend">
     <span><i class="swatch" style="background:var(--accent)"></i> Aggregate (per-pathway, cascade-delete)</span>
@@ -151,10 +151,15 @@
     <div class="decision"><b>D1</b> — Pathway = aggregate root + 10 cascade-delete child tables. Not a JSONB graph blob.</div>
     <div class="decision"><b>D2</b> — Block-type catalogue is server-owned code; <code class="inline">GET /pathway-blocks</code> returns it.</div>
     <div class="decision"><b>D9 + D10</b> — Lanes: <code class="inline">pathway_lane_kind</code> catalogue + per-pathway <code class="inline">pathway_lane</code> instances. Block always FKs a real lane row.</div>
-    <div class="decision"><b>D11</b> — Phases per pathway, ordered, optional duration. Not navigable. Loopback = derived from edge target's lower-ord phase.</div>
-    <div class="decision"><b>D12</b> — Time on <code class="inline">block.duration</code> + <code class="inline">edge.delay</code> via shared <code class="inline">pathway_timing_value</code>. Tri-kind: fixed / enrollment / runtime. CHECK-constrained, no JSONB.</div>
-    <div class="decision"><b>D13</b> — Block cards fixed-width (~175px). Smart time tape deferred post-PoC; data shape preserves seam.</div>
+    <div class="decision"><b>D11</b> — Phases per pathway, ordered. PoC: decorative only (no duration, no anchor). Not navigable.</div>
+    <div class="decision"><b>D12</b> — Time on <code class="inline">block.duration</code> + <code class="inline">edge.delay</code> via shared <code class="inline">pathway_timing_value</code>. PoC kinds: <code class="inline">fixed</code> + <code class="inline">enrollment</code>. <code class="inline">runtime</code> parked in MVP delta. CHECK-constrained, no JSONB.</div>
+    <div class="decision"><b>D13</b> — Block cards fixed-width (~175px). Smart time tape deferred post-PoC.</div>
     <div class="decision"><b>D14</b> — Phase templates live in code (mirror D2). <code class="inline">pathway_phase.template_id</code> = soft pointer, no FK.</div>
+    <div class="decision"><b>D15</b> — Per-pathway tables inherit <code class="inline">TenantOwnedEntity</code>: <code class="inline">tenant_id</code>, audit FKs, timestamps, soft delete free.</div>
+    <div class="decision"><b>D16</b> — No design-time entry block. Enrollment (F4) picks the start.</div>
+    <div class="decision"><b>D17 / D18</b> — Runtime timing + per-field runtime resolution deferred to MVP, together with <code class="inline">output_schema</code> on block-type catalogue.</div>
+    <div class="decision"><b>D19</b> — Branches only on blocks whose catalogue entry advertises branching support. Enforced app-side (Pydantic), not DB.</div>
+    <div class="decision"><b>D20</b> — <code class="inline">pathway_edge</code> UNIQUE on <code class="inline">(source, target, branch) NULLS NOT DISTINCT</code>. UI also blocks duplicate drags.</div>
     <div class="decision"><b>Naming exception</b> — <code class="inline">pathway_block.config</code> is the ONLY jsonb. Validated at the app boundary against the catalogue's per-type <code class="inline">config_schema</code>.</div>
   </div>
 
@@ -197,20 +202,18 @@
   <div class="table shared">
     <div class="name">pathway_timing_value <small>shared by block.duration and edge.delay</small></div>
     <ul>
-      <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
-      <li><span class="col">kind</span><span class="type">text</span><span class="nn">NN</span><span class="check">CHECK in (fixed, enrollment, runtime)</span></li>
+      <li><span class="col">— inherits TenantOwnedEntity (id, tenant_id, audit, timestamps, soft delete)</span></li>
+      <li><span class="col">kind</span><span class="type">text</span><span class="nn">NN</span><span class="check">CHECK in (fixed, enrollment)</span></li>
       <li><span class="col">fixed_days</span><span class="type">int?</span></li>
       <li><span class="col">enrollment_default_days</span><span class="type">int?</span></li>
       <li><span class="col">enrollment_min_days</span><span class="type">int?</span></li>
       <li><span class="col">enrollment_max_days</span><span class="type">int?</span></li>
-      <li><span class="col">runtime_source_block_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_block</span></li>
-      <li><span class="col">runtime_source_output</span><span class="type">text?</span></li>
     </ul>
-    <div class="note">CHECK enforces exactly one column-set populated per <code class="inline">kind</code>. <b>No jsonb.</b> Referenced by <code class="inline">pathway_block.duration_value_id</code>, <code class="inline">pathway_edge.delay_value_id</code>, <code class="inline">pathway_phase.duration_value_id</code>, <code class="inline">pathway_time_marker.value_id</code>.</div>
+    <div class="note">CHECK enforces exactly one column-set populated per <code class="inline">kind</code>. <b>No jsonb.</b> Referenced by <code class="inline">pathway_block.duration_value_id</code>, <code class="inline">pathway_edge.delay_value_id</code>, <code class="inline">pathway_time_marker.value_id</code>. A third kind <code class="inline">runtime</code> (read from upstream block output) is parked in MVP delta — adds two nullable columns + widens CHECK.</div>
   </div>
 
-  <h2>Tri-kind timing semantics</h2>
-  <div class="grid cols-3">
+  <h2>PoC timing kinds</h2>
+  <div class="grid cols-2">
     <div class="timing-card">
       <div class="when">design-time</div>
       <h4>fixed</h4>
@@ -227,14 +230,6 @@
   enrollment_max_days: 7 }</pre>
       <div class="note" style="border:none;padding-top:6px;">Caregiver picks at enrollment, bounded by min/max. Default pre-fills the wizard.</div>
     </div>
-    <div class="timing-card">
-      <div class="when">runtime</div>
-      <h4>runtime</h4>
-      <pre>{ kind: "runtime",
-  runtime_source_block_id: &lt;uuid&gt;,
-  runtime_source_output: "duration_days" }</pre>
-      <div class="note" style="border:none;padding-top:6px;">Read from an upstream block's output at execution. Source must be in the same pathway.</div>
-    </div>
   </div>
 
   <h2>Pathway aggregate (cascade-delete with root)</h2>
@@ -242,31 +237,28 @@
     <div class="table aggregate">
       <div class="name">pathway <small>aggregate root</small></div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity (id, tenant_id, audit, timestamps, soft delete)</span></li>
         <li><span class="col">name</span><span class="type">text</span><span class="nn">NN</span></li>
-        <li><span class="col">entry_block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block</span></li>
-        <li><span class="col">last_edited_at</span><span class="type">timestamptz</span></li>
       </ul>
-      <div class="note">Single row per pathway. <code class="inline">entry_block_id</code> validated against own block set on save.</div>
+      <div class="note">No design-time entry block — enrollment (F4) picks the start. <code class="inline">updated_at</code> from base = "last edited".</div>
     </div>
 
     <div class="table aggregate">
       <div class="name">pathway_phase</div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
         <li><span class="col">template_id</span><span class="type">text?</span><span class="check">soft pointer — no FK</span></li>
         <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
         <li><span class="col">ord</span><span class="type">int</span><span class="nn">NN</span></li>
-        <li><span class="col">duration_value_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_timing_value</span></li>
       </ul>
-      <div class="note">UNIQUE (pathway_id, ord). Loopback = edge whose target sits in lower ord. Not a navigable canvas.</div>
+      <div class="note">UNIQUE (pathway_id, ord). Decorative grouping; no duration/anchor in PoC. Loopback = edge whose target sits in lower ord.</div>
     </div>
 
     <div class="table aggregate">
       <div class="name">pathway_lane</div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
         <li><span class="col">pathway_lane_kind_id</span><span class="type">text</span><span class="fk">FK → pathway_lane_kind</span></li>
         <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
@@ -279,7 +271,7 @@
     <div class="table aggregate">
       <div class="name">pathway_block <small>node on canvas</small></div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
         <li><span class="col">phase_id</span><span class="type">uuid</span><span class="fk">FK → pathway_phase</span><span class="nn">NN</span></li>
         <li><span class="col">lane_id</span><span class="type">uuid</span><span class="fk">FK → pathway_lane</span><span class="nn">NN</span></li>
@@ -295,6 +287,7 @@
     <div class="table extension">
       <div class="name">pathway_block_luscii_extension</div>
       <ul>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">block_id</span><span class="type">uuid</span><span class="pk">PK + FK CASCADE</span></li>
         <li><span class="col">payload</span><span class="type">text</span><span class="check">Exception 2 — opaque, byte-equivalent round-trip</span></li>
       </ul>
@@ -304,31 +297,31 @@
     <div class="table aggregate">
       <div class="name">pathway_branch <small>decision-block branches</small></div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block CASCADE</span></li>
         <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
         <li><span class="col">ord</span><span class="type">int</span><span class="nn">NN</span></li>
       </ul>
-      <div class="note">First-class entity. Edges leaving a decision block carry <code class="inline">source_branch_id</code> to disambiguate.</div>
+      <div class="note">First-class entity. Edges leaving a decision block carry <code class="inline">source_branch_id</code> to disambiguate. Branches only valid on blocks whose catalogue entry advertises branching (PoC: <code class="inline">type == 'decision'</code>).</div>
     </div>
 
     <div class="table aggregate">
       <div class="name">pathway_edge <small>connector</small></div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
         <li><span class="col">source_block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block</span><span class="nn">NN</span></li>
         <li><span class="col">target_block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block</span><span class="nn">NN</span></li>
         <li><span class="col">source_branch_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_branch</span></li>
         <li><span class="col">delay_value_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_timing_value</span></li>
       </ul>
-      <div class="note">One edge model handles forward, branch, and loopback uniformly. Branch must belong to <code class="inline">source_block_id</code>.</div>
+      <div class="note">One edge model handles forward, branch, and loopback uniformly. Branch must belong to <code class="inline">source_block_id</code>. UNIQUE <code class="inline">(source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT</code> — duplicate connectors rejected at DB + UI.</div>
     </div>
 
     <div class="table aggregate">
       <div class="name">pathway_time_marker <small>presentation only</small></div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">pathway_id</span><span class="type">uuid</span><span class="fk">FK CASCADE</span></li>
         <li><span class="col">value_id</span><span class="type">uuid</span><span class="fk">FK → pathway_timing_value</span></li>
         <li><span class="col">label</span><span class="type">text</span><span class="nn">NN</span></li>
@@ -339,14 +332,11 @@
     <div class="table aggregate">
       <div class="name">pathway_block_field_resolution</div>
       <ul>
-        <li><span class="col">id</span><span class="type">uuid</span><span class="pk">PK</span></li>
+        <li><span class="col">— inherits TenantOwnedEntity</span></li>
         <li><span class="col">block_id</span><span class="type">uuid</span><span class="fk">FK → pathway_block CASCADE</span></li>
         <li><span class="col">field_path</span><span class="type">text</span><span class="check">must exist in block's config_schema</span></li>
-        <li><span class="col">source_kind</span><span class="type">text</span><span class="check">∈ (enrollment, runtime)</span></li>
-        <li><span class="col">source_block_id</span><span class="type">uuid?</span><span class="fk">FK → pathway_block</span></li>
-        <li><span class="col">source_output</span><span class="type">text?</span></li>
       </ul>
-      <div class="note">Per-field override: marks which <code class="inline">config</code> fields are filled at enrollment vs runtime instead of design-time.</div>
+      <div class="note">Marks fields filled at enrollment instead of design-time. Runtime resolution (source_block_id / source_output) parked in MVP delta.</div>
     </div>
   </div>
 
@@ -392,7 +382,7 @@
       <!-- TOP: aggregate root -->
       <rect x="500" y="20" width="210" height="60" rx="10" fill="#15203a" stroke="#6aa6ff" stroke-width="2.5"/>
       <text x="605" y="44" fill="#e6ecff" text-anchor="middle" font-weight="600">pathway</text>
-      <text x="605" y="62" fill="#9aa6c7" text-anchor="middle" font-size="10">aggregate root · entry_block_id</text>
+      <text x="605" y="62" fill="#9aa6c7" text-anchor="middle" font-size="10">aggregate root · enrollment picks start</text>
 
       <!-- ROW 2: phase, lane, time_marker -->
       <rect x="270" y="130" width="180" height="50" rx="8" fill="#15203a" stroke="#6aa6ff"/>
@@ -459,9 +449,6 @@
       <path d="M285 156 C 250 175 225 195 215 210" fill="none" stroke="#b89dff" stroke-width="1" stroke-dasharray="2 3" marker-end="url(#arr-purple)"/>
       <text x="222" y="190" fill="#b89dff" font-size="10">template_id (soft)</text>
 
-      <!-- phase.duration_value_id -> timing -->
-      <path d="M310 180 C 250 230 200 290 175 330" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)"/>
-
       <!-- block.duration_value_id -> timing -->
       <path d="M490 290 C 370 320 240 340 210 350" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)"/>
       <text x="320" y="332" fill="#f1c570" font-size="10">duration_value_id</text>
@@ -473,10 +460,6 @@
       <!-- time_marker.value_id -> timing -->
       <path d="M750 158 C 520 180 280 200 210 340" fill="none" stroke="#f1c570" stroke-width="1.2" marker-end="url(#arr-amber)" opacity="0.7"/>
       <text x="510" y="200" fill="#f1c570" font-size="10">value_id</text>
-
-      <!-- timing.runtime_source_block_id -> block (cyclic ok) -->
-      <path d="M170 330 C 200 250 380 230 490 260" fill="none" stroke="#f1c570" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr-amber)" opacity="0.7"/>
-      <text x="280" y="248" fill="#f1c570" font-size="10">runtime_source_block_id</text>
 
       <!-- branch -> block -->
       <path d="M450 380 C 530 340 570 320 590 314" fill="none" stroke="#79e2d4" stroke-width="1.5" marker-end="url(#arr)"/>
@@ -516,14 +499,14 @@
 
   <h2>Validation rules at the app boundary</h2>
   <div class="rules">
-    <div class="rule"><b>entry_block_id</b> must reference a block that belongs to the same pathway.</div>
     <div class="rule"><b>pathway_block.type</b> must exist in the block-type catalogue.</div>
     <div class="rule"><b>pathway_block.config</b> must conform to the catalogue's per-type <code class="inline">config_schema</code> (Pydantic on save, rjsf on input).</div>
     <div class="rule"><b>pathway_block.lane_id</b> NOT NULL — every block sits on exactly one real lane row.</div>
     <div class="rule"><b>pathway_block.phase_id</b> NOT NULL and must reference a phase of the same pathway.</div>
-    <div class="rule"><b>pathway_timing_value</b> CHECK enforces exactly one column-set populated per kind. Contradictions surface as 422.</div>
-    <div class="rule"><b>runtime_source_block_id</b> on a timing value must reference a block in the same pathway.</div>
+    <div class="rule"><b>pathway_timing_value</b> CHECK enforces exactly one column-set populated per kind. Contradictions surface as 422. Unsupported kind (e.g. <code class="inline">runtime</code>) → 422.</div>
     <div class="rule"><b>pathway_edge.source_branch_id</b>, when set, must belong to <code class="inline">source_block_id</code>.</div>
+    <div class="rule"><b>pathway_branch</b> only allowed on blocks whose catalogue entry supports branching (D19; PoC: <code class="inline">decision</code>).</div>
+    <div class="rule"><b>UNIQUE</b> on <code class="inline">pathway_edge (source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT</code> (D20). UI also prevents duplicate drags.</div>
     <div class="rule"><b>pathway_block_field_resolution.field_path</b> must exist in the block's <code class="inline">config_schema</code>.</div>
     <div class="rule"><b>UNIQUE (pathway_id, ord)</b> on both <code class="inline">pathway_phase</code> and <code class="inline">pathway_lane</code>.</div>
     <div class="rule"><b>Cascade-delete</b> from <code class="inline">pathway</code> through every aggregate child table on pathway delete.</div>

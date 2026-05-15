@@ -50,6 +50,30 @@ Future variant prototypes for unsettled UX forks (phase representation, time anc
 
 A pathway definition is one `pathway` row plus 10 child tables (see Naming/Exceptions section for the full list). PoC operations are whole-pathway load/replace, but lanes/phases/timing are queried independently for builder UI and future analytics, so a JSONB graph blob would require app-side reshaping for every read. Per-block-type config is the only field with deliberately variable shape — that's the one purposeful jsonb (Exception 1). All other structural data is relational with FKs and CHECK constraints.
 
+**D15 — Aggregate tables inherit repo base classes (`TenantOwnedEntity`).**
+
+Every per-pathway table extends `apps/backend/app/db/base.py::TenantOwnedEntity` (which itself extends `AuditableEntity` → `Entity`). Free inherited columns: `id`, `created_at`, `updated_at`, `deleted_at` (soft delete), `created_by`, `updated_by`, `deleted_by`, `tenant_id` (NOT NULL, ON DELETE RESTRICT). `pathway_lane_kind` is system-wide and inherits plain `Entity` only. Audit columns are auto-stamped by the `before_flush` hook from `session.info[SESSION_ACTOR_KEY]`. Soft delete: `DELETE /pathways/{id}` sets `deleted_at` and `BaseRepository.list()` filters it out.
+
+**D16 — Entry block is not a definition-time property.**
+
+The pathway aggregate has no `entry_block_id`. Execution start is picked at enrollment time (F4, separate change). The builder guarantees ≥1 block exists; nothing more. Aligns with React Flow's save shape (nodes + edges, no entry pointer) and removes the would-be circular FK between `pathway` and `pathway_block`.
+
+**D17 — PoC timing kinds: `fixed` + `enrollment` only. Runtime kind deferred to MVP.**
+
+`pathway_timing_value.kind` CHECK is `fixed | enrollment`. The `runtime` kind (block A's duration reads block B's output at execution) is parked in `openspec/scope.md` F3 MVP delta. Reintroducing it later is additive: widen the CHECK, add `runtime_source_block_id` + `runtime_source_output`, add `output_schema` to the block-type catalogue. No migration of existing rows needed.
+
+**D18 — Field resolution table flags enrollment-deferred config fields only.**
+
+`pathway_block_field_resolution` collapses to `(id, block_id, field_path)` for PoC. A row marks that `field_path` (must exist in the block's `config_schema`) is filled at enrollment rather than design-time. Runtime resolution is dropped per D17 and re-added together with the runtime timing kind.
+
+**D19 — Branch ownership enforced app-side, against block-type catalogue.**
+
+`pathway_branch` rows are permitted only on blocks whose catalogue entry advertises branching support. PoC: Pydantic on save hard-codes the check against `type == 'decision'`. Once the block-type catalogue (D2) gains per-entry behaviour flags (e.g. `supports_branches: bool`), the validator reads the flag instead. No DB trigger / CHECK — the catalogue lives in code (mirrors D2 operating model), and DB enforcement of a code-side enum is awkward. REST + Pydantic cover all real entry points.
+
+**D20 — Edges are unique on `(source, target, branch)` with defense-in-depth.**
+
+`pathway_edge` enforces `UNIQUE (source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT` at the DB layer. Duplicate connectors (e.g. accidental double-drag in the builder) are bugs, not features; branch tag is part of the key so yes/no branches can both legitimately route to the same target. The builder UI ALSO refuses duplicate-edge creation before save so users see the conflict before a 422. Postgres ≥15 syntax — repo already targets 15+.
+
 **D2 — Block-type catalogue is server-owned, returned by `GET /pathway-blocks`.**
 
 The frontend renders blocks driven by per-block JSON schema returned from the server. Reasoning: adding/changing a block type stays a backend concern; the orchestrator doesn't hardcode block names or config shapes. Alternative considered: TS-only frontend registry — rejected, makes parity with future MVP block additions (e.g. Luscii live) harder.
@@ -130,18 +154,19 @@ Alternatives rejected:
 - Single `pathway_lane` table with kind as enum column — re-introduces deploy coupling for new kinds.
 - Lane-on-block via `kind_id` only (no `pathway_lane` row) — loses ordering, custom labels, and per-pathway "Apotheek under caregiver" override.
 
-**D11 — Phases are per-pathway clinical chapters; not navigable; loopback is derived.**
+**D11 — Phases are per-pathway clinical chapters; not navigable; loopback is derived; PoC phases are decorative.**
 
-Phases are the top-level "where in the journey" labels (Pre-op / Surgery / Recovery / Follow-up). They are anchored to a clinical event (often a surgery), are ordered, and carry an optional duration hint. They are NOT separate canvases — the user does not click into a phase. Blocks in any phase can edge to blocks in any other phase (incl. earlier ones); a "loopback" is just an edge whose target sits in a lower-`ord` phase, derived at render time.
+Phases are the top-level "where in the journey" labels (Pre-op / Surgery / Recovery / Follow-up). They are ordered. They are NOT separate canvases — the user does not click into a phase. Blocks in any phase can edge to blocks in any other phase (incl. earlier ones); a "loopback" is just an edge whose target sits in a lower-`ord` phase, derived at render time.
+
+PoC scope: phases are pure visual chapter labels. No anchor event, no duration, no runtime date math. Block-level timing (`fixed` / `enrollment`) drives everything. Anchor model (when phase X starts for patient Y) is parked in MVP delta and decided when F5/F6 runtime engine lands.
 
 ```
 pathway_phase                                  -- per-pathway, ordered
-  id uuid PK
+  -- inherits TenantOwnedEntity: id, tenant_id, created_at, updated_at, deleted_at, audit FKs
   pathway_id uuid FK ON DELETE CASCADE
-  template_id text NULL                        -- optional ref to code-side template (see D14)
-  label text
-  ord int
-  duration_value_id uuid NULL FK -> pathway_timing_value
+  template_id text NULL                        -- optional soft pointer to code-side template (see D14); no FK
+  label text NOT NULL
+  ord int NOT NULL
   UNIQUE (pathway_id, ord)
 
 pathway_block.phase_id uuid NOT NULL FK -> pathway_phase
@@ -156,7 +181,7 @@ Alternatives rejected:
 - Phases as own sub-canvases — fragments the flow, hides loopback intent.
 - Phase as a tag on blocks (no `pathway_phase` row) — loses ordering and per-pathway duration hint.
 
-**D12 — Time lives on `pathway_block.duration` and `pathway_edge.delay`, both via the shared `pathway_timing_value` table; tri-kind: fixed / enrollment / runtime.**
+**D12 — Time lives on `pathway_block.duration` and `pathway_edge.delay`, both via the shared `pathway_timing_value` table. PoC kinds: `fixed` + `enrollment`. `runtime` is MVP (D17).**
 
 Time has two distinct meanings in a pathway:
 - **Block duration** — how long the block itself takes (an appointment is 30 min, a wait-block is 3 days, a notification is instant).
@@ -166,8 +191,8 @@ Both reference the same shared value table to keep timing semantics uniform and 
 
 ```
 pathway_timing_value
-  id uuid PK
-  kind text NOT NULL CHECK (kind IN ('fixed','enrollment','runtime'))
+  -- inherits TenantOwnedEntity: id, tenant_id, audit, timestamps, soft delete
+  kind text NOT NULL CHECK (kind IN ('fixed','enrollment'))
 
   -- kind = 'fixed'
   fixed_days int NULL
@@ -177,17 +202,11 @@ pathway_timing_value
   enrollment_min_days int NULL
   enrollment_max_days int NULL
 
-  -- kind = 'runtime' (read from an upstream block's output at execution)
-  runtime_source_block_id uuid NULL FK -> pathway_block
-  runtime_source_output text NULL
-
   CHECK (
     (kind = 'fixed'      AND fixed_days IS NOT NULL
-                         AND enrollment_default_days IS NULL AND runtime_source_block_id IS NULL)
+                         AND enrollment_default_days IS NULL)
  OR (kind = 'enrollment' AND enrollment_default_days IS NOT NULL
-                         AND fixed_days IS NULL AND runtime_source_block_id IS NULL)
- OR (kind = 'runtime'    AND runtime_source_block_id IS NOT NULL AND runtime_source_output IS NOT NULL
-                         AND fixed_days IS NULL AND enrollment_default_days IS NULL)
+                         AND fixed_days IS NULL)
   )
 
 pathway_block.duration_value_id uuid NULL FK -> pathway_timing_value   -- NULL = instant
@@ -195,14 +214,15 @@ pathway_edge.delay_value_id     uuid NULL FK -> pathway_timing_value   -- NULL =
 ```
 
 Reasons:
-- **Three lifecycles, one shape**: design-time (`fixed`), enrollment-time (`enrollment` w/ bounds), runtime (`runtime` reading an upstream output). Same surface for builder UI, enrollment wizard, and execution engine.
+- **Two PoC lifecycles, one shape**: design-time (`fixed`) and enrollment-time (`enrollment` w/ bounds). Same surface for builder UI and enrollment wizard.
 - **Shared table** keeps duration + delay queryable as one concept ("show all variable timing on this pathway") and avoids duplicating CHECKs on two tables.
 - **No JSONB on timing**: typed columns + CHECK keep validation in the DB and let plain SQL diffs surface drift (see naming/exceptions section for the one purposeful jsonb).
 - **NULL FK = instant / no delay** keeps the row count down for the common case without losing the seam.
+- **Runtime kind deferred to MVP** (D17): no PoC seed flow needs it. Re-adding is additive (widen CHECK, add two nullable columns, add `output_schema` to block-type catalogue). Parked in `openspec/scope.md` F3 MVP delta.
 
 Alternatives rejected:
 - One JSONB column per timing field — fails the NO JSONB rule, loses queryability.
-- CTI (one row per kind, three sub-tables) — more joins, no real win at PoC scale.
+- CTI (one row per kind, sub-tables) — more joins, no real win at PoC scale.
 - Separate `pathway_block_timing` and `pathway_edge_timing` tables — duplicates the discriminator + CHECK; harder to reason about as one concept.
 
 **D13 — Block card UI is fixed-width; smart time tape is a future visual; data shape is built for it now.**
@@ -247,7 +267,7 @@ pathway_block_luscii_extension
   payload text NOT NULL              -- opaque, round-tripped byte-for-byte
 ```
 
-**YAGNI drops** during the audit: `pathway_lane_kind.is_system`, `pathway_phase.color_token`, `pathway.created_by`, `pathway_block.created_at`/`updated_at`. Re-add when a real consumer asks.
+**YAGNI drops** during the audit: `pathway_lane_kind.is_system`, `pathway_phase.color_token`, `pathway.last_edited_at` (replaced by inherited `updated_at` from `Entity`). `created_at`, `updated_at`, `created_by`, `updated_by` come from the repo base classes (D15) for free — keep them everywhere.
 
 **Final table count: 11.** `pathway_lane_kind`, `pathway_timing_value`, `pathway`, `pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_block_luscii_extension`, `pathway_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_field_resolution`.
 
@@ -266,11 +286,14 @@ No production data exists. Phase 1's DB migration is additive (new tables) — s
 
 ## Resolved (was Open)
 
-- **Storage shape** → relational with one purposeful jsonb (D10–D14, Naming/Exceptions).
-- **Pathway identifier** → UUID PK; no slug in PoC.
+- **Storage shape** → relational with one purposeful jsonb (D10–D18, Naming/Exceptions).
+- **Pathway identifier** → UUID PK from `Entity` base; no slug in PoC.
 - **Block config validation** → both. Pydantic on save against catalogue's `config_schema` (D2); frontend rjsf renderer enforces on input (Phase 3).
-- **Entry-point semantics** → explicit `pathway.entry_block_id` FK to `pathway_block`.
+- **Entry-point semantics** → no design-time entry (D16). Enrollment picks the start block.
 - **Edge metadata for decision blocks** → branches are first-class entities (`pathway_branch`); edges carry an optional `source_branch_id` to disambiguate which branch they leave from.
+- **Repo base inheritance** → every per-pathway table extends `TenantOwnedEntity` (D15). Audit, timestamps, soft delete, tenancy come for free.
+- **Branch ownership enforcement** → app-side Pydantic against catalogue's branching flag (D19). No DB trigger.
+- **Edge uniqueness** → UNIQUE `(source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT` + UI prevention (D20).
 
 ## Open Questions
 
@@ -278,3 +301,5 @@ No production data exists. Phase 1's DB migration is additive (new tables) — s
 - **Create flow shape**: full route `/pathways/new` vs modal-from-overview. Decided in Phase 2 prototyping.
 - **Save UX**: explicit button + dirty indicator (default) vs auto-save. Revisited in Phase 3.
 - **Smart time tape rendering**: data shape locked (D12); visual tape itself revisited post-PoC (D13).
+- **Phase anchor model**: parked. Decide when F5/F6 runtime needs phase dates (likely `anchor_block_id` or `anchor_event_type`).
+- **Runtime timing kind**: parked in MVP delta (D17). Re-add together with `output_schema` on block-type catalogue.

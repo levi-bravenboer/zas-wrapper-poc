@@ -9,41 +9,41 @@
 ### 1b. Domain + persistence
 
 - [ ] 1.4 Create `apps/backend/.../pathway/` module (domain entities, repository, Pydantic schemas)
-- [ ] 1.5 Add DB migration for the 11 canonical tables (per `design.md` Naming Conventions & Schema Exceptions):
+- [ ] 1.5 Add DB migration for the 11 canonical tables (per `design.md` D15 / Naming Conventions & Schema Exceptions). Every per-pathway table inherits `TenantOwnedEntity` (id, tenant_id, audit FKs, timestamps, soft delete). `pathway_lane_kind` inherits plain `Entity`:
   - `pathway_lane_kind` (catalogue, seeded `patient`/`caregiver`/`system`/`external`)
-  - `pathway_timing_value` (shared, with kind discriminator + CHECK constraints for `fixed`/`enrollment`/`runtime`)
-  - `pathway` (aggregate root, `entry_block_id` FK)
-  - `pathway_phase` (per-pathway, ordered, optional `template_id` soft pointer, optional `duration_value_id` FK)
+  - `pathway_timing_value` (shared, `kind` ∈ (`fixed`, `enrollment`) — runtime kind parked in MVP delta; CHECK enforces column-set per kind)
+  - `pathway` (aggregate root; no entry_block_id — enrollment picks the start)
+  - `pathway_phase` (per-pathway, ordered, optional `template_id` soft pointer)
   - `pathway_lane` (per-pathway, FK to `pathway_lane_kind`, `is_default` flag, `(pathway_id, ord)` unique)
-  - `pathway_block` (FK to phase + lane, `config jsonb` — Exception 1, optional `duration_value_id`)
+  - `pathway_block` (FK to phase + lane, `config jsonb` — Exception 1, optional `duration_value_id`, `x`/`y` int)
   - `pathway_block_luscii_extension` (PK = block_id, opaque `payload text` — Exception 2)
-  - `pathway_branch` (decision-block branches, ordered)
-  - `pathway_edge` (FKs source/target block, optional `source_branch_id`, optional `delay_value_id`)
+  - `pathway_branch` (decision-block branches, ordered; ownership validated app-side against catalogue's branching flag per D19)
+  - `pathway_edge` (FKs source/target block, optional `source_branch_id`, optional `delay_value_id`; UNIQUE `(source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT` per D20)
   - `pathway_time_marker` (presentation-only, FK to `pathway_timing_value`)
-  - `pathway_block_field_resolution` (per-field overrides for enrollment/runtime resolution)
-- [ ] 1.6 Implement pathway aggregate with `entry_block_id` validated against own block set; cascade-delete child rows on pathway delete
+  - `pathway_block_field_resolution` (block_id + field_path; marks enrollment-deferred fields)
+- [ ] 1.6 Implement pathway aggregate; soft-delete via base `deleted_at`; cascade child rows on pathway delete via `pathway_id` FK ON DELETE CASCADE (tenant FK stays RESTRICT)
 - [ ] 1.7 Implement block-type registry as a server-side static map (`appointment`, `decision`, `milestone`, `timer`, `luscii-clinical-path`) with `default_lane_kind_id` + per-type JSON schema for config
-- [ ] 1.8 Implement phase-template registry as a server-side static map (Rugrevalidatie chapters: `pre-op`, `surgery`, `recovery`, `follow-up`) with `default_ord` + optional `default_duration_days`
+- [ ] 1.8 Implement phase-template registry as a server-side static map (Rugrevalidatie chapters: `pre-op`, `surgery`, `recovery`, `follow-up`) with `default_ord`
 - [ ] 1.9 Validate pathway blocks against the catalogue on save; reject unknown block types with 422; validate each block's `config` against its `config_schema` (Pydantic) and reject mismatched field paths in `pathway_block_field_resolution`
-- [ ] 1.10 Validate timing inputs against `pathway_timing_value` CHECK semantics at the app boundary; reject contradictory shapes with a 422 citing the offending field
+- [ ] 1.10 Validate timing inputs against `pathway_timing_value` CHECK semantics at the app boundary; reject contradictory shapes + unsupported kinds (e.g. `runtime`) with a 422 citing the offending field
 - [ ] 1.11 Materialize default `pathway_lane` rows on first block placement of a given kind; reject blocks with `lane_id = null`
 
 ### 1c. REST surface
 
-- [ ] 1.12 Implement `GET /pathways` (list summaries: id, name, last_edited_at, block_count)
+- [ ] 1.12 Implement `GET /pathways` (list summaries: id, name, updated_at, block_count)
 - [ ] 1.13 Implement `POST /pathways` (create empty)
 - [ ] 1.14 Implement `GET /pathways/{id}` (full definition with all child entities embedded)
 - [ ] 1.15 Implement `PUT /pathways/{id}` (wholesale replace; cascade-replace child rows)
 - [ ] 1.16 Implement `DELETE /pathways/{id}` (cascade-delete child rows)
 - [ ] 1.17 Implement `GET /pathway-blocks` returning the catalogue with `type`, `label`, `default_lane_kind_id`, `config_schema`
-- [ ] 1.18 Implement `GET /pathway-phase-templates` returning the registry with `id`, `label`, `default_ord`, `default_duration_days`
+- [ ] 1.18 Implement `GET /pathway-phase-templates` returning the registry with `id`, `label`, `default_ord`
 - [ ] 1.19 Wire router under central tag + prefix per `openapi-contract` requirements; declare stable `operation_id` + response models + error responses
 - [ ] 1.20 Regenerate OpenAPI schema; verify no contract drift in CI
 
 ### 1d. Fixtures + tests
 
-- [ ] 1.21 Seed one Rugrevalidatie-shaped pathway (uses all 11 tables: phases via templates, lanes via defaults, fixed + enrollment timing values, one Luscii block) via migration or seed task
-- [ ] 1.22 Pytest coverage: aggregate validation (entry block, unknown block type, unknown phase, unknown lane), timing CHECK enforcement (each kind + contradictions), branch/edge consistency, lane materialization, field-resolution path validation, Luscii payload byte-equivalent round-trip, each REST endpoint
+- [ ] 1.21 Seed one Rugrevalidatie-shaped pathway (phases via templates, lanes via defaults, fixed + enrollment timing values, one Luscii block) via migration or seed task
+- [ ] 1.22 Pytest coverage: aggregate validation (unknown block type, unknown phase, unknown lane), timing CHECK enforcement (`fixed` + `enrollment` + rejection of `runtime`), branch/edge consistency (mismatched `source_branch_id`, branch on non-branching block per D19, duplicate edge rejection per D20), lane materialization, field-resolution path validation, Luscii payload byte-equivalent round-trip, soft-delete behavior, each REST endpoint
 - [ ] 1.23 Update `apps/backend/AGENTS.md` with a `Pathway domain` section + MDR reminder (block-catalogue additions must clear `mdr-watchlist.md`)
 
 ### 1e. Phase 1 review gate

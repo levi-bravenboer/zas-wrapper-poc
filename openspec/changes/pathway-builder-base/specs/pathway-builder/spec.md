@@ -47,13 +47,13 @@ The orchestrator SHALL expose a create flow that captures a pathway name, calls 
 
 ### Requirement: Pathway builder canvas
 
-The orchestrator SHALL render a builder canvas at `/pathways/{id}` that displays the pathway's nodes as a node graph with connectors between them and a visible entry-point marker. The canvas SHALL be backed by a third-party graph-canvas package selected via Phase 3 library audit (default expectation: React Flow / xyflow). The orchestrator SHALL NOT implement a homegrown graph renderer.
+The orchestrator SHALL render a builder canvas at `/pathways/{id}` that displays the pathway's nodes as a node graph with connectors between them. The canvas SHALL be backed by a third-party graph-canvas package selected via Phase 3 library audit (default expectation: React Flow / xyflow). The orchestrator SHALL NOT implement a homegrown graph renderer. The canvas SHALL NOT render a design-time entry-point marker — per D16 the start block is picked at enrollment, not at design time.
 
 #### Scenario: Canvas renders pathway nodes and edges
 
 - **WHEN** the caregiver opens a saved pathway with three nodes and two edges
 - **THEN** the canvas renders three nodes connected by two edges
-- **AND** the entry node is visually marked as the entry point
+- **AND** no node is visually flagged as a design-time entry point
 
 ### Requirement: Block palette and node insertion
 
@@ -84,6 +84,16 @@ The orchestrator SHALL render an `+ Add phase` picker on the builder canvas sour
 
 - **WHEN** the caregiver picks `Custom phase`, names it `Pre-admission`, and saves
 - **THEN** the orchestrator includes a phase with the chosen label and `template_id = null` in the `PUT /pathways/{id}` payload
+
+### Requirement: Block card rendering width
+
+The orchestrator SHALL render every block card at a fixed canvas width (~175px) independent of the block's `duration_value`. Duration SHALL be surfaced as a textual chip on the card (e.g. `3d`, `0–7d`) rather than by scaling the card horizontally. A horizontal "smart time tape" visualization SHALL NOT ship in the PoC (deferred per D13); the underlying data model already supports a future tape without migration.
+
+#### Scenario: Block widths uniform regardless of duration
+
+- **WHEN** the canvas renders one block with `fixed_days = 3` and another with `fixed_days = 90`
+- **THEN** both cards have the same width on the canvas
+- **AND** each shows its duration as a chip on the card
 
 ### Requirement: Per-block configuration editor
 
