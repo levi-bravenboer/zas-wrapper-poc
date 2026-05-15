@@ -6,6 +6,13 @@ import { i18n } from '@/lib/i18n'
 import { toast } from '@/lib/notifications/toast'
 import { useSession } from '@/modules/auth/hooks'
 
+import {
+  RealtimeInvalidationContext,
+  type RealtimeEvent,
+  type RealtimeInvalidationContextValue,
+  type RealtimeStatus,
+} from './realtime-invalidation-context'
+
 /**
  * Realtime invalidation provider — opens a single SSE connection to
  * `${API_BASE_URL}/events` while the user has an active session and turns
@@ -21,31 +28,14 @@ import { useSession } from '@/modules/auth/hooks'
  * ≥5 failures occur in that window we surface a warning toast and flip the
  * query-client default `refetchOnWindowFocus` to true so users still get
  * fresh data when they refocus the tab.
+ *
+ * The `useRealtimeInvalidation` hook and the `RealtimeEvent`,
+ * `RealtimeStatus`, `RealtimeInvalidationContextValue` types live in
+ * `./realtime-invalidation-context` — import them from there directly.
  */
-
-export interface RealtimeEvent {
-  resource: string
-  action: 'upsert' | 'delete'
-  id: string | null
-  v: number
-}
-
-export type RealtimeStatus = 'idle' | 'connecting' | 'open' | 'offline'
-
-export interface RealtimeInvalidationContextValue {
-  register: (topic: string, queryKeys: ReadonlyArray<readonly unknown[]>) => () => void
-  status: RealtimeStatus
-}
 
 const FAILURE_WINDOW_MS = 60_000
 const FAILURE_THRESHOLD = 5
-
-const noopRegister: RealtimeInvalidationContextValue['register'] = () => () => undefined
-
-const RealtimeInvalidationContext = React.createContext<RealtimeInvalidationContextValue>({
-  register: noopRegister,
-  status: 'idle',
-})
 
 // Module-level singleton guard. Ensures that even if the provider is mounted
 // more than once (StrictMode double-invocation, accidental double-mount) we
@@ -75,7 +65,6 @@ export function RealtimeInvalidationProvider({
 
   React.useEffect(() => {
     if (!hasSession) {
-      setStatus('idle')
       return
     }
     if (typeof globalThis.EventSource === 'undefined') {
@@ -89,7 +78,11 @@ export function RealtimeInvalidationProvider({
     }
 
     activeConnections += 1
-    setStatus('connecting')
+    // Defer state transition out of the render phase so React Compiler's
+    // set-state-in-effect rule stays satisfied. The 'connecting' status is
+    // transient — it will be replaced by 'open' (or 'offline') as soon as the
+    // EventSource fires its first event.
+    queueMicrotask(() => setStatus('connecting'))
 
     const url = `${env.API_BASE_URL}/events`
     const source = new EventSource(url, { withCredentials: true })
@@ -150,7 +143,7 @@ export function RealtimeInvalidationProvider({
   }, [hasSession, queryClient])
 
   const value = React.useMemo<RealtimeInvalidationContextValue>(
-    () => ({ register: noopRegister, status }),
+    () => ({ register: () => () => undefined, status }),
     [status],
   )
 
@@ -159,8 +152,4 @@ export function RealtimeInvalidationProvider({
       {children}
     </RealtimeInvalidationContext.Provider>
   )
-}
-
-export function useRealtimeInvalidation(): RealtimeInvalidationContextValue {
-  return React.useContext(RealtimeInvalidationContext)
 }
