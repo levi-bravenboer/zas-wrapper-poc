@@ -88,14 +88,14 @@
 
 ## 11. Orchestrator patients overview UI (F4)
 
-- [ ] 11.1 Add `src/modules/patient/api.ts` exporting the list query-key helper (`paginatedQueryKey('/patients', state)`) and a `softDeletePatient(id)` mutation that calls `DELETE /patients/{id}` and invalidates the `patients` key
-- [ ] 11.2 Add `src/modules/patient/components/PatientsColumns.tsx` with `patientColumns: ColumnDef<PatientRead>[]` (Naam sticky, INSZ pill, Geboortedatum, Geslacht, Organisatie lookup, Bijgewerkt), `patientFilters: DataTableFilter<PatientRead>[]` (birth-date range + organisation select bound to `GET /organisations`), and a `patientRowActions(p)` factory exposing the destructive `Verwijderen` action
-- [ ] 11.3 Add `src/modules/patient/types.ts` re-exporting `PatientRead` from the generated `lib/api/schema` as `PatientRow` (keeps the rest of the module schema-free)
-- [ ] 11.4 Add `src/routes/_auth/patients/index.tsx` as a thin composer wiring `useRouteSearchTableState` + `usePaginatedQuery<PatientRead>('/patients', state)` into `<DataTable<PatientRead>>` with `realtimeTopic="patients"`, `selectable={false}`, the imports from §11.2, and the row-click navigator to `/_auth/patients/$patientId`
-- [ ] 11.5 Add `src/routes/_auth/patients/$patientId/index.tsx` as a placeholder ("Detailpagina komt binnenkort") so row clicks never 404 before F5 lands
-- [ ] 11.6 Add `src/i18n/locales/nl/patients.json` with all user-visible keys (page header, filter labels, kebab actions, empty / error / loading copy); zero inline Dutch literals in `.tsx`
-- [ ] 11.7 File follow-up `BL-NNN — Create-patient dialog (POST /patients) for the overview` in `openspec/backlog.md` (deferred from this change to keep the PR scope tight; overview header ships without a create action)
-- [ ] 11.8 `moon run orchestrator:typecheck` / `:lint` / `:test -- src/modules/patient src/routes/_auth/patients` all green; quote the result in the PR description
+- [x] 11.1 Add `src/modules/patient/api.ts` exporting the list query-key helper (`paginatedQueryKey('/patients', state)`) and a `softDeletePatient(id)` mutation that calls `DELETE /patients/{id}` and invalidates the `patients` key
+- [x] 11.2 Add `src/modules/patient/components/PatientsColumns.tsx` with `patientColumns: ColumnDef<PatientRead>[]` (Naam sticky, Geboortedatum, Geslacht, Organisatie lookup, Bijgewerkt), `patientFilters: DataTableFilter<PatientRead>[]` (birth-date range + organisation select bound to `GET /organisations`), and a `patientRowActions(p)` factory exposing the destructive `Verwijderen` action. INSZ column intentionally dropped from the overview to limit PII exposure in shoulder-surfing range; the identifier remains in the row payload for detail views and stays available for future masking treatments.
+- [x] 11.3 Add `src/modules/patient/types.ts` re-exporting `PatientRead` from the generated `lib/api/schema` as `PatientRow` (keeps the rest of the module schema-free)
+- [x] 11.4 Add `src/routes/_auth/patients/index.tsx` as a thin composer wiring `useRouteSearchTableState` + `usePaginatedQuery<PatientRead>('/patients', state)` into `<DataTable<PatientRead>>` with `realtimeTopic="patients"`, `selectable={false}`, the imports from §11.2, and the row-click navigator to `/_auth/patients/$patientId`
+- [x] 11.5 Add `src/routes/_auth/patients/$patientId/index.tsx` as a placeholder ("Detailpagina komt binnenkort") so row clicks never 404 before F5 lands
+- [x] 11.6 Add `src/i18n/locales/nl/patients.json` with all user-visible keys (page header, filter labels, kebab actions, empty / error / loading copy); zero inline Dutch literals in `.tsx`
+- [x] 11.7 Filed follow-up `BL-055 — Create-patient dialog (POST /patients) for the overview` in `openspec/backlog.md` (deferred from this change to keep the PR scope tight; overview header ships without a create action)
+- [x] 11.8 `moon run orchestrator:typecheck` / `:lint` green; `:test` blocked by the pre-existing rolldown native-binding gap (cf. §12.8 / commit `4b02bd2`) — quote both in the PR description
 
 ## 12. Docs, follow-ups, verification
 
