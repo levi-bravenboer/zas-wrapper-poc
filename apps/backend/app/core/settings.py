@@ -24,8 +24,14 @@ class Settings(BaseSettings):
     env: Environment = "dev"
     cors_origins: list[AnyHttpUrl] = Field(default_factory=lambda: list(DEFAULT_DEV_ORIGINS))
     session_secret_key: SecretStr = SecretStr(DEFAULT_SESSION_SECRET)
-    session_cookie_name: str = "BACKEND_SESSION"
     session_max_age_seconds: int = 8 * 60 * 60
+
+    @property
+    def session_cookie_name(self) -> str:
+        # `__Host-` prefix binds the cookie to Secure + Path=/ + no Domain attribute
+        # (browser enforced) — hardens against subdomain cookie injection in prod.
+        return "__Host-BACKEND_SESSION" if self.env == "production" else "BACKEND_SESSION"
+
     public_url: AnyHttpUrl | None = None
     hix_mode: AdapterMode = "stub"
     luscii_mode: AdapterMode = "stub"

@@ -19,6 +19,10 @@ from app.services.auth.auth_service import AuthService
 from app.services.auth.authenticator import PasswordAuthenticator
 from app.services.auth.errors import ForbiddenRoleError, UnauthenticatedError
 from app.services.auth.password import PasswordHasher
+from app.services.auth.providers import (
+    LoginProviderRegistry,
+    PasswordLoginProvider,
+)
 
 # PoC is single-tenant (`zas`). Multi-tenant resolution lands at MVP.
 from scripts.seed_tenant import ZAS_TENANT_ID
@@ -83,6 +87,28 @@ def get_auth_service(
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_password_login_provider(
+    session: SessionDep,
+    hasher: PasswordHasherDep,
+    user_repo: UserRepoDep,
+) -> PasswordLoginProvider:
+    del session
+    authenticator = PasswordAuthenticator(user_repo, hasher, tenant_id=ZAS_TENANT_ID)
+    return PasswordLoginProvider(authenticator)
+
+
+PasswordLoginProviderDep = Annotated[PasswordLoginProvider, Depends(get_password_login_provider)]
+
+
+def get_login_provider_registry(
+    password_provider: PasswordLoginProviderDep,
+) -> LoginProviderRegistry:
+    return LoginProviderRegistry([password_provider])
+
+
+LoginProviderRegistryDep = Annotated[LoginProviderRegistry, Depends(get_login_provider_registry)]
 
 
 async def get_optional_current_user(session: SessionDep) -> SessionUser | None:

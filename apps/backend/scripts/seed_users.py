@@ -23,6 +23,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.user import Role
+from app.core.settings import get_settings
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.user import User
 from app.repositories.tenant import TenantRepository
@@ -47,6 +48,24 @@ CAREGIVER_PASSWORD_ENV = "BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD"
 _PASSWORD_FALLBACK = "changeme"
 
 
+def _guard_production_bootstrap() -> None:
+    """Refuse to run in production unless explicit bootstrap passwords are set.
+
+    Analogous to the session-secret guard: the `"changeme"` fallback is a
+    PoC convenience, never acceptable in prod. Caller MUST set both
+    `BACKEND_BOOTSTRAP_*_PASSWORD` env vars before invoking the seed.
+    """
+
+    if get_settings().env != "production":
+        return
+    for env_var in (ADMIN_PASSWORD_ENV, CAREGIVER_PASSWORD_ENV):
+        if os.getenv(env_var) is None:
+            raise RuntimeError(
+                f"refusing to seed in production: {env_var} is unset; "
+                f"the {_PASSWORD_FALLBACK!r} fallback is PoC-only"
+            )
+
+
 def _resolve_password(env_var: str, hasher: PasswordHasher) -> str:
     raw = os.getenv(env_var)
     if raw is None:
@@ -64,6 +83,7 @@ class _ZasTenantMissingError(RuntimeError):
 
 
 async def seed_users(session: AsyncSession) -> list[User]:
+    _guard_production_bootstrap()
     tenant_repo = TenantRepository(session)
     tenant = await tenant_repo.get_by_slug(ZAS_TENANT_SLUG)
     if tenant is None:

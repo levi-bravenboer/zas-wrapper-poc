@@ -25,7 +25,7 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 async def _login(client: AsyncClient, email: str) -> None:
     response = await client.post(
-        "/auth/login", json={"email": email, "password": _DEFAULT_PASSWORD}
+        "/auth/login/password", json={"email": email, "password": _DEFAULT_PASSWORD}
     )
     assert response.status_code == 200, response.text
 

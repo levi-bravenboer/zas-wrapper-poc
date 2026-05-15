@@ -79,13 +79,13 @@
         }
       }
     },
-    "/auth/login": {
+    "/auth/login/password": {
       "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Login User",
-        "operationId": "login_user",
+        "summary": "Login Password",
+        "operationId": "login_password",
         "requestBody": {
           "content": {
             "application/json": {
@@ -113,6 +113,31 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/providers": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List Login Providers",
+        "operationId": "list_login_providers",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderDescriptor"
+                  },
+                  "type": "array",
+                  "title": "Response List Login Providers"
                 }
               }
             }
@@ -333,6 +358,33 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "ProviderDescriptor": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "password",
+              "oidc"
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "kind"
+        ],
+        "title": "ProviderDescriptor"
       },
       "ReadinessResponse": {
         "properties": {

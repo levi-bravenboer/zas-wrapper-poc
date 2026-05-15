@@ -25,10 +25,22 @@ class User(TenantOwnedEntity):
             unique=True,
         ),
         sa.Index("ix_users_tenant_id_role", "tenant_id", "role"),
+        sa.Index(
+            "uq_users_tenant_external_subject",
+            "tenant_id",
+            "external_idp",
+            "external_subject",
+            unique=True,
+            postgresql_where=sa.text("external_subject IS NOT NULL"),
+        ),
+        sa.CheckConstraint(
+            "password_hash IS NOT NULL OR external_subject IS NOT NULL",
+            name="ck_users_credential_present",
+        ),
     )
 
     email: Mapped[str] = mapped_column(sa.String(255), nullable=False)
-    password_hash: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     display_name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     role: Mapped[Role] = mapped_column(
         sa.Enum(
@@ -41,3 +53,5 @@ class User(TenantOwnedEntity):
         nullable=False,
     )
     is_active: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.true())
+    external_idp: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    external_subject: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
