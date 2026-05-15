@@ -14,3 +14,8 @@ runs:
       shell: bash
       run: npm ci
       working-directory: apps/orchestrator
+
+    - name: generate route tree
+      shell: bash
+      run: npx tsr generate
+      working-directory: apps/orchestrator
