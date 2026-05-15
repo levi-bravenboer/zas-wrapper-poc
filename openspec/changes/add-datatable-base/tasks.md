@@ -204,31 +204,32 @@
 
 - [x] 21.1 `realtimeTopic?: string` prop on `DataTable` (documentation only — no subscription is opened by the table)
 - [x] 21.2 Lint-time check (TypeScript template type) that `realtimeTopic` matches the query-key prefix used by the table's hook
-- [ ] 21.3 Integration test: emit invalidation via mocked SSE, assert table refetches and overlay appears
+- [x] 21.3 Integration test: emit invalidation via mocked SSE, assert table refetches and overlay appears
 
 ## 22. Orchestrator — tests
 
-- [ ] 22.1 `DataTable.test.tsx`: header + body render, sticky first column, empty/loading/refetch/error states
-- [ ] 22.2 `DataTable.sort.test.tsx`: click cycle + `aria-sort` + keyboard
-- [ ] 22.3 `DataTableToolbar.search.test.tsx`: debounce, clearing
-- [ ] 22.4 `DataTableToolbar.filters.test.tsx`: select / multi / date-range / text filter behaviour, clear-all
-- [ ] 22.5 `DataTablePagination.test.tsx`: bounds + page-size reset
-- [ ] 22.6 `DataTable.selection.test.tsx`: header checkbox, cross-page persistence, selection drift on refetch, BulkBar slide-up + cancel
-- [ ] 22.7 `DataTable.rowActions.test.tsx`: menu render, disabled, destructive, propagation
-- [ ] 22.8 `DataTable.rowClick.test.tsx`: click + keyboard, propagation stop on nested controls
-- [ ] 22.9 `DataTable.expand.test.tsx`: chevron toggle, single-row mode, colspan correctness, keyboard
-- [ ] 22.10 `usePaginatedQuery.test.tsx`: cache key canonicalisation
-- [ ] 22.11 `useRealtimeInvalidation.test.tsx`: dispatch on message, reconnect warning, no connection when logged out
-- [ ] 22.12 End-to-end Vitest integration: MSW backs `/demo` + mocked `/events`; assert sort + filter + search + pagination + selection + realtime-driven refetch work
+- [x] 22.1 `DataTable.test.tsx`: header + body render, sticky first column, empty/loading/refetch/error states
+- [x] 22.2 `DataTable.sort.test.tsx`: click cycle + `aria-sort` + keyboard
+- [x] 22.3 `DataTableToolbar.search.test.tsx`: debounce, clearing
+- [x] 22.4 `DataTableToolbar.filters.test.tsx`: select / multi / date-range / text filter behaviour, clear-all
+- [x] 22.5 `DataTablePagination.test.tsx`: bounds + page-size reset
+- [x] 22.6 `DataTable.selection.test.tsx`: header checkbox, cross-page persistence, selection drift on refetch, BulkBar slide-up + cancel
+- [x] 22.7 `DataTable.rowActions.test.tsx`: menu render, disabled, destructive, propagation
+- [x] 22.8 `DataTable.rowClick.test.tsx`: click + keyboard, propagation stop on nested controls
+- [x] 22.9 `DataTable.expand.test.tsx`: chevron toggle, single-row mode, colspan correctness, keyboard
+- [x] 22.10 `usePaginatedQuery.test.tsx`: cache key canonicalisation
+- [x] 22.11 `useRealtimeInvalidation.test.tsx`: dispatch on message, reconnect warning, no connection when logged out
+- [x] 22.12 End-to-end Vitest integration: MSW backs `/demo` + mocked `/events`; assert sort + filter + search + pagination + selection + realtime-driven refetch work
 
 ## 23. Orchestrator — verification
 
-- [ ] 23.1 `moon run orchestrator:typecheck`
-- [ ] 23.2 `moon run orchestrator:lint`
-- [ ] 23.3 `moon run orchestrator:format`
-- [ ] 23.4 `moon run orchestrator:test -- src/components/data-table src/hooks/usePaginatedQuery src/hooks/useRealtimeInvalidation src/lib/query`
-- [ ] 23.5 `moon run orchestrator:build`
-- [ ] 23.6 Manual browser smoke: scratch route renders `<DataTable />` against MSW-mocked `/demo` + mocked `/events`; verify sort, filter, search, pagination, selection + bulk bar, expand, row-click nav, row actions, sticky first column on horizontal scroll, realtime refetch
+- [x] 23.1 `moon run orchestrator:typecheck`
+- [x] 23.2 `moon run orchestrator:lint`
+- [x] 23.3 `moon run orchestrator:format`
+- [x] 23.4 `moon run orchestrator:test -- src/components/data-table src/hooks/usePaginatedQuery src/hooks/useRealtimeInvalidation src/lib/query`
+- [x] 23.5 `moon run orchestrator:build`
+- [x] 23.6 Scaffold scratch demo route at `apps/orchestrator/src/routes/_auth/demo/data-table.tsx` with example column defs, MSW handlers for `/demo` list + `/events` SSE in `src/mocks/handlers/demo.ts`, and a working `<DataTable />` composition (toolbar + pagination + bulk bar + expand + row actions). Route lives under `_auth/demo/` prefix so it is reachable only by direct URL and never linked from app nav.
+- [x] 23.7 Manual browser smoke against `/demo/data-table`: verify sort, filter, search, pagination, selection + bulk bar, expand, row-click nav, row actions, sticky first column on horizontal scroll, realtime refetch
 
 ## 24. Backend AGENTS.md rules (codify list + bulk + realtime conventions)
 
@@ -290,7 +291,8 @@
 
 ## 29. Change closeout
 
-- [ ] 29.1 `openspec validate --changes add-datatable-base`
+- [x] 29.0 Remove demo scratch route + its MSW handlers before validating + committing: delete `apps/orchestrator/src/routes/demo/data-table.tsx` (and any sibling `demo/` files added for the smoke), drop any demo-only MSW handlers added under `src/test/msw/`, regenerate `routeTree.gen.ts`, re-run `moon run orchestrator:typecheck` + `moon run orchestrator:lint` + `moon run orchestrator:test`
+- [x] 29.1 `openspec validate --changes add-datatable-base`
 - [ ] 29.2 Commit per logical unit (semantic, one-liner, ≤72 chars):
   - `feat(backend): add list-query schemas + page envelope`
   - `feat(backend): add list-query params dep`
