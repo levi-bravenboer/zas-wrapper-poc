@@ -13,11 +13,10 @@ export const Route = createFileRoute('/login')({
 })
 
 function LoginPage() {
-  const { redirect } = Route.useSearch()
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
+    <main className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <LoginForm redirectTo={redirect} />
+        <LoginForm />
       </div>
     </main>
   )

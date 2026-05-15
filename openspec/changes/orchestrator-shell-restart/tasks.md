@@ -93,11 +93,11 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 7. Login screen
 
-- [ ] 7.1 Rewrite `src/routes/login.tsx` with pattern O — minimal centered, no card, aurora background.
-- [ ] 7.2 Use shadcn `Input` + primary `Button`. No "remember me", no "forgot password".
-- [ ] 7.3 Placeholder submit handler: on primary CTA click, navigate to `/dashboard` via TanStack Router unconditionally. NO input validation, NO auth endpoint call. Real wiring (validation + `useLogin` mutation + cookie round-trip + `?redirect=` honouring) is tracked on the `[poc]` roadmap under `BL-035` (F1 user + auth domain) and lands as its own change.
-- [ ] 7.4 The `/login` route MUST NOT be reachable under the `embed` surface base path — embed surface owns its own auth context (HiX). Do not register a `/embed/login` route file.
-- [ ] 7.5 Confirm redirect-after-login still honors the `?redirect=...` search param from the auth guard (carried through but unused at the unconditional-navigate step — guard reinstates it once real validation lands).
+- [x] 7.1 Rewrote `src/routes/login.tsx` with pattern O — minimal centered, no card, aurora background visible through.
+- [x] 7.2 Uses shadcn `Input` + `Label` + primary `Button`. No "remember me", no "forgot password".
+- [x] 7.3 `LoginForm.tsx` collapsed to PoC placeholder: `handleSubmit` `event.preventDefault()` then `navigate({ to: '/dashboard' })`. No `useLogin`, no `zod`/`useForm`. BL-035 carries the real wiring.
+- [x] 7.4 Confirmed: only `src/routes/login.tsx` exists. No `embed/login.tsx` registered.
+- [x] 7.5 `Route.validateSearch` still parses `?redirect=` so the auth guard's redirect param stays type-safe; placeholder ignores it for now (guard reinstates at BL-035).
 
 ## 8. Localization
 
@@ -111,7 +111,7 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 - [ ] 9.2 `PageHeader.test.tsx` — required title; conditional rendering of each slot; auto-crumb renders from `useMatches`.
 - [ ] 9.3 `CommandPalette.test.tsx` — `⌘K` opens; route selection navigates.
 - [ ] 9.4 `Skeleton.test.tsx`, `EmptyState.test.tsx` — render + a11y (role, name).
-- [ ] 9.5 `Login.test.tsx` — submit with empty fields navigates to `/dashboard`; no validation message rendered; no network call issued.
+- [x] 9.5 `LoginForm.test.tsx` rewritten — mocks `useNavigate`, asserts empty submit calls `navigate({ to: '/dashboard' })` exactly once, no `role="alert"` rendered, no fetch path imported.
 - [ ] 9.6 `Shell.surface.test.tsx` — app/smart surfaces render sidebar tree; embed surface renders bare children-only tree (no sidebar, no PageHeader, no `role="navigation"` shell nav).
 
 ## 10. Spec deltas + scope ledger
