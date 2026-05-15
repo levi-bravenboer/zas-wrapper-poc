@@ -79,13 +79,13 @@
         }
       }
     },
-    "/auth/login": {
+    "/auth/login/password": {
       "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Login User",
-        "operationId": "login_user",
+        "summary": "Login Password",
+        "operationId": "login_password",
         "requestBody": {
           "content": {
             "application/json": {
@@ -113,6 +113,31 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/providers": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List Login Providers",
+        "operationId": "list_login_providers",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderDescriptor"
+                  },
+                  "type": "array",
+                  "title": "Response List Login Providers"
                 }
               }
             }
@@ -1099,6 +1124,33 @@
         "type": "object",
         "title": "PatientUpdate",
         "description": "`PATCH /patients/{id}` payload \u2014 demographics only.\n\n`model_config = ConfigDict(extra=\"forbid\")` is what produces the 422\nwhen a client sends `identifiers` here: FastAPI translates Pydantic's\n`extra_forbidden` error into a 422 response automatically."
+      },
+      "ProviderDescriptor": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "password",
+              "oidc"
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "kind"
+        ],
+        "title": "ProviderDescriptor"
       },
       "ReadinessResponse": {
         "properties": {

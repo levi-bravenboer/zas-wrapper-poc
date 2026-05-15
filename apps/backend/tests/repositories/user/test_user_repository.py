@@ -26,6 +26,9 @@ async def _make_user(
     email: str,
     role: Role = Role.CAREGIVER,
     is_active: bool = True,
+    external_idp: str | None = None,
+    external_subject: str | None = None,
+    password_hash: str | None = "hash",
 ) -> User:
     user_id = uuid.uuid4()
     user = User(
@@ -34,10 +37,12 @@ async def _make_user(
         created_by=user_id,
         updated_by=user_id,
         email=email,
-        password_hash="hash",
+        password_hash=password_hash,
         display_name=email,
         role=role,
         is_active=is_active,
+        external_idp=external_idp,
+        external_subject=external_subject,
     )
     session.add(user)
     await session.flush()
@@ -82,6 +87,60 @@ async def test_list_in_tenant_filters_by_active(db_session: AsyncSession) -> Non
 
     assert [u.email for u in active] == ["active@zas.local"]
     assert [u.email for u in inactive] == ["inactive@zas.local"]
+
+
+async def test_get_by_external_identity_returns_row(db_session: AsyncSession) -> None:
+    tenant = await _make_tenant(db_session, "zas")
+    user = await _make_user(
+        db_session,
+        tenant=tenant,
+        email="ext@zas.local",
+        external_idp="itsme",
+        external_subject="abc-123",
+    )
+    await db_session.commit()
+
+    repo = UserRepository(db_session)
+    found = await repo.get_by_external_identity(tenant.id, "itsme", "abc-123")
+
+    assert found is not None
+    assert found.id == user.id
+
+
+async def test_get_by_external_identity_returns_none_when_missing(
+    db_session: AsyncSession,
+) -> None:
+    tenant = await _make_tenant(db_session, "zas")
+    await db_session.commit()
+
+    repo = UserRepository(db_session)
+    assert await repo.get_by_external_identity(tenant.id, "itsme", "missing") is None
+
+
+async def test_get_by_external_identity_is_tenant_scoped(db_session: AsyncSession) -> None:
+    zas = await _make_tenant(db_session, "zas")
+    other = await _make_tenant(db_session, "other")
+    zas_user = await _make_user(
+        db_session,
+        tenant=zas,
+        email="a@zas.local",
+        external_idp="itsme",
+        external_subject="shared-sub",
+    )
+    await _make_user(
+        db_session,
+        tenant=other,
+        email="a@other.local",
+        external_idp="itsme",
+        external_subject="shared-sub",
+    )
+    await db_session.commit()
+
+    repo = UserRepository(db_session)
+    found = await repo.get_by_external_identity(zas.id, "itsme", "shared-sub")
+
+    assert found is not None
+    assert found.id == zas_user.id
 
 
 async def test_duplicate_lower_email_per_tenant_violates_unique(

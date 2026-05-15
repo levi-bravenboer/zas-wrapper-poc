@@ -1,36 +1,61 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { type FormEvent, type ReactElement } from 'react'
+import { useForm } from '@tanstack/react-form'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { authKeys } from '@/modules/auth/keys'
-import type { SessionUser } from '@/modules/auth/schemas'
+import { useLogin } from '@/modules/auth/hooks'
 
-// PoC placeholder: validation + mutation + cookie round-trip land under BL-035
-// (see openspec/backlog.md). Submit unconditionally navigates to /.
+import { safeRedirect } from '../redirect'
+import { loginSchema } from '../schemas'
+
+type ErrorKey = 'invalid' | 'unknown'
+
+function statusToErrorKey(status: number | undefined): ErrorKey {
+  return status === 401 ? 'invalid' : 'unknown'
+}
+
 export function LoginForm(): ReactElement {
   const { t } = useTranslation('auth')
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const redirect = useRouterState({
+    select: (state) => {
+      const value = (state.location.search as Record<string, unknown>).redirect
+      return typeof value === 'string' ? value : undefined
+    },
+  })
+  const login = useLogin()
+  const [errorKey, setErrorKey] = useState<ErrorKey | null>(null)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault()
-    // TEMP: seed session cache so guard lets / render without backend.
-    // Remove once BL-035 wires real auth (or backend is running locally).
-    queryClient.setQueryData<SessionUser>(authKeys.me(), {
-      id: 'poc',
-      email: 'poc@local.test',
-      displayName: 'PoC User',
-      roles: [],
-    })
-    void navigate({ to: '/' })
-  }
+  const form = useForm({
+    defaultValues: { email: '', password: '' },
+    onSubmit: async ({ value, formApi }) => {
+      setErrorKey(null)
+      try {
+        await login.mutateAsync(value)
+        await navigate({ to: safeRedirect(redirect) })
+      } catch (err) {
+        const status = (err as { status?: number } | null)?.status
+        const key = statusToErrorKey(status)
+        setErrorKey(key)
+        if (key === 'invalid') {
+          formApi.setFieldValue('password', '')
+        }
+      }
+    },
+  })
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        void form.handleSubmit()
+      }}
+      className="flex flex-col gap-6"
+      noValidate
+    >
       <header className="flex flex-col gap-1 text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           {t('login.title')}
@@ -38,24 +63,77 @@ export function LoginForm(): ReactElement {
         <p className="text-sm text-muted-foreground">{t('login.subtitle')}</p>
       </header>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="login-username">{t('login.fields.username')}</Label>
-        <Input id="login-username" name="username" autoComplete="username" />
-      </div>
+      <form.Field
+        name="email"
+        validators={{
+          onSubmit: ({ value }) => {
+            const result = loginSchema.shape.email.safeParse(value)
+            return result.success ? undefined : t('login.errors.invalid')
+          },
+        }}
+      >
+        {(field) => (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="login-email">{t('login.fields.email')}</Label>
+            <Input
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              onBlur={field.handleBlur}
+              aria-invalid={field.state.meta.errors.length > 0}
+            />
+            {field.state.meta.errors.length > 0 && (
+              <p className="text-sm text-destructive" role="alert">
+                {String(field.state.meta.errors[0])}
+              </p>
+            )}
+          </div>
+        )}
+      </form.Field>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="login-password">{t('login.fields.password')}</Label>
-        <Input
-          id="login-password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-        />
-      </div>
+      <form.Field
+        name="password"
+        validators={{
+          onSubmit: ({ value }) => {
+            const result = loginSchema.shape.password.safeParse(value)
+            return result.success ? undefined : t('login.errors.required')
+          },
+        }}
+      >
+        {(field) => (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="login-password">{t('login.fields.password')}</Label>
+            <Input
+              id="login-password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={field.state.value}
+              onChange={(e) => field.handleChange(e.target.value)}
+              onBlur={field.handleBlur}
+              aria-invalid={field.state.meta.errors.length > 0}
+            />
+            {field.state.meta.errors.length > 0 && (
+              <p className="text-sm text-destructive" role="alert">
+                {String(field.state.meta.errors[0])}
+              </p>
+            )}
+          </div>
+        )}
+      </form.Field>
 
-      <Button type="submit" className="w-full">
-        {t('login.submit')}
+      <Button type="submit" className="w-full" disabled={login.isPending}>
+        {login.isPending ? t('login.submitting') : t('login.submit')}
       </Button>
+
+      {errorKey !== null && (
+        <p role="alert" className="text-sm text-destructive text-center">
+          {t(`login.errors.${errorKey === 'invalid' ? 'invalid_credentials' : 'unknown'}`)}
+        </p>
+      )}
     </form>
   )
 }

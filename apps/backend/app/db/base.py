@@ -31,6 +31,7 @@ on new auditable rows (and `updated_by` on dirty ones) from
 from __future__ import annotations
 
 from datetime import datetime
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 import sqlalchemy as sa
@@ -43,9 +44,16 @@ class Base(DeclarativeBase):
 
 
 class Entity(Base):
-    """Universal abstract base: id + timestamps + soft delete."""
+    """Universal abstract base: id + timestamps + soft delete.
+
+    `__realtime_resource__` opts a model into the realtime invalidation
+    channel (`app.realtime.flush_hook`). `None` means "do not publish".
+    Subclasses MUST declare it explicitly in the class body (no implicit
+    inheritance) — enforced by `tests/_conformance/test_realtime_resource_declared.py`.
+    """
 
     __abstract__ = True
+    __realtime_resource__: ClassVar[str | None] = None
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     created_at: Mapped[datetime] = mapped_column(

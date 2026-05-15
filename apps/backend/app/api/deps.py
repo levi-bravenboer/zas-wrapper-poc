@@ -7,7 +7,8 @@ only re-exports aliases that have no domain (settings, db session).
 
 from __future__ import annotations
 
+from app.api._list import ListQueryParamsDep, list_query_params
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 
-__all__ = ["SessionDep", "SettingsDep"]
+__all__ = ["ListQueryParamsDep", "SessionDep", "SettingsDep", "list_query_params"]

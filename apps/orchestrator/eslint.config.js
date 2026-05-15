@@ -13,7 +13,16 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage', 'playwright-report', 'test-results', 'src/routeTree.gen.ts']),
+  globalIgnores([
+    'dist',
+    'coverage',
+    'playwright-report',
+    'test-results',
+    'src/routeTree.gen.ts',
+    // Lint-rule fixtures intentionally violate rules; they're linted programmatically
+    // from tests-lint/tests-lint.test.ts, not by the default `eslint .` pass.
+    'tests-lint/violations/**',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -82,6 +91,72 @@ export default defineConfig([
     },
   },
   {
+    // DataTable encapsulation guard rails (see openspec/changes/add-datatable-base §26).
+    // These bans apply broadly across src/**; downstream override blocks re-enable
+    // imports / raw <table> usage inside the DataTable implementation itself.
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXOpeningElement[name.name="table"]',
+          message:
+            'Use `DataTable<T>` for lists; raw `<table>` only allowed inside the `Table` primitive.',
+        },
+        {
+          // Heuristic: flag `useQuery({ ... '...?page=...' ... })` — paginated list
+          // endpoints should go through `usePaginatedQuery` instead. We match any
+          // string literal containing `?page=` inside a useQuery call; this is a
+          // simplified substring check (spec §26.4) chosen over a regex over route
+          // prefixes to keep false positives low.
+          selector: 'CallExpression[callee.name="useQuery"] Literal[value=/\\?page=/]',
+          message: 'Use `usePaginatedQuery` for paginated lists.',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@tanstack/react-table'],
+              message:
+                'TanStack Table is an implementation detail of DataTable; import from `@/components/data-table` instead.',
+            },
+            {
+              group: ['@/components/ui/table'],
+              message:
+                'Import `DataTable` from `@/components/data-table`; the `Table` primitive is internal.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // DataTable internals own TanStack Table + the `Table` primitive — re-enable
+    // the bans above so the implementation can actually import what it needs.
+    files: ['src/components/data-table/**/*.{ts,tsx}', 'src/components/ui/table.tsx'],
+    rules: {
+      'no-restricted-syntax': 'off',
+      'no-restricted-imports': 'off',
+    },
+  },
+  {
+    // Tests may import the `Table` primitive directly for rendering assertions.
+    files: ['src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  {
+    // `usePaginatedQuery` is the sanctioned wrapper around `useQuery` for
+    // paginated lists; it must be allowed to call useQuery with `?page=` URLs.
+    files: ['src/hooks/use-paginated-query.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
+  {
     // routes/** may default-export (TanStack Router file-based requirement)
     // also allow inline component + Route export (fast-refresh exception)
     files: ['src/routes/**/*.{ts,tsx}'],
@@ -116,6 +191,17 @@ export default defineConfig([
     rules: { 'testing-library/no-manual-cleanup': 'off' },
   },
   {
+    // DataTable tests legitimately probe DOM structure (sticky-left classes on
+    // <td>, header row composition, expanded row colSpan) — testing-library's
+    // role queries cannot express these assertions. The product code is fully
+    // covered by role-based tests; these checks complement them.
+    files: ['src/components/data-table/**/*.test.{ts,tsx}'],
+    rules: {
+      'testing-library/no-node-access': 'off',
+      'testing-library/no-container': 'off',
+    },
+  },
+  {
     // Playwright E2E — not testing-library
     files: ['tests-e2e/**/*.{ts,tsx}'],
     rules: {
@@ -124,7 +210,13 @@ export default defineConfig([
   },
   {
     // config files & vite config can default-export and run in node
-    files: ['*.config.{js,ts}', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
+    files: [
+      '*.config.{js,ts}',
+      'vite.config.ts',
+      'vitest.config.ts',
+      'playwright.config.ts',
+      'tests-lint/vitest.config.ts',
+    ],
     rules: { 'import-x/no-default-export': 'off' },
     languageOptions: { globals: globals.node },
   },

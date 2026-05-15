@@ -73,7 +73,7 @@ src/
     components/   module-internal components
     __tests__/    integration tests for module flows
   components/
-    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Tabs, Textarea, Toast, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
+    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Table, Tabs, Textarea, Toast, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
     layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
@@ -161,6 +161,89 @@ Pick the **lowest tier that fits**. Promote up only when the type genuinely need
 - Validate at boundaries: HTTP payloads, route search params, env.
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
+
+## Lists & DataTable
+
+- All overviews MUST use `DataTable<T>` from `@/components/data-table`. No ad-hoc `<table>` outside `@/components/ui/table`. Enforced by ESLint (`no-restricted-syntax` on `JSXOpeningElement[name.name="table"]`).
+- All paginated lists MUST go through `usePaginatedQuery` from `@/hooks/use-paginated-query`. No hand-rolled `useQuery` wrappers around list endpoints — enforced by ESLint.
+- Column defs, filter defs, and row-action defs live at `src/modules/<name>/components/<Name>Columns.tsx`. The route file composes `<DataTable {...defs} />` only. Keep TanStack Table internals out of routes and modules — it is an implementation detail of `DataTable`.
+- Pick URL persistence (`useRouteSearchTableState`) OR localStorage (`useLocalTableState`) OR neither (`useDataTableState`) — never compose two. URL wins over localStorage; both fall back to defaults.
+- Bulk action UI MUST render inside `<DataTable.BulkBar>`. Bulk mutations live in `modules/<name>/api.ts` and call the backend's `POST /<resource>/<action>` endpoints returning `BulkResult`.
+- Lists wanting auto-refresh MUST declare `realtimeTopic` matching the backend model's `__realtime_resource__`. The prop is documentation-only — no subscription is opened by the table; the `RealtimeInvalidationProvider` (mounted once in `src/app/providers.tsx`) drives invalidation via the `[resource]` query-key prefix.
+- All user-visible strings come from the `data-table` namespace or the module's own namespace. No inline literals — enforced by the global `t('namespace.key')` rule.
+
+### Compliant example
+
+```tsx
+// src/modules/patients/components/PatientsColumns.tsx
+import type { ColumnDef, DataTableFilter, DataTableRowAction } from '@/components/data-table'
+import type { components } from '@/lib/api/schema'
+
+type Patient = components['schemas']['Patient']
+
+export const patientColumns: ColumnDef<Patient>[] = [
+  { id: 'name', header: 'naam', accessor: (p) => p.display_name, sortKey: 'display_name', sticky: true },
+  { id: 'status', header: 'status', accessor: (p) => p.status, sortKey: 'status', filterKey: 'status' },
+]
+
+export const patientFilters: DataTableFilter<Patient>[] = [
+  { type: 'select', key: 'status', label: 'status', options: [{ value: 'active', label: 'actief' }] },
+]
+
+export function patientRowActions(p: Patient): DataTableRowAction[] {
+  return [{ label: 'archiveer', onClick: () => archivePatient(p.id), destructive: true }]
+}
+```
+
+```tsx
+// src/routes/_auth/patients.tsx
+import { createFileRoute } from '@tanstack/react-router'
+
+import { DataTable } from '@/components/data-table'
+import { usePaginatedQuery } from '@/hooks/use-paginated-query'
+import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
+import { patientColumns, patientFilters, patientRowActions } from '@/modules/patients/components/PatientsColumns'
+
+function PatientsPage() {
+  const [state, dispatch] = useRouteSearchTableState()
+  const { data, isLoading, isFetching, error } = usePaginatedQuery<Patient>('/patients', state)
+  return (
+    <DataTable<Patient>
+      data={data?.items ?? []}
+      totalPages={data?.total_pages ?? 0}
+      state={state}
+      onStateChange={dispatch}
+      columns={patientColumns}
+      filterDefs={patientFilters}
+      rowActions={patientRowActions}
+      isLoading={isLoading}
+      isFetching={isFetching}
+      error={error}
+      realtimeTopic="patients"
+      selectable
+    />
+  )
+}
+
+export const Route = createFileRoute('/_auth/patients')({ component: PatientsPage })
+```
+
+```ts
+// src/modules/patients/api.ts
+import { api } from '@/lib/api/client'
+
+export async function archivePatients(ids: string[]) {
+  const { data, error } = await api.POST('/patients/archive', { body: { ids } })
+  if (error) throw new Error('archive failed')
+  return data // BulkResult: { succeeded: UUID[], failed: BulkFailure[] }
+}
+```
+
+### Realtime invalidation
+
+- `<RealtimeInvalidationProvider>` is mounted exactly once in `src/app/providers.tsx`. It opens a single SSE connection to `${API_BASE_URL}/events` while a session exists and turns each `RealtimeEvent` into `queryClient.invalidateQueries({ queryKey: [event.resource], exact: false })`.
+- `realtimeTopic="<resource>"` on `DataTable` is opt-in metadata that matches the backend's `__realtime_resource__`. No subscription is opened by the table — the provider already invalidates queries keyed by `[resource]`, and `paginatedQueryKey('/resource', query)` starts with `'resource'` to participate in those invalidations.
+- After ≥5 SSE failures in a rolling 60 s window the provider flips `refetchOnWindowFocus` to `true` and toasts via the `data-table` namespace (`realtime.offline`) so users still get fresh data on refocus.
 
 ## Surfaces — ask before building a new page
 

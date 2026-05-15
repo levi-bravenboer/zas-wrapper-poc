@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -18,6 +19,7 @@ from app.db.base import TenantOwnedEntity
 
 class Organisation(TenantOwnedEntity):
     __tablename__ = "organisations"
+    __realtime_resource__: ClassVar[str | None] = "organisations"
     __table_args__ = (
         sa.CheckConstraint(
             "parent_organisation_id IS NULL OR parent_organisation_id <> id",

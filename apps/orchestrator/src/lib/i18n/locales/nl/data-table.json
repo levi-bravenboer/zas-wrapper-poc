@@ -1,0 +1,46 @@
+{
+  "empty": {
+    "title": "Geen resultaten",
+    "body": "Pas je filters of zoekopdracht aan."
+  },
+  "pagination": {
+    "previous": "Vorige",
+    "next": "Volgende",
+    "indicator": "{{page}} / {{total}}",
+    "pageSize": "Per pagina"
+  },
+  "toolbar": {
+    "search": {
+      "placeholder": "Zoeken…"
+    },
+    "filters": {
+      "clear": "Filters wissen",
+      "button": "Filters"
+    }
+  },
+  "sort": {
+    "ariaAscending": "Oplopend gesorteerd",
+    "ariaDescending": "Aflopend gesorteerd",
+    "ariaNone": "Niet gesorteerd"
+  },
+  "bulk": {
+    "count": {
+      "one": "{{count}} geselecteerd",
+      "other": "{{count}} geselecteerd"
+    },
+    "count_one": "{{count}} geselecteerd",
+    "count_other": "{{count}} geselecteerd",
+    "cancel": "Annuleren"
+  },
+  "expand": {
+    "toggle": "Rij uitklappen"
+  },
+  "actions": {
+    "menu": {
+      "aria": "Acties voor rij"
+    }
+  },
+  "realtime": {
+    "offline": "Live-updates onderbroken — vernieuw om bij te werken."
+  }
+}

@@ -75,7 +75,7 @@ Each row: the mock used in PoC → the real thing it stands in for at MVP.
 
 | Mock (PoC) | Real thing (MVP) |
 |---|---|
-| **Auth** — hard-coded users (`clinician` / `demo`), in-memory password table | IdP integration: eHealth / itsme® / CSAM for ZAS; eID for external caregivers; role-based access control |
+| **Auth** — seeded users in DB (argon2id `password_hash`), `LoginProvider` seam shipped with `password` provider only, cookie session (`HttpOnly` + `SameSite=Lax` + `Secure` in prod + `__Host-` prefix in prod), structured login audit log to stdout, `external_idp`/`external_subject` columns ready (null in PoC), RRN never stored | IdP integration: eHealth / itsme® / CSAM for ZAS; eID for external caregivers; role-based access control. Plus MVP compliance gates: `BL-042` server-side session revocation, `BL-043` rate-limit + lockout, `BL-044` MFA via OIDC (LoA High), `BL-045` RP-initiated logout, `BL-046` DPIA, `BL-047` SMART-on-FHIR bearer-token path, `BL-048` OIDC hardening (PKCE/state/nonce/JWKS), `BL-049` password reset (if password provider survives) |
 | **HiX** — no client; pathways are not initiated from HiX context | SMART-on-FHIR launch from HiX, FHIR R4 read / write, task two-way sync, embeddable orchestrator surface |
 | **Luscii** — clinical care paths represented as static JSON blocks in our DB, no measurements ingested | Luscii Builder API for block authoring, Luscii task webhook for monitoring-triggered tasks, Luscii Vitals embed for clinician viewer |
 | **Patients** — seeded fake patients in our DB | Patients enrolled from HiX context (FHIR Patient resource on launch) |
@@ -90,7 +90,7 @@ Per feature: what is the PoC state, what is the MVP state, what external thing m
 
 | Feature | PoC state | MVP delta | MVP blocker |
 |---|---|---|---|
-| `F1` Login | Hard-coded users + cookie session | IdP-backed login (eHealth / itsme® / eID); role-based ACL; session hardening | IdP integration design + contracts (eHealth, itsme®, eID); NewWave Care input |
+| `F1` Login | Seeded users + cookie session (argon2id, `HttpOnly`/`SameSite=Lax`/`Secure`, `__Host-` prefix in prod, prod seed guard); `LoginProvider` Protocol + `GET /auth/providers` discovery seam shipped (one `password` provider); login audit log to stdout; `users.external_idp`/`external_subject` columns + tenant-scoped lookup ready (null in PoC); spec forbids storing Belgian RRN | IdP-backed login (eHealth / itsme® / eID / CSAM) as `oidc` providers via the same seam; role-based ACL; full session hardening (server-side revocation `BL-042`, rate-limit `BL-043`, MFA via LoA High IdPs `BL-044`, RP-initiated logout `BL-045`, DPIA `BL-046`, SMART-on-FHIR bearer path `BL-047`, OIDC hardening `BL-048`, password lifecycle `BL-049`) | IdP integration design + contracts (eHealth, itsme®, eID, CSAM); NewWave Care input; BL-042..BL-049 closure |
 | `F2` Dashboard | Summary cards over mocked data | Live counts from HiX + Luscii + Orchestrator; alerting on out-of-bounds | HiX FHIR adapter; Luscii API contract |
 | `F3` Carepath builder | Standalone web app, save to our DB; saved = enrollable | Publish flow to Orchestrator runtime + audit trail + versioning; Luscii block configured against real Luscii Builder | Luscii Builder API; designer/runtime split decision (separate app? same?) |
 | `F4` Patients overview | List of seeded patients | List of patients enrolled from HiX, filtered by caregiver / pathway / risk; pagination + search | HiX patient enrollment flow (SMART launch + FHIR Patient read) |

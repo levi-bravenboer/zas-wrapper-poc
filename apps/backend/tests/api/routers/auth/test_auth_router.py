@@ -21,12 +21,12 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
         yield client
 
 
-async def test_login_sets_session_cookie(
+async def test_login_password_sets_session_cookie(
     async_client: AsyncClient, settings: Settings, seeded_zas_users: list[User]
 ) -> None:
     del seeded_zas_users
     response = await async_client.post(
-        "/auth/login", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
+        "/auth/login/password", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
     )
 
     assert response.status_code == 200
@@ -36,27 +36,54 @@ async def test_login_sets_session_cookie(
     assert response.cookies.get(settings.session_cookie_name)
 
 
-async def test_login_rejects_wrong_password(
+async def test_legacy_login_route_returns_404(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
     del seeded_zas_users
     response = await async_client.post(
-        "/auth/login", json={"email": ADMIN_EMAIL, "password": "wrong"}
+        "/auth/login", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
+    )
+    assert response.status_code == 404
+
+
+async def test_login_password_rejects_wrong_password(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    response = await async_client.post(
+        "/auth/login/password", json={"email": ADMIN_EMAIL, "password": "wrong"}
     )
 
     assert response.status_code == 401
     assert response.json()["code"] == "security.auth.invalid_credentials"
 
 
-async def test_login_rejects_unknown_email(
+async def test_login_password_rejects_unknown_email(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
     del seeded_zas_users
     response = await async_client.post(
-        "/auth/login", json={"email": "ghost@zas.local", "password": _DEFAULT_PASSWORD}
+        "/auth/login/password", json={"email": "ghost@zas.local", "password": _DEFAULT_PASSWORD}
     )
 
     assert response.status_code == 401
+
+
+async def test_list_providers_returns_password_only(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    response = await async_client.get("/auth/providers")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body == [{"key": "password", "label": "E-mail + wachtwoord", "kind": "password"}]
+
+
+async def test_list_providers_is_unauthenticated(async_client: AsyncClient) -> None:
+    # No cookie set, no seed — the route MUST still return 200.
+    response = await async_client.get("/auth/providers")
+    assert response.status_code == 200
 
 
 async def test_me_returns_current_user_after_login(
@@ -64,7 +91,8 @@ async def test_me_returns_current_user_after_login(
 ) -> None:
     del seeded_zas_users
     await async_client.post(
-        "/auth/login", json={"email": CAREGIVER_EMAIL, "password": _DEFAULT_PASSWORD}
+        "/auth/login/password",
+        json={"email": CAREGIVER_EMAIL, "password": _DEFAULT_PASSWORD},
     )
 
     response = await async_client.get("/auth/me")
@@ -98,7 +126,7 @@ async def test_me_rejects_deactivated_user(
 ) -> None:
     admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     await async_client.post(
-        "/auth/login", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
+        "/auth/login/password", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
     )
 
     db_admin = await db_session.merge(admin)
@@ -114,7 +142,7 @@ async def test_logout_clears_session_cookie(
 ) -> None:
     del seeded_zas_users
     await async_client.post(
-        "/auth/login", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
+        "/auth/login/password", json={"email": ADMIN_EMAIL, "password": _DEFAULT_PASSWORD}
     )
 
     response = await async_client.post("/auth/logout")

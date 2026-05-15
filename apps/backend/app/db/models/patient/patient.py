@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 class Patient(TenantOwnedEntity):
     __tablename__ = "patients"
+    __realtime_resource__: ClassVar[str | None] = "patients"
     __table_args__ = (
         # Partial unique on the sync key: a given external system can only
         # map to one patient per tenant. `deleted_at IS NULL` lets a soft

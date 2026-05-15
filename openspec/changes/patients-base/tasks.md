@@ -90,10 +90,10 @@
 
 - [ ] 11.1 At archive time: capability docs land at `openspec/specs/patients-base/` (deferred to archive step — `openspec-archive-change` skill handles the move)
 - [x] 11.2 Added a `2026-05-15 — patients-base scope check` entry to `openspec/mdr-watchlist.md` confirming the row stores identifiers + demographics + sync metadata only; re-verify on any future column addition
-- [x] 11.3 Filed follow-up `BL-042 — AUTH-HARDEN sweep` in `openspec/backlog.md`
-- [x] 11.4 Filed follow-up `BL-043 — Patient identifier column encryption` in `openspec/backlog.md` (gated by `BL-034`)
-- [x] 11.5 Filed follow-up `BL-044 — Patient-level ACL wiring on require_patient_access` in `openspec/backlog.md` (deepens `BL-020` for patients)
-- [x] 11.6 Filed follow-up `BL-045 — Patient names / addresses / telecoms child tables` in `openspec/backlog.md` (lands alongside the HiX adapter, BL-001)
+- [x] 11.3 Filed follow-up `BL-051 — AUTH-HARDEN sweep` in `openspec/backlog.md` (renumbered after merging origin/main which had already claimed BL-042..BL-045 for auth-compliance gaps)
+- [x] 11.4 Filed follow-up `BL-052 — Patient identifier column encryption` in `openspec/backlog.md` (gated by `BL-034`)
+- [x] 11.5 Filed follow-up `BL-053 — Patient-level ACL wiring on require_patient_access` in `openspec/backlog.md` (deepens `BL-020` for patients)
+- [x] 11.6 Filed follow-up `BL-054 — Patient names / addresses / telecoms child tables` in `openspec/backlog.md` (lands alongside the HiX adapter, BL-001)
 - [x] 11.7 `moon run backend:format` / `:lint` / `:typecheck` / `:test` all green (`backend:test` → 144 passed in 12.97s)
 - [x] 11.8 `moon run orchestrator:typecheck` green; `moon run orchestrator:build` fails for environment reasons (Node 20.18 < required 20.19 + missing `@rolldown/binding-darwin-arm64` native binding); blocker is unrelated to this change (cf. commit `4b02bd2`) — re-run on a clean install before merging
 - [x] 11.9 `npx openspec validate patients-base --strict` → `Change 'patients-base' is valid`

@@ -12,7 +12,8 @@ import { router } from '@/app/router'
 import { env } from '@/config/env'
 import { server } from '@/mocks/server'
 
-import { useLogin, useLogout, useSession } from './hooks'
+import { useLogin, useLogout, useProviders, useSession } from './hooks'
+import { authKeys } from './keys'
 
 const baseUrl = env.API_BASE_URL
 
@@ -28,8 +29,9 @@ describe('useSession', () => {
         HttpResponse.json({
           id: 'u1',
           email: 'a@b.co',
-          displayName: 'A',
-          roles: ['clinician'],
+          display_name: 'A',
+          tenant_id: '00000000-0000-0000-0000-000000000001',
+          role: 'caregiver',
         }),
       ),
     )
@@ -64,26 +66,42 @@ describe('useLogin', () => {
     const user = {
       id: 'u2',
       email: 'l@b.co',
-      displayName: 'L',
-      roles: ['clinician'],
+      display_name: 'L',
+      tenant_id: '00000000-0000-0000-0000-000000000001',
+      role: 'caregiver',
     }
-    server.use(http.post(`${baseUrl}/auth/login`, () => HttpResponse.json(user)))
+    server.use(http.post(`${baseUrl}/auth/login/password`, () => HttpResponse.json(user)))
 
     const { result } = renderHook(() => useLogin(), { wrapper })
-    await result.current.mutateAsync({ username: 'l', password: 'p' })
+    await result.current.mutateAsync({ email: 'l@b.co', password: 'p' })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data?.id).toBe('u2')
   })
 
   it('surfaces an error on 401', async () => {
     server.use(
-      http.post(`${baseUrl}/auth/login`, () =>
+      http.post(`${baseUrl}/auth/login/password`, () =>
         HttpResponse.json({ detail: 'nope' }, { status: 401 }),
       ),
     )
 
     const { result } = renderHook(() => useLogin(), { wrapper })
-    await expect(result.current.mutateAsync({ username: 'l', password: 'p' })).rejects.toThrow()
+    await expect(result.current.mutateAsync({ email: 'l@b.co', password: 'p' })).rejects.toThrow()
+  })
+})
+
+describe('useProviders', () => {
+  it('uses authKeys.providers and resolves the mocked endpoint', async () => {
+    server.use(
+      http.get(`${baseUrl}/auth/providers`, () =>
+        HttpResponse.json([{ key: 'password', label: 'pwd', kind: 'password' }]),
+      ),
+    )
+    expect(authKeys.providers()).toEqual(['auth', 'providers'])
+
+    const { result } = renderHook(() => useProviders(), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data?.[0]?.kind).toBe('password')
   })
 })
 
