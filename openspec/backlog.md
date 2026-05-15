@@ -247,6 +247,8 @@ Note: F1 backend domain lands as its own `[poc]` change in its own worktree. Sha
 
 Login-screen wiring carve-out: `orchestrator-shell-restart` builds the `/login` screen with a placeholder submit handler that navigates to `/dashboard` unconditionally (no validation, no auth call). BL-035 replaces that placeholder with: frontend field validation, `useLogin` mutation against the hard-coded user table, cookie-session set-cookie round-trip, `?redirect=` search-param honouring, and failure-state rendering. The screen visuals + layout MUST NOT change — BL-035 only wires behaviour to the already-built form.
 
+Promoted to `changes/add-auth-provider-seam/` on 2026-05-15 (login-screen wiring carve-out + `LoginProvider` route-shape seam for the future eID / itsme® / CSAM swap; concrete OIDC providers track under a separate `[mvp]` backlog entry filed when this change archives).
+
 ### BL-036 — F3 pathway domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
@@ -282,3 +284,55 @@ Note: F2 backend aggregation + orchestrator dashboard wiring land as their own `
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
 Note: Seed-data strategy + orchestrator MSW handlers land as their own `[poc]` change in their own worktree once domain shapes stabilise. Depends on BL-035..BL-040.
+
+## Auth compliance gaps (filed by `add-auth-provider-seam` on 2026-05-15)
+
+The `add-auth-provider-seam` PoC change ships F1 login + the route-shape seam for Belgian IdPs and includes the cheap compliance items (audit log, `__Host-` cookie prefix in prod, RRN clause, production bootstrap-password guard). The items below are the deferred MVP compliance gates that block any deployment touching real patient data. They are NOT PoC blockers — the project-wide "no real patient data" invariant covers PoC. They become hard blockers at MVP, regardless of IdP integration progress.
+
+### BL-042 — Server-side session revocation
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: PoC session is a stateless `itsdangerous`-signed cookie carrying the user id. A stolen cookie is valid until the 8h expiry; logout only clears the client cookie. MVP needs a `sessions` table (id, user_id, issued_at, last_seen_at, expires_at, revoked_at, ip, user_agent) and the cookie payload becomes the opaque session id. `auth.logout`, password change, role demotion, and "log out all sessions" admin action all flip `revoked_at`. Promotes the PoC `auth.login.*` stdout log lines to a queryable `auth_audit` table at the same time.
+
+### BL-043 — Login rate limiting + account lockout
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: `POST /auth/login/password` has no rate limit or lockout in PoC. GDPR Art 32 (appropriate security measures) + eHealth Platform deontological code require brute-force mitigation. MVP: per-IP and per-email sliding-window limit, account lockout after N consecutive failures with admin-unlock path. Lives in FastAPI middleware or `slowapi`; reuses the `auth.login.failure` event stream for counting.
+
+### BL-044 — MFA / strong auth via OIDC IdPs (LoA High)
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: Caregivers accessing patient data require strong authentication per eHealth Platform requirements (LoA High under eIDAS). MVP delegates to itsme® / eID — both provide LoA High natively, so MFA is the IdP's responsibility, not ours. The password provider MUST be locked to non-clinical roles (admin bootstrap only) or removed entirely at MVP. Decision lands in the future `oidc-login-providers` change.
+
+### BL-045 — RP-initiated logout (OIDC `end_session_endpoint`)
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: When a caregiver logs out from Orchestrator and the session was minted by an OIDC provider, MVP must call the IdP's `end_session_endpoint` so the session is revoked at the IdP too. Otherwise the next "Sign in with itsme®" click silently re-mints a session without the user noticing. Implementation: extend `LoginProvider` (or add a sibling Protocol) with `async def end_session(session: SessionUser) -> RedirectResponse | None`. Frontend respects the returned redirect.
+
+### BL-046 — DPIA pointer + skeleton
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: GDPR Art 35 mandates a Data Protection Impact Assessment for processing health data on this scale. Not an auth-domain artifact, but auth flows are a section in the DPIA. Add `docs/compliance/dpia.md` with: data inventory (auth fields, audit log fields, session table fields), lawful basis (Art 6 + Art 9 — likely contract + medical purposes), recipients (NewWave Care broker, Luscii, ChipSoft), retention, risks + mitigations, sign-off. Skeleton goes in MVP; legal sign-off depends on ZAS DPO involvement.
+
+### BL-047 — SMART-on-FHIR bearer-token auth path
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: When the HiX live FHIR adapter (`BL-001`) lands, `/fhir/*` routes need to accept short-lived JWT bearer tokens issued by HiX's SMART authorization server alongside the orchestrator's cookie session. Architecturally compatible with current cookie-session: add an `Authorization: Bearer` dependency that resolves to the same `SessionUser` shape (mapping the SMART context to our user via tenant + `external_subject` / `email` lookup). Wires into `CurrentUserDep` as an additional auth resolver. Does not affect this change; filed so the seam stays present in design discussions.
+
+### BL-048 — OIDC hardening requirements (PKCE, state, nonce, JWKS)
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: Filed against the future `oidc-login-providers` change. Concrete provider implementations MUST: use PKCE on the authorization code flow; validate `state` round-trip; validate `nonce` in the ID token; verify ID token signature against the IdP's JWKS endpoint; validate `iss`, `aud`, `exp`, `iat`, `nbf` claims; reject unsupported `alg` values; bind the post-login redirect to the `state` so the OIDC callback cannot be replayed against a different destination. Codify these as `auth-stub` requirements when that change lands.
+
+### BL-049 — Password reset / credential lifecycle
+- Tier: [mvp]
+- Source: add-auth-provider-seam compliance review (2026-05-15)
+
+Note: No password reset flow exists. If the password provider survives MVP for bootstrap admins, it needs: time-boxed reset tokens, email delivery (notifications stack is `[mvp]` work too), forced rotation on first login, password complexity policy. If the password provider is retired at MVP (BL-044 outcome), this becomes a no-op — admin bootstrap moves to a CLI command that writes a one-time eID-link token. Decision deferred to BL-044 + `oidc-login-providers` planning.

@@ -53,8 +53,9 @@ Tier progression for the ZAS Telegeneeskunde build: PoC → MVP → Product. Cro
   - HiX embed for orchestrator screens + two-way task sync.
   - `OperationOutcome` error translation (`BL-005`); `If-Match` / `ETag` versioning (`BL-006`).
 - **Identity + access**
-  - IdP integration: eHealth / itsme® / eID / CSAM (ZAS + external caregivers) via NewWave Care.
+  - IdP integration: eHealth / itsme® / eID / CSAM (ZAS + external caregivers) via NewWave Care — lands as `oidc-login-providers` change on top of the PoC `LoginProvider` seam.
   - Access-control granularity (`BL-020`); HiX admin coordination (`BL-010`).
+  - **Auth compliance gates** (filed by `add-auth-provider-seam`): server-side session revocation (`BL-042`), login rate-limit + lockout (`BL-043`), MFA delegated to LoA High IdPs (`BL-044`), RP-initiated logout against IdP `end_session_endpoint` (`BL-045`), DPIA pointer + skeleton (`BL-046`), SMART-on-FHIR bearer-token auth path on `/fhir/*` (`BL-047`), OIDC hardening — PKCE / state / nonce / JWKS / iss+aud+exp (`BL-048`), password reset / credential lifecycle if password provider survives (`BL-049`). All MUST close before any real patient data touches the system.
 - **Product**
   - Patient surface decided + shipped — view shape, delivery channel, enrollment activation (`BL-014`, `BL-022`); patient app shape decision (`BL-030`).
   - Pathway publish step + versioning (`BL-031`).
