@@ -16,7 +16,7 @@
 - [x] 2.5 Reject duplicate `order_by` with HTTP 422
 - [x] 2.6 Allow per-route override of `default_page_size` / `max_page_size`
 - [x] 2.7 Integration test on a dummy route under `tests/api/_list/test_list_query_params.py` (every operator + invalid combos)
-- [ ] 2.8 Verify OpenAPI parameter docs reflect per-route overrides
+- [x] 2.8 Verify OpenAPI parameter docs reflect per-route overrides
 
 ## 3. Backend — `BaseListRepository[T]` mixin
 
