@@ -90,10 +90,10 @@
 ## 9. Orchestrator — `Table` shadcn primitive
 
 - [x] 9.1 Add `@tanstack/react-table` to `apps/orchestrator/package.json` dependencies
-- [ ] 9.2 Run `npx shadcn add table` (or copy manually) → `apps/orchestrator/src/components/ui/table.tsx`
-- [ ] 9.3 Update `apps/orchestrator/components.json` if needed
-- [ ] 9.4 Update closed-set list in `apps/orchestrator/AGENTS.md` to include `Table`
-- [ ] 9.5 Snapshot / a11y test for `Table` primitive (semantic `<table>`, `<th scope="col">`)
+- [x] 9.2 Run `npx shadcn add table` (or copy manually) → `apps/orchestrator/src/components/ui/table.tsx`
+- [x] 9.3 Update `apps/orchestrator/components.json` if needed
+- [x] 9.4 Update closed-set list in `apps/orchestrator/AGENTS.md` to include `Table`
+- [x] 9.5 Snapshot / a11y test for `Table` primitive (semantic `<table>`, `<th scope="col">`)
 
 ## 10. Orchestrator — `data-table` i18n namespace
 
@@ -111,21 +111,21 @@
 
 ## 11. Orchestrator — `usePaginatedQuery` hook + key factory
 
-- [ ] 11.1 Add `apps/orchestrator/src/lib/query/paginated.ts` exporting `paginatedQueryKey(path, query)` (canonicalised: sorted filter keys, sorted operator keys, sorted value arrays)
-- [ ] 11.2 Add `apps/orchestrator/src/hooks/usePaginatedQuery.ts` wrapping `useQuery` + `openapi-fetch` GET, returning `UseQueryResult<Page<T>>`
-- [ ] 11.3 Type: derive `Page<T>` from `schema.d.ts` (`paths[P]["get"]["responses"]["200"]["content"]["application/json"]`)
-- [ ] 11.4 Tests: cache-hit equality across reordered filters + reference-different-equal queries
-- [ ] 11.5 Tests: cache-miss when any field differs
+- [x] 11.1 Add `apps/orchestrator/src/lib/query/paginated.ts` exporting `paginatedQueryKey(path, query)` (canonicalised: sorted filter keys, sorted operator keys, sorted value arrays)
+- [x] 11.2 Add `apps/orchestrator/src/hooks/usePaginatedQuery.ts` wrapping `useQuery` + `openapi-fetch` GET, returning `UseQueryResult<Page<T>>`
+- [x] 11.3 Type: derive `Page<T>` from `schema.d.ts` (`paths[P]["get"]["responses"]["200"]["content"]["application/json"]`)
+- [x] 11.4 Tests: cache-hit equality across reordered filters + reference-different-equal queries
+- [x] 11.5 Tests: cache-miss when any field differs
 
 ## 12. Orchestrator — realtime invalidation provider
 
-- [ ] 12.1 Add `apps/orchestrator/src/hooks/useRealtimeInvalidation.ts` opening a single `EventSource('/events', { withCredentials: true })`
-- [ ] 12.2 On message: parse `RealtimeEvent`, call `queryClient.invalidateQueries({ queryKey: [event.resource], exact: false })`
-- [ ] 12.3 Reconnect: rely on native `EventSource` retry; track consecutive failures within 60s
-- [ ] 12.4 5+ failures in 60s → `toastWarning('data-table.realtime.offline')` and ensure `refetchOnWindowFocus` enabled
-- [ ] 12.5 Close on logout (driven by auth state change)
-- [ ] 12.6 Mount once in `src/app/providers.tsx`
-- [ ] 12.7 Tests (MSW + `eventsource` polyfill): single connection, invalidation dispatch, reconnect warning, no connection when logged out
+- [x] 12.1 Add `apps/orchestrator/src/hooks/useRealtimeInvalidation.ts` opening a single `EventSource('/events', { withCredentials: true })`
+- [x] 12.2 On message: parse `RealtimeEvent`, call `queryClient.invalidateQueries({ queryKey: [event.resource], exact: false })`
+- [x] 12.3 Reconnect: rely on native `EventSource` retry; track consecutive failures within 60s
+- [x] 12.4 5+ failures in 60s → `toastWarning('data-table.realtime.offline')` and ensure `refetchOnWindowFocus` enabled
+- [x] 12.5 Close on logout (driven by auth state change)
+- [x] 12.6 Mount once in `src/app/providers.tsx`
+- [x] 12.7 Tests (MSW + `eventsource` polyfill): single connection, invalidation dispatch, reconnect warning, no connection when logged out
 
 ## 13. Orchestrator — `DataTable<T>` core
 
@@ -283,10 +283,10 @@
 
 ## 28. Shared `BulkResult` schema
 
-- [ ] 28.1 Add `apps/backend/app/schemas/_bulk/__init__.py` and `apps/backend/app/schemas/_bulk/bulk_result.py`
-- [ ] 28.2 Define `BulkResult` Pydantic model: `{succeeded: list[UUID], failed: list[BulkFailure]}` where `BulkFailure = {id: UUID, code: str, message: str}`
-- [ ] 28.3 Define `BulkRequest` generic `{ids: list[UUID]}` (or per-action body extending it with additional params)
-- [ ] 28.4 Tests for schema shape + OpenAPI naming (`BulkResult_<Resource>_` if generic)
+- [x] 28.1 Add `apps/backend/app/schemas/_bulk/__init__.py` and `apps/backend/app/schemas/_bulk/bulk_result.py`
+- [x] 28.2 Define `BulkResult` Pydantic model: `{succeeded: list[UUID], failed: list[BulkFailure]}` where `BulkFailure = {id: UUID, code: str, message: str}`
+- [x] 28.3 Define `BulkRequest` generic `{ids: list[UUID]}` (or per-action body extending it with additional params)
+- [x] 28.4 Tests for schema shape + OpenAPI naming (`BulkResult_<Resource>_` if generic)
 
 ## 29. Change closeout
 
