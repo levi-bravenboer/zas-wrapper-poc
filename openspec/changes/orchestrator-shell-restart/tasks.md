@@ -70,10 +70,10 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 4. Command palette (built on shadcn `Command`)
 
-- [ ] 4.1 Create `src/components/layout/CommandPalette.tsx` using `<CommandDialog>` from shadcn `Command` primitive (already added in task 0.4).
-- [ ] 4.2 Global `⌘K` / `Ctrl+K` hotkey toggles open state.
-- [ ] 4.3 Wire route entries (Dashboard only for PoC) via `<CommandItem>` + TanStack Router `useNavigate`.
-- [ ] 4.4 Mount `<CommandPalette />` once inside `Shell.tsx`.
+- [x] 4.1 Created `src/components/command-palette/` module: `CommandPalette.tsx` (UI, groups entries by `entry.group`), `CommandPaletteProvider.tsx` (state + key listener), `context.ts` (`useCommandPalette`, `useRegisterCommands` page-level hook keyed by string), `useRouteCommands.ts` (built-in nav registry), `types.ts`, `index.ts` barrel. Pages can contribute commands via `useRegisterCommands('<scope-key>', useMemo<CommandEntry[]>(...))`.
+- [x] 4.2 Provider attaches a `keydown` listener that flips `open` on ⌘K / Ctrl+K (`event.metaKey || event.ctrlKey`).
+- [x] 4.3 `useRouteCommands` merges `hardWiredNavItems` + `getFeaturesForSurface('app')` into palette entries. Uses `router.history.push(path)` to keep the registry's `string` path type (vs `navigate({ to })` which demands a route-tree literal).
+- [x] 4.4 Mounted once in `MenuShell` via `<CommandPaletteProvider>` + `<CommandPalette />` + `<RouteCommandsRegistry />`. Bare (embed) shell skips it deliberately.
 
 ## 5. Page header (built on shadcn `Breadcrumb` + `Tabs`)
 
@@ -109,7 +109,7 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 - [ ] 9.1 `Shell.test.tsx` — renders sidebar; toggle keyboard shortcut flips collapsed state; localStorage round-trip.
 - [ ] 9.2 `PageHeader.test.tsx` — required title; conditional rendering of each slot; auto-crumb renders from `useMatches`.
-- [ ] 9.3 `CommandPalette.test.tsx` — `⌘K` opens; route selection navigates.
+- [x] 9.3 `CommandPalette.test.tsx` — ⌘K opens the palette and lists registered entries; clicking an item invokes its `perform` callback.
 - [ ] 9.4 `Skeleton.test.tsx`, `EmptyState.test.tsx` — render + a11y (role, name).
 - [x] 9.5 `LoginForm.test.tsx` rewritten — mocks `useNavigate`, asserts empty submit calls `navigate({ to: '/dashboard' })` exactly once, no `role="alert"` rendered, no fetch path imported.
 - [ ] 9.6 `Shell.surface.test.tsx` — app/smart surfaces render sidebar tree; embed surface renders bare children-only tree (no sidebar, no PageHeader, no `role="navigation"` shell nav).

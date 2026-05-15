@@ -1,6 +1,11 @@
 import { Outlet } from '@tanstack/react-router'
 import { useEffect, useState, type ReactElement } from 'react'
 
+import {
+  CommandPalette,
+  CommandPaletteProvider,
+  useRouteCommands,
+} from '@/components/command-palette'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useSurface } from '@/platform/surface/hooks'
 
@@ -40,10 +45,19 @@ function MenuShell(): ReactElement {
 
   return (
     <SidebarProvider open={open} onOpenChange={setOpen}>
-      <AppSidebar />
-      <SidebarInset data-shell="menu">
-        <Outlet />
-      </SidebarInset>
+      <CommandPaletteProvider>
+        <AppSidebar />
+        <SidebarInset data-shell="menu">
+          <RouteCommandsRegistry />
+          <CommandPalette />
+          <Outlet />
+        </SidebarInset>
+      </CommandPaletteProvider>
     </SidebarProvider>
   )
+}
+
+function RouteCommandsRegistry(): null {
+  useRouteCommands()
+  return null
 }
