@@ -35,7 +35,9 @@ export function BulkBar({ className, children }: BulkBarProps): ReactElement | n
         className,
       )}
     >
-      <span className="text-sm font-medium">{t('bulk.count', { count })}</span>
+      <span className="text-sm font-medium">
+        {t(count === 1 ? 'bulk.count.one' : 'bulk.count.other', { count })}
+      </span>
       <div className="ml-auto flex items-center gap-2">{children}</div>
       <Button
         type="button"

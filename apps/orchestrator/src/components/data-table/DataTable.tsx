@@ -128,9 +128,13 @@ function splitChildren(children: ReactNode): InternalChildren {
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
+  // NOTE: do not include `[role="button"]` — the row itself carries that role
+  // when `onRowClick` is set, which would make every click inside the row look
+  // interactive. Nested action buttons are real `<button>` elements and are
+  // already caught by the `button` selector.
   return Boolean(
     target.closest(
-      'button, a, input, select, textarea, [role="button"], [role="menu"], [role="menuitem"], [role="checkbox"], [data-stop-row-click]',
+      'button, a, input, select, textarea, [role="menu"], [role="menuitem"], [role="checkbox"], [data-stop-row-click]',
     ),
   )
 }
@@ -227,19 +231,26 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
 
   // Reconcile selection after data refetch: drop ids not in the current page.
   // We only drop *current-page rows that disappeared*; ids that simply belong
-  // to other pages must persist (cross-page selection requirement).
+  // to other pages must persist (cross-page selection requirement). To keep
+  // page navigation from looking like a refetch, the reconcile only fires when
+  // the previous render was on the same `page` value.
   const currentPageIds = useMemo(() => {
     if (!getRowId) return new Set<string>()
     return new Set(data.map((row) => getRowId(row)))
   }, [data, getRowId])
   const previousPageIdsRef = useRef<Set<string>>(currentPageIds)
+  const previousPageNumberRef = useRef<number>(state.page)
   useEffect(() => {
     if (!selectable || !getRowId) return
-    const previous = previousPageIdsRef.current
+    const previousIds = previousPageIdsRef.current
+    const previousPage = previousPageNumberRef.current
     previousPageIdsRef.current = currentPageIds
+    previousPageNumberRef.current = state.page
+    // Page navigation: skip reconcile so cross-page selection persists.
+    if (previousPage !== state.page) return
     // For each id we previously rendered on this page but no longer do, drop it.
     const stale: string[] = []
-    previous.forEach((id) => {
+    previousIds.forEach((id) => {
       if (!currentPageIds.has(id) && selectedIds.has(id)) {
         stale.push(id)
       }
@@ -251,7 +262,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
       return next
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPageIds, selectable])
+  }, [currentPageIds, selectable, state.page])
 
   const toggleRowSelected = useCallback(
     (id: string) => {

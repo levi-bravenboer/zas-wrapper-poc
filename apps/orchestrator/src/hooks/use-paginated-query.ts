@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from '@tanstack/react-query'
 
 import { api } from '@/lib/api/client'
-import { paginatedQueryKey, type ListQuery } from '@/lib/query/paginated'
+import { paginatedQueryKey, serializeListQuery, type ListQuery } from '@/lib/query/paginated'
 
 /**
  * Generic page envelope matching `apps/backend/app/schemas/_list/page.py`.
@@ -43,10 +43,21 @@ export function usePaginatedQuery<T>(
       const client = api as unknown as {
         GET: (
           p: string,
-          init: { params: { query: ListQuery } },
+          init: {
+            params: { query: ListQuery }
+            querySerializer?: (query: ListQuery) => string
+          },
         ) => Promise<{ data?: Page<T>; error?: unknown; response: Response }>
       }
-      const { data, error, response } = await client.GET(path, { params: { query } })
+      const { data, error, response } = await client.GET(path, {
+        params: { query },
+        // openapi-fetch's default serializer rejects deeply-nested objects.
+        // We mirror the backend's bracket-key convention (see
+        // apps/backend/app/api/deps.py): `filter[<field>]=v`,
+        // `filter[<field>][<op>]=v` for filters; scalar fields are passed
+        // through unchanged.
+        querySerializer: serializeListQuery,
+      })
       if (error || !data) {
         throw new Error(
           `Paginated request failed (${response.status} ${response.statusText}) for ${path}`,

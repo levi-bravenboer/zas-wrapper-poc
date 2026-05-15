@@ -71,9 +71,13 @@ describe('usePaginatedQuery', () => {
       }),
     )
     expect(getMock).toHaveBeenCalledTimes(1)
-    expect(getMock).toHaveBeenCalledWith('/patients', {
-      params: { query: { page: 1, page_size: 25 } },
-    })
+    expect(getMock).toHaveBeenCalledWith(
+      '/patients',
+      expect.objectContaining({
+        params: { query: { page: 1, page_size: 25 } },
+        querySerializer: expect.any(Function),
+      }),
+    )
   })
 
   it('does not refetch when the query object is reordered but logically equivalent', async () => {
@@ -133,8 +137,12 @@ describe('usePaginatedQuery', () => {
     rerender({ q: { page: 2, page_size: 25 } })
 
     await waitFor(() => expect(getMock).toHaveBeenCalledTimes(2))
-    expect(getMock).toHaveBeenLastCalledWith('/patients', {
-      params: { query: { page: 2, page_size: 25 } },
-    })
+    expect(getMock).toHaveBeenLastCalledWith(
+      '/patients',
+      expect.objectContaining({
+        params: { query: { page: 2, page_size: 25 } },
+        querySerializer: expect.any(Function),
+      }),
+    )
   })
 })

@@ -74,6 +74,52 @@ function canonicalFilters(
   })
 }
 
+/**
+ * Serialize a {@link ListQuery} to the bracket-key wire format expected by the
+ * backend `list_query_params` dependency (apps/backend/app/api/deps.py):
+ *
+ *   page=1&page_size=25&q=foo&order_by=name&order=asc
+ *   filter[<field>]=<v>                      (eq, single value)
+ *   filter[<field>]=<v1>&filter[<field>]=<v2>  (in, multi value, repeated)
+ *   filter[<field>][<op>]=<v>                (any explicit operator)
+ *
+ * Used as `querySerializer` for openapi-fetch — the default serializer rejects
+ * the nested `filters` object with a "Deeply-nested arrays/objects aren't
+ * supported" error.
+ */
+export function serializeListQuery(query: ListQuery): string {
+  const parts: string[] = []
+  const push = (k: string, v: unknown): void => {
+    if (v === null || v === undefined) return
+    parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+  }
+  push('page', query.page)
+  push('page_size', query.page_size)
+  push('q', query.q ?? null)
+  push('order_by', query.order_by ?? null)
+  push('order', query.order)
+
+  const filters = query.filters
+  if (filters) {
+    for (const field of Object.keys(filters).sort()) {
+      const raw = filters[field]
+      if (!raw) continue
+      const list = Array.isArray(raw) ? raw : [raw]
+      for (const f of list) {
+        const values = Array.isArray(f.value) ? f.value : [f.value]
+        if (f.op === 'eq' && values.length === 1) {
+          push(`filter[${field}]`, values[0])
+        } else if (f.op === 'in') {
+          for (const v of values) push(`filter[${field}]`, v)
+        } else {
+          for (const v of values) push(`filter[${field}][${f.op}]`, v)
+        }
+      }
+    }
+  }
+  return parts.join('&')
+}
+
 export function paginatedQueryKey(path: string, query: ListQuery): readonly unknown[] {
   return [
     'paginated',

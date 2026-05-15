@@ -28,6 +28,8 @@
       "one": "{{count}} geselecteerd",
       "other": "{{count}} geselecteerd"
     },
+    "count_one": "{{count}} geselecteerd",
+    "count_other": "{{count}} geselecteerd",
     "cancel": "Annuleren"
   },
   "expand": {
