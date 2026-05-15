@@ -12,6 +12,7 @@ fileGroups:
   sources:
     - "main.py"
     - "app/**/*.py"
+    - "scripts/**/*.py"
     - "pyproject.toml"
   tests:
     - "tests/**/*.py"
@@ -71,6 +72,27 @@ tasks:
     options:
       cache: false
       runInCI: false
+
+  seed-tenant:
+    command: "docker compose exec backend uv run python -m scripts.seed_tenant"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
+
+  seed-users:
+    command: "docker compose exec backend uv run python -m scripts.seed_users"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
+
+  seed:
+    command: "docker compose exec backend uv run python -m scripts.seed_all"
+    env:
+      COMPOSE_FILE: "../../docker-compose.yml"
+    options:
+      cache: false
 
   lint:
     command: "uv run ruff check"

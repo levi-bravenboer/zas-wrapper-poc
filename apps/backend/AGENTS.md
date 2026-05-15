@@ -106,7 +106,8 @@ apps/backend/
 ├── main.py                             # thin entrypoint (`from app.main import app`)
 ├── alembic.ini  alembic/               # async env wired to settings.database_url
 ├── openapi.json                        # baseline schema for orchestrator typegen
-├── tests/                              # mirrors app/ tree exactly
+├── scripts/                            # standalone operational scripts (seed_tenant, seed_all, ...)
+├── tests/                              # mirrors app/ + scripts/ trees exactly
 ├── pyproject.toml  uv.lock  .env.example  moon.yml  README.md
 ```
 
@@ -132,6 +133,7 @@ The seam is one-directional: `router → service → repository → db.models`. 
 | `app/schemas/<domain>/*` | `pydantic`, stdlib, sibling schema modules | `app.db.*`, `app.services.*`, `app.api.*`, `app.repositories.*` |
 | `app/adapters/<vendor>/*` | `app.core.errors`, vendor SDK types | `app.api.*`, `app.services.*`, `app.repositories.*` |
 | `app/core/*` | stdlib, third-party libs | `app.api.*`, `app.adapters.*`, `app.services.*`, `app.repositories.*`, `app.db.*` |
+| `scripts/*` | `app.core.*`, `app.db.*`, `app.repositories.*`, `app.services.*`, sibling `scripts.*` | `app.api.*`, `fastapi.*` |
 
 ### Dependency injection
 
@@ -165,7 +167,19 @@ The seam is one-directional: `router → service → repository → db.models`. 
 - **Errors**: subclass `AppError` for domain-specific failures; set class-level `code`, `status_code`, `message`. Raising `HTTPException` is fine for ad-hoc cases but `AppError` is preferred when the failure has a stable code.
 - **POC ONLY banner**: any module that contains throwaway scaffolding (in-memory user stores, hard-coded fixtures, demo credentials, mock issuer claims) MUST start with a `# POC ONLY` comment line explaining what would replace it. The banner makes it obvious which files need to be replaced before any non-PoC deployment — see `app/services/auth_service.py` for the canonical example.
 - **Postgres-native enums**: ORM columns backed by an `enum.StrEnum` MUST map via `sa.Enum(MyEnum, name="<snake_name>", native_enum=True, create_constraint=True)` so the value set is enforced in the database. `apps/backend/alembic/env.py` MUST `import alembic_postgresql_enum  # noqa: F401` at the top — the package side-effect-registers autogen hooks that emit correct `CREATE TYPE` / `DROP TYPE` / `ALTER TYPE ADD VALUE` ops. Adding a new value to an existing enum requires a hand-edited revision (the autogen handles the boilerplate, but `ALTER TYPE ... ADD VALUE` must run outside a transaction).
-- **Seed data via CLI, not Alembic**: Alembic revisions MUST contain DDL only. No `op.bulk_insert`, no `op.execute("INSERT ...")`. Every seed (bootstrap tenant, bootstrap users, fixture data) MUST be implemented as a Typer subcommand under `app/cli/` and invoked via `python -m app.cli <name>` / `moon run backend:<name>`. The umbrella `seed-all` chains every seed in dependency order. Seeds MUST be idempotent — re-running is a no-op when rows are already present.
+- **Seed data via scripts, not Alembic**: Alembic revisions MUST contain DDL only. No `op.bulk_insert`, no `op.execute("INSERT ...")`. Every seed (bootstrap tenant, bootstrap users, fixture data) MUST be implemented as a standalone Python module under `scripts/` and invoked via `python -m scripts.<name>` / `moon run backend:<name>`. Each script exposes a `main()` entry plus an importable async helper (e.g. `seed_zas_tenant(session)`) so tests can drive the same logic without spawning subprocesses. The umbrella `scripts/seed_all.py` chains every seed in dependency order. Seeds MUST be idempotent — re-running is a no-op when rows are already present.
+- **ORM base hierarchy**: every concrete model picks exactly one base from `app/db/base.py`:
+  - `Entity(Base)` — `id` + `created_at` + `updated_at` + `deleted_at`. Used by root rows (`Tenant`) and rows that are not tenant-scoped.
+  - `AuditableEntity(Entity)` — adds `created_by` / `updated_by` (NOT NULL, FK `users.id` `ON DELETE RESTRICT`) and `deleted_by` (nullable, same FK).
+  - `TenantOwnedEntity(AuditableEntity)` — adds `tenant_id` (NOT NULL, FK `tenants.id` `ON DELETE RESTRICT`, indexed). Every hospital-owned domain (`User`, `Pathway`, `Patient`, `Task`, ...) MUST inherit `TenantOwnedEntity` — picking a lower base is a review-blocker.
+  - `Tenant` itself inherits `Entity` only (NOT auditable, NOT tenant-owned) to dodge the bootstrap chicken-and-egg.
+  - The bootstrap admin `User` row breaks the self-FK cycle by self-referencing (`id = created_by = updated_by = ADMIN_USER_ID`). Documented in `scripts/seed_users.py`.
+- **Audit auto-fill via `session.info`**: `app/db/audit.install_audit_hooks()` registers a single `Session.before_flush` listener that reads `session.info[SESSION_ACTOR_KEY]` (`"actor"`) and stamps `tenant_id` / `created_by` / `updated_by` on new `AuditableEntity` rows (and `updated_by` on dirty ones) when the slot holds a `SessionUser`. Entry points wire the slot:
+  - HTTP: `app/db/engine.get_session` writes the slot from `OptionalCurrentUserDep`.
+  - Scripts: `scripts/_db.script_session(*, actor=None)` writes the slot when supplied.
+  - Tests: the `session_actor` fixture (default `None`) is read by `db_session` and written to the slot.
+  Callers MUST NOT set `tenant_id` / `created_by` / `updated_by` explicitly on new rows; the hook owns those fields. Setting them is reserved for the admin self-bootstrap path documented in `scripts/seed_users.py`.
+- **Soft delete is the default**: every `Entity` row carries `deleted_at`. Use `BaseRepository.list()` (filters `deleted_at IS NULL` by default) over hand-rolled `select(Model)`. Use `BaseRepository.soft_delete(entity)` over `session.delete(entity)`; the latter is reserved for `hard_delete` cases where retention rules forbid keeping the row. Custom repo queries MUST add `where(Model.deleted_at.is_(None))` unless they intentionally surface soft-deleted rows.
 - **PHI**: treat all clinical payloads as patient data. Never log full payloads — log resource type + id only.
 
 ## Testing
