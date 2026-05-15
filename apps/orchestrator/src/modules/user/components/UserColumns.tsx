@@ -140,6 +140,11 @@ export function useUserRowActions(
             label: t('actions.demote_to_caregiver'),
             icon: <UserMinus className="h-4 w-4" aria-hidden />,
             onClick: () => runRole('caregiver'),
+            confirm: {
+              title: t('confirm.demote.title'),
+              description: t('confirm.demote.description'),
+              confirmLabel: t('confirm.demote.confirmLabel'),
+            },
           }
         : {
             label: t('actions.promote_to_admin'),
@@ -155,6 +160,11 @@ export function useUserRowActions(
             icon: <UserMinus className="h-4 w-4" aria-hidden />,
             destructive: true,
             onClick: () => runActive(false),
+            confirm: {
+              title: t('confirm.deactivate.title'),
+              description: t('confirm.deactivate.description'),
+              confirmLabel: t('confirm.deactivate.confirmLabel'),
+            },
           }
         : {
             label: t('actions.activate'),

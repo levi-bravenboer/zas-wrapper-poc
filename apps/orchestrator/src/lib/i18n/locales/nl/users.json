@@ -58,5 +58,17 @@
     "activated": "Gebruiker geactiveerd",
     "deactivated": "Gebruiker gedeactiveerd",
     "error": "Actie mislukt"
+  },
+  "confirm": {
+    "deactivate": {
+      "title": "Gebruiker deactiveren?",
+      "description": "Deze gebruiker kan niet meer inloggen. Je kunt het later weer ongedaan maken.",
+      "confirmLabel": "Deactiveren"
+    },
+    "demote": {
+      "title": "Beheerderrechten intrekken?",
+      "description": "Deze gebruiker verliest beheerdersrechten en wordt zorgverlener.",
+      "confirmLabel": "Maak zorgverlener"
+    }
   }
 }

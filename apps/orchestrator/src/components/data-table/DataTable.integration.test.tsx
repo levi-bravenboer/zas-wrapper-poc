@@ -13,10 +13,10 @@ import { i18n } from '@/lib/i18n'
 import { server } from '@/mocks/server'
 import { RealtimeInvalidationProvider } from '@/providers/realtime-invalidation'
 
+import { defineColumn } from './columns'
 import { DataTable } from './DataTable'
 import { DataTablePagination } from './DataTablePagination'
 import { type DataTableFilter, DataTableToolbar } from './DataTableToolbar'
-import { defineColumn } from './columns'
 
 /**
  * §22.12 — DataTable end-to-end with MSW + mocked SSE.
