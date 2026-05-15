@@ -28,7 +28,7 @@ const validDetail = {
 
 describe('roleSchema', () => {
   it('accepts known roles', () => {
-    for (const r of ['admin', 'caregiver', 'external'] as const) {
+    for (const r of ['admin', 'caregiver'] as const) {
       expect(roleSchema.parse(r)).toBe(r)
     }
   })

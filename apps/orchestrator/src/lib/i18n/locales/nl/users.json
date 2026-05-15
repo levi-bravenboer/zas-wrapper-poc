@@ -17,8 +17,7 @@
   },
   "role": {
     "admin": "Beheerder",
-    "caregiver": "Zorgverlener",
-    "external": "Extern"
+    "caregiver": "Zorgverlener"
   },
   "status": {
     "active": "Actief",

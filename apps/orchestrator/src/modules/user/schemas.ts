@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type { components } from '@/lib/api/schema'
 
-export const roleSchema = z.enum(['admin', 'caregiver', 'external'])
+export const roleSchema = z.enum(['admin', 'caregiver'])
 export type Role = z.infer<typeof roleSchema>
 
 export const userRowSchema = z.object({
