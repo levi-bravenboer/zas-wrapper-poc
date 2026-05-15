@@ -49,7 +49,7 @@ moon ci                          # affected-only build + lint + test (CI)
 moon query projects              # introspect graph
 ```
 
-Per-project `moon.yml` declares the canonical task surface (`build`, `test`, `lint`, `typecheck`, `dev`, …). Always prefer `moon run …` over invoking `npm` / `uv` directly so caching and affected-detection stay correct.
+Per-project `moon.yml` declares the canonical task surface (`build`, `test`, `lint`, `typecheck`, `dev`, …). Always prefer `moon run …` over invoking `pnpm` / `uv` directly so caching and affected-detection stay correct.
 
 ## Local Runtime
 

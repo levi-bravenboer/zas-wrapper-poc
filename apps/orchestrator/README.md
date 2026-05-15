@@ -7,18 +7,18 @@ Stack: **React 19.2** + **Vite 8** (Rolldown) + **TypeScript 6** + **TanStack Ro
 ## Requirements
 
 - Node `>=22.13` (Rolldown native bindings fail silently on older Node).
-- npm 10+.
+- pnpm 9+.
 
-`nvm use` from repo root picks up `.nvmrc`.
+`nvm use` from repo root picks up `.nvmrc`. Install pnpm via `corepack enable` or `npm i -g pnpm@9`.
 
 ## Bootstrap
 
 ```bash
 nvm use
 cd apps/orchestrator
-npm install --legacy-peer-deps
-npm run typegen          # regenerates src/lib/api/schema.d.ts from http://localhost:18000/openapi.json
-npm run dev              # http://localhost:5173 — MSW mock by default (VITE_API_MODE=mock)
+pnpm install
+pnpm run typegen          # regenerates src/lib/api/schema.d.ts from http://localhost:18000/openapi.json
+pnpm run dev              # http://localhost:5173 — MSW mock by default (VITE_API_MODE=mock)
 ```
 
 Copy `.env.example` → `.env` if you need to point at a different backend or disable mocks (`VITE_API_MODE=live`).
@@ -41,7 +41,7 @@ moon run orchestrator:typegen
 moon run orchestrator:preview
 ```
 
-Direct npm scripts mirror the moon tasks (`npm run dev`, `npm run test`, …) but bypass the cache — only use them ad-hoc.
+Direct pnpm scripts mirror the moon tasks (`pnpm run dev`, `pnpm run test`, …) but bypass the cache — only use them ad-hoc.
 
 ## Demo login
 

@@ -3,7 +3,9 @@ $schema: "https://moonrepo.dev/schemas/toolchain.json"
 # Node toolchain — used by apps/orchestrator.
 node:
   version: "22.13.0"
-  packageManager: "npm"
+  packageManager: "pnpm"
+  pnpm:
+    version: "9.15.1"
   addEnginesConstraint: true
   syncProjectWorkspaceDependencies: false
 
