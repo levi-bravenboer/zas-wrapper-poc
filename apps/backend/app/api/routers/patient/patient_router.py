@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-from datetime import date
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from app.api.deps import ListQueryParamsDep
 from app.core.enums.user import Role
-from app.repositories.patient.patient_repository import PatientFilters
+from app.repositories.patient.deps import PatientRepoDep
+from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
-from app.schemas.patient.patient import (
-    PaginationMeta,
-    PatientCreate,
-    PatientListResponse,
-    PatientRead,
-    PatientUpdate,
-)
+from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdate
 from app.services.auth.deps import require_role
 from app.services.patient.deps import (
     PatientAccessDep,
@@ -30,30 +25,29 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 @router.get(
     "/patients",
     operation_id="list_patients",
-    response_model=PatientListResponse,
+    response_model=Page[PatientRead],
 )
 async def list_patients(
-    service: PatientServiceDep,
-    current_user: SessionUser = _CAREGIVER_OR_ADMIN_GUARD,  # AUTH-HARDEN
-    limit: Annotated[int, Query(ge=1, le=100)] = 25,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    family_name: str | None = None,
-    given_name: str | None = None,
-    birth_date: date | None = None,
-    identifier: str | None = None,
-) -> PatientListResponse:
-    filters = PatientFilters(
-        family_name=family_name,
-        given_name=given_name,
-        birth_date=birth_date,
-        identifier=identifier,
-    )
-    items, total = await service.list_in_tenant(
-        current_user.tenant_id, filters, limit=limit, offset=offset
-    )
-    return PatientListResponse(
-        items=[PatientRead.model_validate(p) for p in items],
-        meta=PaginationMeta(total=total, limit=limit, offset=offset),
+    query: ListQueryParamsDep,
+    repo: PatientRepoDep,
+    _current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    identifier: Annotated[
+        str | None,
+        Query(description="FHIR Patient.identifier short-circuit; exact value match"),
+    ] = None,
+) -> Page[PatientRead]:
+    # AUTH-HARDEN: tenant scope is applied inside `BaseListRepository.list_page`
+    # via `_tenant_predicate`, which reads `session.info[SESSION_ACTOR_KEY]`.
+    # FHIR semantics: `identifier` short-circuits the other discrete params, so
+    # we drop `filter[...]` + `q` from the query before listing when set.
+    effective_query = query.model_copy(update={"filters": {}, "q": None}) if identifier else query
+    page = await repo.with_identifier(identifier).list_page(effective_query)
+    return Page[PatientRead](
+        items=[PatientRead.model_validate(p) for p in page.items],
+        page=page.page,
+        page_size=page.page_size,
+        total=page.total,
+        total_pages=page.total_pages,
     )
 
 
@@ -77,7 +71,7 @@ async def get_patient(
 async def create_patient(
     payload: PatientCreate,
     service: PatientServiceDep,
-    current_user: SessionUser = _CAREGIVER_OR_ADMIN_GUARD,  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
 ) -> PatientRead:
     patient = await service.create(current_user, payload)
     return PatientRead.model_validate(patient)
@@ -93,7 +87,7 @@ async def update_patient(
     payload: PatientUpdate,
     service: PatientServiceDep,
     _patient: PatientAccessDep,  # AUTH-HARDEN
-    current_user: SessionUser = _CAREGIVER_OR_ADMIN_GUARD,
+    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> PatientRead:
     patient = await service.update(current_user, patient_id, payload)
     return PatientRead.model_validate(patient)
@@ -108,7 +102,7 @@ async def soft_delete_patient(
     patient_id: UUID,
     service: PatientServiceDep,
     _patient: PatientAccessDep,  # AUTH-HARDEN
-    current_user: SessionUser = _CAREGIVER_OR_ADMIN_GUARD,
+    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> None:
     await service.soft_delete(current_user, patient_id)
 

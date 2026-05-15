@@ -1,31 +1,62 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date
+from collections.abc import Sequence
+from typing import ClassVar
 from uuid import UUID
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import ColumnElement, select
+from sqlalchemy.orm import InstrumentedAttribute
 
 from app.db.models.patient import Patient, PatientIdentifier
-from app.repositories.base import BaseRepository
+from app.repositories.base import BaseListRepository
+from app.schemas._list.list_query import ListQuery, Operator
 
 
-@dataclass(slots=True, frozen=True)
-class PatientFilters:
-    """FHIR-aligned discrete search params for `GET /patients`.
-
-    `identifier` short-circuits the other filters when set (returns the
-    at-most-one match across any system). See design.md OQ2.
-    """
-
-    family_name: str | None = None
-    given_name: str | None = None
-    birth_date: date | None = None
-    identifier: str | None = None
-
-
-class PatientRepository(BaseRepository[Patient]):
+class PatientRepository(BaseListRepository[Patient]):
     model = Patient
+
+    orderable_fields: ClassVar[frozenset[str]] = frozenset(
+        {"family_name", "given_name", "birth_date", "created_at", "updated_at"}
+    )
+    filterable_fields: ClassVar[dict[str, frozenset[Operator]]] = {
+        "family_name": frozenset({"eq", "contains"}),
+        "given_name": frozenset({"eq", "contains"}),
+        "birth_date": frozenset({"eq", "gte", "lte"}),
+        "primary_organisation_id": frozenset({"eq", "in"}),
+    }
+    searchable_fields: ClassVar[tuple[InstrumentedAttribute, ...]] = (
+        Patient.family_name,
+        Patient.given_name,
+    )
+    default_order: ClassVar[tuple[str, str]] = ("family_name", "asc")
+
+    def __init__(self, session, *, identifier: str | None = None) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(session)
+        self._identifier = identifier
+
+    def with_identifier(self, identifier: str | None) -> PatientRepository:
+        """Return a view of this repo scoped to the given identifier value.
+
+        `identifier` short-circuits the standard `ListQuery` filters: when set,
+        the list call joins `patient_identifiers` and returns the at-most-one
+        row matching `value == identifier` within the actor's tenant.
+        """
+        clone = PatientRepository(self._session, identifier=identifier)
+        return clone
+
+    def _extra_filters(self, query: ListQuery) -> Sequence[ColumnElement[bool]]:
+        del query
+        if self._identifier is None:
+            return ()
+        subq = (
+            select(PatientIdentifier.patient_id)
+            .where(
+                PatientIdentifier.value == self._identifier,
+                PatientIdentifier.deleted_at.is_(None),
+            )
+            .scalar_subquery()
+        )
+        return (Patient.id.in_(subq),)
 
     async def get_by_id(self, tenant_id: UUID, patient_id: UUID) -> Patient | None:
         result = await self._session.execute(
@@ -37,46 +68,6 @@ class PatientRepository(BaseRepository[Patient]):
         )
         return result.scalar_one_or_none()
 
-    async def list_in_tenant(
-        self,
-        tenant_id: UUID,
-        filters: PatientFilters,
-        *,
-        limit: int,
-        offset: int,
-    ) -> tuple[list[Patient], int]:
-        base = self._tenant_scope(tenant_id, filters)
-        total = await self._session.scalar(select(func.count()).select_from(base.subquery()))
-        result = await self._session.execute(
-            base.order_by(Patient.family_name, Patient.given_name, Patient.id)
-            .limit(limit)
-            .offset(offset)
-        )
-        return list(result.scalars().unique().all()), int(total or 0)
-
     async def update(self, patient: Patient) -> Patient:
         await self._session.flush()
         return patient
-
-    def _tenant_scope(self, tenant_id: UUID, filters: PatientFilters) -> Select[tuple[Patient]]:
-        stmt: Select[tuple[Patient]] = select(Patient).where(
-            Patient.tenant_id == tenant_id,
-            Patient.deleted_at.is_(None),
-        )
-        if filters.identifier is not None:
-            # Short-circuit: identifier exact match across any system.
-            # Join through `patients` so tenant scope remains enforced even
-            # though `patient_identifiers` has no tenant column (design.md
-            # risk note).
-            stmt = stmt.join(PatientIdentifier, PatientIdentifier.patient_id == Patient.id).where(
-                PatientIdentifier.value == filters.identifier,
-                PatientIdentifier.deleted_at.is_(None),
-            )
-            return stmt
-        if filters.family_name:
-            stmt = stmt.where(Patient.family_name.ilike(f"{filters.family_name}%"))
-        if filters.given_name:
-            stmt = stmt.where(Patient.given_name.ilike(f"{filters.given_name}%"))
-        if filters.birth_date is not None:
-            stmt = stmt.where(Patient.birth_date == filters.birth_date)
-        return stmt

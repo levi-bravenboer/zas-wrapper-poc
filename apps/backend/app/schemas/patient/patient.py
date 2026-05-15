@@ -65,14 +65,3 @@ class PatientUpdate(BaseModel):
     birth_date: date | None = None
     gender: Gender | None = None
     primary_organisation_id: UUID | None = None
-
-
-class PaginationMeta(BaseModel):
-    total: int
-    limit: int
-    offset: int
-
-
-class PatientListResponse(BaseModel):
-    items: list[PatientRead]
-    meta: PaginationMeta

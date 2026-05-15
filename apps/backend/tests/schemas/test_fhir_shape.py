@@ -6,6 +6,7 @@ from uuid import uuid4
 from app.api.routers.patient.patient_router import list_patients
 from app.core.enums.patient import Gender
 from app.core.identifiers import INSZ_SYSTEM
+from app.repositories.patient.patient_repository import PatientRepository
 from app.schemas.patient.patient import PatientCreate
 from app.schemas.patient.patient_identifier import PatientIdentifierCreate
 
@@ -22,11 +23,15 @@ def test_gender_enum_values_match_fhir_codes() -> None:
 
 
 def test_list_patients_exposes_fhir_aligned_query_params() -> None:
-    signature = inspect.signature(list_patients)
-    params = set(signature.parameters)
-    # FHIR R4 `Patient?family=&given=&birthdate=&identifier=` maps to our
-    # search params one-to-one (snake_case at the FastAPI surface).
-    assert {"family_name", "given_name", "birth_date", "identifier"} <= params
+    # FHIR R4 `Patient?family=&given=&birthdate=&identifier=` maps to:
+    #   - `identifier` as a flat router param (short-circuit, exact match)
+    #   - `family`/`given`/`birthdate` as `filter[<field>][op]` on the
+    #     standard `ListQuery` envelope, backed by `filterable_fields`.
+    router_params = set(inspect.signature(list_patients).parameters)
+    assert "identifier" in router_params
+
+    filterable = set(PatientRepository.filterable_fields)
+    assert {"family_name", "given_name", "birth_date"} <= filterable
 
 
 def test_identifier_create_requires_system_field() -> None:

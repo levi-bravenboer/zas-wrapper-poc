@@ -1,6 +1,3 @@
-from app.repositories.patient.patient_repository import (
-    PatientFilters,
-    PatientRepository,
-)
+from app.repositories.patient.patient_repository import PatientRepository
 
-__all__ = ["PatientFilters", "PatientRepository"]
+__all__ = ["PatientRepository"]

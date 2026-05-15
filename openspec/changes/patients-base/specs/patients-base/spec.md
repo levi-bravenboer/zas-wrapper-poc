@@ -145,35 +145,42 @@ The backend SHALL expose under `/patients` exactly these routes: `GET /patients`
 
 ### Requirement: Patients list supports FHIR-aligned discrete search parameters
 
-The `GET /patients` route SHALL accept the following optional query parameters and combine them per the rules below:
+The `GET /patients` route SHALL ride on the shared `ListQuery` envelope (`page`, `page_size`, `q`, `order_by`, `order`, bracket-key `filter[<field>][<op>]=<value>`) introduced by `add-datatable-base`, and SHALL expose the FHIR `Patient` search dimensions through that envelope as follows:
 
-- `limit` (int, default 50, max 200) and `offset` (int, default 0) for pagination
-- `family_name` (str): prefix ILIKE match on `patients.family_name`
-- `given_name` (str): prefix ILIKE match on `patients.given_name`
-- `birth_date` (date, ISO 8601): exact equality on `patients.birth_date`
-- `identifier` (str): exact equality on `patient_identifiers.value` joined through `patient_id` within the caller's tenant
+- Pagination via `page` (int, default 1) and `page_size` (int, default 25, max 100); response envelope is `Page[PatientRead]` with `items`, `page`, `page_size`, `total`, `total_pages`.
+- `filter[family_name][contains]=<value>` — case-insensitive substring on `patients.family_name` (FHIR `family`).
+- `filter[given_name][contains]=<value>` — case-insensitive substring on `patients.given_name` (FHIR `given`).
+- `filter[birth_date]=<ISO date>` (or `[gte]`/`[lte]`) — equality / range on `patients.birth_date` (FHIR `birthdate`).
+- `filter[primary_organisation_id][eq|in]=<uuid>` — scoping by primary organisation.
+- `q=<value>` — free-text search across `family_name`/`given_name` via `searchable_fields`.
+- `identifier=<value>` — a flat router query param (NOT a `filter[...]` key) that short-circuits the rest of the query with an exact match on `patient_identifiers.value` joined through `patient_id` within the caller's tenant.
 
-When `identifier` is provided, it SHALL short-circuit the other filters (return the at-most-one matching row). When `identifier` is absent, the remaining filters SHALL be AND-combined. All matches SHALL be tenant-scoped via the session actor's `tenant_id`. Parameter names align with FHIR R4 `Patient` search (`family`, `given`, `birthdate`, `identifier`) so MVP HiX adapter wiring is a direct mapping.
+When `identifier` is provided, it SHALL short-circuit all other filters and `q` (return the at-most-one matching row). When `identifier` is absent, the `filter[...]` entries SHALL be AND-combined and intersected with `q`. All matches SHALL be tenant-scoped via the session actor's `tenant_id` enforced by `BaseListRepository._tenant_predicate`. Filter field names align with FHIR R4 `Patient` search (`family`, `given`, `birthdate`, `identifier`) so MVP HiX adapter wiring is a direct mapping.
 
 #### Scenario: Identifier short-circuits other filters
 
-- **WHEN** `GET /patients?identifier=<value>&family_name=zzz` is called and a patient in the caller's tenant has that identifier value
+- **WHEN** `GET /patients?identifier=<value>&filter[family_name][contains]=zzz` is called and a patient in the caller's tenant has that identifier value
 - **THEN** the response MUST contain that patient regardless of the `family_name` mismatch
 
 #### Scenario: Multiple filters AND together
 
-- **WHEN** `GET /patients?family_name=jans&birth_date=1985-03-12` is called
-- **THEN** the response MUST contain only patients whose `family_name` starts with `jans` AND whose `birth_date` equals `1985-03-12`
+- **WHEN** `GET /patients?filter[family_name][contains]=jans&filter[birth_date]=1985-03-12` is called
+- **THEN** the response MUST contain only patients whose `family_name` contains `jans` AND whose `birth_date` equals `1985-03-12`
 
 #### Scenario: Search never crosses tenant boundary
 
 - **WHEN** `GET /patients?identifier=<value>` is called and a patient with that identifier exists in a different tenant
 - **THEN** the response MUST be empty
 
-#### Scenario: Default pagination limit applied
+#### Scenario: Default pagination size applied
 
-- **WHEN** `GET /patients` is called with no `limit` param and the tenant has more than 50 patients
-- **THEN** the response MUST contain at most 50 items and the response meta MUST report `limit=50`, `offset=0`, and the correct `total`
+- **WHEN** `GET /patients` is called with no `page_size` param and the tenant has more than 25 patients
+- **THEN** the response MUST contain at most 25 items and MUST report `page=1`, `page_size=25`, the correct `total`, and a `total_pages` consistent with `ceil(total / page_size)`
+
+#### Scenario: Unknown filter field is rejected
+
+- **WHEN** `GET /patients?filter[gender]=male` is called (gender is intentionally not in `PatientRepository.filterable_fields`)
+- **THEN** the response MUST be `422 Unprocessable Entity` from the shared `ListQuery` validator
 
 ### Requirement: HiX patient adapter module reserves the MVP wiring point
 

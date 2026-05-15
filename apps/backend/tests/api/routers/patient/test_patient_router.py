@@ -37,11 +37,14 @@ async def test_list_patients_paginates(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     await _login(async_client, ADMIN_EMAIL)
-    response = await async_client.get("/patients", params={"limit": 3, "offset": 0})
+    response = await async_client.get("/patients", params={"page_size": 3, "page": 1})
     assert response.status_code == 200
     body = response.json()
     assert len(body["items"]) == 3
-    assert body["meta"] == {"total": len(seeded_zas_patients), "limit": 3, "offset": 0}
+    assert body["page"] == 1
+    assert body["page_size"] == 3
+    assert body["total"] == len(seeded_zas_patients)
+    assert body["total_pages"] == (len(seeded_zas_patients) + 2) // 3
 
 
 async def test_list_patients_family_name_prefix(
@@ -49,7 +52,9 @@ async def test_list_patients_family_name_prefix(
 ) -> None:
     del seeded_zas_patients
     await _login(async_client, CAREGIVER_EMAIL)
-    response = await async_client.get("/patients", params={"family_name": "Janss"})
+    response = await async_client.get(
+        "/patients", params={"filter[family_name][contains]": "janss"}
+    )
     assert response.status_code == 200
     families = {row["family_name"] for row in response.json()["items"]}
     assert families == {"Janssens"}
@@ -60,7 +65,7 @@ async def test_list_patients_given_name_prefix(
 ) -> None:
     del seeded_zas_patients
     await _login(async_client, CAREGIVER_EMAIL)
-    response = await async_client.get("/patients", params={"given_name": "Sve"})
+    response = await async_client.get("/patients", params={"filter[given_name][contains]": "sve"})
     assert response.status_code == 200
     givens = {row["given_name"] for row in response.json()["items"]}
     assert givens == {"Sven"}
@@ -73,7 +78,7 @@ async def test_list_patients_birth_date_exact(
     assert target.birth_date is not None
     await _login(async_client, CAREGIVER_EMAIL)
     response = await async_client.get(
-        "/patients", params={"birth_date": target.birth_date.isoformat()}
+        "/patients", params={"filter[birth_date]": target.birth_date.isoformat()}
     )
     assert response.status_code == 200
     ids = {row["id"] for row in response.json()["items"]}
@@ -88,7 +93,10 @@ async def test_list_patients_identifier_short_circuits(
     await _login(async_client, CAREGIVER_EMAIL)
     response = await async_client.get(
         "/patients",
-        params={"identifier": insz.value, "family_name": "ZZZ_no_match"},
+        params={
+            "identifier": insz.value,
+            "filter[family_name][contains]": "zzz_no_match",
+        },
     )
     assert response.status_code == 200
     body = response.json()
@@ -103,10 +111,21 @@ async def test_list_patients_and_filter_combination(
     response = await async_client.get(
         "/patients",
         params={
-            "given_name": target.given_name[:3],
-            "family_name": target.family_name[:3],
+            "filter[given_name][contains]": target.given_name[:3],
+            "filter[family_name][contains]": target.family_name[:3],
         },
     )
+    assert response.status_code == 200
+    ids = {row["id"] for row in response.json()["items"]}
+    assert str(target.id) in ids
+
+
+async def test_list_patients_search_q(
+    async_client: AsyncClient, seeded_zas_patients: list[Patient]
+) -> None:
+    target = next(p for p in seeded_zas_patients if p.given_name == "Sven")
+    await _login(async_client, CAREGIVER_EMAIL)
+    response = await async_client.get("/patients", params={"q": "Sven"})
     assert response.status_code == 200
     ids = {row["id"] for row in response.json()["items"]}
     assert str(target.id) in ids
@@ -122,7 +141,7 @@ async def test_list_patients_is_tenant_scoped(
     await db_session.flush()
     alien = Patient(
         tenant_id=other.id,
-        primary_organisation_id=RUGREVAL_TEAM_ORG_ID,  # FK satisfied; row is in other tenant
+        primary_organisation_id=RUGREVAL_TEAM_ORG_ID,
         created_by=seeded_zas_patients[0].created_by,
         updated_by=seeded_zas_patients[0].created_by,
         given_name="Alien",
@@ -138,6 +157,15 @@ async def test_list_patients_is_tenant_scoped(
     assert response.status_code == 200
     families = {row["family_name"] for row in response.json()["items"]}
     assert "OtherTenant" not in families
+
+
+async def test_list_patients_rejects_unknown_filter_field(
+    async_client: AsyncClient, seeded_zas_patients: list[Patient]
+) -> None:
+    del seeded_zas_patients
+    await _login(async_client, CAREGIVER_EMAIL)
+    response = await async_client.get("/patients", params={"filter[gender]": "male"})
+    assert response.status_code == 422
 
 
 # ---- create --------------------------------------------------------------

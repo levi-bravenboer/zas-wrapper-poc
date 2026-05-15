@@ -278,14 +278,18 @@ export interface components {
             /** Type Display */
             type_display: string | null;
         };
-        /** PaginationMeta */
-        PaginationMeta: {
+        /** Page[PatientRead] */
+        Page_PatientRead_: {
+            /** Items */
+            items: components["schemas"]["PatientRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
             /** Total */
             total: number;
-            /** Limit */
-            limit: number;
-            /** Offset */
-            offset: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /**
          * PatientCreate
@@ -352,12 +356,6 @@ export interface components {
             value: string;
             /** Use */
             use?: string | null;
-        };
-        /** PatientListResponse */
-        PatientListResponse: {
-            /** Items */
-            items: components["schemas"]["PatientRead"][];
-            meta: components["schemas"]["PaginationMeta"];
         };
         /** PatientRead */
         PatientRead: {
@@ -762,12 +760,18 @@ export interface operations {
     list_patients: {
         parameters: {
             query?: {
-                limit?: number;
-                offset?: number;
-                family_name?: string | null;
-                given_name?: string | null;
-                birth_date?: string | null;
+                /** @description FHIR Patient.identifier short-circuit; exact value match */
                 identifier?: string | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
             };
             header?: never;
             path?: never;
@@ -781,7 +785,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatientListResponse"];
+                    "application/json": components["schemas"]["Page_PatientRead_"];
                 };
             };
             /** @description Validation Error */

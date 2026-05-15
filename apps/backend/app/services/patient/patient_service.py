@@ -4,10 +4,7 @@ from uuid import UUID
 
 from app.db.models.patient import Patient, PatientIdentifier
 from app.repositories.organisation.organisation_repository import OrganisationRepository
-from app.repositories.patient.patient_repository import (
-    PatientFilters,
-    PatientRepository,
-)
+from app.repositories.patient.patient_repository import PatientRepository
 from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientUpdate
 from app.services.organisation.errors import (
@@ -23,9 +20,11 @@ from app.services.patient.errors import (
 class PatientService:
     """Tenant-scoped orchestration for patients.
 
-    Visibility in `patients-base` is tenant-only: every list / get call
-    filters by `actor.tenant_id`. Care-team-based caregiver filtering
-    lands in `care-teams-base` (chain change #3) as a MODIFIED capability.
+    Listing goes through `PatientRepository.list_page()` directly from the
+    router; the service owns the mutating paths (create / update / delete)
+    + the cross-tenant organisation check. Care-team-based caregiver
+    filtering lands in `care-teams-base` (chain change #3) and will hook
+    into the repository's `_extra_filters`.
     """
 
     def __init__(
@@ -35,16 +34,6 @@ class PatientService:
     ) -> None:
         self._repo = repo
         self._org_repo = organisation_repo
-
-    async def list_in_tenant(
-        self,
-        tenant_id: UUID,
-        filters: PatientFilters,
-        *,
-        limit: int,
-        offset: int,
-    ) -> tuple[list[Patient], int]:
-        return await self._repo.list_in_tenant(tenant_id, filters, limit=limit, offset=offset)
 
     async def get_by_id(self, tenant_id: UUID, patient_id: UUID) -> Patient | None:
         return await self._repo.get_by_id(tenant_id, patient_id)

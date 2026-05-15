@@ -26,7 +26,8 @@ def test_patients_openapi_surface() -> None:
     list_response = paths["/patients"]["get"]["responses"]["200"]["content"]["application/json"][
         "schema"
     ]
-    assert list_response["$ref"].endswith("/PatientListResponse")
+    # Page envelope is generic over PatientRead; openapi names it `Page_PatientRead_`.
+    assert list_response["$ref"].endswith("/Page_PatientRead_")
 
     create_response = paths["/patients"]["post"]["responses"]["201"]["content"]["application/json"][
         "schema"
