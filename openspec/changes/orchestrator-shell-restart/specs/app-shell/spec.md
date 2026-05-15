@@ -1,8 +1,29 @@
 ## ADDED Requirements
 
-### Requirement: Sidebar-only shell with no top bar
+### Requirement: Surface-aware Shell mount
 
-The orchestrator SHALL render its authed surface as a sidebar-only shell. No global top bar is permitted. The sidebar SHALL be flush full-height (`inset: 0 auto 0 0`) with square edges and no outer margin. The page content SHALL fill the remaining horizontal viewport. The shell wrapper component lives at `src/components/layout/Shell.tsx` and is the single layout mount point for every authed route.
+`Shell.tsx` SHALL branch on the active surface read from `useSurface()` / the `SURFACES` registry in `src/platform/surface/registry.ts`. Surfaces whose `shell` field is `"menu"` (`app`, `smart`) MUST render the sidebar shell defined below. Surfaces whose `shell` field is `"bare"` (`embed`) MUST render only a bare content slot — no sidebar, no chrome — so the orchestrator can be embedded inside HiX without competing chrome. `Shell.tsx` is the single mount point that performs this branch; route files MUST NOT decide per-route whether to render the sidebar.
+
+#### Scenario: app surface renders sidebar shell
+
+- **WHEN** an authed user opens `/dashboard` (surface `app`)
+- **THEN** the rendered tree is `Shell` → `Sidebar` + `SidebarInset` content slot
+
+#### Scenario: smart surface renders sidebar shell
+
+- **WHEN** an authed user opens `/s/dashboard` (surface `smart`)
+- **THEN** the rendered tree is `Shell` → `Sidebar` + `SidebarInset` content slot
+
+#### Scenario: embed surface renders bare shell
+
+- **WHEN** an authed user opens `/embed/<route>` (surface `embed`)
+- **THEN** the rendered tree is `Shell` → bare content slot
+- **AND** no element with role `navigation` belonging to the sidebar exists in the DOM
+- **AND** no element with the `glass` sidebar styling is present
+
+### Requirement: Sidebar-only shell on menu surfaces
+
+On `app` and `smart` surfaces the orchestrator SHALL render its authed routes as a sidebar-only shell. No global top bar is permitted. The sidebar SHALL be flush full-height (`inset: 0 auto 0 0`) with square edges and no outer margin. The page content SHALL fill the remaining horizontal viewport. The shell wrapper component lives at `src/components/layout/Shell.tsx`.
 
 #### Scenario: Authed route renders inside Shell
 
@@ -12,9 +33,30 @@ The orchestrator SHALL render its authed surface as a sidebar-only shell. No glo
 
 #### Scenario: Sidebar reaches viewport edges
 
-- **WHEN** the shell mounts at any viewport ≥ 1024px
+- **WHEN** the shell mounts at any viewport ≥ 1024px on a menu surface
 - **THEN** the sidebar's bounding box starts at `x = 0`, `y = 0`, `height = 100vh`
 - **AND** has no border-radius
+
+### Requirement: Base page composition
+
+Every authed page SHALL compose itself through the shell rather than mounting layout chrome ad-hoc. On menu surfaces (`app`, `smart`) the composition MUST be `Shell` → `SidebarInset` → `PageHeader` → page body. On the bare surface (`embed`) the composition MUST be `Shell` → bare content slot → page body, with no `PageHeader` and no sidebar. Pages MUST NOT render their own `<aside>` navigation, their own top bar, or their own breadcrumb — those concerns belong to `Shell` and `PageHeader`.
+
+#### Scenario: Menu-surface page uses PageHeader
+
+- **WHEN** the `/dashboard` route renders
+- **THEN** its tree under `SidebarInset` starts with a single `PageHeader` followed by the page body
+- **AND** no `<h1>` is rendered outside that `PageHeader`
+
+#### Scenario: Embed-surface page omits PageHeader
+
+- **WHEN** a route on the `embed` surface renders
+- **THEN** no `PageHeader` is present in the rendered tree
+- **AND** the page body is the only child of the bare content slot
+
+#### Scenario: No ad-hoc layout chrome
+
+- **WHEN** `moon run orchestrator:lint` runs
+- **THEN** no file under `src/routes/**` or `src/modules/**` renders an `<aside>` element or imports `Sidebar` directly from `@/components/ui/`
 
 ### Requirement: Collapsible sidebar with persistence
 

@@ -57,16 +57,16 @@ Before building the shell, verify everything landed in sections 0–2 matches th
 
 The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ our 64px), mobile drawer via `Sheet`, keyboard shortcut (`SidebarTrigger`), state provider, tooltip-on-collapsed, persistence cookie. Override only what conflicts with our locks.
 
-- [ ] 3.1 Create `src/components/layout/Shell.tsx` wrapping `<SidebarProvider>` + `<AppSidebar>` + `<SidebarInset>` (with `PageHeader` slot + content).
-- [ ] 3.2 Configure shadcn `Sidebar` props: `collapsible="icon"`, `variant="sidebar"` (flush), `side="left"`. Square edges via `className` override (drop default `rounded-*`).
-- [ ] 3.3 Apply `.glass` class to the sidebar root; override default bg to `transparent` so glass token wins.
-- [ ] 3.4 Override default cookie persistence to `localStorage["orchestrator.sidebar.collapsed"]` — pass `defaultOpen` + custom `onOpenChange` to `SidebarProvider`.
-- [ ] 3.5 Override default `⌘B` shortcut to `⌘\` / `Ctrl+\` — replace `SIDEBAR_KEYBOARD_SHORTCUT` constant (fork the block locally if shadcn pins it). If overriding cleanly is not possible, add a custom `useHotkeys` and disable the built-in.
-- [ ] 3.6 Brand block in `<SidebarHeader>`: gradient mark + "ZAS Orchestrator" + version pill (read `package.json` `version` via Vite `define`).
-- [ ] 3.7 Nav items in `<SidebarMenu>` using shadcn `SidebarMenuItem` + `SidebarMenuButton`. Apply active-gradient via `className` on `isActive` state. Lucide icon as child.
-- [ ] 3.8 User block in `<SidebarFooter>`: shadcn `DropdownMenu` triggered by a `SidebarMenuButton` rendering avatar + name + role. Items: profile, settings stub, sign-out (wires to existing `useLogout`).
-- [ ] 3.9 Confirm tooltip-on-collapsed works out of the box (shadcn `SidebarMenuButton` accepts a `tooltip` prop) — no extra wiring.
-- [ ] 3.10 Shrink `src/components/layout/navItems.ts` to one item (Dashboard, `/dashboard`).
+- [x] 3.1 `src/components/layout/Shell.tsx` reads `useSurface()`. `shell: "bare"` renders `<main data-shell="bare" data-surface={id}><Outlet /></main>` (no provider, no chrome). `shell: "menu"` renders controlled `<SidebarProvider>` + `<AppSidebar>` + `<SidebarInset data-shell="menu"><Outlet /></SidebarInset>`. Route files no longer decide chrome — `AppShell`/`SmartShell`/`EmbedShell` all mount `<Shell />`.
+- [x] 3.2 `AppSidebar` configured `variant="sidebar"`, `side="left"`, `collapsible="icon"`. `className` overrides drop default rounded edges + right border on the inner container.
+- [x] 3.3 `.glass` class on `<Sidebar>` root.
+- [x] 3.4 localStorage persistence at `orchestrator.sidebar.collapsed` (string `"true"` / `"false"`). Cookie write removed from forked `sidebar.tsx`. Controlled `SidebarProvider` reads on mount + writes on `onOpenChange` (effect-based to keep SSR-safety).
+- [x] 3.5 Forked `SIDEBAR_KEYBOARD_SHORTCUT` constant `"b"` → `"\\"` so the upstream listener fires on `⌘\` / `Ctrl+\`.
+- [x] 3.6 Brand block: gradient ZAS mark + product name `t('shell:brand.name')`. Version pill dropped (user call — surface elsewhere if needed; no `__APP_VERSION__` plumbing).
+- [x] 3.7 Nav items via `<SidebarMenu>` + `<SidebarMenuItem>` + `<SidebarMenuButton asChild>` wrapping TanStack `<Link>`. Active-gradient applied via `data-[active=true]` class overrides on the button.
+- [x] 3.8 User block in `<SidebarFooter>`: `DropdownMenu` triggered by an `lg` `SidebarMenuButton` rendering avatar (initials fallback over active-gradient) + name + role. Items: profile stub, settings stub, sign-out → `useLogout()`.
+- [x] 3.9 Tooltip-on-collapsed: `SidebarMenuButton tooltip={label}` for nav + user button — out-of-box.
+- [x] 3.10 `navItems.ts` shrunk to Dashboard only. Feature registry merge path preserved for later modules.
 
 ## 4. Command palette (built on shadcn `Command`)
 
@@ -95,7 +95,9 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 - [ ] 7.1 Rewrite `src/routes/login.tsx` with pattern O — minimal centered, no card, aurora background.
 - [ ] 7.2 Use shadcn `Input` + primary `Button`. No "remember me", no "forgot password".
-- [ ] 7.3 Confirm redirect-after-login still honors the `?redirect=...` search param from the auth guard.
+- [ ] 7.3 Placeholder submit handler: on primary CTA click, navigate to `/dashboard` via TanStack Router unconditionally. NO input validation, NO auth endpoint call. Real wiring (validation + `useLogin` mutation + cookie round-trip + `?redirect=` honouring) is tracked on the `[poc]` roadmap under `BL-035` (F1 user + auth domain) and lands as its own change.
+- [ ] 7.4 The `/login` route MUST NOT be reachable under the `embed` surface base path — embed surface owns its own auth context (HiX). Do not register a `/embed/login` route file.
+- [ ] 7.5 Confirm redirect-after-login still honors the `?redirect=...` search param from the auth guard (carried through but unused at the unconditional-navigate step — guard reinstates it once real validation lands).
 
 ## 8. Localization
 
@@ -109,13 +111,14 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 - [ ] 9.2 `PageHeader.test.tsx` — required title; conditional rendering of each slot; auto-crumb renders from `useMatches`.
 - [ ] 9.3 `CommandPalette.test.tsx` — `⌘K` opens; route selection navigates.
 - [ ] 9.4 `Skeleton.test.tsx`, `EmptyState.test.tsx` — render + a11y (role, name).
-- [ ] 9.5 `Login.test.tsx` — happy path + redirect param round-trip.
+- [ ] 9.5 `Login.test.tsx` — submit with empty fields navigates to `/dashboard`; no validation message rendered; no network call issued.
+- [ ] 9.6 `Shell.surface.test.tsx` — app/smart surfaces render sidebar tree; embed surface renders bare children-only tree (no sidebar, no PageHeader, no `role="navigation"` shell nav).
 
 ## 10. Spec deltas + scope ledger
 
 - [ ] 10.1 Spec deltas under `changes/orchestrator-shell-restart/specs/` for `app-shell`, `design-system`, `routing` (see this change's `specs/`).
 - [ ] 10.2 Update `openspec/scope.md` if the route narrowing changes any feature ID acceptance criterion.
-- [ ] 10.3 Update `apps/orchestrator/AGENTS.md` if any new convention needs to be discoverable to future agents (e.g. "all routes mount inside `Shell`").
+- [x] 10.3 Update `apps/orchestrator/AGENTS.md` — added "Surfaces — ask before building a new page" section (three-surface registry table, route-shim recipe, mandatory question to ask, page composition contract).
 
 ## 11. Verification
 

@@ -63,3 +63,4 @@ None. Everything fits inside the three existing capabilities above.
   - Dark mode — still gated by its own change per `design-system` rule.
   - Designer (composer) — separate `[poc]` work under `F3`.
   - Patient detail view — separate `[poc]` work under `F5`.
+  - **Login auth wiring** — this change builds only the login screen and a placeholder submit handler that navigates to `/dashboard` unconditionally. Frontend validation, credential exchange against the hard-coded user table, cookie-session round-trip, and `?redirect=` honouring all land in `BL-035` (F1 user + auth domain) as its own `[poc]` change. Roadmap tier: `[poc]`.
