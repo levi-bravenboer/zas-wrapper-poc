@@ -285,6 +285,303 @@
           }
         }
       }
+    },
+    "/pathways/blocks": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Block Types",
+        "operationId": "list_pathway_block_types",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayBlockType"
+                  },
+                  "type": "array",
+                  "title": "Response List Pathway Block Types"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/phase-templates": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Phase Templates",
+        "operationId": "list_pathway_phase_templates",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayPhaseTemplate"
+                  },
+                  "type": "array",
+                  "title": "Response List Pathway Phase Templates"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/lane-kinds": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Lane Kinds",
+        "operationId": "list_pathway_lane_kinds",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayLaneKindRow"
+                  },
+                  "type": "array",
+                  "title": "Response List Pathway Lane Kinds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathways",
+        "operationId": "list_pathways",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathwaySummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Pathways"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Create Pathway",
+        "operationId": "create_pathway",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayDefinition"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Get Pathway",
+        "operationId": "get_pathway",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayDefinition"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Replace Pathway",
+        "operationId": "replace_pathway",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayDefinitionReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayDefinition"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Delete Pathway",
+        "operationId": "delete_pathway",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -300,6 +597,36 @@
           "role"
         ],
         "title": "AssignRoleRequest"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -358,6 +685,1019 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "PathwayBlockIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Id",
+            "description": "Optional. When omitted the backend materializes the block type's default lane (see catalogue.default_lane_kind_code)."
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 63,
+            "minLength": 1,
+            "title": "Type"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "type"
+        ],
+        "title": "PathwayBlockIn"
+      },
+      "PathwayBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "type"
+        ],
+        "title": "PathwayBlockOut"
+      },
+      "PathwayBlockType": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Stable kebab-case identifier"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "default_lane_kind_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Default Lane Kind Id"
+          },
+          "config_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config Schema"
+          },
+          "supports_branches": {
+            "type": "boolean",
+            "title": "Supports Branches",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "label",
+          "default_lane_kind_id",
+          "config_schema"
+        ],
+        "title": "PathwayBlockType"
+      },
+      "PathwayBranchIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayBranchIn"
+      },
+      "PathwayBranchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayBranchOut"
+      },
+      "PathwayCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PathwayCreate"
+      },
+      "PathwayDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayPhaseOut"
+            },
+            "type": "array",
+            "title": "Phases"
+          },
+          "lanes": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayLaneOut"
+            },
+            "type": "array",
+            "title": "Lanes"
+          },
+          "timing_values": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayTimingValueOut"
+            },
+            "type": "array",
+            "title": "Timing Values"
+          },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBlockOut"
+            },
+            "type": "array",
+            "title": "Blocks"
+          },
+          "branches": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBranchOut"
+            },
+            "type": "array",
+            "title": "Branches"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayEdgeOut"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "time_markers": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayTimeMarkerOut"
+            },
+            "type": "array",
+            "title": "Time Markers"
+          },
+          "field_resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayFieldResolutionOut"
+            },
+            "type": "array",
+            "title": "Field Resolutions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "updated_at"
+        ],
+        "title": "PathwayDefinition"
+      },
+      "PathwayDefinitionReplace": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayPhaseIn"
+            },
+            "type": "array",
+            "title": "Phases"
+          },
+          "lanes": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayLaneIn"
+            },
+            "type": "array",
+            "title": "Lanes"
+          },
+          "timing_values": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayTimingValueIn"
+            },
+            "type": "array",
+            "title": "Timing Values"
+          },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBlockIn"
+            },
+            "type": "array",
+            "title": "Blocks"
+          },
+          "branches": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBranchIn"
+            },
+            "type": "array",
+            "title": "Branches"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayEdgeIn"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "time_markers": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayTimeMarkerIn"
+            },
+            "type": "array",
+            "title": "Time Markers"
+          },
+          "field_resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayFieldResolutionIn"
+            },
+            "type": "array",
+            "title": "Field Resolutions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PathwayDefinitionReplace"
+      },
+      "PathwayEdgeIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "source_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Block Id"
+          },
+          "target_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Block Id"
+          },
+          "source_branch_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Branch Id"
+          },
+          "delay_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Value Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source_block_id",
+          "target_block_id"
+        ],
+        "title": "PathwayEdgeIn"
+      },
+      "PathwayEdgeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "source_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Block Id"
+          },
+          "target_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Block Id"
+          },
+          "source_branch_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Branch Id"
+          },
+          "delay_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Value Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source_block_id",
+          "target_block_id"
+        ],
+        "title": "PathwayEdgeOut"
+      },
+      "PathwayFieldResolutionIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "field_path": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Field Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "field_path"
+        ],
+        "title": "PathwayFieldResolutionIn"
+      },
+      "PathwayFieldResolutionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "field_path": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Field Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "field_path"
+        ],
+        "title": "PathwayFieldResolutionOut"
+      },
+      "PathwayLaneIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lane_kind_code": {
+            "type": "string",
+            "maxLength": 63,
+            "minLength": 1,
+            "title": "Lane Kind Code",
+            "description": "System lane-kind code (resolves to pathway_lane_kind.id server-side)"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "lane_kind_code",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayLaneIn"
+      },
+      "PathwayLaneKindRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "label"
+        ],
+        "title": "PathwayLaneKindRow"
+      },
+      "PathwayLaneOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "pathway_lane_kind_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Lane Kind Id"
+          },
+          "lane_kind_code": {
+            "type": "string",
+            "title": "Lane Kind Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "title": "Ord"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pathway_lane_kind_id",
+          "lane_kind_code",
+          "label",
+          "ord",
+          "is_default"
+        ],
+        "title": "PathwayLaneOut"
+      },
+      "PathwayPhaseIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayPhaseIn"
+      },
+      "PathwayPhaseOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayPhaseOut"
+      },
+      "PathwayPhaseTemplate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "default_ord": {
+            "type": "integer",
+            "title": "Default Ord"
+          },
+          "default_duration_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Duration Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "default_ord"
+        ],
+        "title": "PathwayPhaseTemplate"
+      },
+      "PathwaySummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "block_count": {
+            "type": "integer",
+            "title": "Block Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "updated_at",
+          "block_count"
+        ],
+        "title": "PathwaySummary"
+      },
+      "PathwayTimeMarkerIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "value_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Value Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value_id",
+          "label"
+        ],
+        "title": "PathwayTimeMarkerIn"
+      },
+      "PathwayTimeMarkerOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "value_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Value Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value_id",
+          "label"
+        ],
+        "title": "PathwayTimeMarkerOut"
+      },
+      "PathwayTimingValueIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "enrollment"
+            ],
+            "title": "Kind"
+          },
+          "fixed_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixed Days"
+          },
+          "enrollment_default_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Default Days"
+          },
+          "enrollment_min_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Min Days"
+          },
+          "enrollment_max_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Max Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind"
+        ],
+        "title": "PathwayTimingValueIn"
+      },
+      "PathwayTimingValueOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "enrollment"
+            ],
+            "title": "Kind"
+          },
+          "fixed_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixed Days"
+          },
+          "enrollment_default_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Default Days"
+          },
+          "enrollment_min_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Min Days"
+          },
+          "enrollment_max_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Max Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind"
+        ],
+        "title": "PathwayTimingValueOut"
       },
       "ProviderDescriptor": {
         "properties": {
