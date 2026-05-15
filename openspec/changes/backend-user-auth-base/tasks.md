@@ -65,7 +65,7 @@
 - [x] 10.1 Create `apps/backend/app/api/routers/auth/auth_router.py` exposing `router = APIRouter(tags=["auth"])` with `POST /auth/login` (operation_id `login_user`), `GET /auth/me` (`get_current_user`), `POST /auth/logout` (`logout_user`). Login uses `AuthServiceDep`; me uses `CurrentUserDep`; logout clears the cookie. Cookie set with `HttpOnly`, `SameSite=Lax`, `Path=/`, `Secure` iff `Settings.env == "production"`
 - [x] 10.2 Create `apps/backend/app/api/routers/user/user_router.py` exposing `router = APIRouter(tags=["users"])` with `GET /users` (operation_id `list_tenant_users`, query param `active: bool | None = None`, guarded by `Depends(require_role(Role.ADMIN))`) and `PATCH /users/{user_id}/role` (operation_id `update_user_role`, body `AssignRoleRequest`, same guard, returns updated `UserRow`)
 - [x] 10.3 Register both routers in `apps/backend/app/main.py` (or wherever the app factory composes routers)
-- [ ] 10.4 In the FastAPI lifespan startup, add a guard: if `settings.env == "production"` and `settings.session_secret_key == "change-me-in-production"`, raise `RuntimeError("session_secret_key must be overridden in production")` before yielding. Non-production envs skip the check
+- [x] 10.4 In the FastAPI lifespan startup, add a guard: if `settings.env == "production"` and `settings.session_secret_key == "change-me-in-production"`, raise `RuntimeError("session_secret_key must be overridden in production")` before yielding. Non-production envs skip the check
 
 ## 11. Alembic revision (schema only)
 
@@ -93,7 +93,7 @@
 - [x] 13.1 Add `seed-users` task to `apps/backend/moon.yml` running `python -m scripts.seed_users` inside `zas_backend`
 - [x] 13.2 No edit to `apps/backend/docker/entrypoint.sh` — it already chains `python -m scripts.seed_all` (set up in `backend-tenant-base`), and `seed_all` now picks up `seed_users` automatically
 - [x] 13.3 Confirm `zas_backend_test` entrypoint (or compose override) still runs migrate only — NO `scripts.seed_all` invocation
-- [ ] 13.4 Update `apps/backend/README.md` per-task table to list the new `seed-users` moon task and the `BACKEND_BOOTSTRAP_ADMIN_PASSWORD` / `BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD` env vars
+- [x] 13.4 Update `apps/backend/README.md` per-task table to list the new `seed-users` moon task and the `BACKEND_BOOTSTRAP_ADMIN_PASSWORD` / `BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD` env vars
 
 ## 14. Tests
 
@@ -112,11 +112,11 @@
 - [x] 15.1 `moon run backend:lint` clean
 - [x] 15.2 `moon run backend:format` clean
 - [x] 15.3 `moon run backend:typecheck` clean
-- [ ] 15.4 `moon run backend:test -- tests/services/auth tests/services/user tests/repositories/user tests/api/routers/auth tests/api/routers/user tests/scripts` green
-- [ ] 15.5 `moon run backend:test` full suite green
+- [x] 15.4 `moon run backend:test -- tests/services/auth tests/services/user tests/repositories/user tests/api/routers/auth tests/api/routers/user tests/scripts` green
+- [x] 15.5 `moon run backend:test` full suite green
 - [x] 15.6 Spin up `moon run backend:dev`; confirm entrypoint logs show `alembic upgrade head` → `seeded tenant slug=zas` → `seeded user email=admin@zas.local` → `seeded user email=caregiver@zas.local`. Re-run `moon run backend:seed-users`, confirm no-op logs. Hit `POST /auth/login` with seeded admin via curl or /docs, verify cookie set + `SessionUser` shape; hit `GET /users` with the cookie, verify list contains both seeded users; hit `PATCH /users/<caregiver_id>/role` with `{"role":"external"}`, verify update; logout, verify subsequent `GET /auth/me` returns 401
 - [x] 15.7 `moon run backend:openapi` regenerates `openapi.json`; commit the regenerated file alongside the change
 
 ## 16. OpenAPI client regen (orchestrator)
 
-- [ ] 16.1 Run the orchestrator's typegen step to consume the regenerated `openapi.json` (deferred: only land if it is fast and non-breaking; otherwise queue under a follow-up frontend change)
+- [x] 16.1 Run the orchestrator's typegen step to consume the regenerated `openapi.json` (deferred: only land if it is fast and non-breaking; otherwise queue under a follow-up frontend change)
