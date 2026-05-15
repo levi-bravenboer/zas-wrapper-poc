@@ -75,4 +75,22 @@ describe('Shell (menu surface, integration via AppShell)', () => {
     const sidebar = container.querySelector('[data-slot="sidebar"]')
     expect(sidebar?.getAttribute('data-state')).toBe('collapsed')
   })
+
+  it('toggles the sidebar when the edge collapse button is clicked', async () => {
+    const user = userEvent.setup()
+    const { container } = mountShellOnIndex()
+    await screen.findByTestId('page-content')
+
+    const collapse = screen.getByRole('button', { name: 'Zijbalk inklappen' })
+    await user.click(collapse)
+
+    const sidebar = container.querySelector('[data-slot="sidebar"]')
+    expect(sidebar?.getAttribute('data-state')).toBe('collapsed')
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe('true')
+
+    const expand = screen.getByRole('button', { name: 'Zijbalk uitklappen' })
+    await user.click(expand)
+    expect(sidebar?.getAttribute('data-state')).toBe('expanded')
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe('false')
+  })
 })

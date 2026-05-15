@@ -40,7 +40,12 @@ export function CommandPalette(): ReactElement {
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} title={t('palette.placeholder')}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={t('palette.placeholder')}
+      description={t('palette.description')}
+    >
       <CommandInput placeholder={t('palette.placeholder')} />
       <CommandList>
         <CommandEmpty>{t('palette.empty')}</CommandEmpty>

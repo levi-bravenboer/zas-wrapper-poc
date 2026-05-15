@@ -2,6 +2,10 @@
   "brand": {
     "name": "ZAS Orchestrator"
   },
+  "sidebar": {
+    "collapse": "Zijbalk inklappen",
+    "expand": "Zijbalk uitklappen"
+  },
   "user": {
     "roleFallback": "Zorgverlener",
     "profile": "Profiel",
@@ -9,6 +13,7 @@
   },
   "palette": {
     "placeholder": "Zoek of navigeer…",
+    "description": "Zoek een actie of pagina om naartoe te navigeren",
     "empty": "Geen resultaten",
     "groups": {
       "routes": "Navigatie"

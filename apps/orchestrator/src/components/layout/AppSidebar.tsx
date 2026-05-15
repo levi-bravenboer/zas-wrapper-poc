@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { ChevronsUpDown, LogOut, Settings, User } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, LogOut, Settings, User } from 'lucide-react'
 import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -75,7 +75,30 @@ export function AppSidebar(): ReactElement {
         <UserBlock />
       </SidebarFooter>
       <SidebarRail />
+      <CollapseToggle />
     </Sidebar>
+  )
+}
+
+function CollapseToggle(): ReactElement {
+  const { t } = useTranslation('shell')
+  const { state, toggleSidebar } = useSidebar()
+  const collapsed = state === 'collapsed'
+  const Icon = collapsed ? ChevronRight : ChevronLeft
+  return (
+    <button
+      type="button"
+      onClick={toggleSidebar}
+      aria-label={t(collapsed ? 'sidebar.expand' : 'sidebar.collapse')}
+      className={cn(
+        'absolute top-1/2 -right-3 z-20 grid size-6 -translate-y-1/2 place-items-center rounded-full',
+        'border border-border bg-background text-muted-foreground shadow-sm',
+        'transition-colors hover:text-foreground hover:bg-muted',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      )}
+    >
+      <Icon aria-hidden="true" className="size-3.5" />
+    </button>
   )
 }
 
@@ -84,10 +107,10 @@ function BrandBlock(): ReactElement {
   const { state } = useSidebar()
   const collapsed = state === 'collapsed'
   return (
-    <div className="flex items-center gap-2 px-1">
+    <div className={cn('flex items-center gap-2', collapsed ? 'justify-center' : 'px-1')}>
       <span
         aria-hidden="true"
-        className="grid size-8 shrink-0 place-items-center rounded-md bg-[var(--gradient-active)] text-sm font-semibold text-white shadow-sm"
+        className="grid size-8 shrink-0 place-items-center rounded-md [background-image:var(--gradient-active)] text-sm font-semibold text-white shadow-sm"
       >
         Z
       </span>
@@ -117,10 +140,11 @@ function NavMenu(): ReactElement {
               isActive={active}
               tooltip={label}
               className={cn(
-                'data-[active=true]:bg-[var(--gradient-active)]',
+                'data-[active=true]:[background-image:var(--gradient-active)]',
                 'data-[active=true]:text-white',
-                'data-[active=true]:hover:bg-[var(--gradient-active)]',
+                'data-[active=true]:hover:[background-image:var(--gradient-active)]',
                 'data-[active=true]:hover:text-white',
+                'data-[active=true]:shadow-sm',
               )}
             >
               <Link to={item.to} aria-current={active ? 'page' : undefined}>
@@ -161,7 +185,7 @@ function UserBlock(): ReactElement {
               className="glass-strong data-[state=open]:bg-sidebar-accent"
             >
               <Avatar size="sm">
-                <AvatarFallback className="bg-[var(--gradient-active)] text-xs font-medium text-white">
+                <AvatarFallback className="[background-image:var(--gradient-active)] text-xs font-medium text-white">
                   {initialsFromName(session?.displayName)}
                 </AvatarFallback>
               </Avatar>
