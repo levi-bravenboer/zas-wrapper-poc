@@ -26,9 +26,7 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-async def authed_admin(
-    async_client: AsyncClient, seeded_zas_users: list[User]
-) -> User:
+async def authed_admin(async_client: AsyncClient, seeded_zas_users: list[User]) -> User:
     admin = next(u for u in seeded_zas_users if u.role is Role.ADMIN)
     response = await async_client.post(
         "/auth/login", json={"email": ADMIN_EMAIL, "password": _PASSWORD}
@@ -116,9 +114,7 @@ async def test_events_isolates_tenants(
     assert _parse_sse(response.text) == []
 
 
-async def test_events_sets_streaming_headers(
-    async_client: AsyncClient, authed_admin: User
-) -> None:
+async def test_events_sets_streaming_headers(async_client: AsyncClient, authed_admin: User) -> None:
     del authed_admin
     response = await asyncio.wait_for(async_client.get("/events"), timeout=5)
     assert response.status_code == 200

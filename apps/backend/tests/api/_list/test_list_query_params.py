@@ -41,9 +41,7 @@ def test_defaults_when_no_params() -> None:
 
 def test_scalar_params_parsed() -> None:
     client = _make_client()
-    payload = client.get(
-        "/_dummy?page=3&page_size=10&q=alice&order_by=name&order=desc"
-    ).json()
+    payload = client.get("/_dummy?page=3&page_size=10&q=alice&order_by=name&order=desc").json()
     assert payload == {
         "page": 3,
         "page_size": 10,

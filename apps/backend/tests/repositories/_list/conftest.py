@@ -43,9 +43,7 @@ class DemoRepository(BaseListRepository[_DemoModel]):
         "score": frozenset({"gte", "lte"}),
         "name": frozenset({"contains"}),
     }
-    searchable_fields: ClassVar[tuple[InstrumentedAttribute, ...]] = (
-        _DemoModel.name,
-    )
+    searchable_fields: ClassVar[tuple[InstrumentedAttribute, ...]] = (_DemoModel.name,)
     default_order = ("created_at", "desc")
 
 

@@ -194,10 +194,7 @@ class BaseListRepository(BaseRepository[T]):
                 raise ListAllowListError(message=msg)
             for op in ops:
                 if op not in allowed:
-                    msg = (
-                        f"operator `{op}` not allowed for `{field}` "
-                        f"on {self.model.__name__}"
-                    )
+                    msg = f"operator `{op}` not allowed for `{field}` on {self.model.__name__}"
                     raise ListAllowListError(message=msg)
 
     async def list_page(self, query: ListQuery) -> Page[T]:
@@ -260,8 +257,10 @@ class BaseListRepository(BaseRepository[T]):
         empty result → empty count. This branch only fires when `page` is
         past the last page (rare; clients normally clamp).
         """
-        stmt = sa.select(sa.func.count()).select_from(self.model).where(
-            self.model.deleted_at.is_(None)
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(self.model)
+            .where(self.model.deleted_at.is_(None))
         )
         tenant_pred = self._tenant_predicate()
         if tenant_pred is not None:

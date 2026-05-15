@@ -63,9 +63,7 @@ class RealtimePubSub:
                 queue.put_nowait(event)
             except asyncio.QueueFull:
                 self.dropped_events_total += 1
-                logger.warning(
-                    "realtime: dropping event for tenant %s (queue full)", tenant_id
-                )
+                logger.warning("realtime: dropping event for tenant %s (queue full)", tenant_id)
 
     async def subscribe(
         self, tenant_id: UUID, *, idle_timeout: float | None = None
