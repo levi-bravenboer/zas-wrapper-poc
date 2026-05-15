@@ -22,7 +22,7 @@ Generate `lib/api/schema.d.ts` from `apps/backend`'s `/openapi.json` via `openap
 - Schema drift breaks TS compile — that is the contract test.
 - Each module defines its own Query hooks shaped how the module needs them.
 
-Mitigation for first-run friction: commit the last-known-good `schema.d.ts` so a fresh clone compiles offline. `npm run typegen` refreshes it; CI runs typegen against the live backend and fails on drift.
+Mitigation for first-run friction: commit the last-known-good `schema.d.ts` so a fresh clone compiles offline. `pnpm run typegen` refreshes it; CI runs typegen against the live backend and fails on drift.
 
 Rejected: orval / kubb (pin to a regeneration step, auto-generated hooks fight module-specific shaping), hand-written client (loses contract guarantees).
 
