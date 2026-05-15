@@ -65,13 +65,13 @@
 
 ## 6. Backend — `/events` SSE router
 
-- [ ] 6.1 Add `apps/backend/app/api/routers/events_router.py` with `GET /events` mounted under the existing API router
-- [ ] 6.2 Cookie-auth via existing `SessionDep`; HTTP 401 when no session
-- [ ] 6.3 Stream via `sse-starlette.EventSourceResponse`, scope to `actor.tenant_id`
-- [ ] 6.4 Send `: keep-alive` comment every 15s
-- [ ] 6.5 Response headers: `Cache-Control: no-cache`, `X-Accel-Buffering: no`, `Connection: keep-alive`
-- [ ] 6.6 Idle disconnect after 30 min (configurable)
-- [ ] 6.7 Tests: 401 without session, message format `{resource, action, id, v}`, tenant isolation, keep-alive presence, headers correct (`tests/api/events/test_events_router.py`)
+- [x] 6.1 Add `apps/backend/app/api/routers/events_router.py` with `GET /events` mounted under the existing API router
+- [x] 6.2 Cookie-auth via existing `SessionDep`; HTTP 401 when no session
+- [x] 6.3 Stream via `sse-starlette.EventSourceResponse`, scope to `actor.tenant_id`
+- [x] 6.4 Send `: keep-alive` comment every 15s
+- [x] 6.5 Response headers: `Cache-Control: no-cache`, `X-Accel-Buffering: no`, `Connection: keep-alive`
+- [x] 6.6 Idle disconnect after 30 min (configurable)
+- [x] 6.7 Tests: 401 without session, message format `{resource, action, id, v}`, tenant isolation, keep-alive presence, headers correct (`tests/api/events/test_events_router.py`)
 
 ## 7. Backend — verification
 
@@ -89,7 +89,7 @@
 
 ## 9. Orchestrator — `Table` shadcn primitive
 
-- [ ] 9.1 Add `@tanstack/react-table` to `apps/orchestrator/package.json` dependencies
+- [x] 9.1 Add `@tanstack/react-table` to `apps/orchestrator/package.json` dependencies
 - [ ] 9.2 Run `npx shadcn add table` (or copy manually) → `apps/orchestrator/src/components/ui/table.tsx`
 - [ ] 9.3 Update `apps/orchestrator/components.json` if needed
 - [ ] 9.4 Update closed-set list in `apps/orchestrator/AGENTS.md` to include `Table`
@@ -97,7 +97,7 @@
 
 ## 10. Orchestrator — `data-table` i18n namespace
 
-- [ ] 10.1 Create `apps/orchestrator/src/lib/i18n/locales/nl/data-table.json` with keys:
+- [x] 10.1 Create `apps/orchestrator/src/lib/i18n/locales/nl/data-table.json` with keys:
   - `empty.title`, `empty.body`
   - `pagination.previous`, `pagination.next`, `pagination.indicator` (`"{{page}} / {{total}}"`), `pagination.pageSize`
   - `toolbar.search.placeholder`, `toolbar.filters.clear`, `toolbar.filters.button`
@@ -106,8 +106,8 @@
   - `expand.toggle`
   - `actions.menu.aria` (per row)
   - `realtime.offline` (warning toast)
-- [ ] 10.2 Register namespace in `src/lib/i18n/index.ts`
-- [ ] 10.3 i18n smoke test that every key resolves
+- [x] 10.2 Register namespace in `src/lib/i18n/index.ts`
+- [x] 10.3 i18n smoke test that every key resolves
 
 ## 11. Orchestrator — `usePaginatedQuery` hook + key factory
 
