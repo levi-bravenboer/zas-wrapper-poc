@@ -18,10 +18,12 @@ describe('_auth/ index route (home overview)', () => {
   it('renders the Overzicht PageHeader and the KPI heading', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const rootRoute = createRootRoute()
+    const HomeComponent = IndexRoute.options.component
+    if (!HomeComponent) throw new Error('index route missing component')
     const homeRoute = createRoute({
       getParentRoute: () => rootRoute,
       path: '/',
-      component: IndexRoute.options.component,
+      component: HomeComponent,
     })
     const router = createRouter({
       routeTree: rootRoute.addChildren([homeRoute]),
