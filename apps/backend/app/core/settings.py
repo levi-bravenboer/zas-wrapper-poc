@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     cors_origins: list[AnyHttpUrl] = Field(default_factory=lambda: list(DEFAULT_DEV_ORIGINS))
     session_secret_key: SecretStr = SecretStr(DEFAULT_SESSION_SECRET)
     session_cookie_name: str = "BACKEND_SESSION"
+    session_max_age_seconds: int = 8 * 60 * 60
     public_url: AnyHttpUrl | None = None
     hix_mode: AdapterMode = "stub"
     luscii_mode: AdapterMode = "stub"

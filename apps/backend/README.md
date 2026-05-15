@@ -24,9 +24,11 @@ Defaults inside `zas_backend`: `BACKEND_ENV=dev`, CORS open to `http://localhost
 
 Host-side env defaults live in `.env.example` and assume the dev DB on `localhost:5434` (host port; container-internal stays `5432`). Inside the container, compose overrides `BACKEND_DATABASE_URL` to `postgresql+asyncpg://zas:zas@db:5432/zas`.
 
+`scripts/seed_users` reads `BACKEND_BOOTSTRAP_ADMIN_PASSWORD` and `BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD` for the demo accounts. Both fall back to `"changeme"` with a `WARNING` log line when unset — set them via `.env` before sharing the PoC.
+
 ## Auto-migrate on boot
 
-`zas_backend`'s entrypoint runs `alembic upgrade head` before uvicorn starts. A broken revision halts boot — uvicorn never binds its container-internal `:8000` (host `:18000`), and `moon run :up` exits non-zero with the alembic error in the compose log. Run `moon run backend:make-migration "<msg>"` then `moon run backend:migrate` to add new revisions manually.
+`zas_backend`'s entrypoint runs `alembic upgrade head` then `python -m scripts.seed_all` before uvicorn starts. A broken revision or a failing seed halts boot — uvicorn never binds its container-internal `:8000` (host `:18000`), and `moon run :up` exits non-zero with the error in the compose log. Run `moon run backend:make-migration "<msg>"` then `moon run backend:migrate` to add new revisions manually. The test runner overrides ENTRYPOINT to skip seeds — `zas_backend_test` boots straight into pytest.
 
 ## Ports
 
@@ -50,8 +52,18 @@ moon run backend:shell                      # bash inside zas_backend
 moon run backend:psql                       # interactive psql against zas_db
 moon run backend:migrate                    # alembic upgrade head
 moon run backend:make-migration "<message>" # alembic revision --autogenerate
+moon run backend:seed-tenant                # python -m scripts.seed_tenant
+moon run backend:seed-users                 # python -m scripts.seed_users (admin + caregiver)
+moon run backend:seed                       # python -m scripts.seed_all
 moon run backend:install                    # host uv sync (idempotent)
 ```
+
+Seed data is owned by standalone scripts under `scripts/` — alembic revisions
+are schema-only. The dev entrypoint chains `alembic upgrade head && python -m
+scripts.seed_all` so a fresh `moon run :up` produces a fully-seeded DB. For
+prod, run the same chain after `alembic upgrade head`: `python -m
+scripts.seed_all`. Each script is idempotent — re-running is a no-op once
+rows exist.
 
 Native (run on host via `uv` — no docker round-trip; editor LSPs invoke the same binaries):
 
@@ -101,7 +113,8 @@ apps/backend/
 │   ├── services/             # business logic (auth_service today)
 │   ├── main.py               # create_app() factory
 │   └── openapi.py            # `python -m app.openapi` exporter
-├── tests/                    # mirrors app/ tree; conftest + fixtures + utils
+├── scripts/                  # standalone operational scripts (seed_tenant, seed_all, ...)
+├── tests/                    # mirrors app/ + scripts/ trees; conftest + fixtures + utils
 ├── main.py                   # thin entrypoint re-exporting app.main:app
 ├── openapi.json              # baseline schema for orchestrator typegen
 ├── pyproject.toml
