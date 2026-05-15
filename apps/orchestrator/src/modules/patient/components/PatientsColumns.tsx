@@ -4,17 +4,8 @@ import { Trash2 } from 'lucide-react'
 import { defineColumn, type BrandedColumnDef } from '@/components/data-table/columns'
 import { type DataTableFilter } from '@/components/data-table/DataTableToolbar'
 import { type DataTableRowAction } from '@/components/data-table/types'
-import { Badge } from '@/components/ui/badge'
 
 import type { OrganisationOption, PatientRow } from '../types'
-
-/** Belgian INSZ — see apps/backend/app/core/identifiers.py:INSZ_SYSTEM. */
-const INSZ_SYSTEM = 'urn:oid:2.16.840.1.113883.2.8.4.1.1'
-
-function findInsz(row: PatientRow): string | null {
-  const hit = row.identifiers.find((i) => i.system === INSZ_SYSTEM)
-  return hit ? hit.value : null
-}
 
 function formatBirthDate(value: string | null | undefined, locale: string): string {
   if (!value) return '—'
@@ -47,18 +38,6 @@ export function patientColumns(
       sortKey: 'family_name',
       sticky: true,
       cell: (row) => `${row.family_name}, ${row.given_name}`,
-    }),
-    defineColumn<PatientRow>({
-      id: 'insz',
-      header: t('columns.insz'),
-      cell: (row) => {
-        const insz = findInsz(row)
-        return insz ? (
-          <Badge variant="soft">{insz}</Badge>
-        ) : (
-          <span className="text-foreground-muted">—</span>
-        )
-      },
     }),
     defineColumn<PatientRow>({
       id: 'birth_date',

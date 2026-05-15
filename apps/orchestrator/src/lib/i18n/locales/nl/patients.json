@@ -5,7 +5,6 @@
   },
   "columns": {
     "name": "Naam",
-    "insz": "INSZ",
     "birthDate": "Geboortedatum",
     "gender": "Geslacht",
     "organisation": "Organisatie",
