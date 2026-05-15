@@ -281,6 +281,294 @@
           }
         }
       }
+    },
+    "/patients": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "List Patients",
+        "operationId": "list_patients",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "family_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Family Name"
+            }
+          },
+          {
+            "name": "given_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Given Name"
+            }
+          },
+          {
+            "name": "birth_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Birth Date"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Identifier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Create Patient",
+        "operationId": "create_patient",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Get Patient",
+        "operationId": "get_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Update Patient",
+        "operationId": "update_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Soft Delete Patient",
+        "operationId": "soft_delete_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -296,6 +584,16 @@
           "role"
         ],
         "title": "AssignRoleRequest"
+      },
+      "Gender": {
+        "type": "string",
+        "enum": [
+          "male",
+          "female",
+          "other",
+          "unknown"
+        ],
+        "title": "Gender"
       },
       "HTTPValidationError": {
         "properties": {
@@ -431,6 +729,376 @@
           "type_display"
         ],
         "title": "OrganisationRead"
+      },
+      "PaginationMeta": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "PaginationMeta"
+      },
+      "PatientCreate": {
+        "properties": {
+          "primary_organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Primary Organisation Id"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PatientSource",
+            "default": "local"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ref"
+          },
+          "external_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Version"
+          },
+          "identifiers": {
+            "items": {
+              "$ref": "#/components/schemas/PatientIdentifierCreate"
+            },
+            "type": "array",
+            "title": "Identifiers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "primary_organisation_id",
+          "given_name",
+          "family_name",
+          "gender"
+        ],
+        "title": "PatientCreate",
+        "description": "`POST /patients` payload.\n\n`identifiers` is part of the create payload so a patient can be born\nwith an INSZ in a single transaction. Updating identifiers later goes\nthrough a dedicated endpoint (out of scope for `patients-base`); the\nPATCH route rejects the field outright (see `PatientUpdate`)."
+      },
+      "PatientIdentifierCreate": {
+        "properties": {
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "use": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use"
+          }
+        },
+        "type": "object",
+        "required": [
+          "system",
+          "value"
+        ],
+        "title": "PatientIdentifierCreate",
+        "description": "Identifier payload for `POST /patients`.\n\n`system` is a free-text URI \u2014 we keep the column open so unknown\nnamespaces (e.g. local lab numbers) pass through. The Mod-97 check\nonly runs when the system is the Belgian INSZ namespace."
+      },
+      "PatientIdentifierRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "use": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "system",
+          "value"
+        ],
+        "title": "PatientIdentifierRead"
+      },
+      "PatientListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PatientRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "meta"
+        ],
+        "title": "PatientListResponse"
+      },
+      "PatientRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "primary_organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Primary Organisation Id"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PatientSource"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ref"
+          },
+          "external_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Version"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "identifiers": {
+            "items": {
+              "$ref": "#/components/schemas/PatientIdentifierRead"
+            },
+            "type": "array",
+            "title": "Identifiers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "primary_organisation_id",
+          "given_name",
+          "family_name",
+          "gender",
+          "source"
+        ],
+        "title": "PatientRead"
+      },
+      "PatientSource": {
+        "type": "string",
+        "enum": [
+          "local",
+          "hix",
+          "luscii"
+        ],
+        "title": "PatientSource"
+      },
+      "PatientUpdate": {
+        "properties": {
+          "given_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Name"
+          },
+          "family_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gender"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "primary_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Organisation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PatientUpdate",
+        "description": "`PATCH /patients/{id}` payload \u2014 demographics only.\n\n`model_config = ConfigDict(extra=\"forbid\")` is what produces the 422\nwhen a client sends `identifiers` here: FastAPI translates Pydantic's\n`extra_forbidden` error into a 422 response automatically."
       },
       "ReadinessResponse": {
         "properties": {
