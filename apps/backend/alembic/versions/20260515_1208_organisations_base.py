@@ -1,7 +1,7 @@
 """organisations base
 
 Revision ID: 340430029268
-Revises: f2e49e3d3c14
+Revises: a7c1d9e4b210
 Create Date: 2026-05-15 12:08:16.820206
 
 Creates the FHIR-aligned `organisations` table (self-referencing parent FK,
@@ -21,7 +21,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "340430029268"
-down_revision: str | None = "f2e49e3d3c14"
+down_revision: str | None = "a7c1d9e4b210"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
