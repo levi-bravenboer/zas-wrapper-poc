@@ -129,68 +129,68 @@
 
 ## 13. Orchestrator — `DataTable<T>` core
 
-- [ ] 13.1 Create `apps/orchestrator/src/components/data-table/DataTable.tsx` (uncontrolled default, controlled via `state` + `onStateChange`)
-- [ ] 13.2 Create `apps/orchestrator/src/components/data-table/columns.ts` exporting `ColumnDef<T>` brand + helpers (sortKey, filterKey, optional `sticky`, optional `priority`)
-- [ ] 13.3 Wire TanStack Table internally (manual pagination + sorting + filtering)
-- [ ] 13.4 Render sortable `<th>` as nested `<button>` with `aria-sort`, `Enter`/`Space` activation
-- [ ] 13.5 Single-column sort cycle: `asc` → `desc` → unset
-- [ ] 13.6 First column auto-sticky (`position: sticky; left: 0`) + scroll-hint shadow
-- [ ] 13.7 Empty / loading / refetch / error composition (`EmptyState`, `Skeleton`, `RefetchOverlay`, `ErrorState`)
-- [ ] 13.8 Accessible name via `aria-labelledby` or `<caption>` slot
+- [x] 13.1 Create `apps/orchestrator/src/components/data-table/DataTable.tsx` (uncontrolled default, controlled via `state` + `onStateChange`)
+- [x] 13.2 Create `apps/orchestrator/src/components/data-table/columns.ts` exporting `ColumnDef<T>` brand + helpers (sortKey, filterKey, optional `sticky`, optional `priority`)
+- [x] 13.3 Wire TanStack Table internally (manual pagination + sorting + filtering)
+- [x] 13.4 Render sortable `<th>` as nested `<button>` with `aria-sort`, `Enter`/`Space` activation
+- [x] 13.5 Single-column sort cycle: `asc` → `desc` → unset
+- [x] 13.6 First column auto-sticky (`position: sticky; left: 0`) + scroll-hint shadow
+- [x] 13.7 Empty / loading / refetch / error composition (`EmptyState`, `Skeleton`, `RefetchOverlay`, `ErrorState`)
+- [x] 13.8 Accessible name via `aria-labelledby` or `<caption>` slot
 
 ## 14. Orchestrator — Toolbar compound
 
-- [ ] 14.1 `apps/orchestrator/src/components/data-table/DataTableToolbar.tsx` with `Toolbar`, `Toolbar.Search`, `Toolbar.Filters`, `Toolbar.Actions` (compound exports via attached statics)
-- [ ] 14.2 Fixed visual order regardless of JSX child order (Search left, Filters middle, Actions right)
-- [ ] 14.3 Search: debounced 300ms → emits `q`
-- [ ] 14.4 Filters: `select`, `multi`, `date-range`, `text` filter types backed by `DataTableFilter<T>` prop; renders chips; clear-all button
-- [ ] 14.5 `date-range` emits `{gte, lte}`; `text` emits `{contains}`; `multi` emits `{in}`; `select` emits `{eq}`
+- [x] 14.1 `apps/orchestrator/src/components/data-table/DataTableToolbar.tsx` with `Toolbar`, `Toolbar.Search`, `Toolbar.Filters`, `Toolbar.Actions` (compound exports via attached statics)
+- [x] 14.2 Fixed visual order regardless of JSX child order (Search left, Filters middle, Actions right)
+- [x] 14.3 Search: debounced 300ms → emits `q`
+- [x] 14.4 Filters: `select`, `multi`, `date-range`, `text` filter types backed by `DataTableFilter<T>` prop; renders chips; clear-all button
+- [x] 14.5 `date-range` emits `{gte, lte}`; `text` emits `{contains}`; `multi` emits `{in}`; `select` emits `{eq}`
 
 ## 15. Orchestrator — Pagination
 
-- [ ] 15.1 `apps/orchestrator/src/components/data-table/DataTablePagination.tsx`
-- [ ] 15.2 Previous / next buttons with `aria-disabled` at bounds
-- [ ] 15.3 Page indicator using i18n key `pagination.indicator`
-- [ ] 15.4 Page-size selector with `pageSizeOptions` prop (default `[10, 25, 50]`)
-- [ ] 15.5 Page-size change resets `page` to 1
+- [x] 15.1 `apps/orchestrator/src/components/data-table/DataTablePagination.tsx`
+- [x] 15.2 Previous / next buttons with `aria-disabled` at bounds
+- [x] 15.3 Page indicator using i18n key `pagination.indicator`
+- [x] 15.4 Page-size selector with `pageSizeOptions` prop (default `[10, 25, 50]`)
+- [x] 15.5 Page-size change resets `page` to 1
 
 ## 16. Orchestrator — Multi-select + BulkBar
 
-- [ ] 16.1 `selectable?: boolean` prop on `DataTable`
-- [ ] 16.2 Leading checkbox column + header checkbox (selects/deselects current page)
-- [ ] 16.3 Selection set as `Set<string>`; internal default; `selectedIds` + `onSelectionChange` for controlled mode
-- [ ] 16.4 Selection persists across page changes
-- [ ] 16.5 Selection auto-clears when `data` identity changes due to filter/search/sort change
-- [ ] 16.6 Selection reconciles after realtime refetch (drop ids no longer in result set)
-- [ ] 16.7 `<DataTable.BulkBar>` compound slot — sticky bottom, slide-up transition, count label, cancel button, consumer children slot
-- [ ] 16.8 Bar `role="region"` + `aria-live="polite"`
-- [ ] 16.9 Parent scroll container gets `padding-bottom` while bar visible
-- [ ] 16.10 Checkbox click stops propagation (no row navigation)
+- [x] 16.1 `selectable?: boolean` prop on `DataTable`
+- [x] 16.2 Leading checkbox column + header checkbox (selects/deselects current page)
+- [x] 16.3 Selection set as `Set<string>`; internal default; `selectedIds` + `onSelectionChange` for controlled mode
+- [x] 16.4 Selection persists across page changes
+- [x] 16.5 Selection auto-clears when `data` identity changes due to filter/search/sort change
+- [x] 16.6 Selection reconciles after realtime refetch (drop ids no longer in result set)
+- [x] 16.7 `<DataTable.BulkBar>` compound slot — sticky bottom, slide-up transition, count label, cancel button, consumer children slot
+- [x] 16.8 Bar `role="region"` + `aria-live="polite"`
+- [x] 16.9 Parent scroll container gets `padding-bottom` while bar visible
+- [x] 16.10 Checkbox click stops propagation (no row navigation)
 
 ## 17. Orchestrator — Row actions menu
 
-- [ ] 17.1 `rowActions?: (row: T) => DataTableRowAction[]` prop
-- [ ] 17.2 Trailing actions column when prop set; per-row `<DropdownMenu>` from `ui/dropdown-menu`
-- [ ] 17.3 `DataTableRowAction` shape: `{ label, icon?, onClick, destructive?, disabled? }`
-- [ ] 17.4 Destructive styling reuses existing variant
-- [ ] 17.5 Trigger + menu item clicks stop propagation (no row navigation)
-- [ ] 17.6 Menu item `aria-disabled` when `disabled: true`
+- [x] 17.1 `rowActions?: (row: T) => DataTableRowAction[]` prop
+- [x] 17.2 Trailing actions column when prop set; per-row `<DropdownMenu>` from `ui/dropdown-menu`
+- [x] 17.3 `DataTableRowAction` shape: `{ label, icon?, onClick, destructive?, disabled? }`
+- [x] 17.4 Destructive styling reuses existing variant
+- [x] 17.5 Trigger + menu item clicks stop propagation (no row navigation)
+- [x] 17.6 Menu item `aria-disabled` when `disabled: true`
 
 ## 18. Orchestrator — Row-click navigation
 
-- [ ] 18.1 `onRowClick?: (row: T) => void` prop
-- [ ] 18.2 When set: `role="button"`, `tabIndex={0}`, pointer cursor on `<tr>`
-- [ ] 18.3 Click + `Enter` + `Space` invoke handler
-- [ ] 18.4 Propagation stop on nested interactive children (checkbox, actions menu, expand chevron)
+- [x] 18.1 `onRowClick?: (row: T) => void` prop
+- [x] 18.2 When set: `role="button"`, `tabIndex={0}`, pointer cursor on `<tr>`
+- [x] 18.3 Click + `Enter` + `Space` invoke handler
+- [x] 18.4 Propagation stop on nested interactive children (checkbox, actions menu, expand chevron)
 
 ## 19. Orchestrator — Expandable rows
 
-- [ ] 19.1 `renderExpandedRow?: (row: T) => ReactNode` prop
-- [ ] 19.2 Leading chevron column with `<button aria-expanded>` per row
-- [ ] 19.3 Single-row expand state (expanding B collapses A)
-- [ ] 19.4 Expanded panel rendered as a sibling `<tr><td colspan>` directly below
-- [ ] 19.5 Keyboard toggle (`Enter`/`Space`)
-- [ ] 19.6 Chevron click stops propagation (no row navigation)
+- [x] 19.1 `renderExpandedRow?: (row: T) => ReactNode` prop
+- [x] 19.2 Leading chevron column with `<button aria-expanded>` per row
+- [x] 19.3 Single-row expand state (expanding B collapses A)
+- [x] 19.4 Expanded panel rendered as a sibling `<tr><td colspan>` directly below
+- [x] 19.5 Keyboard toggle (`Enter`/`Space`)
+- [x] 19.6 Chevron click stops propagation (no row navigation)
 
 ## 20. Orchestrator — State persistence helpers
 
@@ -202,8 +202,8 @@
 
 ## 21. Orchestrator — Realtime topic prop wiring
 
-- [ ] 21.1 `realtimeTopic?: string` prop on `DataTable` (documentation only — no subscription is opened by the table)
-- [ ] 21.2 Lint-time check (TypeScript template type) that `realtimeTopic` matches the query-key prefix used by the table's hook
+- [x] 21.1 `realtimeTopic?: string` prop on `DataTable` (documentation only — no subscription is opened by the table)
+- [x] 21.2 Lint-time check (TypeScript template type) that `realtimeTopic` matches the query-key prefix used by the table's hook
 - [ ] 21.3 Integration test: emit invalidation via mocked SSE, assert table refetches and overlay appears
 
 ## 22. Orchestrator — tests
@@ -245,8 +245,8 @@
 
 ## 25. Orchestrator AGENTS.md rules (codify table + state + realtime conventions)
 
-- [ ] 25.1 Update closed-set list in `apps/orchestrator/AGENTS.md` to include `Table` (also touched in 9.4 — keep consistent)
-- [ ] 25.2 Add "Lists & DataTable" subsection with all 7 rules:
+- [x] 25.1 Update closed-set list in `apps/orchestrator/AGENTS.md` to include `Table` (also touched in 9.4 — keep consistent)
+- [x] 25.2 Add "Lists & DataTable" subsection with all 7 rules:
   - All overviews MUST use `DataTable<T>`. No ad-hoc `<table>` outside `src/components/ui/table.tsx`. Enforced by ESLint.
   - All paginated lists MUST go through `usePaginatedQuery`. No hand-rolled TanStack Query wrappers around list endpoints.
   - Column definitions, filter definitions, and row-action definitions live at `src/modules/<name>/components/<Name>Columns.tsx`. Route file composes `<DataTable {...defs} />` only.
@@ -254,8 +254,8 @@
   - Bulk action UI MUST render inside `<DataTable.BulkBar>` slot. Bulk mutations live in `modules/<name>/api.ts`.
   - Lists wanting auto-refresh MUST declare `realtimeTopic` matching the backend `__realtime_resource__`. TypeScript type enforces match.
   - List user-visible strings MUST come from the `data-table` namespace or the module's own namespace. No inline literals.
-- [ ] 25.3 Add compliant-example code block showing: column defs file + route composition + bulk mutation
-- [ ] 25.4 Document `useRealtimeInvalidation` provider mount and the `realtimeTopic` opt-in pattern
+- [x] 25.3 Add compliant-example code block showing: column defs file + route composition + bulk mutation
+- [x] 25.4 Document `useRealtimeInvalidation` provider mount and the `realtimeTopic` opt-in pattern
 
 ## 26. ESLint custom rules
 
