@@ -293,7 +293,7 @@
 
 - [x] 29.0 Remove demo scratch route + its MSW handlers before validating + committing: delete `apps/orchestrator/src/routes/demo/data-table.tsx` (and any sibling `demo/` files added for the smoke), drop any demo-only MSW handlers added under `src/test/msw/`, regenerate `routeTree.gen.ts`, re-run `moon run orchestrator:typecheck` + `moon run orchestrator:lint` + `moon run orchestrator:test`
 - [x] 29.1 `openspec validate --changes add-datatable-base`
-- [ ] 29.2 Commit per logical unit (semantic, one-liner, ≤72 chars):
+- [x] 29.2 Commit per logical unit (semantic, one-liner, ≤72 chars):
   - `feat(backend): add list-query schemas + page envelope`
   - `feat(backend): add list-query params dep`
   - `feat(backend): add base list repository`
