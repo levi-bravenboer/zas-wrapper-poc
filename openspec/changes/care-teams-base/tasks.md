@@ -32,16 +32,16 @@
 
 ## 5. Service layer
 
-- [ ] 5.1 Create `app/services/care_team/__init__.py` and `care_team_service.py` (`CareTeamService`)
-- [ ] 5.2 Implement `list_for_patient(actor, patient_id)` — current + historical teams with participants
-- [ ] 5.3 Implement `create_for_patient(actor, patient_id, payload)` — tenant + patient + participant tenant checks
-- [ ] 5.4 Implement `update(actor, care_team_id, payload)`
-- [ ] 5.5 Implement `add_participant(actor, care_team_id, payload)` — enforces partial unique by checking open row
-- [ ] 5.6 Implement `change_participant_role(actor, care_team_id, user_id, new_role)` — close current open row + open new row in one transaction
-- [ ] 5.7 Implement `unassign_participant(actor, care_team_id, user_id)` — sets `period_end`, `unassigned_by`
-- [ ] 5.8 Implement `visible_patient_ids_for(user)` — returns set of patient ids the user can see via open participant rows (used by `patients-base` filter)
-- [ ] 5.9 Implement `has_open_membership(user_id, patient_id)` predicate — used by `require_patient_access`
-- [ ] 5.10 Create `app/services/care_team/deps.py` with `CareTeamServiceDep`
+- [x] 5.1 Create `app/services/care_team/__init__.py` and `care_team_service.py` (`CareTeamService`)
+- [x] 5.2 Implement `list_for_patient(actor, patient_id)` — current + historical teams with participants
+- [x] 5.3 Implement `create_for_patient(actor, patient_id, payload)` — tenant + patient + participant tenant checks
+- [x] 5.4 Implement `update(actor, care_team_id, payload)`
+- [x] 5.5 Implement `add_participant(actor, care_team_id, payload)` — enforces partial unique by checking open row
+- [x] 5.6 Implement `change_participant_role(actor, care_team_id, user_id, new_role)` — close current open row + open new row in one transaction
+- [x] 5.7 Implement `unassign_participant(actor, care_team_id, user_id)` — sets `period_end`, `unassigned_by`
+- [x] 5.8 Implement `visible_patient_ids_for(user)` — returns set of patient ids the user can see via open participant rows (used by `patients-base` filter)
+- [x] 5.9 Implement `has_open_membership(user_id, patient_id)` predicate — used by `require_patient_access`
+- [x] 5.10 Create `app/services/care_team/deps.py` with `CareTeamServiceDep`
 
 ## 6. Patients-base visibility rewrite (MODIFIES patients-base)
 
