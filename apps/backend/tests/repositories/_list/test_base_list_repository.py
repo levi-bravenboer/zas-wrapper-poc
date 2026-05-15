@@ -4,6 +4,7 @@ import uuid
 
 import pytest
 import sqlalchemy as sa
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.audit import SESSION_ACTOR_KEY
@@ -51,9 +52,7 @@ async def alpha_session(
     two_tenants: tuple[Tenant, Tenant, User, User],
 ) -> AsyncSession:
     alpha, _, alpha_admin, _ = two_tenants
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha.id)
     return db_session
 
 
@@ -101,15 +100,11 @@ async def test_tenant_isolation(
 ) -> None:
     alpha, beta, alpha_admin, beta_admin = two_tenants
 
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha.id)
     await _seed(db_session, tenant=alpha, name="a-row")
     await db_session.commit()
 
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=beta_admin.id, tenant_id=beta.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=beta_admin.id, tenant_id=beta.id)
     await _seed(db_session, tenant=beta, name="b-row")
     await db_session.commit()
 
@@ -192,7 +187,7 @@ async def test_list_page_runs_single_query(
     engine = alpha_session.bind
     statements: list[str] = []
 
-    @sa.event.listens_for(engine.sync_engine, "before_cursor_execute")
+    @event.listens_for(engine.sync_engine, "before_cursor_execute")
     def _capture(conn, cursor, statement, parameters, context, executemany):  # noqa: ANN001
         if "_demo_list_rows" in statement:
             statements.append(statement)
@@ -200,7 +195,7 @@ async def test_list_page_runs_single_query(
     try:
         await DemoRepository(alpha_session).list_page(ListQuery())
     finally:
-        sa.event.remove(engine.sync_engine, "before_cursor_execute", _capture)
+        event.remove(engine.sync_engine, "before_cursor_execute", _capture)
 
     assert len(statements) == 1
     assert "count" in statements[0].lower()

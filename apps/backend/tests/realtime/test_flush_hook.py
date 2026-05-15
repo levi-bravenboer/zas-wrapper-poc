@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.tenant import Tenant
+from app.db.models.user import User
 from app.realtime.flush_hook import install_realtime_flush_hook
 from app.realtime.pubsub import RealtimePubSub, set_pubsub_for_tests
 
@@ -47,12 +48,10 @@ async def _collect(bus: RealtimePubSub, tenant_id: uuid.UUID, count: int, timeou
 async def test_commit_publishes_upsert_for_new_row(
     bus: RealtimePubSub,
     db_session: AsyncSession,
-    two_tenants: tuple[Tenant, Tenant, object, object],
+    two_tenants: tuple[Tenant, Tenant, User, User],
 ) -> None:
     alpha, _, alpha_admin, _ = two_tenants
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha.id)
     drain = asyncio.create_task(_collect(bus, alpha.id, count=1))
     await asyncio.sleep(0.05)
 
@@ -76,13 +75,11 @@ async def test_commit_publishes_upsert_for_new_row(
 async def test_rollback_discards_pending_events(
     bus: RealtimePubSub,
     db_session: AsyncSession,
-    two_tenants: tuple[Tenant, Tenant, object, object],
+    two_tenants: tuple[Tenant, Tenant, User, User],
 ) -> None:
     alpha, _, alpha_admin, _ = two_tenants
     alpha_id = alpha.id
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha_id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha_id)
 
     row = _DemoModel(
         tenant_id=alpha_id,
@@ -103,12 +100,10 @@ async def test_rollback_discards_pending_events(
 async def test_soft_delete_emits_upsert(
     bus: RealtimePubSub,
     db_session: AsyncSession,
-    two_tenants: tuple[Tenant, Tenant, object, object],
+    two_tenants: tuple[Tenant, Tenant, User, User],
 ) -> None:
     alpha, _, alpha_admin, _ = two_tenants
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha.id)
     row = _DemoModel(
         tenant_id=alpha.id,
         created_by=alpha_admin.id,
@@ -133,12 +128,10 @@ async def test_soft_delete_emits_upsert(
 async def test_multi_row_commit_publishes_per_row(
     bus: RealtimePubSub,
     db_session: AsyncSession,
-    two_tenants: tuple[Tenant, Tenant, object, object],
+    two_tenants: tuple[Tenant, Tenant, User, User],
 ) -> None:
     alpha, _, alpha_admin, _ = two_tenants
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha.id)
 
     drain = asyncio.create_task(_collect(bus, alpha.id, count=3))
     await asyncio.sleep(0.05)
@@ -163,13 +156,11 @@ async def test_multi_row_commit_publishes_per_row(
 async def test_tenant_id_drives_fan_out_not_actor_tenant(
     bus: RealtimePubSub,
     db_session: AsyncSession,
-    two_tenants: tuple[Tenant, Tenant, object, object],
+    two_tenants: tuple[Tenant, Tenant, User, User],
 ) -> None:
     """Cross-tenant admin write: event must reach the row's tenant, not the actor's."""
     alpha, beta, alpha_admin, _ = two_tenants
-    db_session.info[SESSION_ACTOR_KEY] = make_actor(
-        user_id=alpha_admin.id, tenant_id=alpha.id
-    )
+    db_session.info[SESSION_ACTOR_KEY] = make_actor(user_id=alpha_admin.id, tenant_id=alpha.id)
 
     drain_alpha = asyncio.create_task(_collect(bus, alpha.id, count=1, timeout=0.3))
     drain_beta = asyncio.create_task(_collect(bus, beta.id, count=1, timeout=0.3))
