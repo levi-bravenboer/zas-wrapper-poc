@@ -52,6 +52,6 @@ class PathwayEdge(TenantOwnedEntity):
     )
     delay_value_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("pathway_timing_value.id", ondelete="RESTRICT"),
+        sa.ForeignKey("pathway_timing_value.id", ondelete="CASCADE"),
         nullable=True,
     )

@@ -22,7 +22,7 @@ class PathwayTimeMarker(TenantOwnedEntity):
     )
     value_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("pathway_timing_value.id", ondelete="RESTRICT"),
+        sa.ForeignKey("pathway_timing_value.id", ondelete="CASCADE"),
         nullable=False,
     )
     label: Mapped[str] = mapped_column(sa.String(255), nullable=False)

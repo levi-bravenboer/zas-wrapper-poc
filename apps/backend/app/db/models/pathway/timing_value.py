@@ -5,7 +5,10 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import TenantOwnedEntity
@@ -38,6 +41,12 @@ class PathwayTimingValue(TenantOwnedEntity):
         ),
     )
 
+    pathway_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        sa.ForeignKey("pathway.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     kind: Mapped[str] = mapped_column(sa.String(32), nullable=False)
     fixed_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
     enrollment_default_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)

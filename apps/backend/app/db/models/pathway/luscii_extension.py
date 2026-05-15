@@ -15,11 +15,13 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayBlockLusciiExtension(TenantOwnedEntity):
     __tablename__ = "pathway_block_luscii_extension"
+    __table_args__ = (
+        sa.UniqueConstraint("block_id", name="uq_pathway_block_luscii_extension_block_id"),
+    )
 
     block_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         sa.ForeignKey("pathway_block.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
     )
     payload: Mapped[str] = mapped_column(sa.Text, nullable=False)

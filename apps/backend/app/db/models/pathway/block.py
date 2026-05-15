@@ -40,7 +40,7 @@ class PathwayBlock(TenantOwnedEntity):
     label: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     duration_value_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("pathway_timing_value.id", ondelete="RESTRICT"),
+        sa.ForeignKey("pathway_timing_value.id", ondelete="CASCADE"),
         nullable=True,
     )
     config: Mapped[dict[str, Any]] = mapped_column(
