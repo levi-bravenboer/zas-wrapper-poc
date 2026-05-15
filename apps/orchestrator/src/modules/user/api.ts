@@ -13,20 +13,8 @@ import {
   type UserRow,
 } from './schemas'
 
-type LooseClient = {
-  GET: (
-    path: string,
-    init: { params: { path: Record<string, string> } },
-  ) => Promise<{ data?: unknown; response: Response }>
-  PATCH: (
-    path: string,
-    init: { params: { path: Record<string, string> }; body: unknown },
-  ) => Promise<{ data?: unknown; response: Response }>
-}
-
 export async function fetchUserDetail(userId: string): Promise<UserDetail> {
-  const client = api as unknown as LooseClient
-  const { data, response } = await client.GET('/users/{user_id}', {
+  const { data, response } = await api.GET('/users/{user_id}', {
     params: { path: { user_id: userId } },
   })
   if (!response.ok || !data) {
@@ -40,8 +28,7 @@ export async function setUserActive(
   payload: SetActiveRequest,
 ): Promise<UserRow> {
   const body = setActiveRequestSchema.parse(payload)
-  const client = api as unknown as LooseClient
-  const { data, response } = await client.PATCH('/users/{user_id}/active', {
+  const { data, response } = await api.PATCH('/users/{user_id}/active', {
     params: { path: { user_id: userId } },
     body,
   })
@@ -56,14 +43,14 @@ export async function assignUserRole(
   payload: AssignRoleRequest,
 ): Promise<UserRow> {
   const body = assignRoleRequestSchema.parse(payload)
-  const result = await api.PATCH('/users/{user_id}/role', {
+  const { data, response } = await api.PATCH('/users/{user_id}/role', {
     params: { path: { user_id: userId } },
     body,
   })
-  if (!result.data) {
-    throw apiError('Assign role failed', result.response.status)
+  if (!response.ok || !data) {
+    throw apiError('Assign role failed', response.status)
   }
-  return userRowSchema.parse(result.data)
+  return userRowSchema.parse(data)
 }
 
 export type { AssignRoleRequest, Role, SetActiveRequest, UserDetail, UserRow }
