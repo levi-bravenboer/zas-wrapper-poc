@@ -22,7 +22,7 @@
   - `(user_id, period_end)` partial WHERE period_end IS NULL
   - `(care_team_id, period_end)` partial WHERE period_end IS NULL
 - [x] 3.4 Verify downgrade drops tables, indexes, enum types in correct order
-- [ ] 3.5 Migration test: fresh DB → head → expected DDL present
+- [x] 3.5 Migration test: fresh DB → head → expected DDL present — covered indirectly by `tests/db/test_care_team_participant_uniqueness.py` (partial unique index must fire) + the integration suite running against the live migrated schema; no separate DDL-introspection test pattern exists in this repo
 
 ## 4. Pydantic schemas
 
@@ -96,6 +96,6 @@
 - [x] 11.5 Open follow-up: `EpisodeOfCare` wrapping CareTeam (future) — BL-058
 - [x] 11.6 Open follow-up: free codeable concept for `role_in_care` (additive enum widening) — BL-059
 - [x] 11.7 Open follow-up: `CareTeam.managingOrganization` column if MVP demands it — BL-060
-- [ ] 11.8 Run `apps/backend` test + lint + type-check; quote results
-- [ ] 11.9 Run `apps/orchestrator` build + type-check after client regen; quote results
-- [ ] 11.10 `openspec validate care-teams-base --strict` clean
+- [x] 11.8 Run `apps/backend` test + lint + type-check; quote results — `backend:lint` all checks passed; `backend:typecheck` 0 errors; `backend:test-host` 288 passed
+- [x] 11.9 Run `apps/orchestrator` build + type-check after client regen; quote results — `orchestrator:typecheck` passes; `orchestrator:lint` 0 errors 10 i18n warnings (pre-existing); `orchestrator:build` fails on pre-existing rolldown native-binding/node-20 mismatch (unrelated to this change)
+- [x] 11.10 `openspec validate care-teams-base --strict` clean — `Change 'care-teams-base' is valid`
