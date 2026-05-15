@@ -116,14 +116,14 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 10. Spec deltas + scope ledger
 
-- [ ] 10.1 Spec deltas under `changes/orchestrator-shell-restart/specs/` for `app-shell`, `design-system`, `routing` (see this change's `specs/`).
-- [ ] 10.2 Update `openspec/scope.md` if the route narrowing changes any feature ID acceptance criterion.
+- [x] 10.1 Spec deltas under `changes/orchestrator-shell-restart/specs/` for `app-shell`, `design-system`, `routing` shipped. `openspec validate orchestrator-shell-restart --strict` → valid.
+- [x] 10.2 `openspec/scope.md` unchanged — F1–F8 acceptance criteria preserved. Route narrowing to dashboard-only is implementation-deferred via BL-035, not a scope mutation.
 - [x] 10.3 Update `apps/orchestrator/AGENTS.md` — added "Surfaces — ask before building a new page" section (three-surface registry table, route-shim recipe, mandatory question to ask, page composition contract).
 
 ## 11. Verification
 
-- [ ] 11.1 `moon run orchestrator:typecheck` — passes.
-- [ ] 11.2 `moon run orchestrator:lint` — passes (i18n + no-dark-utilities).
-- [ ] 11.3 `moon run orchestrator:test` — passes.
-- [ ] 11.4 `moon run orchestrator:build` — passes; bundle does not emit requests to `fonts.googleapis.com`.
-- [ ] 11.5 Visual smoke in browser: login → dashboard → toggle sidebar → ⌘K palette → trigger a fake error to see toast.
+- [x] 11.1 `moon run orchestrator:typecheck` — clean.
+- [x] 11.2 `moon run orchestrator:lint` — 0 errors. 1 pre-existing warning in `public/mockServiceWorker.js` unrelated to this change.
+- [x] 11.3 `moon run orchestrator:test` — 24 files / 88 tests passed.
+- [x] 11.4 `moon run orchestrator:build` — `✓ built in 299ms`; bundle emits no `fonts.googleapis.com` requests (Geist via `geist/font` only).
+- [ ] 11.5 Visual smoke in browser: login → dashboard → toggle sidebar → ⌘K palette → trigger a fake error to see toast. *(manual — left for user)*
