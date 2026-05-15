@@ -71,6 +71,24 @@ moon run backend:test -- -vv --lf
 
 The `test_runner` container rebuilds on every invocation; cold runs take longer than `pytest` on the host. That cost is intentional — agents MUST NOT bypass it by running `pytest` directly against the host or `backend:shell`.
 
+#### Picking the right scope (avoid 60s waste on a 1s change)
+
+Don't run the full suite for a localized change. Match the scope to what you touched:
+
+| You changed | Minimum test scope | Needs DB? |
+|---|---|---|
+| `app/schemas/<x>/**` only | `tests/schemas/<x>/` | no |
+| `app/core/**` (pure-Python, no SQLA) | `tests/core/` | no |
+| `app/repositories/<x>/**` | `tests/repositories/<x>/` | yes |
+| `app/api/routers/<x>/**` or `app/services/<x>/**` | `tests/api/routers/<x>/` + `tests/services/<x>/` | yes |
+| `app/db/models/<x>/**` | `tests/db/` + `tests/repositories/<x>/` + `tests/api/routers/<x>/` | yes |
+| `app/realtime/**` | `tests/realtime/` | yes |
+| `alembic/versions/**` | `tests/db/` + full `backend:test` (migrations run on container boot) | yes |
+| Anything in `app/adapters/<vendor>/**` | `tests/adapters/<vendor>/` | no (stubs) |
+| Cross-cutting refactor (DI, settings, middlewares) | full `moon run backend:test` | yes |
+
+**Rule of thumb:** if the diff stays in one domain folder, narrow the test run to that domain. Use `backend:test-host` (host pytest, fast iteration) while iterating; switch to `backend:test` (container) once for the final pass before commit, so the ephemeral DB confirms migrations + fresh-boot path.
+
 ## Layout
 
 Layer-by-type at the top, **domain split inside every layer**. Every feature owns a folder under each layer it touches; a domain MAY skip layers it does not need.
