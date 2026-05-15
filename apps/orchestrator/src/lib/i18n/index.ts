@@ -6,6 +6,7 @@ import common from './locales/nl/common.json'
 import nav from './locales/nl/nav.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
+import states from './locales/nl/states.json'
 
 export const SUPPORTED_LOCALES = ['nl', 'fr', 'en'] as const
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
@@ -20,9 +21,9 @@ void i18next.use(initReactI18next).init({
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: 'common',
-  ns: ['common', 'auth', 'nav', 'shell', 'smart'],
+  ns: ['common', 'auth', 'nav', 'shell', 'smart', 'states'],
   resources: {
-    nl: { common, auth, nav, shell, smart },
+    nl: { common, auth, nav, shell, smart, states },
   },
   interpolation: { escapeValue: false },
   returnNull: false,

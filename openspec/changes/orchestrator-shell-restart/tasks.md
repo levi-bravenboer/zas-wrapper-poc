@@ -84,12 +84,12 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 6. State surfaces (built on shadcn `Skeleton` + `Alert`, Sonner)
 
-- [ ] 6.1 `src/components/states/Skeleton.tsx` — compose shadcn `Skeleton` primitives into `<RowSkeleton>`, `<CardSkeleton>`, `<DetailSkeleton>`. No new shimmer impl — shadcn's `animate-pulse` is the baseline; if a shimmer effect is required, layer it via a Tailwind utility on top of `Skeleton`.
-- [ ] 6.2 `src/components/states/EmptyState.tsx` — props `{ icon, title, body, action? }`. Custom layout, no package fits.
-- [ ] 6.3 `src/components/states/InlineAlert.tsx` — wrap shadcn `Alert` with `variant="destructive"` + retry slot.
-- [ ] 6.4 `src/components/states/ErrorState.tsx` — full-page composition using shadcn `Alert` body + lucide icon + primary `Button`.
-- [ ] 6.5 `src/components/states/RefetchOverlay.tsx` — custom small wrapper (veil div + lucide `Loader2` spinner). No package needed.
-- [ ] 6.6 Sonner `toast.error()` helper in `src/lib/notifications/toast.ts` — wraps existing Sonner with retry-action shorthand. Connect to FHIR error-code → i18n pipeline.
+- [x] 6.1 Created `src/components/states/Skeleton.tsx` exporting `RowSkeleton`, `CardSkeleton`, `DetailSkeleton`. Each composes the shadcn `Skeleton` primitive directly via `animate-pulse` (no new shimmer impl).
+- [x] 6.2 Created `src/components/states/EmptyState.tsx` with `{ icon?, title, body?, action? }`. `role="status"` wrapper + `<h3>` title — dashed border, centered, muted body copy.
+- [x] 6.3 Created `src/components/states/InlineAlert.tsx` wrapping shadcn `Alert variant="destructive"` with optional `retry` slot rendered in the description column.
+- [x] 6.4 Created `src/components/states/ErrorState.tsx` full-page composition: lucide icon in destructive tint pill, title heading, body copy, optional `onRetry` primary button + arbitrary `action` slot.
+- [x] 6.5 Created `src/components/states/RefetchOverlay.tsx` — wraps children, overlays `Loader2` spinner + label when `active={true}`. Uses `role="status"` + `aria-live="polite"` + `aria-busy="true"`.
+- [x] 6.6 Created `src/lib/notifications/toast.ts` — `toastError(title, { description?, retryLabel?, onRetry? })` wraps Sonner with action shorthand. FHIR error-code → i18n mapping stays at the call site.
 
 ## 7. Login screen
 
@@ -101,16 +101,16 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 8. Localization
 
-- [ ] 8.1 Add `locales/nl/shell.json` with keys for: sidebar labels, brand subtitle, command palette placeholder, user menu actions, page header crumb fallback.
-- [ ] 8.2 Add `locales/nl/states.json` (or extend existing) with empty/error copy: `nog geen patiënten`, `kon dossier niet laden`, etc.
-- [ ] 8.3 Run i18n lint — no raw JSX strings in new components.
+- [x] 8.1 `locales/nl/shell.json` shipped with brand, user menu, palette, header crumb keys; registered in `src/lib/i18n/index.ts`.
+- [x] 8.2 `locales/nl/states.json` shipped with `empty.{patients,tasks}`, `error.{generic,fhir,retry}`, `refetch.label`; registered alongside other namespaces.
+- [x] 8.3 ESLint i18next `no-literal-string` rule clean on all shell/state components (only fixture strings disabled per line in test files).
 
 ## 9. Tests
 
 - [ ] 9.1 `Shell.test.tsx` — renders sidebar; toggle keyboard shortcut flips collapsed state; localStorage round-trip.
 - [ ] 9.2 `PageHeader.test.tsx` — required title; conditional rendering of each slot; auto-crumb renders from `useMatches`.
 - [x] 9.3 `CommandPalette.test.tsx` — ⌘K opens the palette and lists registered entries; clicking an item invokes its `perform` callback.
-- [ ] 9.4 `Skeleton.test.tsx`, `EmptyState.test.tsx` — render + a11y (role, name).
+- [x] 9.4 `Skeleton.test.tsx` (presentational slot checks) + `EmptyState.test.tsx` (role=status + heading lookup + body/action conditional) shipped.
 - [x] 9.5 `LoginForm.test.tsx` rewritten — mocks `useNavigate`, asserts empty submit calls `navigate({ to: '/dashboard' })` exactly once, no `role="alert"` rendered, no fetch path imported.
 - [ ] 9.6 `Shell.surface.test.tsx` — app/smart surfaces render sidebar tree; embed surface renders bare children-only tree (no sidebar, no PageHeader, no `role="navigation"` shell nav).
 
