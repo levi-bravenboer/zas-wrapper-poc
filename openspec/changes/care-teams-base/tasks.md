@@ -45,22 +45,22 @@
 
 ## 6. Patients-base visibility rewrite (MODIFIES patients-base)
 
-- [ ] 6.1 Edit `app/services/patient/patient_service.py` `list_in_tenant`: when actor is caregiver, restrict to `CareTeamService.visible_patient_ids_for(user)` only — no org-subtree fallback
-- [ ] 6.2 Edit `app/services/patient/deps.py` `require_patient_access`: same predicate; admin bypass kept
-- [ ] 6.3 Update existing patients-base tests for new caregiver visibility semantics (admin tests unchanged)
-- [ ] 6.4 Assert no `care_team_strict_visibility` setting and no org-subtree fallback branch in code (predicate is participant-row-only)
+- [x] 6.1 Edit `app/services/patient/patient_service.py` `list_in_tenant`: when actor is caregiver, restrict to `CareTeamService.visible_patient_ids_for(user)` only — no org-subtree fallback
+- [x] 6.2 Edit `app/services/patient/deps.py` `require_patient_access`: same predicate; admin bypass kept
+- [x] 6.3 Update existing patients-base tests for new caregiver visibility semantics (admin tests unchanged)
+- [x] 6.4 Assert no `care_team_strict_visibility` setting and no org-subtree fallback branch in code (predicate is participant-row-only)
 
 ## 7. Router
 
-- [ ] 7.1 Create `app/api/routers/care_team/__init__.py` and `care_team_router.py`
-- [ ] 7.2 Implement `GET /patients/{patient_id}/care-teams` (`operation_id="list_patient_care_teams"`) with `require_patient_access`
-- [ ] 7.3 Implement `POST /patients/{patient_id}/care-teams` (`operation_id="create_care_team"`) 201
-- [ ] 7.4 Implement `PATCH /care-teams/{id}` (`operation_id="update_care_team"`)
-- [ ] 7.5 Implement `POST /care-teams/{id}/participants` (`operation_id="add_care_team_participant"`) 201
-- [ ] 7.6 Implement `PATCH /care-teams/{id}/participants/{user_id}` (`operation_id="change_participant_role"`)
-- [ ] 7.7 Implement `DELETE /care-teams/{id}/participants/{user_id}` (`operation_id="unassign_care_team_participant"`) 204
-- [ ] 7.8 Apply `require_role(Role.ADMIN, Role.CAREGIVER)` guard with `# AUTH-HARDEN` comment on every handler
-- [ ] 7.9 Register in `app/api/__init__.py`
+- [x] 7.1 Create `app/api/routers/care_team/__init__.py` and `care_team_router.py`
+- [x] 7.2 Implement `GET /patients/{patient_id}/care-teams` (`operation_id="list_patient_care_teams"`) with `require_patient_access`
+- [x] 7.3 Implement `POST /patients/{patient_id}/care-teams` (`operation_id="create_care_team"`) 201
+- [x] 7.4 Implement `PATCH /care-teams/{id}` (`operation_id="update_care_team"`)
+- [x] 7.5 Implement `POST /care-teams/{id}/participants` (`operation_id="add_care_team_participant"`) 201
+- [x] 7.6 Implement `PATCH /care-teams/{id}/participants/{user_id}` (`operation_id="change_participant_role"`)
+- [x] 7.7 Implement `DELETE /care-teams/{id}/participants/{user_id}` (`operation_id="unassign_care_team_participant"`) 204
+- [x] 7.8 Apply `require_role(Role.ADMIN, Role.CAREGIVER)` guard with `# AUTH-HARDEN` comment on every handler
+- [x] 7.9 Register in `app/api/__init__.py`
 
 ## 8. Seed
 
