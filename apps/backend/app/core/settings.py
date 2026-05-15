@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     hix_mode: AdapterMode = "stub"
     luscii_mode: AdapterMode = "stub"
     database_url: str = DEFAULT_DATABASE_URL
+    realtime_keepalive_seconds: int = 15
+    realtime_idle_timeout_seconds: int = 30 * 60
 
 
 @lru_cache
