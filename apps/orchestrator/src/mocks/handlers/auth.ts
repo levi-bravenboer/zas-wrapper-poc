@@ -17,10 +17,10 @@ const STUB_USER = {
   roles: ['clinician'],
 }
 
-const SESSION_COOKIE = 'orchestrator-session=demo; Path=/; SameSite=Strict'
-
-let signedIn = false
-
+// PoC mock mode: LoginForm seeds the session cache client-side and bypasses
+// `/auth/login` entirely (see modules/auth/components/LoginForm.tsx). To keep
+// `_auth/*` routes reachable across hard refreshes, `/auth/me` unconditionally
+// returns the stub user. Real round-trip auth lands under BL-035.
 export const authHandlers = [
   http.post(`${baseUrl}/auth/login`, async ({ request }) => {
     const body = loginBodySchema.parse(await request.json())
@@ -30,22 +30,10 @@ export const authHandlers = [
     if (body.password === 'wrong') {
       return HttpResponse.json({ detail: 'Invalid credentials' }, { status: 401 })
     }
-    signedIn = true
-    return HttpResponse.json(STUB_USER, {
-      status: 200,
-      headers: { 'Set-Cookie': SESSION_COOKIE },
-    })
-  }),
-
-  http.post(`${baseUrl}/auth/logout`, () => {
-    signedIn = false
-    return new HttpResponse(null, { status: 204 })
-  }),
-
-  http.get(`${baseUrl}/auth/me`, () => {
-    if (!signedIn) {
-      return HttpResponse.json({ detail: 'Not authenticated' }, { status: 401 })
-    }
     return HttpResponse.json(STUB_USER, { status: 200 })
   }),
+
+  http.post(`${baseUrl}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
+
+  http.get(`${baseUrl}/auth/me`, () => HttpResponse.json(STUB_USER, { status: 200 })),
 ]
