@@ -368,3 +368,9 @@ Note: `app/services/patient/deps.py::require_patient_access` is tenant-scope-onl
 - Source: patients-base change
 
 Note: `patients-base` keeps a single `given_name` / `family_name` pair on the row. FHIR R4 `Patient.name`, `Patient.address`, `Patient.telecom` are all `0..*`. The HiX adapter (BL-001) will surface alternate names + contact rows on day one; land `patient_names` / `patient_addresses` / `patient_telecoms` child tables alongside the adapter so the projection stays lossless.
+
+### BL-055 — Create-patient dialog (POST /patients) for the overview
+- Tier: [poc]
+- Source: patients-base change
+
+Note: `patients-base` ships the `/_auth/patients` overview without a create-patient action to keep the PR scope tight. Backend `POST /patients` is live and tenant-scoped; the dialog needs a controlled form (demographics + at least one identifier, with INSZ Mod-97 validation surfaced inline), tied into the page header's actions slot, and invalidating the `patientsListKeyPrefix` query key on success. Should reuse shadcn Dialog + Form primitives. Pre-requisite for the Rugrevalidatie demo flow that wants ad-hoc patient creation outside the seed cohort.
