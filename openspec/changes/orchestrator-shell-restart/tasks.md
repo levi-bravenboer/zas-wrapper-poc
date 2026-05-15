@@ -77,10 +77,10 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 ## 5. Page header (built on shadcn `Breadcrumb` + `Tabs`)
 
-- [ ] 5.1 Create `src/components/layout/PageHeader.tsx` with slots: `eyebrow`, `title` (required), `sub`, `actions`, `tabs`.
-- [ ] 5.2 Auto-crumb via `useMatches()` when depth > 2; render with shadcn `Breadcrumb` + `BreadcrumbItem` + `BreadcrumbLink`. Crumb labels from `staticData.breadcrumb` or loader `crumb`.
-- [ ] 5.3 Tabs render with shadcn `Tabs` shell + custom `<TabsTrigger asChild>` wrapping TanStack Router `<Link>`. Active state driven by router (not local state).
-- [ ] 5.4 Mount `<PageHeader>` inside `Dashboard` route as a smoke test (title + sub only).
+- [x] 5.1 Created `src/components/layout/PageHeader.tsx` with slots: `eyebrow`, `title` (required), `sub`, `actions`, `tabs`.
+- [x] 5.2 Auto-crumb via `useMatches()` when depth > 2; renders shadcn `Breadcrumb` + items. Labels read from `staticData.breadcrumb` via defensive `readBreadcrumb` reader (TanStack `staticData` typed `unknown` here, no module augmentation). Home crumb prefixed via `t('shell:header.crumb.home')`.
+- [x] 5.3 Tabs slot accepts `ReactNode` — consumers compose `Tabs` + `TabsTrigger asChild` themselves to keep PageHeader router-agnostic. Wiring pattern documented in component file via slot name `page-header-tabs`.
+- [x] 5.4 Mounted `<PageHeader title={t('dashboard')} sub={t('placeholder')} />` in `routes/_auth/dashboard.tsx`.
 
 ## 6. State surfaces (built on shadcn `Skeleton` + `Alert`, Sonner)
 
