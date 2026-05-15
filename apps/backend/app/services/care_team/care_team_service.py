@@ -77,7 +77,11 @@ class CareTeamService:
             team.participants.append(await self._build_participant(actor, p))
         self._session.add(team)
         await self._session.flush()
-        return team
+        # Re-fetch with `selectinload(participants)` so the response
+        # serialiser does not trigger a lazy load outside the async context.
+        refreshed = await self.get_by_id(actor.tenant_id, team.id)
+        assert refreshed is not None  # just flushed in this transaction
+        return refreshed
 
     async def update(
         self, actor: SessionUser, care_team_id: UUID, payload: CareTeamUpdate
