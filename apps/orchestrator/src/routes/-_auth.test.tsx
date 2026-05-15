@@ -39,8 +39,9 @@ describe('_auth beforeLoad', () => {
         HttpResponse.json({
           id: 'u1',
           email: 'a@b.co',
-          displayName: 'A',
-          roles: ['clinician'],
+          display_name: 'A',
+          tenant_id: '00000000-0000-0000-0000-000000000001',
+          role: 'caregiver',
         }),
       ),
     )

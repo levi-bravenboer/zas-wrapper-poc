@@ -1,15 +1,29 @@
 import { z } from 'zod'
 
 export const loginSchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
+  email: z.string().email().min(1).max(256),
+  password: z.string().min(1).max(256),
 })
 export type LoginRequest = z.infer<typeof loginSchema>
+
+export const roleSchema = z.enum(['admin', 'caregiver', 'external'])
+export type Role = z.infer<typeof roleSchema>
 
 export const sessionUserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
-  displayName: z.string(),
-  roles: z.array(z.string()).default([]),
+  display_name: z.string(),
+  tenant_id: z.string(),
+  role: roleSchema,
 })
 export type SessionUser = z.infer<typeof sessionUserSchema>
+
+export const providerKindSchema = z.enum(['password', 'oidc'])
+export type ProviderKind = z.infer<typeof providerKindSchema>
+
+export const providerDescriptorSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  kind: providerKindSchema,
+})
+export type ProviderDescriptor = z.infer<typeof providerDescriptorSchema>

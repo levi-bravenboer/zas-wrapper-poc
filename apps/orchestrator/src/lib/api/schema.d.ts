@@ -55,7 +55,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/login": {
+    "/auth/login/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -64,8 +64,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Login User */
-        post: operations["login_user"];
+        /** Login Password */
+        post: operations["login_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Login Providers */
+        get: operations["list_login_providers"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -178,6 +195,18 @@ export interface components {
              * Format: password
              */
             password: string;
+        };
+        /** ProviderDescriptor */
+        ProviderDescriptor: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "password" | "oidc";
         };
         /** ReadinessResponse */
         ReadinessResponse: {
@@ -332,7 +361,7 @@ export interface operations {
             };
         };
     };
-    login_user: {
+    login_password: {
         parameters: {
             query?: never;
             header?: never;
@@ -361,6 +390,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_login_providers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderDescriptor"][];
                 };
             };
         };

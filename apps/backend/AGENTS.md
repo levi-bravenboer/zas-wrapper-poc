@@ -200,6 +200,20 @@ Before claiming a task complete:
 3. `uv run pytest -q` — green.
 4. For new routes: hit them via `curl` or the FastAPI `/docs` Swagger UI and verify the response shape.
 
+## Adding a login provider (MVP path)
+
+The auth seam is built around two Protocols. `Authenticator` (`app/services/auth/authenticator.py`) returns `AuthenticationResult` for a credential check; `LoginProvider` (`app/services/auth/providers/base.py`) owns route-shape concerns — `key`, `label`, `kind` class attributes plus an `async authenticate(*, email, password) -> SessionUser` method. `LoginProviderRegistry` returns the list of providers `GET /auth/providers` exposes to the frontend.
+
+To add a new provider (e.g. itsme® OIDC):
+
+1. Implement `LoginProvider` (e.g. `OidcLoginProvider`) with `kind = "oidc"` and the routes it needs.
+2. Register it in `LoginProviderRegistry` next to `PasswordLoginProvider`.
+3. Add the corresponding `apps/backend/app/api/routers/auth/` route(s).
+4. On the frontend, add a strategy under `apps/orchestrator/src/modules/auth/providers.ts` that maps the `kind` to a component.
+5. Emit `auth.login.success` / `auth.login.failure` via `app/services/auth/audit.py` so the new provider participates in the audit log.
+
+The `external_idp` + `external_subject` columns on `users` carry IdP identifiers. Validate inbound subjects with `validate_external_subject()` before lookup — Belgian RRN values must be rejected to avoid storing identifiers covered by Wet 8 augustus 1983.
+
 ## External Integrations
 
 - **HiX**: stub behind an adapter from day one. PoC Protocol exposes `ping()` only; FHIR verbs return at `[mvp]` via the future `hix-fhir-proxy` change.

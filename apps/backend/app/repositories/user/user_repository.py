@@ -27,6 +27,22 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
+    async def get_by_external_identity(
+        self,
+        tenant_id: UUID,
+        external_idp: str,
+        external_subject: str,
+    ) -> User | None:
+        result = await self._session.execute(
+            select(User).where(
+                User.tenant_id == tenant_id,
+                User.external_idp == external_idp,
+                User.external_subject == external_subject,
+                User.deleted_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def list_in_tenant(self, tenant_id: UUID, *, active: bool | None = None) -> list[User]:
         stmt = select(User).where(
             User.tenant_id == tenant_id,

@@ -170,8 +170,8 @@ function UserBlock(): ReactElement {
   const { t } = useTranslation(['shell', 'auth'])
   const { data: session } = useSession()
   const logout = useLogout()
-  const displayName = session?.displayName ?? session?.email ?? '—'
-  const role = session?.roles[0] ?? t('shell:user.roleFallback')
+  const displayName = session?.display_name ?? session?.email ?? '—'
+  const role = session?.role ?? t('shell:user.roleFallback')
 
   return (
     <SidebarMenu>
@@ -185,7 +185,7 @@ function UserBlock(): ReactElement {
             >
               <Avatar size="sm">
                 <AvatarFallback className="[background-image:var(--gradient-active)] text-xs font-medium text-white">
-                  {initialsFromName(session?.displayName)}
+                  {initialsFromName(session?.display_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-1 flex-col text-left leading-tight">
