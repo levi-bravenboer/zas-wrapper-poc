@@ -93,4 +93,4 @@
 - [x] 10.3 `moon run backend:typecheck` clean
 - [x] 10.4 `moon run backend:test -- tests/repositories/tenant tests/scripts` green
 - [x] 10.5 `moon run backend:test` full suite green
-- [ ] 10.6 Bring up the stack: `moon run backend:dev`. Confirm entrypoint logs show `alembic upgrade head` then `seeded tenant slug=zas`. Run `moon run backend:psql -c 'select id, slug, name from tenants'` — returns one row with `id = ZAS_TENANT_ID`. Re-run `moon run backend:seed-tenant`, confirm no-op log
+- [x] 10.6 Bring up the stack: `moon run backend:dev`. Confirm entrypoint logs show `alembic upgrade head` then `seeded tenant slug=zas`. Run `moon run backend:psql -c 'select id, slug, name from tenants'` — returns one row with `id = ZAS_TENANT_ID`. Re-run `moon run backend:seed-tenant`, confirm no-op log
