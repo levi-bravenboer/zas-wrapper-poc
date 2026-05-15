@@ -43,6 +43,18 @@ moon run orchestrator:preview
 
 Direct npm scripts mirror the moon tasks (`npm run dev`, `npm run test`, …) but bypass the cache — only use them ad-hoc.
 
+## Demo login
+
+The PoC seeds two users in the `zas` tenant. Use them against a running backend:
+
+| Email                 | Password env var                       | Fallback (non-prod) |
+| --------------------- | -------------------------------------- | ------------------- |
+| `admin@zas.local`     | `BACKEND_BOOTSTRAP_ADMIN_PASSWORD`     | `changeme`          |
+| `caregiver@zas.local` | `BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD` | `changeme`          |
+
+In `production`, the seed script refuses to run unless both env vars are set.
+See `scripts/seed_users.py` in `apps/backend/`.
+
 ## Structure
 
 ```

@@ -30,6 +30,8 @@ Through moon (preferred):
 moon run backend:dev                        # docker compose up backend
 moon run backend:test                       # pytest in ephemeral zas_backend_test
 moon run backend:test -- -k <pattern>       # passthrough args
+moon run backend:test-host                  # host pytest → localhost:5433 (fast, agent-safe)
+moon run backend:test-host -- <args>        # passthrough args
 moon run backend:shell                      # bash inside zas_backend
 moon run backend:psql                       # psql -U zas -d zas
 moon run backend:migrate                    # alembic upgrade head
@@ -147,6 +149,25 @@ The seam is one-directional: `router → service → repository → db.models`. 
 - Services and repositories MUST NOT call `session.commit()` themselves. Use `await session.flush()` if an INSERT-generated id is needed mid-request.
 - `async with session.begin_nested()` is the escape hatch for partial-atomicity savepoints inside a service method.
 
+### List endpoints
+
+Paged list endpoints share one query envelope (`ListQuery` in `app/schemas/_list/list_query.py`) and one response envelope (`Page[T]` in `app/schemas/_list/page.py`). Concrete repositories subclass `BaseListRepository[T]` from `app/repositories/base.py` and declare `orderable_fields`, `filterable_fields`, and `searchable_fields` as class attributes; `await repo.list_page(query)` returns a fully-shaped `Page[T]` without hand-rolled SQL. Centralising pagination, search, ordering, and filtering here keeps every domain consistent and lets the orchestrator's typed client treat lists as one shape.
+
+Route handlers stay thin:
+
+```python
+async def list_x(query: ListQueryParamsDep, repo: XRepoDep) -> Page[XRead]:
+    return await repo.list_page(query)
+```
+
+Filters use bracket-key query strings so a single param namespace covers equality and operator forms: `filter[name]=alice`, `filter[name][contains]=al`, `filter[id][in]=...&filter[id][in]=...`. The `ListQueryParamsDep` parser maps these onto the repository's declared `filterable_fields`; unknown fields or operators raise a 422 before hitting the repo.
+
+### Realtime
+
+Realtime fan-out is single-pod only. `app/realtime/pubsub.py` is an in-memory async pub/sub; SSE subscribers connect to `GET /events` (cookie-auth, tenant-scoped, `include_in_schema=False` so it does not leak into the typed client). Events publish on `after_commit` — never on rollback — so subscribers see only durable state. Soft-delete emits `action="upsert"` (the row still exists with `deleted_at` set); hard delete emits `action="delete"`.
+
+A model opts in by declaring `__realtime_resource__: ClassVar[str | None]` on the `Entity` subclass; setting it to `None` skips emission entirely (sensitive rows, audit-only tables). Multi-pod productisation is tracked as `BL-050 — Multi-pod realtime broadcaster` (tier `[mvp]`) — the in-memory bus must be replaced with a shared broker before more than one backend pod can run.
+
 ## Naming Conventions
 
 - **Files**: snake_case. Pattern inside a domain folder is `<domain>_<layer>.py` (`pathway_router.py`, `pathway_service.py`, `pathway_repository.py`). When a single domain outgrows one file per layer, add concern-named siblings (`pathway/blocks.py`, `pathway/runtime.py`) and keep them inside the same domain folder.
@@ -199,6 +220,20 @@ Before claiming a task complete:
 2. `uv run ruff check` — clean.
 3. `uv run pytest -q` — green.
 4. For new routes: hit them via `curl` or the FastAPI `/docs` Swagger UI and verify the response shape.
+
+## Adding a login provider (MVP path)
+
+The auth seam is built around two Protocols. `Authenticator` (`app/services/auth/authenticator.py`) returns `AuthenticationResult` for a credential check; `LoginProvider` (`app/services/auth/providers/base.py`) owns route-shape concerns — `key`, `label`, `kind` class attributes plus an `async authenticate(*, email, password) -> SessionUser` method. `LoginProviderRegistry` returns the list of providers `GET /auth/providers` exposes to the frontend.
+
+To add a new provider (e.g. itsme® OIDC):
+
+1. Implement `LoginProvider` (e.g. `OidcLoginProvider`) with `kind = "oidc"` and the routes it needs.
+2. Register it in `LoginProviderRegistry` next to `PasswordLoginProvider`.
+3. Add the corresponding `apps/backend/app/api/routers/auth/` route(s).
+4. On the frontend, add a strategy under `apps/orchestrator/src/modules/auth/providers.ts` that maps the `kind` to a component.
+5. Emit `auth.login.success` / `auth.login.failure` via `app/services/auth/audit.py` so the new provider participates in the audit log.
+
+The `external_idp` + `external_subject` columns on `users` carry IdP identifiers. Validate inbound subjects with `validate_external_subject()` before lookup — Belgian RRN values must be rejected to avoid storing identifiers covered by Wet 8 augustus 1983.
 
 ## External Integrations
 

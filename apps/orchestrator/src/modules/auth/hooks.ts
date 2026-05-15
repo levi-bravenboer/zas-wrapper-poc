@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { router } from '@/app/router'
 
-import { fetchSession, login, logout } from './api'
+import { fetchProviders, fetchSession, login, logout } from './api'
 import { authKeys } from './keys'
-import type { LoginRequest, SessionUser } from './schemas'
+import type { LoginRequest, ProviderDescriptor, SessionUser } from './schemas'
 
 export function useSession() {
   return useQuery<SessionUser | null>({
@@ -21,6 +21,14 @@ export function useLogin() {
     onSuccess: (user) => {
       qc.setQueryData(authKeys.me(), user)
     },
+  })
+}
+
+export function useProviders() {
+  return useQuery<ProviderDescriptor[]>({
+    queryKey: authKeys.providers(),
+    queryFn: fetchProviders,
+    staleTime: Number.POSITIVE_INFINITY,
   })
 }
 

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { env } from '@/config/env'
 
 const loginBodySchema = z.object({
-  username: z.string().optional(),
+  email: z.string().optional(),
   password: z.string().optional(),
 })
 
@@ -12,23 +12,34 @@ const baseUrl = env.API_BASE_URL
 
 const STUB_USER = {
   id: 'user_demo',
-  email: 'demo@reaktor.local',
-  displayName: 'Demo Clinician',
-  roles: ['clinician'],
+  email: 'caregiver@zas.local',
+  display_name: 'Demo Caregiver',
+  tenant_id: '00000000-0000-0000-0000-000000000001',
+  role: 'caregiver' as const,
 }
 
-const SESSION_COOKIE = 'orchestrator-session=demo; Path=/; SameSite=Strict'
+const STUB_PROVIDERS = [
+  { key: 'password', label: 'E-mail + wachtwoord', kind: 'password' as const },
+]
+
+const SESSION_COOKIE = 'BACKEND_SESSION=demo; Path=/; SameSite=Strict'
 
 let signedIn = false
 
 export const authHandlers = [
-  http.post(`${baseUrl}/auth/login`, async ({ request }) => {
+  http.post(`${baseUrl}/auth/login/password`, async ({ request }) => {
     const body = loginBodySchema.parse(await request.json())
-    if (!body.username || !body.password) {
-      return HttpResponse.json({ detail: 'Missing credentials' }, { status: 400 })
+    if (!body.email || !body.password) {
+      return HttpResponse.json(
+        { code: 'security.auth.invalid_credentials', detail: 'Missing credentials' },
+        { status: 400 },
+      )
     }
-    if (body.password === 'wrong') {
-      return HttpResponse.json({ detail: 'Invalid credentials' }, { status: 401 })
+    if (body.email !== STUB_USER.email || body.password !== 'changeme') {
+      return HttpResponse.json(
+        { code: 'security.auth.invalid_credentials', detail: 'Invalid credentials' },
+        { status: 401 },
+      )
     }
     signedIn = true
     return HttpResponse.json(STUB_USER, {
@@ -48,4 +59,6 @@ export const authHandlers = [
     }
     return HttpResponse.json(STUB_USER, { status: 200 })
   }),
+
+  http.get(`${baseUrl}/auth/providers`, () => HttpResponse.json(STUB_PROVIDERS, { status: 200 })),
 ]

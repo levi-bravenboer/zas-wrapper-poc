@@ -1,49 +1,47 @@
-import { env } from '@/config/env'
+import { api } from '@/lib/api/client'
 
-import { type LoginRequest, sessionUserSchema, type SessionUser } from './schemas'
+import {
+  type LoginRequest,
+  providerDescriptorSchema,
+  type ProviderDescriptor,
+  sessionUserSchema,
+  type SessionUser,
+} from './schemas'
 
-const baseUrl = env.API_BASE_URL
-
-export class AuthError extends Error {
-  readonly status: number
-
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = 'AuthError'
-    this.status = status
-  }
+function authError(message: string, status: number): Error & { status: number } {
+  const err = new Error(message) as Error & { status: number }
+  err.status = status
+  return err
 }
 
 export async function login(input: LoginRequest): Promise<SessionUser> {
-  const res = await fetch(`${baseUrl}/auth/login`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
-  if (!res.ok) {
-    throw new AuthError('Login failed', res.status)
+  const result = await api.POST('/auth/login/password', { body: input })
+  if (!result.data) {
+    throw authError('Login failed', result.response.status)
   }
-  return sessionUserSchema.parse(await res.json())
+  return sessionUserSchema.parse(result.data)
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch(`${baseUrl}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  })
-  if (!res.ok) {
-    throw new AuthError('Logout failed', res.status)
+  const result = await api.POST('/auth/logout', {})
+  if (!result.response.ok) {
+    throw authError('Logout failed', result.response.status)
   }
 }
 
 export async function fetchSession(): Promise<SessionUser | null> {
-  const res = await fetch(`${baseUrl}/auth/me`, {
-    credentials: 'include',
-  })
-  if (res.status === 401) return null
-  if (!res.ok) {
-    throw new AuthError('Session fetch failed', res.status)
+  const result = await api.GET('/auth/me', {})
+  if (result.response.status === 401) return null
+  if (!result.data) {
+    throw authError('Session fetch failed', result.response.status)
   }
-  return sessionUserSchema.parse(await res.json())
+  return sessionUserSchema.parse(result.data)
+}
+
+export async function fetchProviders(): Promise<ProviderDescriptor[]> {
+  const result = await api.GET('/auth/providers', {})
+  if (!result.data) {
+    throw authError('Providers fetch failed', result.response.status)
+  }
+  return result.data.map((entry) => providerDescriptorSchema.parse(entry))
 }

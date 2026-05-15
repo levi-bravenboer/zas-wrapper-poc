@@ -13,8 +13,9 @@ const baseUrl = env.API_BASE_URL
 const STUB_USER = {
   id: 'u1',
   email: 'a@b.co',
-  displayName: 'A',
-  roles: ['clinician'],
+  display_name: 'A',
+  tenant_id: '00000000-0000-0000-0000-000000000001',
+  role: 'caregiver',
 }
 
 function makeClient() {

@@ -17,8 +17,10 @@ from app.core.readiness import ReadinessRegistry
 from app.core.settings import DEFAULT_SESSION_SECRET, Settings, get_settings
 from app.db.audit import install_audit_hooks
 from app.db.engine import create_engine, create_session_factory
+from app.realtime import install_realtime_flush_hook
 
 install_audit_hooks()
+install_realtime_flush_hook()
 
 
 class InsecureProductionConfigError(RuntimeError):
