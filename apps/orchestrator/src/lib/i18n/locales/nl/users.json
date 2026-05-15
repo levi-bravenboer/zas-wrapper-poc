@@ -1,0 +1,73 @@
+{
+  "title": "Gebruikers",
+  "sub": "Beheer gebruikers en rollen binnen je tenant.",
+  "search": {
+    "placeholder": "Zoek op naam of e-mailadres"
+  },
+  "columns": {
+    "display_name": "Naam",
+    "email": "E-mail",
+    "role": "Rol",
+    "is_active": "Status",
+    "created_at": "Aangemaakt"
+  },
+  "filters": {
+    "role": "Rol",
+    "is_active": "Status"
+  },
+  "role": {
+    "admin": "Beheerder",
+    "caregiver": "Zorgverlener"
+  },
+  "status": {
+    "active": "Actief",
+    "inactive": "Inactief"
+  },
+  "actions": {
+    "view": "Bekijken",
+    "promote_to_admin": "Maak beheerder",
+    "demote_to_caregiver": "Maak zorgverlener",
+    "deactivate": "Deactiveren",
+    "activate": "Activeren"
+  },
+  "detail": {
+    "title": "Gebruiker",
+    "back": "Terug naar gebruikers",
+    "section": {
+      "identity": "Identiteit",
+      "access": "Toegang",
+      "audit": "Audit"
+    },
+    "field": {
+      "id": "ID",
+      "email": "E-mail",
+      "display_name": "Naam",
+      "role": "Rol",
+      "is_active": "Status",
+      "external_idp": "Externe provider",
+      "external_subject": "Extern onderwerp",
+      "created_at": "Aangemaakt",
+      "updated_at": "Bijgewerkt"
+    },
+    "empty": "—",
+    "notFound": "Gebruiker niet gevonden."
+  },
+  "toast": {
+    "role_updated": "Rol bijgewerkt",
+    "activated": "Gebruiker geactiveerd",
+    "deactivated": "Gebruiker gedeactiveerd",
+    "error": "Actie mislukt"
+  },
+  "confirm": {
+    "deactivate": {
+      "title": "Gebruiker deactiveren?",
+      "description": "Deze gebruiker kan niet meer inloggen. Je kunt het later weer ongedaan maken.",
+      "confirmLabel": "Deactiveren"
+    },
+    "demote": {
+      "title": "Beheerderrechten intrekken?",
+      "description": "Deze gebruiker verliest beheerdersrechten en wordt zorgverlener.",
+      "confirmLabel": "Maak zorgverlener"
+    }
+  }
+}

@@ -481,7 +481,6 @@ function ToolbarBase<T>({
     } else if (slot === 'DataTableToolbar.Actions') {
       actionsSlot = child
     } else if (import.meta.env?.DEV) {
-      // eslint-disable-next-line no-console
       console.warn(
         '[DataTableToolbar] Unknown child ignored. Wrap content in Toolbar.Search, Toolbar.Filters, or Toolbar.Actions.',
         child,

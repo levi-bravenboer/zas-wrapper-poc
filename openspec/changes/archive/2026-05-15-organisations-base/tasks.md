@@ -45,7 +45,7 @@
 
 - [x] 7.1 Edit `app/services/auth/deps.py`: change `require_role(role: Role)` → `require_role(*roles: Role)`; raise `ValueError` if `roles` empty; check `current_user.role in set(roles)`
 - [x] 7.2 Verify all existing call sites (`require_role(Role.ADMIN)`, etc.) still compile and pass tests — single-arg call sites unchanged (one site: `user_router.py:15`)
-- [ ] 7.3 Update auth tests to cover varargs (any-of-many allowed; non-listed role denied; empty varargs → ValueError at wiring)
+- [x] 7.3 Auth tests cover varargs at `tests/services/auth/test_require_role.py` (any-of-many allowed; non-listed role denied; empty varargs → `ValueError`)
 
 ## 8. Router
 
@@ -76,7 +76,7 @@
 - [x] 11.1 Regenerate `apps/backend/openapi.json` via `moon run backend:openapi`
 - [x] 11.2 Regenerate orchestrator typed client — ran `npx openapi-typescript ../backend/openapi.json -o src/lib/api/schema.d.ts` (host `pnpm typegen` script points at a running backend URL; offline regen from the file produces the same output)
 - [x] 11.3 Contract test: `GET /organisations` present in OpenAPI; `role` enum has only `admin | caregiver` — verified in diff (added `/organisations` path + `OrganisationRead`/`OrganisationListResponse`; `Role` enum now `[admin, caregiver]` only)
-- [ ] 11.4 Commit generated client diff in its own commit — pending user permission
+- [x] 11.4 Generated client diff shipped on `main` (commit `45d6f9f chore(api): regenerate openapi and orchestrator schema for organisations`)
 
 ## 12. Docs, verification, follow-ups
 

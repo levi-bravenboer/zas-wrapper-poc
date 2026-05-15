@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="BACKEND_",
         env_file=".env",
-        extra="forbid",
+        extra="ignore",
         case_sensitive=False,
     )
 

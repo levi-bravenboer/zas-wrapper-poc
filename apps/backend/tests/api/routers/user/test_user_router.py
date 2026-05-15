@@ -51,9 +51,85 @@ async def test_list_users_returns_tenant_rows_for_admin(
     response = await async_client.get("/users")
 
     assert response.status_code == 200
-    emails = sorted(row["email"] for row in response.json())
+    body = response.json()
+    assert body["page"] == 1
+    assert body["page_size"] == 25
+    emails = sorted(row["email"] for row in body["items"])
     assert ADMIN_EMAIL in emails
     assert CAREGIVER_EMAIL in emails
+    assert body["total"] == len(body["items"])
+
+
+async def test_list_users_filters_by_is_active(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    caregiver.is_active = False
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get("/users", params={"filter[is_active]": "false"})
+
+    assert response.status_code == 200
+    body = response.json()
+    emails = {row["email"] for row in body["items"]}
+    assert CAREGIVER_EMAIL in emails
+    assert ADMIN_EMAIL not in emails
+
+
+async def test_list_users_filters_by_role_in(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.get(
+        "/users",
+        params=[("filter[role]", Role.ADMIN.value), ("filter[role]", Role.CAREGIVER.value)],
+    )
+
+    assert response.status_code == 200
+    roles = {row["role"] for row in response.json()["items"]}
+    assert roles == {Role.ADMIN.value, Role.CAREGIVER.value}
+
+
+async def test_list_users_search_matches_email_or_display_name(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.get("/users", params={"q": admin.email.split("@")[0]})
+
+    assert response.status_code == 200
+    emails = [row["email"] for row in response.json()["items"]]
+    assert ADMIN_EMAIL in emails
+
+
+async def test_list_users_sort_by_email_asc(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.get("/users", params={"order_by": "email", "order": "asc"})
+
+    assert response.status_code == 200
+    emails = [row["email"] for row in response.json()["items"]]
+    assert emails == sorted(emails)
+
+
+async def test_list_users_rejects_unknown_filter(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.get("/users", params={"filter[bogus]": "x"})
+
+    assert response.status_code == 422
 
 
 async def test_list_users_without_cookie_returns_401(
@@ -62,6 +138,106 @@ async def test_list_users_without_cookie_returns_401(
     response = await async_client.get("/users")
 
     assert response.status_code == 401
+
+
+async def test_list_users_is_tenant_scoped(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    del seeded_zas_users
+    other = Tenant(id=uuid.uuid4(), slug="other-list", name="OTHER")
+    db_session.add(other)
+    await db_session.flush()
+    alien_id = uuid.uuid4()
+    db_session.add(
+        User(
+            id=alien_id,
+            tenant_id=other.id,
+            created_by=alien_id,
+            updated_by=alien_id,
+            email="alien@other.local",
+            password_hash="hash",
+            display_name="Alien",
+            role=Role.CAREGIVER,
+            is_active=True,
+        )
+    )
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get("/users")
+
+    assert response.status_code == 200
+    emails = {row["email"] for row in response.json()["items"]}
+    assert "alien@other.local" not in emails
+
+
+async def test_get_user_returns_detail(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.get(f"/users/{caregiver.id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["email"] == CAREGIVER_EMAIL
+    assert "updated_at" in body
+    assert "external_idp" in body
+
+
+async def test_get_user_rejects_caregiver_caller(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    await _login(async_client, CAREGIVER_EMAIL)
+
+    response = await async_client.get(f"/users/{caregiver.id}")
+
+    assert response.status_code == 403
+
+
+async def test_get_user_returns_404_for_missing_target(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.get(f"/users/{uuid.uuid4()}")
+
+    assert response.status_code == 404
+
+
+async def test_get_user_rejects_cross_tenant(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    del seeded_zas_users
+    other = Tenant(id=uuid.uuid4(), slug="other-detail", name="OTHER")
+    db_session.add(other)
+    await db_session.flush()
+    alien_id = uuid.uuid4()
+    alien = User(
+        id=alien_id,
+        tenant_id=other.id,
+        created_by=alien_id,
+        updated_by=alien_id,
+        email="alien@other.local",
+        password_hash="hash",
+        display_name="Alien",
+        role=Role.CAREGIVER,
+        is_active=True,
+    )
+    db_session.add(alien)
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get(f"/users/{alien.id}")
+
+    assert response.status_code == 403
 
 
 async def test_update_role_changes_target(
@@ -150,3 +326,60 @@ async def test_update_role_self_demotion_locks_out_admin_actions(
 
     response = await async_client.get("/users")
     assert response.status_code == 403
+
+
+async def test_set_user_active_toggles(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    deactivate = await async_client.patch(
+        f"/users/{caregiver.id}/active", json={"is_active": False}
+    )
+    assert deactivate.status_code == 200
+    assert deactivate.json()["is_active"] is False
+
+    reactivate = await async_client.patch(f"/users/{caregiver.id}/active", json={"is_active": True})
+    assert reactivate.status_code == 200
+    assert reactivate.json()["is_active"] is True
+
+
+async def test_set_user_active_rejects_caregiver_caller(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    await _login(async_client, CAREGIVER_EMAIL)
+
+    response = await async_client.patch(f"/users/{caregiver.id}/active", json={"is_active": False})
+    assert response.status_code == 403
+
+
+async def test_set_user_active_rejects_cross_tenant(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    del seeded_zas_users
+    other = Tenant(id=uuid.uuid4(), slug="other-active", name="OTHER")
+    db_session.add(other)
+    await db_session.flush()
+    alien_id = uuid.uuid4()
+    alien = User(
+        id=alien_id,
+        tenant_id=other.id,
+        created_by=alien_id,
+        updated_by=alien_id,
+        email="alien@other.local",
+        password_hash="hash",
+        display_name="Alien",
+        role=Role.CAREGIVER,
+        is_active=True,
+    )
+    db_session.add(alien)
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.patch(f"/users/{alien.id}/active", json={"is_active": False})
+    assert response.status_code == 403
+    assert response.json()["code"] == "forbidden.user.cross_tenant"

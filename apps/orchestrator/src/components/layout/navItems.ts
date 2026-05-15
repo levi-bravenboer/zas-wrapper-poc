@@ -1,4 +1,4 @@
-import { Home, Users } from 'lucide-react'
+import { HeartPulse, Home, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export type NavItem = {
@@ -8,9 +8,11 @@ export type NavItem = {
   readonly order: number
 }
 
-// PoC ships a single hard-wired nav entry. Additional sections re-enter the
-// nav by registering as features (`defineFeature({ nav: { icon, order } })`).
+// PoC ships hard-wired nav entries for app-surface sections. Embed/SMART
+// features re-enter the nav by registering as features
+// (`defineFeature({ nav: { icon, order } })`).
 export const hardWiredNavItems: readonly NavItem[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: Home, order: 10 },
-  { to: '/patients', labelKey: 'nav.patients', icon: Users, order: 20 },
+  { to: '/users', labelKey: 'nav.users', icon: Users, order: 20 },
+  { to: '/patients', labelKey: 'nav.patients', icon: HeartPulse, order: 30 },
 ]
