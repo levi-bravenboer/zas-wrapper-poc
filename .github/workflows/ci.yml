@@ -172,12 +172,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-backend
-      - name: export locked prod deps
-        run: uv export --frozen --no-dev --no-hashes --format requirements-txt -o requirements.ci.txt
+      - name: export locked prod deps (hashed)
+        run: uv export --frozen --no-dev --format requirements-txt -o requirements.ci.txt
       - name: pip-audit
-        # --disable-pip requires hashed requirements; use --no-deps instead so
-        # pip-audit audits exactly the locked set without resolving transitively.
-        run: uvx --from pip-audit pip-audit --strict --no-deps -r requirements.ci.txt
+        run: uvx --from pip-audit pip-audit --strict --disable-pip -r requirements.ci.txt
 
   # ╔══════════════════════════════════════════════════════════════════════╗
   # ║ orchestrator                                                         ║
