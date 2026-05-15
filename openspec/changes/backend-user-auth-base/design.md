@@ -34,6 +34,32 @@ Stakeholders: this change (backend), every subsequent backend domain (consumer o
 
 ## Decisions
 
+### `User` inherits `TenantOwnedEntity`; bootstrap admin self-references audit FKs
+
+`User(TenantOwnedEntity)` picks up the abstract-base hierarchy introduced in `backend-tenant-base`: id, timestamps, soft delete, `tenant_id` (NOT NULL), `created_by` / `updated_by` (NOT NULL, FK `users.id`), `deleted_by` (nullable, FK `users.id`). The `users.id`-FK is self-referential — that is the whole point — and `ON DELETE RESTRICT` on every FK ensures no row vanishes underneath an audit reference.
+
+The bootstrap admin breaks the chicken-and-egg this creates: a fresh DB has zero `users` rows, so the very first insert cannot satisfy the `created_by` NOT NULL constraint via the audit hook (the hook needs an actor; the actor needs a row). `scripts/seed_users.py` solves this by:
+
+1. Defining `ADMIN_USER_ID: UUID = UUID("<stable literal>")` at module level.
+2. Looking up the `zas` tenant (must already be seeded).
+3. Checking whether a user with the admin's `(tenant_id, lower(email))` exists; if so, no-op.
+4. Otherwise, constructing the admin `User` ORM instance with `id = ADMIN_USER_ID`, `tenant_id = ZAS_TENANT_ID`, AND `created_by = updated_by = ADMIN_USER_ID` set explicitly. The audit hook skips fields that are already non-`None`, so the self-FK survives the flush. The DB enforces `RESTRICT`; the self-FK is valid because the row's own `id` matches the FK value at commit time.
+5. Building an in-process `SessionUser` from the just-inserted admin and calling `script_session(actor=admin_session_user)` (or rebinding `session.info[SESSION_ACTOR_KEY]`) for the demo caregiver insert. The audit hook auto-fills `tenant_id` / `created_by` / `updated_by` from the admin actor — no explicit per-field wiring at the caller.
+
+- **Why self-reference, not nullable `created_by`**: nullable defeats the FK guarantee at exactly the place we want the strongest invariant. A self-FK is a one-off pattern documented at the seed script — every other auditable row in the system has a real actor.
+- **Why the admin row, not a synthetic "system" row**: PoC has a single tenant and a single admin; a separate "system" user adds noise and a "who can change this" question. When multi-tenant lands, the same admin-bootstrap pattern repeats per tenant.
+
+### Tenant + audit auto-fill via `session.info[SESSION_ACTOR_KEY]`
+
+The audit hook introduced in `backend-tenant-base` (`apps/backend/app/db/audit.py`) is the source of truth for stamping `tenant_id` / `created_by` / `updated_by` / `deleted_by`. This change wires the actor into `session.info` at every entry point:
+
+- **HTTP**: `app/db/engine.get_session` consumes `OptionalCurrentUserDep` (silent when no cookie / expired token) and writes `session.info[SESSION_ACTOR_KEY] = current_user` when truthy. Authenticated routes therefore audit automatically; unauthenticated routes (login, health) flush rows that are NOT `AuditableEntity` (or none at all).
+- **Scripts**: `scripts/_db.script_session(*, actor=None)` writes the slot when supplied. `seed_users` calls `script_session()` (no actor) for the admin self-bootstrap, then `script_session(actor=admin)` (or rebinds via `session.info[SESSION_ACTOR_KEY] = admin`) for the caregiver insert.
+- **Tests**: the `session_actor` pytest fixture (introduced in `backend-tenant-base`) is set to a `SessionUser` in tests that exercise auditable row creation. Router-layer tests rely on the login flow producing a valid cookie and therefore set the actor through the HTTP path.
+
+- **Why not put audit logic inside `UserService`**: every domain that creates auditable rows would need the same boilerplate. Centralising at the session boundary fixes it once.
+- **Why `OptionalCurrentUserDep`, not `CurrentUserDep`, in `get_session`**: `get_session` runs for every request, including unauthenticated ones. A required dep would block `/auth/login`. The optional shape lets the slot stay `None` for unauthenticated traffic; required-auth routes still use `CurrentUserDep` and get 401 enforcement.
+
 ### Role enum lives at `app/core/enums/user.py`
 
 `class Role(StrEnum)` with `ADMIN = "admin"`, `CAREGIVER = "caregiver"`, `EXTERNAL = "external"`. Re-exported from `app/core/enums/__init__.py`.
@@ -206,7 +232,7 @@ This is a **planned breaking change** to `auth-stub` at MVP — call sites in th
 ## Risks / Trade-offs
 
 - **Risk**: a future domain forgets the `tenant_id` arg on a repo call → cross-tenant leak. **Mitigation**: at PoC scale unobservable; queued: `with_loader_criteria` defense-in-depth as a separate change before MVP. AGENTS.md will get a "tenant-scoped repo methods MUST take `tenant_id`" rule when that change lands.
-- **Risk**: bootstrap admin password fallback (`"changeme"`) accidentally ships to a non-PoC environment. **Mitigation**: `# POC ONLY` banner at the top of `app/cli/seed.py` + the `seed-users` CLI logs a `WARNING` when the env var is unset. Alembic no longer carries the banner because alembic no longer seeds.
+- **Risk**: bootstrap admin password fallback (`"changeme"`) accidentally ships to a non-PoC environment. **Mitigation**: `# POC ONLY` banner at the top of `scripts/seed_users.py` + the script logs a `WARNING` when the env var is unset. Alembic no longer carries the banner because alembic no longer seeds.
 - **Risk**: `argon2-cffi` C extension build issues on certain platforms. **Mitigation**: backend already runs in our own dockerfile based on python:3.13-slim — wheel availability is stable; CI matches.
 - **Risk**: `alembic-postgresql-enum` package abandonment. **Mitigation**: it's a tiny shim; we can vendor the 30-line autogen hook if upstream goes stale.
 - **Risk**: native Postgres enum makes adding a new role value a 2-step migration (`ALTER TYPE ... ADD VALUE` must run outside a transaction). **Mitigation**: documented; alembic-postgresql-enum handles the boilerplate. Shipping all three values now (including `external`) lets downstream pathway / patient domains gate on the distinction without a follow-up enum migration.
@@ -218,8 +244,8 @@ This is a **planned breaking change** to `auth-stub` at MVP — call sites in th
 - Forward sequence: `backend-tenant-base` revision (creates `tenants`) then this change's revision (creates `users` + `role` enum). DDL only — neither revision inserts data.
 - Revision `down_revision` MUST point to the `backend-tenant-base` revision hash.
 - Rollback: `alembic downgrade -1` drops `users` and the `role` enum type. `alembic-postgresql-enum` handles the `DROP TYPE` op.
-- Seed: dev entrypoint runs `alembic upgrade head && python -m app.cli seed-all`; `seed-all` is extended in this change to chain `seed-tenant → seed-users`. Test entrypoint stays migrate-only. Prod deploy is `alembic upgrade head` followed by an explicit `python -m app.cli seed-all` step.
-- Re-seed without migration: `moon run backend:seed-users` (or `seed`). Idempotent — looks up each user by `(tenant_id, lower(email))` and skips if present.
+- Seed: dev entrypoint runs `alembic upgrade head && python -m scripts.seed_all`; `seed_all` is extended in this change to chain `seed_zas_tenant → seed_users`. Test entrypoint stays migrate-only. Prod deploy is `alembic upgrade head` followed by an explicit `python -m scripts.seed_all` step.
+- Re-seed without migration: `moon run backend:seed-users` (or `moon run backend:seed`). Idempotent — looks up each user by `(tenant_id, lower(email))` and skips if present.
 
 ## Open Questions
 

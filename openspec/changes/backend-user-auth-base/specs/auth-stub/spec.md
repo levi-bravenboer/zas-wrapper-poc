@@ -99,6 +99,22 @@ The backend SHALL define an `Authenticator` Protocol in `app/services/auth/authe
 - **WHEN** `PasswordAuthenticator.authenticate(email="admin@zas.local", password=<seeded admin password>)` is awaited
 - **THEN** it MUST return the matching `User` row
 
+### Requirement: `OptionalCurrentUserDep` populates the audit session slot
+
+The backend SHALL export `OptionalCurrentUserDep = Annotated[SessionUser | None, Depends(get_optional_current_user)]` from `app/services/auth/deps.py` (re-exported from `app/services/auth/__init__.py`). `get_optional_current_user` MUST share the same cookie-decode + user-reload logic as `get_current_user`, returning the resolved `SessionUser` on success and `None` (no raise) when the cookie is missing, tampered, expired, or refers to a missing / deactivated user.
+
+`app/db/engine.get_session` SHALL consume `OptionalCurrentUserDep` and write `session.info[SESSION_ACTOR_KEY] = current_user` when not `None`, so the audit hook introduced in `backend-tenant-base` auto-stamps `tenant_id` / `created_by` / `updated_by` / `deleted_by` on every authenticated request. Unauthenticated requests MUST yield a session with the slot unset; the hook MUST stay a no-op in that path.
+
+#### Scenario: Authenticated request stamps audit fields
+
+- **WHEN** an authenticated route handler causes `session.add(<new AuditableEntity>)` followed by a flush
+- **THEN** the resulting row's `tenant_id` / `created_by` / `updated_by` MUST equal the requesting user's `tenant_id` / `id` even when the handler did not set them explicitly
+
+#### Scenario: Unauthenticated request leaves audit slot empty
+
+- **WHEN** a request with no `BACKEND_SESSION` cookie reaches a handler that flushes a non-auditable `Entity` row (e.g. health writes)
+- **THEN** the flush MUST succeed and `session.info[SESSION_ACTOR_KEY]` MUST be unset (the audit hook makes no changes)
+
 ### Requirement: `require_role` factory dep guards admin-only routes
 
 The backend SHALL export a callable `require_role(role: Role)` from `app/services/auth/deps.py` (re-exported from `app/services/auth/__init__.py`) that returns a FastAPI dependency. The returned dependency MUST resolve `CurrentUserDep` and raise `ForbiddenRoleError` (`forbidden.auth.role`, 403) when `current_user.role` does not equal the required role.
