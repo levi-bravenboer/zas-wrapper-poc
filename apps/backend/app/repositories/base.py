@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import date, datetime
 from math import ceil
 from typing import ClassVar, Generic, TypeVar
+from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy import ColumnElement, or_, select
@@ -155,6 +157,21 @@ class BaseListRepository(BaseRepository[T]):
             return value.lower() in {"1", "true", "yes", "on"}
         if python_type is str:
             return value
+        if python_type is date:
+            try:
+                return date.fromisoformat(value)
+            except ValueError:
+                return value
+        if python_type is datetime:
+            try:
+                return datetime.fromisoformat(value)
+            except ValueError:
+                return value
+        if python_type is UUID:
+            try:
+                return UUID(value)
+            except ValueError:
+                return value
         try:
             return python_type(value)
         except (TypeError, ValueError):
