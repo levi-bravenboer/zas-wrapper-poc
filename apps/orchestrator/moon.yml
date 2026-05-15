@@ -22,45 +22,45 @@ fileGroups:
 
 tasks:
   install:
-    command: "npm install"
+    command: "pnpm install"
     inputs:
       - "package.json"
-      - "package-lock.json"
+      - "pnpm-lock.yaml"
     options:
       cache: false
 
   dev:
-    command: "npm run dev"
+    command: "pnpm run dev"
     preset: "server"
 
   build:
-    command: "npm run build"
+    command: "pnpm run build"
     deps:
       - "~:typecheck"
     outputs:
       - "dist"
 
   typecheck:
-    command: "npx tsc -b --noEmit"
+    command: "pnpm exec tsc -b --noEmit"
 
   lint:
-    command: "npm run lint"
+    command: "pnpm run lint"
 
   format:
-    command: "npm run format"
+    command: "pnpm run format"
 
   preview:
-    command: "npm run preview"
+    command: "pnpm run preview"
     preset: "server"
 
   test:
-    command: "npm run test"
+    command: "pnpm run test"
 
   test-coverage:
-    command: "npm run test:coverage"
+    command: "pnpm run test:coverage"
 
   test-e2e:
-    command: "npm run test:e2e"
+    command: "pnpm run test:e2e"
 
   typegen:
-    command: "npm run typegen"
+    command: "pnpm run typegen"

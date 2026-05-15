@@ -16,7 +16,7 @@ The backend runs in docker under the `zas_backend` container during dev. The hos
 ```bash
 # From repo root:
 moon run :doctor              # verify host prereqs (compose v2.22+, node, python, uv, moon)
-moon run :install             # uv sync + npm install (host-side)
+moon run :install             # uv sync + pnpm install (host-side)
 moon run :up                  # boots zas_db + zas_backend + vite
 ```
 
