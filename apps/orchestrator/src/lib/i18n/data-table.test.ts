@@ -32,15 +32,11 @@ describe('data-table i18n namespace', () => {
   })
 
   it('interpolates the pagination indicator', () => {
-    expect(i18n.t('pagination.indicator', { ns: 'data-table', page: 2, total: 7 })).toBe(
-      '2 / 7',
-    )
+    expect(i18n.t('pagination.indicator', { ns: 'data-table', page: 2, total: 7 })).toBe('2 / 7')
   })
 
   it('interpolates the bulk count plural variants', () => {
     expect(i18n.t('bulk.count.one', { ns: 'data-table', count: 1 })).toBe('1 geselecteerd')
-    expect(i18n.t('bulk.count.other', { ns: 'data-table', count: 3 })).toBe(
-      '3 geselecteerd',
-    )
+    expect(i18n.t('bulk.count.other', { ns: 'data-table', count: 3 })).toBe('3 geselecteerd')
   })
 })

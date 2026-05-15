@@ -130,10 +130,7 @@ export function useDataTableState(
     (pageSize: number) => rawDispatch({ type: 'setPageSize', pageSize }),
     [],
   )
-  const setSearch = useCallback(
-    (q: string | null) => rawDispatch({ type: 'setSearch', q }),
-    [],
-  )
+  const setSearch = useCallback((q: string | null) => rawDispatch({ type: 'setSearch', q }), [])
   const setSort = useCallback(
     (orderBy: string, order: 'asc' | 'desc') => rawDispatch({ type: 'setSort', orderBy, order }),
     [],

@@ -42,12 +42,7 @@ function isListFilter(value: unknown): value is ListFilter {
   if (!isPlainObject(value)) return false
   const op = value['op']
   return (
-    op === 'eq' ||
-    op === 'in' ||
-    op === 'gte' ||
-    op === 'lte' ||
-    op === 'contains' ||
-    op === 'not'
+    op === 'eq' || op === 'in' || op === 'gte' || op === 'lte' || op === 'contains' || op === 'not'
   )
 }
 
@@ -153,10 +148,7 @@ export function useRouteSearchTableState(
     (pageSize: number) => apply({ type: 'setPageSize', pageSize }),
     [apply],
   )
-  const setSearchValue = useCallback(
-    (q: string | null) => apply({ type: 'setSearch', q }),
-    [apply],
-  )
+  const setSearchValue = useCallback((q: string | null) => apply({ type: 'setSearch', q }), [apply])
   const setSort = useCallback(
     (orderBy: string, order: 'asc' | 'desc') => apply({ type: 'setSort', orderBy, order }),
     [apply],
@@ -167,10 +159,7 @@ export function useRouteSearchTableState(
       apply({ type: 'setFilter', field, filter }),
     [apply],
   )
-  const clearFilter = useCallback(
-    (field: string) => apply({ type: 'clearFilter', field }),
-    [apply],
-  )
+  const clearFilter = useCallback((field: string) => apply({ type: 'clearFilter', field }), [apply])
   const clearAll = useCallback(() => apply({ type: 'clearAll' }), [apply])
   const reset = useCallback(
     (next?: Partial<DataTableState>) =>

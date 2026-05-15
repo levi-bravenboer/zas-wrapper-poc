@@ -15,7 +15,10 @@ describe('mergeInitialState', () => {
   })
 
   it('shallow-merges caller overrides over the defaults', () => {
-    const merged = mergeInitialState({ pageSize: 50, filters: { status: { op: 'eq', value: 'a' } } })
+    const merged = mergeInitialState({
+      pageSize: 50,
+      filters: { status: { op: 'eq', value: 'a' } },
+    })
     expect(merged.pageSize).toBe(50)
     expect(merged.page).toBe(1)
     expect(merged.filters).toEqual({ status: { op: 'eq', value: 'a' } })

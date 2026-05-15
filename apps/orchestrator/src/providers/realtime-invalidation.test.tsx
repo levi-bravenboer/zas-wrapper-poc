@@ -102,8 +102,7 @@ function wrap(client: QueryClient, children: React.ReactNode): React.ReactElemen
 beforeEach(() => {
   FakeEventSource.reset()
   warningSpy.mockReset()
-  ;(globalThis as unknown as { EventSource: typeof FakeEventSource }).EventSource =
-    FakeEventSource
+  ;(globalThis as unknown as { EventSource: typeof FakeEventSource }).EventSource = FakeEventSource
   vi.useFakeTimers({ shouldAdvanceTime: true })
 })
 

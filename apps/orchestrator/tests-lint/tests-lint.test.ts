@@ -50,10 +50,7 @@ describe('DataTable encapsulation lint rules (§26)', () => {
   })
 
   it('§26.3 flags @/components/ui/table imports outside data-table/** and tests', async () => {
-    const result = await lintFixture(
-      'ui-table-import.ts',
-      'src/modules/example/ui-table-import.ts',
-    )
+    const result = await lintFixture('ui-table-import.ts', 'src/modules/example/ui-table-import.ts')
     const messages = result.messages.map((m) => m.message)
     expect(
       messages.some((m) =>
@@ -73,10 +70,7 @@ describe('DataTable encapsulation lint rules (§26)', () => {
   })
 
   it('§26.2 allows @tanstack/react-table imports inside data-table/**', async () => {
-    const result = await lintFixture(
-      'tanstack-import.ts',
-      'src/components/data-table/internal.ts',
-    )
+    const result = await lintFixture('tanstack-import.ts', 'src/components/data-table/internal.ts')
     const messages = result.messages.map((m) => m.message)
     expect(messages.some((m) => m.includes('TanStack Table is an implementation detail'))).toBe(
       false,

@@ -10,10 +10,7 @@ import * as React from 'react'
 import { describe, expect, it } from 'vitest'
 
 import { DATA_TABLE_DEFAULT_STATE, type DataTableState } from './use-data-table-state'
-import {
-  composeTableState,
-  useRouteSearchTableState,
-} from './use-route-search-table-state'
+import { composeTableState, useRouteSearchTableState } from './use-route-search-table-state'
 
 type HookReturn = ReturnType<typeof useRouteSearchTableState>
 

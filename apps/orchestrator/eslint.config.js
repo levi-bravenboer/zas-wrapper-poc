@@ -109,8 +109,7 @@ export default defineConfig([
           // string literal containing `?page=` inside a useQuery call; this is a
           // simplified substring check (spec §26.4) chosen over a regex over route
           // prefixes to keep false positives low.
-          selector:
-            'CallExpression[callee.name="useQuery"] Literal[value=/\\?page=/]',
+          selector: 'CallExpression[callee.name="useQuery"] Literal[value=/\\?page=/]',
           message: 'Use `usePaginatedQuery` for paginated lists.',
         },
       ],
