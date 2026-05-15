@@ -68,6 +68,8 @@ describe('PageHeader', () => {
 
     expect(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Patiënten' })).toBeInTheDocument()
-    expect(screen.getByText('Jan Janssen', { selector: '[data-slot="breadcrumb-page"]' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Jan Janssen', { selector: '[data-slot="breadcrumb-page"]' }),
+    ).toBeInTheDocument()
   })
 })

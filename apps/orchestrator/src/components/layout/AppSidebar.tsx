@@ -131,8 +131,7 @@ function NavMenu(): ReactElement {
       {items.map((item) => {
         const Icon = item.icon
         const label = t(item.labelKey.replace(/^nav\./, ''))
-        const active =
-          location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+        const active = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
         return (
           <SidebarMenuItem key={item.to}>
             <SidebarMenuButton

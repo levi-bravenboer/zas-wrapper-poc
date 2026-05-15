@@ -54,10 +54,7 @@ export function PageHeader({
   const crumbs = useAutoCrumbs()
 
   return (
-    <header
-      data-slot="page-header"
-      className={cn('flex flex-col gap-4 px-6 pt-6 pb-4', className)}
-    >
+    <header data-slot="page-header" className={cn('flex flex-col gap-4 px-6 pt-6 pb-4', className)}>
       {crumbs.length > 0 && (
         <Breadcrumb>
           <BreadcrumbList>

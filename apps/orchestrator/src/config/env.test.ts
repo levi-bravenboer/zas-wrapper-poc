@@ -34,9 +34,7 @@ describe('envSchema', () => {
   })
 
   it('rejects an empty VITE_SMART_CLIENT_ID', () => {
-    expect(() =>
-      envSchema.parse({ PROD: false, DEV: true, VITE_SMART_CLIENT_ID: '' }),
-    ).toThrow()
+    expect(() => envSchema.parse({ PROD: false, DEV: true, VITE_SMART_CLIENT_ID: '' })).toThrow()
   })
 
   it('requires PROD and DEV booleans', () => {

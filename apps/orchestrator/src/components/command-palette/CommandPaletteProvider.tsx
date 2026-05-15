@@ -1,16 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactElement,
-  type ReactNode,
-} from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactElement, type ReactNode } from 'react'
 
-import {
-  CommandPaletteContext,
-  type CommandPaletteContextValue,
-} from './context'
+import { CommandPaletteContext, type CommandPaletteContextValue } from './context'
 import type { CommandEntry } from './types'
 
 type RegistrationMap = ReadonlyMap<string, readonly CommandEntry[]>

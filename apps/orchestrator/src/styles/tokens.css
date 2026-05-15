@@ -84,9 +84,7 @@
   --glass-blur-strong: 24px;
   --glass-saturate: 180%;
 
-  --shadow-glass:
-    0 12px 32px rgba(38, 107, 94, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  --shadow-glass: 0 12px 32px rgba(38, 107, 94, 0.08), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 
   /* Aurora background — painted on body, shared across routes */
   --gradient-aurora:
