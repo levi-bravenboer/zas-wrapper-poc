@@ -4,24 +4,24 @@
 
 ## 1. Enums
 
-- [ ] 1.1 Create `app/core/enums/care_team.py` with `RoleInCare` (`primary | consulting | observer`) and `CareTeamStatus` (`active | inactive`); re-export from `app/core/enums/__init__.py`
+- [x] 1.1 Create `app/core/enums/care_team.py` with `RoleInCare` (`primary | consulting | observer`) and `CareTeamStatus` (`active | inactive`); re-export from `app/core/enums/__init__.py`
 
 ## 2. ORM models
 
-- [ ] 2.1 Create `app/models/care_team.py` (`CareTeam(TenantOwnedEntity)`) with `patient_id` FK (RESTRICT), `name`, `status`, `period_start`, `period_end`, `category`
-- [ ] 2.2 Create `app/models/care_team_participant.py` (`CareTeamParticipant`) with denormalised `tenant_id`, FK `care_team_id` (CASCADE), FK `user_id` (RESTRICT), `role_in_care`, `period_start`, `period_end`, `on_behalf_of_organisation_id` (FK organisations, nullable, RESTRICT), `assigned_by`, `unassigned_by`
-- [ ] 2.3 Add `CareTeam.participants` relationship with `selectinload`; cascade `all, delete-orphan` matches DB CASCADE
-- [ ] 2.4 Register both models in metadata import root
+- [x] 2.1 Create `app/models/care_team.py` (`CareTeam(TenantOwnedEntity)`) with `patient_id` FK (RESTRICT), `name`, `status`, `period_start`, `period_end`, `category`
+- [x] 2.2 Create `app/models/care_team_participant.py` (`CareTeamParticipant`) with denormalised `tenant_id`, FK `care_team_id` (CASCADE), FK `user_id` (RESTRICT), `role_in_care`, `period_start`, `period_end`, `on_behalf_of_organisation_id` (FK organisations, nullable, RESTRICT), `assigned_by`, `unassigned_by`
+- [x] 2.3 Add `CareTeam.participants` relationship with `selectinload`; cascade `all, delete-orphan` matches DB CASCADE
+- [x] 2.4 Register both models in metadata import root
 
 ## 3. Migration
 
-- [ ] 3.1 Generate Alembic revision creating `role_in_care` + `care_team_status` Postgres enum types
-- [ ] 3.2 Create `care_teams` table with all columns + FK + indexes
-- [ ] 3.3 Create `care_team_participants` table + FKs + indexes:
+- [x] 3.1 Generate Alembic revision creating `role_in_care` + `care_team_status` Postgres enum types
+- [x] 3.2 Create `care_teams` table with all columns + FK + indexes
+- [x] 3.3 Create `care_team_participants` table + FKs + indexes:
   - partial unique `(care_team_id, user_id) WHERE period_end IS NULL`
   - `(user_id, period_end)` partial WHERE period_end IS NULL
   - `(care_team_id, period_end)` partial WHERE period_end IS NULL
-- [ ] 3.4 Verify downgrade drops tables, indexes, enum types in correct order
+- [x] 3.4 Verify downgrade drops tables, indexes, enum types in correct order
 - [ ] 3.5 Migration test: fresh DB → head → expected DDL present
 
 ## 4. Pydantic schemas
