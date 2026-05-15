@@ -2,11 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DATA_TABLE_DEFAULT_STATE } from './use-data-table-state'
-import {
-  parseStoredState,
-  storageKeyFor,
-  useLocalTableState,
-} from './use-local-table-state'
+import { parseStoredState, storageKeyFor, useLocalTableState } from './use-local-table-state'
 
 describe('parseStoredState', () => {
   it('returns null for nullish or malformed input', () => {
@@ -74,10 +70,7 @@ describe('useLocalTableState', () => {
   })
 
   it('hydrates from localStorage in preference to initial', () => {
-    window.localStorage.setItem(
-      storageKeyFor('demo'),
-      JSON.stringify({ page: 2, pageSize: 100 }),
-    )
+    window.localStorage.setItem(storageKeyFor('demo'), JSON.stringify({ page: 2, pageSize: 100 }))
     const { result } = renderHook(() => useLocalTableState('demo', { pageSize: 50 }))
     expect(result.current[0].pageSize).toBe(100)
     expect(result.current[0].page).toBe(2)

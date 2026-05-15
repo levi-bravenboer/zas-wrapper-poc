@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 
 import {
   DATA_TABLE_DEFAULT_STATE,
@@ -38,12 +38,7 @@ function isListFilter(value: unknown): value is ListFilter {
   if (!isPlainObject(value)) return false
   const op = value['op']
   return (
-    op === 'eq' ||
-    op === 'in' ||
-    op === 'gte' ||
-    op === 'lte' ||
-    op === 'contains' ||
-    op === 'not'
+    op === 'eq' || op === 'in' || op === 'gte' || op === 'lte' || op === 'contains' || op === 'not'
   )
 }
 
@@ -117,16 +112,11 @@ export function useLocalTableState(
     (): DataTableState => initialiseState(tableId, initial),
   )
 
-  // Track the most recent state so the debounced effect always writes the
-  // latest value, even if a burst of updates collapses into a single write.
-  const stateRef = useRef(state)
-  stateRef.current = state
-
   useEffect(() => {
     if (typeof window === 'undefined') return
     const handle = window.setTimeout(() => {
       try {
-        window.localStorage.setItem(storageKeyFor(tableId), JSON.stringify(stateRef.current))
+        window.localStorage.setItem(storageKeyFor(tableId), JSON.stringify(state))
       } catch {
         // ignore quota / serialisation errors — the table still works in-memory.
       }
