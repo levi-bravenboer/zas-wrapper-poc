@@ -1,0 +1,26 @@
+{
+  "empty": {
+    "patients": {
+      "title": "Nog geen patiënten",
+      "body": "Zodra er patiënten worden toegewezen, verschijnen ze hier."
+    },
+    "tasks": {
+      "title": "Geen taken",
+      "body": "Alle taken zijn afgehandeld."
+    }
+  },
+  "error": {
+    "generic": {
+      "title": "Er ging iets mis",
+      "body": "We konden de gegevens niet laden. Probeer het opnieuw."
+    },
+    "fhir": {
+      "title": "Kon dossier niet laden",
+      "body": "Het patiëntendossier is op dit moment niet bereikbaar."
+    },
+    "retry": "Opnieuw proberen"
+  },
+  "refetch": {
+    "label": "Bijwerken…"
+  }
+}

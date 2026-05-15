@@ -2,11 +2,12 @@ import { QueryClient } from '@tanstack/react-query'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
+import { env } from '@/config/env'
 import { server } from '@/mocks/server'
 
-import { Route as AuthRoute } from './_auth'
+import { authBeforeLoad } from './_auth'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+const baseUrl = env.API_BASE_URL
 
 function makeContext() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -19,18 +20,15 @@ describe('_auth beforeLoad', () => {
       http.get(`${baseUrl}/auth/me`, () => HttpResponse.json({ detail: 'no' }, { status: 401 })),
     )
 
-    const beforeLoad = AuthRoute.options.beforeLoad
-    if (!beforeLoad) throw new Error('beforeLoad missing')
-
     await expect(
-      beforeLoad({
+      authBeforeLoad({
         context: makeContext(),
-        location: { href: '/pathways' },
-      } as Parameters<typeof beforeLoad>[0]),
+        location: { href: '/' },
+      }),
     ).rejects.toMatchObject({
       options: {
         to: '/login',
-        search: { redirect: '/pathways' },
+        search: { redirect: '/' },
       },
     })
   })
@@ -47,13 +45,10 @@ describe('_auth beforeLoad', () => {
       ),
     )
 
-    const beforeLoad = AuthRoute.options.beforeLoad
-    if (!beforeLoad) throw new Error('beforeLoad missing')
-
-    const result = await beforeLoad({
+    const result = await authBeforeLoad({
       context: makeContext(),
-      location: { href: '/dashboard' },
-    } as Parameters<typeof beforeLoad>[0])
+      location: { href: '/' },
+    })
 
     expect(result).toMatchObject({ session: { id: 'u1' } })
   })

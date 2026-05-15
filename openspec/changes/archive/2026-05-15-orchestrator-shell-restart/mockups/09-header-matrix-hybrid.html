@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Page header — P / Q / R / Hybrid</title>
+<style>
+  :root {
+    --teal: #266b5e;
+    --teal-soft: #cfede8;
+    --teal-subtle: #f1f8f7;
+    --teal-pressed: #08453c;
+    --teal-bright: #34a08c;
+    --teal-glow: rgba(38, 107, 94, 0.18);
+    --bg: #fafaf9;
+    --surface-1: #ffffff;
+    --surface-2: #f4f4f3;
+    --border: #e7e5e4;
+    --fg: #1c1917;
+    --fg-muted: #57534e;
+    --fg-subtle: #8a847e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    background: #f6f5f3;
+    color: var(--fg);
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 20px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--fg-muted); margin: 0 0 18px 0; font-size: 13px; }
+  .row-label {
+    font-size: 11px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    margin: 18px 0 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .row-label::before, .row-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .mockup.fav {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 1px var(--teal), 0 4px 14px rgba(38,107,94,0.12);
+  }
+  .mockup-label {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .mockup-label .key { color: var(--teal); font-family: 'Geist Mono Variable', monospace; }
+  .mockup.fav .mockup-label { background: var(--teal); color: white; }
+  .mockup.fav .mockup-label .key { color: white; opacity: 0.9; }
+  .body-base {
+    height: 400px;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 60% 50% at 0% 0%, rgba(38,107,94,0.20) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 100% 100%, rgba(207,237,232,0.55) 0%, transparent 55%),
+      linear-gradient(180deg, #fafaf9 0%, #f1efed 100%);
+  }
+  .sb-stub {
+    width: 48px;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-right: 1px solid rgba(255,255,255,0.7);
+    padding: 8px 5px;
+    display: flex; flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .sb-mark { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed)); display:grid; place-items:center; color:white; font-weight:700; font-size:10px; font-family:'Geist Mono Variable', monospace; margin-bottom: 3px; }
+  .sb-ic { width: 28px; height: 28px; border-radius: 7px; display:grid; place-items:center; color: var(--fg-muted); }
+  .sb-ic.active { background: linear-gradient(135deg, rgba(38,107,94,0.95), rgba(8,69,60,0.95)); color: white; box-shadow: 0 4px 12px rgba(38,107,94,0.25); }
+  .sb-ic.muted { opacity: 0.45; }
+  .sb-ic svg { width: 14px; height: 14px; }
+  .main { flex: 1; min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .header { padding: 13px 14px 0; }
+  .content { padding: 10px 14px 12px; overflow: auto; flex: 1; }
+  .page-title { font-size: 15px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+  .page-sub { font-size: 10px; color: var(--fg-muted); margin: 2px 0 0; }
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.7);
+    font-size: 8px;
+    color: var(--teal-pressed);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .crumb {
+    font-size: 10px;
+    color: var(--fg-muted);
+    margin-bottom: 5px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .crumb b { color: var(--fg); font-weight: 500; }
+  .crumb svg { opacity: 0.5; width: 9px; height: 9px; }
+  .head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .actions { display: flex; gap: 5px; align-items: center; }
+  .btn {
+    padding: 4px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.6);
+    color: var(--fg);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+  }
+  .btn svg { opacity: 0.7; width: 9px; height: 9px; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 2px 6px var(--teal-glow);
+  }
+  .btn-primary svg { opacity: 1; }
+  .tabs {
+    display: flex; gap: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.6);
+    padding-top: 8px;
+    margin-top: 3px;
+  }
+  .tab {
+    padding: 5px 8px;
+    font-size: 10px;
+    color: var(--fg-muted);
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--teal-pressed); border-bottom-color: var(--teal); }
+
+  .ph-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .ph-cell { background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.7); border-radius: 7px; height: 56px; padding: 8px; }
+  .ph-stat-l { font-size: 8px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ph-stat-v { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; }
+  .ph-stat-d { font-size: 8px; color: var(--teal); margin-top: 1px; }
+  .ph-card { background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.7); border-radius: 7px; height: 36px; margin-top: 6px; }
+  .pat-card { background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.7); border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+  .pat-step-row { display: flex; gap: 4px; margin-top: 6px; }
+  .pat-step { flex: 1; height: 20px; border-radius: 4px; background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7); font-size: 8px; color: var(--fg-subtle); display: grid; place-items: center; }
+  .pat-step.done { background: linear-gradient(135deg, rgba(38,107,94,0.18), rgba(207,237,232,0.4)); color: var(--teal-pressed); }
+  .pat-step.now { background: linear-gradient(135deg, rgba(38,107,94,0.95), rgba(8,69,60,0.95)); color: white; box-shadow: 0 2px 6px var(--teal-glow); }
+  .task-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 9px;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+  .check { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid var(--border); background: white; flex-shrink: 0; }
+  .task-title { flex: 1; color: var(--fg); font-weight: 500; }
+  .task-meta { color: var(--fg-subtle); font-size: 9px; }
+  .task-badge { padding: 1px 6px; border-radius: 999px; font-size: 8px; font-weight: 500; background: var(--teal-soft); color: var(--teal-pressed); letter-spacing: 0.04em; text-transform: uppercase; }
+  .task-badge.due { background: #fee9c8; color: #8b4d00; }
+
+  .fav-tag {
+    display: inline-block; font-size: 9px; font-weight: 600;
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--teal-soft); color: var(--teal-pressed);
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <h1>Page header — P / Q / R / Hybrid recommendation</h1>
+  <p class="subtitle">Column 4 = the hybrid <code style="font-family:'Geist Mono Variable',monospace;background:var(--surface-2);padding:1px 5px;border-radius:3px;color:var(--teal-pressed)">PageHeader</code> component, slot-rendered: crumb when depth&gt;1, eyebrow when supplied, tabs when supplied. Same component, three faces.</p>
+
+  <!-- ROW 1: Dashboard -->
+  <div class="row-label">Row 1 · Dashboard (depth 1)</div>
+  <div class="grid4">
+
+    <div class="mockup">
+      <div class="mockup-label"><span>P · Simple</span><span class="key">/dashboard</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Dashboard</h2>
+                <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary">+ Nieuw</button>
+              </div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="ph-grid">
+              <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Pad</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+            </div>
+            <div class="ph-card"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-label"><span>Q · Eyebrow + tabs</span><span class="key">/dashboard</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <span class="pill">Woensdag 14 mei</span>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Dashboard</h2>
+                <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary">+ Nieuw</button>
+              </div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Overzicht</div>
+              <div class="tab">Vandaag</div>
+              <div class="tab">Week</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="ph-grid">
+              <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Pad</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-label"><span>R · Crumb + tabs</span><span class="key">/dashboard</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="crumb"><b>Dashboard</b></div>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Dashboard</h2>
+                <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary">+ Nieuw</button>
+              </div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Overzicht</div>
+              <div class="tab">Vandaag</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="ph-grid">
+              <div class="ph-cell"><div class="ph-stat-l">Pt</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Pad</div><div class="ph-stat-v">4</div><div class="ph-stat-d">act</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HYBRID · Dashboard -->
+    <div class="mockup fav">
+      <div class="mockup-label"><span>★ Hybrid · only title + sub + actions</span><span class="key">depth 1</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Dashboard</h2>
+                <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+              </div>
+              <div class="actions">
+                <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Vernieuwen</button>
+                <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Nieuw</button>
+              </div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="ph-grid">
+              <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+              <div class="ph-cell"><div class="ph-stat-l">Zorgpaden</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+            </div>
+            <div class="ph-card"></div>
+            <div class="ph-card"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 2: Patient detail -->
+  <div class="row-label">Row 2 · Patient detail (depth 2, sub-tabs needed)</div>
+  <div class="grid4">
+
+    <div class="mockup">
+      <div class="mockup-label"><span>P · Simple</span><span class="key">/patienten/de-smet</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">De Smet, J.</h2>
+                <p class="page-sub">Rugrevalidatie · stap 3 / 7</p>
+              </div>
+              <div class="actions"><button class="btn btn-primary">Voltooien</button></div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="pat-card">
+              <div class="pat-step-row"><div class="pat-step done">1</div><div class="pat-step done">2</div><div class="pat-step now">3</div><div class="pat-step">4</div><div class="pat-step">5</div><div class="pat-step">6</div><div class="pat-step">7</div></div>
+            </div>
+            <div class="pat-card"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-label"><span>Q · Eyebrow + tabs</span><span class="key">/patienten/de-smet</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <span class="pill">Rugrevalidatie · stap 3</span>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">De Smet, J.</h2>
+                <p class="page-sub">Sinds 12 apr · ZAS</p>
+              </div>
+              <div class="actions"><button class="btn btn-primary">Voltooien</button></div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Zorgpad</div>
+              <div class="tab">Taken</div>
+              <div class="tab">Metingen</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="pat-card">
+              <div class="pat-step-row"><div class="pat-step done">1</div><div class="pat-step done">2</div><div class="pat-step now">3</div><div class="pat-step">4</div><div class="pat-step">5</div><div class="pat-step">6</div><div class="pat-step">7</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-label"><span>R · Crumb + tabs</span><span class="key">/patienten/de-smet</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="crumb"><span>Patiënten</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg><b>De Smet, J.</b></div>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">De Smet, J.</h2>
+                <p class="page-sub">Rugrevalidatie · stap 3 / 7</p>
+              </div>
+              <div class="actions"><button class="btn btn-primary">Voltooien</button></div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Zorgpad</div>
+              <div class="tab">Taken</div>
+              <div class="tab">Metingen</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="pat-card">
+              <div class="pat-step-row"><div class="pat-step done">1</div><div class="pat-step done">2</div><div class="pat-step now">3</div><div class="pat-step">4</div><div class="pat-step">5</div><div class="pat-step">6</div><div class="pat-step">7</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HYBRID · Patient -->
+    <div class="mockup fav">
+      <div class="mockup-label"><span>★ Hybrid · all slots filled</span><span class="key">depth 2</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="crumb"><span>Patiënten</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg><b>De Smet, J.</b></div>
+            <span class="pill">Rugrevalidatie · stap 3</span>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">De Smet, J.</h2>
+                <p class="page-sub">Sinds 12 apr · ZAS · Dr. Vermeulen</p>
+              </div>
+              <div class="actions">
+                <button class="btn">Bewerken</button>
+                <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Voltooien</button>
+              </div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Zorgpad</div>
+              <div class="tab">Taken</div>
+              <div class="tab">Metingen</div>
+              <div class="tab">Notities</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="pat-card">
+              <div class="pat-step-row"><div class="pat-step done">1</div><div class="pat-step done">2</div><div class="pat-step now">3</div><div class="pat-step">4</div><div class="pat-step">5</div><div class="pat-step">6</div><div class="pat-step">7</div></div>
+            </div>
+            <div class="pat-card"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: Tasks -->
+  <div class="row-label">Row 3 · Tasks (depth 1, filter tabs needed)</div>
+  <div class="grid4">
+
+    <div class="mockup">
+      <div class="mockup-label"><span>P · Simple</span><span class="key">/taken</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Taken</h2>
+                <p class="page-sub">7 open · 3 vandaag</p>
+              </div>
+              <div class="actions">
+                <button class="btn">Filter</button>
+                <button class="btn btn-primary">+ Nieuw</button>
+              </div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="task-row"><div class="check"></div><div class="task-title">De Smet bellen</div><span class="task-badge due">Vandaag</span></div>
+            <div class="task-row"><div class="check"></div><div class="task-title">Janssens plannen</div><span class="task-badge">Morgen</span></div>
+            <div class="task-row"><div class="check"></div><div class="task-title">Peeters formulier</div><span class="task-badge">Vrij</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-label"><span>Q · Eyebrow + tabs</span><span class="key">/taken</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <span class="pill">7 open · 3 vandaag</span>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Taken</h2>
+                <p class="page-sub">Mijn taken over alle patiënten.</p>
+              </div>
+              <div class="actions"><button class="btn btn-primary">+ Nieuw</button></div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Open</div>
+              <div class="tab">Vandaag</div>
+              <div class="tab">Voltooid</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="task-row"><div class="check"></div><div class="task-title">De Smet bellen</div><span class="task-badge due">Vandaag</span></div>
+            <div class="task-row"><div class="check"></div><div class="task-title">Janssens plannen</div><span class="task-badge">Morgen</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-label"><span>R · Crumb + tabs</span><span class="key">/taken</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="crumb"><b>Taken</b></div>
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Taken</h2>
+                <p class="page-sub">7 open · 3 vandaag</p>
+              </div>
+              <div class="actions"><button class="btn btn-primary">+ Nieuw</button></div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Open</div>
+              <div class="tab">Vandaag</div>
+              <div class="tab">Voltooid</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="task-row"><div class="check"></div><div class="task-title">De Smet bellen</div><span class="task-badge due">Vandaag</span></div>
+            <div class="task-row"><div class="check"></div><div class="task-title">Janssens plannen</div><span class="task-badge">Morgen</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HYBRID · Tasks -->
+    <div class="mockup fav">
+      <div class="mockup-label"><span>★ Hybrid · title + sub + actions + tabs</span><span class="key">depth 1</span></div>
+      <div class="body-base">
+        <aside class="sb-stub">
+          <div class="sb-mark">Z</div>
+          <div class="sb-ic active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></div>
+        </aside>
+        <div class="main">
+          <header class="header">
+            <div class="head-row">
+              <div>
+                <h2 class="page-title">Taken</h2>
+                <p class="page-sub">7 open · 3 vandaag</p>
+              </div>
+              <div class="actions">
+                <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg>Filter</button>
+                <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Nieuw</button>
+              </div>
+            </div>
+            <div class="tabs">
+              <div class="tab active">Open</div>
+              <div class="tab">Vandaag</div>
+              <div class="tab">Voltooid</div>
+              <div class="tab">Alle</div>
+            </div>
+          </header>
+          <div class="content">
+            <div class="task-row"><div class="check"></div><div class="task-title">Bel De Smet</div><span class="task-meta">Rug</span><span class="task-badge due">Vandaag</span></div>
+            <div class="task-row"><div class="check"></div><div class="task-title">Plan Janssens</div><span class="task-meta">Cardio</span><span class="task-badge">Morgen</span></div>
+            <div class="task-row"><div class="check"></div><div class="task-title">Stuur Peeters</div><span class="task-meta">Rug</span><span class="task-badge">Vrij</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 20px; padding: 16px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;">
+    <span class="fav-tag">★ Hybrid PageHeader</span>
+    <h3 style="margin: 8px 0 6px; font-size: 14px; font-weight: 600;">Anatomy</h3>
+    <pre style="margin: 0; font-family: 'Geist Mono Variable', monospace; font-size: 12px; color: var(--fg); background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-x: auto;">&lt;PageHeader
+  title="De Smet, J."
+  sub="Rugrevalidatie · stap 3 / 7 · sinds 12 apr"
+  eyebrow={&lt;Badge&gt;Rugrevalidatie · stap 3&lt;/Badge&gt;}        // optional
+  actions={&lt;&gt;&lt;Button variant="ghost"&gt;Bewerken&lt;/Button&gt;...&lt;/&gt;} // optional
+  tabs={[                                                  // optional
+    { to: '.', label: 'Zorgpad' },
+    { to: 'taken', label: 'Taken' },
+  ]}
+/&gt;
+// crumb is auto-rendered from useMatches() when depth &gt; 1</pre>
+    <ul style="margin: 10px 0 0; padding-left: 18px; font-size: 13px; color: var(--fg-muted);">
+      <li><b>Row 1 (Dashboard)</b> — only <code style="font-family:'Geist Mono Variable',monospace;font-size:11px;background:var(--surface-2);padding:1px 4px;border-radius:3px">title + sub + actions</code>. Reads identical to P. No crumb (depth 1), no tabs (not passed).</li>
+      <li><b>Row 2 (Patient)</b> — all slots filled. Auto-crumb from router matches. Reads like R + Q combined.</li>
+      <li><b>Row 3 (Tasks)</b> — <code style="font-family:'Geist Mono Variable',monospace;font-size:11px;background:var(--surface-2);padding:1px 4px;border-radius:3px">title + sub + actions + tabs</code>. Reads like Q minus eyebrow.</li>
+      <li>One component to learn. Consumers never thread breadcrumbs manually.</li>
+    </ul>
+  </div>
+
+</body>
+</html>

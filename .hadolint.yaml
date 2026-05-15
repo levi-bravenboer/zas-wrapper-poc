@@ -1,0 +1,4 @@
+ignored:
+  # apt-get install version pinning — build-essential et al. are routinely
+  # left unpinned; security patches arrive through base-image rebuilds.
+  - DL3008

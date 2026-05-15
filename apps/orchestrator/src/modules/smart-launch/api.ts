@@ -2,8 +2,11 @@ import FHIR from 'fhirclient'
 import type Client from 'fhirclient/lib/Client'
 import type { fhirclient } from 'fhirclient/lib/types'
 
+import { env } from '@/config/env'
+
 import type { LaunchSearch } from './schemas'
-import { useLaunchStore, type SmartCtx } from './store'
+import { useLaunchStore } from './store'
+import type { SmartCtx } from './types'
 
 export class SmartLaunchError extends Error {
   constructor(message: string) {
@@ -24,8 +27,8 @@ export class SmartExchangeError extends Error {
 const PKCE_STORAGE_PREFIX = 'smart-pkce'
 
 function getClientId(): string {
-  const value = import.meta.env.VITE_SMART_CLIENT_ID
-  if (typeof value !== 'string' || value.length === 0) {
+  const value = env.SMART_CLIENT_ID
+  if (value === undefined) {
     throw new SmartLaunchError('VITE_SMART_CLIENT_ID is not configured')
   }
   return value

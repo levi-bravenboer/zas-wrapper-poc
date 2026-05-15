@@ -1,44 +1,38 @@
-import { screen, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { I18nextProvider } from 'react-i18next'
+import { describe, expect, it, vi } from 'vitest'
 
-import { server } from '@/mocks/server'
-import { renderWithProviders } from '@/test/renderWithProviders'
+import { i18n } from '@/lib/i18n'
 
 import { LoginForm } from './LoginForm'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+const navigateMock = vi.fn()
 
-describe('LoginForm', () => {
-  it('shows validation errors when fields are empty', async () => {
+vi.mock('@tanstack/react-router', async () => {
+  const actual =
+    await vi.importActual<typeof import('@tanstack/react-router')>('@tanstack/react-router')
+  return { ...actual, useNavigate: () => navigateMock }
+})
+
+describe('LoginForm (PoC placeholder)', () => {
+  it('navigates to / on submit without validating or hitting the network', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<LoginForm />)
+    const queryClient = new QueryClient()
 
-    const submit = await screen.findByRole('button', { name: 'Inloggen' })
-    await user.click(submit)
-
-    await waitFor(() => {
-      expect(screen.getAllByRole('alert').length).toBeGreaterThan(0)
-    })
-  })
-
-  it('surfaces an error toast when the credentials are wrong', async () => {
-    server.use(
-      http.post(`${baseUrl}/auth/login`, () =>
-        HttpResponse.json({ detail: 'Invalid credentials' }, { status: 401 }),
-      ),
+    render(
+      <QueryClientProvider client={queryClient}>
+        <I18nextProvider i18n={i18n}>
+          <LoginForm />
+        </I18nextProvider>
+      </QueryClientProvider>,
     )
 
-    const user = userEvent.setup()
-    renderWithProviders(<LoginForm />)
-
-    await user.type(await screen.findByLabelText(/gebruikersnaam/i), 'demo')
-    await user.type(await screen.findByLabelText(/wachtwoord/i), 'wrong')
     await user.click(screen.getByRole('button', { name: 'Inloggen' }))
 
-    await waitFor(() => {
-      expect(screen.getByText(/inloggen mislukt/i)).toBeInTheDocument()
-    })
+    expect(navigateMock).toHaveBeenCalledTimes(1)
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/' })
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })

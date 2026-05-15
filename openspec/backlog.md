@@ -241,9 +241,11 @@ Note: "No real patient data" is now a project-wide invariant. Consider a CI lint
 
 ### BL-035 — F1 user + auth domain
 - Tier: [poc]
-- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+- Source: align-stack-with-poc-scope, scope narrowed 2026-05-13; login-screen wiring carve-out added 2026-05-15
 
 Note: F1 backend domain lands as its own `[poc]` change in its own worktree. Shape (tables, services, routes, schemas) is designed inside that change — not pre-decided here. Orchestrator `modules/auth/` already exists; the change wires it to the new backend surface.
+
+Login-screen wiring carve-out: `orchestrator-shell-restart` builds the `/login` screen with a placeholder submit handler that navigates to `/dashboard` unconditionally (no validation, no auth call). BL-035 replaces that placeholder with: frontend field validation, `useLogin` mutation against the hard-coded user table, cookie-session set-cookie round-trip, `?redirect=` search-param honouring, and failure-state rendering. The screen visuals + layout MUST NOT change — BL-035 only wires behaviour to the already-built form.
 
 ### BL-036 — F3 pathway domain
 - Tier: [poc]

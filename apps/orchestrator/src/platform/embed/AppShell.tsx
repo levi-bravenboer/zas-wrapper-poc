@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 
-import { MenuLayout } from '@/components/layout/MenuLayout'
+import { Shell } from '@/components/layout/Shell'
 import { api } from '@/lib/api/client'
 import { SURFACES } from '@/platform/surface/registry'
 import { SurfaceProvider } from '@/platform/surface/SurfaceProvider'
@@ -11,7 +11,7 @@ export function AppShell(): ReactElement {
   return (
     <SurfaceProvider surface={SURFACES.app}>
       <OrchestratorDepsProvider deps={{ api }}>
-        <MenuLayout />
+        <Shell />
       </OrchestratorDepsProvider>
     </SurfaceProvider>
   )

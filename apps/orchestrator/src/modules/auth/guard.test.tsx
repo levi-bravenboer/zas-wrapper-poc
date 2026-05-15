@@ -2,12 +2,13 @@ import { QueryClient } from '@tanstack/react-query'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
+import { env } from '@/config/env'
 import { server } from '@/mocks/server'
 
 import { requireSession } from './guard'
 import { authKeys } from './keys'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+const baseUrl = env.API_BASE_URL
 
 const STUB_USER = {
   id: 'u1',

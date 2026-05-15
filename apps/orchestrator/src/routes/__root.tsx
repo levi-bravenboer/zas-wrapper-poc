@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
-export interface RouterContext {
+interface RouterContext {
   queryClient: QueryClient
 }
 
@@ -11,7 +11,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <Outlet />
     </div>
   )

@@ -1,8 +1,8 @@
 import type { SurfaceId } from '@/platform/surface/types'
 
-import type { FeatureSpec, SmartBlock, SurfaceTuple } from './types'
+import type { AnyFeatureSpec, FeatureSpec, SurfaceTuple } from './types'
 
-const registry = new Map<string, FeatureSpec>()
+const registry = new Map<string, AnyFeatureSpec>()
 
 export function defineFeature<P, S extends SurfaceTuple>(
   spec: FeatureSpec<P, S>,
@@ -10,28 +10,31 @@ export function defineFeature<P, S extends SurfaceTuple>(
   if (registry.has(spec.id)) {
     throw new Error(`feature '${spec.id}' already registered`)
   }
-  registry.set(spec.id, spec as unknown as FeatureSpec)
+  // Erase the (P, S) generics for storage. AdaptersForSurfaces<S, P> is a
+  // generic conditional that TS cannot prove assignable to the relaxed
+  // AnyFeatureSpec shape, so the boundary requires one widening cast. All
+  // accessors return AnyFeatureSpec; consumers narrow via the surface guard.
+  registry.set(spec.id, spec as unknown as AnyFeatureSpec)
   return spec
 }
 
-export function getFeatures(): readonly FeatureSpec[] {
+export function getFeatures(): readonly AnyFeatureSpec[] {
   return Array.from(registry.values())
 }
 
-export function getFeaturesForSurface(id: SurfaceId): readonly FeatureSpec[] {
+export function getFeaturesForSurface(id: SurfaceId): readonly AnyFeatureSpec[] {
   return getFeatures().filter((feature) => feature.surfaces.includes(id))
 }
 
-export function getFeatureById(id: string): FeatureSpec | undefined {
+export function getFeatureById(id: string): AnyFeatureSpec | undefined {
   return registry.get(id)
 }
 
 export function getRequiredScopes(): readonly string[] {
   const scopes = new Set<string>()
   for (const feature of registry.values()) {
-    const smart = (feature as { smart?: SmartBlock }).smart
-    if (smart) {
-      for (const scope of smart.scopes) scopes.add(scope)
+    if (feature.smart) {
+      for (const scope of feature.smart.scopes) scopes.add(scope)
     }
   }
   return Array.from(scopes)

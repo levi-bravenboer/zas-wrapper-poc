@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sidebar — modern directions</title>
+<style>
+  :root {
+    --teal: #266b5e;
+    --teal-soft: #cfede8;
+    --teal-subtle: #f1f8f7;
+    --teal-pressed: #08453c;
+    --teal-glow: rgba(38, 107, 94, 0.18);
+    --bg: #fafaf9;
+    --surface-1: #ffffff;
+    --surface-2: #f4f4f3;
+    --surface-3: #ebeae8;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --fg: #1c1917;
+    --fg-muted: #57534e;
+    --fg-subtle: #8a847e;
+    --dark-bg: #0e1413;
+    --dark-surface: #161d1c;
+    --dark-border: #1f2827;
+    --dark-fg: #e7e5e4;
+    --dark-fg-muted: #a8a29e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 24px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--fg-muted); margin: 0 0 24px 0; font-size: 13px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-1);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .mockup-label {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .mockup-label .key { color: var(--teal); font-family: 'Geist Mono Variable', monospace; }
+  .mockup-body { height: 540px; display: flex; }
+
+  .main {
+    flex: 1;
+    padding: 24px 20px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .page-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px 0; }
+  .page-sub { font-size: 12px; color: var(--fg-muted); margin: 0 0 16px 0; }
+  .ph-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; height: 70px; margin-bottom: 10px; }
+  .ph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ph-cell { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; height: 90px; padding: 12px; }
+  .ph-stat-l { font-size: 10px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ph-stat-v { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
+  .ph-stat-d { font-size: 10px; color: var(--teal); margin-top: 2px; }
+
+  /* === C · Floating glass sidebar (Vercel-flavor) === */
+  .c-body { background: linear-gradient(180deg, #fafaf9 0%, #f0efed 100%); padding: 14px; gap: 14px; }
+  .c-sb {
+    width: 232px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 10px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  }
+  .c-main { flex: 1; padding: 14px 18px; overflow: hidden; }
+  .c-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 12px; border-bottom: 1px solid var(--border); }
+  .c-brand-mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--teal), var(--teal-pressed)); display: grid; place-items: center; color: white; font-weight: 700; font-size: 13px; font-family: 'Geist Mono Variable', monospace; box-shadow: 0 2px 6px var(--teal-glow); }
+  .c-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; }
+  .c-brand-sub { font-size: 10px; color: var(--fg-subtle); }
+  .c-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
+  .c-section-l { font-size: 10px; color: var(--fg-subtle); padding: 8px 10px 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; }
+  .c-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    transition: all .15s;
+  }
+  .c-item.active {
+    background: white;
+    color: var(--fg);
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 0 0 1px var(--border);
+  }
+  .c-item .ico { width: 14px; height: 14px; border-radius: 3px; background: currentColor; opacity: 0.6; }
+  .c-item.active .ico { background: var(--teal); opacity: 1; }
+  .c-item.muted { opacity: 0.55; }
+  .c-spacer { flex: 1; }
+  .c-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.5); border: 1px solid var(--border); }
+  .c-avatar { width: 30px; height: 30px; border-radius: 8px; background: var(--teal); color: white; display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'Geist Mono Variable', monospace; }
+  .c-user-name { font-size: 12px; font-weight: 500; }
+  .c-user-role { font-size: 10px; color: var(--fg-subtle); }
+
+  /* === D · Dark contrast sidebar (Linear-flavor) === */
+  .d-sb {
+    width: 224px;
+    background: var(--dark-bg);
+    color: var(--dark-fg);
+    padding: 14px 10px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    border-right: 1px solid var(--dark-border);
+  }
+  .d-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
+  .d-brand-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--teal); display: grid; place-items: center; color: white; font-weight: 700; font-size: 12px; font-family: 'Geist Mono Variable', monospace; }
+  .d-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; color: var(--dark-fg); }
+  .d-search { margin: 0 4px; padding: 7px 10px; background: var(--dark-surface); border: 1px solid var(--dark-border); border-radius: 7px; font-size: 12px; color: var(--dark-fg-muted); display: flex; justify-content: space-between; align-items: center; }
+  .d-search .kbd { font-family: 'Geist Mono Variable', monospace; font-size: 10px; padding: 1px 5px; background: rgba(255,255,255,0.08); border-radius: 3px; }
+  .d-nav { display: flex; flex-direction: column; gap: 2px; }
+  .d-section-l { font-size: 10px; color: var(--dark-fg-muted); padding: 8px 10px 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; opacity: 0.7; }
+  .d-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: var(--dark-fg-muted); }
+  .d-item .ico { width: 14px; height: 14px; border: 1.4px solid currentColor; border-radius: 3px; opacity: 0.7; }
+  .d-item.active { background: var(--dark-surface); color: var(--dark-fg); font-weight: 500; }
+  .d-item.active .ico { border-color: var(--teal); background: var(--teal); opacity: 1; }
+  .d-item.muted { opacity: 0.5; }
+  .d-spacer { flex: 1; }
+  .d-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; background: var(--dark-surface); }
+  .d-user-name { font-size: 12px; font-weight: 500; color: var(--dark-fg); }
+  .d-user-role { font-size: 10px; color: var(--dark-fg-muted); }
+
+  /* === E · Edge-accent sidebar (active gets left teal bar) === */
+  .e-sb {
+    width: 228px;
+    background: var(--surface-1);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+  .e-brand { display: flex; align-items: center; gap: 10px; padding: 0 16px 14px; border-bottom: 1px solid var(--border); }
+  .e-brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--teal); color: white; display: grid; place-items: center; font-weight: 700; font-size: 12px; font-family: 'Geist Mono Variable', monospace; }
+  .e-brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; }
+  .e-search { margin: 0 12px; padding: 7px 10px; background: var(--surface-2); border-radius: 7px; font-size: 12px; color: var(--fg-subtle); display: flex; justify-content: space-between; align-items: center; }
+  .e-search .kbd { font-family: 'Geist Mono Variable', monospace; font-size: 10px; padding: 1px 5px; background: white; border: 1px solid var(--border); border-radius: 3px; }
+  .e-nav { display: flex; flex-direction: column; }
+  .e-section-l { font-size: 10px; color: var(--fg-subtle); padding: 10px 16px 6px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; }
+  .e-item {
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+  .e-item .ico { width: 16px; height: 16px; border: 1.5px solid currentColor; border-radius: 4px; opacity: 0.7; }
+  .e-item.active {
+    background: linear-gradient(90deg, var(--teal-subtle), transparent);
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .e-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 6px; bottom: 6px;
+    width: 3px;
+    background: var(--teal);
+    border-radius: 0 3px 3px 0;
+  }
+  .e-item.active .ico { border-color: var(--teal); background: var(--teal-soft); opacity: 1; }
+  .e-item.muted { opacity: 0.5; }
+  .e-spacer { flex: 1; }
+  .e-user { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--border); }
+  .e-user-name { font-size: 12px; font-weight: 500; }
+  .e-user-role { font-size: 10px; color: var(--fg-subtle); }
+  .avatar-sm { width: 28px; height: 28px; border-radius: 50%; background: var(--teal); color: white; display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'Geist Mono Variable', monospace; }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 22px;
+  }
+  .pc {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--surface-1);
+  }
+  .pc h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--teal-pressed); }
+  .pc ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--fg-muted); }
+  .pc li { margin-bottom: 3px; }
+  .pc .tag { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--teal-soft); color: var(--teal-pressed); margin-bottom: 6px; font-weight: 500; }
+</style>
+</head>
+<body>
+  <h1>Sidebar — modern directions</h1>
+  <p class="subtitle">Three takes on a more deliberate look. All sidebar-only, all carry one active item + four dimmed future items + brand + user. Pick a base direction; details (search position, sections, density) we'll refine after.</p>
+
+  <div class="grid3">
+
+    <!-- C · Floating glass -->
+    <div class="mockup">
+      <div class="mockup-label"><span>C · Floating glass</span><span class="key">Vercel-flavor</span></div>
+      <div class="mockup-body c-body">
+        <aside class="c-sb">
+          <div class="c-brand">
+            <div class="c-brand-mark">Z</div>
+            <div>
+              <div class="c-brand-name">ZAS Orchestrator</div>
+              <div class="c-brand-sub">v0.1 · poc</div>
+            </div>
+          </div>
+          <div class="c-nav">
+            <div class="c-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="c-section-l">Soon</div>
+          <div class="c-nav">
+            <div class="c-item muted"><div class="ico"></div>Patiënten</div>
+            <div class="c-item muted"><div class="ico"></div>Zorgpaden</div>
+            <div class="c-item muted"><div class="ico"></div>Taken</div>
+            <div class="c-item muted"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="c-spacer"></div>
+          <div class="c-user">
+            <div class="c-avatar">DV</div>
+            <div>
+              <div class="c-user-name">Dr. Vermeulen</div>
+              <div class="c-user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="c-main">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D · Dark contrast -->
+    <div class="mockup">
+      <div class="mockup-label"><span>D · Dark contrast</span><span class="key">Linear-flavor</span></div>
+      <div class="mockup-body">
+        <aside class="d-sb">
+          <div class="d-brand">
+            <div class="d-brand-mark">Z</div>
+            <div class="d-brand-name">ZAS Orchestrator</div>
+          </div>
+          <div class="d-search"><span>Zoeken</span><span class="kbd">⌘K</span></div>
+          <div class="d-section-l">Werkruimte</div>
+          <div class="d-nav">
+            <div class="d-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="d-section-l">Soon</div>
+          <div class="d-nav">
+            <div class="d-item muted"><div class="ico"></div>Patiënten</div>
+            <div class="d-item muted"><div class="ico"></div>Zorgpaden</div>
+            <div class="d-item muted"><div class="ico"></div>Taken</div>
+            <div class="d-item muted"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="d-spacer"></div>
+          <div class="d-user">
+            <div class="avatar-sm">DV</div>
+            <div>
+              <div class="d-user-name">Dr. Vermeulen</div>
+              <div class="d-user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E · Edge accent -->
+    <div class="mockup">
+      <div class="mockup-label"><span>E · Edge accent</span><span class="key">brand-led</span></div>
+      <div class="mockup-body">
+        <aside class="e-sb">
+          <div class="e-brand">
+            <div class="e-brand-mark">Z</div>
+            <div class="e-brand-name">ZAS Orchestrator</div>
+          </div>
+          <div class="e-search"><span>Zoeken</span><span class="kbd">⌘K</span></div>
+          <div class="e-section-l">Werkruimte</div>
+          <div class="e-nav">
+            <div class="e-item active"><div class="ico"></div>Dashboard</div>
+          </div>
+          <div class="e-section-l">Soon</div>
+          <div class="e-nav">
+            <div class="e-item muted"><div class="ico"></div>Patiënten</div>
+            <div class="e-item muted"><div class="ico"></div>Zorgpaden</div>
+            <div class="e-item muted"><div class="ico"></div>Taken</div>
+            <div class="e-item muted"><div class="ico"></div>Designer</div>
+          </div>
+          <div class="e-spacer"></div>
+          <div class="e-user">
+            <div class="avatar-sm">DV</div>
+            <div>
+              <div class="e-user-name">Dr. Vermeulen</div>
+              <div class="e-user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+          </div>
+          <div style="height:10px"></div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pros-cons">
+    <div class="pc">
+      <span class="tag">C · Glass</span>
+      <h3>Floating + translucent</h3>
+      <ul>
+        <li>Feels deliberate, "designed"</li>
+        <li>Page bg can carry subtle gradient or grain</li>
+        <li>Active item = white card with hairline shadow</li>
+        <li>Risk: backdrop-filter on older devices</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">D · Dark</span>
+      <h3>Contrast sidebar</h3>
+      <ul>
+        <li>Strong visual anchor + premium tool feel</li>
+        <li>Teal accent pops harder on dark</li>
+        <li>Permanent ⌘K search slot in sidebar</li>
+        <li>Risk: contradicts "light theme only" rule — would need spec amend</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">E · Edge</span>
+      <h3>Brand-led light</h3>
+      <ul>
+        <li>Stays inside light theme rule</li>
+        <li>Active item: 3px teal bar + teal-tinted gradient</li>
+        <li>Search inline, section labels separate groups</li>
+        <li>Most conservative of the three</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

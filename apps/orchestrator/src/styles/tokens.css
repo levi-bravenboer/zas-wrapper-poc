@@ -71,3 +71,26 @@
 
   --tracking-tight: -0.011em;
 }
+
+/* Bold-glass surface tokens — opt-in via .glass utility (see globals.css) */
+:root {
+  --glass-panel: rgba(255, 255, 255, 0.55);
+  --glass-panel-strong: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  /* Blur tiers — match mockup placements: 8px badge, 14px subtle, 20px panel, 24px strong */
+  --glass-blur-xs: 8px;
+  --glass-blur-sm: 14px;
+  --glass-blur: 20px;
+  --glass-blur-strong: 24px;
+  --glass-saturate: 180%;
+
+  --shadow-glass: 0 12px 32px rgba(38, 107, 94, 0.08), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+
+  /* Aurora background — painted on body, shared across routes */
+  --gradient-aurora:
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+    linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+
+  /* Active-item pill gradient — primary → pressed */
+  --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+}

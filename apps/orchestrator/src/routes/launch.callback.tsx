@@ -1,15 +1,19 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { z } from 'zod'
 
 import { exchangeAuthCode, SmartExchangeError } from '@/modules/smart-launch/api'
 import { callbackSearchSchema } from '@/modules/smart-launch/schemas'
 import { useLaunchStore } from '@/modules/smart-launch/store'
 import { SURFACES } from '@/platform/surface/registry'
 
+type CallbackSearch = z.infer<typeof callbackSearchSchema>
+type NavigateFn = (opts: { to: string; replace?: boolean }) => void | Promise<void>
+
 export const Route = createFileRoute('/launch/callback')({
   validateSearch: callbackSearchSchema,
-  component: LaunchCallbackPage,
+  component: LaunchCallbackRoute,
 })
 
 function resolveDestination(): string {
@@ -20,12 +24,22 @@ function resolveDestination(): string {
   if (returnPath !== null && returnPath !== undefined && returnPath !== '') {
     return returnPath
   }
-  return base === '/' ? '/' : `${base}/`
+  return `${base}/`
 }
 
-function LaunchCallbackPage() {
+function LaunchCallbackRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate()
+  return <LaunchCallbackPage search={search} navigate={navigate} />
+}
+
+export function LaunchCallbackPage({
+  search,
+  navigate,
+}: {
+  search: CallbackSearch
+  navigate: NavigateFn
+}) {
   const { t } = useTranslation('smart')
   const [error, setError] = useState<string | null>(
     search.error !== undefined ? (search.error_description ?? search.error) : null,

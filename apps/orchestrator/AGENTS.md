@@ -73,7 +73,7 @@ src/
     components/   module-internal components
     __tests__/    integration tests for module flows
   components/
-    ui/         shadcn primitives — closed set: Avatar, Badge, Button, Card, Checkbox, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Skeleton, Switch, Tabs, Textarea, Toast, Toaster, Tooltip. Adding outside this set requires an OpenSpec change.
+    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Tabs, Textarea, Toast, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
     layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
@@ -90,7 +90,7 @@ src/
   styles/       tokens.css + globals.css
   test/         setup.ts + renderWithProviders.tsx
   mocks/        handlers/ + server.ts + browser.ts
-  types/        cross-module ambient types
+  types/        ambient declarations (*.d.ts) + cross-module shared types organised by domain (types/<domain>/)
 ```
 
 ### Hard rules
@@ -106,6 +106,7 @@ src/
 | Thing | Casing | Example |
 | --- | --- | --- |
 | Component file + export | PascalCase, named export | `LoginForm.tsx` → `export function LoginForm()` |
+| `components/ui/*` file | lowercase / kebab (shadcn CLI), PascalCase export | `dropdown-menu.tsx` → `export function DropdownMenu()` |
 | Hook | camelCase, `use` prefix | `useSession.ts` |
 | Module folder | lowercase / kebab-case | `auth/`, `pathway/` |
 | Route file | TanStack convention, kebab segments | `routes/_auth/index.tsx` |
@@ -121,6 +122,34 @@ src/
 | FHIR query key | `["fhir", "<ResourceType>", ...]` capitalised | `["fhir", "Patient", id]` |
 | FHIR-centred module | lowercase FHIR resource type | `modules/patient/`, `modules/observation/` |
 
+## Typing rules
+
+Pick the **lowest tier that fits**. Promote up only when the type genuinely needs the wider scope.
+
+1. **OpenAPI-generated first.** If the backend exposes it, import from `lib/api/schema.d.ts`. Never hand-roll a type that openapi-typescript already emits.
+   ```ts
+   import type { components } from '@/lib/api/schema'
+   type User = components['schemas']['User']
+   ```
+   Re-run `moon run orchestrator:typegen` when the backend contract changes.
+
+2. **Zod-inferred for boundaries.** For runtime-validated payloads (route search, HTTP bodies, env) define the schema in `<module>/schemas.ts` and infer the type: `type LoginRequest = z.infer<typeof LoginRequestSchema>`.
+
+3. **Co-located when single-consumer.** Component props, hook return shapes, file-local discriminated unions live in the same `.tsx`/`.ts`. Export only if a sibling imports.
+
+4. **Module-shared in `<module>/types.ts`.** Used by 2+ files within one feature/platform module. Lives next to its owner: `modules/tasks/types.ts`, `platform/embed/types.ts`.
+
+5. **Cross-module shared in `types/<domain>/`.** Only when a type is consumed by 2+ unrelated modules and has no single owner. Group by domain: `types/auth/`, `types/feature/`, `types/surface/`. One file per concern, named exports, no barrels.
+
+6. **Ambient declarations in `types/*.d.ts`.** Module augmentation only — `css.d.ts` for `React.CSSProperties` `--*` keys, `fontsource.d.ts` for asset imports. Never domain types here.
+
+### Cast rules
+
+- No `any` without a one-line `// reason:` comment.
+- No `as unknown as X` / `as never` outside fundamental boundaries: variance erasure (heterogeneous registries), class-instance stubs in test fixtures, third-party library quirks. Each cast carries a comment explaining why TS cannot express it.
+- Prefer `satisfies` over `as` for shape constraints with literal-narrowing.
+- Prefer type guards (`function isX(v): v is X`) over assertion casts at runtime boundaries.
+
 ## Coding rules
 
 - TypeScript `strict: true`. No `any` without a one-line `// reason:` comment.
@@ -132,6 +161,47 @@ src/
 - Validate at boundaries: HTTP payloads, route search params, env.
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
+
+## Surfaces — ask before building a new page
+
+The orchestrator ships three surfaces, defined in `src/platform/surface/registry.ts`:
+
+| Surface | Base path | Shell | Data backend | Use case |
+| --- | --- | --- | --- | --- |
+| `app` | `/` | `menu` (sidebar) | orchestrator | ZAS caregiver web app |
+| `smart` | `/s/` | `menu` (sidebar) | fhir | SMART-on-FHIR launch (PoC stub, MVP live) |
+| `embed` | `/embed/` | `bare` (no chrome) | fhir | HiX iframe embed |
+
+A page is a single feature module under `modules/<name>/` (page + port + adapters) registered via `defineFeature`. Each surface that exposes the page needs a 3-line route shim:
+
+```ts
+// routes/<surface>/<feature>.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { tasksFeature } from '@/modules/tasks'
+import { renderFeature } from '@/platform/embed/renderFeature'
+
+export const Route = createFileRoute('/<surface>/<feature>')({
+  component: renderFeature(tasksFeature),
+})
+```
+
+`renderFeature` reads `useSurface()` and mounts the right adapter (`orchestrator` for `app`, `fhir` for `smart` + `embed`). `Shell.tsx` reads the same `useSurface()` and renders the sidebar tree for menu surfaces, a bare slot for `embed`.
+
+### Mandatory question
+
+**When prompted to build a new page, ask the user which surfaces it ships on before writing code.** Options:
+
+1. **`app` only** — webapp-internal screen (most PoC pages). One route shim under `routes/_auth/`.
+2. **`app` + `embed`** — page that ZAS caregivers use AND that should embed inside HiX. Three shims (`_auth/`, `s/`, `embed/`); feature spec declares `surfaces: ['app', 'smart', 'embed']` and provides both `orchestrator` and `fhir` adapters.
+3. **`embed` only** — HiX-only surface, no webapp entry. Rare. Route shim under `routes/embed/` only.
+
+Default assumption is `app` only. If the user says "also for HiX" or "embedded" or mentions iframe / SMART-on-FHIR, surface the question explicitly before scaffolding files. Adding a surface later means writing a new adapter + a new shim; cheaper to decide up front.
+
+### Page composition contract
+
+- Menu surfaces (`app`, `smart`): `Shell` → `SidebarInset` → `PageHeader` → page body. Never render `<aside>` or your own breadcrumb.
+- Bare surface (`embed`): `Shell` → bare slot → page body. No `PageHeader`, no sidebar.
+- All routes mount inside `Shell`. Surface branching lives in `Shell.tsx`, not in route files.
 
 ## Router context and guards
 

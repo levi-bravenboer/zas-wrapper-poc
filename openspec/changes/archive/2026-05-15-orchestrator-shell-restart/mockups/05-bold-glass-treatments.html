@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Bold glass — placement + treatment options</title>
+<style>
+  :root {
+    --teal: #266b5e;
+    --teal-soft: #cfede8;
+    --teal-subtle: #f1f8f7;
+    --teal-pressed: #08453c;
+    --teal-bright: #34a08c;
+    --teal-glow: rgba(38, 107, 94, 0.18);
+    --bg: #fafaf9;
+    --surface-1: #ffffff;
+    --surface-2: #f4f4f3;
+    --border: #e7e5e4;
+    --fg: #1c1917;
+    --fg-muted: #57534e;
+    --fg-subtle: #8a847e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    background: #f6f5f3;
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 24px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--fg-muted); margin: 0 0 22px 0; font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    background: white;
+  }
+  .mockup-label {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .mockup-label .key { color: var(--teal); font-family: 'Geist Mono Variable', monospace; }
+  .body-base {
+    height: 540px;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 60% 50% at 0% 0%, rgba(38,107,94,0.20) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 100% 100%, rgba(207,237,232,0.55) 0%, transparent 55%),
+      linear-gradient(180deg, #fafaf9 0%, #f1efed 100%);
+  }
+  .body-padded { padding: 16px; gap: 16px; }
+  .body-flush  { padding: 0; gap: 0; }
+
+  /* GLASS PANEL — shared */
+  .gsb-base {
+    width: 240px;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    padding: 14px 12px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 12px 32px rgba(38,107,94,0.08),
+                0 1px 0 rgba(255,255,255,0.6) inset;
+    border: 1px solid rgba(255,255,255,0.7);
+  }
+  .gsb-floating { border-radius: 18px; }
+  .gsb-flush { border-radius: 0; border-left: 0; border-top: 0; border-bottom: 0; border-right: 1px solid rgba(255,255,255,0.6); height: 100%; }
+  .gsb-flush-rounded { border-radius: 0 18px 18px 0; border-left: 0; border-top: 0; border-bottom: 0; border-right: 1px solid rgba(255,255,255,0.6); height: 100%; }
+  .gsb-flush-strong {
+    border-radius: 0;
+    background: rgba(255,255,255,0.7);
+    border-left: 0; border-top: 0; border-bottom: 0;
+    border-right: 1px solid rgba(255,255,255,0.8);
+    height: 100%;
+    box-shadow: inset -1px 0 0 rgba(0,0,0,0.04),
+                0 0 0 1px rgba(255,255,255,0.7) inset;
+  }
+  .gsb-flush-strong::before {
+    /* noise/grain overlay */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(38,107,94,0.04) 1px, transparent 1px);
+    background-size: 4px 4px;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* SHARED PARTS */
+  .brand { display: flex; align-items: center; gap: 10px; padding: 2px 6px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    color: white;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 13px;
+    font-family: 'Geist Mono Variable', monospace;
+    box-shadow: 0 2px 8px var(--teal-glow), 0 0 0 1px rgba(255,255,255,0.4) inset;
+    flex-shrink: 0;
+  }
+  .brand-name { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; white-space: nowrap; }
+  .brand-sub { font-size: 10px; color: var(--fg-subtle); white-space: nowrap; }
+  .collapse-btn {
+    margin-left: auto;
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.7);
+    display: grid; place-items: center;
+    color: var(--fg-muted);
+    flex-shrink: 0;
+  }
+  .search {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--fg-muted);
+    margin: 0 2px;
+  }
+  .search svg { opacity: 0.7; flex-shrink: 0; }
+  .search .label { flex: 1; }
+  .kbd { font-family: 'Geist Mono Variable', monospace; font-size: 10px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,0.7); border: 1px solid var(--border); color: var(--fg-muted); }
+
+  .section-l { font-size: 10px; color: var(--fg-subtle); padding: 8px 10px 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--fg-muted);
+    position: relative;
+  }
+  .item svg { flex-shrink: 0; opacity: 0.7; }
+  .item .label { flex: 1; white-space: nowrap; }
+  .item.active {
+    background: linear-gradient(135deg, rgba(38,107,94,0.95), rgba(8,69,60,0.95));
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(38,107,94,0.25);
+  }
+  .item.active svg { opacity: 1; }
+  .item.muted { opacity: 0.55; }
+  .item .badge {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.7);
+    color: var(--teal-pressed);
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+  .item.active .badge { background: rgba(255,255,255,0.25); color: white; border-color: transparent; }
+
+  .spacer { flex: 1; }
+  .user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
+    border: 1px solid rgba(255,255,255,0.7);
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    color: white; display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+    font-family: 'Geist Mono Variable', monospace;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px var(--teal-glow), 0 0 0 1px rgba(255,255,255,0.5) inset;
+  }
+  .user-name { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .user-role { font-size: 10px; color: var(--fg-subtle); white-space: nowrap; }
+
+  /* MAIN AREA */
+  .main { flex: 1; padding: 18px 22px; overflow: hidden; min-width: 0; }
+  .main-flush { padding: 24px 28px; }
+  .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px 0; }
+  .page-sub { font-size: 12px; color: var(--fg-muted); margin: 0 0 16px 0; }
+  .ph-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .ph-cell {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 10px;
+    height: 88px;
+    padding: 12px;
+  }
+  .ph-stat-l { font-size: 10px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+  .ph-stat-v { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
+  .ph-stat-d { font-size: 10px; color: var(--teal); margin-top: 2px; }
+  .ph-card {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 10px;
+    height: 60px;
+    margin-top: 10px;
+  }
+
+  /* TREATMENT VARIANT BITS */
+  /* I — flush square */
+  .I .item.active { border-radius: 8px; }
+
+  /* J — flush rounded-right */
+
+  /* K — floating refined */
+  .K-item.active {
+    background: rgba(255,255,255,0.7);
+    color: var(--teal-pressed);
+    box-shadow: 0 4px 14px rgba(38,107,94,0.12),
+                0 0 0 1px rgba(255,255,255,0.8) inset;
+  }
+  .K-item.active svg { opacity: 1; color: var(--teal); }
+  .K-item.active .badge { background: var(--teal-soft); color: var(--teal-pressed); border-color: rgba(38,107,94,0.2); }
+  .K-rail {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 18px;
+    background: var(--teal);
+    border-radius: 3px;
+  }
+
+  /* L — flush strong + grain */
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .pc {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--surface-1);
+  }
+  .pc h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--teal-pressed); }
+  .pc ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--fg-muted); }
+  .pc li { margin-bottom: 3px; }
+  .pc .tag { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--teal-soft); color: var(--teal-pressed); margin-bottom: 6px; font-weight: 500; }
+
+  /* icon-only helpers for shorter markup */
+  .ic-dash { content: ''; }
+</style>
+</head>
+<body>
+  <h1>Bold glass — four placement + treatment variants</h1>
+  <p class="subtitle">All keep teal radial gradients on page bg + lucide icons + ⌘K search. Variation lives in panel placement (floating vs flush) and active-state treatment. Pick a winner or mix attributes.</p>
+
+  <div class="grid2">
+
+    <!-- I · Flush, square edges, gradient active -->
+    <div class="mockup">
+      <div class="mockup-label"><span>I · Flush full-height (square)</span><span class="key">flush · 240 px</span></div>
+      <div class="body-base body-flush">
+        <aside class="gsb-base gsb-flush I">
+          <div class="brand">
+            <div class="brand-mark">Z</div>
+            <div>
+              <div class="brand-name">ZAS Orchestrator</div>
+              <div class="brand-sub">v0.1 · poc</div>
+            </div>
+            <button class="collapse-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+          </div>
+          <div class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span class="label">Zoeken</span><span class="kbd">⌘K</span>
+          </div>
+          <div class="section-l">Werkruimte</div>
+          <div class="nav">
+            <div class="item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <span class="label">Dashboard</span>
+            </div>
+          </div>
+          <div class="section-l">Soon</div>
+          <div class="nav">
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span class="label">Patiënten</span><span class="badge">24</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              <span class="label">Zorgpaden</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+              <span class="label">Taken</span><span class="badge">7</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="user">
+            <div class="avatar">DV</div>
+            <div>
+              <div class="user-name">Dr. Vermeulen</div>
+              <div class="user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main main-flush">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Zorgpaden</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+          </div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- J · Flush, rounded right edge only -->
+    <div class="mockup">
+      <div class="mockup-label"><span>J · Flush, rounded right edge</span><span class="key">flush · 18px R</span></div>
+      <div class="body-base body-flush">
+        <aside class="gsb-base gsb-flush-rounded">
+          <div class="brand">
+            <div class="brand-mark">Z</div>
+            <div>
+              <div class="brand-name">ZAS Orchestrator</div>
+              <div class="brand-sub">v0.1 · poc</div>
+            </div>
+            <button class="collapse-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+          </div>
+          <div class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span class="label">Zoeken</span><span class="kbd">⌘K</span>
+          </div>
+          <div class="section-l">Werkruimte</div>
+          <div class="nav">
+            <div class="item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <span class="label">Dashboard</span>
+            </div>
+          </div>
+          <div class="section-l">Soon</div>
+          <div class="nav">
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span class="label">Patiënten</span><span class="badge">24</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              <span class="label">Zorgpaden</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+              <span class="label">Taken</span><span class="badge">7</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="user">
+            <div class="avatar">DV</div>
+            <div>
+              <div class="user-name">Dr. Vermeulen</div>
+              <div class="user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main main-flush">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Zorgpaden</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+          </div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid2">
+
+    <!-- K · Floating refined (lighter active) -->
+    <div class="mockup">
+      <div class="mockup-label"><span>K · Floating · lighter active</span><span class="key">floating · 240 px</span></div>
+      <div class="body-base body-padded">
+        <aside class="gsb-base gsb-floating">
+          <div class="brand">
+            <div class="brand-mark">Z</div>
+            <div>
+              <div class="brand-name">ZAS Orchestrator</div>
+              <div class="brand-sub">v0.1 · poc</div>
+            </div>
+            <button class="collapse-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+          </div>
+          <div class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span class="label">Zoeken</span><span class="kbd">⌘K</span>
+          </div>
+          <div class="section-l">Werkruimte</div>
+          <div class="nav">
+            <div class="item K-item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <span class="label">Dashboard</span>
+            </div>
+          </div>
+          <div class="section-l">Soon</div>
+          <div class="nav">
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span class="label">Patiënten</span><span class="badge">24</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              <span class="label">Zorgpaden</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+              <span class="label">Taken</span><span class="badge">7</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="user">
+            <div class="avatar">DV</div>
+            <div>
+              <div class="user-name">Dr. Vermeulen</div>
+              <div class="user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Zorgpaden</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+          </div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L · Flush, strong glass + subtle grain texture -->
+    <div class="mockup">
+      <div class="mockup-label"><span>L · Flush · stronger + grain</span><span class="key">flush · grain</span></div>
+      <div class="body-base body-flush">
+        <aside class="gsb-base gsb-flush-strong" style="position: relative;">
+          <div class="brand">
+            <div class="brand-mark">Z</div>
+            <div>
+              <div class="brand-name">ZAS Orchestrator</div>
+              <div class="brand-sub">v0.1 · poc</div>
+            </div>
+            <button class="collapse-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+          </div>
+          <div class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span class="label">Zoeken</span><span class="kbd">⌘K</span>
+          </div>
+          <div class="section-l">Werkruimte</div>
+          <div class="nav">
+            <div class="item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <span class="label">Dashboard</span>
+            </div>
+          </div>
+          <div class="section-l">Soon</div>
+          <div class="nav">
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span class="label">Patiënten</span><span class="badge">24</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+              <span class="label">Zorgpaden</span>
+            </div>
+            <div class="item muted">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+              <span class="label">Taken</span><span class="badge">7</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="user">
+            <div class="avatar">DV</div>
+            <div>
+              <div class="user-name">Dr. Vermeulen</div>
+              <div class="user-role">Caregiver</div>
+            </div>
+          </div>
+        </aside>
+        <div class="main main-flush">
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-sub">Goedemorgen, Dr. Vermeulen.</p>
+          <div class="ph-grid">
+            <div class="ph-cell"><div class="ph-stat-l">Patiënten</div><div class="ph-stat-v">24</div><div class="ph-stat-d">+2</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Taken</div><div class="ph-stat-v">7</div><div class="ph-stat-d">3 vandaag</div></div>
+            <div class="ph-cell"><div class="ph-stat-l">Zorgpaden</div><div class="ph-stat-v">4</div><div class="ph-stat-d">actief</div></div>
+          </div>
+          <div class="ph-card"></div>
+          <div class="ph-card"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pros-cons">
+    <div class="pc">
+      <span class="tag">I · Flush square</span>
+      <h3>Anchored</h3>
+      <ul>
+        <li>No corner radius — reads as part of window chrome</li>
+        <li>Max vertical real estate for nav (no 32 px gutters)</li>
+        <li>Cleanest feel under HiX embed</li>
+        <li>Glass effect still visible but contained</li>
+        <li>Most space-efficient</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">J · Flush rounded-R</span>
+      <h3>Compromise</h3>
+      <ul>
+        <li>Flush top/left/bottom — sidebar feels anchored</li>
+        <li>18 px rounded right edge — softness without floating</li>
+        <li>Reads as "panel embedded in app shell"</li>
+        <li>Decent under embed + good as standalone</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">K · Floating light</span>
+      <h3>Refined floater</h3>
+      <ul>
+        <li>Same 18 px floating panel from earlier</li>
+        <li>Active state: white-glass pill, teal icon (not full teal fill)</li>
+        <li>Less visual weight per item, plays nice with badges</li>
+        <li>Best when you want the sidebar to feel like a separate surface</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">L · Flush + grain</span>
+      <h3>Tactile</h3>
+      <ul>
+        <li>Flush, higher base opacity (70%)</li>
+        <li>Subtle teal-dot grain inside sidebar</li>
+        <li>Inset shadow on right edge for depth</li>
+        <li>Most "material", least "purely glass"</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Login screen — glass variants</title>
+<style>
+  :root {
+    --teal: #266b5e;
+    --teal-soft: #cfede8;
+    --teal-subtle: #f1f8f7;
+    --teal-pressed: #08453c;
+    --teal-bright: #34a08c;
+    --teal-glow: rgba(38, 107, 94, 0.18);
+    --bg: #fafaf9;
+    --surface-1: #ffffff;
+    --surface-2: #f4f4f3;
+    --border: #e7e5e4;
+    --fg: #1c1917;
+    --fg-muted: #57534e;
+    --fg-subtle: #8a847e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    background: #f6f5f3;
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 24px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--fg-muted); margin: 0 0 24px 0; font-size: 13px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .mockup {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    background: white;
+  }
+  .mockup-label {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .mockup-label .key { color: var(--teal); font-family: 'Geist Mono Variable', monospace; }
+  .body-base {
+    height: 560px;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 60% at 20% 20%, rgba(38,107,94,0.22) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(207,237,232,0.6) 0%, transparent 55%),
+      linear-gradient(180deg, #fafaf9 0%, #f1efed 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* shared form bits */
+  .brand-mark {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    color: white;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 18px;
+    font-family: 'Geist Mono Variable', monospace;
+    box-shadow: 0 4px 14px var(--teal-glow), 0 0 0 1px rgba(255,255,255,0.4) inset;
+  }
+  .brand-mark-sm {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    font-size: 13px;
+  }
+  .label {
+    font-size: 11px;
+    color: var(--fg-muted);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--fg);
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.7);
+    outline: none;
+  }
+  .input::placeholder { color: var(--fg-subtle); }
+  .input:focus { background: white; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(38,107,94,0.15); }
+  .btn-primary {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 0;
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-pressed));
+    color: white;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    box-shadow: 0 4px 14px var(--teal-glow), 0 0 0 1px rgba(255,255,255,0.3) inset;
+  }
+  .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-bottom: 4px;
+  }
+  .meta-row a { color: var(--teal-pressed); text-decoration: none; font-weight: 500; }
+  .helper { font-size: 12px; color: var(--fg-subtle); }
+  .helper a { color: var(--teal-pressed); }
+
+  /* === M · Centered glass card === */
+  .M-card {
+    width: 380px;
+    padding: 32px;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(38,107,94,0.12),
+                0 0 0 1px rgba(255,255,255,0.7) inset;
+    display: flex; flex-direction: column;
+    gap: 20px;
+  }
+  .M-head { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .M-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  .M-sub { font-size: 13px; color: var(--fg-muted); margin: 0; text-align: center; }
+  .M-form { display: flex; flex-direction: column; gap: 14px; }
+  .M-foot { text-align: center; font-size: 11px; color: var(--fg-subtle); border-top: 1px solid var(--border); padding-top: 14px; }
+
+  /* === N · Split panel: brand + form === */
+  .N-shell {
+    width: 92%; height: 88%;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(18px) saturate(170%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 20px;
+    box-shadow: 0 12px 32px rgba(38,107,94,0.10), 0 0 0 1px rgba(255,255,255,0.7) inset;
+    display: grid; grid-template-columns: 1.1fr 1fr;
+    overflow: hidden;
+  }
+  .N-brand {
+    background: linear-gradient(135deg, var(--teal-pressed), var(--teal));
+    color: white;
+    padding: 28px;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .N-brand::before {
+    content: '';
+    position: absolute;
+    inset: -40%;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18) 0%, transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(52,160,140,0.4) 0%, transparent 45%);
+    filter: blur(20px);
+  }
+  .N-brand-inner { position: relative; z-index: 1; }
+  .N-brand-top { display: flex; align-items: center; gap: 10px; }
+  .N-brand-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+  .N-tag { font-size: 11px; opacity: 0.7; }
+  .N-headline { font-size: 24px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; margin-top: 28px; }
+  .N-body { font-size: 13px; opacity: 0.85; margin-top: 8px; line-height: 1.5; max-width: 240px; }
+  .N-foot { font-size: 11px; opacity: 0.6; }
+  .N-form-side { padding: 28px; display: flex; flex-direction: column; justify-content: center; gap: 16px; background: rgba(255,255,255,0.4); }
+  .N-form-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 2px 0; }
+  .N-form-sub { font-size: 12px; color: var(--fg-muted); margin: 0 0 12px 0; }
+
+  /* === O · Minimal centered === */
+  .O-stack {
+    width: 320px;
+    display: flex; flex-direction: column;
+    gap: 22px;
+    align-items: center;
+  }
+  .O-brand-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .O-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  .O-sub { font-size: 12px; color: var(--fg-muted); margin: 0; text-align: center; }
+  .O-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+  .O-foot { font-size: 11px; color: var(--fg-subtle); }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 22px;
+  }
+  .pc {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--surface-1);
+  }
+  .pc h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--teal-pressed); }
+  .pc ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--fg-muted); }
+  .pc li { margin-bottom: 3px; }
+  .pc .tag { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--teal-soft); color: var(--teal-pressed); margin-bottom: 6px; font-weight: 500; }
+</style>
+</head>
+<body>
+  <h1>Login screen — three glass variants</h1>
+  <p class="subtitle">Same aurora bg as the shell. Locked: hard-coded users (PoC). Question is the framing — card, split, or minimal.</p>
+
+  <div class="grid3">
+
+    <!-- M · Centered glass card -->
+    <div class="mockup">
+      <div class="mockup-label"><span>M · Centered glass card</span><span class="key">380 px card</span></div>
+      <div class="body-base">
+        <div class="M-card">
+          <div class="M-head">
+            <div class="brand-mark">Z</div>
+            <h2 class="M-title">ZAS Orchestrator</h2>
+            <p class="M-sub">Meld je aan met je ZAS-account om verder te gaan.</p>
+          </div>
+          <form class="M-form">
+            <div>
+              <span class="label">E-mail</span>
+              <input class="input" placeholder="naam@zas.be" value="dr.vermeulen@zas.be" />
+            </div>
+            <div>
+              <div class="meta-row">
+                <span class="label" style="margin:0">Wachtwoord</span>
+                <a href="#">Vergeten?</a>
+              </div>
+              <input class="input" type="password" placeholder="••••••••" value="••••••••" />
+            </div>
+            <button class="btn-primary" type="button">Aanmelden</button>
+          </form>
+          <p class="M-foot">PoC · gebruik test-account · v0.1</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- N · Split panel -->
+    <div class="mockup">
+      <div class="mockup-label"><span>N · Split: brand + form</span><span class="key">2-column</span></div>
+      <div class="body-base">
+        <div class="N-shell">
+          <div class="N-brand">
+            <div class="N-brand-inner N-brand-top">
+              <div class="brand-mark brand-mark-sm">Z</div>
+              <div>
+                <div class="N-brand-name">ZAS Orchestrator</div>
+                <div class="N-tag">v0.1 · poc</div>
+              </div>
+            </div>
+            <div class="N-brand-inner">
+              <div class="N-headline">Het zorgpad,<br>jouw regie.</div>
+              <div class="N-body">Stel zorgpaden samen, volg patiënten op en organiseer taken — alles op één plek.</div>
+            </div>
+            <div class="N-brand-inner N-foot">ZAS Antwerpen · Reaktor Health</div>
+          </div>
+          <div class="N-form-side">
+            <div>
+              <h3 class="N-form-title">Aanmelden</h3>
+              <p class="N-form-sub">Voer je ZAS-account in.</p>
+            </div>
+            <div>
+              <span class="label">E-mail</span>
+              <input class="input" value="dr.vermeulen@zas.be" />
+            </div>
+            <div>
+              <div class="meta-row">
+                <span class="label" style="margin:0">Wachtwoord</span>
+                <a href="#">Vergeten?</a>
+              </div>
+              <input class="input" type="password" value="••••••••" />
+            </div>
+            <button class="btn-primary" type="button">Aanmelden</button>
+            <div class="helper" style="text-align:center;">PoC · test-account · <a href="#">help</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O · Minimal centered -->
+    <div class="mockup">
+      <div class="mockup-label"><span>O · Minimal, no card</span><span class="key">bg only</span></div>
+      <div class="body-base">
+        <div class="O-stack">
+          <div class="O-brand-row">
+            <div class="brand-mark">Z</div>
+            <h2 class="O-title">ZAS Orchestrator</h2>
+            <p class="O-sub">Meld je aan om verder te gaan.</p>
+          </div>
+          <form class="O-form">
+            <div>
+              <span class="label">E-mail</span>
+              <input class="input" value="dr.vermeulen@zas.be" />
+            </div>
+            <div>
+              <div class="meta-row">
+                <span class="label" style="margin:0">Wachtwoord</span>
+                <a href="#">Vergeten?</a>
+              </div>
+              <input class="input" type="password" value="••••••••" />
+            </div>
+            <button class="btn-primary" type="button">Aanmelden</button>
+          </form>
+          <p class="O-foot">PoC · v0.1</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pros-cons">
+    <div class="pc">
+      <span class="tag">M · Centered card</span>
+      <h3>Card on aurora</h3>
+      <ul>
+        <li>Glass card mirrors sidebar treatment (consistent vocabulary)</li>
+        <li>380 px focused form, easy on the eyes</li>
+        <li>Brand mark + title + form stacked vertical</li>
+        <li>Bg gradient does the visual work</li>
+        <li>Cheapest, most flexible</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">N · Split</span>
+      <h3>Brand + form</h3>
+      <ul>
+        <li>Left teal panel for brand + tagline, right for form</li>
+        <li>More "marketing" — sets product personality first impression</li>
+        <li>Glass shell wraps both halves</li>
+        <li>Slot for hospital crest / co-brand later</li>
+        <li>Costs more layout work, less optimal on mobile</li>
+      </ul>
+    </div>
+    <div class="pc">
+      <span class="tag">O · Minimal</span>
+      <h3>No card</h3>
+      <ul>
+        <li>Form sits directly on bg, no card chrome</li>
+        <li>Most restrained — focus on form alone</li>
+        <li>Brand mark + title floating above inputs</li>
+        <li>Risk: feels under-designed for first impression</li>
+        <li>Strong on mobile (no panel to fight with viewport)</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

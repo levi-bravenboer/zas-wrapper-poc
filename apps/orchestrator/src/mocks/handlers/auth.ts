@@ -1,6 +1,14 @@
 import { HttpResponse, http } from 'msw'
+import { z } from 'zod'
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18000'
+import { env } from '@/config/env'
+
+const loginBodySchema = z.object({
+  username: z.string().optional(),
+  password: z.string().optional(),
+})
+
+const baseUrl = env.API_BASE_URL
 
 const STUB_USER = {
   id: 'user_demo',
@@ -15,7 +23,7 @@ let signedIn = false
 
 export const authHandlers = [
   http.post(`${baseUrl}/auth/login`, async ({ request }) => {
-    const body = (await request.json()) as { username?: string; password?: string }
+    const body = loginBodySchema.parse(await request.json())
     if (!body.username || !body.password) {
       return HttpResponse.json({ detail: 'Missing credentials' }, { status: 400 })
     }

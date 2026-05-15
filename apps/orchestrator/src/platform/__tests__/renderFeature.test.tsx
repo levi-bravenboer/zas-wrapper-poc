@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react'
-import type Client from 'fhirclient/lib/Client'
 import { describe, expect, it, vi } from 'vitest'
 
 import { FhirDepsProvider, OrchestratorDepsProvider } from '@/platform/embed/deps'
@@ -9,16 +8,17 @@ import type { FeatureSpec } from '@/platform/embed/types'
 import { createPort } from '@/platform/ports/createPort'
 import { SURFACES } from '@/platform/surface/registry'
 import { SurfaceProvider } from '@/platform/surface/SurfaceProvider'
+import { makeFhirClient } from '@/test/fhirFixtures'
 
 const fakeFhirDeps: FhirDeps = {
-  client: { state: { tokenResponse: {} } } as unknown as Client,
+  client: makeFhirClient(),
   ctx: { patient: { id: 'p1', reference: 'Patient/p1' } },
 }
 
 type ExamplePort = { readonly source: 'orchestrator' | 'fhir' }
 
 function buildSpec(): {
-  spec: FeatureSpec<ExamplePort>
+  spec: FeatureSpec<ExamplePort, readonly ['app', 'embed']>
   orchestratorAdapter: ReturnType<typeof vi.fn>
   fhirAdapter: ReturnType<typeof vi.fn>
 } {
@@ -30,19 +30,19 @@ function buildSpec(): {
     return port.use().source
   }
 
-  const spec = {
+  const spec: FeatureSpec<ExamplePort, readonly ['app', 'embed']> = {
     id: 'example',
     path: '/example',
     titleKey: 'nav.example',
     page: Page,
     port,
-    surfaces: ['app', 'embed'] as const,
+    surfaces: ['app', 'embed'],
     adapters: {
       orchestrator: orchestratorAdapter,
       fhir: fhirAdapter,
     },
-    smart: { scopes: ['patient/Example.read'], requires: ['patient'] as const },
-  } as unknown as FeatureSpec<ExamplePort>
+    smart: { scopes: ['patient/Example.read'], requires: ['patient'] },
+  }
 
   return { spec, orchestratorAdapter, fhirAdapter }
 }

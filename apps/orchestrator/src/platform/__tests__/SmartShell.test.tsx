@@ -14,10 +14,13 @@ describe('SmartShell', () => {
     useLaunchStore.getState().clear()
   })
 
-  it('renders the primary sidebar alongside the active route', async () => {
-    mountShellWithTasks(SmartShell, '/tasks')
+  it('mounts the menu shell (sidebar present) alongside the active route', async () => {
+    const { container } = mountShellWithTasks(SmartShell, '/tasks')
 
-    expect(await screen.findByRole('navigation', { name: 'primary' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Taken' })).toBeInTheDocument()
+    /* eslint-disable testing-library/no-node-access -- attribute selectors lack a semantic Testing Library equivalent */
+    expect(container.querySelector('[data-shell="menu"]')).not.toBeNull()
+    expect(container.querySelector('[data-slot="sidebar"]')).not.toBeNull()
+    /* eslint-enable testing-library/no-node-access */
   })
 })

@@ -14,11 +14,18 @@ describe('EmbedShell', () => {
     useLaunchStore.getState().clear()
   })
 
-  it('renders the active route inside the bare embed main without a sidebar', async () => {
-    mountShellWithTasks(EmbedShell, '/tasks')
+  it('renders the active route inside the bare shell without a sidebar', async () => {
+    const { container } = mountShellWithTasks(EmbedShell, '/tasks')
 
     expect(await screen.findByRole('heading', { name: 'Taken' })).toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: 'primary' })).not.toBeInTheDocument()
-    expect(screen.getByRole('main')).toHaveAttribute('data-embed', 'hix')
+
+    /* eslint-disable testing-library/no-node-access -- attribute selectors lack a semantic Testing Library equivalent */
+    const bare = container.querySelector('[data-shell="bare"]')
+    expect(bare).not.toBeNull()
+    expect(bare?.getAttribute('data-surface')).toBe('embed')
+
+    expect(container.querySelector('[data-slot="sidebar"]')).toBeNull()
+    expect(container.querySelector('[data-shell="menu"]')).toBeNull()
+    /* eslint-enable testing-library/no-node-access */
   })
 })

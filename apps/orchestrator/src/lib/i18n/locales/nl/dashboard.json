@@ -1,0 +1,19 @@
+{
+  "title": "Overzicht",
+  "sub": "Vandaag in één oogopslag",
+  "stats": {
+    "heading": "Vandaag",
+    "patients": "Actieve patiënten",
+    "tasks": "Open taken",
+    "appointments": "Afspraken",
+    "messages": "Nieuwe berichten"
+  },
+  "tasks": {
+    "heading": "Mijn taken",
+    "sub": "Laatst toegekend"
+  },
+  "patients": {
+    "heading": "Recente patiënten",
+    "sub": "Door jou geopend"
+  }
+}

@@ -128,4 +128,15 @@ export default defineConfig([
     rules: { 'import-x/no-default-export': 'off' },
     languageOptions: { globals: globals.node },
   },
+  {
+    // shadcn primitives — vendor code, project-stricter rules relaxed
+    files: ['src/components/ui/**/*.{ts,tsx}', 'src/hooks/use-mobile.ts'],
+    plugins: { i18next },
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'i18next/no-literal-string': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 ])
