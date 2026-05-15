@@ -36,7 +36,7 @@ The three changes MUST merge sequentially on `main`. They MAY be drafted in para
 | --- | --- | --- | --- |
 | 1 | `organisations-base` | `.worktrees/feat-patients-base-setup/` | applied locally (awaiting integration merge) |
 | 2 | `patients-base` | `.worktrees/feat-patients-base-setup/` | draft (this worktree) |
-| 3 | `care-teams-base` | (draft in this worktree alongside patients-base) | draft |
+| 3 | `care-teams-base` | `.worktrees/feat-care-teams-base/` | ready-to-apply (tests + contract + typegen green) |
 
 Update this file whenever a change advances state (draft → in-review → applied → archived).
 

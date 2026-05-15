@@ -82,20 +82,20 @@
 
 ## 10. OpenAPI + frontend client
 
-- [ ] 10.1 Regenerate OpenAPI schema export
-- [ ] 10.2 Regenerate orchestrator typed client (`pnpm typegen`)
-- [ ] 10.3 Contract test: 6 care-team routes present with expected request/response shapes
-- [ ] 10.4 Commit generated client diff in its own commit
+- [x] 10.1 Regenerate OpenAPI schema export
+- [x] 10.2 Regenerate orchestrator typed client (`pnpm typegen`)
+- [x] 10.3 Contract test: 6 care-team routes present with expected request/response shapes
+- [x] 10.4 Commit generated client diff in its own commit
 
 ## 11. Docs, verification, follow-ups
 
-- [ ] 11.1 Update `openspec/changes/CHAIN.md`: mark `care-teams-base` ready-to-apply when prerequisites are applied
-- [ ] 11.2 Update `openspec/mdr-watchlist.md`: care-team membership is administrative, not clinical reasoning — MDR-safe
-- [ ] 11.3 Open follow-up: pathway builder + runtime (assigns patients to orgs/teams automatically)
-- [ ] 11.4 Open follow-up: `Encounter.participant` per-visit modelling (future clinical-data change)
-- [ ] 11.5 Open follow-up: `EpisodeOfCare` wrapping CareTeam (future)
-- [ ] 11.6 Open follow-up: free codeable concept for `role_in_care` (additive enum widening)
-- [ ] 11.7 Open follow-up: `CareTeam.managingOrganization` column if MVP demands it
+- [x] 11.1 Update `openspec/changes/CHAIN.md`: mark `care-teams-base` ready-to-apply when prerequisites are applied
+- [x] 11.2 Update `openspec/mdr-watchlist.md`: care-team membership is administrative, not clinical reasoning — MDR-safe
+- [x] 11.3 Open follow-up: pathway builder + runtime (assigns patients to orgs/teams automatically) — BL-056
+- [x] 11.4 Open follow-up: `Encounter.participant` per-visit modelling (future clinical-data change) — BL-057
+- [x] 11.5 Open follow-up: `EpisodeOfCare` wrapping CareTeam (future) — BL-058
+- [x] 11.6 Open follow-up: free codeable concept for `role_in_care` (additive enum widening) — BL-059
+- [x] 11.7 Open follow-up: `CareTeam.managingOrganization` column if MVP demands it — BL-060
 - [ ] 11.8 Run `apps/backend` test + lint + type-check; quote results
 - [ ] 11.9 Run `apps/orchestrator` build + type-check after client regen; quote results
 - [ ] 11.10 `openspec validate care-teams-base --strict` clean
