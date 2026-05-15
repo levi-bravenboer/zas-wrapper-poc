@@ -99,7 +99,7 @@
 
 ## 12. Docs, follow-ups, verification
 
-- [ ] 12.1 At archive time: capability docs land at `openspec/specs/patients-base/` (deferred to archive step — `openspec-archive-change` skill handles the move)
+- [x] 12.1 At archive time: capability docs land at `openspec/specs/patients-base/` (deferred to archive step — `openspec-archive-change` skill handles the move)
 - [x] 12.2 Added a `2026-05-15 — patients-base scope check` entry to `openspec/mdr-watchlist.md` confirming the row stores identifiers + demographics + sync metadata only; re-verify on any future column addition
 - [x] 12.3 Filed follow-up `BL-051 — AUTH-HARDEN sweep` in `openspec/backlog.md` (renumbered after merging origin/main which had already claimed BL-042..BL-045 for auth-compliance gaps)
 - [x] 12.4 Filed follow-up `BL-052 — Patient identifier column encryption` in `openspec/backlog.md` (gated by `BL-034`)
