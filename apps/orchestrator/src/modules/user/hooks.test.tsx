@@ -50,9 +50,7 @@ function makeSharedWrapper(qc: QueryClient) {
 
 describe('useUserDetail', () => {
   it('fetches detail by id', async () => {
-    server.use(
-      http.get(`${baseUrl}/users/${USER_ID}`, () => HttpResponse.json(makeDetail())),
-    )
+    server.use(http.get(`${baseUrl}/users/${USER_ID}`, () => HttpResponse.json(makeDetail())))
 
     const { result } = renderHook(() => useUserDetail(USER_ID), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))

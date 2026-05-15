@@ -128,8 +128,7 @@ export function useUserRowActions(
       setActive.mutate(
         { userId: row.id, is_active },
         {
-          onSuccess: () =>
-            toast.success(is_active ? t('toast.activated') : t('toast.deactivated')),
+          onSuccess: () => toast.success(is_active ? t('toast.activated') : t('toast.deactivated')),
           onError: () => toast.error(t('toast.error')),
         },
       )

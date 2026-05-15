@@ -103,9 +103,7 @@ describe('/_auth/users route', () => {
 
   it('surfaces an error state with a retry control on failed fetch', async () => {
     server.use(
-      http.get(`${baseUrl}/users`, () =>
-        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
-      ),
+      http.get(`${baseUrl}/users`, () => HttpResponse.json({ detail: 'boom' }, { status: 500 })),
     )
 
     renderUsersPage()
@@ -114,17 +112,13 @@ describe('/_auth/users route', () => {
   })
 
   it('navigates to the detail route when a row is clicked', async () => {
-    server.use(
-      http.get(`${baseUrl}/users`, () => HttpResponse.json(makePage([row()]))),
-    )
+    server.use(http.get(`${baseUrl}/users`, () => HttpResponse.json(makePage([row()]))))
 
     const { router } = renderUsersPage()
 
     const rowEl = await screen.findByText('Alice Caregiver')
     await userEvent.click(rowEl)
 
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe(`/users/${ROW_USER_ID}`),
-    )
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/users/${ROW_USER_ID}`))
   })
 })
