@@ -15,6 +15,7 @@ export async function retryOn401Logic(
 ): Promise<Response | undefined> {
   if (response.status !== 401) return undefined
   if (request.url.endsWith('/auth/me')) return undefined
+  if (request.url.includes('/auth/login/')) return undefined
   if (request.headers.get('x-retry') === '1') return undefined
 
   if (!retryLock) {
