@@ -282,3 +282,27 @@ Note: F2 backend aggregation + orchestrator dashboard wiring land as their own `
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
 
 Note: Seed-data strategy + orchestrator MSW handlers land as their own `[poc]` change in their own worktree once domain shapes stabilise. Depends on BL-035..BL-040.
+
+### BL-042 — AUTH-HARDEN sweep
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: Every `# AUTH-HARDEN` marker in `app/api/routers/**` and `app/services/**` records a PoC-grade authorisation decision (role-only / tenant-only) that MVP needs to revisit once the patient-level ACL and org-tree visibility rules are defined. Sweep all markers in a single dedicated change before the first MVP cut.
+
+### BL-043 — Patient identifier column encryption
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: `patient_identifiers.value` (INSZ today, MRN tomorrow) stores plaintext at PoC because the seed cohort is synthetic. Before BL-034's "no real patient data" guard is relaxed for an MVP customer, encrypt this column at rest (pgcrypto or app-level envelope) and re-test the partial-unique index path. Gated by BL-034.
+
+### BL-044 — Patient-level ACL wiring on `require_patient_access`
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: `app/services/patient/deps.py::require_patient_access` is tenant-scope-only at PoC. MVP wires the BL-020 ACL model (caregiver sees only patients in their care-team / delegated-care subtree; admin keeps tenant-wide read). Body lives in `require_patient_access` so all four guarded routes pick up the new rule from one place.
+
+### BL-045 — Patient names / addresses / telecoms child tables
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: `patients-base` keeps a single `given_name` / `family_name` pair on the row. FHIR R4 `Patient.name`, `Patient.address`, `Patient.telecom` are all `0..*`. The HiX adapter (BL-001) will surface alternate names + contact rows on day one; land `patient_names` / `patient_addresses` / `patient_telecoms` child tables alongside the adapter so the projection stays lossless.

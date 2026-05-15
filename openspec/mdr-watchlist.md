@@ -20,4 +20,8 @@ Stop. Add an entry. Propose a non-MDR alternative. Get a decision before proceed
 
 ## Entries
 
-_None yet._
+### 2026-05-15 — patients-base scope check (source: patients-base)
+- **Trigger:** none. `patients` stores identifiers (INSZ + reserved HiX namespaces) + demographics (`given_name`, `family_name`, `birth_date`, `gender`) + sync metadata (`source`, `external_*`, `last_synced_at`). No clinical state, no diagnostic logic, no decision output.
+- **Why wanted:** demo orchestrator needs a tenant-scoped patient list + identifier upsert path for the Rugrevalidatie demo and the future HiX adapter.
+- **Non-MDR alternative:** already chosen — separate clinical-data tables (`Encounter`, `Condition`, `Observation`) are queued behind a future change; `patients-base` keeps the row purely administrative.
+- **Decision:** chosen — landed as-is. Re-verify this entry on any future field addition that introduces clinical semantics.
