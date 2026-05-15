@@ -30,6 +30,8 @@ Through moon (preferred):
 moon run backend:dev                        # docker compose up backend
 moon run backend:test                       # pytest in ephemeral zas_backend_test
 moon run backend:test -- -k <pattern>       # passthrough args
+moon run backend:test-host                  # host pytest → localhost:5433 (fast, agent-safe)
+moon run backend:test-host -- <args>        # passthrough args
 moon run backend:shell                      # bash inside zas_backend
 moon run backend:psql                       # psql -U zas -d zas
 moon run backend:migrate                    # alembic upgrade head
