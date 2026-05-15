@@ -7,7 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.core.settings import Settings
+from app.core.settings import Settings, get_settings
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.base import Base
 from app.db.models.tenant import Tenant
@@ -35,10 +35,15 @@ TEST_DATABASE_URL = os.getenv("BACKEND_DATABASE_URL", DEFAULT_TEST_DATABASE_URL)
 @pytest.fixture(scope="session")
 async def db_engine() -> AsyncIterator[AsyncEngine]:
     engine = create_async_engine(TEST_DATABASE_URL, future=True, pool_pre_ping=True)
-    # drop_all + create_all so schema additions (deleted_at, audit columns)
-    # apply to a previously-created test DB on the same volume.
+    # Wipe the entire `public` schema before recreating tables. We avoid
+    # `Base.metadata.drop_all` because per-test-package fixture models
+    # (e.g. `_DemoModel` in `tests/repositories/_list/conftest.py`) only
+    # register their tables when imported — running a narrow test selection
+    # leaves their tables behind on the DB volume, blocking the next FK
+    # drop. `DROP SCHEMA ... CASCADE` clears them unconditionally.
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
         await conn.run_sync(Base.metadata.create_all)
     try:
         yield engine
@@ -61,6 +66,10 @@ def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
     app.state.session_factory = async_sessionmaker(
         db_engine, expire_on_commit=False, autoflush=False
     )
+    # Routes resolve `SettingsDep` via the lru-cached `get_settings()`, which
+    # would otherwise leak the host's real env into tests. Override per-app
+    # so per-test settings fixtures (e.g. SSE idle timeout) take effect.
+    app.dependency_overrides[get_settings] = lambda: settings
     return app
 
 

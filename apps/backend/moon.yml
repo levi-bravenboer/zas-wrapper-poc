@@ -42,6 +42,18 @@ tasks:
     options:
       cache: false
 
+  # Host-side pytest. Hits the test DB exposed by docker-compose on
+  # `localhost:5433`. Stable prefix so it can be pre-approved as a safe
+  # command for autonomous agents. Passthrough args:
+  #   moon run backend:test-host -- tests/api/events/
+  test-host:
+    command: "uv run pytest"
+    env:
+      BACKEND_DATABASE_URL: "postgresql+asyncpg://zas:zas@localhost:5433/zas_test"
+    options:
+      cache: false
+      runInCI: false
+
   shell:
     command: "docker compose exec backend bash"
     env:

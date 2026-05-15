@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +19,7 @@ from app.db.base import TenantOwnedEntity
 
 class User(TenantOwnedEntity):
     __tablename__ = "users"
+    __realtime_resource__: ClassVar[str | None] = "users"
     __table_args__ = (
         sa.Index(
             "uq_users_tenant_id_lower_email",

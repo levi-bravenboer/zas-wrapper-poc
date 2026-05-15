@@ -336,3 +336,9 @@ Note: Filed against the future `oidc-login-providers` change. Concrete provider 
 - Source: add-auth-provider-seam compliance review (2026-05-15)
 
 Note: No password reset flow exists. If the password provider survives MVP for bootstrap admins, it needs: time-boxed reset tokens, email delivery (notifications stack is `[mvp]` work too), forced rotation on first login, password complexity policy. If the password provider is retired at MVP (BL-044 outcome), this becomes a no-op — admin bootstrap moves to a CLI command that writes a one-time eID-link token. Decision deferred to BL-044 + `oidc-login-providers` planning.
+
+### BL-050 — Multi-pod realtime broadcaster
+- Tier: [mvp]
+- Source: add-datatable-base change (§8 backend docs)
+
+Note: `add-datatable-base` ships an in-memory `RealtimePubSub` in `app/realtime/pubsub.py` that fans `after_commit` events out to SSE subscribers on `GET /events`. The bus is process-local — events published on pod A are invisible to subscribers on pod B. PoC runs single-pod so this is fine. MVP horizontal scale needs a shared broker (Redis pub/sub, NATS, or Postgres `LISTEN`/`NOTIFY`) sitting behind the same `RealtimePubSub` interface so any pod's `after_commit` reaches every subscriber regardless of which pod accepted the SSE connection. Keep the publish/subscribe seam stable so swapping the transport is a single-module change.
