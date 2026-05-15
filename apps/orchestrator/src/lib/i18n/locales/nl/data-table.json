@@ -42,5 +42,9 @@
   },
   "realtime": {
     "offline": "Live-updates onderbroken — vernieuw om bij te werken."
+  },
+  "confirm": {
+    "ok": "Bevestigen",
+    "cancel": "Annuleren"
   }
 }

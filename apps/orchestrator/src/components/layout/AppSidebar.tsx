@@ -26,6 +26,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/style/cn'
+import { initials } from '@/lib/utils/initials'
 import { useLogout, useSession } from '@/modules/auth/hooks'
 import { getFeaturesForSurface } from '@/platform/embed/defineFeature'
 
@@ -158,14 +159,6 @@ function NavMenu(): ReactElement {
   )
 }
 
-function initialsFromName(name: string | undefined): string {
-  const parts = name?.trim().split(/\s+/).filter(Boolean) ?? []
-  if (parts.length === 0) return '??'
-  const first = parts[0]?.charAt(0) ?? ''
-  const last = parts.length > 1 ? (parts.at(-1)?.charAt(0) ?? '') : ''
-  return (first + last).toUpperCase() || '??'
-}
-
 function UserBlock(): ReactElement {
   const { t } = useTranslation(['shell', 'auth'])
   const { data: session } = useSession()
@@ -185,7 +178,7 @@ function UserBlock(): ReactElement {
             >
               <Avatar size="sm">
                 <AvatarFallback className="[background-image:var(--gradient-active)] text-xs font-medium text-white">
-                  {initialsFromName(session?.display_name)}
+                  {initials(session?.display_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-1 flex-col text-left leading-tight">

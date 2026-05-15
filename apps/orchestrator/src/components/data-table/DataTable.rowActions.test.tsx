@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/renderWithProviders'
 
-import { DataTable } from './DataTable'
 import { defineColumn } from './columns'
+import { DataTable } from './DataTable'
 import type { DataTableRowAction } from './types'
 
 interface Demo {
@@ -125,5 +125,52 @@ describe('DataTable — row actions', () => {
 
     expect(itemOnClick).toHaveBeenCalledTimes(1)
     expect(onRowClick).not.toHaveBeenCalled()
+  })
+
+  it('opens an AlertDialog before invoking a confirm-protected action', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    renderTable(() => [
+      {
+        label: 'Delete',
+        destructive: true,
+        onClick,
+        confirm: {
+          title: 'Delete row?',
+          description: 'This cannot be undone.',
+          confirmLabel: 'Delete it',
+        },
+      },
+    ])
+
+    const triggers = await getTriggers()
+    await user.click(triggers[0]!)
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
+
+    expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
+    expect(screen.getByText('This cannot be undone.')).toBeInTheDocument()
+    expect(onClick).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Delete it' }))
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('cancelling the confirm dialog does not invoke onClick', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    renderTable(() => [
+      {
+        label: 'Delete',
+        onClick,
+        confirm: { title: 'Delete row?', confirmLabel: 'Delete it' },
+      },
+    ])
+
+    const triggers = await getTriggers()
+    await user.click(triggers[0]!)
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
+
+    await user.click(await screen.findByRole('button', { name: /annuleren/i }))
+    expect(onClick).not.toHaveBeenCalled()
   })
 })

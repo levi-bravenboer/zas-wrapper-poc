@@ -2,6 +2,14 @@ import { type ReactNode } from 'react'
 
 import { type DataTableState } from '@/hooks/use-data-table-state'
 
+/** Confirm prompt rendered before invoking a row action's `onClick`. */
+export interface DataTableRowActionConfirm {
+  title: ReactNode
+  description?: ReactNode
+  confirmLabel?: ReactNode
+  cancelLabel?: ReactNode
+}
+
 /** Action descriptor for the row actions dropdown. */
 export interface DataTableRowAction {
   label: ReactNode
@@ -9,6 +17,7 @@ export interface DataTableRowAction {
   onClick: () => void
   destructive?: boolean
   disabled?: boolean
+  confirm?: DataTableRowActionConfirm
 }
 
 /** Row identity extractor. */

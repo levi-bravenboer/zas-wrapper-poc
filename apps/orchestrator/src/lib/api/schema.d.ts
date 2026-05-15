@@ -130,8 +130,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Tenant Users */
-        get: operations["list_tenant_users"];
+        /** List Users */
+        get: operations["list_users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User */
+        get: operations["get_user"];
         put?: never;
         post?: never;
         delete?: never;
@@ -155,6 +172,23 @@ export interface paths {
         head?: never;
         /** Update User Role */
         patch: operations["update_user_role"];
+        trace?: never;
+    };
+    "/users/{user_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set User Active */
+        patch: operations["set_user_active"];
         trace?: never;
     };
     "/organisations": {
@@ -282,6 +316,19 @@ export interface components {
         Page_PatientRead_: {
             /** Items */
             items: components["schemas"]["PatientRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** Page[UserRow] */
+        Page_UserRow_: {
+            /** Items */
+            items: components["schemas"]["UserRow"][];
             /** Page */
             page: number;
             /** Page Size */
@@ -468,6 +515,40 @@ export interface components {
              */
             tenant_id: string;
             role: components["schemas"]["Role"];
+        };
+        /** SetActiveRequest */
+        SetActiveRequest: {
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** UserDetail */
+        UserDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Display Name */
+            display_name: string;
+            role: components["schemas"]["Role"];
+            /** Is Active */
+            is_active: boolean;
+            /** External Idp */
+            external_idp: string | null;
+            /** External Subject */
+            external_subject: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** UserRow */
         UserRow: {
@@ -671,10 +752,19 @@ export interface operations {
             };
         };
     };
-    list_tenant_users: {
+    list_users: {
         parameters: {
             query?: {
-                active?: boolean | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
             };
             header?: never;
             path?: never;
@@ -688,7 +778,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserRow"][];
+                    "application/json": components["schemas"]["Page_UserRow_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
                 };
             };
             /** @description Validation Error */
@@ -714,6 +835,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AssignRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_active: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetActiveRequest"];
             };
         };
         responses: {

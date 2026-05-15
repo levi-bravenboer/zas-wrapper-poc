@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import { renderWithProviders } from '@/test/renderWithProviders'
 
-import { DataTable } from './DataTable'
 import { defineColumn } from './columns'
+import { DataTable } from './DataTable'
 
 interface Demo {
   id: string
