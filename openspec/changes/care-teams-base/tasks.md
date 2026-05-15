@@ -26,9 +26,9 @@
 
 ## 4. Pydantic schemas
 
-- [ ] 4.1 Create `app/schemas/care_team/care_team.py`: `CareTeamRead` (with embedded participants), `CareTeamCreate` (`name?`, `category?`, `participants?: list[ParticipantCreate]`), `CareTeamUpdate` (`name?`, `category?`, `status?`, `period_end?`)
-- [ ] 4.2 Create `app/schemas/care_team/participant.py`: `ParticipantRead`, `ParticipantCreate` (`user_id`, `role_in_care`, `on_behalf_of_organisation_id?`), `ParticipantRoleChange` (just `role_in_care`)
-- [ ] 4.3 Unit tests: schema validation, enum round-trip
+- [x] 4.1 Create `app/schemas/care_team/care_team.py`: `CareTeamRead` (with embedded participants), `CareTeamCreate` (`name?`, `category?`, `participants?: list[ParticipantCreate]`), `CareTeamUpdate` (`name?`, `category?`, `status?`, `period_end?`)
+- [x] 4.2 Create `app/schemas/care_team/participant.py`: `ParticipantRead`, `ParticipantCreate` (`user_id`, `role_in_care`, `on_behalf_of_organisation_id?`), `ParticipantRoleChange` (just `role_in_care`)
+- [x] 4.3 Unit tests: schema validation, enum round-trip
 
 ## 5. Service layer
 
