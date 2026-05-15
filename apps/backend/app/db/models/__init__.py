@@ -2,7 +2,34 @@
 `Base.metadata`. Alembic's `env.py` imports this package for autogenerate.
 """
 
+from app.db.models.pathway import (
+    Pathway,
+    PathwayBlock,
+    PathwayBlockFieldResolution,
+    PathwayBlockLusciiExtension,
+    PathwayBranch,
+    PathwayEdge,
+    PathwayLane,
+    PathwayLaneKind,
+    PathwayPhase,
+    PathwayTimeMarker,
+    PathwayTimingValue,
+)
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
-__all__ = ["Tenant", "User"]
+__all__ = [
+    "Pathway",
+    "PathwayBlock",
+    "PathwayBlockFieldResolution",
+    "PathwayBlockLusciiExtension",
+    "PathwayBranch",
+    "PathwayEdge",
+    "PathwayLane",
+    "PathwayLaneKind",
+    "PathwayPhase",
+    "PathwayTimeMarker",
+    "PathwayTimingValue",
+    "Tenant",
+    "User",
+]
