@@ -157,6 +157,60 @@ export interface paths {
         patch: operations["update_user_role"];
         trace?: never;
     };
+    "/organisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Organisations */
+        get: operations["list_organisations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patients */
+        get: operations["list_patients"];
+        put?: never;
+        /** Create Patient */
+        post: operations["create_patient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Patient */
+        get: operations["get_patient"];
+        put?: never;
+        post?: never;
+        /** Soft Delete Patient */
+        delete: operations["soft_delete_patient"];
+        options?: never;
+        head?: never;
+        /** Update Patient */
+        patch: operations["update_patient"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -165,6 +219,11 @@ export interface components {
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
         };
+        /**
+         * Gender
+         * @enum {string}
+         */
+        Gender: "male" | "female" | "other" | "unknown";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -196,6 +255,166 @@ export interface components {
              */
             password: string;
         };
+        /** OrganisationListResponse */
+        OrganisationListResponse: {
+            /** Items */
+            items: components["schemas"]["OrganisationRead"][];
+        };
+        /** OrganisationRead */
+        OrganisationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Organisation Id */
+            parent_organisation_id: string | null;
+            /** Name */
+            name: string;
+            /** Type Code */
+            type_code: string;
+            /** Type System */
+            type_system: string | null;
+            /** Type Display */
+            type_display: string | null;
+        };
+        /** Page[PatientRead] */
+        Page_PatientRead_: {
+            /** Items */
+            items: components["schemas"]["PatientRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /**
+         * PatientCreate
+         * @description `POST /patients` payload.
+         *
+         *     `identifiers` is part of the create payload so a patient can be born
+         *     with an INSZ in a single transaction. Updating identifiers later goes
+         *     through a dedicated endpoint (out of scope for `patients-base`); the
+         *     PATCH route rejects the field outright (see `PatientUpdate`).
+         */
+        PatientCreate: {
+            /**
+             * Primary Organisation Id
+             * Format: uuid
+             */
+            primary_organisation_id: string;
+            /** Given Name */
+            given_name: string;
+            /** Family Name */
+            family_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            gender: components["schemas"]["Gender"];
+            /** @default local */
+            source: components["schemas"]["PatientSource"];
+            /** External System */
+            external_system?: string | null;
+            /** External Ref */
+            external_ref?: string | null;
+            /** External Version */
+            external_version?: string | null;
+            /**
+             * Identifiers
+             * @default []
+             */
+            identifiers: components["schemas"]["PatientIdentifierCreate"][];
+        };
+        /**
+         * PatientIdentifierCreate
+         * @description Identifier payload for `POST /patients`.
+         *
+         *     `system` is a free-text URI — we keep the column open so unknown
+         *     namespaces (e.g. local lab numbers) pass through. The Mod-97 check
+         *     only runs when the system is the Belgian INSZ namespace.
+         */
+        PatientIdentifierCreate: {
+            /** System */
+            system: string;
+            /** Value */
+            value: string;
+            /** Use */
+            use?: string | null;
+        };
+        /** PatientIdentifierRead */
+        PatientIdentifierRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** System */
+            system: string;
+            /** Value */
+            value: string;
+            /** Use */
+            use?: string | null;
+        };
+        /** PatientRead */
+        PatientRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Primary Organisation Id
+             * Format: uuid
+             */
+            primary_organisation_id: string;
+            /** Given Name */
+            given_name: string;
+            /** Family Name */
+            family_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            gender: components["schemas"]["Gender"];
+            source: components["schemas"]["PatientSource"];
+            /** External System */
+            external_system?: string | null;
+            /** External Ref */
+            external_ref?: string | null;
+            /** External Version */
+            external_version?: string | null;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+            /**
+             * Identifiers
+             * @default []
+             */
+            identifiers: components["schemas"]["PatientIdentifierRead"][];
+        };
+        /**
+         * PatientSource
+         * @enum {string}
+         */
+        PatientSource: "local" | "hix" | "luscii";
+        /**
+         * PatientUpdate
+         * @description `PATCH /patients/{id}` payload — demographics only.
+         *
+         *     `model_config = ConfigDict(extra="forbid")` is what produces the 422
+         *     when a client sends `identifiers` here: FastAPI translates Pydantic's
+         *     `extra_forbidden` error into a 422 response automatically.
+         */
+        PatientUpdate: {
+            /** Given Name */
+            given_name?: string | null;
+            /** Family Name */
+            family_name?: string | null;
+            /** Birth Date */
+            birth_date?: string | null;
+            gender?: components["schemas"]["Gender"] | null;
+            /** Primary Organisation Id */
+            primary_organisation_id?: string | null;
+        };
         /** ProviderDescriptor */
         ProviderDescriptor: {
             /** Key */
@@ -224,7 +443,7 @@ export interface components {
          * Role
          * @enum {string}
          */
-        Role: "admin" | "caregiver" | "external";
+        Role: "admin" | "caregiver";
         /** RootResponse */
         RootResponse: {
             /** Name */
@@ -505,6 +724,196 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_organisations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationListResponse"];
+                };
+            };
+        };
+    };
+    list_patients: {
+        parameters: {
+            query?: {
+                /** @description FHIR Patient.identifier short-circuit; exact value match */
+                identifier?: string | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PatientRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    soft_delete_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
                 };
             };
             /** @description Validation Error */

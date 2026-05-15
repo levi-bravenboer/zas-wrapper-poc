@@ -9,8 +9,10 @@
 from __future__ import annotations
 
 from typing import ClassVar
+from uuid import UUID
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.enums.user import Role
@@ -42,6 +44,28 @@ class User(TenantOwnedEntity):
         ),
     )
 
+    # Nullable at DB level to break the bootstrap chicken-and-egg cycle:
+    # `users.organisation_id` → organisations.id, and
+    # `organisations.created_by` → users.id (via AuditableEntity) are both
+    # NOT NULL. The bootstrap admin row is inserted with `organisation_id=NULL`
+    # so `seed_organisations` can run next and stamp `created_by=admin.id`;
+    # the seed then back-fills `admin.organisation_id` to the root org.
+    # Non-bootstrap rows MUST set this — enforced by the user service layer.
+    organisation_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        # `use_alter=True` defers FK creation past the initial table emit so
+        # `Base.metadata.create_all` (used by the test bootstrap) can resolve
+        # the users ↔ organisations cycle introduced by `AuditableEntity`'s
+        # `created_by` / `updated_by` FKs to `users.id`.
+        sa.ForeignKey(
+            "organisations.id",
+            ondelete="RESTRICT",
+            use_alter=True,
+            name="fk_users_organisation_id_organisations",
+        ),
+        nullable=True,
+        index=True,
+    )
     email: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     password_hash: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     display_name: Mapped[str] = mapped_column(sa.String(255), nullable=False)

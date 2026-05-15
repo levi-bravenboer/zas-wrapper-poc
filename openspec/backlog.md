@@ -342,3 +342,35 @@ Note: No password reset flow exists. If the password provider survives MVP for b
 - Source: add-datatable-base change (§8 backend docs)
 
 Note: `add-datatable-base` ships an in-memory `RealtimePubSub` in `app/realtime/pubsub.py` that fans `after_commit` events out to SSE subscribers on `GET /events`. The bus is process-local — events published on pod A are invisible to subscribers on pod B. PoC runs single-pod so this is fine. MVP horizontal scale needs a shared broker (Redis pub/sub, NATS, or Postgres `LISTEN`/`NOTIFY`) sitting behind the same `RealtimePubSub` interface so any pod's `after_commit` reaches every subscriber regardless of which pod accepted the SSE connection. Keep the publish/subscribe seam stable so swapping the transport is a single-module change.
+
+## Patients-base follow-ups (filed by `patients-base` on 2026-05-15)
+
+### BL-051 — AUTH-HARDEN sweep
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: Every `# AUTH-HARDEN` marker in `app/api/routers/**` and `app/services/**` records a PoC-grade authorisation decision (role-only / tenant-only) that MVP needs to revisit once the patient-level ACL and org-tree visibility rules are defined. Sweep all markers in a single dedicated change before the first MVP cut.
+
+### BL-052 — Patient identifier column encryption
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: `patient_identifiers.value` (INSZ today, MRN tomorrow) stores plaintext at PoC because the seed cohort is synthetic. Before BL-034's "no real patient data" guard is relaxed for an MVP customer, encrypt this column at rest (pgcrypto or app-level envelope) and re-test the partial-unique index path. Gated by BL-034.
+
+### BL-053 — Patient-level ACL wiring on `require_patient_access`
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: `app/services/patient/deps.py::require_patient_access` is tenant-scope-only at PoC. MVP wires the BL-020 ACL model (caregiver sees only patients in their care-team / delegated-care subtree; admin keeps tenant-wide read). Body lives in `require_patient_access` so all four guarded routes pick up the new rule from one place.
+
+### BL-054 — Patient names / addresses / telecoms child tables
+- Tier: [mvp]
+- Source: patients-base change
+
+Note: `patients-base` keeps a single `given_name` / `family_name` pair on the row. FHIR R4 `Patient.name`, `Patient.address`, `Patient.telecom` are all `0..*`. The HiX adapter (BL-001) will surface alternate names + contact rows on day one; land `patient_names` / `patient_addresses` / `patient_telecoms` child tables alongside the adapter so the projection stays lossless.
+
+### BL-055 — Create-patient dialog (POST /patients) for the overview
+- Tier: [poc]
+- Source: patients-base change
+
+Note: `patients-base` ships the `/_auth/patients` overview without a create-patient action to keep the PR scope tight. Backend `POST /patients` is live and tenant-scoped; the dialog needs a controlled form (demographics + at least one identifier, with INSZ Mod-97 validation surfaced inline), tied into the page header's actions slot, and invalidating the `patientsListKeyPrefix` query key on success. Should reuse shadcn Dialog + Form primitives. Pre-requisite for the Rugrevalidatie demo flow that wants ad-hoc patient creation outside the seed cohort.
