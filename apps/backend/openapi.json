@@ -260,6 +260,27 @@
           }
         }
       }
+    },
+    "/organisations": {
+      "get": {
+        "tags": [
+          "organisations"
+        ],
+        "summary": "List Organisations",
+        "operationId": "list_organisations",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -334,6 +355,83 @@
         ],
         "title": "LoginRequest"
       },
+      "OrganisationListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganisationRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OrganisationListResponse"
+      },
+      "OrganisationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Organisation Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type_code": {
+            "type": "string",
+            "title": "Type Code"
+          },
+          "type_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type System"
+          },
+          "type_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Display"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "parent_organisation_id",
+          "name",
+          "type_code",
+          "type_system",
+          "type_display"
+        ],
+        "title": "OrganisationRead"
+      },
       "ReadinessResponse": {
         "properties": {
           "status": {
@@ -367,8 +465,7 @@
         "type": "string",
         "enum": [
           "admin",
-          "caregiver",
-          "external"
+          "caregiver"
         ],
         "title": "Role"
       },
