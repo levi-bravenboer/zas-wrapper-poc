@@ -7,7 +7,7 @@ from app.api._list import ListQueryParamsDep, list_query_params
 from app.schemas._list.list_query import ListQuery
 
 
-def _make_client(*, default_page_size: int = 25, max_page_size: int = 100) -> TestClient:
+def _make_app(*, default_page_size: int = 25, max_page_size: int = 100) -> FastAPI:
     app = FastAPI()
 
     @app.get("/_dummy")
@@ -25,7 +25,11 @@ def _make_client(*, default_page_size: int = 25, max_page_size: int = 100) -> Te
     ) -> dict[str, object]:
         return query.model_dump()
 
-    return TestClient(app)
+    return app
+
+
+def _make_client(*, default_page_size: int = 25, max_page_size: int = 100) -> TestClient:
+    return TestClient(_make_app(default_page_size=default_page_size, max_page_size=max_page_size))
 
 
 def test_defaults_when_no_params() -> None:
@@ -99,10 +103,32 @@ def test_invalid_page_rejected() -> None:
     assert response.status_code == 422
 
 
-def test_page_size_clamped_to_max() -> None:
+def test_page_size_over_max_rejected() -> None:
     client = _make_client(max_page_size=50)
-    payload = client.get("/_dummy_custom?page_size=500").json()
-    assert payload["page_size"] == 50
+    response = client.get("/_dummy_custom?page_size=500")
+    assert response.status_code == 422
+    assert "page_size" in response.text
+
+
+def test_openapi_reflects_per_route_page_size_overrides() -> None:
+    app = _make_app(default_page_size=5, max_page_size=50)
+    schema = app.openapi()
+
+    def _page_size_param(path: str) -> dict[str, object]:
+        params = schema["paths"][path]["get"]["parameters"]
+        return next(p for p in params if p["name"] == "page_size")
+
+    default_param = _page_size_param("/_dummy")
+    default_schema = default_param["schema"]
+    assert isinstance(default_schema, dict)
+    assert default_schema["default"] == 25
+    assert default_schema["maximum"] == 100
+
+    custom_param = _page_size_param("/_dummy_custom")
+    custom_schema = custom_param["schema"]
+    assert isinstance(custom_schema, dict)
+    assert custom_schema["default"] == 5
+    assert custom_schema["maximum"] == 50
 
 
 def test_route_default_page_size_override() -> None:
