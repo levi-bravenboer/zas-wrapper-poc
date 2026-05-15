@@ -18,7 +18,13 @@ describe('api client 401 retry', () => {
     server.use(
       http.get(`${baseUrl}/auth/me`, () => {
         probed = true
-        return HttpResponse.json({ id: 'u', email: 'x@y.z', displayName: 'X', roles: [] })
+        return HttpResponse.json({
+          id: 'u',
+          email: 'x@y.z',
+          display_name: 'X',
+          tenant_id: '00000000-0000-0000-0000-000000000001',
+          role: 'caregiver',
+        })
       }),
       http.get(`${baseUrl}/healthz`, ({ request }) => {
         count++
@@ -63,6 +69,15 @@ describe('api client 401 retry', () => {
     expect(retried).toBeUndefined()
   })
 
+  it('does not retry a 401 from /auth/login/password (wrong credentials must surface)', async () => {
+    const response = new Response(JSON.stringify({ detail: 'no' }), { status: 401 })
+    const request = new Request(`${baseUrl}/auth/login/password`, { method: 'POST' })
+
+    const retried = await retryOn401Logic(response, request)
+
+    expect(retried).toBeUndefined()
+  })
+
   it('does not retry when the request was already retried (x-retry header set)', async () => {
     const response = new Response(JSON.stringify({ detail: 'no' }), { status: 401 })
     const request = new Request(`${baseUrl}/healthz`, {
@@ -89,7 +104,13 @@ describe('api client 401 retry', () => {
     server.use(
       http.get(`${baseUrl}/auth/me`, () => {
         probes++
-        return HttpResponse.json({ id: 'u', email: 'x@y.z', displayName: 'X', roles: [] })
+        return HttpResponse.json({
+          id: 'u',
+          email: 'x@y.z',
+          display_name: 'X',
+          tenant_id: '00000000-0000-0000-0000-000000000001',
+          role: 'caregiver',
+        })
       }),
       http.get(`${baseUrl}/healthz`, ({ request }) => {
         count++

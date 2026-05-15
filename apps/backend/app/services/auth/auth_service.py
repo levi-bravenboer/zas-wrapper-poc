@@ -34,10 +34,10 @@ class AuthService:
         )
 
     async def login(self, *, email: str, password: str) -> SessionUser:
-        user = await self._authenticator.authenticate(email=email, password=password)
-        if user is None:
+        result = await self._authenticator.authenticate(email=email, password=password)
+        if result.user is None or result.reason is not None:
             raise InvalidCredentialsError()
-        return _to_session_user(user)
+        return _to_session_user(result.user)
 
     def mint_session_token(self, user_id: UUID) -> str:
         return self._serializer.dumps(str(user_id))

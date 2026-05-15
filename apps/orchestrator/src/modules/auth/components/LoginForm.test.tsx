@@ -1,38 +1,135 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { HttpResponse, http } from 'msw'
 import { I18nextProvider } from 'react-i18next'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { env } from '@/config/env'
 import { i18n } from '@/lib/i18n'
-
-import { LoginForm } from './LoginForm'
+import { server } from '@/mocks/server'
 
 const navigateMock = vi.fn()
+let currentRedirect: string | undefined
 
 vi.mock('@tanstack/react-router', async () => {
   const actual =
     await vi.importActual<typeof import('@tanstack/react-router')>('@tanstack/react-router')
-  return { ...actual, useNavigate: () => navigateMock }
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+    useRouterState: ({ select }: { select?: (s: unknown) => unknown }) => {
+      const state = { location: { search: { redirect: currentRedirect } } }
+      return select ? select(state) : state
+    },
+  }
 })
 
-describe('LoginForm (PoC placeholder)', () => {
-  it('navigates to / on submit without validating or hitting the network', async () => {
-    const user = userEvent.setup()
-    const queryClient = new QueryClient()
+import { safeRedirect } from '../redirect'
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <I18nextProvider i18n={i18n}>
-          <LoginForm />
-        </I18nextProvider>
-      </QueryClientProvider>,
+import { LoginForm } from './LoginForm'
+
+const baseUrl = env.API_BASE_URL
+const STUB_USER = {
+  id: 'u1',
+  email: 'caregiver@zas.local',
+  display_name: 'Care',
+  tenant_id: '00000000-0000-0000-0000-000000000001',
+  role: 'caregiver',
+}
+
+function renderForm() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <I18nextProvider i18n={i18n}>
+        <LoginForm />
+      </I18nextProvider>
+    </QueryClientProvider>,
+  )
+}
+
+async function fillAndSubmit(email = STUB_USER.email, password = 'changeme') {
+  const user = userEvent.setup()
+  await user.type(screen.getByLabelText(/E-mailadres/i), email)
+  await user.type(screen.getByLabelText(/Wachtwoord/i), password)
+  await user.click(screen.getByRole('button', { name: 'Inloggen' }))
+  return user
+}
+
+describe('LoginForm', () => {
+  beforeEach(() => {
+    navigateMock.mockClear()
+    currentRedirect = undefined
+  })
+
+  it('navigates to / on happy path', async () => {
+    server.use(http.post(`${baseUrl}/auth/login/password`, () => HttpResponse.json(STUB_USER)))
+    renderForm()
+    await fillAndSubmit()
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: '/' }))
+  })
+
+  it('honours ?redirect=/patients/abc', async () => {
+    currentRedirect = '/patients/abc'
+    server.use(http.post(`${baseUrl}/auth/login/password`, () => HttpResponse.json(STUB_USER)))
+    renderForm()
+    await fillAndSubmit()
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: '/patients/abc' }))
+  })
+
+  it('drops //evil.com redirect to /', async () => {
+    currentRedirect = '//evil.com'
+    server.use(http.post(`${baseUrl}/auth/login/password`, () => HttpResponse.json(STUB_USER)))
+    renderForm()
+    await fillAndSubmit()
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: '/' }))
+  })
+
+  it('shows invalid_credentials and clears password on 401', async () => {
+    server.use(
+      http.post(`${baseUrl}/auth/login/password`, () =>
+        HttpResponse.json({ detail: 'nope' }, { status: 401 }),
+      ),
     )
+    renderForm()
+    await fillAndSubmit('caregiver@zas.local', 'nope')
+    expect(await screen.findByText('Ongeldige inloggegevens')).toBeInTheDocument()
+    const password = screen.getByLabelText(/Wachtwoord/i) as HTMLInputElement
+    expect(password.value).toBe('')
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
 
-    await user.click(screen.getByRole('button', { name: 'Inloggen' }))
+  it('shows generic error on 500', async () => {
+    server.use(
+      http.post(`${baseUrl}/auth/login/password`, () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+    renderForm()
+    await fillAndSubmit()
+    expect(await screen.findByText('Er ging iets mis, probeer opnieuw')).toBeInTheDocument()
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
 
-    expect(navigateMock).toHaveBeenCalledTimes(1)
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/' })
-    expect(screen.queryByRole('alert')).toBeNull()
+  it('blocks submit with invalid email', async () => {
+    renderForm()
+    await fillAndSubmit('not-an-email', 'changeme')
+    expect(await screen.findByText('Ongeldige gegevens')).toBeInTheDocument()
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('safeRedirect', () => {
+  it.each([
+    [undefined, '/'],
+    ['', '/'],
+    ['evil.com', '/'],
+    ['//evil.com', '/'],
+    ['/patients\\foo', '/'],
+    ['/login', '/'],
+    ['/patients/abc', '/patients/abc'],
+  ])('safeRedirect(%j) → %j', (input, expected) => {
+    expect(safeRedirect(input as string | undefined)).toBe(expected)
   })
 })
