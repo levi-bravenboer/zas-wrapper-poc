@@ -162,6 +162,47 @@ Pick the **lowest tier that fits**. Promote up only when the type genuinely need
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
 
+## Surfaces — ask before building a new page
+
+The orchestrator ships three surfaces, defined in `src/platform/surface/registry.ts`:
+
+| Surface | Base path | Shell | Data backend | Use case |
+| --- | --- | --- | --- | --- |
+| `app` | `/` | `menu` (sidebar) | orchestrator | ZAS caregiver web app |
+| `smart` | `/s/` | `menu` (sidebar) | fhir | SMART-on-FHIR launch (PoC stub, MVP live) |
+| `embed` | `/embed/` | `bare` (no chrome) | fhir | HiX iframe embed |
+
+A page is a single feature module under `modules/<name>/` (page + port + adapters) registered via `defineFeature`. Each surface that exposes the page needs a 3-line route shim:
+
+```ts
+// routes/<surface>/<feature>.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { tasksFeature } from '@/modules/tasks'
+import { renderFeature } from '@/platform/embed/renderFeature'
+
+export const Route = createFileRoute('/<surface>/<feature>')({
+  component: renderFeature(tasksFeature),
+})
+```
+
+`renderFeature` reads `useSurface()` and mounts the right adapter (`orchestrator` for `app`, `fhir` for `smart` + `embed`). `Shell.tsx` reads the same `useSurface()` and renders the sidebar tree for menu surfaces, a bare slot for `embed`.
+
+### Mandatory question
+
+**When prompted to build a new page, ask the user which surfaces it ships on before writing code.** Options:
+
+1. **`app` only** — webapp-internal screen (most PoC pages). One route shim under `routes/_auth/`.
+2. **`app` + `embed`** — page that ZAS caregivers use AND that should embed inside HiX. Three shims (`_auth/`, `s/`, `embed/`); feature spec declares `surfaces: ['app', 'smart', 'embed']` and provides both `orchestrator` and `fhir` adapters.
+3. **`embed` only** — HiX-only surface, no webapp entry. Rare. Route shim under `routes/embed/` only.
+
+Default assumption is `app` only. If the user says "also for HiX" or "embedded" or mentions iframe / SMART-on-FHIR, surface the question explicitly before scaffolding files. Adding a surface later means writing a new adapter + a new shim; cheaper to decide up front.
+
+### Page composition contract
+
+- Menu surfaces (`app`, `smart`): `Shell` → `SidebarInset` → `PageHeader` → page body. Never render `<aside>` or your own breadcrumb.
+- Bare surface (`embed`): `Shell` → bare slot → page body. No `PageHeader`, no sidebar.
+- All routes mount inside `Shell`. Surface branching lives in `Shell.tsx`, not in route files.
+
 ## Router context and guards
 
 - The router is a singleton constructed in `src/app/router.ts`. Its `context` exposes `{ queryClient }` so route loaders and guards can hit the React Query cache without prop drilling.
