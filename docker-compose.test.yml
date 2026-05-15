@@ -33,6 +33,11 @@ services:
       BACKEND_HIX_MODE: stub
       BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: WARNING
+    # Override the dev ENTRYPOINT — tests must not seed-all (test DB stays
+    # empty; per-test fixtures build their own state). Pin pytest as the
+    # entrypoint so passthrough args (`moon run backend:test -- tests/foo`)
+    # land as pytest arguments rather than replacing it as the container CMD.
+    entrypoint: ["uv", "run", "pytest", "-q"]
     volumes:
       - ./apps/backend:/app
       - /app/.venv

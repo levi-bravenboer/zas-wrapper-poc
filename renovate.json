@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "npm dev deps (non-major)",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["pep621"],
+      "groupName": "python deps"
+    },
+    {
+      "matchDatasources": ["docker"],
+      "groupName": "docker images"
+    },
+    {
+      "matchPackagePatterns": ["@radix-ui/"],
+      "groupName": "radix-ui"
+    },
+    {
+      "matchPackagePatterns": ["@tanstack/"],
+      "groupName": "tanstack"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": false
+  },
+  "osvVulnerabilityAlerts": true
+}

@@ -1,0 +1,21 @@
+name: setup-backend
+description: Install uv, Python 3.13, and sync apps/backend dependencies.
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v4
+      with:
+        version: "0.5.x"
+        enable-cache: true
+        cache-dependency-glob: apps/backend/uv.lock
+
+    - name: install python
+      shell: bash
+      run: uv python install 3.13
+      working-directory: apps/backend
+
+    - name: uv sync (frozen)
+      shell: bash
+      run: uv sync --frozen
+      working-directory: apps/backend

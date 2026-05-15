@@ -1,0 +1,55 @@
+"""create tenants table
+
+Revision ID: 3e2a52a6df9c
+Revises:
+Create Date: 2026-05-14 00:00:00.000000
+
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy.dialects import postgresql
+
+revision: str = "3e2a52a6df9c"
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "tenants",
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
+        sa.Column("slug", sa.String(length=63), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "deleted_at",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.CheckConstraint(
+            "slug ~ '^[a-z][a-z0-9-]{0,62}$'",
+            name="ck_tenants_slug_format",
+        ),
+        sa.UniqueConstraint("slug", name="uq_tenants_slug"),
+    )
+
+
+def downgrade() -> None:
+    op.drop_table("tenants")

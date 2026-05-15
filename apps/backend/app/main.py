@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -15,7 +15,10 @@ from app.core.errors import AppError, ErrorResponse
 from app.core.logging import configure_logging
 from app.core.readiness import ReadinessRegistry
 from app.core.settings import DEFAULT_SESSION_SECRET, Settings, get_settings
+from app.db.audit import install_audit_hooks
 from app.db.engine import create_engine, create_session_factory
+
+install_audit_hooks()
 
 
 class InsecureProductionConfigError(RuntimeError):
@@ -81,16 +84,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _check_production_safety(settings)
     configure_logging(settings)
 
-    fastapi_kwargs: dict[str, Any] = {
-        "title": "ZAS Wrapper Backend",
-        "version": __version__,
-        "description": "FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
-    }
-    if settings.public_url is not None:
-        fastapi_kwargs["servers"] = [{"url": str(settings.public_url).rstrip("/")}]
-    app = FastAPI(**fastapi_kwargs)
+    servers = (
+        [{"url": str(settings.public_url).rstrip("/")}] if settings.public_url is not None else None
+    )
+    app = FastAPI(
+        title="ZAS Wrapper Backend",
+        version=__version__,
+        description="FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
+        servers=servers,
+    )
     app.state.settings = settings
-    app.state.started_at = datetime.now(timezone.utc)
+    app.state.started_at = datetime.now(UTC)
     app.state.readiness = ReadinessRegistry()
 
     hix_client = build_hix_client(settings)

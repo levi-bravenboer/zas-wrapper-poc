@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import alembic_postgresql_enum  # noqa: F401
 import asyncio
 from logging.config import fileConfig
 
