@@ -6,12 +6,12 @@
 
 #### Scenario: app surface renders sidebar shell
 
-- **WHEN** an authed user opens `/dashboard` (surface `app`)
+- **WHEN** an authed user opens `/` (surface `app`)
 - **THEN** the rendered tree is `Shell` → `Sidebar` + `SidebarInset` content slot
 
 #### Scenario: smart surface renders sidebar shell
 
-- **WHEN** an authed user opens `/s/dashboard` (surface `smart`)
+- **WHEN** an authed user opens `/s/` (surface `smart`)
 - **THEN** the rendered tree is `Shell` → `Sidebar` + `SidebarInset` content slot
 
 #### Scenario: embed surface renders bare shell
@@ -27,7 +27,7 @@ On `app` and `smart` surfaces the orchestrator SHALL render its authed routes as
 
 #### Scenario: Authed route renders inside Shell
 
-- **WHEN** an authed user opens `/dashboard`
+- **WHEN** an authed user opens `/`
 - **THEN** the rendered tree is `Shell` → sidebar + content slot
 - **AND** no element with role `banner` exists outside the sidebar
 
@@ -43,7 +43,7 @@ Every authed page SHALL compose itself through the shell rather than mounting la
 
 #### Scenario: Menu-surface page uses PageHeader
 
-- **WHEN** the `/dashboard` route renders
+- **WHEN** the `/` route renders
 - **THEN** its tree under `SidebarInset` starts with a single `PageHeader` followed by the page body
 - **AND** no `<h1>` is rendered outside that `PageHeader`
 
@@ -89,7 +89,7 @@ The sidebar SHALL render a brand block at the top containing a gradient mark, th
 
 ### Requirement: Global command palette
 
-The shell SHALL mount a global command palette component (`src/components/layout/CommandPalette.tsx`) reachable via the keyboard shortcut `⌘K` on macOS / `Ctrl+K` on other platforms. The palette MUST list available routes (Dashboard in PoC) and resolve to a TanStack Router navigation when an item is selected. The palette MUST be mounted exactly once inside `Shell.tsx`.
+The shell SHALL mount a global command palette component (`src/components/layout/CommandPalette.tsx`) reachable via the keyboard shortcut `⌘K` on macOS / `Ctrl+K` on other platforms. The palette MUST list available routes (Overzicht in PoC) and resolve to a TanStack Router navigation when an item is selected. The palette MUST be mounted exactly once inside `Shell.tsx`.
 
 #### Scenario: Shortcut opens palette
 

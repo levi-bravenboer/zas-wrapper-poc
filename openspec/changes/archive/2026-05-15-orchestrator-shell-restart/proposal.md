@@ -13,8 +13,8 @@ This change restarts the frontend's visual + navigational base while keeping the
 
 ## What Changes
 
-- **Reduce authed section routes from 5 → 1.** Keep only `/dashboard` under `_auth/`. Drop `/taken`, `/zorgpaden`, `/patienten`, `/instellingen` from scope. They reappear as separate `[poc]` changes when their feature work begins.
-- **Reconcile route language.** `_auth/dashboard` stays (Dutch + English share the spelling). The dropped routes resolve the drift by simply not existing yet — when reintroduced, they ship under their Dutch path per the `routing` rule.
+- **Reduce authed section routes from 5 → 1.** Keep only the home overview at `/` (rendered by `_auth/index.tsx`, labelled "Overzicht"). Drop `/taken`, `/zorgpaden`, `/patienten`, `/instellingen` from scope. They reappear as separate `[poc]` changes when their feature work begins.
+- **Reconcile route language.** The home overview lives at `/` and reads "Overzicht" in the UI. The dropped routes resolve the drift by simply not existing yet — when reintroduced, they ship under their Dutch path per the `routing` rule.
 - **Lock visual language as "bold glass".** Translucent sidebar panel with `backdrop-filter: blur(20px) saturate(180%)`, aurora radial gradients on the page background, ZAS teal gradient (`#266b5e` → `#08453c`) for active states. Bold but glass-leaning — never dark mode (POC stays light-theme-only per `design-system`).
 - **Lock shell skeleton as sidebar-only, flush full-height.** No top bar. Sidebar spans full viewport height, square edges, no margin. 240px expanded ↔ 64px collapsed.
 - **Lock sidebar interaction.** Collapse toggle keyboard shortcut `⌘\` (Mac) / `Ctrl+\` (other). State persists in `localStorage` key `orchestrator.sidebar.collapsed`. Auto-collapses below tablet breakpoint. Mobile renders as a drawer.
@@ -33,7 +33,7 @@ This change restarts the frontend's visual + navigational base while keeping the
 
 - **`app-shell`** — adds the locked shell decisions (sidebar-only, collapsible, command palette trigger) as concrete requirements on top of the existing folder-layout + provider-tree rules. The shell goes from "abstract structure" to "named visual surface with concrete behavior".
 - **`design-system`** — adds the bold-glass treatment tokens (translucent panel, aurora gradient, teal active-state gradient) on top of the existing ZAS palette + Geist typography rules. Adds the locked `PageHeader` and state-surface patterns to the restrained primitive set.
-- **`routing`** — narrows the "five sibling section routes" requirement to "one section route: `/dashboard`". The rule that section routes stay lowercase Dutch is preserved for when more routes are added.
+- **`routing`** — narrows the "five sibling section routes" requirement to "one section route: `/` (home overview at `_auth/index.tsx`)". The rule that section routes stay lowercase Dutch is preserved for when more routes are added.
 
 ### New Capabilities
 
@@ -63,4 +63,4 @@ None. Everything fits inside the three existing capabilities above.
   - Dark mode — still gated by its own change per `design-system` rule.
   - Designer (composer) — separate `[poc]` work under `F3`.
   - Patient detail view — separate `[poc]` work under `F5`.
-  - **Login auth wiring** — this change builds only the login screen and a placeholder submit handler that navigates to `/dashboard` unconditionally. Frontend validation, credential exchange against the hard-coded user table, cookie-session round-trip, and `?redirect=` honouring all land in `BL-035` (F1 user + auth domain) as its own `[poc]` change. Roadmap tier: `[poc]`.
+  - **Login auth wiring** — this change builds only the login screen and a placeholder submit handler that navigates to `/` unconditionally. Frontend validation, credential exchange against the hard-coded user table, cookie-session round-trip, and `?redirect=` honouring all land in `BL-035` (F1 user + auth domain) as its own `[poc]` change. Roadmap tier: `[poc]`.

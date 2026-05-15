@@ -48,22 +48,21 @@ A `.glass` utility class in `src/styles/globals.css` SHALL set `background: var(
 
 ### Requirement: Aurora background layer
 
-The body SHALL paint an aurora background on every authed route via a `body::before` pseudo-element. The pseudo MUST be `position: fixed; inset: 0; z-index: -1; pointer-events: none` and use the token `--gradient-aurora` defined in `src/styles/tokens.css` as:
+The body SHALL paint a soft aurora background on every authed route directly via `body { background: var(--gradient-aurora) fixed }` (no `body::before` pseudo). Intermediate wrappers (`#root`, `_auth` shell, `SidebarInset`) MUST stay transparent so the aurora reaches the canvas. The token `--gradient-aurora` is defined in `src/styles/tokens.css` as a single bottom-right mint bloom over a neutral base:
 
 ```css
 --gradient-aurora:
-  radial-gradient(ellipse 60% 50% at 0% 0%, rgba(38, 107, 94, 0.20) 0%, transparent 55%),
-  radial-gradient(ellipse 50% 40% at 100% 100%, rgba(207, 237, 232, 0.55) 0%, transparent 55%),
-  linear-gradient(180deg, #fafaf9 0%, #f1efed 100%);
+  radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+  linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
 ```
 
 The aurora MUST NOT use `backdrop-filter`. The login route SHALL paint the same aurora.
 
-#### Scenario: Aurora present on dashboard
+#### Scenario: Aurora present on home
 
-- **WHEN** an authed user opens `/dashboard`
-- **THEN** `getComputedStyle(document.body, '::before').position === 'fixed'`
-- **AND** the layer is below `z-index: 0`
+- **WHEN** an authed user opens `/`
+- **THEN** `getComputedStyle(document.body).backgroundImage` includes a `radial-gradient` and `backgroundAttachment === 'fixed'`
+- **AND** no wrapping element between body and page content paints an opaque `background-color`
 
 #### Scenario: Aurora present on login
 
@@ -76,8 +75,8 @@ Active navigation items SHALL render with the token `--gradient-active`, defined
 
 #### Scenario: Active item background
 
-- **WHEN** the user is on `/dashboard` and the sidebar nav renders
-- **THEN** the Dashboard item's `::before` (or background) resolves to the active gradient
+- **WHEN** the user is on `/` and the sidebar nav renders
+- **THEN** the home item's background resolves to the active gradient
 - **AND** its text colour resolves to `#ffffff`
 
 ### Requirement: State-surface component set

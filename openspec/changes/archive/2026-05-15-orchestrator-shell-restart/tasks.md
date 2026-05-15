@@ -19,15 +19,15 @@ The `design-system` spec gates `src/components/ui/` to a closed list. Extend the
 ## 1. Tokens + global aesthetic
 
 - [x] 1.1 Add glass + aurora + active-gradient tokens to `src/styles/tokens.css` (see `design.md` D2).
-- [x] 1.2 Add aurora `body::before` layer in `src/styles/globals.css`.
+- [x] 1.2 Paint aurora directly on `body { background: var(--gradient-aurora) fixed }` in `src/styles/globals.css` (no `body::before`); soften `--gradient-aurora` to a single bottom-right mint bloom over a neutral base. Root `__root.tsx` wrapper drops `bg-background` and `SidebarInset` carries `bg-transparent` so intermediate layers don't paint over the aurora.
 - [x] 1.3 Add `.glass` utility class (opt-in `backdrop-filter`) in `src/styles/globals.css`. Also added `.glass-strong` for the brighter panel variant.
 - [x] 1.4 Verify no `dark:` Tailwind variants land alongside these tokens (light-only rule still holds). Removed shadcn-injected `@custom-variant dark` + `.dark` block. Sidebar tokens now map to ZAS palette.
 
 ## 2. Routing narrowing
 
 - [x] 2.1 Delete `src/routes/_auth/{tasks,pathways,patients,settings}.tsx` (English names, not the Dutch placeholders the original task listed). 4 files removed.
-- [x] 2.2 Keep `src/routes/_auth/dashboard.tsx` as the single webapp section route.
-- [x] 2.3 Confirm `_auth/index.tsx` still redirects `/` → `/dashboard` (`-index.test.tsx` covers).
+- [x] 2.2 Promote the home overview to `src/routes/_auth/index.tsx` (URL `/`, copy "Overzicht"); delete the obsolete `_auth/dashboard.tsx` and the `_auth/-index.test.tsx` redirect fixture.
+- [x] 2.3 `_auth.tsx` guard redirects `/` → `/login?redirect=%2F` when unauthed; authed `/` renders the overview directly (no intermediate redirect).
 - [x] 2.4 Regenerated `routeTree.gen.ts` via `scripts/gen-route-tree.mjs`. Typecheck + lint + test clean.
 - [x] 2.5 Keep `embed.tsx` + `s.tsx` shell layouts + their `tasks.tsx` route files as live reference for the three-shell pattern (`AppShell` / `EmbedShell` / `SmartShell`). Decided over full prune so future `[mvp]` SMART launch + HiX iframe surfaces don't need to rebuild the shells from scratch.
 - [x] 2.6 Keep `routes/launch.tsx` + `launch.callback.tsx` (SMART-on-FHIR PKCE entry) for the same reason.
@@ -50,7 +50,7 @@ Before building the shell, verify everything landed in sections 0–2 matches th
   - Active-gradient opacity drift vs mockup → kept opaque per user call (design.md authoritative).
   - Glass-blur tiers gap → fixed in 2.5.2.
   - shadcn CLI alias mis-resolution → fixed in 2.5.5.
-  - `-_auth.test.tsx` referenced removed `/pathways` route as a redirect fixture → renamed to `/dashboard` for cleanliness.
+  - `-_auth.test.tsx` referenced removed `/pathways` route as a redirect fixture → renamed to `/` for cleanliness.
   - Pre-existing lint warnings (mockServiceWorker / vi.mock hoist) deliberately untouched — owned by msw / vitest patterns, not shell work.
 
 ## 3. Sidebar shell (built on shadcn `Sidebar` block)
@@ -66,7 +66,7 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 - [x] 3.7 Nav items via `<SidebarMenu>` + `<SidebarMenuItem>` + `<SidebarMenuButton asChild>` wrapping TanStack `<Link>`. Active-gradient applied via `data-[active=true]` class overrides on the button.
 - [x] 3.8 User block in `<SidebarFooter>`: `DropdownMenu` triggered by an `lg` `SidebarMenuButton` rendering avatar (initials fallback over active-gradient) + name + role. Items: profile stub, settings stub, sign-out → `useLogout()`.
 - [x] 3.9 Tooltip-on-collapsed: `SidebarMenuButton tooltip={label}` for nav + user button — out-of-box.
-- [x] 3.10 `navItems.ts` shrunk to Dashboard only. Feature registry merge path preserved for later modules.
+- [x] 3.10 `navItems.ts` shrunk to a single Overzicht entry pointing at `/`. Feature registry merge path preserved for later modules.
 
 ## 4. Command palette (built on shadcn `Command`)
 
@@ -80,11 +80,11 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 - [x] 5.1 Created `src/components/layout/PageHeader.tsx` with slots: `eyebrow`, `title` (required), `sub`, `actions`, `tabs`.
 - [x] 5.2 Auto-crumb via `useMatches()` when depth > 2; renders shadcn `Breadcrumb` + items. Labels read from `staticData.breadcrumb` via defensive `readBreadcrumb` reader (TanStack `staticData` typed `unknown` here, no module augmentation). Home crumb prefixed via `t('shell:header.crumb.home')`.
 - [x] 5.3 Tabs slot accepts `ReactNode` — consumers compose `Tabs` + `TabsTrigger asChild` themselves to keep PageHeader router-agnostic. Wiring pattern documented in component file via slot name `page-header-tabs`.
-- [x] 5.4 Mounted `<PageHeader title={t('dashboard')} sub={t('placeholder')} />` in `routes/_auth/dashboard.tsx`.
+- [x] 5.4 Mounted `<PageHeader title={t('title')} sub={t('sub')} />` (namespace `dashboard`) in `routes/_auth/index.tsx`.
 
 ## 6. State surfaces (built on shadcn `Skeleton` + `Alert`, Sonner)
 
-- [x] 6.1 Created `src/components/states/Skeleton.tsx` exporting `RowSkeleton`, `CardSkeleton`, `DetailSkeleton`. Each composes the shadcn `Skeleton` primitive directly via `animate-pulse` (no new shimmer impl).
+- [x] 6.1 Created `src/components/states/Skeleton.tsx` exporting `RowSkeleton`, `CardSkeleton`, `DetailSkeleton`. Primitive `ui/skeleton.tsx` now uses the `.shimmer` utility (1.4s ease-in-out infinite keyframe over a translucent linear-gradient) to match mockup 10.
 - [x] 6.2 Created `src/components/states/EmptyState.tsx` with `{ icon?, title, body?, action? }`. `role="status"` wrapper + `<h3>` title — dashed border, centered, muted body copy.
 - [x] 6.3 Created `src/components/states/InlineAlert.tsx` wrapping shadcn `Alert variant="destructive"` with optional `retry` slot rendered in the description column.
 - [x] 6.4 Created `src/components/states/ErrorState.tsx` full-page composition: lucide icon in destructive tint pill, title heading, body copy, optional `onRetry` primary button + arbitrary `action` slot.
@@ -95,7 +95,7 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 - [x] 7.1 Rewrote `src/routes/login.tsx` with pattern O — minimal centered, no card, aurora background visible through.
 - [x] 7.2 Uses shadcn `Input` + `Label` + primary `Button`. No "remember me", no "forgot password".
-- [x] 7.3 `LoginForm.tsx` collapsed to PoC placeholder: `handleSubmit` `event.preventDefault()` then `navigate({ to: '/dashboard' })`. No `useLogin`, no `zod`/`useForm`. BL-035 carries the real wiring.
+- [x] 7.3 `LoginForm.tsx` collapsed to PoC placeholder: `handleSubmit` `event.preventDefault()` then seeds an in-memory session via `queryClient.setQueryData(authKeys.me(), stub)` and `navigate({ to: '/' })`. No `useLogin`, no `zod`/`useForm`. BL-035 carries the real wiring (and removes the cache seed).
 - [x] 7.4 Confirmed: only `src/routes/login.tsx` exists. No `embed/login.tsx` registered.
 - [x] 7.5 `Route.validateSearch` still parses `?redirect=` so the auth guard's redirect param stays type-safe; placeholder ignores it for now (guard reinstates at BL-035).
 
@@ -111,8 +111,10 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 - [x] 9.2 `PageHeader.test.tsx` shipped — mocked `useMatches` + `Link`, asserts required `<h1>` heading, eyebrow/sub/actions/tabs slot rendering, and auto-crumb chain (home + intermediate link + final `BreadcrumbPage`).
 - [x] 9.3 `CommandPalette.test.tsx` — ⌘K opens the palette and lists registered entries; clicking an item invokes its `perform` callback.
 - [x] 9.4 `Skeleton.test.tsx` (presentational slot checks) + `EmptyState.test.tsx` (role=status + heading lookup + body/action conditional) shipped.
-- [x] 9.5 `LoginForm.test.tsx` rewritten — mocks `useNavigate`, asserts empty submit calls `navigate({ to: '/dashboard' })` exactly once, no `role="alert"` rendered, no fetch path imported.
+- [x] 9.5 `LoginForm.test.tsx` rewritten — wraps in `QueryClientProvider`, mocks `useNavigate`, asserts empty submit calls `navigate({ to: '/' })` exactly once, no `role="alert"` rendered, no fetch path imported.
 - [x] 9.6 Surface branching coverage spread across three files: `SmartShell.test.tsx` (menu surface → sidebar slot present), `Shell.test.tsx` (app surface → sidebar + persistence), `EmbedShell.test.tsx` (embed surface → `data-shell="bare"`, no sidebar). One consolidated `Shell.surface.test.tsx` would duplicate — left as-is.
+- [x] 9.7 `Shell.test.tsx` extended: clicking the floating edge `CollapseToggle` button toggles `data-state` between `expanded`/`collapsed` and writes the same `orchestrator.sidebar.collapsed` localStorage flag as the keyboard shortcut.
+- [x] 9.8 `routes/_auth/-index.test.tsx` smoke: mounting the home route renders the `Overzicht` `<h1>` and the `Vandaag` KPI heading.
 
 ## 10. Spec deltas + scope ledger
 
@@ -124,6 +126,6 @@ The shadcn `Sidebar` block already ships: collapsible rail (`icon` variant ≈ o
 
 - [x] 11.1 `moon run orchestrator:typecheck` — clean.
 - [x] 11.2 `moon run orchestrator:lint` — 0 errors. 1 pre-existing warning in `public/mockServiceWorker.js` unrelated to this change.
-- [x] 11.3 `moon run orchestrator:test` — 24 files / 88 tests passed.
+- [x] 11.3 `moon run orchestrator:test` — 24 files / 89 tests passed.
 - [x] 11.4 `moon run orchestrator:build` — `✓ built in 299ms`; bundle emits no `fonts.googleapis.com` requests (Geist via `geist/font` only).
-- [ ] 11.5 Visual smoke in browser: login → dashboard → toggle sidebar → ⌘K palette → trigger a fake error to see toast. *(manual — left for user)*
+- [x] 11.5 Visual smoke in browser via Playwright MCP: `/login` → submit (TEMP cache seed) → `/` overview renders with PageHeader "Overzicht", glass KPI section, shimmer skeletons, soft mint aurora bottom-right, floating CollapseToggle on sidebar edge, ⌘K palette opens. Final gate: typecheck clean · 1 pre-existing lint warning · 24 files / 89 tests passed · build ✓ 301ms.
