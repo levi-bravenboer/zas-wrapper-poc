@@ -6,7 +6,10 @@ from app.main import InsecureProductionConfigError, _check_production_safety
 from tests._settings import build_settings
 
 
-def test_settings_load_defaults() -> None:
+def test_settings_load_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    # CI sets BACKEND_ENV=test in the workflow env; clear so defaults apply.
+    for var in ("BACKEND_ENV", "BACKEND_HIX_MODE", "BACKEND_LUSCII_MODE"):
+        monkeypatch.delenv(var, raising=False)
     settings = build_settings()
     assert settings.env == "dev"
     assert settings.session_cookie_name == "BACKEND_SESSION"
