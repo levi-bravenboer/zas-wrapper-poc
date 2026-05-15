@@ -5,8 +5,9 @@
   "type": "module",
   "engines": {
     "node": ">=22.13.0",
-    "npm": ">=10.0.0"
+    "pnpm": ">=9.0.0"
   },
+  "packageManager": "pnpm@9.15.1",
   "scripts": {
     "dev": "vite",
     "build": "tsr generate && tsc -b && vite build",
