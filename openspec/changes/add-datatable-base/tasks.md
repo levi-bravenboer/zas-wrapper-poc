@@ -75,17 +75,17 @@
 
 ## 7. Backend — verification
 
-- [ ] 7.1 `moon run backend:lint`
-- [ ] 7.2 `moon run backend:format`
-- [ ] 7.3 `moon run backend:typecheck`
-- [ ] 7.4 `moon run backend:test -- tests/schemas/_list/ tests/api/_list/ tests/repositories/_list/ tests/realtime/ tests/api/events/`
-- [ ] 7.5 `moon run backend:openapi` and confirm `Page_DemoModel_` schema renders; `/events` excluded from typed client
+- [x] 7.1 `moon run backend:lint`
+- [x] 7.2 `moon run backend:format`
+- [x] 7.3 `moon run backend:typecheck`
+- [x] 7.4 `moon run backend:test -- tests/schemas/_list/ tests/api/_list/ tests/repositories/_list/ tests/realtime/ tests/api/events/`
+- [x] 7.5 `moon run backend:openapi` and confirm `Page_DemoModel_` schema renders; `/events` excluded from typed client
 
 ## 8. Backend — docs
 
-- [ ] 8.1 Add "List endpoints" subsection to `apps/backend/AGENTS.md` documenting `ListQuery` + `Page[T]` + `BaseListRepository` usage
-- [ ] 8.2 Add "Realtime" subsection to `apps/backend/AGENTS.md`: single-pod invariant, `__realtime_resource__`, after-commit semantics, multi-pod backlog
-- [ ] 8.3 Add backlog entry `BL-NNN — Multi-pod realtime broadcaster` (tier `[mvp]`)
+- [x] 8.1 Add "List endpoints" subsection to `apps/backend/AGENTS.md` documenting `ListQuery` + `Page[T]` + `BaseListRepository` usage
+- [x] 8.2 Add "Realtime" subsection to `apps/backend/AGENTS.md`: single-pod invariant, `__realtime_resource__`, after-commit semantics, multi-pod backlog
+- [x] 8.3 Add backlog entry `BL-NNN — Multi-pod realtime broadcaster` (tier `[mvp]`)
 
 ## 9. Orchestrator — `Table` shadcn primitive
 
@@ -194,11 +194,11 @@
 
 ## 20. Orchestrator — State persistence helpers
 
-- [ ] 20.1 `useDataTableState(initial?)` reducer producing `{page, pageSize, q, orderBy, order, filters}`
-- [ ] 20.2 `useRouteSearchTableState(searchSchema)` round-tripping through TanStack Router search params
-- [ ] 20.3 `useLocalTableState(tableId, initial?)` round-tripping through `localStorage` with 200ms debounced writes
-- [ ] 20.4 Type-safe overlap: localStorage fallback for fields not present in URL
-- [ ] 20.5 Tests for each helper
+- [x] 20.1 `useDataTableState(initial?)` reducer producing `{page, pageSize, q, orderBy, order, filters}`
+- [x] 20.2 `useRouteSearchTableState(searchSchema)` round-tripping through TanStack Router search params
+- [x] 20.3 `useLocalTableState(tableId, initial?)` round-tripping through `localStorage` with 200ms debounced writes
+- [x] 20.4 Type-safe overlap: localStorage fallback for fields not present in URL
+- [x] 20.5 Tests for each helper
 
 ## 21. Orchestrator — Realtime topic prop wiring
 
@@ -232,7 +232,7 @@
 
 ## 24. Backend AGENTS.md rules (codify list + bulk + realtime conventions)
 
-- [ ] 24.1 Add "List endpoints" subsection to `apps/backend/AGENTS.md` with all 7 rules:
+- [x] 24.1 Add "List endpoints" subsection to `apps/backend/AGENTS.md` with all 7 rules:
   - All list endpoints MUST use `BaseListRepository.list_page` and return `Page[T]`. No bespoke pagination.
   - All list endpoints MUST consume `ListQueryParamsDep`. No manual query parsing.
   - Repositories MUST declare `orderable_fields`, `filterable_fields`, `searchable_fields`, and `default_order` explicitly. No model introspection.
@@ -240,8 +240,8 @@
   - Every model that may surface in a list endpoint MUST declare `__realtime_resource__: str | None` explicitly (no defaults). `None` means "do not publish".
   - Introducing a new filter operator requires an OpenSpec change extending `list-query-base`.
   - List route URL: `GET /<resource>` (plural). Detail: `GET /<resource>/{id}`. No `/list` suffix.
-- [ ] 24.2 Add code example block showing a minimal compliant list endpoint (route + dep + repo + schema)
-- [ ] 24.3 Add "Realtime" subsection: single-pod invariant, `__realtime_resource__` examples, after-commit semantics, multi-pod backlog reference
+- [x] 24.2 Add code example block showing a minimal compliant list endpoint (route + dep + repo + schema)
+- [x] 24.3 Add "Realtime" subsection: single-pod invariant, `__realtime_resource__` examples, after-commit semantics, multi-pod backlog reference
 
 ## 25. Orchestrator AGENTS.md rules (codify table + state + realtime conventions)
 
@@ -259,27 +259,27 @@
 
 ## 26. ESLint custom rules
 
-- [ ] 26.1 Configure `no-restricted-syntax` in `apps/orchestrator/eslint.config.js` blocking JSX `<table>` element outside `src/components/ui/table.tsx` and `src/components/data-table/**`. Error message: "Use `DataTable<T>` for lists; raw `<table>` only allowed inside the `Table` primitive."
-- [ ] 26.2 Configure `no-restricted-imports` blocking `@tanstack/react-table` imports outside `src/components/data-table/**`. Error: "TanStack Table is an implementation detail of DataTable; import from `@/components/data-table` instead."
-- [ ] 26.3 Configure `no-restricted-imports` blocking `@/components/ui/table` imports outside `src/components/data-table/**` and tests. Error: "Import `DataTable` from `@/components/data-table`; the `Table` primitive is internal."
-- [ ] 26.4 Configure `no-restricted-syntax` blocking `useQuery` calls whose first arg matches a list-endpoint path literal (`/<resource>?page=` etc) — best effort heuristic flagging direct list-endpoint calls. Error: "Use `usePaginatedQuery` for paginated lists."
-- [ ] 26.5 ESLint integration tests under `apps/orchestrator/tests-lint/` exercising each rule
-- [ ] 26.6 Verify `moon run orchestrator:lint` fails on a deliberate violation example then passes after removal
+- [x] 26.1 Configure `no-restricted-syntax` in `apps/orchestrator/eslint.config.js` blocking JSX `<table>` element outside `src/components/ui/table.tsx` and `src/components/data-table/**`. Error message: "Use `DataTable<T>` for lists; raw `<table>` only allowed inside the `Table` primitive."
+- [x] 26.2 Configure `no-restricted-imports` blocking `@tanstack/react-table` imports outside `src/components/data-table/**`. Error: "TanStack Table is an implementation detail of DataTable; import from `@/components/data-table` instead."
+- [x] 26.3 Configure `no-restricted-imports` blocking `@/components/ui/table` imports outside `src/components/data-table/**` and tests. Error: "Import `DataTable` from `@/components/data-table`; the `Table` primitive is internal."
+- [x] 26.4 Configure `no-restricted-syntax` blocking `useQuery` calls whose first arg matches a list-endpoint path literal (`/<resource>?page=` etc) — best effort heuristic flagging direct list-endpoint calls. Error: "Use `usePaginatedQuery` for paginated lists."
+- [x] 26.5 ESLint integration tests under `apps/orchestrator/tests-lint/` exercising each rule
+- [x] 26.6 Verify `moon run orchestrator:lint` fails on a deliberate violation example then passes after removal
 
 ## 27. Backend conformance tests
 
-- [ ] 27.1 Add `tests/_conformance/test_list_endpoint_conformance.py`:
+- [x] 27.1 Add `tests/_conformance/test_list_endpoint_conformance.py`:
   - Introspect every route in the FastAPI app whose `response_model` is a `Page[*]` subclass
   - Assert each declares `ListQueryParamsDep` (or factory result) as a parameter
   - Assert each is a `GET /<resource>` (plural noun, no `/list` suffix)
-- [ ] 27.2 Add `tests/_conformance/test_bulk_endpoint_conformance.py`:
+- [x] 27.2 Add `tests/_conformance/test_bulk_endpoint_conformance.py`:
   - Detect routes matching `POST /<resource>/<action>` shape where action is in a known verb set (`archive`, `delete`, `assign`, `complete`, etc — extensible list)
   - Assert request body Pydantic model has a single `ids: list[UUID]` field
   - Assert response model is `BulkResult` subclass
-- [ ] 27.3 Add `tests/_conformance/test_realtime_resource_declared.py`:
+- [x] 27.3 Add `tests/_conformance/test_realtime_resource_declared.py`:
   - Walk every concrete subclass of `TenantOwnedEntity`
   - Assert each declares `__realtime_resource__` (value MAY be `None` but the attr MUST be present in the class body, not inherited as a default)
-- [ ] 27.4 Tests run as part of `moon run backend:test`
+- [x] 27.4 Tests run as part of `moon run backend:test`
 
 ## 28. Shared `BulkResult` schema
 
