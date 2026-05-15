@@ -1,0 +1,22 @@
+{
+  "brand": {
+    "name": "ZAS Orchestrator"
+  },
+  "user": {
+    "roleFallback": "Zorgverlener",
+    "profile": "Profiel",
+    "settings": "Instellingen"
+  },
+  "palette": {
+    "placeholder": "Zoek of navigeer…",
+    "empty": "Geen resultaten",
+    "groups": {
+      "routes": "Navigatie"
+    }
+  },
+  "header": {
+    "crumb": {
+      "home": "Home"
+    }
+  }
+}

@@ -23,12 +23,15 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/style/cn"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+// reason: orchestrator overrides default shadcn cookie persistence with
+// localStorage at the Shell.tsx level (spec: app-shell). The cookie constants
+// are kept only so the upstream signature stays drop-in compatible if we ever
+// resync the primitive.
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
-const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+// reason: spec mandates ⌘\ / Ctrl+\ (not the upstream ⌘B).
+const SIDEBAR_KEYBOARD_SHORTCUT = "\\"
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -79,9 +82,8 @@ function SidebarProvider({
       } else {
         _setOpen(openState)
       }
-
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      // reason: persistence is owned by Shell.tsx via localStorage; the upstream
+      // document.cookie write was removed deliberately (spec: app-shell).
     },
     [setOpenProp, open]
   )
