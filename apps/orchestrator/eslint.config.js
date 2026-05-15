@@ -191,6 +191,17 @@ export default defineConfig([
     rules: { 'testing-library/no-manual-cleanup': 'off' },
   },
   {
+    // DataTable tests legitimately probe DOM structure (sticky-left classes on
+    // <td>, header row composition, expanded row colSpan) — testing-library's
+    // role queries cannot express these assertions. The product code is fully
+    // covered by role-based tests; these checks complement them.
+    files: ['src/components/data-table/**/*.test.{ts,tsx}'],
+    rules: {
+      'testing-library/no-node-access': 'off',
+      'testing-library/no-container': 'off',
+    },
+  },
+  {
     // Playwright E2E — not testing-library
     files: ['tests-e2e/**/*.{ts,tsx}'],
     rules: {
