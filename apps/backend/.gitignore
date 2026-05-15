@@ -12,3 +12,6 @@ wheels/
 # Stale local SQLite artefacts (PoC now runs Postgres in docker)
 *.db
 *.db-journal
+
+# CI-only export from `uv export` for pip-audit
+requirements.ci.txt

@@ -1,0 +1,418 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# ────────────────────────────────────────────────────────────────────────────
+# Shared backend env. Test/migration jobs inherit + override DB-specific bits.
+# `BACKEND_SESSION_SECRET_KEY` is a non-secret dummy so trufflehog won't flag.
+# ────────────────────────────────────────────────────────────────────────────
+env:
+  BACKEND_ENV: test
+  BACKEND_SESSION_SECRET_KEY: dummy-ci-not-a-real-secret
+  BACKEND_HIX_MODE: stub
+  BACKEND_LUSCII_MODE: stub
+  BACKEND_LOG_LEVEL: WARNING
+
+jobs:
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║ change detection — skip per-app jobs when their tree is untouched    ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      orchestrator: ${{ steps.filter.outputs.orchestrator }}
+      openspec: ${{ steps.filter.outputs.openspec }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'apps/backend/**'
+              - 'docker-compose*.yml'
+              - '.github/workflows/ci.yml'
+              - '.github/actions/setup-backend/**'
+            orchestrator:
+              - 'apps/orchestrator/**'
+              - '.github/workflows/ci.yml'
+              - '.github/actions/setup-orchestrator/**'
+            openspec:
+              - 'openspec/**'
+              - '.github/workflows/ci.yml'
+            workflows:
+              - '.github/workflows/**'
+              - '.github/actions/**'
+            docker:
+              - 'apps/backend/Dockerfile*'
+              - 'docker-compose*.yml'
+              - '.github/workflows/ci.yml'
+
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║ backend                                                              ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  backend-quality:
+    name: backend quality
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-backend
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run pyright
+
+  backend-test:
+    name: backend test
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: zas
+          POSTGRES_PASSWORD: zas
+          POSTGRES_DB: zas_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U zas -d zas_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      BACKEND_DATABASE_URL: postgresql+asyncpg://zas:zas@localhost:5432/zas_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-backend
+      - run: uv run pytest -q
+
+  backend-migrations:
+    name: backend migrations
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: zas
+          POSTGRES_PASSWORD: zas
+          POSTGRES_DB: zas
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U zas -d zas"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      BACKEND_DATABASE_URL: postgresql+asyncpg://zas:zas@localhost:5432/zas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-backend
+      - name: upgrade head from empty DB
+        run: uv run alembic upgrade head
+      - name: check for unrevisioned model drift
+        run: uv run alembic check
+
+  backend-openapi:
+    name: backend openapi drift
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-backend
+      - name: regenerate openapi.json
+        run: uv run python -m app.openapi
+      - name: fail if openapi.json drifted
+        run: |
+          if ! git diff --exit-code openapi.json; then
+            echo "::error::apps/backend/openapi.json is out of date. Run 'moon run backend:openapi' and commit."
+            exit 1
+          fi
+
+  backend-vuln-audit:
+    name: backend vuln audit
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-backend
+      - name: export locked prod deps
+        run: uv export --frozen --no-dev --no-hashes --format requirements-txt -o requirements.ci.txt
+      - name: pip-audit
+        run: uvx --from pip-audit pip-audit --strict --disable-pip -r requirements.ci.txt
+
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║ orchestrator                                                         ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  orchestrator-quality:
+    name: orchestrator quality
+    needs: changes
+    if: needs.changes.outputs.orchestrator == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-orchestrator
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npx tsc -b --noEmit
+
+  orchestrator-test:
+    name: orchestrator test
+    needs: changes
+    if: needs.changes.outputs.orchestrator == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-orchestrator
+      - run: npm run test -- --coverage=false
+
+  orchestrator-e2e:
+    name: orchestrator e2e
+    needs: changes
+    if: needs.changes.outputs.orchestrator == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/orchestrator
+    env:
+      VITE_API_MODE: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-orchestrator
+      - name: install playwright browsers
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/orchestrator/playwright-report/
+          retention-days: 7
+
+  orchestrator-build:
+    name: orchestrator build
+    needs: changes
+    if: needs.changes.outputs.orchestrator == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-orchestrator
+      - run: npm run build
+
+  orchestrator-vuln-audit:
+    name: orchestrator vuln audit
+    needs: changes
+    if: needs.changes.outputs.orchestrator == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-orchestrator
+      - name: audit prod deps (fail on high)
+        run: npm audit --audit-level=high --omit=dev
+      - name: audit all deps (advisory only)
+        run: npm audit --audit-level=high || true
+
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║ docker / container                                                   ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  hadolint:
+    name: dockerfile lint
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile:
+          - apps/backend/Dockerfile
+          - apps/backend/Dockerfile.test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          failure-threshold: warning
+
+  trivy-fs:
+    name: trivy filesystem scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+      - if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║ repo-wide / workflow / supply-chain                                  ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  actionlint:
+    name: workflow lint
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: raven-actions/actionlint@v2
+        with:
+          matcher: true
+
+  openspec-validate:
+    name: openspec validate
+    needs: changes
+    if: needs.changes.outputs.openspec == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm install -g @fission-ai/openspec@1.3.1
+      - run: openspec validate --all --strict --no-interactive
+
+  dependency-review:
+    name: dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  secret-scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@v3.83.7
+        with:
+          path: ./
+          base: ${{ github.event.pull_request.base.sha || '' }}
+          head: ${{ github.event.pull_request.head.sha || github.sha }}
+          extra_args: --only-verified --fail
+
+  # SBOM is a release artifact — only generated on push to main.
+  sbom:
+    name: generate sbom
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0.17.8
+        with:
+          path: .
+          format: spdx-json
+          artifact-name: zas-wrapper-sbom.spdx.json
+          upload-artifact: true
+          upload-release-assets: false
+
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║ required-check aggregator                                            ║
+  # ║ Point branch protection at this single job.                          ║
+  # ║                                                                      ║
+  # ║ Iterates `toJSON(needs)` so adding a new upstream job needs only one ║
+  # ║ edit (the `needs:` list below) — the aggregation script is generic.  ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  pr-gate:
+    name: pr gate
+    if: always()
+    needs:
+      - changes
+      - backend-quality
+      - backend-test
+      - backend-migrations
+      - backend-openapi
+      - backend-vuln-audit
+      - orchestrator-quality
+      - orchestrator-test
+      - orchestrator-e2e
+      - orchestrator-build
+      - orchestrator-vuln-audit
+      - hadolint
+      - trivy-fs
+      - actionlint
+      - openspec-validate
+      - dependency-review
+      - secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: aggregate upstream results
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          failed=0
+          while IFS=$'\t' read -r job result; do
+            case "$result" in
+              success|skipped) printf "✓ %-28s (%s)\n" "$job" "$result" ;;
+              *)               printf "✗ %-28s (%s)\n" "$job" "$result"; failed=1 ;;
+            esac
+          done < <(jq -r 'to_entries[] | "\(.key)\t\(.value.result)"' <<<"$NEEDS")
+          exit "$failed"
