@@ -53,7 +53,7 @@ The orchestrator SHALL render at `/_auth/admin/users` a `<UserListPage>` composi
 4. **Actief** — badge: `Ja | Nee`. Filterable via toggle.
 5. **Aangemaakt** — `dd MMM HH:mm` (locale `nl-NL`), sortable.
 
-The page SHALL provide a search input (`q` over `display_name + email`), a `Rol`-filter single-select, an `Actief`-filter toggle, and a primary CTA `Gebruiker toevoegen` opening `<CreateUserDialog>`. Each row's kebab SHALL expose `Bewerken` (opens `<EditUserDialog>`) and `Deactiveren` (destructive confirm; calls `PATCH /users/{id}` with `is_active=false`). The `Deactiveren` action SHALL be disabled when `row.id === currentSession.user.id`. The empty state copy SHALL be `"Nog geen gebruikers in dit tenant."`. The route SHALL be reachable only via the admin route group's existing layout gate.
+The page SHALL provide a search input (`q` over `display_name + email`), a `Rol`-filter single-select, an `Actief`-filter toggle, and a primary CTA `Gebruiker toevoegen` linking to `/_auth/admin/users/new`. Each row's kebab SHALL expose `Bewerken` (linking to `/_auth/admin/users/$userId/edit`) and `Deactiveren` (destructive confirm; calls `PATCH /users/{id}` with `is_active=false`). The `Deactiveren` action SHALL be disabled when `row.id === currentSession.user.id`. The empty state copy SHALL be `"Nog geen gebruikers in dit tenant."`. The route SHALL be reachable only via the admin route group's existing layout gate.
 
 #### Scenario: Caregiver session cannot load the page
 
@@ -72,11 +72,12 @@ The page SHALL provide a search input (`q` over `display_name + email`), a `Rol`
 
 ### Requirement: Admin user detail page surfaces Practitioner + roles
 
-The orchestrator SHALL render at `/_auth/admin/users/$userId` a `<UserDetailPage>` containing:
+The orchestrator SHALL render at `/_auth/admin/users/$userId` a `<UserDetailPage>` built on `<EntityDetailPage>` chrome (header: title=display_name, subtitle=role badge + email, back link to `/_auth/admin/users`, actions slot = Bewerken + Deactiveren). The body SHALL use `<EntityDetailSingleColumn>` containing:
 
-1. **Demographics section**: `Naam`, `Email`, `Rol`, `Actief`, `Aangemaakt`.
-2. **Practitioner section** (only when `user.role === 'caregiver'` and `GET /practitioners/{userId}` returns 200): `family_name`, `given_name`, `qualification`, and a small table of `PractitionerRole` rows showing `code`, `organisation.name`, `period_start`, `period_end` (em-dash when open), `is_primary` badge.
-3. **Page kebab**: `Bewerken` (opens `<EditUserDialog>`), `Deactiveren` (destructive confirm; disabled when target is the current admin).
+1. **Demographics card**: `Naam`, `Email`, `Rol`, `Actief`, `Aangemaakt`.
+2. **Practitioner card** (only when `user.role === 'caregiver'` and `GET /practitioners/{userId}` returns 200): `family_name`, `given_name`, `qualification`, and a small table of `PractitionerRole` rows showing `code`, `organisation.name`, `period_start`, `period_end` (em-dash when open), `is_primary` badge.
+
+The header `Bewerken` action SHALL navigate to `/_auth/admin/users/$userId/edit`. The header `Deactiveren` action SHALL use `useEntityDelete` semantics adapted for soft-deactivate: AlertDialog confirm → `PATCH /users/{id}` with `is_active=false` → toast + invalidate the detail query; disabled when target is the current admin. Loading state SHALL render `<EntityDetailSkeleton>`. Missing resource (404) SHALL render `<EntityNotFound>` with back link to the list.
 
 Affiliation editing SHALL NOT be exposed from this page — each PractitionerRole row's chip MAY link to the (placeholder until `practitioner-roles-admin-ui` ships) `/_auth/admin/practitioner-roles?practitioner_id=…` route.
 
@@ -90,16 +91,21 @@ Affiliation editing SHALL NOT be exposed from this page — each PractitionerRol
 - **WHEN** the detail page loads for a caregiver with two open PractitionerRole rows and one closed
 - **THEN** the Practitioner section MUST render all three rows ordered by `is_primary DESC, period_start DESC`, with closed rows visually distinguished (e.g. muted text and a `Beëindigd` chip)
 
-### Requirement: Create + Edit dialogs use shadcn form primitives with field-level errors
+### Requirement: Create + Edit pages compose entity-page chrome with field-level errors
 
-The orchestrator SHALL provide `<CreateUserDialog>` and `<EditUserDialog>` components built on shadcn's `Dialog` + `Form` primitives. Both dialogs SHALL surface API field-level errors inline against the relevant form field (e.g. duplicate email → `email` field error). Submit SHALL invalidate the `/users` query key on success. The create dialog's `qualification` input SHALL only render when the selected `role === 'caregiver'`.
+The orchestrator SHALL render Create at `/_auth/admin/users/new` and Edit at `/_auth/admin/users/$userId/edit`. Both routes SHALL render a single `<UserFormPage>` parameterised by `mode: 'create' | 'edit'` and SHALL compose `<EntityFormPage>` (sticky footer with Cancel + Save) driven by `useEntityForm` against a Zod schema. The form body SHALL render shadcn `Form` field rows: `email` (create only), `display_name`, `role` (create only; default `caregiver`), `qualification` (only when selected `role === 'caregiver'`), `is_active` (edit only). Cancel SHALL navigate back to the source (detail for edit, list for create). On success: create POSTs `/users`, navigates to the new detail page, fires a success toast; edit PATCHes `/users/{id}`, navigates back to detail, fires a success toast. Both flows SHALL invalidate the `/users` list query key on success. API field-level errors SHALL surface inline against the relevant field (e.g. duplicate email → `email` field error). `useDirtyGuard` SHALL block in-app navigation while the form is dirty.
 
 #### Scenario: Qualification input visibility tied to role
 
-- **WHEN** the user picks `role: 'admin'` in `<CreateUserDialog>`
+- **WHEN** the user picks `role: 'admin'` in `<UserFormPage mode="create">`
 - **THEN** the `qualification` input MUST be hidden and its value MUST NOT be sent in the POST body
 
 #### Scenario: Duplicate-email error surfaces inline
 
-- **WHEN** the dialog submits an email already taken in the tenant
-- **THEN** the `email` input MUST render the error copy from `ErrorResponse{ code: "conflict.user.email_exists" }`, and the dialog MUST stay open
+- **WHEN** the create form submits an email already taken in the tenant
+- **THEN** the `email` input MUST render the error copy from `ErrorResponse{ code: "conflict.user.email_exists" }`, the route MUST NOT navigate away, and the form state MUST be preserved
+
+#### Scenario: Dirty navigation triggers guard
+
+- **WHEN** the user edits any field in `<UserFormPage>` and clicks the back link or a sidebar item before saving
+- **THEN** the dirty-guard AlertDialog MUST open; choosing Discard completes navigation, Cancel keeps the user on the form
