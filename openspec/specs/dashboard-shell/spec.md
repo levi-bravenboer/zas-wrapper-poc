@@ -20,27 +20,28 @@ The orchestrator SHALL render a persistent left sidebar plus main content area f
 
 ### Requirement: Sidebar nav inventory
 
-The sidebar SHALL display exactly five primary nav items in this order, each with a Lucide icon and a Dutch label translated via the `nav` i18n namespace:
+The orchestrator SHALL render a single canonical sidebar inventory declared in `apps/orchestrator/src/components/nav/sidebar-items.ts`, structured into three groups in this order:
 
-1. Dashboard → `/dashboard` → `Home` icon → `t('nav.dashboard')`
-2. Taken → `/taken` → `ListTodo` icon → `t('nav.taken')`
-3. Zorgpaden → `/zorgpaden` → `Workflow` icon → `t('nav.zorgpaden')`
-4. Mijn patiënten → `/patienten` → `Users` icon → `t('nav.patienten')`
-5. Instellingen → `/instellingen` → `Settings` icon → `t('nav.instellingen')`
+1. **Top group** (visible to all authed sessions): `Dashboard` → `/_auth/`, `Patiënten` → `/_auth/patients`, `Inbox` → `/_auth/inbox` (placeholder).
+2. **Beheer group** (collapsible; visible only when `session.user.role === 'admin'`): `Gebruikers`, `Organisaties`, `Affiliaties` linked under `/_auth/admin/*`.
+3. **Pinned bottom group** (visible to all authed sessions): `Instellingen` → `/_auth/settings`.
 
-Items MUST be defined as a typed `NavItem[]` constant exported from `src/components/layout/navItems.ts` so tests can iterate it.
+Each inventory entry SHALL carry an optional `requiresRole?: Role[]`; entries whose `requiresRole` excludes the current session role MUST be filtered out before the sidebar renders — no hidden-but-present DOM nodes. The collapsible `Beheer` group SHALL default to expanded for admins.
 
-#### Scenario: Sidebar renders the full inventory
+#### Scenario: Inventory file is the single source of truth
 
-- **WHEN** the layout mounts for an authed user
-- **THEN** the sidebar contains five anchor elements in the order above
-- **AND** each anchor's accessible name equals the translated Dutch label
+- **WHEN** any nav label or path needs editing
+- **THEN** the edit MUST be made in `sidebar-items.ts` and MUST NOT require touching `Sidebar.tsx` to add or remove entries
 
-#### Scenario: Adding an item is one source of truth
+#### Scenario: Caregiver renders without Beheer
 
-- **WHEN** a contributor pushes a new entry into `navItems.ts`
-- **THEN** it appears in the sidebar without any sidebar component edit
-- **AND** missing translation keys log a dev warning rather than throwing
+- **WHEN** a caregiver session renders the sidebar
+- **THEN** no DOM node under the Beheer group exists and no path beginning `/_auth/admin/` appears in the rendered nav
+
+#### Scenario: Admin renders Beheer expanded by default
+
+- **WHEN** an admin session renders the sidebar on first visit (no persisted collapse state)
+- **THEN** the Beheer group is expanded and the three child entries are visible
 
 ### Requirement: Active route highlighting
 
@@ -60,17 +61,22 @@ The sidebar SHALL visually distinguish the nav item whose `to` matches the curre
 
 ### Requirement: Section placeholder pages
 
-Each non-dashboard section (`/taken`, `/zorgpaden`, `/patienten`, `/instellingen`) SHALL render a placeholder page consisting of an `<h1>` with the section's Dutch label and a single paragraph reading `t('nav.placeholder')`. Placeholder pages MUST live under `src/routes/_auth/<segment>.tsx`. The `/dashboard` route MUST render a dedicated `DashboardPage` component (placeholder for now, but with its own component name and file to receive real content later).
+Each top-level nav destination SHALL be backed by a TanStack route under `apps/orchestrator/src/routes/_auth/`. Routes destined to be filled by chain specs `users-admin-ui`, `organisations-admin-ui`, `practitioner-roles-admin-ui`, `patient-profile-ui`, `care-teams-ui` MAY ship as placeholders rendering `"Komt binnenkort — wordt geleverd door <spec>"` copy with a link back to `/_auth/`. Placeholder routes MUST be deleted (or replaced) by the chain spec that owns them; no placeholder may persist after its owning spec is archived.
 
-#### Scenario: Placeholder section renders header + body
+The previously-redirecting `_auth/index.tsx` (which redirected to `/_auth/patients`) SHALL be replaced by a real component rendering `<DashboardLanding>` (defined in capability `caregiver-shell`).
 
-- **WHEN** an authed user navigates to `/instellingen`
-- **THEN** the main area renders an `<h1>` with text "Instellingen"
-- **AND** a paragraph with the placeholder copy
+#### Scenario: Admin placeholder deep-link renders the placeholder
 
-#### Scenario: Dashboard route is not a generic placeholder
+- **WHEN** an admin loads `/_auth/admin/users` before `users-admin-ui` ships
+- **THEN** the route renders the placeholder copy and a "back to dashboard" link, and MUST NOT throw or render a 404
 
-- **WHEN** an authed user navigates to `/dashboard`
-- **THEN** the rendered component is `DashboardPage` from `src/routes/_auth/dashboard.tsx`
-- **AND** the file does NOT reuse the generic placeholder component shared by the other four sections
+#### Scenario: Landing route no longer redirects
+
+- **WHEN** an authed user loads `/_auth/`
+- **THEN** the response renders `<DashboardLanding>` (KPI tiles + quick links), not a redirect to `/_auth/patients`
+
+#### Scenario: Placeholders disappear when owning spec lands
+
+- **WHEN** chain spec `users-admin-ui` is archived
+- **THEN** `apps/orchestrator/src/routes/_auth/admin/users.tsx` MUST contain the real users-admin route, not the placeholder copy
 

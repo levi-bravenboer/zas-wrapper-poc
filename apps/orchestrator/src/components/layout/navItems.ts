@@ -1,18 +1,86 @@
-import { HeartPulse, Home, Users } from 'lucide-react'
+import { Building2, HeartPulse, Home, Inbox, Settings, Users, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+
+import type { Role } from '@/modules/auth/schemas'
+
+// labelKey is a fully-qualified i18next key in `namespace:path.to.key` form so
+// the sidebar can pull from multiple namespaces without per-call useTranslation
+// boilerplate.
+export type NavLabelKey = `${string}:${string}`
 
 export type NavItem = {
   readonly to: string
-  readonly labelKey: `nav.${string}`
+  readonly labelKey: NavLabelKey
   readonly icon: LucideIcon
   readonly order: number
+  readonly requiresRole?: readonly Role[]
 }
 
-// PoC ships hard-wired nav entries for app-surface sections. Embed/SMART
-// features re-enter the nav by registering as features
-// (`defineFeature({ nav: { icon, order } })`).
-export const hardWiredNavItems: readonly NavItem[] = [
-  { to: '/', labelKey: 'nav.dashboard', icon: Home, order: 10 },
-  { to: '/users', labelKey: 'nav.users', icon: Users, order: 20 },
-  { to: '/patients', labelKey: 'nav.patients', icon: HeartPulse, order: 30 },
+export type NavGroup = {
+  readonly id: 'top' | 'beheer' | 'footer'
+  readonly labelKey?: NavLabelKey
+  readonly collapsible?: boolean
+  readonly placement: 'main' | 'footer'
+  readonly requiresRole?: readonly Role[]
+  readonly items: readonly NavItem[]
+}
+
+// Single source of truth for sidebar inventory. Filtering by role happens in
+// AppSidebar before render; entries with `requiresRole` MUST NOT appear in the
+// DOM for sessions whose role is not listed.
+export const navGroups: readonly NavGroup[] = [
+  {
+    id: 'top',
+    placement: 'main',
+    items: [
+      { to: '/', labelKey: 'nav:dashboard', icon: Home, order: 10 },
+      { to: '/patients', labelKey: 'nav:patients', icon: HeartPulse, order: 20 },
+      { to: '/inbox', labelKey: 'caregiver-shell:nav.inbox', icon: Inbox, order: 30 },
+    ],
+  },
+  {
+    id: 'beheer',
+    labelKey: 'caregiver-shell:group.beheer',
+    collapsible: true,
+    placement: 'main',
+    requiresRole: ['admin'],
+    items: [
+      {
+        to: '/admin/users',
+        labelKey: 'caregiver-shell:nav.users',
+        icon: Users,
+        order: 10,
+        requiresRole: ['admin'],
+      },
+      {
+        to: '/admin/organisations',
+        labelKey: 'caregiver-shell:nav.organisations',
+        icon: Building2,
+        order: 20,
+        requiresRole: ['admin'],
+      },
+      {
+        to: '/admin/practitioner-roles',
+        labelKey: 'caregiver-shell:nav.practitionerRoles',
+        icon: UsersRound,
+        order: 30,
+        requiresRole: ['admin'],
+      },
+    ],
+  },
+  {
+    id: 'footer',
+    placement: 'footer',
+    items: [
+      {
+        to: '/settings',
+        labelKey: 'caregiver-shell:nav.settings',
+        icon: Settings,
+        order: 10,
+      },
+    ],
+  },
 ]
+
+// Feature-registered nav entries (defineFeature({ nav })) still merge here.
+export const hardWiredNavItems: readonly NavItem[] = navGroups.find((g) => g.id === 'top')!.items

@@ -232,7 +232,7 @@ The backend SHALL provide a module at `app/adapters/hix/patients.py` exposing cl
 
 ### Requirement: Orchestrator exposes a patients overview screen built on `DataTable<T>`
 
-The orchestrator SHALL ship `/_auth/patients` as the canonical caregiver/admin patients overview, satisfying PoC feature `F4` (Patients overview). The page SHALL compose `<DataTable<PatientRead>>` per `apps/orchestrator/AGENTS.md` §25 (Lists & DataTable) — no ad-hoc `<table>`, no hand-rolled `useQuery` wrappers, no inline filter / column / action defs in the route file. Data fetching SHALL go through `usePaginatedQuery('/patients', state)` and ride the shared `ListQuery` + `Page[T]` envelope (`page`, `page_size`, `q`, `order_by`, `order`, `filter[<field>][<op>]`). User-visible Dutch strings SHALL live under the `patients` i18n namespace.
+The orchestrator SHALL ship `/_auth/patients` as the canonical caregiver/admin patients overview, satisfying PoC feature `F4` (Patients overview). The page SHALL compose `<FilterableListPage<PatientRead>>` (introduced by `caregiver-shell`) around `<DataTable<PatientRead>>` per `apps/orchestrator/AGENTS.md` §25 (Lists & DataTable) — no ad-hoc `<table>`, no hand-rolled `useQuery` wrappers, no inline filter / column / action defs in the route file, and no per-page shell. Data fetching SHALL go through `usePaginatedQuery('/patients', state)` and ride the shared `ListQuery` + `Page[T]` envelope (`page`, `page_size`, `q`, `order_by`, `order`, `filter[<field>][<op>]`). User-visible Dutch strings SHALL live under the `patients` i18n namespace.
 
 The page SHALL render the following columns (left-to-right; first column sticky):
 
@@ -245,47 +245,38 @@ The page SHALL render the following columns (left-to-right; first column sticky)
 
 The page SHALL expose:
 
-- **Search** (`q`): placeholder `"Zoek op naam of voornaam…"`, matches backend `searchable_fields = (family_name, given_name)`.
-- **Filter — geboortedatum** (`filter[birth_date][gte]` / `[lte]`): date-range picker.
-- **Filter — organisatie** (`filter[primary_organisation_id][eq]`): single-select bound to the tenant-scoped `GET /organisations` list.
+- **Search** (`q`): placeholder `"Zoek op naam of voornaam…"`, matches backend `searchable_fields = (family_name, given_name)`. Rendered inside the `<FilterableListPage>` `filters` slot.
+- **Filter — geboortedatum** (`filter[birth_date][gte]` / `[lte]`): date-range picker, in the `filters` slot.
+- **Filter — organisatie** (`filter[primary_organisation_id][eq]`): single-select bound to the tenant-scoped `GET /organisations` list, in the `filters` slot.
 - **Default sort**: `family_name asc` (matches `PatientRepository.default_order`).
-- **Row click**: navigate `/_auth/patients/$patientId`. The detail route SHALL be scaffolded as a placeholder ("Detailpagina komt binnenkort") in this change so row clicks never 404; the real F5 detail view ships in a later change.
+- **Row click**: navigate `/_auth/patients/$patientId` (rendered by `patient-profile-ui`).
 - **Row actions** (kebab): a single `Verwijderen` action calling `DELETE /patients/{id}` behind a destructive confirm dialog. Visible to caregivers and admins.
 - **Bulk actions**: none. `selectable={false}`.
 - **State persistence**: `useRouteSearchTableState` (URL-driven). MUST NOT be combined with `useLocalTableState`.
 - **Realtime**: `realtimeTopic="patients"` (matches `Patient.__realtime_resource__`); the global `RealtimeInvalidationProvider` drives invalidation, no per-table subscription.
+- **Empty state**: rendered via `<FilterableListPage>` `emptyState` slot when zero rows and no filters; copy `"Nog geen patiënten in jouw bereik."`.
 
-The route SHALL be guarded by the existing `Role.ADMIN | Role.CAREGIVER` requirement at the router level; unauthenticated users land back on the login screen via the auth router context. The page MUST NOT surface tenant identity in any user-visible copy (tenants are an implementation detail, not a user-facing concept).
+The route SHALL be guarded by the existing `Role.ADMIN | Role.CAREGIVER` requirement at the router level. The page MUST NOT surface tenant identity in any user-visible copy.
 
-#### Scenario: Page composes `DataTable<PatientRead>` against `/patients`
+#### Scenario: Page composes FilterableListPage around DataTable
 
 - **WHEN** a caregiver loads `/_auth/patients`
-- **THEN** the page MUST render `<DataTable<PatientRead>>` populated from `usePaginatedQuery<PatientRead>('/patients', state)`, where `state` is produced by `useRouteSearchTableState`, and MUST NOT use a raw `<table>` element nor a bespoke `useQuery` call to `/patients`
+- **THEN** the rendered tree MUST nest `<DataTable<PatientRead>>` inside `<FilterableListPage<PatientRead>>`, and MUST NOT render a bespoke page header or filter bar outside the scaffolding's slots
 
-#### Scenario: Default sort matches backend default_order
+#### Scenario: Behaviour preserved across refactor
 
-- **WHEN** the page loads with no `order_by` in the URL
-- **THEN** the request to `/patients` MUST omit `order_by`, and the rendered list MUST be ordered by `family_name asc` (delegated to `PatientRepository.default_order`)
+- **WHEN** the existing patient-page test suite runs against the refactored `_auth/patients/index.tsx`
+- **THEN** every assertion (URL keys, default sort, row click target, kebab `Verwijderen` confirm, realtime invalidation, no tenant copy) MUST pass without test-file edits
 
-#### Scenario: Filters and search map onto the shared envelope
+#### Scenario: Empty state surfaces only when filters unset
 
-- **WHEN** the caregiver picks an organisation in the filter dropdown, sets a birth-date range, and types `"jans"` in the search box
-- **THEN** the next `/patients` request MUST carry `filter[primary_organisation_id][eq]=<uuid>`, `filter[birth_date][gte]=<iso>`, `filter[birth_date][lte]=<iso>`, and `q=jans` (URL-encoded), and MUST NOT carry any non-FHIR-aligned query keys
+- **WHEN** the patient list returns zero rows AND no `q` / `filter[...]` keys are present
+- **THEN** the `<FilterableListPage>` `emptyState` slot renders `"Nog geen patiënten in jouw bereik."`
 
-#### Scenario: Row click routes to the detail placeholder
+#### Scenario: Filtered empty result stays inside DataTable
 
-- **WHEN** a caregiver clicks a patient row
-- **THEN** the orchestrator MUST navigate to `/_auth/patients/$patientId` with the row's `id`, and that route MUST render a placeholder screen ("Detailpagina komt binnenkort") without throwing a 404
-
-#### Scenario: Soft-delete row action removes the row after confirm
-
-- **WHEN** a caregiver opens the row kebab, selects `Verwijderen`, and confirms the destructive dialog
-- **THEN** the orchestrator MUST call `DELETE /patients/{id}`, invalidate the `patients` query key on success (also triggered by the realtime `patients` topic), and the soft-deleted row MUST disappear from subsequent paginated responses
-
-#### Scenario: No tenant copy is rendered
-
-- **WHEN** any user inspects the page header, empty state, error state, or filter labels
-- **THEN** no string MUST contain the word "tenant" (Dutch or English); tenant scoping is enforced server-side and intentionally invisible to caregivers
+- **WHEN** the patient list returns zero rows AND at least one `filter[...]` key is present
+- **THEN** the `<DataTable>`'s own "no matches" copy renders, not the page-level `emptyState` slot
 
 ### Requirement: Seed script generates synthetic patients only
 

@@ -1,6 +1,14 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, ChevronsUpDown, LogOut, Settings, User } from 'lucide-react'
-import { useMemo, type ReactElement } from 'react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  LogOut,
+  Settings,
+  User,
+} from 'lucide-react'
+import { useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -18,6 +26,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -28,29 +37,55 @@ import {
 import { cn } from '@/lib/style/cn'
 import { initials } from '@/lib/utils/initials'
 import { useLogout, useSession } from '@/modules/auth/hooks'
+import type { Role } from '@/modules/auth/schemas'
 import { getFeaturesForSurface } from '@/platform/embed/defineFeature'
 
-import { hardWiredNavItems, type NavItem } from './navItems'
+import { navGroups, type NavGroup, type NavItem } from './navItems'
 
-function useResolvedNavItems(): readonly NavItem[] {
+function passesRole(role: Role | undefined, required: readonly Role[] | undefined): boolean {
+  if (!required || required.length === 0) return true
+  if (!role) return false
+  return required.includes(role)
+}
+
+function useResolvedNavGroups(): readonly NavGroup[] {
+  const { data: session } = useSession()
+  const role = session?.role
+
   return useMemo(() => {
+    // Feature-registered items still inject into the top group, preserving
+    // legacy behaviour for SMART/embed surfaces.
     const featureItems = getFeaturesForSurface('app').flatMap<NavItem>((feature) =>
       feature.nav
         ? [
             {
               to: feature.path,
-              labelKey: feature.titleKey,
+              labelKey: feature.titleKey.replace(/^nav\./, 'nav:') as NavItem['labelKey'],
               icon: feature.nav.icon,
               order: feature.nav.order ?? 100,
             },
           ]
         : [],
     )
-    return [...hardWiredNavItems, ...featureItems].toSorted((a, b) => a.order - b.order)
-  }, [])
+
+    return navGroups
+      .filter((group) => passesRole(role, group.requiresRole))
+      .map((group) => {
+        const baseItems = group.id === 'top' ? [...group.items, ...featureItems] : [...group.items]
+        const items = baseItems
+          .filter((item) => passesRole(role, item.requiresRole))
+          .toSorted((a, b) => a.order - b.order)
+        return { ...group, items }
+      })
+      .filter((group) => group.items.length > 0)
+  }, [role])
 }
 
 export function AppSidebar(): ReactElement {
+  const groups = useResolvedNavGroups()
+  const mainGroups = groups.filter((g) => g.placement === 'main')
+  const footerGroups = groups.filter((g) => g.placement === 'footer')
+
   return (
     <Sidebar
       variant="sidebar"
@@ -66,13 +101,14 @@ export function AppSidebar(): ReactElement {
         <BrandBlock />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <NavMenu />
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {mainGroups.map((group) => (
+          <NavGroupSection key={group.id} group={group} />
+        ))}
       </SidebarContent>
       <SidebarFooter className="px-2 pb-3">
+        {footerGroups.map((group) => (
+          <NavGroupSection key={group.id} group={group} variant="footer" />
+        ))}
         <UserBlock />
       </SidebarFooter>
       <SidebarRail />
@@ -122,16 +158,67 @@ function BrandBlock(): ReactElement {
   )
 }
 
-function NavMenu(): ReactElement {
-  const { t } = useTranslation('nav')
-  const items = useResolvedNavItems()
+type NavGroupSectionProps = {
+  group: NavGroup
+  variant?: 'main' | 'footer'
+}
+
+function NavGroupSection({ group, variant = 'main' }: NavGroupSectionProps): ReactElement {
+  if (group.collapsible && group.labelKey) {
+    return <CollapsibleNavGroup group={group} />
+  }
+  return (
+    <SidebarGroup className={variant === 'footer' ? 'py-1' : undefined}>
+      <SidebarGroupContent>
+        <NavMenuList items={group.items} />
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
+}
+
+function CollapsibleNavGroup({ group }: { group: NavGroup }): ReactElement {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(true)
+  const label = group.labelKey ? t(group.labelKey) : ''
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel asChild>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={`nav-group-${group.id}`}
+          className="flex w-full items-center justify-between gap-2 hover:text-sidebar-foreground"
+        >
+          <span className="truncate">{label}</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={cn(
+              'size-3.5 shrink-0 transition-transform duration-200',
+              open ? '' : '-rotate-90',
+            )}
+          />
+        </button>
+      </SidebarGroupLabel>
+      {open && (
+        <SidebarGroupContent id={`nav-group-${group.id}`}>
+          <NavMenuList items={group.items} />
+        </SidebarGroupContent>
+      )}
+    </SidebarGroup>
+  )
+}
+
+function NavMenuList({ items }: { items: readonly NavItem[] }): ReactElement {
+  const { t } = useTranslation()
   const { location } = useRouterState()
 
   return (
     <SidebarMenu>
       {items.map((item) => {
         const Icon = item.icon
-        const label = t(item.labelKey.replace(/^nav\./, ''))
+        const label = t(item.labelKey)
         const active = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
         return (
           <SidebarMenuItem key={item.to}>
