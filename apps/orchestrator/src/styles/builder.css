@@ -1,0 +1,36 @@
+/* Pathway builder tokens — phase tints + lane accents.
+ * Values mirror openspec/changes/pathway-builder-base/builder-canvas-prototype.html.
+ * Consumed by PhaseColumn (sets --ph-soft / --ph-ink) and LaneRow (sets --lane-accent).
+ */
+:root {
+  --ph-1-ink: #08453c;
+  --ph-1-soft: #cfede8;
+  --ph-2-ink: #5b21b6;
+  --ph-2-soft: #ede9fe;
+  --ph-3-ink: #1d4ed8;
+  --ph-3-soft: #dbeafe;
+  --ph-4-ink: #92400e;
+  --ph-4-soft: #fef3c7;
+
+  --lane-patient: #266b5e;
+  --lane-caregiver: #2563eb;
+  --lane-system: #7c3aed;
+  --lane-external: #b45309;
+
+  --hairline: rgba(16, 24, 40, 0.06);
+
+  --builder-row-topbar: 64px;
+  --builder-row-subbar: 44px;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}

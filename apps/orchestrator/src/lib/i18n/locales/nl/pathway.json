@@ -29,10 +29,102 @@
     "error": "Aanmaken mislukt."
   },
   "builder": {
+    "crumbRoot": "ZORGPADEN",
     "stubTitle": "Builder komt in fase 3",
     "stubBody": "Het zorgpad is aangemaakt. De canvas-editor volgt in een latere fase.",
     "clinicalGoal": "Klinisch doel",
     "patientGoal": "Patiëntdoel",
-    "blocks": "Blokken"
+    "blocks": "Blokken",
+    "phases": "Fasen",
+    "editedAt": "bewerkt {{time}}",
+    "loading": "Zorgpad laden…",
+    "notFound": {
+      "title": "Zorgpad niet gevonden",
+      "body": "Dit zorgpad bestaat niet of is verwijderd.",
+      "back": "Terug naar overzicht"
+    },
+    "error": {
+      "title": "Kan zorgpad niet laden",
+      "body": "Er ging iets mis bij het laden van dit zorgpad.",
+      "retry": "Opnieuw proberen",
+      "back": "Terug naar overzicht"
+    },
+    "topbar": {
+      "renameLabel": "Naam wijzigen",
+      "undo": "Ongedaan maken",
+      "redo": "Opnieuw",
+      "history": "Geschiedenis",
+      "save": "Opslaan"
+    },
+    "status": {
+      "clean": "Opgeslagen",
+      "dirty": "Niet opgeslagen",
+      "saving": "Opslaan…",
+      "error": "Opslaan mislukt"
+    },
+    "subbar": {
+      "jumpTo": "SPRING NAAR",
+      "addPhase": "Fase",
+      "customPhase": "Eigen fase",
+      "phaseLabel": "Fase {{idx}}",
+      "navLabel": "Fasen"
+    },
+    "dock": {
+      "toolbarLabel": "Blok-palet",
+      "addLabel": "Voeg {{label}} toe"
+    },
+    "drawer": {
+      "title": "Blok bewerken",
+      "delete": "Verwijderen",
+      "done": "Klaar",
+      "close": "Sluiten",
+      "deleteConfirmTitle": "Blok verwijderen?",
+      "deleteConfirmBody": "Dit verwijdert het blok en de bijbehorende verbindingen.",
+      "configHeader": "Configuratie"
+    },
+    "minimap": {
+      "fit": "Passend maken",
+      "zoomIn": "Inzoomen",
+      "zoomOut": "Uitzoomen",
+      "label": "Overzicht"
+    },
+    "entry": {
+      "badge": "START"
+    },
+    "blockType": {
+      "appointment": "Afspraak",
+      "decision": "Beslissing",
+      "milestone": "Mijlpaal",
+      "timer": "Wachten",
+      "task": "Taak",
+      "email": "E-mail"
+    },
+    "blockTypeDescription": {
+      "appointment": "Klinische afspraak met de patiënt.",
+      "decision": "Splits het pad in twee takken.",
+      "milestone": "Markeer een belangrijk moment.",
+      "timer": "Wacht op tijd voordat het volgende blok start.",
+      "task": "Actie voor het zorgteam.",
+      "email": "Bericht naar de patiënt."
+    },
+    "lane": {
+      "patient": "Patiënt",
+      "caregiver": "Zorgteam",
+      "system": "Systeem",
+      "external": "Extern"
+    },
+    "canvas": {
+      "label": "Zorgpad-canvas",
+      "emptyTitle": "Begin met een blok",
+      "emptyBody": "Sleep een blok uit het palet hieronder of klik om er één toe te voegen.",
+      "emptyNoScaffold": "Voeg eerst een fase toe via + Fase."
+    },
+    "save": {
+      "success": "Zorgpad opgeslagen.",
+      "error": "Opslaan mislukt."
+    },
+    "delete": {
+      "success": "Blok verwijderd."
+    }
   }
 }
