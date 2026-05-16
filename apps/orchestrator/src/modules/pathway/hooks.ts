@@ -13,10 +13,10 @@ import { pathwayKeys } from './keys'
 import type {
   PathwayBlockType,
   PathwayCreate,
-  PathwayDefinition,
   PathwayDefinitionReplace,
   PathwayPhaseTemplate,
   PathwaySummary,
+  PathwayWithVersion,
 } from './types'
 
 export function usePathwayList() {
@@ -27,7 +27,7 @@ export function usePathwayList() {
 }
 
 export function usePathway(id: string | undefined) {
-  return useQuery<PathwayDefinition>({
+  return useQuery<PathwayWithVersion>({
     queryKey: id ? pathwayKeys.detail(id) : pathwayKeys.detail('__none__'),
     queryFn: () => getPathway(id as string),
     enabled: Boolean(id),
@@ -36,9 +36,10 @@ export function usePathway(id: string | undefined) {
 
 export function useCreatePathway() {
   const qc = useQueryClient()
-  return useMutation<PathwayDefinition, Error, PathwayCreate>({
+  return useMutation<PathwayWithVersion, Error, PathwayCreate>({
     mutationFn: createPathway,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      qc.setQueryData(pathwayKeys.detail(data.pathway.id), data)
       void qc.invalidateQueries({ queryKey: pathwayKeys.list() })
     },
   })
@@ -46,7 +47,7 @@ export function useCreatePathway() {
 
 export function useReplacePathway(id: string) {
   const qc = useQueryClient()
-  return useMutation<PathwayDefinition, Error, PathwayDefinitionReplace>({
+  return useMutation<PathwayWithVersion, Error, PathwayDefinitionReplace>({
     mutationFn: (payload) => replacePathway(id, payload),
     onSuccess: (data) => {
       qc.setQueryData(pathwayKeys.detail(id), data)

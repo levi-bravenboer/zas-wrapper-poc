@@ -57,7 +57,10 @@ export function CreatePathwayDialog({ open, onOpenChange }: Props): ReactElement
       {
         onSuccess: (created) => {
           handleOpenChange(false)
-          void navigate({ to: '/pathways/$pathwayId', params: { pathwayId: created.id } })
+          void navigate({
+            to: '/pathways/$pathwayId',
+            params: { pathwayId: created.pathway.id },
+          })
         },
       },
     )
