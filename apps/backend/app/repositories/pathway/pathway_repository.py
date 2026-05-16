@@ -5,20 +5,21 @@ from datetime import datetime
 from typing import NamedTuple
 from uuid import UUID
 
-import sqlalchemy as sa
-from sqlalchemy import func, select
+from sqlalchemy import Select, and_, delete, func, or_, select
+from sqlalchemy.orm import aliased
 
 from app.db.models.pathway import (
     Pathway,
     PathwayBlock,
-    PathwayBlockDeferredField,
     PathwayBlockBranch,
+    PathwayBlockDeferredField,
     PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
     PathwayPhase,
     PathwayTimeMarker,
     PathwayTimingValue,
+    PathwayVersion,
 )
 from app.repositories.base import BaseRepository
 
@@ -30,6 +31,12 @@ class PathwaySummaryRow(NamedTuple):
     patient_goal: str | None
     updated_at: datetime
     block_count: int
+    last_edited_at: datetime
+    has_concept: bool
+    concept_version_id: UUID | None
+    latest_published_version_id: UUID | None
+    latest_published_version_no: int | None
+    latest_published_at: datetime | None
 
 
 @dataclass(slots=True)
@@ -48,13 +55,50 @@ class PathwayRepository(BaseRepository[Pathway]):
     model = Pathway
 
     async def list_summaries(self, tenant_id: UUID) -> list[PathwaySummaryRow]:
-        block_count = (
+        # Derived rollups per `pathway-version` spec Requirement 11:
+        # `block_count` aggregates every non-deleted block across the pathway's
+        # versions (overview cares about workload, not which version owns it);
+        # `last_edited_at` is the most recent version-row update; `has_concept`
+        # + `concept_version_id` come from the partial-unique-indexed concept
+        # row; `latest_published_*` comes from the (pathway_id, status,
+        # published_at DESC) index. Kept as a single SELECT with subqueries to
+        # avoid N+1; promotion to LATERAL is a future optimisation.
+        concept_subq = (
             select(
-                PathwayBlock.pathway_id.label("pathway_id"),
-                func.count(PathwayBlock.id).label("block_count"),
+                PathwayVersion.pathway_id.label("pathway_id"),
+                PathwayVersion.id.label("concept_version_id"),
             )
-            .where(PathwayBlock.deleted_at.is_(None))
-            .group_by(PathwayBlock.pathway_id)
+            .where(
+                PathwayVersion.status == "concept",
+                PathwayVersion.deleted_at.is_(None),
+            )
+            .subquery()
+        )
+        published_subq = (
+            select(
+                PathwayVersion.pathway_id.label("pathway_id"),
+                func.max(PathwayVersion.published_at).label("latest_published_at"),
+            )
+            .where(
+                PathwayVersion.status == "published",
+                PathwayVersion.deleted_at.is_(None),
+            )
+            .group_by(PathwayVersion.pathway_id)
+            .subquery()
+        )
+        latest_published_row = aliased(PathwayVersion)
+        block_count_subq = (
+            select(
+                PathwayVersion.pathway_id.label("pathway_id"),
+                func.count(PathwayBlock.id).label("block_count"),
+                func.max(PathwayVersion.updated_at).label("last_edited_at"),
+            )
+            .join(PathwayBlock, PathwayBlock.pathway_version_id == PathwayVersion.id, isouter=True)
+            .where(
+                PathwayVersion.deleted_at.is_(None),
+                or_(PathwayBlock.id.is_(None), PathwayBlock.deleted_at.is_(None)),
+            )
+            .group_by(PathwayVersion.pathway_id)
             .subquery()
         )
         stmt = (
@@ -64,21 +108,45 @@ class PathwayRepository(BaseRepository[Pathway]):
                 Pathway.clinical_goal,
                 Pathway.patient_goal,
                 Pathway.updated_at,
-                func.coalesce(block_count.c.block_count, 0).label("block_count"),
+                func.coalesce(block_count_subq.c.block_count, 0).label("block_count"),
+                func.coalesce(block_count_subq.c.last_edited_at, Pathway.updated_at).label(
+                    "last_edited_at"
+                ),
+                concept_subq.c.concept_version_id,
+                latest_published_row.id.label("latest_published_version_id"),
+                latest_published_row.version_no.label("latest_published_version_no"),
+                latest_published_row.published_at.label("latest_published_at"),
             )
-            .outerjoin(block_count, block_count.c.pathway_id == Pathway.id)
+            .outerjoin(block_count_subq, block_count_subq.c.pathway_id == Pathway.id)
+            .outerjoin(concept_subq, concept_subq.c.pathway_id == Pathway.id)
+            .outerjoin(published_subq, published_subq.c.pathway_id == Pathway.id)
+            .outerjoin(
+                latest_published_row,
+                and_(
+                    latest_published_row.pathway_id == Pathway.id,
+                    latest_published_row.status == "published",
+                    latest_published_row.deleted_at.is_(None),
+                    latest_published_row.published_at == published_subq.c.latest_published_at,
+                ),
+            )
             .where(Pathway.tenant_id == tenant_id, Pathway.deleted_at.is_(None))
             .order_by(Pathway.updated_at.desc())
         )
         result = await self._session.execute(stmt)
         return [
             PathwaySummaryRow(
-                row.id,
-                row.name,
-                row.clinical_goal,
-                row.patient_goal,
-                row.updated_at,
-                row.block_count,
+                id=row.id,
+                name=row.name,
+                clinical_goal=row.clinical_goal,
+                patient_goal=row.patient_goal,
+                updated_at=row.updated_at,
+                block_count=row.block_count,
+                last_edited_at=row.last_edited_at,
+                has_concept=row.concept_version_id is not None,
+                concept_version_id=row.concept_version_id,
+                latest_published_version_id=row.latest_published_version_id,
+                latest_published_version_no=row.latest_published_version_no,
+                latest_published_at=row.latest_published_at,
             )
             for row in result.all()
         ]
@@ -93,26 +161,33 @@ class PathwayRepository(BaseRepository[Pathway]):
         )
         return result.scalar_one_or_none()
 
-    async def fetch_children(self, pathway_id: UUID) -> PathwayChildren:
+    async def fetch_children(self, pathway_version_id: UUID) -> PathwayChildren:
         phases = await self._scalars(
             select(PathwayPhase)
-            .where(PathwayPhase.pathway_id == pathway_id, PathwayPhase.deleted_at.is_(None))
+            .where(
+                PathwayPhase.pathway_version_id == pathway_version_id,
+                PathwayPhase.deleted_at.is_(None),
+            )
             .order_by(PathwayPhase.ord)
         )
         lanes = await self._scalars(
             select(PathwayLane)
-            .where(PathwayLane.pathway_id == pathway_id, PathwayLane.deleted_at.is_(None))
+            .where(
+                PathwayLane.pathway_version_id == pathway_version_id,
+                PathwayLane.deleted_at.is_(None),
+            )
             .order_by(PathwayLane.ord)
         )
         timing_values = await self._scalars(
             select(PathwayTimingValue).where(
-                PathwayTimingValue.pathway_id == pathway_id,
+                PathwayTimingValue.pathway_version_id == pathway_version_id,
                 PathwayTimingValue.deleted_at.is_(None),
             )
         )
         blocks = await self._scalars(
             select(PathwayBlock).where(
-                PathwayBlock.pathway_id == pathway_id, PathwayBlock.deleted_at.is_(None)
+                PathwayBlock.pathway_version_id == pathway_version_id,
+                PathwayBlock.deleted_at.is_(None),
             )
         )
         block_ids = [b.id for b in blocks]
@@ -130,12 +205,13 @@ class PathwayRepository(BaseRepository[Pathway]):
         )
         edges = await self._scalars(
             select(PathwayEdge).where(
-                PathwayEdge.pathway_id == pathway_id, PathwayEdge.deleted_at.is_(None)
+                PathwayEdge.pathway_version_id == pathway_version_id,
+                PathwayEdge.deleted_at.is_(None),
             )
         )
         time_markers = await self._scalars(
             select(PathwayTimeMarker).where(
-                PathwayTimeMarker.pathway_id == pathway_id,
+                PathwayTimeMarker.pathway_version_id == pathway_version_id,
                 PathwayTimeMarker.deleted_at.is_(None),
             )
         )
@@ -166,58 +242,67 @@ class PathwayRepository(BaseRepository[Pathway]):
         )
         return {row.code: row for row in result.scalars().all()}
 
-    async def delete_children(self, pathway_id: UUID) -> None:
-        """Hard-delete every child row of a pathway, FK-safe order.
+    async def delete_children(self, pathway_version_id: UUID) -> None:
+        """Hard-delete every child row of a pathway version, FK-safe order.
 
-        Used by PUT replace + DELETE cascade. The pathway row itself is
-        left for the caller to either persist (replace) or soft-delete
-        (delete). `synchronize_session=False` skips per-instance state
-        sync since child rows aren't held in this session.
+        Used by PUT replace (autosave) + version deletion cascade. The version
+        row itself is left for the caller. `synchronize_session=False` skips
+        per-instance state sync since child rows aren't held in this session.
         """
 
         opts = {"synchronize_session": False}
         await self._session.execute(
-            sa.delete(PathwayEdge).where(PathwayEdge.pathway_id == pathway_id),
+            delete(PathwayEdge).where(PathwayEdge.pathway_version_id == pathway_version_id),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayBlockBranch).where(
+            delete(PathwayBlockBranch).where(
                 PathwayBlockBranch.block_id.in_(
-                    select(PathwayBlock.id).where(PathwayBlock.pathway_id == pathway_id)
+                    select(PathwayBlock.id).where(
+                        PathwayBlock.pathway_version_id == pathway_version_id
+                    )
                 )
             ),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayBlockDeferredField).where(
+            delete(PathwayBlockDeferredField).where(
                 PathwayBlockDeferredField.block_id.in_(
-                    select(PathwayBlock.id).where(PathwayBlock.pathway_id == pathway_id)
+                    select(PathwayBlock.id).where(
+                        PathwayBlock.pathway_version_id == pathway_version_id
+                    )
                 )
             ),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayTimeMarker).where(PathwayTimeMarker.pathway_id == pathway_id),
+            delete(PathwayTimeMarker).where(
+                PathwayTimeMarker.pathway_version_id == pathway_version_id
+            ),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayBlock).where(PathwayBlock.pathway_id == pathway_id),
+            delete(PathwayBlock).where(
+                PathwayBlock.pathway_version_id == pathway_version_id
+            ),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayLane).where(PathwayLane.pathway_id == pathway_id),
+            delete(PathwayLane).where(PathwayLane.pathway_version_id == pathway_version_id),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayPhase).where(PathwayPhase.pathway_id == pathway_id),
+            delete(PathwayPhase).where(PathwayPhase.pathway_version_id == pathway_version_id),
             execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayTimingValue).where(PathwayTimingValue.pathway_id == pathway_id),
+            delete(PathwayTimingValue).where(
+                PathwayTimingValue.pathway_version_id == pathway_version_id
+            ),
             execution_options=opts,
         )
         await self._session.flush()
 
-    async def _scalars[E](self, stmt: sa.Select[tuple[E]]) -> list[E]:
+    async def _scalars[E](self, stmt: Select[tuple[E]]) -> list[E]:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())

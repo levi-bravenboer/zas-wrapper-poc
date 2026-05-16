@@ -16,23 +16,22 @@ from app.db.models.pathway import (
     PathwayPhase,
     PathwayTimeMarker,
     PathwayTimingValue,
+    PathwayVersion,
 )
-from app.repositories.pathway.pathway_repository import (
-    PathwayChildren,
-    PathwayRepository,
-)
+from app.repositories.pathway.pathway_repository import PathwayRepository
+from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.schemas.pathway.catalogue import (
     PathwayBlockType,
     PathwayPhaseTemplate,
 )
 from app.schemas.pathway.pathway import (
+    PathwayBare,
     PathwayBlockBranchIn,
     PathwayBlockBranchOut,
     PathwayBlockDeferredFieldIn,
     PathwayBlockDeferredFieldOut,
     PathwayBlockIn,
     PathwayBlockOut,
-    PathwayDefinition,
     PathwayDefinitionReplace,
     PathwayEdgeIn,
     PathwayEdgeOut,
@@ -45,6 +44,8 @@ from app.schemas.pathway.pathway import (
     PathwayTimeMarkerOut,
     PathwayTimingValueIn,
     PathwayTimingValueOut,
+    PathwayVersionDefinition,
+    PathwayWithVersionResponse,
 )
 from app.services.pathway.catalogue import (
     BLOCK_TYPES,
@@ -56,8 +57,11 @@ from app.services.pathway.errors import (
     BranchOwnershipError,
     DeferredFieldError,
     EdgeValidationError,
+    NoConceptVersionError,
     PathwayNotFoundError,
     PathwayValidationError,
+    PathwayVersionImmutableError,
+    PathwayVersionNotFoundError,
     UnknownBlockTypeError,
     UnknownLaneKindError,
     UnknownPhaseError,
@@ -65,8 +69,13 @@ from app.services.pathway.errors import (
 
 
 class PathwayService:
-    def __init__(self, repo: PathwayRepository) -> None:
+    def __init__(
+        self,
+        repo: PathwayRepository,
+        version_repo: PathwayVersionRepository,
+    ) -> None:
         self._repo = repo
+        self._version_repo = version_repo
 
     # ---- Read paths -------------------------------------------------------
 
@@ -80,17 +89,43 @@ class PathwayService:
                 patient_goal=r.patient_goal,
                 updated_at=r.updated_at,
                 block_count=r.block_count,
+                last_edited_at=r.last_edited_at,
+                has_concept=r.has_concept,
+                concept_version_id=r.concept_version_id,
+                latest_published_version_id=r.latest_published_version_id,
+                latest_published_version_no=r.latest_published_version_no,
+                latest_published_at=r.latest_published_at,
             )
             for r in rows
         ]
 
-    async def get_definition(self, pathway_id: UUID, tenant_id: UUID) -> PathwayDefinition:
+    async def get_with_resolved_version(
+        self, pathway_id: UUID, tenant_id: UUID
+    ) -> PathwayWithVersionResponse:
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
-        children = await self._repo.fetch_children(pathway_id)
-        lane_kinds = await self._repo.lane_kinds_by_code()
-        return self._definition_from_orm(pathway, children, lane_kinds)
+        version = await self._version_repo.resolve_for_view(pathway_id)
+        if version is None:
+            # Backstop per spec Requirement 9 — every pathway must have at least
+            # the `initial` row, so reaching here means corrupted state.
+            raise PathwayVersionNotFoundError()
+        definition = await self._build_version_definition(version)
+        return PathwayWithVersionResponse(
+            pathway=PathwayBare.model_validate(pathway),
+            version=definition,
+        )
+
+    async def get_version_definition(
+        self, pathway_id: UUID, version_id: UUID, tenant_id: UUID
+    ) -> PathwayVersionDefinition:
+        pathway = await self._repo.get(pathway_id, tenant_id)
+        if pathway is None:
+            raise PathwayNotFoundError()
+        version = await self._version_repo.get_in_pathway(version_id, pathway_id)
+        if version is None:
+            raise PathwayVersionNotFoundError()
+        return await self._build_version_definition(version)
 
     # ---- Catalogue surfaces ----------------------------------------------
 
@@ -126,21 +161,42 @@ class PathwayService:
         *,
         clinical_goal: str,
         patient_goal: str,
-    ) -> PathwayDefinition:
+    ) -> PathwayWithVersionResponse:
         del tenant_id  # stamped by audit hook from session.info[actor]
         pathway = Pathway(name=name, clinical_goal=clinical_goal, patient_goal=patient_goal)
         await self._repo.add(pathway)
-        return self._definition_from_orm(pathway, _EMPTY_CHILDREN, lane_kinds={})
+        version = PathwayVersion(
+            pathway_id=pathway.id,
+            version_no=1,
+            status="concept",
+            kind="initial",
+        )
+        await self._version_repo.add(version)
+        await self._repo._session.refresh(version, ["created_at", "updated_at"])  # noqa: SLF001
+        definition = await self._build_version_definition(version)
+        return PathwayWithVersionResponse(
+            pathway=PathwayBare.model_validate(pathway),
+            version=definition,
+        )
 
     async def replace_definition(
         self,
         pathway_id: UUID,
         tenant_id: UUID,
         payload: PathwayDefinitionReplace,
-    ) -> PathwayDefinition:
+    ) -> PathwayWithVersionResponse:
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
+
+        concept = await self._version_repo.get_concept(pathway_id)
+        if concept is None:
+            # Per spec Requirement 3: the frontend must restore or fork-from-publish
+            # before mutating a pathway whose only versions are published.
+            raise NoConceptVersionError()
+        if concept.status != "concept":
+            # Defensive — partial unique index makes this unreachable.
+            raise PathwayVersionImmutableError(concept.id)
 
         lane_kinds = await self._repo.lane_kinds_by_code()
         resolved = _ResolvedDefinition.from_payload(payload, lane_kinds=lane_kinds)
@@ -148,32 +204,79 @@ class PathwayService:
         pathway.name = payload.name
         pathway.clinical_goal = payload.clinical_goal
         pathway.patient_goal = payload.patient_goal
-        await self._repo.delete_children(pathway_id)
-        await self._persist_children(pathway_id, resolved)
-        # `updated_at` has `onupdate=func.now()` — server-computed, so it
-        # expires on flush. Refresh eagerly to avoid an implicit lazy
-        # reload on attribute access (incompatible with async session).
-        await self._repo._session.refresh(pathway, ["updated_at"])  # noqa: SLF001
+        await self._repo.delete_children(concept.id)
+        await self._persist_children(concept.id, resolved)
+        session = self._repo._session  # noqa: SLF001
+        await session.refresh(pathway, ["updated_at"])
+        await session.refresh(concept, ["updated_at"])
 
-        children = await self._repo.fetch_children(pathway_id)
-        return self._definition_from_orm(pathway, children, lane_kinds)
+        definition = await self._build_version_definition(concept)
+        return PathwayWithVersionResponse(
+            pathway=PathwayBare.model_validate(pathway),
+            version=definition,
+        )
 
     async def soft_delete(self, pathway_id: UUID, tenant_id: UUID) -> None:
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
-        await self._repo.delete_children(pathway_id)
         await self._repo.soft_delete(pathway)
 
     # ---- Helpers ---------------------------------------------------------
 
-    async def _persist_children(self, pathway_id: UUID, r: _ResolvedDefinition) -> None:
+    async def _build_version_definition(
+        self, version: PathwayVersion
+    ) -> PathwayVersionDefinition:
+        children = await self._repo.fetch_children(version.id)
+        lane_kinds = await self._repo.lane_kinds_by_code()
+        code_by_id = {kind.id: code for code, kind in lane_kinds.items()}
+        lanes_out: list[PathwayLaneOut] = []
+        for lane in children.lanes:
+            lanes_out.append(
+                PathwayLaneOut(
+                    id=lane.id,
+                    pathway_lane_kind_id=lane.pathway_lane_kind_id,
+                    lane_kind_code=code_by_id.get(lane.pathway_lane_kind_id, ""),
+                    label=lane.label,
+                    ord=lane.ord,
+                    is_default=lane.is_default,
+                )
+            )
+        return PathwayVersionDefinition(
+            id=version.id,
+            pathway_id=version.pathway_id,
+            version_no=version.version_no,
+            status=version.status,  # type: ignore[arg-type]
+            kind=version.kind,  # type: ignore[arg-type]
+            label=version.label,
+            note=version.note,
+            derived_from_version_id=version.derived_from_version_id,
+            published_at=version.published_at,
+            published_by=version.published_by,
+            updated_at=version.updated_at,
+            phases=[PathwayPhaseOut.model_validate(p) for p in children.phases],
+            lanes=lanes_out,
+            timing_values=[
+                PathwayTimingValueOut.model_validate(tv) for tv in children.timing_values
+            ],
+            blocks=[PathwayBlockOut.model_validate(b) for b in children.blocks],
+            branches=[PathwayBlockBranchOut.model_validate(br) for br in children.branches],
+            edges=[PathwayEdgeOut.model_validate(e) for e in children.edges],
+            time_markers=[PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers],
+            deferred_fields=[
+                PathwayBlockDeferredFieldOut.model_validate(fr) for fr in children.deferred_fields
+            ],
+        )
+
+    async def _persist_children(
+        self, pathway_version_id: UUID, r: _ResolvedDefinition
+    ) -> None:
         session = self._repo._session  # noqa: SLF001 — service owns repo internals here
         session.add_all(
             [
                 PathwayPhase(
                     id=p.id,
-                    pathway_id=pathway_id,
+                    pathway_version_id=pathway_version_id,
                     template_id=p.template_id,
                     label=p.label,
                     ord=p.ord,
@@ -185,7 +288,7 @@ class PathwayService:
             [
                 PathwayLane(
                     id=lane.id,
-                    pathway_id=pathway_id,
+                    pathway_version_id=pathway_version_id,
                     pathway_lane_kind_id=r.lane_kind_ids[lane.id],
                     label=lane.label,
                     ord=lane.ord,
@@ -198,7 +301,7 @@ class PathwayService:
             [
                 PathwayTimingValue(
                     id=tv.id,
-                    pathway_id=pathway_id,
+                    pathway_version_id=pathway_version_id,
                     kind=tv.kind,
                     fixed_days=tv.fixed_days,
                     enrollment_default_days=tv.enrollment_default_days,
@@ -213,7 +316,7 @@ class PathwayService:
             [
                 PathwayBlock(
                     id=b.id,
-                    pathway_id=pathway_id,
+                    pathway_version_id=pathway_version_id,
                     phase_id=b.phase_id,
                     lane_id=b.lane_id,  # type: ignore[arg-type] — resolver guarantees non-null
                     type=b.type,
@@ -238,7 +341,7 @@ class PathwayService:
             [
                 PathwayEdge(
                     id=e.id,
-                    pathway_id=pathway_id,
+                    pathway_version_id=pathway_version_id,
                     source_block_id=e.source_block_id,
                     target_block_id=e.target_block_id,
                     source_branch_id=e.source_branch_id,
@@ -250,7 +353,10 @@ class PathwayService:
         session.add_all(
             [
                 PathwayTimeMarker(
-                    id=m.id, pathway_id=pathway_id, value_id=m.value_id, label=m.label
+                    id=m.id,
+                    pathway_version_id=pathway_version_id,
+                    value_id=m.value_id,
+                    label=m.label,
                 )
                 for m in r.time_markers
             ]
@@ -264,57 +370,6 @@ class PathwayService:
             ]
         )
         await session.flush()
-
-    def _definition_from_orm(
-        self,
-        pathway: Pathway,
-        children: PathwayChildren,
-        lane_kinds: dict[str, PathwayLaneKind],
-    ) -> PathwayDefinition:
-        code_by_id = {kind.id: code for code, kind in lane_kinds.items()}
-        lanes_out: list[PathwayLaneOut] = []
-        for lane in children.lanes:
-            lanes_out.append(
-                PathwayLaneOut(
-                    id=lane.id,
-                    pathway_lane_kind_id=lane.pathway_lane_kind_id,
-                    lane_kind_code=code_by_id.get(lane.pathway_lane_kind_id, ""),
-                    label=lane.label,
-                    ord=lane.ord,
-                    is_default=lane.is_default,
-                )
-            )
-        return PathwayDefinition(
-            id=pathway.id,
-            name=pathway.name,
-            clinical_goal=pathway.clinical_goal,
-            patient_goal=pathway.patient_goal,
-            updated_at=pathway.updated_at,
-            phases=[PathwayPhaseOut.model_validate(p) for p in children.phases],
-            lanes=lanes_out,
-            timing_values=[
-                PathwayTimingValueOut.model_validate(tv) for tv in children.timing_values
-            ],
-            blocks=[PathwayBlockOut.model_validate(b) for b in children.blocks],
-            branches=[PathwayBlockBranchOut.model_validate(br) for br in children.branches],
-            edges=[PathwayEdgeOut.model_validate(e) for e in children.edges],
-            time_markers=[PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers],
-            deferred_fields=[
-                PathwayBlockDeferredFieldOut.model_validate(fr) for fr in children.deferred_fields
-            ],
-        )
-
-
-_EMPTY_CHILDREN = PathwayChildren(
-    phases=[],
-    lanes=[],
-    timing_values=[],
-    blocks=[],
-    branches=[],
-    edges=[],
-    time_markers=[],
-    deferred_fields=[],
-)
 
 
 class _ResolvedDefinition:

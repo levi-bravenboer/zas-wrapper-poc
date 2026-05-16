@@ -19,12 +19,14 @@ class PathwayPhase(TenantOwnedEntity):
     __tablename__ = "pathway_phase"
     __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
-        sa.UniqueConstraint("pathway_id", "ord", name="uq_pathway_phase_pathway_id_ord"),
+        sa.UniqueConstraint(
+            "pathway_version_id", "ord", name="uq_pathway_phase_pathway_version_id_ord"
+        ),
     )
 
-    pathway_id: Mapped[UUID] = mapped_column(
+    pathway_version_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("pathway.id", ondelete="CASCADE"),
+        sa.ForeignKey("pathway_version.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

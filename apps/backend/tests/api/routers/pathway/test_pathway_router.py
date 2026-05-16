@@ -115,10 +115,12 @@ async def test_create_pathway_returns_definition(
 
     assert response.status_code == 201
     body = response.json()
-    assert body["name"] == "Brand new"
-    assert body["clinical_goal"] == "Reduce post-op pain to <3 NRS by week 6."
-    assert body["patient_goal"] == "Walk pain-free with my grandkids."
-    assert body["blocks"] == []
+    assert body["pathway"]["name"] == "Brand new"
+    assert body["pathway"]["clinical_goal"] == "Reduce post-op pain to <3 NRS by week 6."
+    assert body["pathway"]["patient_goal"] == "Walk pain-free with my grandkids."
+    assert body["version"]["status"] == "concept"
+    assert body["version"]["kind"] == "initial"
+    assert body["version"]["blocks"] == []
 
 
 async def test_list_pathways_includes_created(
@@ -131,8 +133,12 @@ async def test_list_pathways_includes_created(
     response = await async_client.get("/pathways")
 
     assert response.status_code == 200
-    ids = [row["id"] for row in response.json()]
-    assert created["id"] in ids
+    rows = response.json()
+    ids = [row["id"] for row in rows]
+    assert created["pathway"]["id"] in ids
+    row = next(r for r in rows if r["id"] == created["pathway"]["id"])
+    assert row["has_concept"] is True
+    assert row["latest_published_version_id"] is None
 
 
 async def test_get_pathway_round_trip(
@@ -142,10 +148,12 @@ async def test_get_pathway_round_trip(
     await _login(async_client)
     created = await _create(async_client)
 
-    response = await async_client.get(f"/pathways/{created['id']}")
+    response = await async_client.get(f"/pathways/{created['pathway']['id']}")
 
     assert response.status_code == 200
-    assert response.json()["id"] == created["id"]
+    body = response.json()
+    assert body["pathway"]["id"] == created["pathway"]["id"]
+    assert body["version"]["id"] == created["version"]["id"]
 
 
 async def test_get_unknown_pathway_returns_404(
@@ -166,14 +174,16 @@ async def test_replace_pathway_overwrites(
     created = await _create(async_client, name="Before")
 
     payload = _replace_payload("After", lane_kinds)
-    response = await async_client.put(f"/pathways/{created['id']}", json=payload)
+    response = await async_client.put(
+        f"/pathways/{created['pathway']['id']}", json=payload
+    )
 
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["name"] == "After"
-    assert len(body["blocks"]) == 1
-    assert len(body["phases"]) == 1
-    assert len(body["lanes"]) == 1
+    assert body["pathway"]["name"] == "After"
+    assert len(body["version"]["blocks"]) == 1
+    assert len(body["version"]["phases"]) == 1
+    assert len(body["version"]["lanes"]) == 1
 
 
 async def test_replace_unknown_pathway_returns_404(
@@ -196,7 +206,9 @@ async def test_replace_invalid_payload_returns_422(
     payload = _replace_payload("Bad", lane_kinds)
     payload["blocks"][0]["type"] = "not-a-real-block-type"
 
-    response = await async_client.put(f"/pathways/{created['id']}", json=payload)
+    response = await async_client.put(
+        f"/pathways/{created['pathway']['id']}", json=payload
+    )
 
     assert response.status_code == 422
 
@@ -208,12 +220,12 @@ async def test_delete_pathway_returns_204_and_hides_from_list(
     await _login(async_client)
     created = await _create(async_client)
 
-    response = await async_client.delete(f"/pathways/{created['id']}")
+    response = await async_client.delete(f"/pathways/{created['pathway']['id']}")
     assert response.status_code == 204
 
     listing = await async_client.get("/pathways")
     ids = [row["id"] for row in listing.json()]
-    assert created["id"] not in ids
+    assert created["pathway"]["id"] not in ids
 
 
 async def test_delete_unknown_pathway_returns_404(
@@ -225,3 +237,141 @@ async def test_delete_unknown_pathway_returns_404(
     response = await async_client.delete(f"/pathways/{uuid.uuid4()}")
 
     assert response.status_code == 404
+
+
+# ---------- Version lifecycle endpoints --------------------------------------
+
+
+async def test_list_versions_empty_concept_only(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    del lane_kinds
+    await _login(async_client)
+    created = await _create(async_client)
+
+    response = await async_client.get(f"/pathways/{created['pathway']['id']}/versions")
+
+    assert response.status_code == 200
+    versions = response.json()
+    assert len(versions) == 1
+    assert versions[0]["status"] == "concept"
+    assert versions[0]["kind"] == "initial"
+
+
+async def test_publish_promotes_concept_to_published(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    await _login(async_client)
+    created = await _create(async_client)
+    payload = _replace_payload("To publish", lane_kinds)
+    await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
+
+    response = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/publish",
+        json={"clinically_approved": True, "label": "v1"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "published"
+    assert body["label"] == "v1"
+
+
+async def test_publish_without_approval_returns_422(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    del lane_kinds
+    await _login(async_client)
+    created = await _create(async_client)
+
+    response = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/publish",
+        json={"clinically_approved": False},
+    )
+
+    assert response.status_code == 422
+
+
+async def test_publish_without_concept_returns_409(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """After publishing, the concept is gone → second publish must 409."""
+
+    await _login(async_client)
+    created = await _create(async_client)
+    payload = _replace_payload("Once", lane_kinds)
+    await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
+    first = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/publish",
+        json={"clinically_approved": True},
+    )
+    assert first.status_code == 200, first.text
+
+    second = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/publish",
+        json={"clinically_approved": True},
+    )
+
+    assert second.status_code == 409
+
+
+async def test_fork_from_publish_requires_published_source(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Source must be `published` for fork-from-publish — otherwise 422."""
+
+    del lane_kinds
+    await _login(async_client)
+    created = await _create(async_client)
+    concept_id = created["version"]["id"]
+
+    response = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/versions/{concept_id}/fork-from-publish",
+    )
+
+    assert response.status_code == 422
+
+
+async def test_restore_creates_new_concept_from_published(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    await _login(async_client)
+    created = await _create(async_client)
+    payload = _replace_payload("Restorable", lane_kinds)
+    put_resp = await async_client.put(
+        f"/pathways/{created['pathway']['id']}", json=payload
+    )
+    assert put_resp.status_code == 200, put_resp.text
+    publish = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/publish",
+        json={"clinically_approved": True},
+    )
+    assert publish.status_code == 200, publish.text
+    published_version_id = publish.json()["id"]
+
+    response = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/versions/{published_version_id}/restore",
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["status"] == "concept"
+    assert body["kind"] == "restore-from-version"
+    assert body["derived_from_version_id"] == published_version_id
+
+
+async def test_restore_blocked_by_existing_concept(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Restore must 409 if a concept already exists (one-concept invariant)."""
+
+    del lane_kinds
+    await _login(async_client)
+    created = await _create(async_client)
+    concept_id = created["version"]["id"]
+
+    response = await async_client.post(
+        f"/pathways/{created['pathway']['id']}/versions/{concept_id}/restore",
+    )
+
+    assert response.status_code == 409

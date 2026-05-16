@@ -8,7 +8,7 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.user import Role
-from app.db.models.pathway import Pathway, PathwayLaneKind
+from app.db.models.pathway import Pathway, PathwayLaneKind, PathwayVersion
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
@@ -95,6 +95,13 @@ async def empty_pathway(
     )
     db_session.add(pathway)
     await db_session.flush()
+    initial_version = PathwayVersion(
+        pathway_id=pathway.id,
+        version_no=1,
+        status="concept",
+        kind="initial",
+    )
+    db_session.add(initial_version)
     await db_session.commit()
     return pathway
 

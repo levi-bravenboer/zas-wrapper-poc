@@ -382,7 +382,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PathwayDefinition"
+                  "$ref": "#/components/schemas/PathwayWithVersionResponse"
                 }
               }
             }
@@ -425,7 +425,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PathwayDefinition"
+                  "$ref": "#/components/schemas/PathwayWithVersionResponse"
                 }
               }
             }
@@ -486,7 +486,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PathwayDefinition"
+                  "$ref": "#/components/schemas/PathwayWithVersionResponse"
                 }
               }
             }
@@ -500,6 +500,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "422": {
             "content": {
@@ -554,6 +564,345 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}/versions": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Versions",
+        "operationId": "list_pathway_versions",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayVersionSummary"
+                  },
+                  "title": "Response List Pathway Versions"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}/versions/{version_id}": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Get Pathway Version",
+        "operationId": "get_pathway_version",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayVersionDefinition"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}/publish": {
+      "post": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Publish Pathway",
+        "operationId": "publish_pathway",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayPublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayVersionSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}/versions/{version_id}/restore": {
+      "post": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Restore Pathway Version",
+        "operationId": "restore_pathway_version",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayVersionSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}/versions/{version_id}/fork-from-publish": {
+      "post": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Fork Pathway From Publish",
+        "operationId": "fork_pathway_from_publish",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayVersionSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
           }
         }
       }
@@ -660,6 +1009,80 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "PathwayActorRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "PathwayActorRef",
+        "description": "Minimal user reference embedded in version summaries."
+      },
+      "PathwayBare": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "clinical_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Goal"
+          },
+          "patient_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Goal"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "updated_at"
+        ],
+        "title": "PathwayBare",
+        "description": "Identity fields only \u2014 no version-scoped children. Returned as the\n`pathway` arm of `PathwayWithVersionResponse`."
       },
       "PathwayBlockBranchIn": {
         "properties": {
@@ -992,109 +1415,6 @@
         ],
         "title": "PathwayCreate"
       },
-      "PathwayDefinition": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "clinical_goal": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Clinical Goal"
-          },
-          "patient_goal": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Patient Goal"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          },
-          "phases": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayPhaseOut"
-            },
-            "type": "array",
-            "title": "Phases"
-          },
-          "lanes": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayLaneOut"
-            },
-            "type": "array",
-            "title": "Lanes"
-          },
-          "timing_values": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayTimingValueOut"
-            },
-            "type": "array",
-            "title": "Timing Values"
-          },
-          "blocks": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayBlockOut"
-            },
-            "type": "array",
-            "title": "Blocks"
-          },
-          "branches": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayBlockBranchOut"
-            },
-            "type": "array",
-            "title": "Branches"
-          },
-          "edges": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayEdgeOut"
-            },
-            "type": "array",
-            "title": "Edges"
-          },
-          "time_markers": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayTimeMarkerOut"
-            },
-            "type": "array",
-            "title": "Time Markers"
-          },
-          "deferred_fields": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayBlockDeferredFieldOut"
-            },
-            "type": "array",
-            "title": "Deferred Fields"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "updated_at"
-        ],
-        "title": "PathwayDefinition"
-      },
       "PathwayDefinitionReplace": {
         "properties": {
           "name": {
@@ -1186,7 +1506,8 @@
         "required": [
           "name"
         ],
-        "title": "PathwayDefinitionReplace"
+        "title": "PathwayDefinitionReplace",
+        "description": "Autosave body for `PUT /pathways/{id}` \u2014 applied to the current concept\nversion's children. Pathway identity fields (`name`/`clinical_goal`/\n`patient_goal`) live on the pathway row and are mutable regardless of\nversion status."
       },
       "PathwayEdgeIn": {
         "properties": {
@@ -1480,6 +1801,46 @@
         ],
         "title": "PathwayPhaseTemplate"
       },
+      "PathwayPublishRequest": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "clinically_approved": {
+            "type": "boolean",
+            "const": true,
+            "title": "Clinically Approved",
+            "description": "Must be true. The frontend gates this behind an explicit checkbox."
+          }
+        },
+        "type": "object",
+        "required": [
+          "clinically_approved"
+        ],
+        "title": "PathwayPublishRequest",
+        "description": "Body for `POST /pathways/{id}/publish` \u2014 promotes the current concept.\n`clinically_approved` is `Literal[True]`: anything else is a 422 from the\nframework rather than a custom validator (keeps the error payload JSON-\nserialisable without bespoke handling)."
+      },
       "PathwaySummary": {
         "properties": {
           "id": {
@@ -1521,6 +1882,62 @@
           "block_count": {
             "type": "integer",
             "title": "Block Count"
+          },
+          "last_edited_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Edited At"
+          },
+          "has_concept": {
+            "type": "boolean",
+            "title": "Has Concept"
+          },
+          "concept_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Version Id"
+          },
+          "latest_published_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Published Version Id"
+          },
+          "latest_published_version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Published Version No"
+          },
+          "latest_published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Published At"
           }
         },
         "type": "object",
@@ -1528,9 +1945,12 @@
           "id",
           "name",
           "updated_at",
-          "block_count"
+          "block_count",
+          "last_edited_at",
+          "has_concept"
         ],
-        "title": "PathwaySummary"
+        "title": "PathwaySummary",
+        "description": "Overview row for `GET /pathways`. Rollups derived per `pathway-version`\nRequirement 11 \u2014 backend joins `pathway_version` + `pathway_block`, never\nreads denormalised columns on `pathway`."
       },
       "PathwayTimeMarkerIn": {
         "properties": {
@@ -1727,6 +2147,307 @@
           "kind"
         ],
         "title": "PathwayTimingValueOut"
+      },
+      "PathwayVersionDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "pathway_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "published",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "fork-from-publish",
+              "restore-from-version"
+            ],
+            "title": "Kind"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "derived_from_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Version Id"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published By"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayPhaseOut"
+            },
+            "type": "array",
+            "title": "Phases"
+          },
+          "lanes": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayLaneOut"
+            },
+            "type": "array",
+            "title": "Lanes"
+          },
+          "timing_values": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayTimingValueOut"
+            },
+            "type": "array",
+            "title": "Timing Values"
+          },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBlockOut"
+            },
+            "type": "array",
+            "title": "Blocks"
+          },
+          "branches": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBlockBranchOut"
+            },
+            "type": "array",
+            "title": "Branches"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayEdgeOut"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "time_markers": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayTimeMarkerOut"
+            },
+            "type": "array",
+            "title": "Time Markers"
+          },
+          "deferred_fields": {
+            "items": {
+              "$ref": "#/components/schemas/PathwayBlockDeferredFieldOut"
+            },
+            "type": "array",
+            "title": "Deferred Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pathway_id",
+          "version_no",
+          "status",
+          "kind",
+          "updated_at"
+        ],
+        "title": "PathwayVersionDefinition",
+        "description": "Snapshot of one pathway version \u2014 meta + children. Returned by version\ndetail endpoints and embedded as `version` in `PathwayWithVersionResponse`."
+      },
+      "PathwayVersionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "pathway_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "published",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "fork-from-publish",
+              "restore-from-version"
+            ],
+            "title": "Kind"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "derived_from_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Version Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PathwayActorRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PathwayActorRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pathway_id",
+          "version_no",
+          "status",
+          "kind",
+          "created_at"
+        ],
+        "title": "PathwayVersionSummary",
+        "description": "One row of `GET /pathways/{id}/versions` (reverse-chrono)."
+      },
+      "PathwayWithVersionResponse": {
+        "properties": {
+          "pathway": {
+            "$ref": "#/components/schemas/PathwayBare"
+          },
+          "version": {
+            "$ref": "#/components/schemas/PathwayVersionDefinition"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pathway",
+          "version"
+        ],
+        "title": "PathwayWithVersionResponse",
+        "description": "Resolved-version envelope for `GET /pathways/{id}` and `POST /pathways`.\n\n`version` is the current concept if one exists, else the latest published\n(per `pathway-version` spec Requirement 9)."
       },
       "ProviderDescriptor": {
         "properties": {

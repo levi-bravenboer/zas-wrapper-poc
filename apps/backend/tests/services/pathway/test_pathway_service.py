@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.pathway import Pathway, PathwayBlock, PathwayLaneKind
+from app.db.models.pathway import Pathway, PathwayBlock, PathwayLaneKind, PathwayVersion
 from app.repositories.pathway.pathway_repository import PathwayRepository
+from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
+from app.schemas.auth.auth import SessionUser
 from app.schemas.pathway.pathway import (
     PathwayBlockBranchIn,
     PathwayBlockDeferredFieldIn,
@@ -24,8 +28,10 @@ from app.services.pathway.errors import (
     BranchOwnershipError,
     DeferredFieldError,
     EdgeValidationError,
+    NoConceptVersionError,
     PathwayNotFoundError,
     PathwayValidationError,
+    PathwayVersionNotFoundError,
     UnknownBlockTypeError,
     UnknownLaneKindError,
     UnknownPhaseError,
@@ -63,7 +69,10 @@ def _appointment_block(
 
 
 def _service(db_session: AsyncSession) -> PathwayService:
-    return PathwayService(PathwayRepository(db_session))
+    return PathwayService(
+        PathwayRepository(db_session),
+        PathwayVersionRepository(db_session),
+    )
 
 
 def _minimal_payload(
@@ -111,12 +120,14 @@ async def test_list_summaries_includes_block_count(
     assert len(summaries) == 1
     assert summaries[0].id == empty_pathway.id
     assert summaries[0].block_count == 1
+    assert summaries[0].has_concept is True
+    assert summaries[0].latest_published_version_id is None
 
 
-async def test_get_definition_missing_raises(db_session: AsyncSession) -> None:
+async def test_get_with_resolved_version_missing_raises(db_session: AsyncSession) -> None:
     service = _service(db_session)
     with pytest.raises(PathwayNotFoundError):
-        await service.get_definition(uuid.uuid4(), uuid.uuid4())
+        await service.get_with_resolved_version(uuid.uuid4(), uuid.uuid4())
 
 
 # ---------- Validation: catalogue ---------------------------------------------
@@ -313,11 +324,11 @@ async def test_lane_materialized_when_block_lane_id_null(
         _minimal_payload(phases=[phase], blocks=[block]),
     )
 
-    assert len(result.lanes) == 1
-    materialized = result.lanes[0]
+    assert len(result.version.lanes) == 1
+    materialized = result.version.lanes[0]
     assert materialized.lane_kind_code == "caregiver"
     assert materialized.is_default is True
-    assert result.blocks[0].lane_id == materialized.id
+    assert result.version.blocks[0].lane_id == materialized.id
 
 
 # ---------- Field resolution -------------------------------------------------
@@ -357,13 +368,13 @@ async def test_deferred_field_accepts_declared_path(
         empty_pathway.tenant_id,
         _minimal_payload(phases=[phase], lanes=[lane], blocks=[block], deferred_fields=[good]),
     )
-    assert len(result.deferred_fields) == 1
+    assert len(result.version.deferred_fields) == 1
 
 
 # ---------- Soft delete + replace cascade ------------------------------------
 
 
-async def test_soft_delete_clears_children(
+async def test_soft_delete_hides_pathway(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
     service = _service(db_session)
@@ -380,14 +391,10 @@ async def test_soft_delete_clears_children(
     await service.soft_delete(empty_pathway.id, empty_pathway.tenant_id)
     await db_session.commit()
 
-    # Pathway hidden from list, children gone
+    # Pathway hidden from list; concept version + children retained per spec
+    # (soft-delete does not touch version rows in the two-level aggregate).
     summaries = await service.list_summaries(empty_pathway.tenant_id)
     assert summaries == []
-
-    remaining_blocks = await db_session.execute(
-        PathwayBlock.__table__.select().where(PathwayBlock.pathway_id == empty_pathway.id)
-    )
-    assert remaining_blocks.first() is None
 
 
 async def test_replace_definition_overwrites_children(
@@ -421,8 +428,15 @@ async def test_replace_definition_overwrites_children(
         empty_pathway.tenant_id,
         _minimal_payload(phases=[new_phase], lanes=[new_lane], blocks=[new_block]),
     )
-    assert len(result.blocks) == 1
-    assert result.blocks[0].id == new_block.id
+    assert len(result.version.blocks) == 1
+    assert result.version.blocks[0].id == new_block.id
+
+    # All blocks for the pathway's concept version are the new ones.
+    concept_id = result.version.id
+    rows = await db_session.execute(
+        select(PathwayBlock).where(PathwayBlock.pathway_version_id == concept_id)
+    )
+    assert {row.id for row in rows.scalars()} == {new_block.id}
 
 
 # ---------- Misc -------------------------------------------------------------
@@ -460,4 +474,50 @@ async def test_duplicate_block_id_in_payload_raises(
             empty_pathway.id,
             empty_pathway.tenant_id,
             _minimal_payload(phases=[phase], lanes=[lane], blocks=[a, b]),
+        )
+
+
+# ---------- Version lifecycle (concept enforcement) --------------------------
+
+
+async def test_replace_without_concept_raises(
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+    session_actor: SessionUser,
+) -> None:
+    """A pathway with no concept version (only published/archived) must reject PUT."""
+
+    del lane_kinds
+    pathway = Pathway(
+        name="No-concept pathway",
+        clinical_goal=None,
+        patient_goal=None,
+    )
+    db_session.add(pathway)
+    await db_session.flush()
+    published = PathwayVersion(
+        pathway_id=pathway.id,
+        version_no=1,
+        status="published",
+        kind="initial",
+        published_at=datetime.now(UTC),
+        published_by=session_actor.id,
+    )
+    db_session.add(published)
+    await db_session.commit()
+
+    service = _service(db_session)
+    with pytest.raises(NoConceptVersionError):
+        await service.replace_definition(
+            pathway.id, pathway.tenant_id, _minimal_payload()
+        )
+
+
+async def test_get_version_definition_unknown_version_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    service = _service(db_session)
+    with pytest.raises(PathwayVersionNotFoundError):
+        await service.get_version_definition(
+            empty_pathway.id, uuid.uuid4(), empty_pathway.tenant_id
         )

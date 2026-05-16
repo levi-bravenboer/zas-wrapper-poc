@@ -8,6 +8,7 @@ from app.db.models.pathway.pathway import Pathway
 from app.db.models.pathway.phase import PathwayPhase
 from app.db.models.pathway.time_marker import PathwayTimeMarker
 from app.db.models.pathway.timing_value import PathwayTimingValue
+from app.db.models.pathway.version import PathwayVersion
 
 __all__ = [
     "Pathway",
@@ -20,4 +21,5 @@ __all__ = [
     "PathwayPhase",
     "PathwayTimeMarker",
     "PathwayTimingValue",
+    "PathwayVersion",
 ]

@@ -16,6 +16,7 @@ from app.db.models.pathway import (
     PathwayPhase,
     PathwayTimeMarker,
     PathwayTimingValue,
+    PathwayVersion,
 )
 from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.db.models.tenant import Tenant
@@ -35,6 +36,7 @@ __all__ = [
     "PathwayPhase",
     "PathwayTimeMarker",
     "PathwayTimingValue",
+    "PathwayVersion",
     "Patient",
     "PatientIdentifier",
     "Practitioner",

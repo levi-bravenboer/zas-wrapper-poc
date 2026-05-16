@@ -19,8 +19,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.audit import SESSION_ACTOR_KEY
-from app.db.models.pathway import Pathway, PathwayLaneKind
+from app.db.models.pathway import Pathway, PathwayLaneKind, PathwayVersion
 from app.repositories.pathway.pathway_repository import PathwayRepository
+from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
@@ -259,7 +260,19 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
         session.add(pathway)
         await session.flush()
 
-        service = PathwayService(PathwayRepository(session))
+        initial_version = PathwayVersion(
+            pathway_id=PATHWAY_ID,
+            version_no=1,
+            status="concept",
+            kind="initial",
+        )
+        session.add(initial_version)
+        await session.flush()
+
+        service = PathwayService(
+            PathwayRepository(session),
+            PathwayVersionRepository(session),
+        )
         await service.replace_definition(
             pathway_id=PATHWAY_ID,
             tenant_id=tenant.id,

@@ -29,9 +29,9 @@ class PathwayEdge(TenantOwnedEntity):
         ),
     )
 
-    pathway_id: Mapped[UUID] = mapped_column(
+    pathway_version_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("pathway.id", ondelete="CASCADE"),
+        sa.ForeignKey("pathway_version.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

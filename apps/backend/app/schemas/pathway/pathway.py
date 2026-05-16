@@ -14,6 +14,11 @@ class PathwayCreate(BaseModel):
 
 
 class PathwaySummary(BaseModel):
+    """Overview row for `GET /pathways`. Rollups derived per `pathway-version`
+    Requirement 11 — backend joins `pathway_version` + `pathway_block`, never
+    reads denormalised columns on `pathway`.
+    """
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -22,6 +27,12 @@ class PathwaySummary(BaseModel):
     patient_goal: str | None = None
     updated_at: datetime
     block_count: int
+    last_edited_at: datetime
+    has_concept: bool
+    concept_version_id: UUID | None = None
+    latest_published_version_id: UUID | None = None
+    latest_published_version_no: int | None = None
+    latest_published_at: datetime | None = None
 
 
 # Aggregate child shapes — client supplies stable UUIDs so cross-child
@@ -180,13 +191,70 @@ class PathwayBlockDeferredFieldOut(PathwayBlockDeferredFieldIn):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PathwayDefinition(BaseModel):
+# ----- Identity + version meta ------------------------------------------
+
+
+VersionStatus = Literal["concept", "published", "archived"]
+VersionKind = Literal["initial", "fork-from-publish", "restore-from-version"]
+
+
+class PathwayBare(BaseModel):
+    """Identity fields only — no version-scoped children. Returned as the
+    `pathway` arm of `PathwayWithVersionResponse`.
+    """
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     name: str
     clinical_goal: str | None = None
     patient_goal: str | None = None
+    updated_at: datetime
+
+
+class PathwayActorRef(BaseModel):
+    """Minimal user reference embedded in version summaries."""
+
+    id: UUID
+    name: str | None = None
+
+
+class PathwayVersionSummary(BaseModel):
+    """One row of `GET /pathways/{id}/versions` (reverse-chrono)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    pathway_id: UUID
+    version_no: int
+    status: VersionStatus
+    kind: VersionKind
+    label: str | None = None
+    note: str | None = None
+    derived_from_version_id: UUID | None = None
+    created_at: datetime
+    created_by: PathwayActorRef | None = None
+    published_at: datetime | None = None
+    published_by: PathwayActorRef | None = None
+
+
+class PathwayVersionDefinition(BaseModel):
+    """Snapshot of one pathway version — meta + children. Returned by version
+    detail endpoints and embedded as `version` in `PathwayWithVersionResponse`.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    pathway_id: UUID
+    version_no: int
+    status: VersionStatus
+    kind: VersionKind
+    label: str | None = None
+    note: str | None = None
+    derived_from_version_id: UUID | None = None
+    published_at: datetime | None = None
+    published_by: UUID | None = None
     updated_at: datetime
     phases: list[PathwayPhaseOut] = Field(default_factory=list)
     lanes: list[PathwayLaneOut] = Field(default_factory=list)
@@ -198,7 +266,24 @@ class PathwayDefinition(BaseModel):
     deferred_fields: list[PathwayBlockDeferredFieldOut] = Field(default_factory=list)
 
 
+class PathwayWithVersionResponse(BaseModel):
+    """Resolved-version envelope for `GET /pathways/{id}` and `POST /pathways`.
+
+    `version` is the current concept if one exists, else the latest published
+    (per `pathway-version` spec Requirement 9).
+    """
+
+    pathway: PathwayBare
+    version: PathwayVersionDefinition
+
+
 class PathwayDefinitionReplace(BaseModel):
+    """Autosave body for `PUT /pathways/{id}` — applied to the current concept
+    version's children. Pathway identity fields (`name`/`clinical_goal`/
+    `patient_goal`) live on the pathway row and are mutable regardless of
+    version status.
+    """
+
     name: str = Field(min_length=1, max_length=255)
     clinical_goal: str | None = Field(default=None)
     patient_goal: str | None = Field(default=None)
@@ -210,3 +295,17 @@ class PathwayDefinitionReplace(BaseModel):
     edges: list[PathwayEdgeIn] = Field(default_factory=list)
     time_markers: list[PathwayTimeMarkerIn] = Field(default_factory=list)
     deferred_fields: list[PathwayBlockDeferredFieldIn] = Field(default_factory=list)
+
+
+class PathwayPublishRequest(BaseModel):
+    """Body for `POST /pathways/{id}/publish` — promotes the current concept.
+    `clinically_approved` is `Literal[True]`: anything else is a 422 from the
+    framework rather than a custom validator (keeps the error payload JSON-
+    serialisable without bespoke handling).
+    """
+
+    label: str | None = Field(default=None, max_length=120)
+    note: str | None = Field(default=None, max_length=2000)
+    clinically_approved: Literal[True] = Field(
+        description="Must be true. The frontend gates this behind an explicit checkbox.",
+    )
