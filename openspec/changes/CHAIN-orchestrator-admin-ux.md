@@ -68,7 +68,7 @@ The seven changes MUST land in dependency order. The parallel set (`#3 + #4 + #6
 | --- | --- | --- | --- | --- |
 | 1 | `practitioner-role-split` | `feat/practitioner-role-split` | (removed) | **archived** (PR #10 merged 2026-05-16; archive id `2026-05-16-practitioner-role-split`) |
 | 2 | `caregiver-shell` | `feat/caregiver-shell` | (removed) | **archived** (PR #11 merged 2026-05-16; archive id `2026-05-16-caregiver-shell`) |
-| 2.5 | `entity-page-scaffolding` | `feat/entity-page-scaffolding` | `.worktrees/feat-entity-page-scaffolding` | in-progress (applied; awaiting commit + PR) |
+| 2.5 | `entity-page-scaffolding` | `feat/entity-page-scaffolding` | (removed) | **archived** (PR #13 merged 2026-05-16; archive id `2026-05-16-entity-page-scaffolding`) |
 | 3 | `users-admin-ui` | `feat/users-admin-ui` | `.worktrees/feat-users-admin-ui` | draft (worktree not yet created) |
 | 4 | `organisations-admin-ui` | `feat/organisations-admin-ui` | `.worktrees/feat-organisations-admin-ui` | draft (worktree not yet created) |
 | 5 | `practitioner-roles-admin-ui` | `feat/practitioner-roles-admin-ui` | `.worktrees/feat-practitioner-roles-admin-ui` | draft (worktree not yet created) |
