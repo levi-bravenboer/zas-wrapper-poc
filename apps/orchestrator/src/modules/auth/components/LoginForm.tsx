@@ -83,9 +83,9 @@ export function LoginForm(): ReactElement {
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={field.state.meta.errors.length > 0}
+              aria-invalid={!!field.state.meta.errors.length}
             />
-            {field.state.meta.errors.length > 0 && (
+            {!!field.state.meta.errors.length && (
               <p className="text-sm text-destructive" role="alert">
                 {String(field.state.meta.errors[0])}
               </p>
@@ -114,9 +114,9 @@ export function LoginForm(): ReactElement {
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={field.state.meta.errors.length > 0}
+              aria-invalid={!!field.state.meta.errors.length}
             />
-            {field.state.meta.errors.length > 0 && (
+            {!!field.state.meta.errors.length && (
               <p className="text-sm text-destructive" role="alert">
                 {String(field.state.meta.errors[0])}
               </p>

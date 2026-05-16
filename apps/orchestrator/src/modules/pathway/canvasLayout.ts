@@ -1,12 +1,16 @@
-import type { PathwayLane } from './types'
+import type { PathwayLane, PathwayPhase } from './types'
 
 export const CANVAS_LEFT_PAD = 96
 export const PHASE_COL_WIDTH = 380
+export const PHASE_COL_MIN_WIDTH = 240
 export const PHASE_HEADER_HEIGHT = 36
 export const LANE_TOP_PAD = PHASE_HEADER_HEIGHT + 12
 export const LANE_ROW_HEIGHT = 180
+export const LANE_ROW_MIN_HEIGHT = 110
+export const LANE_INSET = 58
 export const BLOCK_WIDTH = 240
 export const BLOCK_HEIGHT = 64
+export const BLOCK_DEFAULT_X = 70
 
 export function phaseColumnX(index: number): number {
   return CANVAS_LEFT_PAD + index * PHASE_COL_WIDTH
@@ -24,26 +28,62 @@ export function canvasInnerHeight(laneCount: number): number {
   return LANE_TOP_PAD + Math.max(laneCount, 1) * LANE_ROW_HEIGHT
 }
 
-const LANE_KIND_TO_ACCENT: Record<string, string> = {
-  patient: 'var(--lane-patient)',
-  caregiver: 'var(--lane-caregiver)',
-  system: 'var(--lane-system)',
-  external: 'var(--lane-external)',
+export type CanvasGeometry = {
+  phaseX: (phaseId: string) => number
+  phaseW: (phaseId: string) => number
+  laneY: (laneId: string) => number
+  laneH: (laneId: string) => number
+  phaseIndex: (phaseId: string) => number
+  laneIndex: (laneId: string) => number
+  phaseAt: (flowX: number) => string | null
+  laneAt: (flowY: number) => string | null
+  flowWidth: number
+  flowHeight: number
 }
 
-export function laneAccent(lane: Pick<PathwayLane, 'lane_kind_code'>): string {
-  return LANE_KIND_TO_ACCENT[lane.lane_kind_code] ?? 'var(--color-primary)'
+export function buildCanvasGeometry(
+  phases: PathwayPhase[],
+  lanes: PathwayLane[],
+  phaseSizes: ReadonlyMap<string, number>,
+  laneSizes: ReadonlyMap<string, number>,
+): CanvasGeometry {
+  const phaseEntries: Array<{ id: string; x: number; w: number; idx: number }> = []
+  const phasesByOrd = [...phases].sort((a, b) => a.ord - b.ord)
+  let cursorX = CANVAS_LEFT_PAD
+  phasesByOrd.forEach((p, i) => {
+    const w = Math.max(PHASE_COL_MIN_WIDTH, phaseSizes.get(p.id) ?? PHASE_COL_WIDTH)
+    phaseEntries.push({ id: p.id, x: cursorX, w, idx: i })
+    cursorX += w
+  })
+  const flowWidth = Math.max(CANVAS_LEFT_PAD + PHASE_COL_WIDTH, cursorX)
+
+  const laneEntries: Array<{ id: string; y: number; h: number; idx: number }> = []
+  const lanesByOrd = [...lanes].sort((a, b) => a.ord - b.ord)
+  let cursorY = LANE_TOP_PAD
+  lanesByOrd.forEach((l, i) => {
+    const h = Math.max(LANE_ROW_MIN_HEIGHT, laneSizes.get(l.id) ?? LANE_ROW_HEIGHT)
+    laneEntries.push({ id: l.id, y: cursorY, h, idx: i })
+    cursorY += h
+  })
+  const flowHeight = Math.max(LANE_TOP_PAD + LANE_ROW_HEIGHT, cursorY)
+
+  const phaseMap = new Map(phaseEntries.map((e) => [e.id, e]))
+  const laneMap = new Map(laneEntries.map((e) => [e.id, e]))
+
+  return {
+    phaseX: (id) => phaseMap.get(id)?.x ?? CANVAS_LEFT_PAD,
+    phaseW: (id) => phaseMap.get(id)?.w ?? PHASE_COL_WIDTH,
+    laneY: (id) => laneMap.get(id)?.y ?? LANE_TOP_PAD,
+    laneH: (id) => laneMap.get(id)?.h ?? LANE_ROW_HEIGHT,
+    phaseIndex: (id) => phaseMap.get(id)?.idx ?? 0,
+    laneIndex: (id) => laneMap.get(id)?.idx ?? 0,
+    phaseAt: (flowX) =>
+      phaseEntries.find((e) => flowX < e.x + e.w)?.id ?? phaseEntries.at(-1)?.id ?? null,
+    laneAt: (flowY) =>
+      laneEntries.find((e) => flowY < e.y + e.h)?.id ?? laneEntries.at(-1)?.id ?? null,
+    flowWidth,
+    flowHeight,
+  }
 }
 
-const PHASE_TINT_VARS = [
-  { soft: 'var(--ph-1-soft)', ink: 'var(--ph-1-ink)' },
-  { soft: 'var(--ph-2-soft)', ink: 'var(--ph-2-ink)' },
-  { soft: 'var(--ph-3-soft)', ink: 'var(--ph-3-ink)' },
-  { soft: 'var(--ph-4-soft)', ink: 'var(--ph-4-ink)' },
-] as const
-
-const PHASE_TINT_FALLBACK: { soft: string; ink: string } = PHASE_TINT_VARS[0]
-
-export function phaseTint(index: number): { soft: string; ink: string } {
-  return PHASE_TINT_VARS[index % PHASE_TINT_VARS.length] ?? PHASE_TINT_FALLBACK
-}
+export { laneAccent, phaseTint } from './constants/theme'

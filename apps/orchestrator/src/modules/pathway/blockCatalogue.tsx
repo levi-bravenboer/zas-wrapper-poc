@@ -11,28 +11,32 @@ import {
 } from 'lucide-react'
 import { createElement, type ReactElement } from 'react'
 
-const BLOCK_TYPE_ICONS: Record<string, LucideIcon> = {
+import type { LaneKindCode } from './types'
+
+const BLOCK_TYPE_ICONS = {
   appointment: Calendar,
   decision: GitBranch,
   milestone: Flag,
   timer: Clock,
   task: ListChecks,
   email: Mail,
-}
+} as const satisfies Record<string, LucideIcon>
 
-const LANE_KIND_ICONS: Record<string, LucideIcon> = {
+const LANE_KIND_ICONS = {
   patient: Workflow,
   caregiver: ListChecks,
   system: Clock,
   external: Mail,
-}
+} as const satisfies Record<LaneKindCode, LucideIcon>
 
 type IconProps = Omit<LucideProps, 'ref'>
 
 export function BlockTypeIcon({ type, ...rest }: { type: string } & IconProps): ReactElement {
-  return createElement(BLOCK_TYPE_ICONS[type] ?? Workflow, rest)
+  const Icon = (BLOCK_TYPE_ICONS as Partial<Record<string, LucideIcon>>)[type] ?? Workflow
+  return createElement(Icon, rest)
 }
 
 export function LaneKindIcon({ code, ...rest }: { code: string } & IconProps): ReactElement {
-  return createElement(LANE_KIND_ICONS[code] ?? Workflow, rest)
+  const Icon = (LANE_KIND_ICONS as Partial<Record<string, LucideIcon>>)[code] ?? Workflow
+  return createElement(Icon, rest)
 }

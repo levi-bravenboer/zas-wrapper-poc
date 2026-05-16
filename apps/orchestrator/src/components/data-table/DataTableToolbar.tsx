@@ -139,7 +139,7 @@ function DebouncedSearch({ value, onChange, placeholder }: InternalSearchProps) 
     setLocal(next)
     if (timerRef.current !== null) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      const normalised = next.trim().length === 0 ? null : next
+      const normalised = next.trim() ? next : null
       lastEmittedRef.current = normalised
       onChange(normalised)
     }, 300)
@@ -190,50 +190,46 @@ function buildChips<T>(
   defs: ReadonlyArray<DataTableFilter<T>>,
   filters: Record<string, ListFilter | ListFilter[]>,
 ): ChipDescriptor[] {
-  const chips: ChipDescriptor[] = []
-  for (const def of defs) {
+  return defs.flatMap<ChipDescriptor>((def) => {
     const value = filters[def.key]
-    if (!value) continue
+    if (!value) return []
     switch (def.type) {
       case 'select': {
         const f = findOp(value, 'eq')
-        if (!f) break
+        if (!f) return []
         const opt = def.options.find((o) => o.value === String(f.value))
-        chips.push({
-          field: def.key,
-          label: def.label,
-          display: opt?.label ?? primitiveToString(f.value),
-        })
-        break
+        return [
+          {
+            field: def.key,
+            label: def.label,
+            display: opt?.label ?? primitiveToString(f.value),
+          },
+        ]
       }
       case 'multi': {
         const f = findOp(value, 'in')
-        if (!f) break
+        if (!f) return []
         const values = Array.isArray(f.value) ? f.value : [f.value]
         const display = values
           .map((v) => def.options.find((o) => o.value === String(v))?.label ?? String(v))
           .join(', ')
-        chips.push({ field: def.key, label: def.label, display })
-        break
+        return [{ field: def.key, label: def.label, display }]
       }
       case 'date-range': {
         const gte = findOp(value, 'gte')
         const lte = findOp(value, 'lte')
-        if (!gte && !lte) break
+        if (!gte && !lte) return []
         const from = gte ? primitiveToString(gte.value) : '…'
         const to = lte ? primitiveToString(lte.value) : '…'
-        chips.push({ field: def.key, label: def.label, display: `${from} – ${to}` })
-        break
+        return [{ field: def.key, label: def.label, display: `${from} – ${to}` }]
       }
       case 'text': {
         const f = findOp(value, 'contains')
-        if (!f) break
-        chips.push({ field: def.key, label: def.label, display: primitiveToString(f.value) })
-        break
+        if (!f) return []
+        return [{ field: def.key, label: def.label, display: primitiveToString(f.value) }]
       }
     }
-  }
-  return chips
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -250,12 +246,11 @@ function SelectFilterEditor<T>({ def, current, onChange }: FilterEditorProps<T>)
   if (def.type !== 'select') return null
   const active = findOp(current, 'eq')
   const value = active ? String(active.value) : ''
-  const selectProps: { value?: string; onValueChange: (v: string) => void } = {
-    onValueChange: (v) => onChange(def.key, { op: 'eq', value: v }),
-  }
-  if (value) selectProps.value = value
   return (
-    <Select {...selectProps}>
+    <Select
+      onValueChange={(v) => onChange(def.key, { op: 'eq', value: v })}
+      {...(value && { value })}
+    >
       <SelectTrigger className="h-9">
         <SelectValue placeholder={def.label} />
       </SelectTrigger>
@@ -329,7 +324,7 @@ function DateRangeFilterEditor<T>({ def, current, onChange }: FilterEditorProps<
     const parts: ListFilter[] = []
     if (nextFrom) parts.push({ op: 'gte', value: nextFrom })
     if (nextTo) parts.push({ op: 'lte', value: nextTo })
-    if (parts.length === 0) {
+    if (!parts.length) {
       onChange(def.key, null)
       return
     }
@@ -372,7 +367,7 @@ function TextFilterEditor<T>({ def, current, onChange }: FilterEditorProps<T>) {
         placeholder={def.label}
         onChange={(e) => {
           const next = e.target.value
-          if (next.trim().length === 0) onChange(def.key, null)
+          if (!next.trim()) onChange(def.key, null)
           else onChange(def.key, { op: 'contains', value: next })
         }}
         className="h-9"
@@ -496,9 +491,9 @@ function ToolbarBase<T>({
     <DebouncedSearch value={q} onChange={onSearchChange} placeholder={placeholder} />
   )
 
-  const hasFilterDefs = filterDefs && filterDefs.length > 0
+  const hasFilterDefs = !!filterDefs?.length
   const chips = hasFilterDefs ? buildChips(filterDefs, filters) : []
-  const hasActiveFilters = chips.length > 0
+  const hasActiveFilters = !!chips.length
 
   const defaultFilters = hasFilterDefs ? (
     <>

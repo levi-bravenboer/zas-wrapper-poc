@@ -19,3 +19,12 @@ export type PathwayTimeMarker = components['schemas']['PathwayTimeMarkerOut']
 export type PathwayBlockDeferredField = components['schemas']['PathwayBlockDeferredFieldOut']
 
 export type LaneKindCode = 'patient' | 'caregiver' | 'system' | 'external'
+
+export const LANE_KIND_CODES = ['patient', 'caregiver', 'system', 'external'] as const
+
+export function isLaneKindCode(value: string): value is LaneKindCode {
+  return (LANE_KIND_CODES as readonly string[]).includes(value)
+}
+
+export type BlockConfig = NonNullable<PathwayBlock['config']>
+export type BlockConfigSchema = NonNullable<PathwayBlockType['config_schema']>

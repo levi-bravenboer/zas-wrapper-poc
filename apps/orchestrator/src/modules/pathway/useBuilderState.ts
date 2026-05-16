@@ -1,5 +1,8 @@
 import { useEffect, useReducer, useRef, type Dispatch } from 'react'
 
+import { sortByOrd } from '@/lib/utils/ordinal'
+
+import { HISTORY_LIMIT } from './constants/limits'
 import type {
   PathwayBlock,
   PathwayEdge,
@@ -20,11 +23,15 @@ type EditableSnapshot = {
   lanes: PathwayLane[]
 }
 
+export type DimensionMap = ReadonlyMap<string, number>
+
 export type BuilderState = {
   version: PathwayVersionDefinition
   baseline: PathwayVersionDefinition
   selection: BuilderSelection
   history: { past: EditableSnapshot[]; future: EditableSnapshot[] }
+  phaseSizes: DimensionMap
+  laneSizes: DimensionMap
 }
 
 export type BuilderAction =
@@ -36,12 +43,13 @@ export type BuilderAction =
   | { type: 'add-edge'; edge: PathwayEdge }
   | { type: 'delete-edge'; edgeId: string }
   | { type: 'add-phase'; phase: PathwayPhase }
+  | { type: 'reorder-phase'; phaseId: string; toIndex: number }
+  | { type: 'resize-phase'; phaseId: string; width: number }
+  | { type: 'resize-lane'; laneId: string; height: number }
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'reset'; version: PathwayVersionDefinition }
   | { type: 'mark-saved' }
-
-const HISTORY_LIMIT = 50
 
 function snapshot(v: PathwayVersionDefinition): EditableSnapshot {
   return {
@@ -123,11 +131,35 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'add-phase': {
       const history = pushHistory(state)
-      const phases = [...(state.version.phases ?? []), action.phase].sort((a, b) => a.ord - b.ord)
+      const phases = sortByOrd([...(state.version.phases ?? []), action.phase])
+      return { ...state, version: { ...state.version, phases }, history }
+    }
+    case 'resize-phase':
+      return {
+        ...state,
+        phaseSizes: new Map(state.phaseSizes).set(action.phaseId, action.width),
+      }
+    case 'resize-lane':
+      return {
+        ...state,
+        laneSizes: new Map(state.laneSizes).set(action.laneId, action.height),
+      }
+    case 'reorder-phase': {
+      const current = sortByOrd(state.version.phases ?? [])
+      const fromIndex = current.findIndex((p) => p.id === action.phaseId)
+      if (fromIndex < 0) return state
+      const toIndex = Math.max(0, Math.min(current.length - 1, action.toIndex))
+      if (fromIndex === toIndex) return state
+      const history = pushHistory(state)
+      const moved = current[fromIndex]
+      if (!moved) return state
+      const next = [...current]
+      next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, moved)
+      const phases = next.map((p, i) => ({ ...p, ord: (i + 1) * 10 }))
       return { ...state, version: { ...state.version, phases }, history }
     }
     case 'undo': {
-      if (state.history.past.length === 0) return state
       const past = [...state.history.past]
       const snap = past.pop()
       if (!snap) return state
@@ -135,30 +167,59 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
       return { ...state, version: applySnapshot(state.version, snap), history: { past, future } }
     }
     case 'redo': {
-      if (state.history.future.length === 0) return state
       const [snap, ...future] = state.history.future
       if (!snap) return state
       const past = [...state.history.past, snapshot(state.version)]
       return { ...state, version: applySnapshot(state.version, snap), history: { past, future } }
     }
-    case 'reset':
+    case 'reset': {
+      const ensured = ensureLanes(action.version)
       return {
-        version: action.version,
-        baseline: action.version,
+        version: ensured,
+        baseline: ensured,
         selection: { kind: 'none' },
         history: { past: [], future: [] },
+        phaseSizes: new Map(),
+        laneSizes: new Map(),
       }
+    }
     case 'mark-saved':
       return { ...state, baseline: state.version, history: { past: [], future: [] } }
   }
 }
 
+const DEFAULT_LANE_SCAFFOLD: Array<{
+  code: PathwayLane['lane_kind_code']
+  label: string
+  is_default: boolean
+}> = [
+  { code: 'patient', label: 'Patiënt', is_default: true },
+  { code: 'caregiver', label: 'Zorgteam', is_default: false },
+  { code: 'system', label: 'Systeem', is_default: false },
+]
+
+function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinition {
+  if (version.lanes?.length) return version
+  const lanes: PathwayLane[] = DEFAULT_LANE_SCAFFOLD.map((entry, i) => ({
+    id: crypto.randomUUID(),
+    pathway_lane_kind_id: crypto.randomUUID(),
+    lane_kind_code: entry.code,
+    label: entry.label,
+    ord: (i + 1) * 10,
+    is_default: entry.is_default,
+  }))
+  return { ...version, lanes }
+}
+
 function init(version: PathwayVersionDefinition): BuilderState {
+  const ensured = ensureLanes(version)
   return {
-    version,
-    baseline: version,
+    version: ensured,
+    baseline: ensured,
     selection: { kind: 'none' },
     history: { past: [], future: [] },
+    phaseSizes: new Map(),
+    laneSizes: new Map(),
   }
 }
 

@@ -1,7 +1,7 @@
 """add_pathway_version_table
 
 Revision ID: 761940d8999e
-Revises: 6175e2c8ebf8
+Revises: f1a2b3c4d5e6, 6175e2c8ebf8
 Create Date: 2026-05-16 18:02:29.221969
 
 Two-level aggregate: `pathway` holds identity, `pathway_version` owns the
@@ -18,7 +18,7 @@ from alembic import op
 
 
 revision: str = "761940d8999e"
-down_revision: str | None = "6175e2c8ebf8"
+down_revision: tuple[str, ...] = ("f1a2b3c4d5e6", "6175e2c8ebf8")
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,13 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { useSidebar } from '@/components/ui/sidebar'
 
 export function useCollapsedSidebar(): void {
   const { open, setOpen } = useSidebar()
+  const initialRef = useRef(open)
+  const setOpenRef = useRef(setOpen)
+
   useEffect(() => {
-    const previous = open
-    setOpen(false)
-    return () => setOpen(previous)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setOpenRef.current = setOpen
+  })
+
+  useEffect(() => {
+    const restore = initialRef.current
+    setOpenRef.current(false)
+    return () => setOpenRef.current(restore)
   }, [])
 }

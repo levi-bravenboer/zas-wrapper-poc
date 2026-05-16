@@ -50,7 +50,7 @@ function PathwayOverviewPage(): ReactElement {
   }, [locale, t])
 
   const items = list.data ?? []
-  const showEmpty = list.isSuccess && items.length === 0
+  const showEmpty = list.isSuccess && !items.length
 
   return (
     <>

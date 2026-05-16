@@ -35,6 +35,7 @@ services:
       BACKEND_HIX_MODE: stub
       BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: INFO
+      BACKEND_CORS_ORIGINS: '["http://localhost:5173","http://localhost:5174","http://localhost:5175"]'
     ports:
       - "18000:8000"
     develop:

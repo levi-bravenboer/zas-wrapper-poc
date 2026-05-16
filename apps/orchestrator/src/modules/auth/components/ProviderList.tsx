@@ -38,7 +38,7 @@ export function ProviderList(): ReactElement {
     )
   }
 
-  if (providers.length === 0) {
+  if (!providers.length) {
     return (
       <p role="alert" className="text-sm text-muted-foreground text-center">
         {t('login.providers.none_available')}

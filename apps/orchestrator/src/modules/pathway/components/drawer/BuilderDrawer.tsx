@@ -7,7 +7,13 @@ import { Button } from '@/components/ui/button'
 
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { laneAccent } from '../../canvasLayout'
-import type { PathwayBlock, PathwayBlockType, PathwayLane } from '../../types'
+import type {
+  BlockConfig,
+  BlockConfigSchema,
+  PathwayBlock,
+  PathwayBlockType,
+  PathwayLane,
+} from '../../types'
 
 import { ConfigForm } from './ConfigForm'
 
@@ -15,10 +21,14 @@ type Props = {
   block: PathwayBlock
   blockType: PathwayBlockType | null
   lane: PathwayLane | null
-  onPatchConfig: (next: Record<string, unknown>) => void
+  onPatchConfig: (next: BlockConfig) => void
   onRename: (label: string) => void
   onClose: () => void
   onDelete: () => void
+}
+
+function toRJSFSchema(schema: BlockConfigSchema): RJSFSchema {
+  return schema as RJSFSchema
 }
 
 export function BuilderDrawer({
@@ -86,8 +96,8 @@ export function BuilderDrawer({
         </h3>
         {blockType ? (
           <ConfigForm
-            schema={blockType.config_schema as RJSFSchema}
-            formData={(block.config ?? {}) as Record<string, unknown>}
+            schema={toRJSFSchema(blockType.config_schema)}
+            formData={block.config ?? {}}
             onChange={onPatchConfig}
           />
         ) : (

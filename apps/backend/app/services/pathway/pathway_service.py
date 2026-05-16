@@ -172,7 +172,29 @@ class PathwayService:
             kind="initial",
         )
         await self._version_repo.add(version)
-        await self._repo._session.refresh(version, ["created_at", "updated_at"])  # noqa: SLF001
+        session = self._repo._session  # noqa: SLF001 — service owns repo internals here
+        await session.refresh(version, ["created_at", "updated_at"])
+        lane_kinds = await self._repo.lane_kinds_by_code()
+        default_lane_codes = [
+            ("patient", "Patiënt", True),
+            ("caregiver", "Zorgteam", False),
+            ("system", "Systeem", False),
+        ]
+        session.add_all(
+            [
+                PathwayLane(
+                    id=uuid4(),
+                    pathway_version_id=version.id,
+                    pathway_lane_kind_id=lane_kinds[code].id,
+                    label=label,
+                    ord=(idx + 1) * 10,
+                    is_default=is_default,
+                )
+                for idx, (code, label, is_default) in enumerate(default_lane_codes)
+                if code in lane_kinds
+            ]
+        )
+        await session.flush()
         definition = await self._build_version_definition(version)
         return PathwayWithVersionResponse(
             pathway=PathwayBare.model_validate(pathway),

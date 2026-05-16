@@ -1,6 +1,7 @@
-import { type CSSProperties, type ReactElement } from 'react'
+import { useViewport } from '@xyflow/react'
+import { useRef, type CSSProperties, type ReactElement } from 'react'
 
-import { phaseTint } from '../../canvasLayout'
+import { PHASE_COL_MIN_WIDTH, phaseTint } from '../../canvasLayout'
 import type { PathwayPhase } from '../../types'
 
 type Props = {
@@ -9,20 +10,53 @@ type Props = {
   blockCount: number
   xStart: number
   width: number
+  height: number
+  onResize: (width: number) => void
 }
 
-export function PhaseColumn({ phase, index, blockCount, xStart, width }: Props): ReactElement {
+export function PhaseColumn({
+  phase,
+  index,
+  blockCount,
+  xStart,
+  width,
+  height,
+  onResize,
+}: Props): ReactElement {
   const tint = phaseTint(index)
+  const { zoom } = useViewport()
+  const dragRef = useRef<{ startW: number; startX: number } | null>(null)
+
   const style = {
     left: xStart,
+    top: 0,
     width,
+    height,
     '--ph-soft': tint.soft,
     '--ph-ink': tint.ink,
   } as CSSProperties
+
+  function onPointerDown(event: React.PointerEvent<HTMLDivElement>): void {
+    event.preventDefault()
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { startW: width, startX: event.clientX }
+  }
+  function onPointerMove(event: React.PointerEvent<HTMLDivElement>): void {
+    const drag = dragRef.current
+    if (!drag) return
+    const dx = (event.clientX - drag.startX) / Math.max(zoom, 0.05)
+    onResize(Math.max(PHASE_COL_MIN_WIDTH, drag.startW + dx))
+  }
+  function onPointerUp(event: React.PointerEvent<HTMLDivElement>): void {
+    dragRef.current = null
+    event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute top-0 bottom-0 border-r border-dashed border-black/5"
+      className="pointer-events-none absolute border-r border-dashed border-black/5"
       style={style}
     >
       <div
@@ -43,6 +77,17 @@ export function PhaseColumn({ phase, index, blockCount, xStart, width }: Props):
           {blockCount}
         </span>
       </div>
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={`Verbreed fase ${phase.label}`}
+        className="pointer-events-auto absolute top-0 bottom-0 right-0 w-2 cursor-col-resize hover:bg-black/[0.06] active:bg-black/[0.1]"
+        style={{ touchAction: 'none' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      />
     </div>
   )
 }

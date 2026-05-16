@@ -4,6 +4,7 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { formatTime } from '@/lib/utils/datetime'
 
 import type { PathwayBare } from '../../types'
 
@@ -37,10 +38,7 @@ export function BuilderTopbar({
   onRename,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
-  const time = new Date(pathway.updated_at).toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const time = formatTime(pathway.updated_at)
 
   return (
     <header
