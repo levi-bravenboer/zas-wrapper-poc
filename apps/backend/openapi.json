@@ -1093,6 +1093,361 @@
           }
         }
       }
+    },
+    "/practitioners/{user_id}": {
+      "get": {
+        "tags": [
+          "practitioners"
+        ],
+        "summary": "Get Practitioner",
+        "operationId": "get_practitioner",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "practitioners"
+        ],
+        "summary": "Update Practitioner",
+        "operationId": "update_practitioner",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioners": {
+      "post": {
+        "tags": [
+          "practitioners"
+        ],
+        "summary": "Create Practitioner",
+        "operationId": "create_practitioner",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioner-roles": {
+      "get": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "List Practitioner Roles",
+        "operationId": "list_practitioner_roles",
+        "parameters": [
+          {
+            "name": "practitioner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Practitioner Id"
+            }
+          },
+          {
+            "name": "organisation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Organisation Id"
+            }
+          },
+          {
+            "name": "is_open",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Open"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PractitionerRoleRead"
+                  },
+                  "title": "Response List Practitioner Roles"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "Open Practitioner Role",
+        "operationId": "open_practitioner_role",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerRoleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioner-roles/{role_id}": {
+      "patch": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "Update Practitioner Role",
+        "operationId": "update_practitioner_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerRoleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "Close Practitioner Role",
+        "operationId": "close_practitioner_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1514,7 +1869,7 @@
           "role_in_care": {
             "$ref": "#/components/schemas/RoleInCare"
           },
-          "on_behalf_of_organisation_id": {
+          "acting_as_practitioner_role_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -1524,7 +1879,7 @@
                 "type": "null"
               }
             ],
-            "title": "On Behalf Of Organisation Id"
+            "title": "Acting As Practitioner Role Id"
           }
         },
         "additionalProperties": false,
@@ -1534,7 +1889,7 @@
           "role_in_care"
         ],
         "title": "ParticipantCreate",
-        "description": "`POST /care-teams/{id}/participants` payload.\n\nOpens a new participant row. The service enforces the partial unique\nconstraint (`uq_care_team_participants_open_membership`) by checking\nfor an existing open row before insert."
+        "description": "`POST /care-teams/{id}/participants` payload.\n\nOpens a new participant row. The service enforces the partial unique\nconstraint (`uq_care_team_participants_open_membership`) by checking\nfor an existing open row before insert. `acting_as_practitioner_role_id`\nis optional (NULL permitted per `practitioner-role-split`)."
       },
       "ParticipantRead": {
         "properties": {
@@ -1568,7 +1923,7 @@
             ],
             "title": "Period End"
           },
-          "on_behalf_of_organisation_id": {
+          "acting_as_practitioner_role_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -1578,7 +1933,7 @@
                 "type": "null"
               }
             ],
-            "title": "On Behalf Of Organisation Id"
+            "title": "Acting As Practitioner Role Id"
           },
           "assigned_by": {
             "type": "string",
@@ -1948,6 +2303,300 @@
         "type": "object",
         "title": "PatientUpdate",
         "description": "`PATCH /patients/{id}` payload \u2014 demographics only.\n\n`model_config = ConfigDict(extra=\"forbid\")` is what produces the 422\nwhen a client sends `identifiers` here: FastAPI translates Pydantic's\n`extra_forbidden` error into a 422 response automatically."
+      },
+      "PractitionerCreate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_id",
+          "family_name",
+          "given_name"
+        ],
+        "title": "PractitionerCreate"
+      },
+      "PractitionerRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/PractitionerRoleRead"
+            },
+            "type": "array",
+            "title": "Roles",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "family_name",
+          "given_name"
+        ],
+        "title": "PractitionerRead"
+      },
+      "PractitionerRoleCode": {
+        "type": "string",
+        "enum": [
+          "gp",
+          "physiotherapist",
+          "psychologist",
+          "nurse",
+          "physician",
+          "other"
+        ],
+        "title": "PractitionerRoleCode"
+      },
+      "PractitionerRoleCreate": {
+        "properties": {
+          "practitioner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Practitioner Id"
+          },
+          "organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organisation Id"
+          },
+          "code": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary",
+            "default": false
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "practitioner_id",
+          "organisation_id",
+          "code"
+        ],
+        "title": "PractitionerRoleCreate"
+      },
+      "PractitionerRoleRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "practitioner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Practitioner Id"
+          },
+          "organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organisation Id"
+          },
+          "code": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "practitioner_id",
+          "organisation_id",
+          "code",
+          "is_primary",
+          "period_start"
+        ],
+        "title": "PractitionerRoleRead"
+      },
+      "PractitionerRoleUpdate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PractitionerRoleCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          },
+          "is_primary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Primary"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PractitionerRoleUpdate",
+        "description": "PATCH payload for an open role.\n\n`period_end` is intentionally NOT settable here \u2014 closing a role goes\nthrough `DELETE /practitioner-roles/{id}` so the close-side invariants\n(drop primary, stamp `period_end=now`) run in one place. Reopening a\nclosed role is not supported; open a fresh row instead."
+      },
+      "PractitionerUpdate": {
+        "properties": {
+          "family_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Name"
+          },
+          "given_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Name"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PractitionerUpdate"
       },
       "ProviderDescriptor": {
         "properties": {

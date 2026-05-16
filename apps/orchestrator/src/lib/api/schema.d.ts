@@ -315,6 +315,77 @@ export interface paths {
         patch: operations["change_participant_role"];
         trace?: never;
     };
+    "/practitioners/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practitioner */
+        get: operations["get_practitioner"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Practitioner */
+        patch: operations["update_practitioner"];
+        trace?: never;
+    };
+    "/practitioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Practitioner */
+        post: operations["create_practitioner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practitioner-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Practitioner Roles */
+        get: operations["list_practitioner_roles"];
+        put?: never;
+        /** Open Practitioner Role */
+        post: operations["open_practitioner_role"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practitioner-roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Close Practitioner Role */
+        delete: operations["close_practitioner_role"];
+        options?: never;
+        head?: never;
+        /** Update Practitioner Role */
+        patch: operations["update_practitioner_role"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -486,7 +557,8 @@ export interface components {
          *
          *     Opens a new participant row. The service enforces the partial unique
          *     constraint (`uq_care_team_participants_open_membership`) by checking
-         *     for an existing open row before insert.
+         *     for an existing open row before insert. `acting_as_practitioner_role_id`
+         *     is optional (NULL permitted per `practitioner-role-split`).
          */
         ParticipantCreate: {
             /**
@@ -495,8 +567,8 @@ export interface components {
              */
             user_id: string;
             role_in_care: components["schemas"]["RoleInCare"];
-            /** On Behalf Of Organisation Id */
-            on_behalf_of_organisation_id?: string | null;
+            /** Acting As Practitioner Role Id */
+            acting_as_practitioner_role_id?: string | null;
         };
         /** ParticipantRead */
         ParticipantRead: {
@@ -518,8 +590,8 @@ export interface components {
             period_start: string;
             /** Period End */
             period_end?: string | null;
-            /** On Behalf Of Organisation Id */
-            on_behalf_of_organisation_id?: string | null;
+            /** Acting As Practitioner Role Id */
+            acting_as_practitioner_role_id?: string | null;
             /**
              * Assigned By
              * Format: uuid
@@ -662,6 +734,127 @@ export interface components {
             gender?: components["schemas"]["Gender"] | null;
             /** Primary Organisation Id */
             primary_organisation_id?: string | null;
+        };
+        /** PractitionerCreate */
+        PractitionerCreate: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
+            /** Qualification */
+            qualification?: string | null;
+        };
+        /** PractitionerRead */
+        PractitionerRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
+            /** Qualification */
+            qualification?: string | null;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: components["schemas"]["PractitionerRoleRead"][];
+        };
+        /**
+         * PractitionerRoleCode
+         * @enum {string}
+         */
+        PractitionerRoleCode: "gp" | "physiotherapist" | "psychologist" | "nurse" | "physician" | "other";
+        /** PractitionerRoleCreate */
+        PractitionerRoleCreate: {
+            /**
+             * Practitioner Id
+             * Format: uuid
+             */
+            practitioner_id: string;
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            code: components["schemas"]["PractitionerRoleCode"];
+            /** Specialty */
+            specialty?: string | null;
+            /**
+             * Is Primary
+             * @default false
+             */
+            is_primary: boolean;
+            /** Period Start */
+            period_start?: string | null;
+        };
+        /** PractitionerRoleRead */
+        PractitionerRoleRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Practitioner Id
+             * Format: uuid
+             */
+            practitioner_id: string;
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            code: components["schemas"]["PractitionerRoleCode"];
+            /** Specialty */
+            specialty?: string | null;
+            /** Is Primary */
+            is_primary: boolean;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end?: string | null;
+        };
+        /**
+         * PractitionerRoleUpdate
+         * @description PATCH payload for an open role.
+         *
+         *     `period_end` is intentionally NOT settable here — closing a role goes
+         *     through `DELETE /practitioner-roles/{id}` so the close-side invariants
+         *     (drop primary, stamp `period_end=now`) run in one place. Reopening a
+         *     closed role is not supported; open a fresh row instead.
+         */
+        PractitionerRoleUpdate: {
+            code?: components["schemas"]["PractitionerRoleCode"] | null;
+            /** Specialty */
+            specialty?: string | null;
+            /** Is Primary */
+            is_primary?: boolean | null;
+        };
+        /** PractitionerUpdate */
+        PractitionerUpdate: {
+            /** Family Name */
+            family_name?: string | null;
+            /** Given Name */
+            given_name?: string | null;
+            /** Qualification */
+            qualification?: string | null;
         };
         /** ProviderDescriptor */
         ProviderDescriptor: {
@@ -1478,6 +1671,237 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ParticipantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practitioner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_practitioner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_practitioner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_practitioner_roles: {
+        parameters: {
+            query?: {
+                practitioner_id?: string | null;
+                organisation_id?: string | null;
+                is_open?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_practitioner_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerRoleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_practitioner_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_practitioner_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerRoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"];
                 };
             };
             /** @description Validation Error */
