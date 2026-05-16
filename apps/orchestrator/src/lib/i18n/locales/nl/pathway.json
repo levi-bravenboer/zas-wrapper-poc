@@ -1,0 +1,38 @@
+{
+  "overview": {
+    "title": "Zorgpaden",
+    "sub": "Beheer en ontwerp van klinische zorgpaden.",
+    "createButton": "Nieuw zorgpad",
+    "empty": {
+      "title": "Nog geen zorgpaden",
+      "body": "Maak je eerste zorgpad aan om te beginnen.",
+      "action": "Nieuw zorgpad"
+    },
+    "table": {
+      "name": "Naam",
+      "blocks": "Blokken",
+      "updated": "Laatst gewijzigd"
+    },
+    "loadError": "Kon zorgpaden niet laden."
+  },
+  "create": {
+    "title": "Nieuw zorgpad",
+    "sub": "Geef je zorgpad een naam en omschrijf de klinische en patiëntdoelen.",
+    "nameLabel": "Naam",
+    "namePlaceholder": "Bijv. Rugrevalidatie",
+    "clinicalGoalLabel": "Klinisch doel",
+    "clinicalGoalPlaceholder": "Wat wil het zorgteam medisch bereiken?",
+    "patientGoalLabel": "Patiëntdoel",
+    "patientGoalPlaceholder": "Wat wil de patiënt zelf bereiken?",
+    "submit": "Aanmaken",
+    "cancel": "Annuleren",
+    "error": "Aanmaken mislukt."
+  },
+  "builder": {
+    "stubTitle": "Builder komt in fase 3",
+    "stubBody": "Het zorgpad is aangemaakt. De canvas-editor volgt in een latere fase.",
+    "clinicalGoal": "Klinisch doel",
+    "patientGoal": "Patiëntdoel",
+    "blocks": "Blokken"
+  }
+}

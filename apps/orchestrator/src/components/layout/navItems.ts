@@ -1,4 +1,4 @@
-import { Home } from 'lucide-react'
+import { Home, Workflow } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export type NavItem = {
@@ -12,4 +12,5 @@ export type NavItem = {
 // nav by registering as features (`defineFeature({ nav: { icon, order } })`).
 export const hardWiredNavItems: readonly NavItem[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: Home, order: 10 },
+  { to: '/pathways', labelKey: 'nav.pathways', icon: Workflow, order: 30 },
 ]
