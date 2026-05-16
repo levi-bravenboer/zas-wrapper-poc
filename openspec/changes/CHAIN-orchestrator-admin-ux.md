@@ -19,8 +19,13 @@ Coordinated by the temporary project skill `.claude/skills/orchestrator-admin-ux
      └─ modifies: app-layout (route group, auth shell), patients-base (list page uses shared filterable list scaffolding)
      └─ adds:    caregiver-shell capability (nav, auth shell, landing, filterable DataTable primitives)
 
+2.5 entity-page-scaffolding
+     └─ requires: caregiver-shell (archived)
+     └─ modifies: none (additive chrome + hooks under apps/orchestrator)
+     └─ adds:    entity-page-scaffolding capability (EntityDetailPage, EntityFormPage, useEntityForm, useDirtyGuard, useEntityDelete, shared `entity-page` i18n namespace)
+
 3. users-admin-ui
-     └─ requires: practitioner-role-split (archived), caregiver-shell (archived)
+     └─ requires: practitioner-role-split (archived), caregiver-shell (archived), entity-page-scaffolding (archived)
      └─ modifies: user-base (no spec changes; consumes typed client only)
      └─ adds:    users-admin-ui capability
 
@@ -63,6 +68,7 @@ The seven changes MUST land in dependency order. The parallel set (`#3 + #4 + #6
 | --- | --- | --- | --- | --- |
 | 1 | `practitioner-role-split` | `feat/practitioner-role-split` | (removed) | **archived** (PR #10 merged 2026-05-16; archive id `2026-05-16-practitioner-role-split`) |
 | 2 | `caregiver-shell` | `feat/caregiver-shell` | (removed) | **archived** (PR #11 merged 2026-05-16; archive id `2026-05-16-caregiver-shell`) |
+| 2.5 | `entity-page-scaffolding` | `feat/entity-page-scaffolding` | `.worktrees/feat-entity-page-scaffolding` | in-progress (applied; awaiting commit + PR) |
 | 3 | `users-admin-ui` | `feat/users-admin-ui` | `.worktrees/feat-users-admin-ui` | draft (worktree not yet created) |
 | 4 | `organisations-admin-ui` | `feat/organisations-admin-ui` | `.worktrees/feat-organisations-admin-ui` | draft (worktree not yet created) |
 | 5 | `practitioner-roles-admin-ui` | `feat/practitioner-roles-admin-ui` | `.worktrees/feat-practitioner-roles-admin-ui` | draft (worktree not yet created) |
@@ -73,17 +79,18 @@ Update this file whenever a change advances state (draft → in-progress → app
 
 ## Cross-change touch matrix
 
-| Concern | role-split | shell | users-ui | orgs-ui | pr-roles-ui | patient-ui | care-teams-ui |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Backend: `practitioners` table | adds | reads | reads | — | reads | — | — |
-| Backend: `practitioner_roles` table | adds | reads | — | reads | adds-via-API | — | reads |
-| Backend: `users.organisation_id` | drops | — | — | — | — | — | — |
-| Backend: `care_team_participants.on_behalf_of_organisation_id` | replaces with `acting_as_practitioner_role_id` | — | — | — | — | — | reads |
-| Backend: visibility predicate | rewrites (queries practitioner roles) | — | — | — | — | — | reads |
-| Frontend: route group `_auth/admin/*` | — | adds | populates | populates | populates | — | — |
-| Frontend: route `_auth/patients/$patientId` | — | scaffolding | — | — | — | adds/edits | embeds |
-| Frontend: typed client | regenerates | regenerates | consumes | consumes | consumes | consumes | consumes |
-| Frontend: i18n keys | — | adds namespace | adds | adds | adds | adds | adds |
+| Concern | role-split | shell | entity-scaffold | users-ui | orgs-ui | pr-roles-ui | patient-ui | care-teams-ui |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Backend: `practitioners` table | adds | reads | — | reads | — | reads | — | — |
+| Backend: `practitioner_roles` table | adds | reads | — | — | reads | adds-via-API | — | reads |
+| Backend: `users.organisation_id` | drops | — | — | — | — | — | — | — |
+| Backend: `care_team_participants.on_behalf_of_organisation_id` | replaces with `acting_as_practitioner_role_id` | — | — | — | — | — | — | reads |
+| Backend: visibility predicate | rewrites (queries practitioner roles) | — | — | — | — | — | — | reads |
+| Frontend: route group `_auth/admin/*` | — | adds | — | populates | populates | populates | — | — |
+| Frontend: route `_auth/patients/$patientId` | — | scaffolding | — | — | — | — | adds/edits | embeds |
+| Frontend: entity page chrome + hooks | — | — | adds | consumes | consumes | consumes | consumes | consumes |
+| Frontend: typed client | regenerates | regenerates | — | consumes | consumes | consumes | consumes | consumes |
+| Frontend: i18n keys | — | adds namespace | adds `entity-page` namespace | adds | adds | adds | adds | adds |
 
 ## Out of scope for this chain
 
