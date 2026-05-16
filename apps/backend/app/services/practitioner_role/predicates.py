@@ -25,9 +25,7 @@ from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.schemas.auth.auth import SessionUser
 
 
-async def practitioner_root_orgs_for(
-    session: AsyncSession, user: SessionUser
-) -> set[UUID]:
+async def practitioner_root_orgs_for(session: AsyncSession, user: SessionUser) -> set[UUID]:
     result = await session.execute(
         select(PractitionerRole.organisation_id)
         .join(Practitioner, Practitioner.id == PractitionerRole.practitioner_id)

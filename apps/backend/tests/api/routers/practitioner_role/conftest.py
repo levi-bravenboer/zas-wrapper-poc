@@ -44,9 +44,7 @@ async def seeded_caregiver_practitioner(
         .one()
     )
     admin = (
-        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL)))
-        .scalars()
-        .one()
+        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL))).scalars().one()
     )
     practitioner = Practitioner(
         tenant_id=caregiver.tenant_id,

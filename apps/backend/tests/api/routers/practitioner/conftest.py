@@ -23,9 +23,7 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-async def seeded_zas_orgs(
-    db_session: AsyncSession, seeded_zas_users: list[User]
-) -> list[User]:
+async def seeded_zas_orgs(db_session: AsyncSession, seeded_zas_users: list[User]) -> list[User]:
     """Seed orgs + return the bootstrap users (admin + caregiver)."""
 
     await seed_organisations(db_session)

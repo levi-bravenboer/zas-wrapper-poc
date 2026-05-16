@@ -75,12 +75,8 @@ class PractitionerRoleService:
     async def open_role(
         self, actor: SessionUser, payload: PractitionerRoleCreate
     ) -> PractitionerRole:
-        await self._practitioner_service.assert_in_tenant(
-            actor.tenant_id, payload.practitioner_id
-        )
-        await self._organisation_service.assert_in_tenant(
-            actor.tenant_id, payload.organisation_id
-        )
+        await self._practitioner_service.assert_in_tenant(actor.tenant_id, payload.practitioner_id)
+        await self._organisation_service.assert_in_tenant(actor.tenant_id, payload.organisation_id)
         if await self._has_open_at(payload.practitioner_id, payload.organisation_id):
             raise DuplicateOpenAffiliationError()
         if payload.is_primary:
@@ -158,4 +154,3 @@ class PractitionerRoleService:
         for row in result.scalars().all():
             row.is_primary = False
         await self._session.flush()
-

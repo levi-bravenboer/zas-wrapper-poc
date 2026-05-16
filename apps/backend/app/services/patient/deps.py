@@ -55,9 +55,7 @@ async def require_patient_access(
     if patient is None:
         raise PatientNotFoundError()
     if current_user.role != Role.ADMIN:
-        has_membership = await care_team_service.has_open_membership(
-            current_user.id, patient_id
-        )
+        has_membership = await care_team_service.has_open_membership(current_user.id, patient_id)
         if not has_membership:
             root_orgs = await practitioner_root_orgs_for(session, current_user)
             patient_root = await patient_root_org(

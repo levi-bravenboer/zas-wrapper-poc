@@ -72,9 +72,7 @@ async def _bootstrap(
     return tenant, actor, [root, dept, team]
 
 
-async def _make_practitioner(
-    session: AsyncSession, tenant: Tenant, user: User
-) -> Practitioner:
+async def _make_practitioner(session: AsyncSession, tenant: Tenant, user: User) -> Practitioner:
     practitioner = Practitioner(
         tenant_id=tenant.id,
         created_by=user.id,

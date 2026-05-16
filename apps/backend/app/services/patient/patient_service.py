@@ -65,9 +65,7 @@ class PatientService:
             return await repo.list_page(query)
         via_care_team = await self._care_team_service.visible_patient_ids_for(actor)
         root_orgs = await practitioner_root_orgs_for(self._session, actor)
-        via_roles = await patient_ids_under_roots(
-            self._session, actor.tenant_id, root_orgs
-        )
+        via_roles = await patient_ids_under_roots(self._session, actor.tenant_id, root_orgs)
         visible = via_care_team | via_roles
         if not visible:
             return Page[Patient](

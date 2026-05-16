@@ -125,9 +125,7 @@ class CareTeamService:
         current.period_end = now
         current.unassigned_by = actor.id
         await self._session.flush()
-        acting_role_id = await self._reuse_open_role(
-            current.acting_as_practitioner_role_id
-        )
+        acting_role_id = await self._reuse_open_role(current.acting_as_practitioner_role_id)
         new_row = CareTeamParticipant(
             tenant_id=actor.tenant_id,
             care_team_id=care_team_id,

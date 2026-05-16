@@ -83,9 +83,7 @@ async def test_practitioner_create_rejects_admin_target(
 ) -> None:
     del seeded_zas_orgs
     admin = (
-        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL)))
-        .scalars()
-        .one()
+        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL))).scalars().one()
     )
     await _login(async_client, ADMIN_EMAIL)
     response = await async_client.post(
@@ -129,9 +127,7 @@ async def test_caregiver_can_read_own_practitioner(
     del seeded_zas_orgs
     caregiver = await _caregiver(db_session)
     admin = (
-        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL)))
-        .scalars()
-        .one()
+        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL))).scalars().one()
     )
     db_session.add(
         Practitioner(
@@ -168,9 +164,7 @@ async def test_admin_updates_practitioner(
     del seeded_zas_orgs
     caregiver = await _caregiver(db_session)
     admin = (
-        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL)))
-        .scalars()
-        .one()
+        (await db_session.execute(select(User).where(User.email == ADMIN_EMAIL))).scalars().one()
     )
     db_session.add(
         Practitioner(
