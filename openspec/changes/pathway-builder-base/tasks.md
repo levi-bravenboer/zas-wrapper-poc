@@ -133,8 +133,90 @@
 - [ ] 3.21 Frontend lint + typecheck + tests + e2e; quote results
 - [ ] 3.22 Demo end-to-end flow against the seeded pathway; user review
 
-## 4. Wrap-up
+## 4. Phase 4 — Version lifecycle (backend `pathway-version` capability)
 
-- [ ] 4.1 Update `openspec/backlog.md` `BL-036` entry to reference this change as promoted
-- [ ] 4.2 Run `openspec validate pathway-builder-base` and quote result
-- [ ] 4.3 Archive the change once shipped (`/opsx:archive`)
+Implements the `pathway-version` capability spec (`specs/pathway-version/spec.md`) and the supporting backend changes called out in `history-spec.md` §6 and `design.md` D36–D45. Land before Phase 5 frontend version surface so the orchestrator hook (`useResolvedVersion`) and ver-switch chip have endpoints to bind against.
+
+### 4a. Schema migration
+
+- [ ] 4.1 New Alembic migration `add_pathway_version_table.py` — create `pathway_version` (id, pathway_id FK CASCADE, version_no, status enum `concept|published|archived`, kind enum `initial|fork-from-publish|restore-from-version`, derived_from_version_id self-FK ON DELETE SET NULL, label 120, note text, published_at, published_by FK user, audit columns from `TenantOwnedEntity`)
+- [ ] 4.2 Same migration — `UNIQUE (pathway_id, version_no)` and partial unique index `pathway_version (pathway_id) WHERE status = 'concept' AND deleted_at IS NULL`
+- [ ] 4.3 Same migration — backfill: every existing `pathway` row gets one `pathway_version` row with `version_no=1`, `status='concept'`, `kind='initial'`, copied audit columns
+- [ ] 4.4 Same migration — add `pathway_version_id` FK column to each structural child table (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_edge`, `pathway_block_branch`, `pathway_time_marker`, `pathway_block_deferred_field`); backfill from existing `pathway_id` linkage; switch each table's per-pathway unique constraint to `(pathway_version_id, ord)` (or equivalent); drop the obsolete `pathway_id` FK column where redundant
+- [ ] 4.5 Same migration — required indexes: `pathway_version (pathway_id, status, published_at DESC)`, `pathway_block (pathway_version_id)`, `pathway (tenant_id, deleted_at, updated_at DESC)`
+- [ ] 4.6 `moon run backend:migrate` against the dev DB, verify backfill via psql (every pathway has exactly one concept; every child row references a version)
+
+### 4b. Models + repositories + services
+
+- [ ] 4.7 Add SQLAlchemy `PathwayVersion` model under `apps/backend/app/db/models/pathway/version.py` mirroring the migration columns
+- [ ] 4.8 Update child models to point their `pathway_id` relationship at `pathway_version` via the new FK column; drop direct `pathway` relationships on structural children
+- [ ] 4.9 `PathwayVersionRepository` — `latest_concept(pathway_id)`, `latest_published(pathway_id)`, `list_versions(pathway_id)`, `version(pathway_id, version_id)`, `create_initial(pathway)`, `create_concept_from(source_version, kind)`, `mark_published(version, label, note, user)`
+- [ ] 4.10 `PathwayVersionService` — encapsulates concept-creation, restore, fork-from-publish, publish (validates the clinical-approval flag), and the immutability rule (raise `PathwayVersionImmutable` when callers try to mutate a published version's children)
+- [ ] 4.11 Update `PathwayService` write paths so structural mutations resolve to the pathway's current concept version (`PUT /pathways/{id}` → concept resolution; 409 `no_concept_version` when none exists)
+- [ ] 4.12 Update `PathwayService` read paths to embed the resolved version on `GET /pathways/{id}` per "Hybrid version resolution"; overview rollups computed via LATERAL joins per "Pathway-level rollups are derived"
+- [ ] 4.13 New domain errors `ConceptAlreadyExists`, `NoConceptVersion`, `PathwayVersionImmutable` mapped to 409 + machine-readable error codes (mirror existing error envelope)
+
+### 4c. REST surface
+
+- [ ] 4.14 Update `PathwayRouter` — `GET /pathways/{id}` returns `{ pathway, version }`; remove old "definition embedded directly" shape
+- [ ] 4.15 New `PathwayVersionRouter` mounted at `/pathways/{pathway_id}/versions`: `GET /` (list summaries reverse-chrono), `GET /{version_id}` (full snapshot)
+- [ ] 4.16 `POST /pathways/{id}/publish` — request body `{ label?, note?, clinically_approved: true }`; 422 when `clinically_approved` missing/false
+- [ ] 4.17 `POST /pathways/{id}/versions/{version_id}/restore` — 409 `concept_already_exists` when a concept already exists
+- [ ] 4.18 `POST /pathways/{id}/versions/{version_id}/fork-from-publish` — 422 when source is not `published`, 409 when concept already exists
+- [ ] 4.19 Wire all new routes under the central `pathway` tag with stable `operation_id`s and declared response models per `openapi-contract`
+- [ ] 4.20 Regenerate openapi (`moon run backend:openapi`) and orchestrator types (`/openapi-sync`)
+
+### 4d. Tests
+
+- [ ] 4.21 Pytest — `test_pathway_version_service.py`: initial creation, restore copies children, fork-from-publish requires published source, publish flips status + sets `published_at`/`published_by`, publish without `clinically_approved` → 422, restore-while-concept-exists → 409 `concept_already_exists`, attempted mutation on published version → 409 `pathway_version_immutable`, partial unique index rejects double-concept under concurrency
+- [ ] 4.22 Pytest — `test_pathway_version_router.py`: list ordering reverse-chrono, version detail tenant-scoped (404 on cross-tenant), hybrid resolution returns concept-if-exists else latest published, autosave PUT routes to current concept (409 when none), restore + fork-from-publish endpoints round-trip
+- [ ] 4.23 Pytest — overview query: rollups (`latest_published_version_no`, `has_concept`, `block_count`, `last_edited_at`) correct after publish/restore/edit cycles; required indexes present after `alembic upgrade head`
+- [ ] 4.24 Update seed (`seed_pathway.py`) so Rugrevalidatie ships with at least one published version + one concept to exercise the version surface in dev
+
+### 4e. Phase 4 review gate
+
+- [ ] 4.25 `moon run backend:lint backend:typecheck backend:test-host`; quote results
+- [ ] 4.26 User review of Phase 4 output before starting Phase 5
+
+## 5. Phase 5 — Orchestrator version surface
+
+Implements `pathway-builder` requirements added in `specs/pathway-builder/spec.md` for hybrid version routes, topbar version-switch chip, read-only banner, crumb version marker, publish modal, restore-when-concept-exists handling, and the Geschiedenis drawer. Components per `builder-components.md` §19. Hooks against the Phase 4 endpoints — do NOT start until Phase 4 review gate passes.
+
+### 5a. Routing + loader hook
+
+- [ ] 5.1 Add `/pathways/$pathwayId/v/$versionId` route mounting the same shell as the bare `/pathways/$pathwayId` route (per `pathway-builder` capability "Hybrid version route resolution")
+- [ ] 5.2 Implement `useResolvedVersion(pathwayId, versionId?)` returning `{ pathway, version, isReadOnly, readOnlyVariant }`; bare route resolves via `GET /pathways/{id}`, `/v/...` route resolves via `GET /pathways/{id}/versions/{versionId}`; `isReadOnly = url-has-/v/ OR version.status !== 'concept'`; `readOnlyVariant = 'historical' | 'published-fallback'`
+- [ ] 5.3 Shell applies `.is-readonly` class to `<main>` when `isReadOnly`; dims palette dock, save button, undo/redo, status pill, presence stack per `builder-ui-spec.md` §28 + history-spec §5
+
+### 5b. Version-switch chip + crumb marker
+
+- [ ] 5.4 `<VersionSwitchChip>` (`modules/pathway/components/topbar/VersionSwitchChip.tsx`) — trigger `dot · v.{n} · chev`, popover menu grouped Werkversie/Gepubliceerd, footer link `Alle versies in geschiedenis` opens drawer
+- [ ] 5.5 Navigation rule from chip: if target version = what bare URL would currently resolve to → navigate bare; else navigate `/v/{versionId}` (history-spec §5a)
+- [ ] 5.6 `<CrumbVersionMarker>` (`modules/pathway/components/topbar/CrumbVersionMarker.tsx`) — passive `<span aria-hidden="true">` with dot + `v.{n}` + state word inline in crumbs
+- [ ] 5.7 Remove the standalone `Geschiedenis` topbar button (replaced by chip + drawer-footer link)
+
+### 5c. Read-only banner + drawer
+
+- [ ] 5.8 `<ReadOnlyBanner>` (`modules/pathway/components/shell/ReadOnlyBanner.tsx`) — 36px strip between topbar and subbar; variant from `version.status` (`published-fallback` → success tint + `Maak nieuwe versie` CTA; `historical` → info tint + `Herstel als nieuw concept` + `Terug naar huidige` CTAs); `role="status"`
+- [ ] 5.9 `<GeschiedenisDrawer>` (`modules/pathway/components/drawer/GeschiedenisDrawer.tsx`) — mutex with block-config drawer; renders version rows from `useVersionList(pathwayId)`; per-row `Bekijken` + `Herstellen`; restore confirmation swaps copy when concept already exists, offers `Open bestaande concept` escape (navigates bare URL, no restore call)
+
+### 5d. Publish + fork-on-edit flows
+
+- [ ] 5.10 Publish modal — optional `label` (max 120) + optional `note` (max 2000) + required `clinically_approved` checkbox; confirm disabled until checkbox ticked; on success toast `Versie v.{n} gepubliceerd`
+- [ ] 5.11 Fork-on-edit intercept — any mutation against a read-only version opens the `Nieuwe versie nodig` modal; on confirm calls fork-from-publish, navigates to bare URL, replays the intercepted mutation as the first edit
+- [ ] 5.12 Surface 409 `pathway_version_immutable` from the autosave path identically to the click-intercept (same modal)
+- [ ] 5.13 Restore mutation hook `useRestoreVersion()` flushes in-memory undo stack on success; toast `pathway.history.restore.success`
+
+### 5e. Tests + review
+
+- [ ] 5.14 Vitest coverage — `useResolvedVersion` cases (concept exists, concept absent, `/v/...` route); chip navigation rule; banner variant selection; restore-when-concept-exists modal-copy swap
+- [ ] 5.15 Playwright — happy path publish → automatic concept-disappears → bare URL falls back to published → ver-switch chip shows green dot; restore historical → new concept appears → undo stack empty
+- [ ] 5.16 i18n keys added to `nl/pathway.json` (publish modal copy, banner copy, restore-when-concept-exists copy, ver-switch labels)
+- [ ] 5.17 `moon run orchestrator:lint orchestrator:typecheck orchestrator:test`; quote results
+- [ ] 5.18 User review of Phase 5 output
+
+## 6. Wrap-up
+
+- [ ] 6.1 Update `openspec/backlog.md` `BL-036` entry to reference this change as promoted
+- [ ] 6.2 Run `openspec validate pathway-builder-base` and quote result
+- [ ] 6.3 Archive the change once shipped (`/opsx:archive`)
