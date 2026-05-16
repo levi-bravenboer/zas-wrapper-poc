@@ -1,36 +1,34 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { type ReactElement } from 'react'
-import { useTranslation } from 'react-i18next'
 
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ErrorState } from '@/components/states/ErrorState'
-import { RowSkeleton } from '@/components/states/Skeleton'
-import { usePathway } from '@/modules/pathway/hooks'
+import { BuilderShellStateRenderer } from '@/modules/pathway/components/BuilderShellStateRenderer'
+import { usePathway, usePathwayBlocks, usePathwayPhaseTemplates } from '@/modules/pathway/hooks'
 
 export const Route = createFileRoute('/_auth/pathways/$pathwayId')({
-  component: PathwayBuilderStubPage,
+  component: PathwayBuilderPage,
   staticData: { breadcrumb: 'Builder' },
 })
 
-function PathwayBuilderStubPage(): ReactElement {
-  const { t } = useTranslation('pathway')
+function PathwayBuilderPage(): ReactElement {
   const { pathwayId } = Route.useParams()
   const pathway = usePathway(pathwayId)
+  const blocks = usePathwayBlocks()
+  const templates = usePathwayPhaseTemplates()
 
-  if (pathway.isLoading) {
-    return (
-      <div className="flex flex-col gap-3 px-6 py-6">
-        <RowSkeleton />
-        <RowSkeleton />
-        <RowSkeleton />
-      </div>
-    )
+  if (pathway.isLoading || blocks.isLoading || templates.isLoading) {
+    return <BuilderShellStateRenderer state="loading" />
   }
 
-  if (pathway.isError || !pathway.data) {
+  if (pathway.isError) {
+    const status =
+      pathway.error && typeof pathway.error === 'object' && 'status' in pathway.error
+        ? (pathway.error as { status?: number }).status
+        : undefined
+    if (status === 404) return <BuilderShellStateRenderer state="not-found" />
     return (
-      <ErrorState
-        title={t('overview.loadError')}
+      <BuilderShellStateRenderer
+        state="error"
+        error={pathway.error instanceof Error ? pathway.error : new Error('Unknown error')}
         onRetry={() => {
           void pathway.refetch()
         }}
@@ -38,38 +36,17 @@ function PathwayBuilderStubPage(): ReactElement {
     )
   }
 
-  const data = pathway.data
+  if (!pathway.data || !blocks.data || !templates.data) {
+    return <BuilderShellStateRenderer state="loading" />
+  }
 
   return (
-    <>
-      <PageHeader title={data.name} sub={t('builder.stubTitle')} />
-      <div className="flex flex-col gap-4 px-6 pb-8">
-        <p className="text-sm text-muted-foreground">{t('builder.stubBody')}</p>
-        {data.clinical_goal && (
-          <section className="glass rounded-xl p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              {t('builder.clinicalGoal')}
-            </h2>
-            <p className="mt-2 text-sm text-foreground">{data.clinical_goal}</p>
-          </section>
-        )}
-        {data.patient_goal && (
-          <section className="glass rounded-xl p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              {t('builder.patientGoal')}
-            </h2>
-            <p className="mt-2 text-sm text-foreground">{data.patient_goal}</p>
-          </section>
-        )}
-        <section className="glass rounded-xl p-5">
-          <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            {t('builder.blocks')}
-          </h2>
-          <p className="mt-2 text-sm text-foreground tabular-nums">
-            {data.blocks?.length ?? 0}
-          </p>
-        </section>
-      </div>
-    </>
+    <BuilderShellStateRenderer
+      state="ready"
+      pathway={pathway.data.pathway}
+      version={pathway.data.version}
+      catalogue={blocks.data}
+      phaseTemplates={templates.data}
+    />
   )
 }
