@@ -1,0 +1,2236 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pathway builder — canvas wireframe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* ---------- orchestrator tokens (mirrored from apps/orchestrator/src/styles/tokens.css) ---------- */
+      :root {
+        --background: #f3f7f5;
+        --foreground: #0b1a17;
+        --muted: #f4f4f5;
+        --muted-foreground: #5b6770;
+        --card: #ffffff;
+        --card-foreground: #0b1a17;
+        --border: #e4e7ec;
+        --border-strong: #d0d5dd;
+        --hairline: rgba(11, 26, 23, 0.06);
+
+        --primary: #266b5e;
+        --primary-pressed: #08453c;
+        --primary-soft: #cfede8;
+        --primary-mint: #6fc7b6;
+        --primary-foreground: #ffffff;
+
+        --ring: rgba(38, 107, 94, 0.35);
+        --danger: #b42318;
+        --danger-soft: #fef3f2;
+        --warn: #b54708;
+        --warn-soft: #fffaeb;
+        --success: #067647;
+        --success-soft: #ecfdf3;
+
+        /* lane accents (presentation-only) */
+        --lane-patient: #266b5e;
+        --lane-caregiver: #2563eb;
+        --lane-system: #7c3aed;
+        --lane-external: #b45309;
+
+        /* phase tints (very subtle) */
+        --phase-1: rgba(38, 107, 94, 0.06);
+        --phase-2: rgba(124, 58, 237, 0.06);
+        --phase-3: rgba(37, 99, 235, 0.06);
+        --phase-4: rgba(180, 83, 9, 0.06);
+        /* phase accents (badge fill / text) */
+        --phase-1-ink:  #08453c;  --phase-1-soft:  #cfede8;
+        --phase-2-ink:  #5b21b6;  --phase-2-soft:  #ede9fe;
+        --phase-3-ink:  #1d4ed8;  --phase-3-soft:  #dbeafe;
+        --phase-4-ink:  #92400e;  --phase-4-soft:  #fef3c7;
+
+        /* radii: Linear-tight */
+        --r-xs: 4px;
+        --r-sm: 6px;
+        --r-md: 8px;
+        --r-lg: 12px;
+
+        /* spacing rhythm */
+        --topbar-h: 64px;
+        --subbar-h: 44px;
+        --sidebar-w: 56px;
+        --dock-h: 60px;
+        --rail-w: 200px;
+
+        /* aurora bg (orchestrator body bg) */
+        --gradient-aurora:
+          radial-gradient(1200px 600px at 8% -10%, rgba(111, 199, 182, 0.22), transparent 60%),
+          radial-gradient(900px 500px at 110% 10%, rgba(207, 237, 232, 0.6), transparent 55%),
+          linear-gradient(180deg, #f3f7f5 0%, #eef4f1 100%);
+        --gradient-active: linear-gradient(135deg, #266b5e 0%, #08453c 100%);
+
+        --shadow-xs: 0 1px 2px rgba(11, 26, 23, 0.04);
+        --shadow-sm: 0 1px 2px rgba(11, 26, 23, 0.05), 0 1px 3px rgba(11, 26, 23, 0.04);
+        --shadow-md: 0 4px 6px -2px rgba(11, 26, 23, 0.05), 0 8px 16px -4px rgba(11, 26, 23, 0.08);
+        --shadow-lg: 0 12px 24px -6px rgba(11, 26, 23, 0.12), 0 20px 40px -10px rgba(11, 26, 23, 0.10);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font-feature-settings: 'ss01';
+        color: var(--foreground);
+        background: var(--gradient-aurora) fixed;
+        font-size: 14px;
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      /* glass utilities (mirror globals.css) */
+      .glass-xs   { background: rgba(255,255,255,0.65); backdrop-filter: blur(6px) saturate(140%); -webkit-backdrop-filter: blur(6px) saturate(140%); }
+      .glass-sm   { background: rgba(255,255,255,0.72); backdrop-filter: blur(10px) saturate(150%); -webkit-backdrop-filter: blur(10px) saturate(150%); }
+      .glass      { background: rgba(255,255,255,0.80); backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%); }
+      .glass-strong { background: rgba(255,255,255,0.88); backdrop-filter: blur(18px) saturate(170%); -webkit-backdrop-filter: blur(18px) saturate(170%); }
+
+      /* ---------- shell ---------- */
+      .app {
+        display: grid;
+        grid-template-columns: var(--sidebar-w) 1fr;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* sidebar (collapsed) */
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 0 12px;
+        gap: 10px;
+        border-right: 1px solid var(--hairline);
+      }
+      .sb-brand {
+        width: 32px; height: 32px;
+        display: grid; place-items: center;
+        border-radius: var(--r-md);
+        background: var(--gradient-active);
+        color: #fff; font-weight: 600; font-size: 13px;
+        box-shadow: var(--shadow-sm);
+        letter-spacing: -0.02em;
+      }
+      .sb-nav { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+      .sb-item {
+        width: 36px; height: 36px;
+        display: grid; place-items: center;
+        border-radius: var(--r-sm);
+        color: var(--muted-foreground);
+        cursor: pointer;
+      }
+      .sb-item:hover { background: rgba(11, 26, 23, 0.04); color: var(--foreground); }
+      .sb-item.active { background: var(--gradient-active); color: #fff; box-shadow: var(--shadow-sm); }
+      .sb-spacer { flex: 1; }
+      .sb-avatar {
+        width: 32px; height: 32px;
+        border-radius: 999px;
+        background: var(--gradient-active);
+        color: #fff; font-size: 11px; font-weight: 500;
+        display: grid; place-items: center;
+        border: 2px solid rgba(255,255,255,0.6);
+      }
+
+      /* main column */
+      .main {
+        display: grid;
+        grid-template-rows: var(--topbar-h) var(--subbar-h) 1fr;
+        min-width: 0; min-height: 0;
+      }
+
+      /* topbar */
+      .topbar {
+        display: flex; align-items: center;
+        padding: 0 16px 0 14px;
+        gap: 14px;
+        border-bottom: 1px solid var(--hairline);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(207, 237, 232, 0.18) 100%),
+          rgba(255,255,255,0.55);
+        backdrop-filter: blur(10px) saturate(140%);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+      }
+      .topbar::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: -1px; height: 1px;
+        background: linear-gradient(90deg,
+          transparent 0%,
+          color-mix(in srgb, var(--primary) 22%, transparent) 18%,
+          color-mix(in srgb, var(--primary) 22%, transparent) 82%,
+          transparent 100%);
+        opacity: .35;
+        pointer-events: none;
+      }
+      .topbar { position: relative; }
+
+      .tb-id {
+        display: inline-grid; place-items: center;
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background:
+          linear-gradient(135deg,
+            color-mix(in srgb, var(--primary) 16%, var(--card)) 0%,
+            color-mix(in srgb, #6fc7b6 22%, var(--card)) 100%);
+        color: var(--primary-pressed);
+        border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, var(--shadow-xs);
+      }
+
+      .tb-id-stack { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+
+      .crumbs {
+        display: flex; align-items: center; gap: 6px;
+        color: var(--muted-foreground); font-size: 11.5px;
+        min-width: 0;
+        letter-spacing: 0.02em;
+      }
+      .crumbs .sep { opacity: .5; }
+      .crumbs .root {
+        color: var(--muted-foreground);
+        text-transform: uppercase;
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+      .crumbs .root:hover { color: var(--foreground); cursor: pointer; }
+
+      .tb-title-row {
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      .tb-title {
+        font-size: 14.5px; font-weight: 600;
+        color: var(--foreground);
+        letter-spacing: -0.005em;
+        max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .tb-title-edit {
+        display: inline-grid; place-items: center;
+        width: 22px; height: 22px;
+        border-radius: var(--r-sm);
+        color: var(--muted-foreground);
+        cursor: text;
+      }
+      .tb-title-edit:hover { background: rgba(11, 26, 23, 0.05); color: var(--foreground); }
+
+      .tb-meta {
+        font-size: 11px;
+        color: var(--muted-foreground);
+        display: inline-flex; align-items: center; gap: 6px;
+        letter-spacing: 0.01em;
+      }
+      .tb-meta .meta-dot {
+        width: 2.5px; height: 2.5px; border-radius: 999px;
+        background: currentColor; opacity: .45;
+      }
+      .tb-meta .meta-mono { font-variant-numeric: tabular-nums; }
+
+      .tb-spacer { flex: 1; }
+
+      .tb-divider {
+        width: 1px; height: 22px;
+        background: var(--hairline);
+        margin: 0 6px;
+      }
+
+      .tb-presence {
+        display: inline-flex; align-items: center;
+      }
+      .tb-presence .av {
+        width: 26px; height: 26px;
+        border-radius: 999px;
+        display: inline-grid; place-items: center;
+        font-size: 10.5px; font-weight: 600;
+        color: #fff;
+        border: 2px solid var(--card);
+        box-shadow: 0 0 0 0.5px rgba(11, 26, 23, 0.08);
+      }
+      .tb-presence .av + .av { margin-left: -8px; }
+      .tb-presence .av.lb { background: linear-gradient(135deg, #266b5e, #08453c); }
+      .tb-presence .av.mk { background: linear-gradient(135deg, #4d6e87, #2a4860); color:#fff; }
+      .tb-presence .av.more {
+        background: var(--card); color: var(--muted-foreground);
+        font-weight: 600; font-size: 10px;
+        border-color: var(--card);
+        box-shadow: 0 0 0 1px var(--border);
+      }
+
+      .status-pill {
+        display: inline-flex; align-items: center; gap: 7px;
+        height: 24px; padding: 0 11px 0 9px;
+        border-radius: 999px;
+        font-size: 11.5px; font-weight: 500;
+        letter-spacing: 0.005em;
+        border: 1px solid transparent;
+        background: var(--card);
+      }
+      .status-pill .dot {
+        position: relative;
+        width: 7px; height: 7px; border-radius: 999px; background: currentColor;
+        box-shadow: 0 0 0 0 currentColor;
+      }
+      .status-pill.is-dirty {
+        color: var(--warn);
+        border-color: color-mix(in srgb, var(--warn) 28%, transparent);
+        background: color-mix(in srgb, var(--warn) 8%, var(--card));
+      }
+      .status-pill.is-dirty .dot {
+        animation: pulseDot 1.8s ease-out infinite;
+      }
+      @keyframes pulseDot {
+        0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warn) 55%, transparent); }
+        70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--warn) 0%, transparent); }
+        100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--warn) 0%, transparent); }
+      }
+      .status-pill.is-clean {
+        color: var(--success);
+        border-color: color-mix(in srgb, var(--success) 26%, transparent);
+        background: color-mix(in srgb, var(--success) 8%, var(--card));
+      }
+      .status-pill.is-error {
+        color: var(--danger);
+        border-color: color-mix(in srgb, var(--danger) 28%, transparent);
+        background: color-mix(in srgb, var(--danger) 8%, var(--card));
+      }
+
+      .icon-btn {
+        width: 32px; height: 32px;
+        display: inline-grid; place-items: center;
+        border-radius: var(--r-sm);
+        background: transparent; border: 1px solid transparent;
+        color: var(--muted-foreground);
+        cursor: pointer;
+      }
+      .icon-btn:hover { background: rgba(11, 26, 23, 0.05); color: var(--foreground); }
+      .icon-btn[disabled] { opacity: .4; pointer-events: none; }
+
+      .btn {
+        height: 32px;
+        padding: 0 12px;
+        display: inline-flex; align-items: center; gap: 6px;
+        border-radius: var(--r-sm);
+        font: inherit; font-size: 13px; font-weight: 500;
+        cursor: pointer; border: 1px solid transparent;
+        transition: background-color 120ms ease;
+      }
+      .btn-ghost { background: transparent; color: var(--foreground); }
+      .btn-ghost:hover { background: rgba(11, 26, 23, 0.05); }
+      .btn-outline {
+        background: var(--card); color: var(--foreground);
+        border-color: var(--border);
+      }
+      .btn-outline:hover { background: var(--muted); }
+      .btn-primary {
+        background-image: var(--gradient-active);
+        color: var(--primary-foreground);
+        box-shadow:
+          0 1px 0 rgba(255,255,255,0.18) inset,
+          0 1px 2px rgba(8, 69, 60, 0.35),
+          0 0 0 1px rgba(8, 69, 60, 0.25);
+      }
+      .btn-primary:hover {
+        background-image: linear-gradient(135deg, #2e7868 0%, #0a4f44 100%);
+      }
+      .btn-primary:active {
+        background-image: linear-gradient(135deg, #08453c 0%, #08453c 100%);
+      }
+      .btn-danger { background: transparent; color: var(--danger); border-color: rgba(180, 35, 24, 0.25); }
+      .btn-danger:hover { background: var(--danger-soft); }
+
+      /* subbar = phase timeline (anchors, not tabs) — floats on canvas, no bar chrome */
+      .subbar {
+        display: flex; align-items: center;
+        gap: 2px;
+        padding: 0 14px;
+        background: transparent;
+        border-bottom: 0;
+        overflow-x: auto;
+      }
+      .subbar::after {
+        content: "";
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg,
+          transparent 0%,
+          rgba(11, 26, 23, 0.06) 12%,
+          rgba(11, 26, 23, 0.06) 88%,
+          transparent 100%);
+        pointer-events: none;
+      }
+      .subbar { position: relative; }
+      .sb-label {
+        font-size: 10.5px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--muted-foreground);
+        padding-right: 8px;
+      }
+      .phase-step {
+        display: inline-flex; align-items: center; gap: 8px;
+        height: 28px; padding: 0 10px;
+        border-radius: var(--r-sm);
+        font-size: 12.5px; font-weight: 500;
+        color: var(--foreground);
+        cursor: pointer; white-space: nowrap;
+        background: transparent; border: 0;
+        font: inherit;
+      }
+      .phase-step:hover { background: rgba(11, 26, 23, 0.04); }
+      .phase-step .idx {
+        display: inline-grid; place-items: center;
+        width: 18px; height: 18px;
+        border-radius: 999px;
+        background: var(--ph-soft, var(--primary-soft));
+        color: var(--ph-ink, var(--primary-pressed));
+        font-size: 10.5px; font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .phase-step[data-phase="pre"]  { --ph-soft: var(--phase-1-soft); --ph-ink: var(--phase-1-ink); }
+      .phase-step[data-phase="surg"] { --ph-soft: var(--phase-2-soft); --ph-ink: var(--phase-2-ink); }
+      .phase-step[data-phase="rec"]  { --ph-soft: var(--phase-3-soft); --ph-ink: var(--phase-3-ink); }
+      .phase-step[data-phase="fu"]   { --ph-soft: var(--phase-4-soft); --ph-ink: var(--phase-4-ink); }
+      .phase-sep {
+        color: var(--border-strong);
+        flex-shrink: 0;
+      }
+      .phase-add {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 26px; padding: 0 10px;
+        margin-left: 6px;
+        border-radius: var(--r-sm);
+        font-size: 12.5px; font-weight: 500;
+        color: var(--muted-foreground);
+        border: 1px dashed var(--border-strong);
+        background: transparent;
+        cursor: pointer;
+      }
+      .phase-add:hover { border-color: var(--primary); color: var(--primary); }
+
+      /* canvas frame */
+      .frame {
+        position: relative;
+        display: block;
+        min-height: 0; min-width: 0;
+        overflow: hidden;
+      }
+
+      /* canvas */
+      .canvas {
+        position: absolute; inset: 0;
+        overflow: hidden;
+        background-image:
+          radial-gradient(circle at 1px 1px, rgba(11, 26, 23, 0.06) 1px, transparent 0);
+        background-size: 24px 24px;
+        background-position: -1px -1px;
+      }
+      .canvas-scroll {
+        position: absolute; inset: 0;
+        overflow: auto;
+      }
+      .canvas-inner {
+        position: relative;
+        width: 2320px; height: 1200px;
+      }
+
+      /* phase column ribbons */
+      .phase-col {
+        position: absolute; top: 0; bottom: 0;
+        border-right: 1px dashed rgba(11, 26, 23, 0.08);
+      }
+      .phase-col.p1 { background: var(--phase-1); }
+      .phase-col.p2 { background: var(--phase-2); }
+      .phase-col.p3 { background: var(--phase-3); }
+      .phase-col.p4 { background: var(--phase-4); }
+
+      .ph-head {
+        position: absolute; top: 14px; left: 14px;
+        display: inline-flex; align-items: center; gap: 7px;
+        height: 26px; padding: 0 10px 0 7px;
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(10px) saturate(160%);
+        -webkit-backdrop-filter: blur(10px) saturate(160%);
+        border: 1px solid color-mix(in srgb, var(--ph-ink, var(--primary-pressed)) 14%, var(--hairline));
+        border-radius: 999px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 1px 2px rgba(11, 26, 23, 0.05);
+        z-index: 4;
+        width: max-content;
+      }
+      .ph-head .ph-idx {
+        display: inline-grid; place-items: center;
+        width: 16px; height: 16px;
+        border-radius: 999px;
+        background: var(--ph-soft, var(--primary-soft));
+        color: var(--ph-ink, var(--primary-pressed));
+        font-size: 10px; font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .phase-col.p1 { --ph-soft: var(--phase-1-soft); --ph-ink: var(--phase-1-ink); }
+      .phase-col.p2 { --ph-soft: var(--phase-2-soft); --ph-ink: var(--phase-2-ink); }
+      .phase-col.p3 { --ph-soft: var(--phase-3-soft); --ph-ink: var(--phase-3-ink); }
+      .phase-col.p4 { --ph-soft: var(--phase-4-soft); --ph-ink: var(--phase-4-ink); }
+      .ph-head .ph-name {
+        font-size: 11.5px; font-weight: 600;
+        color: var(--foreground);
+        letter-spacing: -0.005em;
+      }
+      .ph-head .ph-count {
+        font-size: 10.5px; color: var(--muted-foreground);
+        font-variant-numeric: tabular-nums;
+        background: rgba(11, 26, 23, 0.06);
+        padding: 1px 6px; border-radius: 999px;
+        margin-left: 2px;
+      }
+
+      /* lane stripes + sticky lane labels */
+      .lane-row {
+        position: absolute; left: 0; right: 0;
+        border-bottom: 1px dashed rgba(11, 26, 23, 0.05);
+        background: linear-gradient(90deg,
+          color-mix(in srgb, var(--lane-accent, var(--primary)) 10%, transparent) 0,
+          color-mix(in srgb, var(--lane-accent, var(--primary))  3%, transparent) 220px,
+          transparent 520px);
+        pointer-events: none;
+      }
+      .lane-label {
+        position: sticky; left: 12px;
+        top: 8px;
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 5px 10px 5px 6px;
+        margin: 8px 0 0 12px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid var(--hairline);
+        border-radius: 999px;
+        box-shadow: var(--shadow-xs);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        pointer-events: auto;
+        z-index: 6;
+        width: max-content;
+      }
+      .lane-label::before {
+        content: '';
+        display: inline-block;
+        width: 4px; height: 16px;
+        border-radius: 999px;
+        background: var(--lane-accent, var(--primary));
+      }
+      .lane-label .ll-ico {
+        display: grid; place-items: center;
+        color: var(--lane-accent, var(--primary));
+      }
+      .lane-label .ll-name {
+        font-size: 12px; font-weight: 500; color: var(--foreground);
+        line-height: 1;
+      }
+      .lane-label .ll-count {
+        font-size: 10.5px; color: var(--muted-foreground);
+        font-variant-numeric: tabular-nums;
+        background: rgba(11, 26, 23, 0.05);
+        padding: 1px 6px; border-radius: 999px;
+      }
+      /* block card */
+      .blk {
+        position: absolute;
+        width: 220px; min-height: 64px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: 4px 36px 1fr;
+        transition: box-shadow 120ms ease, border-color 120ms ease, transform 120ms ease;
+      }
+      .blk:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); transform: translateY(-1px); }
+      .blk.selected { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring), var(--shadow-md); }
+      .blk .rail-bar { background: var(--lane-accent, var(--primary)); }
+      .blk .ico-tile {
+        display: grid; place-items: center;
+        background: color-mix(in srgb, var(--lane-accent, var(--primary)) 10%, white);
+        color: var(--lane-accent, var(--primary));
+        border-right: 1px solid var(--hairline);
+      }
+      .blk .body { padding: 10px 12px 10px 10px; min-width: 0; }
+      .blk .name {
+        font-size: 13px; font-weight: 500; color: var(--foreground);
+        line-height: 1.25;
+        overflow: hidden; text-overflow: ellipsis;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      }
+      .blk .meta {
+        display: flex; align-items: center; gap: 6px;
+        margin-top: 4px;
+        font-size: 11.5px; color: var(--muted-foreground);
+      }
+      .blk .meta .type { text-transform: capitalize; }
+      .blk .day-chip {
+        margin-left: auto;
+        font-size: 10.5px; font-weight: 500;
+        color: var(--foreground);
+        background: rgba(11, 26, 23, 0.05);
+        padding: 2px 6px; border-radius: 999px;
+        font-variant-numeric: tabular-nums;
+      }
+      .blk .badge {
+        position: absolute; top: -6px; right: -6px;
+        width: 16px; height: 16px;
+        display: grid; place-items: center;
+        border-radius: 999px;
+        background: var(--danger); color: #fff;
+        font-size: 10px; font-weight: 600;
+        box-shadow: var(--shadow-sm);
+      }
+      .blk.is-branch { border-style: solid; }
+      .blk .entry-badge {
+        position: absolute;
+        top: -1px; left: -1px;
+        padding: 3px 7px 3px 8px;
+        font-size: 9px; font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        background: var(--primary);
+        color: #fff;
+        border-top-left-radius: var(--r-md);
+        border-bottom-right-radius: var(--r-md);
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      /* connection ports */
+      .port {
+        position: absolute;
+        width: 11px; height: 11px;
+        border-radius: 999px;
+        background: var(--card);
+        border: 1.5px solid var(--lane-accent, var(--primary));
+        box-shadow: 0 1px 2px rgba(11, 26, 23, 0.15);
+        z-index: 3;
+        cursor: crosshair;
+        transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+      }
+      .port::after {
+        /* invisible larger hit-area */
+        content: '';
+        position: absolute; inset: -8px;
+        border-radius: 999px;
+      }
+      .port.in  { left:  -6px; top: 50%; margin-top: -5.5px; }
+      .port.out { right: -6px; top: 50%; margin-top: -5.5px; }
+      .port.out-yes { right: -6px; top: 28%; margin-top: 0; }
+      .port.out-no  { right: -6px; top: 72%; margin-top: 0; }
+      .blk:hover .port,
+      .blk-group:hover .port {
+        transform: scale(1.25);
+        background: var(--lane-accent, var(--primary));
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--lane-accent, var(--primary)) 18%, transparent);
+      }
+      .port:hover {
+        transform: scale(1.5) !important;
+        background: var(--lane-accent, var(--primary)) !important;
+      }
+
+      /* group: multiple blocks triggered at one moment, in order */
+      .blk-group {
+        position: absolute;
+        width: 252px;
+        padding: 8px 10px 10px 10px;
+        border-radius: var(--r-md);
+        border: 1.5px dashed color-mix(in srgb, var(--lane-accent, var(--primary)) 55%, var(--border-strong));
+        background: color-mix(in srgb, var(--lane-accent, var(--primary)) 5%, rgba(255,255,255,0.82));
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        display: flex; flex-direction: column; gap: 6px;
+        z-index: 1;
+      }
+      .blk-group .grp-head {
+        display: flex; align-items: center; gap: 8px;
+        padding: 2px 2px 4px;
+        font-size: 10.5px; font-weight: 600;
+        color: var(--lane-accent, var(--primary));
+        text-transform: uppercase; letter-spacing: 0.06em;
+      }
+      .blk-group .grp-head .grp-count { color: var(--muted-foreground); font-weight: 500; }
+      .blk-group .grp-head .grp-day {
+        margin-left: auto;
+        font-size: 10.5px; font-weight: 600;
+        color: var(--foreground);
+        background: var(--card);
+        padding: 1px 7px; border-radius: 999px;
+        border: 1px solid var(--hairline);
+        text-transform: none; letter-spacing: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .blk-group .grp-item {
+        display: grid; grid-template-columns: 14px 24px 1fr auto;
+        align-items: center; gap: 8px;
+        padding: 6px 8px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--r-sm);
+      }
+      .blk-group .grp-item .grp-idx {
+        font-size: 10px; font-weight: 600;
+        color: var(--muted-foreground);
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .blk-group .grp-item .grp-ico {
+        width: 22px; height: 22px;
+        display: grid; place-items: center;
+        border-radius: var(--r-xs);
+        color: var(--lane-accent, var(--primary));
+        background: color-mix(in srgb, var(--lane-accent, var(--primary)) 12%, white);
+      }
+      .blk-group .grp-item .grp-name {
+        font-size: 12.5px; font-weight: 500; color: var(--foreground);
+        min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .blk-group .grp-item .grp-type {
+        font-size: 10.5px; color: var(--muted-foreground);
+      }
+      .blk.ghost {
+        opacity: .58;
+        border-style: dashed;
+        background: transparent;
+        box-shadow: none;
+      }
+      .blk.ghost:hover { transform: none; }
+
+      /* edges */
+      .edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+      .edges path {
+        fill: none;
+        stroke: #cbd1d8;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .edges path.primary { stroke: var(--primary); stroke-width: 2; }
+      .edges path.dashed  { stroke-dasharray: 4 5; }
+      .edges text {
+        fill: var(--muted-foreground);
+        font-size: 10.5px; font-family: inherit; font-weight: 500;
+        font-feature-settings: 'tnum';
+        paint-order: stroke;
+        stroke: rgba(243, 247, 245, 0.92); stroke-width: 4px; stroke-linejoin: round;
+      }
+
+      /* palette dock (bottom-center) */
+      .dock {
+        position: absolute;
+        left: 50%; bottom: 16px;
+        transform: translateX(-50%);
+        display: flex; align-items: center; gap: 4px;
+        padding: 6px;
+        border-radius: var(--r-lg);
+        border: 1px solid var(--hairline);
+        box-shadow: var(--shadow-lg);
+        z-index: 12;
+      }
+      .dock .d-item {
+        display: flex; align-items: center; gap: 8px;
+        height: 36px;
+        padding: 0 12px;
+        border-radius: var(--r-sm);
+        font-size: 12.5px; font-weight: 500;
+        color: var(--foreground);
+        cursor: grab;
+      }
+      .dock .d-item:hover { background: rgba(11, 26, 23, 0.05); }
+      .dock .d-item .d-ico {
+        width: 22px; height: 22px;
+        display: grid; place-items: center;
+        border-radius: var(--r-xs);
+        color: var(--lane-accent, var(--primary));
+        background: color-mix(in srgb, var(--lane-accent, var(--primary)) 10%, white);
+      }
+      .dock .d-sep { width: 1px; height: 24px; background: var(--hairline); margin: 0 4px; }
+
+      /* drawer */
+      .drawer {
+        position: absolute;
+        top: 12px; right: 12px; bottom: 12px;
+        width: 380px;
+        border-radius: var(--r-lg);
+        border: 1px solid var(--hairline);
+        box-shadow: var(--shadow-lg);
+        display: flex; flex-direction: column;
+        overflow: hidden;
+        z-index: 14;
+      }
+      .dr-head {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid var(--hairline);
+      }
+      .dr-ico-tile {
+        width: 36px; height: 36px;
+        display: grid; place-items: center;
+        border-radius: var(--r-md);
+        color: var(--lane-accent, var(--primary));
+        background: color-mix(in srgb, var(--lane-accent, var(--primary)) 12%, white);
+      }
+      .dr-title { font-size: 13px; font-weight: 500; min-width: 0; }
+      .dr-title .sub { color: var(--muted-foreground); font-weight: 400; font-size: 11.5px; margin-top: 2px; }
+      .dr-close {
+        margin-left: auto;
+        width: 28px; height: 28px;
+        display: grid; place-items: center;
+        border-radius: var(--r-sm);
+        color: var(--muted-foreground); cursor: pointer;
+      }
+      .dr-close:hover { background: rgba(11, 26, 23, 0.06); color: var(--foreground); }
+
+      .dr-body { padding: 12px 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+      .field { display: flex; flex-direction: column; gap: 6px; }
+      .field label {
+        font-size: 11.5px; font-weight: 500; color: var(--muted-foreground);
+        text-transform: uppercase; letter-spacing: 0.04em;
+      }
+      .field input, .field select, .field textarea {
+        font: inherit; font-size: 13px;
+        padding: 8px 10px;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--foreground);
+        outline: none;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+      }
+      .field input:focus, .field select:focus, .field textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--ring);
+      }
+      .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .help { font-size: 11.5px; color: var(--muted-foreground); }
+      .checkbox-row { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--foreground); }
+      .checkbox-row input { margin-top: 2px; }
+
+      .section-h {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--muted-foreground);
+        margin-top: 4px;
+      }
+      .branch-list { display: flex; flex-direction: column; gap: 6px; }
+      .branch-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-sm);
+        font-size: 12.5px;
+        background: var(--card);
+      }
+      .branch-item .b-key {
+        font-size: 11px; font-weight: 600; color: var(--muted-foreground);
+        background: rgba(11, 26, 23, 0.05);
+        padding: 2px 6px; border-radius: var(--r-xs);
+        font-variant-numeric: tabular-nums;
+      }
+      .branch-add {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12.5px; color: var(--primary);
+        background: transparent; border: 1px dashed var(--border-strong);
+        border-radius: var(--r-sm);
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      .branch-add:hover { border-color: var(--primary); background: var(--primary-soft); }
+
+      .dr-foot {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--hairline);
+        background: rgba(255,255,255,0.55);
+      }
+
+      /* phase picker popover */
+      .popover {
+        position: absolute;
+        width: 320px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--hairline);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        z-index: 16;
+      }
+      .pop-search {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--hairline);
+      }
+      .pop-search svg { color: var(--muted-foreground); flex-shrink: 0; }
+      .pop-search input {
+        border: 0; background: transparent; outline: none;
+        font: inherit; font-size: 13px; flex: 1; color: var(--foreground);
+      }
+      .pop-list { padding: 6px; display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; }
+      .pop-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 8px;
+        border-radius: var(--r-sm);
+        cursor: pointer; font-size: 13px;
+      }
+      .pop-item:hover, .pop-item.active { background: var(--primary-soft); color: var(--primary-pressed); }
+      .pop-item .p-ico {
+        width: 26px; height: 26px;
+        display: grid; place-items: center;
+        border-radius: var(--r-sm);
+        background: rgba(11, 26, 23, 0.04);
+        color: var(--muted-foreground);
+      }
+      .pop-item.active .p-ico { background: var(--primary); color: #fff; }
+      .pop-item .p-name { flex: 1; font-weight: 500; }
+      .pop-item .p-sub { font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
+      .pop-foot {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 12px;
+        border-top: 1px solid var(--hairline);
+        font-size: 11.5px; color: var(--muted-foreground);
+      }
+      .kbd {
+        display: inline-grid; place-items: center;
+        min-width: 18px; height: 18px;
+        padding: 0 5px;
+        font-size: 10.5px; font-weight: 500;
+        color: var(--muted-foreground);
+        background: rgba(11, 26, 23, 0.05);
+        border-radius: var(--r-xs);
+        border: 1px solid var(--hairline);
+        font-family: inherit;
+      }
+
+      /* toast */
+      .toast {
+        position: absolute;
+        top: 16px; left: 50%;
+        transform: translateX(-50%);
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px 10px 12px;
+        border-radius: 999px;
+        font-size: 13px; font-weight: 500;
+        color: var(--foreground);
+        background: var(--card);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-lg);
+        z-index: 18;
+      }
+      .toast .t-ico {
+        width: 20px; height: 20px;
+        display: grid; place-items: center;
+        border-radius: 999px;
+        flex-shrink: 0;
+      }
+      .toast.is-success .t-ico { background: var(--success-soft); color: var(--success); }
+      .toast.is-error .t-ico { background: var(--danger-soft); color: var(--danger); }
+      .toast.is-success .ico-warn { display: none; }
+      .toast.is-error .ico-check { display: none; }
+      .toast .t-action {
+        margin-left: 4px;
+        font-size: 12.5px; color: var(--primary); font-weight: 500;
+        cursor: pointer;
+      }
+
+      /* mini-map panel (minimap + zoom toolbar) */
+      .minimap {
+        position: absolute;
+        right: 12px; bottom: 16px;
+        width: 220px;
+        border-radius: var(--r-md);
+        border: 1px solid var(--hairline);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        z-index: 10;
+      }
+      .minimap .mm-map {
+        position: relative;
+        height: 132px;
+      }
+      .minimap .mm-vp {
+        position: absolute;
+        border: 1.5px solid var(--primary);
+        background: rgba(38, 107, 94, 0.10);
+        border-radius: var(--r-xs);
+      }
+      .minimap .mm-dot {
+        position: absolute;
+        width: 6px; height: 6px;
+        border-radius: 2px;
+        background: var(--lane-accent, var(--primary));
+        opacity: .8;
+      }
+      .minimap .mm-bar {
+        display: flex; align-items: center;
+        gap: 2px;
+        padding: 4px 6px;
+        border-top: 1px solid var(--hairline);
+        background: rgba(255,255,255,0.6);
+      }
+      .minimap .mm-bar button {
+        width: 24px; height: 24px;
+        display: grid; place-items: center;
+        background: transparent; border: 0;
+        color: var(--muted-foreground);
+        cursor: pointer; border-radius: var(--r-xs);
+      }
+      .minimap .mm-bar button:hover { background: rgba(11, 26, 23, 0.06); color: var(--foreground); }
+      .minimap .mm-bar .z-val {
+        flex: 1; text-align: center;
+        font-size: 11.5px; color: var(--foreground);
+        font-variant-numeric: tabular-nums;
+      }
+      .minimap .mm-bar .z-sep { width: 1px; height: 14px; background: var(--hairline); margin: 0 2px; }
+
+      /* dev scene picker */
+      .scenebar {
+        position: fixed; left: 50%; bottom: 14px;
+        transform: translateX(-50%);
+        display: flex; align-items: center; gap: 2px;
+        padding: 4px;
+        border-radius: 999px;
+        background: rgba(11, 26, 23, 0.92);
+        color: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        z-index: 100;
+        font-size: 11.5px;
+      }
+      .scenebar button {
+        background: transparent; border: 0; color: inherit;
+        padding: 5px 11px; border-radius: 999px; cursor: pointer;
+        font: inherit; font-weight: 500;
+      }
+      .scenebar button:hover { color: #fff; }
+      .scenebar button.active { background: rgba(255,255,255,0.12); color: #fff; }
+      .scenebar .sb-label {
+        padding: 0 8px 0 10px; color: rgba(255,255,255,0.45);
+        text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px;
+      }
+
+      /* scrollbar polish */
+      .canvas-scroll::-webkit-scrollbar, .rail::-webkit-scrollbar, .dr-body::-webkit-scrollbar { width: 10px; height: 10px; }
+      .canvas-scroll::-webkit-scrollbar-thumb, .rail::-webkit-scrollbar-thumb, .dr-body::-webkit-scrollbar-thumb {
+        background: rgba(11, 26, 23, 0.15);
+        border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      .canvas-scroll::-webkit-scrollbar-thumb:hover { background: rgba(11, 26, 23, 0.28); background-clip: content-box; }
+
+      /* selection overlay */
+      .sel-handles {
+        position: absolute;
+        pointer-events: none;
+        border: 1.5px dashed var(--primary);
+        border-radius: var(--r-md);
+        z-index: 5;
+      }
+
+      /* ============ Q3 route-resolution demo: faux browser + view-mode toggle ============ */
+      body { padding-top: 40px; }
+      .browser-chrome {
+        position: fixed; top: 0; left: 0; right: 0; height: 40px;
+        z-index: 50;
+        display: flex; align-items: center; gap: 10px;
+        padding: 0 14px 0 16px;
+        background: linear-gradient(180deg, #ecebe8, #e2e0db);
+        border-bottom: 1px solid rgba(11,26,23,0.12);
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+        font: 12px/1 ui-sans-serif, system-ui;
+      }
+      .browser-chrome .dots {
+        display: inline-flex; gap: 6px;
+      }
+      .browser-chrome .dots span {
+        width: 11px; height: 11px; border-radius: 999px;
+      }
+      .browser-chrome .dots .r { background: #ff5f57; }
+      .browser-chrome .dots .y { background: #febc2e; }
+      .browser-chrome .dots .g { background: #28c840; }
+      .browser-chrome .nav {
+        display: inline-flex; gap: 4px; margin-left: 6px;
+        color: rgba(11,26,23,0.45);
+      }
+      .browser-chrome .nav svg { display: block; }
+      .browser-chrome .url {
+        flex: 1;
+        display: inline-flex; align-items: center; gap: 8px;
+        height: 26px; padding: 0 12px;
+        background: rgba(255,255,255,0.85);
+        border: 1px solid rgba(11,26,23,0.1);
+        border-radius: 999px;
+        font: 12px/1 ui-monospace, 'SF Mono', Menlo, Consolas;
+        color: #2a3340;
+        overflow: hidden;
+      }
+      .browser-chrome .url .lock {
+        width: 11px; height: 11px; flex: 0 0 auto;
+        color: rgba(11,26,23,0.5);
+      }
+      .browser-chrome .url .scheme { color: rgba(11,26,23,0.45); }
+      .browser-chrome .url .path-current { color: #08453c; font-weight: 600; }
+      .browser-chrome .url .path-version { color: #b06d0a; font-weight: 600; }
+
+      /* version switch: tiny dropdown chip inside topbar, sits left of Save */
+      .ver-switch { position: relative; font: inherit; }
+      .ver-switch .vs-trigger {
+        appearance: none; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 5px;
+        height: 24px; padding: 0 7px 0 8px;
+        background: transparent;
+        border: 1px solid rgba(11,26,23,0.14);
+        border-radius: 7px;
+        color: #1a2329;
+        font: inherit; font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .ver-switch .vs-trigger:hover { background: rgba(11,26,23,0.04); }
+      .ver-switch .vs-dot { width: 6px; height: 6px; border-radius: 999px; }
+      .ver-switch .vs-chev { width: 10px; height: 10px; opacity: 0.55; }
+
+      .ver-switch .vs-menu {
+        display: none;
+        position: absolute; top: 30px; right: 0;
+        min-width: 240px;
+        padding: 4px;
+        background: rgba(255,255,255,0.97);
+        border: 1px solid rgba(11,26,23,0.12);
+        border-radius: 10px;
+        backdrop-filter: blur(12px) saturate(160%);
+        box-shadow: 0 12px 28px rgba(11,26,23,0.14);
+        z-index: 40;
+      }
+      .ver-switch.is-open .vs-menu { display: block; }
+      .ver-switch .vs-section {
+        padding: 6px 10px 4px;
+        font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(11,26,23,0.45);
+      }
+      .ver-switch .vs-item {
+        appearance: none; border: 0; background: transparent;
+        width: 100%; text-align: left; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px;
+        height: 30px; padding: 0 10px;
+        border-radius: 6px;
+        font: inherit; color: #1a2329; font-weight: 500;
+      }
+      .ver-switch .vs-item:hover { background: rgba(11,26,23,0.05); }
+      .ver-switch .vs-item .vs-ver {
+        font-weight: 700; font-variant-numeric: tabular-nums;
+        min-width: 28px;
+      }
+      .ver-switch .vs-item .vs-state {
+        opacity: 0.65; font-weight: 500;
+      }
+      .ver-switch .vs-item .vs-check {
+        margin-left: auto; width: 12px; height: 12px;
+        color: #08453c; visibility: hidden;
+      }
+      .ver-switch .vs-item.is-active .vs-check { visibility: visible; }
+      .ver-switch .vs-item.is-active { color: #08453c; }
+      .ver-switch .vs-divider {
+        height: 1px; margin: 4px 0;
+        background: rgba(11,26,23,0.08);
+      }
+      .ver-switch .vs-foot {
+        display: inline-flex; align-items: center; gap: 6px;
+        width: 100%; padding: 6px 10px;
+        font-size: 11.5px; color: rgba(11,26,23,0.55);
+        background: transparent; border: 0; cursor: pointer;
+      }
+      .ver-switch .vs-foot:hover { color: #08453c; }
+
+      /* version marker rendered inline in the crumbs row — no chip, no border, just colored dot + tinted text */
+      .crumb-version {
+        display: inline-flex; align-items: center; gap: 5px;
+        margin-left: 6px;
+        font: inherit;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      .crumb-version::before {
+        content: ''; flex: 0 0 auto;
+        width: 6px; height: 6px; border-radius: 999px;
+        background: currentColor;
+      }
+      .crumb-version .cv-status {
+        font-weight: 500;
+        opacity: 0.75;
+        text-transform: lowercase;
+      }
+      .crumb-version.is-concept    { color: #b06d0a; }
+      .crumb-version.is-published  { color: #1f7a3a; }
+      .crumb-version.is-historical { color: #2c6473; }
+
+      /* read-only banner that overlays below the topbar in non-editable modes */
+      .readonly-banner {
+        display: none;
+        align-items: center; gap: 12px;
+        padding: 0 16px;
+        height: 36px;
+        background: linear-gradient(90deg,
+          color-mix(in srgb, #3a7d8d 10%, white) 0%,
+          color-mix(in srgb, #3a7d8d 4%, white) 100%);
+        border-bottom: 1px solid color-mix(in srgb, #3a7d8d 22%, var(--hairline));
+        font: 12.5px/1 ui-sans-serif, system-ui;
+        color: #2c6473;
+      }
+      .readonly-banner.is-visible { display: flex; }
+      .readonly-banner.is-published-current {
+        background: linear-gradient(90deg,
+          color-mix(in srgb, #16a34a 8%, white) 0%,
+          color-mix(in srgb, #16a34a 3%, white) 100%);
+        border-bottom-color: color-mix(in srgb, #16a34a 22%, var(--hairline));
+        color: #166534;
+      }
+      .readonly-banner .rb-ico {
+        width: 14px; height: 14px;
+      }
+      .readonly-banner .rb-body {
+        flex: 1;
+        font-weight: 500;
+      }
+      .readonly-banner .rb-body strong {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .readonly-banner .rb-cta {
+        appearance: none; border: 0; cursor: pointer;
+        height: 24px; padding: 0 10px;
+        border-radius: 6px;
+        font: inherit; font-weight: 600;
+        background: linear-gradient(135deg, #266b5e 0%, #08453c 100%);
+        color: #fff;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 2px rgba(11,26,23,0.12);
+      }
+      .readonly-banner .rb-back {
+        appearance: none; border: 1px solid currentColor; background: transparent;
+        cursor: pointer;
+        height: 24px; padding: 0 10px;
+        border-radius: 6px;
+        font: inherit; font-weight: 600;
+        color: inherit;
+        opacity: 0.7;
+      }
+      .readonly-banner .rb-back:hover { opacity: 1; }
+
+      /* when non-editable: dim editing chrome and disable interactions */
+      .main.is-readonly .blk,
+      .main.is-readonly .dock,
+      .main.is-readonly .ph-head,
+      .main.is-readonly .lane-label {
+        pointer-events: none;
+      }
+      .main.is-readonly .topbar #save-btn,
+      .main.is-readonly .topbar #undo-btn,
+      .main.is-readonly .topbar #redo-btn,
+      .main.is-readonly .topbar .tb-presence {
+        opacity: 0.45; pointer-events: none;
+      }
+      .main.is-readonly .status-pill { display: none; }
+    </style>
+  </head>
+  <body>
+    <!-- ============ Q3 demo: faux browser chrome ============ -->
+    <div class="browser-chrome" aria-hidden="true">
+      <span class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></span>
+      <span class="nav">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </span>
+      <span class="url" id="url-bar">
+        <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <span class="scheme">https://</span><span>app.zas.health</span><span id="url-path" class="path-current">/pathways/9f3a-rugrevalidatie</span>
+      </span>
+    </div>
+
+    <div class="app">
+      <!-- ============ SIDEBAR (collapsed) ============ -->
+      <aside class="sidebar glass">
+        <div class="sb-brand">Z</div>
+        <nav class="sb-nav">
+          <div class="sb-item" title="Overzicht">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
+          </div>
+          <div class="sb-item" title="Patiënten">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div class="sb-item active" title="Zorgpaden">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 8c0 5 7 5 7 8M19 8c0 5-7 5-7 8"/></svg>
+          </div>
+          <div class="sb-item" title="Inbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 17 4H7L3 8v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><path d="M3 8h6l2 3h2l2-3h6"/></svg>
+          </div>
+          <div class="sb-item" title="Berichten">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-12.2 6.8L3 21l2.2-5.8A8 8 0 1 1 21 12z"/></svg>
+          </div>
+        </nav>
+        <div class="sb-spacer"></div>
+        <div class="sb-avatar">LB</div>
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main class="main">
+        <!-- topbar -->
+        <header class="topbar">
+          <span class="tb-id" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="12" r="2.4"/><path d="M8 6h6a4 4 0 0 1 4 4v.5"/><path d="M8 18h6a4 4 0 0 0 4-4v-.5"/></svg>
+          </span>
+
+          <div class="tb-id-stack">
+            <div class="crumbs">
+              <span class="root">Zorgpaden</span>
+              <span class="sep">/</span>
+              <span>Rugrevalidatie</span>
+              <span class="crumb-version is-concept" id="version-marker">
+                <span>v.5</span>
+                <span class="cv-status">concept</span>
+              </span>
+            </div>
+            <div class="tb-title-row">
+              <span class="tb-title" id="title-text">Rugrevalidatie</span>
+              <span class="tb-title-edit" id="title-edit" title="Naam wijzigen">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </span>
+              <span class="tb-meta">
+                <span class="meta-mono">9 blokken</span>
+                <span class="meta-dot"></span>
+                <span class="meta-mono">4 fasen</span>
+                <span class="meta-dot"></span>
+                <span>bewerkt <span class="meta-mono">13:24</span></span>
+              </span>
+            </div>
+          </div>
+
+          <span id="status-pill" class="status-pill is-dirty">
+            <span class="dot"></span>
+            <span id="status-text">Niet opgeslagen</span>
+          </span>
+
+          <div class="tb-spacer"></div>
+
+          <span class="tb-presence" title="Levi Bravenboer, Marieke Klein">
+            <span class="av lb">LB</span>
+            <span class="av mk">MK</span>
+          </span>
+
+          <span class="tb-divider"></span>
+
+          <div style="display:flex; align-items:center; gap:2px;">
+            <button class="icon-btn" id="undo-btn" title="Ongedaan maken (⌘Z)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+            </button>
+            <button class="icon-btn" id="redo-btn" title="Opnieuw (⌘⇧Z)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+            </button>
+          </div>
+
+          <div class="ver-switch" id="ver-switch">
+            <button type="button" class="vs-trigger" id="vs-trigger" aria-haspopup="menu" aria-expanded="false">
+              <span class="vs-dot" id="vs-trigger-dot" style="background:#d97706"></span>
+              <span id="vs-trigger-label">v.5</span>
+              <svg class="vs-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="vs-menu" role="menu">
+              <div class="vs-section">Werkversie</div>
+              <button type="button" class="vs-item is-active" data-mode="concept-current" role="menuitem">
+                <span class="vs-dot" style="background:#d97706"></span>
+                <span class="vs-ver">v.5</span>
+                <span class="vs-state">concept</span>
+                <svg class="vs-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              </button>
+              <div class="vs-section">Gepubliceerd</div>
+              <button type="button" class="vs-item" data-mode="published-current" role="menuitem">
+                <span class="vs-dot" style="background:#16a34a"></span>
+                <span class="vs-ver">v.4</span>
+                <span class="vs-state">gepubliceerd</span>
+                <svg class="vs-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              </button>
+              <button type="button" class="vs-item" data-mode="historical" role="menuitem">
+                <span class="vs-dot" style="background:#3a7d8d"></span>
+                <span class="vs-ver">v.2</span>
+                <span class="vs-state">historisch</span>
+                <svg class="vs-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              </button>
+              <div class="vs-divider"></div>
+              <button type="button" class="vs-foot">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+                Alle versies in geschiedenis
+              </button>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="save-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+            Opslaan
+          </button>
+        </header>
+
+        <!-- ============ Q3 demo: read-only banner ============ -->
+        <div class="readonly-banner" id="readonly-banner">
+          <svg class="rb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><circle cx="12" cy="16" r=".6" fill="currentColor"/></svg>
+          <span class="rb-body" id="rb-body">Je bekijkt <strong>v.2</strong> · gepubliceerd op 12 mei 2026. Dit is een historische versie.</span>
+          <button type="button" class="rb-back" id="rb-back">Terug naar huidige</button>
+          <button type="button" class="rb-cta" id="rb-cta">Herstel als nieuw concept</button>
+        </div>
+
+        <!-- subbar: phase timeline (scroll-anchors, not filter-tabs) -->
+        <div class="subbar glass-xs" id="subbar">
+          <span class="sb-label">Spring naar</span>
+          <button class="phase-step" data-phase="pre"><span class="idx">1</span><span>Pre-operatief</span></button>
+          <svg class="phase-sep" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <button class="phase-step" data-phase="surg"><span class="idx">2</span><span>Operatie</span></button>
+          <svg class="phase-sep" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <button class="phase-step" data-phase="rec"><span class="idx">3</span><span>Herstel</span></button>
+          <svg class="phase-sep" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <button class="phase-step" data-phase="fu"><span class="idx">4</span><span>Follow-up</span></button>
+          <button class="phase-add" id="phase-add">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Fase
+          </button>
+        </div>
+
+        <!-- canvas frame -->
+        <section class="frame">
+          <!-- canvas viewport -->
+          <div class="canvas">
+            <div class="canvas-scroll" id="cs">
+              <div class="canvas-inner" id="ci">
+                <!-- phase columns: tinted background + header strip with name -->
+                <div class="phase-col p1" style="left:0;    width:760px;">
+                  <div class="ph-head"><span class="ph-idx">1</span><span class="ph-name">Pre-operatief</span><span class="ph-count">3</span></div>
+                </div>
+                <div class="phase-col p2" style="left:760px; width:520px;">
+                  <div class="ph-head"><span class="ph-idx">2</span><span class="ph-name">Operatie</span><span class="ph-count">2</span></div>
+                </div>
+                <div class="phase-col p3" style="left:1280px; width:720px;">
+                  <div class="ph-head"><span class="ph-idx">3</span><span class="ph-name">Herstel</span><span class="ph-count">3</span></div>
+                </div>
+                <div class="phase-col p4" style="left:2000px; width:320px;">
+                  <div class="ph-head"><span class="ph-idx">4</span><span class="ph-name">Follow-up</span><span class="ph-count">1</span></div>
+                </div>
+
+                <!-- lane rows with sticky-left lane labels -->
+                <div class="lane-row" style="top:60px;  height:170px; --lane-accent: var(--lane-patient)">
+                  <div class="lane-label">
+                    <span class="ll-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></span>
+                    <span class="ll-name">Patiënt</span>
+                    <span class="ll-count">2</span>
+                  </div>
+                </div>
+                <div class="lane-row" style="top:230px; height:170px; --lane-accent: var(--lane-caregiver)">
+                  <div class="lane-label">
+                    <span class="ll-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                    <span class="ll-name">Zorgverlener</span>
+                    <span class="ll-count">4</span>
+                  </div>
+                </div>
+                <div class="lane-row" style="top:400px; height:140px; --lane-accent: var(--lane-system)">
+                  <div class="lane-label">
+                    <span class="ll-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span>
+                    <span class="ll-name">Systeem</span>
+                    <span class="ll-count">3</span>
+                  </div>
+                </div>
+                <div class="lane-row" style="top:540px; height:120px; --lane-accent: var(--lane-external)">
+                  <div class="lane-label">
+                    <span class="ll-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M15 3h6v6"/><path d="m10 14 11-11"/></svg></span>
+                    <span class="ll-name">Extern</span>
+                    <span class="ll-count">0</span>
+                  </div>
+                </div>
+
+                <!-- edges (orthogonal smoothstep, rounded corners) -->
+                <svg class="edges" id="edges-default" width="2320" height="1200">
+                  <!-- intake → pre-screening (lane drop, Pre-op) -->
+                  <path class="primary" d="M390 122 H397 Q405 122 405 130 V277 Q405 285 413 285 H420"/>
+                  <text x="411" y="206" text-anchor="middle">+1d</text>
+
+                  <!-- pre-screening → MRI (lane drop, Pre-op) -->
+                  <path d="M510 285 Q515 285 515 290 V445 Q515 450 520 450"/>
+                  <text x="521" y="370" text-anchor="middle">+2d</text>
+
+                  <!-- MRI → Operatie (lane lift, cross-phase) -->
+                  <path d="M740 450 H760 Q770 450 770 440 V295 Q770 285 780 285 H800"/>
+                  <text x="778" y="370" text-anchor="middle">+7d</text>
+
+                  <!-- Operatie → Wachttijd (lane drop) -->
+                  <path class="primary" d="M1020 285 H1022 Q1030 285 1030 293 V442 Q1030 450 1038 450 H1040"/>
+
+                  <!-- Wachttijd → Dagelijkse (cross-phase, big lift) -->
+                  <path d="M1260 450 H1270 Q1280 450 1280 440 V132 Q1280 122 1290 122 H1300"/>
+                  <text x="1288" y="290" text-anchor="middle">+1d</text>
+
+                  <!-- Dagelijkse → Beslissing (lane drop) -->
+                  <path d="M1520 122 H1522 Q1530 122 1530 130 V277 Q1530 285 1538 285 H1540"/>
+
+                  <!-- Beslissing JA (top-right port) → Fysio -->
+                  <path d="M1760 271 Q1770 271 1770 278 V285 Q1770 285 1780 285"/>
+                  <text x="1770" y="261" text-anchor="middle">ja</text>
+
+                  <!-- Beslissing NEE (bottom-right port) → Follow-up bericht (cross-phase) -->
+                  <path class="dashed" d="M1760 299 H1885 Q1895 299 1895 311 V438 Q1895 450 1907 450 H2030"/>
+                  <text x="1895" y="372" text-anchor="middle">nee</text>
+                </svg>
+
+                <!-- BLOCKS (default scene) -->
+                <div class="blk is-entry" style="left:170px; top:90px; --lane-accent: var(--lane-patient)" data-phase="1">
+                  <span class="entry-badge">START</span>
+                  <span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 14 2 2 4-4"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Intake-vragenlijst</div>
+                    <div class="meta"><span class="type">Taak</span>·<span>Patiënt</span><span class="day-chip">D0</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:290px; top:253px; --lane-accent: var(--lane-caregiver)" data-phase="1">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Pre-screening afspraak</div>
+                    <div class="meta"><span class="type">Afspraak</span>·<span>30 min</span><span class="day-chip">D0+1</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:520px; top:418px; --lane-accent: var(--lane-system)" data-phase="1">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">MRI ingepland</div>
+                    <div class="meta"><span class="type">Mijlpaal</span><span class="day-chip">D+3</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:800px; top:253px; --lane-accent: var(--lane-caregiver)" data-phase="2">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Operatie</div>
+                    <div class="meta"><span class="type">Afspraak</span>·<span>2u</span><span class="day-chip">D+10</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:1040px; top:418px; --lane-accent: var(--lane-system)" data-phase="2">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Wachttijd ontwaken</div>
+                    <div class="meta"><span class="type">Timer</span>·<span>2u</span><span class="day-chip">D+10</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:1300px; top:90px; --lane-accent: var(--lane-patient)" data-phase="3">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Dagelijkse pijn-score</div>
+                    <div class="meta"><span class="type">Taak</span>·<span>dagelijks</span><span class="day-chip">D+11</span></div>
+                  </div>
+                </div>
+
+                <div class="blk is-branch" style="left:1540px; top:253px; --lane-accent: var(--lane-caregiver)" data-phase="3">
+                  <span class="port in"></span>
+                  <span class="port out-yes" title="ja"></span>
+                  <span class="port out-no" title="nee"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6"/><path d="M18 15c0-3-4-3-9-3"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Hoge pijn-score?</div>
+                    <div class="meta"><span class="type">Beslissing</span>·<span>2 takken</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:1780px; top:253px; --lane-accent: var(--lane-caregiver)" data-phase="3">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Fysio-consult</div>
+                    <div class="meta"><span class="type">Afspraak</span>·<span>45 min</span><span class="day-chip">D+24</span></div>
+                  </div>
+                </div>
+
+                <div class="blk" style="left:2030px; top:418px; --lane-accent: var(--lane-system)" data-phase="4">
+                  <span class="port in"></span><span class="port out"></span>
+                  <div class="rail-bar"></div>
+                  <div class="ico-tile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
+                  </div>
+                  <div class="body">
+                    <div class="name">Follow-up bericht</div>
+                    <div class="meta"><span class="type">E-mail</span><span class="day-chip">D+24</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- selection overlay (hidden in default) -->
+              <div class="sel-handles" id="sel-overlay" style="display:none;"></div>
+            </div>
+
+            <!-- palette dock -->
+            <div class="dock glass-strong" id="dock">
+              <div class="d-item" style="--lane-accent: var(--lane-caregiver)">
+                <span class="d-ico">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </span>
+                Afspraak
+              </div>
+              <div class="d-item" style="--lane-accent: var(--lane-patient)">
+                <span class="d-ico">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+                </span>
+                Taak
+              </div>
+              <div class="d-item" style="--lane-accent: var(--lane-caregiver)">
+                <span class="d-ico">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6"/><path d="M18 15c0-3-4-3-9-3"/></svg>
+                </span>
+                Beslissing
+              </div>
+              <div class="d-item" style="--lane-accent: var(--lane-system)">
+                <span class="d-ico">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </span>
+                Mijlpaal
+              </div>
+              <div class="d-item" style="--lane-accent: var(--lane-system)">
+                <span class="d-ico">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></svg>
+                </span>
+                Timer
+              </div>
+              <div class="d-sep"></div>
+              <div class="d-item" style="--lane-accent: var(--lane-system)">
+                <span class="d-ico">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
+                </span>
+                E-mail
+              </div>
+            </div>
+
+            <!-- minimap + zoom toolbar -->
+            <div class="minimap glass" id="minimap">
+              <div class="mm-map">
+                <div class="mm-dot" style="left:6%;  top:18%; --lane-accent: var(--lane-patient)"></div>
+                <div class="mm-dot" style="left:14%; top:18%; --lane-accent: var(--lane-caregiver)"></div>
+                <div class="mm-dot" style="left:30%; top:42%; --lane-accent: var(--lane-system)"></div>
+                <div class="mm-dot" style="left:46%; top:18%; --lane-accent: var(--lane-caregiver)"></div>
+                <div class="mm-dot" style="left:54%; top:42%; --lane-accent: var(--lane-system)"></div>
+                <div class="mm-dot" style="left:62%; top:18%; --lane-accent: var(--lane-patient)"></div>
+                <div class="mm-dot" style="left:68%; top:18%; --lane-accent: var(--lane-caregiver)"></div>
+                <div class="mm-dot" style="left:86%; top:42%; --lane-accent: var(--lane-caregiver)"></div>
+                <div class="mm-dot" style="left:86%; top:64%; --lane-accent: var(--lane-system)"></div>
+                <div class="mm-vp" style="left:8%; top:8%; width:48%; height:54%"></div>
+              </div>
+              <div class="mm-bar">
+                <button title="Uitzoomen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+                <span class="z-val">100%</span>
+                <button title="Inzoomen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+                <span class="z-sep"></span>
+                <button title="Aanpassen aan scherm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V5a2 2 0 0 1 2-2h4"/><path d="M21 9V5a2 2 0 0 0-2-2h-4"/><path d="M3 15v4a2 2 0 0 0 2 2h4"/><path d="M21 15v4a2 2 0 0 1-2 2h-4"/></svg></button>
+              </div>
+            </div>
+
+            <!-- drawer (hidden in default) -->
+            <aside class="drawer glass-strong" id="drawer" style="display:none;">
+              <div class="dr-head">
+                <div class="dr-ico-tile" style="--lane-accent: var(--lane-caregiver)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6"/><path d="M18 15c0-3-4-3-9-3"/></svg>
+                </div>
+                <div class="dr-title">
+                  Beslissing<div class="sub">Hoge pijn-score?</div>
+                </div>
+                <div class="dr-close" id="dr-close">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </div>
+              </div>
+              <div class="dr-body">
+                <div class="field">
+                  <label>Naam</label>
+                  <input type="text" value="Hoge pijn-score?" />
+                </div>
+                <div class="field">
+                  <label>Conditie</label>
+                  <select><option>VAS pijnscore ≥ 7</option><option>VAS pijnscore ≥ 5</option></select>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label>Fase</label>
+                    <select><option>Herstel</option><option>Pre-operatief</option><option>Operatie</option><option>Follow-up</option></select>
+                  </div>
+                  <div class="field">
+                    <label>Lane</label>
+                    <select><option>Zorgverlener</option><option>Patiënt</option><option>Systeem</option><option>Extern</option></select>
+                  </div>
+                </div>
+
+                <div class="section-h">Takken</div>
+                <div class="branch-list">
+                  <div class="branch-item">
+                    <span class="b-key">JA</span>
+                    <span style="flex:1">Verwijs naar fysio-consult</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                  </div>
+                  <div class="branch-item">
+                    <span class="b-key">NEE</span>
+                    <span style="flex:1">Stuur follow-up bericht</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                  </div>
+                  <button class="branch-add">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Tak toevoegen
+                  </button>
+                </div>
+
+                <div class="section-h">Timing</div>
+                <div class="field-row">
+                  <div class="field">
+                    <label>Type</label>
+                    <select><option>Vast</option><option>Bij inschrijving</option></select>
+                  </div>
+                  <div class="field">
+                    <label>Dag (offset)</label>
+                    <input type="number" value="11" />
+                  </div>
+                </div>
+
+                <div class="checkbox-row">
+                  <input type="checkbox" />
+                  <span>Conditie pas invullen bij inschrijving van een patiënt</span>
+                </div>
+              </div>
+              <div class="dr-foot">
+                <button class="btn btn-danger" title="Verwijderen">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                  Verwijder
+                </button>
+                <div style="flex:1"></div>
+                <button class="btn btn-ghost">Annuleren</button>
+                <button class="btn btn-primary">Toepassen</button>
+              </div>
+            </aside>
+
+            <!-- phase popover (hidden in default) -->
+            <div class="popover glass-strong" id="popover" style="display:none; left:96px; top:54px;">
+              <div class="pop-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" placeholder="Zoek of typ nieuwe fase…" value="" />
+                <span class="kbd">Esc</span>
+              </div>
+              <div class="pop-list">
+                <div class="pop-item active">
+                  <span class="p-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+                  <div><div class="p-name">Pre-operatief</div><div class="p-sub">Sjabloon · Rugrevalidatie</div></div>
+                </div>
+                <div class="pop-item">
+                  <span class="p-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+                  <div><div class="p-name">Operatie</div><div class="p-sub">Sjabloon · Rugrevalidatie</div></div>
+                </div>
+                <div class="pop-item">
+                  <span class="p-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="m4.93 10.93 4.24 4.24"/><path d="M2 18h6"/><path d="m4.93 25.07 4.24-4.24" transform="translate(0 -8)"/></svg></span>
+                  <div><div class="p-name">Herstel</div><div class="p-sub">Sjabloon · Rugrevalidatie</div></div>
+                </div>
+                <div class="pop-item">
+                  <span class="p-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+                  <div><div class="p-name">Follow-up</div><div class="p-sub">Sjabloon · Rugrevalidatie</div></div>
+                </div>
+                <div class="pop-item">
+                  <span class="p-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                  <div><div class="p-name">Nieuwe fase…</div><div class="p-sub">Maak een lege fase aan</div></div>
+                </div>
+              </div>
+              <div class="pop-foot">
+                <span>Tip: typ om te filteren</span>
+                <span><span class="kbd">↑</span> <span class="kbd">↓</span> <span class="kbd">↵</span></span>
+              </div>
+            </div>
+
+            <!-- toast (hidden in default) -->
+            <div class="toast is-success" id="toast" style="display:none;">
+              <span class="t-ico">
+                <svg class="ico-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg class="ico-warn" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0z"/></svg>
+              </span>
+              <span id="toast-text">Wijzigingen opgeslagen</span>
+              <span class="t-action" id="toast-action">Bekijk</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ============ DEV SCENE PICKER ============ -->
+    <nav class="scenebar" id="scenebar">
+      <span class="sb-label">Scènes</span>
+      <button class="active" data-scene="loaded">Geladen</button>
+      <button data-scene="empty">Leeg</button>
+      <button data-scene="selected">Selectie</button>
+      <button data-scene="phase">Fase-picker</button>
+      <button data-scene="drag">Drag</button>
+      <button data-scene="big">Volume</button>
+      <button data-scene="success">Opgeslagen</button>
+      <button data-scene="error">Foutmelding</button>
+      <button data-scene="bladder">Blaaskanker</button>
+    </nav>
+
+    <script>
+      // ---------- scene controller ----------
+      const drawer  = document.getElementById('drawer');
+      const popover = document.getElementById('popover');
+      const toast   = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      const toastAction = document.getElementById('toast-action');
+      const ci      = document.getElementById('ci');
+      const dock    = document.getElementById('dock');
+      const subbar  = document.getElementById('subbar');
+      const statusPill = document.getElementById('status-pill');
+      const statusText = document.getElementById('status-text');
+      const titleText  = document.getElementById('title-text');
+      const selOverlay = document.getElementById('sel-overlay');
+      const minimap = document.getElementById('minimap');
+
+      // remember initial inner HTML of canvas so we can restore between scenes
+      const baseInner = ci.innerHTML;
+
+      function resetCanvas() {
+        ci.innerHTML = baseInner;
+      }
+
+      function hideAll() {
+        drawer.style.display  = 'none';
+        popover.style.display = 'none';
+        toast.style.display   = 'none';
+        selOverlay.style.display = 'none';
+        // restore base scene chrome
+        statusPill.classList.remove('is-clean','is-error');
+        statusPill.classList.add('is-dirty');
+        statusText.textContent = 'Niet opgeslagen';
+        titleText.textContent = 'Rugrevalidatie';
+        dock.style.display = 'flex';
+        minimap.style.display = '';
+      }
+
+      function selectBlockAt(left, top, w, h) {
+        selOverlay.style.display = 'block';
+        selOverlay.style.left   = (left - 4) + 'px';
+        selOverlay.style.top    = (top - 4) + 'px';
+        selOverlay.style.width  = (w + 8) + 'px';
+        selOverlay.style.height = (h + 8) + 'px';
+      }
+
+      function setToast(kind, msg, actionLabel) {
+        toast.style.display = 'flex';
+        toast.classList.remove('is-success', 'is-error');
+        toast.classList.add(kind === 'success' ? 'is-success' : 'is-error');
+        toastText.textContent = msg;
+        if (actionLabel) {
+          toastAction.style.display = '';
+          toastAction.textContent = actionLabel;
+        } else {
+          toastAction.style.display = 'none';
+        }
+      }
+
+      function setScene(name) {
+        resetCanvas();
+        hideAll();
+
+        switch (name) {
+          case 'loaded':
+            // default already
+            break;
+
+          case 'empty': {
+            ci.innerHTML = `
+              <div class="phase-col p1" style="left:0; width:100%;"></div>
+              <div style="position:absolute; inset:0; display:grid; place-items:center;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:12px; max-width:340px; text-align:center;">
+                  <div style="width:56px; height:56px; border-radius:14px; background:var(--card); display:grid; place-items:center; box-shadow:var(--shadow-md); color:var(--primary);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 8c0 5 7 5 7 8M19 8c0 5-7 5-7 8"/></svg>
+                  </div>
+                  <div style="font-size:16px; font-weight:600;">Begin met je eerste blok</div>
+                  <div style="font-size:13px; color:var(--muted-foreground); line-height:1.5;">Sleep een blok vanaf de palette of klik op een type hieronder om te starten met dit zorgpad.</div>
+                </div>
+              </div>
+            `;
+            statusPill.classList.remove('is-dirty','is-error');
+            statusPill.classList.add('is-clean');
+            statusText.textContent = 'Opgeslagen · zojuist';
+            titleText.textContent = 'Nieuw zorgpad';
+            break;
+          }
+
+          case 'selected': {
+            // mark the decision block selected
+            drawer.style.display = 'flex';
+            const node = ci.querySelector('.blk.is-branch');
+            if (node) {
+              node.classList.add('selected');
+              selectBlockAt(node.offsetLeft, node.offsetTop, node.offsetWidth, node.offsetHeight);
+            }
+            break;
+          }
+
+          case 'phase': {
+            popover.style.display = 'block';
+            popover.style.left = '110px';
+            popover.style.top  = '6px';
+            break;
+          }
+
+          case 'drag': {
+            // ghost block hovering near the patient lane in herstel column
+            const ghost = document.createElement('div');
+            ghost.className = 'blk ghost';
+            ghost.style.left = '1080px';
+            ghost.style.top  = '110px';
+            ghost.style.setProperty('--lane-accent', 'var(--lane-patient)');
+            ghost.innerHTML = `
+              <div class="rail-bar"></div>
+              <div class="ico-tile">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </div>
+              <div class="body">
+                <div class="name">Nieuwe taak</div>
+                <div class="meta"><span>Patiënt-lane · Herstel</span></div>
+              </div>
+            `;
+            ci.appendChild(ghost);
+            // drop ring guidance
+            const ring = document.createElement('div');
+            ring.style.cssText = `position:absolute; left:1062px; top:92px; width:256px; height:96px;
+              border:2px dashed var(--primary); border-radius:14px;
+              background:rgba(38,107,94,0.04);`;
+            ci.appendChild(ring);
+            break;
+          }
+
+          case 'big': {
+            // demonstrate groups: multiple blocks triggered at the same moment, in order.
+            // mounted into the existing canvas alongside base blocks.
+            const SVG_TASK     = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/>';
+            const SVG_APPT     = '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>';
+            const SVG_EMAIL    = '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="m22 7-10 7L2 7"/>';
+            const SVG_TIMER    = '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/>';
+            const SVG_MILESTONE= '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>';
+
+            const icon = (svg) => `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
+
+            const renderGroup = ({ left, top, lane, label, day, items }) => {
+              const g = document.createElement('div');
+              g.className = 'blk-group';
+              g.style.left = left + 'px';
+              g.style.top  = top + 'px';
+              g.style.setProperty('--lane-accent', `var(${lane})`);
+              const itemsHtml = items.map((it, i) => `
+                <div class="grp-item">
+                  <span class="grp-idx">${i + 1}</span>
+                  <span class="grp-ico">${icon(it.ico)}</span>
+                  <span class="grp-name">${it.name}</span>
+                  <span class="grp-type">${it.type}</span>
+                </div>
+              `).join('');
+              g.innerHTML = `
+                <span class="port in"></span><span class="port out"></span>
+                <div class="grp-head">
+                  <span>${label}</span>
+                  <span class="grp-count">${items.length} stappen</span>
+                  <span class="grp-day">${day}</span>
+                </div>
+                ${itemsHtml}
+              `;
+              ci.appendChild(g);
+            };
+
+            // Herstel (phase 3) — Wekelijkse check-in (patient lane, D+17)
+            renderGroup({
+              left: 1300, top: 560, lane: '--lane-patient',
+              label: 'Wekelijkse check-in', day: 'D+17',
+              items: [
+                { name: 'Pijn-vragenlijst',    type: 'Taak',     ico: SVG_TASK },
+                { name: 'Mobiliteits-test',    type: 'Taak',     ico: SVG_TASK },
+                { name: 'Foto van wond',       type: 'Taak',     ico: SVG_TASK },
+              ],
+            });
+
+            // Operatie (phase 2) — Pre-op protocol (caregiver, D+10 morning)
+            renderGroup({
+              left: 800, top: 560, lane: '--lane-caregiver',
+              label: 'Pre-op protocol', day: 'D+10',
+              items: [
+                { name: 'Nuchter-controle',    type: 'Taak',     ico: SVG_TASK },
+                { name: 'IV plaatsen',         type: 'Afspraak', ico: SVG_APPT },
+                { name: 'Anesthesie-briefing', type: 'Afspraak', ico: SVG_APPT },
+                { name: 'Operatiekamer klaar', type: 'Mijlpaal', ico: SVG_MILESTONE },
+              ],
+            });
+
+            // Follow-up (phase 4) — Discharge bundle (system, D+30)
+            renderGroup({
+              left: 2030, top: 560, lane: '--lane-system',
+              label: 'Ontslag-bundel', day: 'D+30',
+              items: [
+                { name: 'Ontslagbrief huisarts', type: 'E-mail',  ico: SVG_EMAIL },
+                { name: 'Receptverzoek',         type: 'E-mail',  ico: SVG_EMAIL },
+                { name: 'Wachttijd antwoord',    type: 'Timer',   ico: SVG_TIMER },
+              ],
+            });
+            break;
+          }
+
+          case 'success': {
+            statusPill.classList.remove('is-dirty','is-error');
+            statusPill.classList.add('is-clean');
+            statusText.textContent = 'Opgeslagen · zojuist';
+            setToast('success', 'Zorgpad opgeslagen', 'Ongedaan');
+            break;
+          }
+
+          case 'error': {
+            statusPill.classList.remove('is-dirty','is-clean');
+            statusPill.classList.add('is-error');
+            statusText.textContent = '1 fout · niet opgeslagen';
+            // add a tiny badge to the decision block
+            const node = ci.querySelector('.blk.is-branch');
+            if (node) {
+              const badge = document.createElement('div');
+              badge.className = 'badge';
+              badge.textContent = '!';
+              node.appendChild(badge);
+              node.style.borderColor = 'var(--danger)';
+              node.style.boxShadow = '0 0 0 3px rgba(180,35,24,0.12), var(--shadow-sm)';
+            }
+            setToast('error', 'Beslissing "Hoge pijn-score?" mist een NEE-tak', 'Toon');
+            break;
+          }
+
+          case 'bladder': {
+            titleText.textContent = 'Blaaskanker · diagnose → behandeling';
+            const labels = ['Verwijzing','Diagnostiek','Behandelplan','Nazorg'];
+            subbar.querySelectorAll('.phase-step span:not(.idx):not(.count)').forEach((el, i) => { if (labels[i]) el.textContent = labels[i]; });
+            // swap block names + types to a bladder-cancer scenario
+            const swaps = [
+              { name: 'Verwijsbrief huisarts', type: 'Taak',       day: 'D0'  },
+              { name: 'Eerste consult uroloog', type: 'Afspraak',  day: 'D+2' },
+              { name: 'Cystoscopie gepland',    type: 'Mijlpaal',  day: 'D+5' },
+              { name: 'TURBT operatie',         type: 'Afspraak',  day: 'D+14'},
+              { name: 'Herstel monitor',        type: 'Timer',     day: 'D+15'},
+              { name: 'Pathologie-uitslag',     type: 'Taak',      day: 'D+21'},
+              { name: 'Hoog-risico tumor?',     type: 'Beslissing',day: ''    },
+              { name: 'BCG-spoeling traject',   type: 'Afspraak',  day: 'D+28'},
+              { name: 'Reguliere follow-up',    type: 'E-mail',    day: 'D+28'},
+            ];
+            const blocks = ci.querySelectorAll('.blk');
+            blocks.forEach((blk, i) => {
+              if (!swaps[i]) return;
+              const nameEl = blk.querySelector('.name');
+              const typeEl = blk.querySelector('.meta .type');
+              const dayEl  = blk.querySelector('.day-chip');
+              if (nameEl) nameEl.textContent = swaps[i].name;
+              if (typeEl) typeEl.textContent = swaps[i].type;
+              if (dayEl)  dayEl.textContent  = swaps[i].day;
+            });
+            break;
+          }
+        }
+      }
+
+      // wire scene buttons
+      const sbButtons = document.querySelectorAll('#scenebar [data-scene]');
+      sbButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          sbButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          setScene(btn.dataset.scene);
+        });
+      });
+
+      // close drawer if user clicks the X
+      document.getElementById('dr-close').addEventListener('click', () => {
+        drawer.style.display = 'none';
+        selOverlay.style.display = 'none';
+        const sel = ci.querySelector('.blk.selected');
+        if (sel) sel.classList.remove('selected');
+      });
+
+      // open drawer when clicking a block (non-default scenes too)
+      document.addEventListener('click', (e) => {
+        const blk = e.target.closest('.blk');
+        if (!blk) return;
+        ci.querySelectorAll('.blk.selected').forEach(b => b.classList.remove('selected'));
+        blk.classList.add('selected');
+        selectBlockAt(blk.offsetLeft, blk.offsetTop, blk.offsetWidth, blk.offsetHeight);
+        drawer.style.display = 'flex';
+      });
+
+      // phase add opens popover
+      document.getElementById('phase-add').addEventListener('click', () => {
+        popover.style.display = popover.style.display === 'none' ? 'block' : 'none';
+        popover.style.left = '110px';
+        popover.style.top  = '6px';
+      });
+
+      // phase-step buttons scroll canvas to that phase column
+      const phaseMap = { pre: '.phase-col.p1', surg: '.phase-col.p2', rec: '.phase-col.p3', fu: '.phase-col.p4' };
+      document.querySelectorAll('.phase-step').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const sel = phaseMap[btn.dataset.phase];
+          const col = sel && ci.querySelector(sel);
+          const cs = document.getElementById('cs');
+          if (col && cs) cs.scrollTo({ left: Math.max(0, col.offsetLeft - 24), behavior: 'smooth' });
+        });
+      });
+
+      // ============ Q3 demo: view-mode switcher (hybrid route resolution) ============
+      // Three modes show how the same /pathways/{id} URL resolves vs /pathways/{id}/v/{versionId}:
+      //  - concept-current   : URL bare, status = CONCEPT, fully editable, status-pill visible
+      //  - published-current : URL bare, status = PUBLISHED, read-only, CTA = "Maak nieuwe versie"
+      //  - historical        : URL has /v/<id>, status = v.2, read-only, CTA = "Herstel als nieuw concept"
+      const main = document.querySelector('.main');
+      const urlPath = document.getElementById('url-path');
+      const versionMarker = document.getElementById('version-marker');
+      const banner = document.getElementById('readonly-banner');
+      const rbBody = document.getElementById('rb-body');
+      const rbCta = document.getElementById('rb-cta');
+      const rbBack = document.getElementById('rb-back');
+
+      const modes = {
+        'concept-current': {
+          url: '/pathways/9f3a-rugrevalidatie',
+          urlClass: 'path-current',
+          versionNo: 'v.5',
+          versionStatus: 'concept',
+          versionVariant: 'is-concept',
+          readonly: false,
+          showBanner: false,
+        },
+        'published-current': {
+          url: '/pathways/9f3a-rugrevalidatie',
+          urlClass: 'path-current',
+          versionNo: 'v.4',
+          versionStatus: 'gepubliceerd',
+          versionVariant: 'is-published',
+          readonly: true,
+          showBanner: true,
+          bannerVariant: 'is-published-current',
+          bannerBody: 'Deze versie is <strong>gepubliceerd</strong> en wordt gebruikt door lopende zorgpaden. Maak een nieuwe versie om wijzigingen te doen.',
+          ctaLabel: 'Maak nieuwe versie',
+          showBack: false,
+        },
+        'historical': {
+          url: '/pathways/9f3a-rugrevalidatie/v/v2-2026-05-12',
+          urlClass: 'path-version',
+          versionNo: 'v.2',
+          versionStatus: 'historisch',
+          versionVariant: 'is-historical',
+          readonly: true,
+          showBanner: true,
+          bannerVariant: '',
+          bannerBody: 'Je bekijkt <strong>v.2</strong> · gepubliceerd op 12 mei 2026. Dit is een historische versie.',
+          ctaLabel: 'Herstel als nieuw concept',
+          showBack: true,
+        },
+      };
+
+      const dotColors = {
+        'concept-current':   '#d97706',
+        'published-current': '#16a34a',
+        'historical':        '#3a7d8d',
+      };
+
+      const verSwitch    = document.getElementById('ver-switch');
+      const vsTrigger    = document.getElementById('vs-trigger');
+      const vsTriggerDot = document.getElementById('vs-trigger-dot');
+      const vsTriggerLbl = document.getElementById('vs-trigger-label');
+
+      function applyMode(modeKey) {
+        const m = modes[modeKey];
+        if (!m) return;
+
+        urlPath.textContent = m.url;
+        urlPath.className = m.urlClass;
+
+        versionMarker.className = 'crumb-version ' + m.versionVariant;
+        versionMarker.innerHTML = '<span>' + m.versionNo + '</span><span class="cv-status">' + m.versionStatus + '</span>';
+
+        if (m.readonly) main.classList.add('is-readonly');
+        else main.classList.remove('is-readonly');
+
+        banner.classList.toggle('is-visible', !!m.showBanner);
+        banner.classList.toggle('is-published-current', m.bannerVariant === 'is-published-current');
+        if (m.showBanner) {
+          rbBody.innerHTML = m.bannerBody;
+          rbCta.textContent = m.ctaLabel;
+          rbBack.style.display = m.showBack ? '' : 'none';
+        }
+
+        vsTriggerDot.style.background = dotColors[modeKey];
+        vsTriggerLbl.textContent = m.versionNo;
+        document.querySelectorAll('.ver-switch .vs-item').forEach(b => {
+          b.classList.toggle('is-active', b.dataset.mode === modeKey);
+        });
+      }
+
+      vsTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = verSwitch.classList.toggle('is-open');
+        vsTrigger.setAttribute('aria-expanded', String(open));
+      });
+      document.querySelectorAll('.ver-switch .vs-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyMode(btn.dataset.mode);
+          verSwitch.classList.remove('is-open');
+          vsTrigger.setAttribute('aria-expanded', 'false');
+        });
+      });
+      document.addEventListener('click', (e) => {
+        if (!verSwitch.contains(e.target)) {
+          verSwitch.classList.remove('is-open');
+          vsTrigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      rbBack.addEventListener('click', () => applyMode('concept-current'));
+      rbCta.addEventListener('click', () => {
+        // simulated: fork → land on new concept
+        applyMode('concept-current');
+      });
+    </script>
+  </body>
+</html>

@@ -2,7 +2,7 @@
 
 ### Requirement: Pathway definition aggregate
 
-The backend SHALL persist a pathway definition as an aggregate identified by a stable UUID. The aggregate root is the `pathway` row; child entities (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_field_resolution`, `pathway_timing_value`) cascade-delete with the root. The aggregate SHALL hold a human-friendly `name`. Every aggregate table SHALL inherit `TenantOwnedEntity` (from `apps/backend/app/db/base.py`) so `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`, and audit FKs come from the base class. The pathway has no design-time entry block — execution start is picked at enrollment (F4, separate change). Concrete storage is relational with one purposeful jsonb (`pathway_block.config`) per Naming Conventions & Schema Exceptions in `design.md`.
+The backend SHALL persist a pathway definition as an aggregate identified by a stable UUID. The aggregate root is the `pathway` row; child entities (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_block_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_deferred_field`, `pathway_timing_value`) cascade-delete with the root. The aggregate SHALL hold a human-friendly `name`. Every aggregate table SHALL inherit `TenantOwnedEntity` (from `apps/backend/app/db/base.py`) so `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`, and audit FKs come from the base class. The pathway has no design-time entry block — execution start is picked at enrollment (F4, separate change). Concrete storage is relational with one purposeful jsonb (`pathway_block.config`) per Naming Conventions & Schema Exceptions in `design.md`.
 
 #### Scenario: Persist and reload a pathway
 
@@ -55,13 +55,13 @@ Endpoints SHALL follow the `openapi-contract` requirements: stable `operation_id
 
 ### Requirement: Block-type catalogue
 
-The backend SHALL expose `GET /pathway-blocks` returning the registry of available block types. Each entry SHALL include a stable `type` identifier (kebab-case), a human-readable `label`, a `default_lane_kind_id` referencing `pathway_lane_kind`, and a JSON schema (`config_schema`) describing the block's configuration fields. The PoC registry SHALL include at minimum: `appointment`, `decision`, `milestone`, `timer`, and `luscii-clinical-path`. The catalogue is owned by the backend; the orchestrator SHALL NOT hardcode block names or config shapes.
+The backend SHALL expose `GET /pathways/blocks` returning the registry of available block types. Each entry SHALL include a stable `type` identifier (kebab-case), a human-readable `label`, a `default_lane_kind_code` (one of the seeded `pathway_lane_kind.code` values), and a JSON schema (`config_schema`) describing the block's configuration fields. The catalogue inlines the lane-kind `code` (a stable D10 identifier) rather than a UUID FK so the orchestrator does not need a second round-trip to resolve catalogue entries. The PoC registry SHALL include at minimum: `appointment`, `decision`, `milestone`, `timer`, `task`, and `email`. External-system blocks (e.g. a Luscii care-path reference) are deferred. The catalogue is owned by the backend; the orchestrator SHALL NOT hardcode block names or config shapes.
 
 #### Scenario: Catalogue lists PoC block types
 
-- **WHEN** a client calls `GET /pathway-blocks`
-- **THEN** the response includes entries for `appointment`, `decision`, `milestone`, `timer`, and `luscii-clinical-path`
-- **AND** each entry carries a `type`, `label`, `default_lane_kind_id`, and `config_schema`
+- **WHEN** a client calls `GET /pathways/blocks`
+- **THEN** the response includes entries for `appointment`, `decision`, `milestone`, `timer`, `task`, and `email`
+- **AND** each entry carries a `type`, `label`, `default_lane_kind_code`, and `config_schema`
 
 #### Scenario: Pathway blocks validated against catalogue
 
@@ -75,11 +75,11 @@ The backend SHALL expose `GET /pathway-blocks` returning the registry of availab
 
 ### Requirement: Phase-template catalogue
 
-The backend SHALL expose `GET /pathway-phase-templates` returning a registry of phase templates owned by code (per D14). Each entry SHALL include a stable `id`, a `label`, a `default_ord`, and an optional `default_duration_days`. The PoC registry SHALL include at minimum the chapters used by the seeded Rugrevalidatie pathway (e.g. `pre-op`, `surgery`, `recovery`, `follow-up`). `pathway_phase.template_id` is a soft pointer (no FK constraint) so renaming or removing a template does not break existing pathways.
+The backend SHALL expose `GET /pathways/phase-templates` returning a registry of phase templates owned by code (per D14). Each entry SHALL include a stable `id`, a `label`, a `default_ord`, and an optional `default_duration_days`. The PoC registry SHALL include at minimum the chapters used by the seeded Rugrevalidatie pathway (e.g. `pre-op`, `surgery`, `recovery`, `follow-up`). `pathway_phase.template_id` is a soft pointer (no FK constraint) so renaming or removing a template does not break existing pathways.
 
 #### Scenario: Catalogue lists PoC phase templates
 
-- **WHEN** a client calls `GET /pathway-phase-templates`
+- **WHEN** a client calls `GET /pathways/phase-templates`
 - **THEN** the response includes the seeded Rugrevalidatie chapters with `id`, `label`, `default_ord`, and `default_duration_days`
 
 #### Scenario: Custom phase has NULL template_id
@@ -161,7 +161,7 @@ A third kind (`runtime`, where a value reads an upstream block's output at execu
 
 ### Requirement: Branches and edges
 
-The backend SHALL persist decision-block branches as first-class `pathway_branch` rows scoped to the owning block, ordered by `ord`. `pathway_edge` SHALL reference `source_block_id`, `target_block_id`, and an OPTIONAL `source_branch_id` (NULL for non-branching sources). The backend SHALL reject edges whose `source_branch_id` is set but does not belong to `source_block_id`. `pathway_branch` rows SHALL be permitted only on blocks whose catalogue entry advertises branching support (PoC: hard-coded check against `decision`; future block-type catalogue entries declare a `supports_branches` flag). `pathway_edge` SHALL enforce `UNIQUE (source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT` so duplicate connectors are rejected at the DB layer; the builder UI MUST also prevent duplicate-edge creation to surface the conflict before save.
+The backend SHALL persist decision-block branches as first-class `pathway_block_branch` rows scoped to the owning block, ordered by `ord`. `pathway_edge` SHALL reference `source_block_id`, `target_block_id`, and an OPTIONAL `source_branch_id` (NULL for non-branching sources). The backend SHALL reject edges whose `source_branch_id` is set but does not belong to `source_block_id`. `pathway_block_branch` rows SHALL be permitted only on blocks whose catalogue entry advertises branching support (PoC: hard-coded check against `decision`; future block-type catalogue entries declare a `supports_branches` flag). `pathway_edge` SHALL enforce `UNIQUE (source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT` so duplicate connectors are rejected at the DB layer; the builder UI MUST also prevent duplicate-edge creation to surface the conflict before save.
 
 #### Scenario: Branching edge persisted with branch reference
 
@@ -175,7 +175,7 @@ The backend SHALL persist decision-block branches as first-class `pathway_branch
 
 #### Scenario: Reject branch on non-branching block
 
-- **WHEN** a client submits a `pathway_branch` whose `block_id` references a block of a type that does not support branching (e.g. `appointment`)
+- **WHEN** a client submits a `pathway_block_branch` whose `block_id` references a block of a type that does not support branching (e.g. `appointment`)
 - **THEN** the backend rejects the request with a 422 validation error citing the block type
 
 #### Scenario: Reject duplicate edge between same source/branch/target
@@ -192,9 +192,9 @@ The backend SHALL persist optional `pathway_time_marker` rows for visual day mar
 - **WHEN** a pathway is saved with one time marker labelled `Surgery + 30d` referencing a fixed timing value
 - **THEN** `GET /pathways/{id}` returns the marker with the same label and timing value
 
-### Requirement: Block field resolution (enrollment-deferred fields)
+### Requirement: Block deferred fields (filled at enrollment)
 
-The backend SHALL persist `pathway_block_field_resolution` rows as `(block_id, field_path)`. A row marks that `field_path` (must exist in the block's `config_schema`) is filled at enrollment time rather than design time. Runtime-resolved fields are deferred to MVP together with the runtime timing kind. The backend SHALL reject rows whose `field_path` does not exist in the block's `config_schema`.
+The backend SHALL persist `pathway_block_deferred_field` rows as `(block_id, field_path)`. A row marks that `field_path` (must exist in the block's `config_schema`) is filled at enrollment time rather than design time. Runtime-resolved fields are deferred to MVP together with the runtime timing kind. The backend SHALL reject rows whose `field_path` does not exist in the block's `config_schema`.
 
 #### Scenario: Enrollment-deferred field persisted
 
@@ -216,17 +216,6 @@ The backend SHALL treat any persisted pathway definition as enrollable. There SH
 - **THEN** the pathway appears in `GET /pathways` with no draft/published flag
 - **AND** there is no `publish` endpoint exposed
 
-### Requirement: Luscii clinical-path block is reference-only
+### Requirement: External-system blocks remain reference-only
 
-The `luscii-clinical-path` block SHALL carry NO Luscii-specific column or table. Its catalogue `config_schema` SHALL define reference fields only (at minimum `luscii_path_id`; optional `luscii_path_url`) — never the Luscii payload itself. The backend SHALL validate the reference shape via the catalogue's `config_schema` like any other block type and SHALL NOT fetch, parse, or mirror Luscii clinical content. Live Luscii Builder API integration is deferred to MVP.
-
-#### Scenario: Luscii block stores only reference fields
-
-- **WHEN** a pathway is saved with a `luscii-clinical-path` block whose `config` carries `luscii_path_id`
-- **THEN** `GET /pathways/{id}` returns the same `luscii_path_id` in the block's `config`
-- **AND** no separate Luscii table or column exists in the schema
-
-#### Scenario: Reject Luscii block missing required reference
-
-- **WHEN** a client submits a `luscii-clinical-path` block whose `config` omits `luscii_path_id`
-- **THEN** the backend rejects the request with a 422 validation error citing the missing field
+The PoC catalogue contains no external-system blocks. If/when external-system blocks (e.g. a Luscii care-path reference, FHIR pulls, HiX tasks) are reintroduced, they SHALL carry NO external-system–specific column or table. Their catalogue `config_schema` SHALL define reference fields only (IDs and optional URLs) — never the upstream payload itself. The backend SHALL validate the reference shape via the catalogue's `config_schema` like any other block type and SHALL NOT fetch, parse, or mirror upstream clinical content.
