@@ -17,14 +17,17 @@ class OrganisationService:
     async def list_in_tenant(self, tenant_id: UUID) -> list[Organisation]:
         return await self._repo.list_in_tenant(tenant_id)
 
+    async def assert_in_tenant(self, tenant_id: UUID, organisation_id: UUID) -> None:
+        org = await self._repo.get_by_id(organisation_id)
+        if org is None:
+            raise OrganisationNotFoundError()
+        if org.tenant_id != tenant_id:
+            raise CrossTenantOrganisationError()
+
     async def assert_same_tenant_parent(self, tenant_id: UUID, parent_id: UUID | None) -> None:
         if parent_id is None:
             return
-        parent = await self._repo.get_by_id(parent_id)
-        if parent is None:
-            raise OrganisationNotFoundError()
-        if parent.tenant_id != tenant_id:
-            raise CrossTenantOrganisationError()
+        await self.assert_in_tenant(tenant_id, parent_id)
 
     async def get_root_ancestor_id(self, organisation_id: UUID) -> UUID | None:
         root = await self._repo.get_root_ancestor(organisation_id)
