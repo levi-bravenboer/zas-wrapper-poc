@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.enums.user import Role
 from app.db.models.patient import Patient, PatientIdentifier
 from app.repositories.organisation.organisation_repository import OrganisationRepository
@@ -19,16 +21,24 @@ from app.services.patient.errors import (
     PatientIdentifiersImmutableError,
     PatientNotFoundError,
 )
+from app.services.practitioner_role.predicates import (
+    patient_ids_under_roots,
+    practitioner_root_orgs_for,
+)
 
 
 class PatientService:
     """Tenant-scoped orchestration for patients.
 
     Listing flows through this service so caregiver visibility is enforced
-    in one place: caregivers only see patients reachable via an open
-    `CareTeamParticipant` row (the participant-row predicate is the only
-    rule — no org-subtree fallback). Admins bypass and see every patient
-    in their tenant.
+    in one place: caregivers see a patient when ANY of these holds:
+
+    - they have an open `CareTeamParticipant` row on a care team for that
+      patient, OR
+    - the patient's `primary_organisation_id` descends from a root org the
+      caregiver can act under via an open `PractitionerRole`.
+
+    Admins bypass both checks and see every patient in their tenant.
     """
 
     def __init__(
@@ -36,10 +46,12 @@ class PatientService:
         repo: PatientRepository,
         organisation_repo: OrganisationRepository,
         care_team_service: CareTeamService,
+        session: AsyncSession,
     ) -> None:
         self._repo = repo
         self._org_repo = organisation_repo
         self._care_team_service = care_team_service
+        self._session = session
 
     async def list_in_tenant(
         self,
@@ -51,7 +63,12 @@ class PatientService:
         repo = self._repo.with_identifier(identifier)
         if actor.role == Role.ADMIN:
             return await repo.list_page(query)
-        visible = await self._care_team_service.visible_patient_ids_for(actor)
+        via_care_team = await self._care_team_service.visible_patient_ids_for(actor)
+        root_orgs = await practitioner_root_orgs_for(self._session, actor)
+        via_roles = await patient_ids_under_roots(
+            self._session, actor.tenant_id, root_orgs
+        )
+        visible = via_care_team | via_roles
         if not visible:
             return Page[Patient](
                 items=[],
