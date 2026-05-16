@@ -185,23 +185,141 @@
         "tags": [
           "users"
         ],
-        "summary": "List Tenant Users",
-        "operationId": "list_tenant_users",
+        "summary": "List Users",
+        "operationId": "list_users",
         "parameters": [
           {
-            "name": "active",
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-indexed page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "1-indexed page number"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (1..100)",
+              "default": 25,
+              "title": "Page Size"
+            },
+            "description": "Items per page (1..100)"
+          },
+          {
+            "name": "q",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "boolean"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Active"
+              "description": "Free-text search query; whitespace-only is treated as absent",
+              "title": "Q"
+            },
+            "description": "Free-text search query; whitespace-only is treated as absent"
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sort field; may appear at most once",
+              "title": "Order By"
+            },
+            "description": "Sort field; may appear at most once"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sort direction; may appear at most once",
+              "title": "Order"
+            },
+            "description": "Sort direction; may appear at most once"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_UserRow_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get User",
+        "operationId": "get_user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
             }
           }
         ],
@@ -211,11 +329,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UserRow"
-                  },
-                  "title": "Response List Tenant Users"
+                  "$ref": "#/components/schemas/UserDetail"
                 }
               }
             }
@@ -269,6 +383,1055 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserRow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}/active": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Set User Active",
+        "operationId": "set_user_active",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organisations": {
+      "get": {
+        "tags": [
+          "organisations"
+        ],
+        "summary": "List Organisations",
+        "operationId": "list_organisations",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "List Patients",
+        "operationId": "list_patients",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "FHIR Patient.identifier short-circuit; exact value match",
+              "title": "Identifier"
+            },
+            "description": "FHIR Patient.identifier short-circuit; exact value match"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-indexed page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "1-indexed page number"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (1..100)",
+              "default": 25,
+              "title": "Page Size"
+            },
+            "description": "Items per page (1..100)"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Free-text search query; whitespace-only is treated as absent",
+              "title": "Q"
+            },
+            "description": "Free-text search query; whitespace-only is treated as absent"
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sort field; may appear at most once",
+              "title": "Order By"
+            },
+            "description": "Sort field; may appear at most once"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sort direction; may appear at most once",
+              "title": "Order"
+            },
+            "description": "Sort direction; may appear at most once"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PatientRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Create Patient",
+        "operationId": "create_patient",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Get Patient",
+        "operationId": "get_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Update Patient",
+        "operationId": "update_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Soft Delete Patient",
+        "operationId": "soft_delete_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/care-teams": {
+      "get": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "List Patient Care Teams",
+        "operationId": "list_patient_care_teams",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CareTeamRead"
+                  },
+                  "title": "Response List Patient Care Teams"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Create Care Team",
+        "operationId": "create_care_team",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CareTeamCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/care-teams/{care_team_id}": {
+      "patch": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Update Care Team",
+        "operationId": "update_care_team",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CareTeamUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/care-teams/{care_team_id}/participants": {
+      "post": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Add Care Team Participant",
+        "operationId": "add_care_team_participant",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/care-teams/{care_team_id}/participants/{user_id}": {
+      "patch": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Change Participant Role",
+        "operationId": "change_participant_role",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantRoleChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Unassign Care Team Participant",
+        "operationId": "unassign_care_team_participant",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioners/{user_id}": {
+      "get": {
+        "tags": [
+          "practitioners"
+        ],
+        "summary": "Get Practitioner",
+        "operationId": "get_practitioner",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "practitioners"
+        ],
+        "summary": "Update Practitioner",
+        "operationId": "update_practitioner",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioners": {
+      "post": {
+        "tags": [
+          "practitioners"
+        ],
+        "summary": "Create Practitioner",
+        "operationId": "create_practitioner",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioner-roles": {
+      "get": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "List Practitioner Roles",
+        "operationId": "list_practitioner_roles",
+        "parameters": [
+          {
+            "name": "practitioner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Practitioner Id"
+            }
+          },
+          {
+            "name": "organisation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Organisation Id"
+            }
+          },
+          {
+            "name": "is_open",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Open"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PractitionerRoleRead"
+                  },
+                  "title": "Response List Practitioner Roles"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "Open Practitioner Role",
+        "operationId": "open_practitioner_role",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerRoleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/practitioner-roles/{role_id}": {
+      "patch": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "Update Practitioner Role",
+        "operationId": "update_practitioner_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerRoleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "practitioner-roles"
+        ],
+        "summary": "Close Practitioner Role",
+        "operationId": "close_practitioner_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerRoleRead"
                 }
               }
             }
@@ -922,6 +2085,176 @@
         ],
         "title": "AssignRoleRequest"
       },
+      "CareTeamCreate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipantCreate"
+            },
+            "type": "array",
+            "title": "Participants",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CareTeamCreate",
+        "description": "`POST /patients/{patient_id}/care-teams` payload.\n\n`participants` is part of the create payload so a team can be born\nwith a primary practitioner in a single transaction. Adding or\nchanging participants later goes through the participant endpoints."
+      },
+      "CareTeamRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CareTeamStatus"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipantRead"
+            },
+            "type": "array",
+            "title": "Participants",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "status",
+          "period_start"
+        ],
+        "title": "CareTeamRead"
+      },
+      "CareTeamStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive"
+        ],
+        "title": "CareTeamStatus"
+      },
+      "CareTeamUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CareTeamStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CareTeamUpdate",
+        "description": "`PATCH /care-teams/{id}` payload \u2014 team-level metadata only.\n\nParticipant changes are out of scope here; use the participant\nendpoints. Setting `status = inactive` or `period_end` closes the\nteam but does not auto-unassign participants \u2014 the service handles\nthat side-effect inside the same transaction."
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -951,6 +2284,16 @@
           "message"
         ],
         "title": "ErrorResponse"
+      },
+      "Gender": {
+        "type": "string",
+        "enum": [
+          "male",
+          "female",
+          "other",
+          "unknown"
+        ],
+        "title": "Gender"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1009,6 +2352,281 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "OrganisationListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganisationRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OrganisationListResponse"
+      },
+      "OrganisationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Organisation Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type_code": {
+            "type": "string",
+            "title": "Type Code"
+          },
+          "type_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type System"
+          },
+          "type_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Display"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "parent_organisation_id",
+          "name",
+          "type_code",
+          "type_system",
+          "type_display"
+        ],
+        "title": "OrganisationRead"
+      },
+      "Page_PatientRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PatientRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "total_pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "title": "Page[PatientRead]"
+      },
+      "Page_UserRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UserRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "total_pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "title": "Page[UserRow]"
+      },
+      "ParticipantCreate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "role_in_care": {
+            "$ref": "#/components/schemas/RoleInCare"
+          },
+          "acting_as_practitioner_role_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acting As Practitioner Role Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_id",
+          "role_in_care"
+        ],
+        "title": "ParticipantCreate",
+        "description": "`POST /care-teams/{id}/participants` payload.\n\nOpens a new participant row. The service enforces the partial unique\nconstraint (`uq_care_team_participants_open_membership`) by checking\nfor an existing open row before insert. `acting_as_practitioner_role_id`\nis optional (NULL permitted per `practitioner-role-split`)."
+      },
+      "ParticipantRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "role_in_care": {
+            "$ref": "#/components/schemas/RoleInCare"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "acting_as_practitioner_role_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acting As Practitioner Role Id"
+          },
+          "assigned_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assigned By"
+          },
+          "unassigned_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unassigned By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "role_in_care",
+          "period_start",
+          "assigned_by"
+        ],
+        "title": "ParticipantRead"
+      },
+      "ParticipantRoleChange": {
+        "properties": {
+          "role_in_care": {
+            "$ref": "#/components/schemas/RoleInCare"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role_in_care"
+        ],
+        "title": "ParticipantRoleChange",
+        "description": "`PATCH /care-teams/{id}/participants/{user_id}` payload.\n\nRole changes are append-only: the service closes the current open\nrow (sets `period_end`, `unassigned_by`) and inserts a new open row\nwith the new role in the same transaction."
       },
       "PathwayActorRef": {
         "properties": {
@@ -2449,6 +4067,627 @@
         "title": "PathwayWithVersionResponse",
         "description": "Resolved-version envelope for `GET /pathways/{id}` and `POST /pathways`.\n\n`version` is the current concept if one exists, else the latest published\n(per `pathway-version` spec Requirement 9)."
       },
+      "PatientCreate": {
+        "properties": {
+          "primary_organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Primary Organisation Id"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PatientSource",
+            "default": "local"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ref"
+          },
+          "external_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Version"
+          },
+          "identifiers": {
+            "items": {
+              "$ref": "#/components/schemas/PatientIdentifierCreate"
+            },
+            "type": "array",
+            "title": "Identifiers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "primary_organisation_id",
+          "given_name",
+          "family_name",
+          "gender"
+        ],
+        "title": "PatientCreate",
+        "description": "`POST /patients` payload.\n\n`identifiers` is part of the create payload so a patient can be born\nwith an INSZ in a single transaction. Updating identifiers later goes\nthrough a dedicated endpoint (out of scope for `patients-base`); the\nPATCH route rejects the field outright (see `PatientUpdate`)."
+      },
+      "PatientIdentifierCreate": {
+        "properties": {
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "use": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use"
+          }
+        },
+        "type": "object",
+        "required": [
+          "system",
+          "value"
+        ],
+        "title": "PatientIdentifierCreate",
+        "description": "Identifier payload for `POST /patients`.\n\n`system` is a free-text URI \u2014 we keep the column open so unknown\nnamespaces (e.g. local lab numbers) pass through. The Mod-97 check\nonly runs when the system is the Belgian INSZ namespace."
+      },
+      "PatientIdentifierRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "use": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "system",
+          "value"
+        ],
+        "title": "PatientIdentifierRead"
+      },
+      "PatientRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "primary_organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Primary Organisation Id"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PatientSource"
+          },
+          "external_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External System"
+          },
+          "external_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ref"
+          },
+          "external_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Version"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "identifiers": {
+            "items": {
+              "$ref": "#/components/schemas/PatientIdentifierRead"
+            },
+            "type": "array",
+            "title": "Identifiers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "primary_organisation_id",
+          "given_name",
+          "family_name",
+          "gender",
+          "source"
+        ],
+        "title": "PatientRead"
+      },
+      "PatientSource": {
+        "type": "string",
+        "enum": [
+          "local",
+          "hix",
+          "luscii"
+        ],
+        "title": "PatientSource"
+      },
+      "PatientUpdate": {
+        "properties": {
+          "given_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Name"
+          },
+          "family_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Name"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gender"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "primary_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Organisation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PatientUpdate",
+        "description": "`PATCH /patients/{id}` payload \u2014 demographics only.\n\n`model_config = ConfigDict(extra=\"forbid\")` is what produces the 422\nwhen a client sends `identifiers` here: FastAPI translates Pydantic's\n`extra_forbidden` error into a 422 response automatically."
+      },
+      "PractitionerCreate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_id",
+          "family_name",
+          "given_name"
+        ],
+        "title": "PractitionerCreate"
+      },
+      "PractitionerRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "family_name": {
+            "type": "string",
+            "title": "Family Name"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/PractitionerRoleRead"
+            },
+            "type": "array",
+            "title": "Roles",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "family_name",
+          "given_name"
+        ],
+        "title": "PractitionerRead"
+      },
+      "PractitionerRoleCode": {
+        "type": "string",
+        "enum": [
+          "gp",
+          "physiotherapist",
+          "psychologist",
+          "nurse",
+          "physician",
+          "other"
+        ],
+        "title": "PractitionerRoleCode"
+      },
+      "PractitionerRoleCreate": {
+        "properties": {
+          "practitioner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Practitioner Id"
+          },
+          "organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organisation Id"
+          },
+          "code": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary",
+            "default": false
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "practitioner_id",
+          "organisation_id",
+          "code"
+        ],
+        "title": "PractitionerRoleCreate"
+      },
+      "PractitionerRoleRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "practitioner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Practitioner Id"
+          },
+          "organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organisation Id"
+          },
+          "code": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "practitioner_id",
+          "organisation_id",
+          "code",
+          "is_primary",
+          "period_start"
+        ],
+        "title": "PractitionerRoleRead"
+      },
+      "PractitionerRoleUpdate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PractitionerRoleCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          },
+          "is_primary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Primary"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PractitionerRoleUpdate",
+        "description": "PATCH payload for an open role.\n\n`period_end` is intentionally NOT settable here \u2014 closing a role goes\nthrough `DELETE /practitioner-roles/{id}` so the close-side invariants\n(drop primary, stamp `period_end=now`) run in one place. Reopening a\nclosed role is not supported; open a fresh row instead."
+      },
+      "PractitionerUpdate": {
+        "properties": {
+          "family_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Name"
+          },
+          "given_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given Name"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PractitionerUpdate"
+      },
       "ProviderDescriptor": {
         "properties": {
           "key": {
@@ -2509,10 +4748,18 @@
         "type": "string",
         "enum": [
           "admin",
-          "caregiver",
-          "external"
+          "caregiver"
         ],
         "title": "Role"
+      },
+      "RoleInCare": {
+        "type": "string",
+        "enum": [
+          "primary",
+          "consulting",
+          "observer"
+        ],
+        "title": "RoleInCare"
       },
       "RootResponse": {
         "properties": {
@@ -2565,6 +4812,88 @@
           "role"
         ],
         "title": "SessionUser"
+      },
+      "SetActiveRequest": {
+        "properties": {
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_active"
+        ],
+        "title": "SetActiveRequest"
+      },
+      "UserDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "external_idp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Idp"
+          },
+          "external_subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Subject"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "role",
+          "is_active",
+          "external_idp",
+          "external_subject",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UserDetail"
       },
       "UserRow": {
         "properties": {

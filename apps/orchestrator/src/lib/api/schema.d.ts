@@ -130,8 +130,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Tenant Users */
-        get: operations["list_tenant_users"];
+        /** List Users */
+        get: operations["list_users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User */
+        get: operations["get_user"];
         put?: never;
         post?: never;
         delete?: never;
@@ -155,6 +172,218 @@ export interface paths {
         head?: never;
         /** Update User Role */
         patch: operations["update_user_role"];
+        trace?: never;
+    };
+    "/users/{user_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set User Active */
+        patch: operations["set_user_active"];
+        trace?: never;
+    };
+    "/organisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Organisations */
+        get: operations["list_organisations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patients */
+        get: operations["list_patients"];
+        put?: never;
+        /** Create Patient */
+        post: operations["create_patient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Patient */
+        get: operations["get_patient"];
+        put?: never;
+        post?: never;
+        /** Soft Delete Patient */
+        delete: operations["soft_delete_patient"];
+        options?: never;
+        head?: never;
+        /** Update Patient */
+        patch: operations["update_patient"];
+        trace?: never;
+    };
+    "/patients/{patient_id}/care-teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Care Teams */
+        get: operations["list_patient_care_teams"];
+        put?: never;
+        /** Create Care Team */
+        post: operations["create_care_team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/care-teams/{care_team_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Care Team */
+        patch: operations["update_care_team"];
+        trace?: never;
+    };
+    "/care-teams/{care_team_id}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Care Team Participant */
+        post: operations["add_care_team_participant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/care-teams/{care_team_id}/participants/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unassign Care Team Participant */
+        delete: operations["unassign_care_team_participant"];
+        options?: never;
+        head?: never;
+        /** Change Participant Role */
+        patch: operations["change_participant_role"];
+        trace?: never;
+    };
+    "/practitioners/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practitioner */
+        get: operations["get_practitioner"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Practitioner */
+        patch: operations["update_practitioner"];
+        trace?: never;
+    };
+    "/practitioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Practitioner */
+        post: operations["create_practitioner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practitioner-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Practitioner Roles */
+        get: operations["list_practitioner_roles"];
+        put?: never;
+        /** Open Practitioner Role */
+        post: operations["open_practitioner_role"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practitioner-roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Close Practitioner Role */
+        delete: operations["close_practitioner_role"];
+        options?: never;
+        head?: never;
+        /** Update Practitioner Role */
+        patch: operations["update_practitioner_role"];
         trace?: never;
     };
     "/pathways/blocks": {
@@ -321,6 +550,78 @@ export interface components {
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
         };
+        /**
+         * CareTeamCreate
+         * @description `POST /patients/{patient_id}/care-teams` payload.
+         *
+         *     `participants` is part of the create payload so a team can be born
+         *     with a primary practitioner in a single transaction. Adding or
+         *     changing participants later goes through the participant endpoints.
+         */
+        CareTeamCreate: {
+            /** Name */
+            name?: string | null;
+            /** Category */
+            category?: string | null;
+            /**
+             * Participants
+             * @default []
+             */
+            participants: components["schemas"]["ParticipantCreate"][];
+        };
+        /** CareTeamRead */
+        CareTeamRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /** Name */
+            name?: string | null;
+            status: components["schemas"]["CareTeamStatus"];
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end?: string | null;
+            /** Category */
+            category?: string | null;
+            /**
+             * Participants
+             * @default []
+             */
+            participants: components["schemas"]["ParticipantRead"][];
+        };
+        /**
+         * CareTeamStatus
+         * @enum {string}
+         */
+        CareTeamStatus: "active" | "inactive";
+        /**
+         * CareTeamUpdate
+         * @description `PATCH /care-teams/{id}` payload — team-level metadata only.
+         *
+         *     Participant changes are out of scope here; use the participant
+         *     endpoints. Setting `status = inactive` or `period_end` closes the
+         *     team but does not auto-unassign participants — the service handles
+         *     that side-effect inside the same transaction.
+         */
+        CareTeamUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Category */
+            category?: string | null;
+            status?: components["schemas"]["CareTeamStatus"] | null;
+            /** Period End */
+            period_end?: string | null;
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Code */
@@ -332,6 +633,11 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /**
+         * Gender
+         * @enum {string}
+         */
+        Gender: "male" | "female" | "other" | "unknown";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -362,6 +668,115 @@ export interface components {
              * Format: password
              */
             password: string;
+        };
+        /** OrganisationListResponse */
+        OrganisationListResponse: {
+            /** Items */
+            items: components["schemas"]["OrganisationRead"][];
+        };
+        /** OrganisationRead */
+        OrganisationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Organisation Id */
+            parent_organisation_id: string | null;
+            /** Name */
+            name: string;
+            /** Type Code */
+            type_code: string;
+            /** Type System */
+            type_system: string | null;
+            /** Type Display */
+            type_display: string | null;
+        };
+        /** Page[PatientRead] */
+        Page_PatientRead_: {
+            /** Items */
+            items: components["schemas"]["PatientRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** Page[UserRow] */
+        Page_UserRow_: {
+            /** Items */
+            items: components["schemas"]["UserRow"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /**
+         * ParticipantCreate
+         * @description `POST /care-teams/{id}/participants` payload.
+         *
+         *     Opens a new participant row. The service enforces the partial unique
+         *     constraint (`uq_care_team_participants_open_membership`) by checking
+         *     for an existing open row before insert. `acting_as_practitioner_role_id`
+         *     is optional (NULL permitted per `practitioner-role-split`).
+         */
+        ParticipantCreate: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            role_in_care: components["schemas"]["RoleInCare"];
+            /** Acting As Practitioner Role Id */
+            acting_as_practitioner_role_id?: string | null;
+        };
+        /** ParticipantRead */
+        ParticipantRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            role_in_care: components["schemas"]["RoleInCare"];
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end?: string | null;
+            /** Acting As Practitioner Role Id */
+            acting_as_practitioner_role_id?: string | null;
+            /**
+             * Assigned By
+             * Format: uuid
+             */
+            assigned_by: string;
+            /** Unassigned By */
+            unassigned_by?: string | null;
+        };
+        /**
+         * ParticipantRoleChange
+         * @description `PATCH /care-teams/{id}/participants/{user_id}` payload.
+         *
+         *     Role changes are append-only: the service closes the current open
+         *     row (sets `period_end`, `unassigned_by`) and inserts a new open row
+         *     with the new role in the same transaction.
+         */
+        ParticipantRoleChange: {
+            role_in_care: components["schemas"]["RoleInCare"];
         };
         /**
          * PathwayActorRef
@@ -732,6 +1147,9 @@ export interface components {
         /**
          * PathwayPublishRequest
          * @description Body for `POST /pathways/{id}/publish` — promotes the current concept.
+         *     `clinically_approved` is `Literal[True]`: anything else is a 422 from the
+         *     framework rather than a custom validator (keeps the error payload JSON-
+         *     serialisable without bespoke handling).
          */
         PathwayPublishRequest: {
             /** Label */
@@ -741,8 +1159,9 @@ export interface components {
             /**
              * Clinically Approved
              * @description Must be true. The frontend gates this behind an explicit checkbox.
+             * @constant
              */
-            clinically_approved: boolean;
+            clinically_approved: true;
         };
         /**
          * PathwaySummary
@@ -971,6 +1390,251 @@ export interface components {
             pathway: components["schemas"]["PathwayBare"];
             version: components["schemas"]["PathwayVersionDefinition"];
         };
+        /**
+         * PatientCreate
+         * @description `POST /patients` payload.
+         *
+         *     `identifiers` is part of the create payload so a patient can be born
+         *     with an INSZ in a single transaction. Updating identifiers later goes
+         *     through a dedicated endpoint (out of scope for `patients-base`); the
+         *     PATCH route rejects the field outright (see `PatientUpdate`).
+         */
+        PatientCreate: {
+            /**
+             * Primary Organisation Id
+             * Format: uuid
+             */
+            primary_organisation_id: string;
+            /** Given Name */
+            given_name: string;
+            /** Family Name */
+            family_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            gender: components["schemas"]["Gender"];
+            /** @default local */
+            source: components["schemas"]["PatientSource"];
+            /** External System */
+            external_system?: string | null;
+            /** External Ref */
+            external_ref?: string | null;
+            /** External Version */
+            external_version?: string | null;
+            /**
+             * Identifiers
+             * @default []
+             */
+            identifiers: components["schemas"]["PatientIdentifierCreate"][];
+        };
+        /**
+         * PatientIdentifierCreate
+         * @description Identifier payload for `POST /patients`.
+         *
+         *     `system` is a free-text URI — we keep the column open so unknown
+         *     namespaces (e.g. local lab numbers) pass through. The Mod-97 check
+         *     only runs when the system is the Belgian INSZ namespace.
+         */
+        PatientIdentifierCreate: {
+            /** System */
+            system: string;
+            /** Value */
+            value: string;
+            /** Use */
+            use?: string | null;
+        };
+        /** PatientIdentifierRead */
+        PatientIdentifierRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** System */
+            system: string;
+            /** Value */
+            value: string;
+            /** Use */
+            use?: string | null;
+        };
+        /** PatientRead */
+        PatientRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Primary Organisation Id
+             * Format: uuid
+             */
+            primary_organisation_id: string;
+            /** Given Name */
+            given_name: string;
+            /** Family Name */
+            family_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            gender: components["schemas"]["Gender"];
+            source: components["schemas"]["PatientSource"];
+            /** External System */
+            external_system?: string | null;
+            /** External Ref */
+            external_ref?: string | null;
+            /** External Version */
+            external_version?: string | null;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+            /**
+             * Identifiers
+             * @default []
+             */
+            identifiers: components["schemas"]["PatientIdentifierRead"][];
+        };
+        /**
+         * PatientSource
+         * @enum {string}
+         */
+        PatientSource: "local" | "hix" | "luscii";
+        /**
+         * PatientUpdate
+         * @description `PATCH /patients/{id}` payload — demographics only.
+         *
+         *     `model_config = ConfigDict(extra="forbid")` is what produces the 422
+         *     when a client sends `identifiers` here: FastAPI translates Pydantic's
+         *     `extra_forbidden` error into a 422 response automatically.
+         */
+        PatientUpdate: {
+            /** Given Name */
+            given_name?: string | null;
+            /** Family Name */
+            family_name?: string | null;
+            /** Birth Date */
+            birth_date?: string | null;
+            gender?: components["schemas"]["Gender"] | null;
+            /** Primary Organisation Id */
+            primary_organisation_id?: string | null;
+        };
+        /** PractitionerCreate */
+        PractitionerCreate: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
+            /** Qualification */
+            qualification?: string | null;
+        };
+        /** PractitionerRead */
+        PractitionerRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
+            /** Qualification */
+            qualification?: string | null;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: components["schemas"]["PractitionerRoleRead"][];
+        };
+        /**
+         * PractitionerRoleCode
+         * @enum {string}
+         */
+        PractitionerRoleCode: "gp" | "physiotherapist" | "psychologist" | "nurse" | "physician" | "other";
+        /** PractitionerRoleCreate */
+        PractitionerRoleCreate: {
+            /**
+             * Practitioner Id
+             * Format: uuid
+             */
+            practitioner_id: string;
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            code: components["schemas"]["PractitionerRoleCode"];
+            /** Specialty */
+            specialty?: string | null;
+            /**
+             * Is Primary
+             * @default false
+             */
+            is_primary: boolean;
+            /** Period Start */
+            period_start?: string | null;
+        };
+        /** PractitionerRoleRead */
+        PractitionerRoleRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Practitioner Id
+             * Format: uuid
+             */
+            practitioner_id: string;
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            code: components["schemas"]["PractitionerRoleCode"];
+            /** Specialty */
+            specialty?: string | null;
+            /** Is Primary */
+            is_primary: boolean;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end?: string | null;
+        };
+        /**
+         * PractitionerRoleUpdate
+         * @description PATCH payload for an open role.
+         *
+         *     `period_end` is intentionally NOT settable here — closing a role goes
+         *     through `DELETE /practitioner-roles/{id}` so the close-side invariants
+         *     (drop primary, stamp `period_end=now`) run in one place. Reopening a
+         *     closed role is not supported; open a fresh row instead.
+         */
+        PractitionerRoleUpdate: {
+            code?: components["schemas"]["PractitionerRoleCode"] | null;
+            /** Specialty */
+            specialty?: string | null;
+            /** Is Primary */
+            is_primary?: boolean | null;
+        };
+        /** PractitionerUpdate */
+        PractitionerUpdate: {
+            /** Family Name */
+            family_name?: string | null;
+            /** Given Name */
+            given_name?: string | null;
+            /** Qualification */
+            qualification?: string | null;
+        };
         /** ProviderDescriptor */
         ProviderDescriptor: {
             /** Key */
@@ -999,7 +1663,12 @@ export interface components {
          * Role
          * @enum {string}
          */
-        Role: "admin" | "caregiver" | "external";
+        Role: "admin" | "caregiver";
+        /**
+         * RoleInCare
+         * @enum {string}
+         */
+        RoleInCare: "primary" | "consulting" | "observer";
         /** RootResponse */
         RootResponse: {
             /** Name */
@@ -1024,6 +1693,40 @@ export interface components {
              */
             tenant_id: string;
             role: components["schemas"]["Role"];
+        };
+        /** SetActiveRequest */
+        SetActiveRequest: {
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** UserDetail */
+        UserDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Display Name */
+            display_name: string;
+            role: components["schemas"]["Role"];
+            /** Is Active */
+            is_active: boolean;
+            /** External Idp */
+            external_idp: string | null;
+            /** External Subject */
+            external_subject: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** UserRow */
         UserRow: {
@@ -1227,10 +1930,19 @@ export interface operations {
             };
         };
     };
-    list_tenant_users: {
+    list_users: {
         parameters: {
             query?: {
-                active?: boolean | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
             };
             header?: never;
             path?: never;
@@ -1244,7 +1956,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserRow"][];
+                    "application/json": components["schemas"]["Page_UserRow_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
                 };
             };
             /** @description Validation Error */
@@ -1280,6 +2023,664 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_active: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetActiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_organisations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationListResponse"];
+                };
+            };
+        };
+    };
+    list_patients: {
+        parameters: {
+            query?: {
+                /** @description FHIR Patient.identifier short-circuit; exact value match */
+                identifier?: string | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PatientRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    soft_delete_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_patient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_care_teams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareTeamRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_care_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareTeamCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareTeamRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_care_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareTeamUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareTeamRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_care_team_participant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParticipantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParticipantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unassign_care_team_participant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_participant_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParticipantRoleChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParticipantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practitioner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_practitioner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_practitioner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_practitioner_roles: {
+        parameters: {
+            query?: {
+                practitioner_id?: string | null;
+                organisation_id?: string | null;
+                is_open?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_practitioner_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerRoleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_practitioner_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_practitioner_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerRoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerRoleRead"];
                 };
             };
             /** @description Validation Error */
