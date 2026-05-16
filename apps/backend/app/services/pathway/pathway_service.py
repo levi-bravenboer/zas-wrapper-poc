@@ -8,8 +8,8 @@ from jsonschema import Draft202012Validator
 from app.db.models.pathway import (
     Pathway,
     PathwayBlock,
-    PathwayBlockFieldResolution,
-    PathwayBranch,
+    PathwayBlockBranch,
+    PathwayBlockDeferredField,
     PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
@@ -23,20 +23,19 @@ from app.repositories.pathway.pathway_repository import (
 )
 from app.schemas.pathway.catalogue import (
     PathwayBlockType,
-    PathwayLaneKindRow,
     PathwayPhaseTemplate,
 )
 from app.schemas.pathway.pathway import (
+    PathwayBlockBranchIn,
+    PathwayBlockBranchOut,
+    PathwayBlockDeferredFieldIn,
+    PathwayBlockDeferredFieldOut,
     PathwayBlockIn,
     PathwayBlockOut,
-    PathwayBranchIn,
-    PathwayBranchOut,
     PathwayDefinition,
     PathwayDefinitionReplace,
     PathwayEdgeIn,
     PathwayEdgeOut,
-    PathwayFieldResolutionIn,
-    PathwayFieldResolutionOut,
     PathwayLaneIn,
     PathwayLaneOut,
     PathwayPhaseIn,
@@ -55,8 +54,8 @@ from app.services.pathway.catalogue import (
 from app.services.pathway.errors import (
     BlockConfigError,
     BranchOwnershipError,
+    DeferredFieldError,
     EdgeValidationError,
-    FieldResolutionError,
     PathwayNotFoundError,
     PathwayValidationError,
     UnknownBlockTypeError,
@@ -74,7 +73,14 @@ class PathwayService:
     async def list_summaries(self, tenant_id: UUID) -> list[PathwaySummary]:
         rows = await self._repo.list_summaries(tenant_id)
         return [
-            PathwaySummary(id=r.id, name=r.name, updated_at=r.updated_at, block_count=r.block_count)
+            PathwaySummary(
+                id=r.id,
+                name=r.name,
+                clinical_goal=r.clinical_goal,
+                patient_goal=r.patient_goal,
+                updated_at=r.updated_at,
+                block_count=r.block_count,
+            )
             for r in rows
         ]
 
@@ -88,27 +94,17 @@ class PathwayService:
 
     # ---- Catalogue surfaces ----------------------------------------------
 
-    async def list_block_types(self) -> list[PathwayBlockType]:
-        lane_kinds = await self._repo.lane_kinds_by_code()
-        result: list[PathwayBlockType] = []
-        for entry in BLOCK_TYPES:
-            kind = lane_kinds.get(entry.default_lane_kind_code)
-            if kind is None:
-                # Seed missing for a code referenced in catalogue — fail loud
-                # so the catalogue and seed stay in sync.
-                raise RuntimeError(
-                    f"Lane-kind seed missing for code '{entry.default_lane_kind_code}'"
-                )
-            result.append(
-                PathwayBlockType(
-                    type=entry.type,
-                    label=entry.label,
-                    default_lane_kind_id=kind.id,
-                    config_schema=entry.config_schema,
-                    supports_branches=entry.supports_branches,
-                )
+    def list_block_types(self) -> list[PathwayBlockType]:
+        return [
+            PathwayBlockType(
+                type=entry.type,
+                label=entry.label,
+                default_lane_kind_code=entry.default_lane_kind_code,
+                config_schema=entry.config_schema,
+                supports_branches=entry.supports_branches,
             )
-        return result
+            for entry in BLOCK_TYPES
+        ]
 
     def list_phase_templates(self) -> list[PathwayPhaseTemplate]:
         return [
@@ -121,15 +117,18 @@ class PathwayService:
             for p in PHASE_TEMPLATES
         ]
 
-    async def list_lane_kinds(self) -> list[PathwayLaneKindRow]:
-        kinds = (await self._repo.lane_kinds_by_code()).values()
-        return [PathwayLaneKindRow.model_validate(k) for k in kinds]
-
     # ---- Write paths -----------------------------------------------------
 
-    async def create_empty(self, tenant_id: UUID, name: str) -> PathwayDefinition:
+    async def create_empty(
+        self,
+        tenant_id: UUID,
+        name: str,
+        *,
+        clinical_goal: str,
+        patient_goal: str,
+    ) -> PathwayDefinition:
         del tenant_id  # stamped by audit hook from session.info[actor]
-        pathway = Pathway(name=name)
+        pathway = Pathway(name=name, clinical_goal=clinical_goal, patient_goal=patient_goal)
         await self._repo.add(pathway)
         return self._definition_from_orm(pathway, _EMPTY_CHILDREN, lane_kinds={})
 
@@ -147,8 +146,14 @@ class PathwayService:
         resolved = _ResolvedDefinition.from_payload(payload, lane_kinds=lane_kinds)
 
         pathway.name = payload.name
+        pathway.clinical_goal = payload.clinical_goal
+        pathway.patient_goal = payload.patient_goal
         await self._repo.delete_children(pathway_id)
         await self._persist_children(pathway_id, resolved)
+        # `updated_at` has `onupdate=func.now()` — server-computed, so it
+        # expires on flush. Refresh eagerly to avoid an implicit lazy
+        # reload on attribute access (incompatible with async session).
+        await self._repo._session.refresh(pathway, ["updated_at"])  # noqa: SLF001
 
         children = await self._repo.fetch_children(pathway_id)
         return self._definition_from_orm(pathway, children, lane_kinds)
@@ -224,7 +229,7 @@ class PathwayService:
         await session.flush()
         session.add_all(
             [
-                PathwayBranch(id=br.id, block_id=br.block_id, label=br.label, ord=br.ord)
+                PathwayBlockBranch(id=br.id, block_id=br.block_id, label=br.label, ord=br.ord)
                 for br in r.branches
             ]
         )
@@ -252,10 +257,10 @@ class PathwayService:
         )
         session.add_all(
             [
-                PathwayBlockFieldResolution(
+                PathwayBlockDeferredField(
                     id=fr.id, block_id=fr.block_id, field_path=fr.field_path
                 )
-                for fr in r.field_resolutions
+                for fr in r.deferred_fields
             ]
         )
         await session.flush()
@@ -282,6 +287,8 @@ class PathwayService:
         return PathwayDefinition(
             id=pathway.id,
             name=pathway.name,
+            clinical_goal=pathway.clinical_goal,
+            patient_goal=pathway.patient_goal,
             updated_at=pathway.updated_at,
             phases=[PathwayPhaseOut.model_validate(p) for p in children.phases],
             lanes=lanes_out,
@@ -289,13 +296,11 @@ class PathwayService:
                 PathwayTimingValueOut.model_validate(tv) for tv in children.timing_values
             ],
             blocks=[PathwayBlockOut.model_validate(b) for b in children.blocks],
-            branches=[PathwayBranchOut.model_validate(br) for br in children.branches],
+            branches=[PathwayBlockBranchOut.model_validate(br) for br in children.branches],
             edges=[PathwayEdgeOut.model_validate(e) for e in children.edges],
-            time_markers=[
-                PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers
-            ],
-            field_resolutions=[
-                PathwayFieldResolutionOut.model_validate(fr) for fr in children.field_resolutions
+            time_markers=[PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers],
+            deferred_fields=[
+                PathwayBlockDeferredFieldOut.model_validate(fr) for fr in children.deferred_fields
             ],
         )
 
@@ -308,7 +313,7 @@ _EMPTY_CHILDREN = PathwayChildren(
     branches=[],
     edges=[],
     time_markers=[],
-    field_resolutions=[],
+    deferred_fields=[],
 )
 
 
@@ -318,9 +323,8 @@ class _ResolvedDefinition:
     Walks the wire shape once, enforcing every cross-entity invariant the
     spec requires (block.type ∈ catalogue, lane resolves, phase belongs to
     payload, branch on branching block only per D19, edge endpoints exist,
-    branch matches source, timing CHECK columns, field_path ∈ config_schema,
-    Luscii block carries reference-only config). On success exposes the
-    resolved children for the service to persist verbatim.
+    branch matches source, timing CHECK columns, field_path ∈ config_schema).
+    On success exposes the resolved children for the service to persist verbatim.
     """
 
     def __init__(
@@ -331,10 +335,10 @@ class _ResolvedDefinition:
         lane_kind_ids: dict[UUID, UUID],
         timing_values: list[PathwayTimingValueIn],
         blocks: list[PathwayBlockIn],
-        branches: list[PathwayBranchIn],
+        branches: list[PathwayBlockBranchIn],
         edges: list[PathwayEdgeIn],
         time_markers: list[PathwayTimeMarkerIn],
-        field_resolutions: list[PathwayFieldResolutionIn],
+        deferred_fields: list[PathwayBlockDeferredFieldIn],
     ) -> None:
         self.phases = phases
         self.lanes = lanes
@@ -345,7 +349,7 @@ class _ResolvedDefinition:
         self.branches = branches
         self.edges = edges
         self.time_markers = time_markers
-        self.field_resolutions = field_resolutions
+        self.deferred_fields = deferred_fields
 
     @classmethod
     def from_payload(
@@ -374,9 +378,7 @@ class _ResolvedDefinition:
                     reason=f"unknown lane kind '{lane.lane_kind_code}'",
                 )
             if lane.id in lane_kind_ids:
-                raise PathwayValidationError(
-                    field=f"lanes[{lane.id}]", reason="duplicate lane id"
-                )
+                raise PathwayValidationError(field=f"lanes[{lane.id}]", reason="duplicate lane id")
             lane_kind_ids[lane.id] = kind.id
             resolved_lanes.append(lane)
 
@@ -456,9 +458,7 @@ class _ResolvedDefinition:
         edge_keys: set[tuple[UUID, UUID, UUID | None]] = set()
         for edge in payload.edges:
             if edge.id in edge_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}]", reason="duplicate edge id"
-                )
+                raise EdgeValidationError(field=f"edges[{edge.id}]", reason="duplicate edge id")
             edge_ids.add(edge.id)
             if edge.source_block_id not in block_ids:
                 raise EdgeValidationError(
@@ -525,21 +525,21 @@ class _ResolvedDefinition:
                 )
 
         resolution_ids: set[UUID] = set()
-        for fr in payload.field_resolutions:
+        for fr in payload.deferred_fields:
             if fr.id in resolution_ids:
                 raise PathwayValidationError(
-                    field=f"field_resolutions[{fr.id}]", reason="duplicate id"
+                    field=f"deferred_fields[{fr.id}]", reason="duplicate id"
                 )
             resolution_ids.add(fr.id)
             schema = block_schemas.get(fr.block_id)
             if schema is None:
-                raise FieldResolutionError(
-                    field=f"field_resolutions[{fr.id}].block_id",
+                raise DeferredFieldError(
+                    field=f"deferred_fields[{fr.id}].block_id",
                     reason="block_id not present in payload blocks",
                 )
             if not _field_path_in_schema(schema, fr.field_path):
-                raise FieldResolutionError(
-                    field=f"field_resolutions[{fr.id}].field_path",
+                raise DeferredFieldError(
+                    field=f"deferred_fields[{fr.id}].field_path",
                     reason=f"field_path '{fr.field_path}' not declared in block config_schema",
                 )
 
@@ -552,7 +552,7 @@ class _ResolvedDefinition:
             branches=list(payload.branches),
             edges=list(payload.edges),
             time_markers=list(payload.time_markers),
-            field_resolutions=list(payload.field_resolutions),
+            deferred_fields=list(payload.deferred_fields),
         )
 
 
@@ -595,9 +595,7 @@ def _resolve_or_materialize_lane(
     return materialized_id
 
 
-def _validate_block_config(
-    block_id: UUID, schema: dict[str, Any], config: dict[str, Any]
-) -> None:
+def _validate_block_config(block_id: UUID, schema: dict[str, Any], config: dict[str, Any]) -> None:
     validator = Draft202012Validator(schema)
     errors = sorted(validator.iter_errors(config), key=lambda e: list(e.absolute_path))
     if not errors:

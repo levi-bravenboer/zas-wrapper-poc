@@ -5,8 +5,8 @@
 from app.db.models.pathway import (
     Pathway,
     PathwayBlock,
-    PathwayBlockFieldResolution,
-    PathwayBranch,
+    PathwayBlockBranch,
+    PathwayBlockDeferredField,
     PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
@@ -20,8 +20,8 @@ from app.db.models.user import User
 __all__ = [
     "Pathway",
     "PathwayBlock",
-    "PathwayBlockFieldResolution",
-    "PathwayBranch",
+    "PathwayBlockBranch",
+    "PathwayBlockDeferredField",
     "PathwayEdge",
     "PathwayLane",
     "PathwayLaneKind",

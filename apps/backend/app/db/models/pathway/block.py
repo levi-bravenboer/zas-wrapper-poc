@@ -5,7 +5,8 @@
 # coordinates persisted as ints.
 
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -17,6 +18,7 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayBlock(TenantOwnedEntity):
     __tablename__ = "pathway_block"
+    __realtime_resource__: ClassVar[str | None] = None
 
     pathway_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),

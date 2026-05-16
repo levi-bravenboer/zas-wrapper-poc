@@ -4,6 +4,8 @@
 # pathways already using it.
 
 from __future__ import annotations
+
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -15,6 +17,7 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayPhase(TenantOwnedEntity):
     __tablename__ = "pathway_phase"
+    __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
         sa.UniqueConstraint("pathway_id", "ord", name="uq_pathway_phase_pathway_id_ord"),
     )

@@ -11,8 +11,8 @@ from sqlalchemy import func, select
 from app.db.models.pathway import (
     Pathway,
     PathwayBlock,
-    PathwayBlockFieldResolution,
-    PathwayBranch,
+    PathwayBlockDeferredField,
+    PathwayBlockBranch,
     PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
@@ -26,6 +26,8 @@ from app.repositories.base import BaseRepository
 class PathwaySummaryRow(NamedTuple):
     id: UUID
     name: str
+    clinical_goal: str | None
+    patient_goal: str | None
     updated_at: datetime
     block_count: int
 
@@ -36,10 +38,10 @@ class PathwayChildren:
     lanes: list[PathwayLane]
     timing_values: list[PathwayTimingValue]
     blocks: list[PathwayBlock]
-    branches: list[PathwayBranch]
+    branches: list[PathwayBlockBranch]
     edges: list[PathwayEdge]
     time_markers: list[PathwayTimeMarker]
-    field_resolutions: list[PathwayBlockFieldResolution]
+    deferred_fields: list[PathwayBlockDeferredField]
 
 
 class PathwayRepository(BaseRepository[Pathway]):
@@ -59,6 +61,8 @@ class PathwayRepository(BaseRepository[Pathway]):
             select(
                 Pathway.id,
                 Pathway.name,
+                Pathway.clinical_goal,
+                Pathway.patient_goal,
                 Pathway.updated_at,
                 func.coalesce(block_count.c.block_count, 0).label("block_count"),
             )
@@ -68,7 +72,14 @@ class PathwayRepository(BaseRepository[Pathway]):
         )
         result = await self._session.execute(stmt)
         return [
-            PathwaySummaryRow(row.id, row.name, row.updated_at, row.block_count)
+            PathwaySummaryRow(
+                row.id,
+                row.name,
+                row.clinical_goal,
+                row.patient_goal,
+                row.updated_at,
+                row.block_count,
+            )
             for row in result.all()
         ]
 
@@ -105,14 +116,14 @@ class PathwayRepository(BaseRepository[Pathway]):
             )
         )
         block_ids = [b.id for b in blocks]
-        branches: list[PathwayBranch] = (
+        branches: list[PathwayBlockBranch] = (
             await self._scalars(
-                select(PathwayBranch)
+                select(PathwayBlockBranch)
                 .where(
-                    PathwayBranch.block_id.in_(block_ids),
-                    PathwayBranch.deleted_at.is_(None),
+                    PathwayBlockBranch.block_id.in_(block_ids),
+                    PathwayBlockBranch.deleted_at.is_(None),
                 )
-                .order_by(PathwayBranch.ord)
+                .order_by(PathwayBlockBranch.ord)
             )
             if block_ids
             else []
@@ -128,11 +139,11 @@ class PathwayRepository(BaseRepository[Pathway]):
                 PathwayTimeMarker.deleted_at.is_(None),
             )
         )
-        field_resolutions: list[PathwayBlockFieldResolution] = (
+        deferred_fields: list[PathwayBlockDeferredField] = (
             await self._scalars(
-                select(PathwayBlockFieldResolution).where(
-                    PathwayBlockFieldResolution.block_id.in_(block_ids),
-                    PathwayBlockFieldResolution.deleted_at.is_(None),
+                select(PathwayBlockDeferredField).where(
+                    PathwayBlockDeferredField.block_id.in_(block_ids),
+                    PathwayBlockDeferredField.deleted_at.is_(None),
                 )
             )
             if block_ids
@@ -146,7 +157,7 @@ class PathwayRepository(BaseRepository[Pathway]):
             branches=list(branches),
             edges=list(edges),
             time_markers=list(time_markers),
-            field_resolutions=list(field_resolutions),
+            deferred_fields=list(deferred_fields),
         )
 
     async def lane_kinds_by_code(self) -> dict[str, PathwayLaneKind]:
@@ -158,41 +169,52 @@ class PathwayRepository(BaseRepository[Pathway]):
     async def delete_children(self, pathway_id: UUID) -> None:
         """Hard-delete every child row of a pathway, FK-safe order.
 
-        Used by PUT replace + DELETE cascade. The pathway row itself is left
-        for the caller to either persist (replace) or soft-delete (delete).
+        Used by PUT replace + DELETE cascade. The pathway row itself is
+        left for the caller to either persist (replace) or soft-delete
+        (delete). `synchronize_session=False` skips per-instance state
+        sync since child rows aren't held in this session.
         """
 
+        opts = {"synchronize_session": False}
         await self._session.execute(
-            sa.delete(PathwayEdge).where(PathwayEdge.pathway_id == pathway_id)
+            sa.delete(PathwayEdge).where(PathwayEdge.pathway_id == pathway_id),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayBranch).where(
-                PathwayBranch.block_id.in_(
+            sa.delete(PathwayBlockBranch).where(
+                PathwayBlockBranch.block_id.in_(
                     select(PathwayBlock.id).where(PathwayBlock.pathway_id == pathway_id)
                 )
-            )
+            ),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayBlockFieldResolution).where(
-                PathwayBlockFieldResolution.block_id.in_(
+            sa.delete(PathwayBlockDeferredField).where(
+                PathwayBlockDeferredField.block_id.in_(
                     select(PathwayBlock.id).where(PathwayBlock.pathway_id == pathway_id)
                 )
-            )
+            ),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayTimeMarker).where(PathwayTimeMarker.pathway_id == pathway_id)
+            sa.delete(PathwayTimeMarker).where(PathwayTimeMarker.pathway_id == pathway_id),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayBlock).where(PathwayBlock.pathway_id == pathway_id)
+            sa.delete(PathwayBlock).where(PathwayBlock.pathway_id == pathway_id),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayLane).where(PathwayLane.pathway_id == pathway_id)
+            sa.delete(PathwayLane).where(PathwayLane.pathway_id == pathway_id),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayPhase).where(PathwayPhase.pathway_id == pathway_id)
+            sa.delete(PathwayPhase).where(PathwayPhase.pathway_id == pathway_id),
+            execution_options=opts,
         )
         await self._session.execute(
-            sa.delete(PathwayTimingValue).where(PathwayTimingValue.pathway_id == pathway_id)
+            sa.delete(PathwayTimingValue).where(PathwayTimingValue.pathway_id == pathway_id),
+            execution_options=opts,
         )
         await self._session.flush()
 

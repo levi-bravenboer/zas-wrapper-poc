@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,5 +14,8 @@ from app.db.base import TenantOwnedEntity
 
 class Pathway(TenantOwnedEntity):
     __tablename__ = "pathway"
+    __realtime_resource__: ClassVar[str | None] = None
 
     name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    clinical_goal: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    patient_goal: Mapped[str | None] = mapped_column(sa.Text, nullable=True)

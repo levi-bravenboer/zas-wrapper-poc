@@ -5,6 +5,8 @@
 # connectors at the DB layer; the builder UI also prevents duplicate drags.
 
 from __future__ import annotations
+
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -16,6 +18,7 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayEdge(TenantOwnedEntity):
     __tablename__ = "pathway_edge"
+    __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
         sa.UniqueConstraint(
             "source_block_id",
@@ -46,7 +49,7 @@ class PathwayEdge(TenantOwnedEntity):
     )
     source_branch_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("pathway_branch.id", ondelete="CASCADE"),
+        sa.ForeignKey("pathway_block_branch.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )

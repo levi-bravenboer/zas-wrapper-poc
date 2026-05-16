@@ -4,6 +4,8 @@
 # `is_default=false`.
 
 from __future__ import annotations
+
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -15,6 +17,7 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayLane(TenantOwnedEntity):
     __tablename__ = "pathway_lane"
+    __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
         sa.UniqueConstraint("pathway_id", "ord", name="uq_pathway_lane_pathway_id_ord"),
     )

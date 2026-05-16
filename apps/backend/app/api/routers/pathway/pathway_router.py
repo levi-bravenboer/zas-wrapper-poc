@@ -11,7 +11,6 @@ from app.schemas.pathway import (
     PathwayCreate,
     PathwayDefinition,
     PathwayDefinitionReplace,
-    PathwayLaneKindRow,
     PathwayPhaseTemplate,
     PathwaySummary,
 )
@@ -33,7 +32,7 @@ async def list_pathway_block_types(
     _current_user: CurrentUserDep,
     service: PathwayServiceDep,
 ) -> list[PathwayBlockType]:
-    return await service.list_block_types()
+    return service.list_block_types()
 
 
 @router.get(
@@ -46,18 +45,6 @@ async def list_pathway_phase_templates(
     service: PathwayServiceDep,
 ) -> list[PathwayPhaseTemplate]:
     return service.list_phase_templates()
-
-
-@router.get(
-    "/lane-kinds",
-    operation_id="list_pathway_lane_kinds",
-    response_model=list[PathwayLaneKindRow],
-)
-async def list_pathway_lane_kinds(
-    _current_user: CurrentUserDep,
-    service: PathwayServiceDep,
-) -> list[PathwayLaneKindRow]:
-    return await service.list_lane_kinds()
 
 
 @router.get(
@@ -84,7 +71,12 @@ async def create_pathway(
     current_user: CurrentUserDep,
     service: PathwayServiceDep,
 ) -> PathwayDefinition:
-    return await service.create_empty(current_user.tenant_id, payload.name)
+    return await service.create_empty(
+        current_user.tenant_id,
+        payload.name,
+        clinical_goal=payload.clinical_goal,
+        patient_goal=payload.patient_goal,
+    )
 
 
 @router.get(

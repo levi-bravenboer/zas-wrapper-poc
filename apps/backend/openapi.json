@@ -336,31 +336,6 @@
         }
       }
     },
-    "/pathways/lane-kinds": {
-      "get": {
-        "tags": [
-          "pathways"
-        ],
-        "summary": "List Pathway Lane Kinds",
-        "operationId": "list_pathway_lane_kinds",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PathwayLaneKindRow"
-                  },
-                  "type": "array",
-                  "title": "Response List Pathway Lane Kinds"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/pathways": {
       "get": {
         "tags": [
@@ -686,6 +661,126 @@
         ],
         "title": "LoginRequest"
       },
+      "PathwayBlockBranchIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayBlockBranchIn"
+      },
+      "PathwayBlockBranchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayBlockBranchOut"
+      },
+      "PathwayBlockDeferredFieldIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "field_path": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Field Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "field_path"
+        ],
+        "title": "PathwayBlockDeferredFieldIn"
+      },
+      "PathwayBlockDeferredFieldOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Id"
+          },
+          "field_path": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Field Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_id",
+          "field_path"
+        ],
+        "title": "PathwayBlockDeferredFieldOut"
+      },
       "PathwayBlockIn": {
         "properties": {
           "id": {
@@ -845,10 +940,10 @@
             "type": "string",
             "title": "Label"
           },
-          "default_lane_kind_id": {
+          "default_lane_kind_code": {
             "type": "string",
-            "format": "uuid",
-            "title": "Default Lane Kind Id"
+            "title": "Default Lane Kind Code",
+            "description": "Stable lane-kind code (D10): patient | caregiver | system | external"
           },
           "config_schema": {
             "additionalProperties": true,
@@ -865,76 +960,10 @@
         "required": [
           "type",
           "label",
-          "default_lane_kind_id",
+          "default_lane_kind_code",
           "config_schema"
         ],
         "title": "PathwayBlockType"
-      },
-      "PathwayBranchIn": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Block Id"
-          },
-          "label": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Label"
-          },
-          "ord": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Ord"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "block_id",
-          "label",
-          "ord"
-        ],
-        "title": "PathwayBranchIn"
-      },
-      "PathwayBranchOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Block Id"
-          },
-          "label": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Label"
-          },
-          "ord": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Ord"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "block_id",
-          "label",
-          "ord"
-        ],
-        "title": "PathwayBranchOut"
       },
       "PathwayCreate": {
         "properties": {
@@ -943,11 +972,23 @@
             "maxLength": 255,
             "minLength": 1,
             "title": "Name"
+          },
+          "clinical_goal": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Clinical Goal"
+          },
+          "patient_goal": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Patient Goal"
           }
         },
         "type": "object",
         "required": [
-          "name"
+          "name",
+          "clinical_goal",
+          "patient_goal"
         ],
         "title": "PathwayCreate"
       },
@@ -961,6 +1002,28 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "clinical_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Goal"
+          },
+          "patient_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Goal"
           },
           "updated_at": {
             "type": "string",
@@ -997,7 +1060,7 @@
           },
           "branches": {
             "items": {
-              "$ref": "#/components/schemas/PathwayBranchOut"
+              "$ref": "#/components/schemas/PathwayBlockBranchOut"
             },
             "type": "array",
             "title": "Branches"
@@ -1016,12 +1079,12 @@
             "type": "array",
             "title": "Time Markers"
           },
-          "field_resolutions": {
+          "deferred_fields": {
             "items": {
-              "$ref": "#/components/schemas/PathwayFieldResolutionOut"
+              "$ref": "#/components/schemas/PathwayBlockDeferredFieldOut"
             },
             "type": "array",
-            "title": "Field Resolutions"
+            "title": "Deferred Fields"
           }
         },
         "type": "object",
@@ -1039,6 +1102,28 @@
             "maxLength": 255,
             "minLength": 1,
             "title": "Name"
+          },
+          "clinical_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Goal"
+          },
+          "patient_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Goal"
           },
           "phases": {
             "items": {
@@ -1070,7 +1155,7 @@
           },
           "branches": {
             "items": {
-              "$ref": "#/components/schemas/PathwayBranchIn"
+              "$ref": "#/components/schemas/PathwayBlockBranchIn"
             },
             "type": "array",
             "title": "Branches"
@@ -1089,12 +1174,12 @@
             "type": "array",
             "title": "Time Markers"
           },
-          "field_resolutions": {
+          "deferred_fields": {
             "items": {
-              "$ref": "#/components/schemas/PathwayFieldResolutionIn"
+              "$ref": "#/components/schemas/PathwayBlockDeferredFieldIn"
             },
             "type": "array",
-            "title": "Field Resolutions"
+            "title": "Deferred Fields"
           }
         },
         "type": "object",
@@ -1203,60 +1288,6 @@
         ],
         "title": "PathwayEdgeOut"
       },
-      "PathwayFieldResolutionIn": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Block Id"
-          },
-          "field_path": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Field Path"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "block_id",
-          "field_path"
-        ],
-        "title": "PathwayFieldResolutionIn"
-      },
-      "PathwayFieldResolutionOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Block Id"
-          },
-          "field_path": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Field Path"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "block_id",
-          "field_path"
-        ],
-        "title": "PathwayFieldResolutionOut"
-      },
       "PathwayLaneIn": {
         "properties": {
           "id": {
@@ -1296,30 +1327,6 @@
           "ord"
         ],
         "title": "PathwayLaneIn"
-      },
-      "PathwayLaneKindRow": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "code": {
-            "type": "string",
-            "title": "Code"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "code",
-          "label"
-        ],
-        "title": "PathwayLaneKindRow"
       },
       "PathwayLaneOut": {
         "properties": {
@@ -1483,6 +1490,28 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "clinical_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clinical Goal"
+          },
+          "patient_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Goal"
           },
           "updated_at": {
             "type": "string",

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -18,6 +19,7 @@ TIMING_KINDS = ("fixed", "enrollment")
 
 class PathwayTimingValue(TenantOwnedEntity):
     __tablename__ = "pathway_timing_value"
+    __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
         sa.CheckConstraint(f"kind IN {TIMING_KINDS}", name="ck_pathway_timing_value_kind"),
         sa.CheckConstraint(

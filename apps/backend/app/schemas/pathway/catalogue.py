@@ -1,23 +1,16 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
-
-
-class PathwayLaneKindRow(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    code: str
-    label: str
+from pydantic import BaseModel, Field
 
 
 class PathwayBlockType(BaseModel):
     type: str = Field(description="Stable kebab-case identifier")
     label: str
-    default_lane_kind_id: UUID
+    default_lane_kind_code: str = Field(
+        description="Stable lane-kind code (D10): patient | caregiver | system | external"
+    )
     config_schema: dict[str, Any]
     supports_branches: bool = False
 

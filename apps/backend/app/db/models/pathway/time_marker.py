@@ -2,6 +2,8 @@
 # only — does not influence routing.
 
 from __future__ import annotations
+
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -13,6 +15,7 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayTimeMarker(TenantOwnedEntity):
     __tablename__ = "pathway_time_marker"
+    __realtime_resource__: ClassVar[str | None] = None
 
     pathway_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),

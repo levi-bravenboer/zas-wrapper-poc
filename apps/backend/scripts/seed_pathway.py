@@ -13,29 +13,29 @@ Run: `python -m scripts.seed_pathway` (or `python scripts/seed_pathway.py`).
 from __future__ import annotations
 
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.audit import SESSION_ACTOR_KEY
-from app.db.models.pathway import Pathway
+from app.db.models.pathway import Pathway, PathwayLaneKind
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
 from app.schemas.pathway.pathway import (
+    PathwayBlockBranchIn,
     PathwayBlockIn,
-    PathwayBranchIn,
     PathwayDefinitionReplace,
     PathwayEdgeIn,
     PathwayLaneIn,
     PathwayPhaseIn,
 )
 from app.services.pathway.catalogue import (
-    LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,
     LANE_KIND_SYSTEM,
+    SEEDED_LANE_KINDS,
 )
 from app.services.pathway.pathway_service import PathwayService
 from scripts._db import run_script
@@ -55,11 +55,10 @@ PHASE_FOLLOW_UP_ID: UUID = UUID("00000000-0000-4000-8000-000000000104")
 LANE_PATIENT_ID: UUID = UUID("00000000-0000-4000-8000-000000000201")
 LANE_CAREGIVER_ID: UUID = UUID("00000000-0000-4000-8000-000000000202")
 LANE_SYSTEM_ID: UUID = UUID("00000000-0000-4000-8000-000000000203")
-LANE_EXTERNAL_ID: UUID = UUID("00000000-0000-4000-8000-000000000204")
 
 BLOCK_INTAKE_ID: UUID = UUID("00000000-0000-4000-8000-000000000301")
 BLOCK_OPERATIE_ID: UUID = UUID("00000000-0000-4000-8000-000000000302")
-BLOCK_LUSCII_ID: UUID = UUID("00000000-0000-4000-8000-000000000303")
+BLOCK_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000303")
 BLOCK_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000304")
 BLOCK_ONTSLAG_ID: UUID = UUID("00000000-0000-4000-8000-000000000305")
 BLOCK_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000306")
@@ -68,8 +67,8 @@ BRANCH_GOED_ID: UUID = UUID("00000000-0000-4000-8000-000000000401")
 BRANCH_SLECHT_ID: UUID = UUID("00000000-0000-4000-8000-000000000402")
 
 EDGE_INTAKE_OP_ID: UUID = UUID("00000000-0000-4000-8000-000000000501")
-EDGE_OP_LUSCII_ID: UUID = UUID("00000000-0000-4000-8000-000000000502")
-EDGE_LUSCII_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000503")
+EDGE_OP_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000502")
+EDGE_HERSTEL_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000503")
 EDGE_GOED_ONTSLAG_ID: UUID = UUID("00000000-0000-4000-8000-000000000504")
 EDGE_SLECHT_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000505")
 
@@ -77,6 +76,13 @@ EDGE_SLECHT_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000505")
 def _build_payload() -> PathwayDefinitionReplace:
     return PathwayDefinitionReplace(
         name=PATHWAY_NAME,
+        clinical_goal=(
+            "Restore pain-free lumbar mobility and return patient to "
+            "pre-op function within 12 weeks."
+        ),
+        patient_goal=(
+            "Walk my daughter down the aisle without back pain in three months."
+        ),
         phases=[
             PathwayPhaseIn(id=PHASE_PRE_OP_ID, template_id="pre-op", label="Pre-op", ord=10),
             PathwayPhaseIn(id=PHASE_SURGERY_ID, template_id="surgery", label="Surgery", ord=20),
@@ -105,12 +111,6 @@ def _build_payload() -> PathwayDefinitionReplace:
                 label="System",
                 ord=30,
             ),
-            PathwayLaneIn(
-                id=LANE_EXTERNAL_ID,
-                lane_kind_code=LANE_KIND_EXTERNAL,
-                label="External",
-                ord=40,
-            ),
         ],
         blocks=[
             PathwayBlockIn(
@@ -138,12 +138,12 @@ def _build_payload() -> PathwayDefinitionReplace:
                 y=0,
             ),
             PathwayBlockIn(
-                id=BLOCK_LUSCII_ID,
+                id=BLOCK_HERSTEL_ID,
                 phase_id=PHASE_RECOVERY_ID,
-                lane_id=LANE_EXTERNAL_ID,
-                type="luscii-clinical-path",
-                label="Luscii thuisrevalidatie",
-                config={"luscii_path_id": "zas-rugrevalidatie-v1"},
+                lane_id=LANE_SYSTEM_ID,
+                type="timer",
+                label="Thuisrevalidatie periode",
+                config={"note": "Patient herstelt thuis; volgende contact na 6 weken."},
                 x=480,
                 y=0,
             ),
@@ -179,8 +179,8 @@ def _build_payload() -> PathwayDefinitionReplace:
             ),
         ],
         branches=[
-            PathwayBranchIn(id=BRANCH_GOED_ID, block_id=BLOCK_VOORTGANG_ID, label="Goed", ord=0),
-            PathwayBranchIn(
+            PathwayBlockBranchIn(id=BRANCH_GOED_ID, block_id=BLOCK_VOORTGANG_ID, label="Goed", ord=0),
+            PathwayBlockBranchIn(
                 id=BRANCH_SLECHT_ID, block_id=BLOCK_VOORTGANG_ID, label="Onvoldoende", ord=1
             ),
         ],
@@ -191,13 +191,13 @@ def _build_payload() -> PathwayDefinitionReplace:
                 target_block_id=BLOCK_OPERATIE_ID,
             ),
             PathwayEdgeIn(
-                id=EDGE_OP_LUSCII_ID,
+                id=EDGE_OP_HERSTEL_ID,
                 source_block_id=BLOCK_OPERATIE_ID,
-                target_block_id=BLOCK_LUSCII_ID,
+                target_block_id=BLOCK_HERSTEL_ID,
             ),
             PathwayEdgeIn(
-                id=EDGE_LUSCII_VOORTGANG_ID,
-                source_block_id=BLOCK_LUSCII_ID,
+                id=EDGE_HERSTEL_VOORTGANG_ID,
+                source_block_id=BLOCK_HERSTEL_ID,
                 target_block_id=BLOCK_VOORTGANG_ID,
             ),
             PathwayEdgeIn(
@@ -244,7 +244,18 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = actor
     try:
-        pathway = Pathway(id=PATHWAY_ID, name=PATHWAY_NAME)
+        pathway = Pathway(
+            id=PATHWAY_ID,
+            name=PATHWAY_NAME,
+            clinical_goal=(
+                "Restore pain-free lumbar mobility and return patient to "
+                "pre-op function within 12 weeks."
+            ),
+            patient_goal=(
+                "Walk my daughter down the aisle without back pain "
+                "in three months."
+            ),
+        )
         session.add(pathway)
         await session.flush()
 
@@ -264,7 +275,29 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
     return pathway
 
 
+async def seed_lane_kinds(session: AsyncSession) -> None:
+    """Insert the four canonical lane kinds if missing. Idempotent.
+
+    The Alembic migration also seeds these via `op.execute`, so on a
+    real Postgres they already exist. This helper covers the test path
+    where the schema is rebuilt via `Base.metadata.create_all` (which
+    skips migration `op.execute` blocks) and any environment where the
+    seed needs to be re-applied.
+    """
+
+    existing_codes = set((await session.scalars(select(PathwayLaneKind.code))).all())
+    missing = [(code, label) for code, label in SEEDED_LANE_KINDS if code not in existing_codes]
+    if not missing:
+        return
+    session.add_all(
+        [PathwayLaneKind(id=uuid4(), code=code, label=label) for code, label in missing]
+    )
+    await session.flush()
+    logger.info("seeded lane kinds codes=%s", [code for code, _ in missing])
+
+
 async def _seed(session: AsyncSession) -> None:
+    await seed_lane_kinds(session)
     await seed_rugrevalidatie(session)
 
 

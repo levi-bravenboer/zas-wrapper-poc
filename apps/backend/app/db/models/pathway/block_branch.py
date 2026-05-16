@@ -1,8 +1,11 @@
-# First-class entity for decision-block branches. App-side validation (D19)
-# rejects branch creation on blocks whose catalogue entry does not advertise
-# branching support. Branches are ordered within their owning block.
+# First-class entity for decision-block branches — one row per outbound option
+# on a decision block. App-side validation (D19) rejects branches on blocks
+# whose catalogue entry does not advertise branching support. Branches are
+# ordered within their owning block.
 
 from __future__ import annotations
+
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -12,10 +15,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import TenantOwnedEntity
 
 
-class PathwayBranch(TenantOwnedEntity):
-    __tablename__ = "pathway_branch"
+class PathwayBlockBranch(TenantOwnedEntity):
+    __tablename__ = "pathway_block_branch"
+    __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
-        sa.UniqueConstraint("block_id", "ord", name="uq_pathway_branch_block_id_ord"),
+        sa.UniqueConstraint("block_id", "ord", name="uq_pathway_block_branch_block_id_ord"),
     )
 
     block_id: Mapped[UUID] = mapped_column(

@@ -103,15 +103,27 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
         ),
     ),
     BlockTypeEntry(
-        type="luscii-clinical-path",
-        label="Luscii clinical path",
-        default_lane_kind_code=LANE_KIND_EXTERNAL,
+        type="task",
+        label="Task",
+        default_lane_kind_code=LANE_KIND_CAREGIVER,
         config_schema=_object_schema(
             properties={
-                "luscii_path_id": {"type": "string", "minLength": 1, "maxLength": 255},
-                "luscii_path_url": {"type": "string", "format": "uri", "maxLength": 1024},
+                "title": {"type": "string", "minLength": 1, "maxLength": 255},
+                "notes": {"type": "string", "maxLength": 2000},
             },
-            required=["luscii_path_id"],
+            required=["title"],
+        ),
+    ),
+    BlockTypeEntry(
+        type="email",
+        label="Email",
+        default_lane_kind_code=LANE_KIND_PATIENT,
+        config_schema=_object_schema(
+            properties={
+                "subject": {"type": "string", "minLength": 1, "maxLength": 255},
+                "body": {"type": "string", "maxLength": 5000},
+            },
+            required=["subject"],
         ),
     ),
 )
@@ -127,9 +139,7 @@ PHASE_TEMPLATES: tuple[PhaseTemplateEntry, ...] = (
     PhaseTemplateEntry(id="pre-op", label="Pre-op", default_ord=10, default_duration_days=14),
     PhaseTemplateEntry(id="surgery", label="Surgery", default_ord=20, default_duration_days=1),
     PhaseTemplateEntry(id="recovery", label="Recovery", default_ord=30, default_duration_days=30),
-    PhaseTemplateEntry(
-        id="follow-up", label="Follow-up", default_ord=40, default_duration_days=90
-    ),
+    PhaseTemplateEntry(id="follow-up", label="Follow-up", default_ord=40, default_duration_days=90),
 )
 
 _PHASE_TEMPLATES_BY_ID: dict[str, PhaseTemplateEntry] = {p.id: p for p in PHASE_TEMPLATES}

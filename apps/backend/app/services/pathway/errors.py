@@ -47,8 +47,8 @@ class EdgeValidationError(PathwayValidationError):
     code = "invalid.pathway.edge"
 
 
-class FieldResolutionError(PathwayValidationError):
-    code = "invalid.pathway.field-resolution"
+class DeferredFieldError(PathwayValidationError):
+    code = "invalid.pathway.deferred-field"
 
 
 class BlockConfigError(PathwayValidationError):
@@ -58,8 +58,8 @@ class BlockConfigError(PathwayValidationError):
 __all__ = [
     "BlockConfigError",
     "BranchOwnershipError",
+    "DeferredFieldError",
     "EdgeValidationError",
-    "FieldResolutionError",
     "PathwayNotFoundError",
     "PathwayValidationError",
     "TimingValidationError",
