@@ -404,3 +404,21 @@ Note: `role_in_care` is a closed Postgres enum (`primary | consulting | observer
 - Source: care-teams-base change
 
 Note: FHIR `CareTeam.managingOrganization` records the organisation accountable for the team itself (separate from each participant's `on_behalf_of_organisation_id`). Useful for cross-organisation cases — e.g. a team owned by a specialist clinic with a GP participant on behalf of their practice. Adds a nullable FK to `organisations`; deferred until MVP customer requires the distinction.
+
+### BL-061 — `PractitionerRole.specialty` as open CodeableConcept
+- Tier: [product]
+- Source: practitioner-role-split change
+
+Note: `specialty` is nullable free text for PoC. FHIR `PractitionerRole.specialty` is a `CodeableConcept` (typically SNOMED). Widen to `(system, code, display)` tuple when a real customer needs structured specialty filtering — e.g. "all GPs with specialty=cardiology in tenant X". Additive — existing free-text values map to a default coding system.
+
+### BL-062 — Free `PractitionerRoleCode` widening
+- Tier: [product]
+- Source: practitioner-role-split change
+
+Note: `practitioner_role_code` is a closed Postgres enum (`gp | physiotherapist | psychologist | nurse | physician | other`) for PoC. FHIR `PractitionerRole.code` is a `CodeableConcept` so customers can register site-specific roles. Widen when a real tenant needs values beyond the closed set. Migration path: add `(system, code, display)` columns + view that preserves the enum during the transition.
+
+### BL-063 — Cross-tenant Practitioner federation
+- Tier: [product]
+- Source: practitioner-role-split change
+
+Note: `Practitioner` is tenant-owned (1 row per `User`). FHIR models `Practitioner` as a globally identifiable resource that can hold `PractitionerRole` rows in multiple organisations across tenants. Land when we have a real federation requirement (e.g. a GP who consults across two ZAS-style customers). Additive: introduce a tenant-shared `practitioners` projection plus a federation identifier; existing rows keep their tenant scoping.
