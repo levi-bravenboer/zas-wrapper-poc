@@ -13,7 +13,6 @@ from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
-from app.repositories.organisation.organisation_repository import OrganisationRepository
 from app.schemas.auth.auth import SessionUser
 from app.services.care_team.care_team_service import CareTeamService
 
@@ -91,7 +90,7 @@ async def _setup(session: AsyncSession) -> tuple[SessionUser, CareTeam]:
 
 async def test_change_role_produces_two_rows(db_session: AsyncSession) -> None:
     session_user, team = await _setup(db_session)
-    service = CareTeamService(db_session, OrganisationRepository(db_session))
+    service = CareTeamService(db_session)
     await service.change_participant_role(
         session_user, team.id, session_user.id, RoleInCare.CONSULTING
     )

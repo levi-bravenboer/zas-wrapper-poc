@@ -13,7 +13,6 @@ from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
-from app.repositories.organisation.organisation_repository import OrganisationRepository
 from app.schemas.auth.auth import SessionUser
 from app.services.care_team.care_team_service import CareTeamService
 
@@ -129,7 +128,7 @@ async def test_visible_ids_returns_only_open_membership_patients(
     await _make_team_with_member(db_session, tenant, p_closed, caregiver, closed=True)
     await _make_patient(db_session, tenant, org, "Unrelated")
 
-    service = CareTeamService(db_session, OrganisationRepository(db_session))
+    service = CareTeamService(db_session)
     actor = SessionUser(
         id=caregiver.id,
         email=caregiver.email,
@@ -181,7 +180,7 @@ async def test_visible_ids_respects_tenant_isolation(db_session: AsyncSession) -
     caregiver_b = await _make_actor(db_session, tenant_b, "cb@example.test")
     await _make_team_with_member(db_session, tenant_b, patient_b, caregiver_b)
 
-    service = CareTeamService(db_session, OrganisationRepository(db_session))
+    service = CareTeamService(db_session)
     actor_a = SessionUser(
         id=caregiver_a.id,
         email=caregiver_a.email,
@@ -202,6 +201,6 @@ async def test_has_open_membership_true_only_for_open_row(db_session: AsyncSessi
     await _make_team_with_member(db_session, tenant, patient_open, caregiver)
     await _make_team_with_member(db_session, tenant, patient_closed, caregiver, closed=True)
 
-    service = CareTeamService(db_session, OrganisationRepository(db_session))
+    service = CareTeamService(db_session)
     assert await service.has_open_membership(caregiver.id, patient_open.id) is True
     assert await service.has_open_membership(caregiver.id, patient_closed.id) is False

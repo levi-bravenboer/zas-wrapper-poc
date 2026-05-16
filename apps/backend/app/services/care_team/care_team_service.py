@@ -9,21 +9,20 @@ from sqlalchemy.orm import selectinload
 
 from app.core.enums.care_team import RoleInCare
 from app.db.models.care_team import CareTeam, CareTeamParticipant
+from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.db.models.user import User
-from app.repositories.organisation.organisation_repository import OrganisationRepository
 from app.schemas.auth.auth import SessionUser
 from app.schemas.care_team.care_team import CareTeamCreate, CareTeamUpdate
 from app.schemas.care_team.participant import ParticipantCreate
 from app.services.care_team.errors import (
     CareTeamNotFoundError,
+    CrossTenantPractitionerRoleError,
     CrossTenantUserError,
     ParticipantAlreadyOpenError,
     ParticipantNotFoundError,
+    PractitionerRoleUserMismatchError,
 )
-from app.services.organisation.errors import (
-    CrossTenantOrganisationError,
-    OrganisationNotFoundError,
-)
+from app.services.practitioner_role.errors import PractitionerRoleNotFoundError
 
 
 class CareTeamService:
@@ -36,9 +35,8 @@ class CareTeamService:
     fail fast with a typed 409 before the DB constraint trips.
     """
 
-    def __init__(self, session: AsyncSession, organisation_repo: OrganisationRepository) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
-        self._org_repo = organisation_repo
 
     async def list_for_patient(self, tenant_id: UUID, patient_id: UUID) -> list[CareTeam]:
         result = await self._session.execute(
@@ -127,12 +125,15 @@ class CareTeamService:
         current.period_end = now
         current.unassigned_by = actor.id
         await self._session.flush()
+        acting_role_id = await self._reuse_open_role(
+            current.acting_as_practitioner_role_id
+        )
         new_row = CareTeamParticipant(
             tenant_id=actor.tenant_id,
             care_team_id=care_team_id,
             user_id=user_id,
             role_in_care=new_role,
-            on_behalf_of_organisation_id=current.on_behalf_of_organisation_id,
+            acting_as_practitioner_role_id=acting_role_id,
             assigned_by=actor.id,
             period_start=now,
         )
@@ -191,15 +192,17 @@ class CareTeamService:
         self, actor: SessionUser, payload: ParticipantCreate
     ) -> CareTeamParticipant:
         await self._assert_user_in_tenant(actor.tenant_id, payload.user_id)
-        if payload.on_behalf_of_organisation_id is not None:
-            await self._assert_organisation_in_tenant(
-                actor.tenant_id, payload.on_behalf_of_organisation_id
+        if payload.acting_as_practitioner_role_id is not None:
+            await self._assert_practitioner_role_matches_user(
+                actor.tenant_id,
+                payload.user_id,
+                payload.acting_as_practitioner_role_id,
             )
         return CareTeamParticipant(
             tenant_id=actor.tenant_id,
             user_id=payload.user_id,
             role_in_care=payload.role_in_care,
-            on_behalf_of_organisation_id=payload.on_behalf_of_organisation_id,
+            acting_as_practitioner_role_id=payload.acting_as_practitioner_role_id,
             assigned_by=actor.id,
         )
 
@@ -223,9 +226,45 @@ class CareTeamService:
         if row_tenant is None or row_tenant != tenant_id:
             raise CrossTenantUserError()
 
-    async def _assert_organisation_in_tenant(self, tenant_id: UUID, organisation_id: UUID) -> None:
-        org = await self._org_repo.get_by_id(organisation_id)
-        if org is None:
-            raise OrganisationNotFoundError()
-        if org.tenant_id != tenant_id:
-            raise CrossTenantOrganisationError()
+    async def _assert_practitioner_role_matches_user(
+        self,
+        tenant_id: UUID,
+        user_id: UUID,
+        role_id: UUID,
+    ) -> None:
+        result = await self._session.execute(
+            select(PractitionerRole, Practitioner.user_id)
+            .join(Practitioner, Practitioner.id == PractitionerRole.practitioner_id)
+            .where(
+                PractitionerRole.id == role_id,
+                PractitionerRole.deleted_at.is_(None),
+            )
+        )
+        row = result.first()
+        if row is None:
+            raise PractitionerRoleNotFoundError()
+        role, owner_user_id = row
+        if role.tenant_id != tenant_id:
+            raise CrossTenantPractitionerRoleError()
+        if owner_user_id != user_id:
+            raise PractitionerRoleUserMismatchError()
+
+    async def _reuse_open_role(self, role_id: UUID | None) -> UUID | None:
+        """Return `role_id` only when it still points at an open, live role.
+
+        Used when a participant row is rewritten (e.g. `change_participant_role`)
+        and we'd otherwise carry the old `acting_as_practitioner_role_id`
+        forward — a role that has since been closed or soft-deleted must
+        drop to NULL rather than persist a dangling reference.
+        """
+
+        if role_id is None:
+            return None
+        result = await self._session.execute(
+            select(PractitionerRole.id).where(
+                PractitionerRole.id == role_id,
+                PractitionerRole.period_end.is_(None),
+                PractitionerRole.deleted_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()

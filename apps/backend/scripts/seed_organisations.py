@@ -9,8 +9,7 @@
 # tree without lookups. Idempotent by `(tenant_id, name,
 # parent_organisation_id)` lookup. The audit hook stamps `created_by` /
 # `updated_by` from `session.info[SESSION_ACTOR_KEY]`; this script populates
-# the slot with the bootstrap admin actor before inserting org rows, then
-# back-fills the seeded users' `organisation_id` once the tree exists. The
+# the slot with the bootstrap admin actor before inserting org rows. The
 # bootstrap admin must already exist — `seed_all` runs users BEFORE
 # organisations because `organisations.created_by` FKs `users.id`.
 
@@ -30,13 +29,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTypeCode
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.organisation import Organisation
-from app.db.models.user import User
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
 from scripts._db import run_script
 from scripts.seed_tenant import ZAS_TENANT_SLUG
-from scripts.seed_users import ADMIN_EMAIL, ADMIN_USER_ID, CAREGIVER_EMAIL
+from scripts.seed_users import ADMIN_USER_ID
 
 logger = logging.getLogger(__name__)
 
@@ -94,21 +92,6 @@ async def _get_or_create(
     return org
 
 
-async def _backfill_user_org(session: AsyncSession, email: str, org_id: UUID) -> None:
-    """Idempotent: set user's organisation_id only if currently NULL."""
-    repo = UserRepository(session)
-    # Lookup uses the tenant; pull tenant id by querying via seeded admin id
-    # only when needed. Simpler: pull all users and find by email.
-    stmt = select(User).where(User.email == email, User.deleted_at.is_(None))
-    user = (await session.execute(stmt)).scalar_one_or_none()
-    if user is None:
-        return
-    if user.organisation_id is None:
-        user.organisation_id = org_id
-        await repo.update(user)
-        logger.info("backfilled organisation_id on user email=%s", email)
-
-
 async def seed_organisations(session: AsyncSession) -> list[Organisation]:
     tenant = await TenantRepository(session).get_by_slug(ZAS_TENANT_SLUG)
     if tenant is None:
@@ -162,10 +145,6 @@ async def seed_organisations(session: AsyncSession) -> list[Organisation]:
             type_display="Organizational team",
             parent_organisation_id=dept.id,
         )
-
-        # Backfill the bootstrap users' organisation_id now that the tree exists.
-        await _backfill_user_org(session, ADMIN_EMAIL, root.id)
-        await _backfill_user_org(session, CAREGIVER_EMAIL, team.id)
     finally:
         if previous_actor is None:
             session.info.pop(SESSION_ACTOR_KEY, None)
