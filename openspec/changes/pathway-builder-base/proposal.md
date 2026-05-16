@@ -36,8 +36,7 @@ We land the F3 foundation in one change, in three sequenced phases so the data m
 
 **Explicitly out of scope (deferred):**
 
-- Pathway versioning, publish flow, audit trail (`F3` MVP delta in `openspec/scope.md`).
-- Runtime execution / enrollment of patients into a pathway (`F4`/`F5` — separate changes).
+- Runtime execution / enrollment of patients into a pathway (`F4`/`F5` — separate changes). Versions are designed to be enrollment-pinnable (`pathway_version_id` as FK target), but the enrollment surface itself lands later.
 - Luscii Builder API integration. Any external-system block (Luscii care-path reference, FHIR pulls, HiX tasks) is out of PoC scope; if/when re-introduced it stays reference-only per `openspec/scope.md` mocks row.
 - Real-time multi-user editing, comments, branching/diffing of pathway definitions.
 - MDR-territory blocks (clinical decision logic that interprets measurements). See `openspec/mdr-watchlist.md`.
@@ -46,7 +45,8 @@ We land the F3 foundation in one change, in three sequenced phases so the data m
 
 ### New Capabilities
 
-- `pathway-domain`: Backend pathway-definition domain — aggregate, nodes, edges, block-type catalogue, REST surface under `/pathways` (catalogue endpoints nested as `/pathways/blocks` + `/pathways/phase-templates`), persistence in our own DB. No runtime/enrollment behaviour.
+- `pathway-domain`: Backend pathway-definition domain — aggregate, nodes, edges, block-type catalogue, REST surface under `/pathways` (catalogue endpoints nested as `/pathways/blocks` + `/pathways/phase-templates`), persistence in our own DB. No runtime/enrollment behaviour. Structural children FK to `pathway_version_id`; lifecycle of versions lives in `pathway-version`.
+- `pathway-version`: Backend pathway-version lifecycle — `pathway_version` table, concept/published states, one-concept-max invariant, publish operation (label + note + clinical-approval acknowledgement), restore + fork-from-publish endpoints, hybrid resolution on `GET /pathways/{id}`, version listing/detail endpoints, derived pathway-level rollups. See `history-spec.md` for full backend implications and `design.md` D36–D45 for the decisions behind the shape.
 - `pathway-builder`: Orchestrator surface for managing pathway definitions — sidebar entry, overview page, create flow, builder canvas, block palette + node graph + connectors + per-block config editor. Wraps an existing graph-canvas package.
 
 ### Modified Capabilities

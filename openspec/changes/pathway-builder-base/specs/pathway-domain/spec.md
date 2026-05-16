@@ -2,13 +2,13 @@
 
 ### Requirement: Pathway definition aggregate
 
-The backend SHALL persist a pathway definition as an aggregate identified by a stable UUID. The aggregate root is the `pathway` row; child entities (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_block_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_deferred_field`, `pathway_timing_value`) cascade-delete with the root. The aggregate SHALL hold a human-friendly `name`. Every aggregate table SHALL inherit `TenantOwnedEntity` (from `apps/backend/app/db/base.py`) so `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`, and audit FKs come from the base class. The pathway has no design-time entry block — execution start is picked at enrollment (F4, separate change). Concrete storage is relational with one purposeful jsonb (`pathway_block.config`) per Naming Conventions & Schema Exceptions in `design.md`.
+The backend SHALL persist a pathway as a two-level aggregate identified by a stable UUID. The aggregate root is the `pathway` row, which holds only identity and ownership fields (`id`, `tenant_id`, `name`, optional `clinical_goal`, optional `patient_goal`, `owner_id`, `archived_at`) plus inherited audit columns. The structural definition lives one level deeper on `pathway_version` rows (see `pathway-version` capability) — every editable revision of the pathway is its own `pathway_version` and owns its own snapshot of the child tables. Child entities (`pathway_phase`, `pathway_lane`, `pathway_block`, `pathway_block_branch`, `pathway_edge`, `pathway_time_marker`, `pathway_block_deferred_field`) SHALL FK to `pathway_version_id` (NOT `pathway_id`) with `ON DELETE CASCADE`; `pathway_timing_value` rows are scoped to the version via their referencing block/edge. Deleting a `pathway` cascades through its versions which cascade through their children. Every table in the aggregate SHALL inherit `TenantOwnedEntity` (from `apps/backend/app/db/base.py`) so `id`, `tenant_id`, `created_at`, `updated_at`, `deleted_at`, and audit FKs come from the base class. The pathway has no design-time entry block — execution start is picked at enrollment (F4, separate change). Concrete storage is relational with one purposeful jsonb (`pathway_block.config`) per Naming Conventions & Schema Exceptions in `design.md`.
 
 #### Scenario: Persist and reload a pathway
 
-- **WHEN** a client `POST`s a pathway with a name, two blocks, and one edge between them
-- **THEN** the backend persists the aggregate
-- **AND** a subsequent `GET /pathways/{id}` returns the full definition with the same blocks and edges
+- **WHEN** a client `POST`s a pathway with a name, then `PUT`s a definition with two blocks and one edge against the bare `/pathways/{id}` endpoint
+- **THEN** the backend persists the structural children under the pathway's `concept` `pathway_version` row
+- **AND** a subsequent `GET /pathways/{id}` returns `{ pathway, version }` where `version` is the concept and embeds the same blocks and edges
 
 #### Scenario: Audit columns auto-stamped on save
 
@@ -21,32 +21,37 @@ The backend SHALL persist a pathway definition as an aggregate identified by a s
 - **THEN** the deleted pathway is not present in the response
 - **AND** `deleted_at` is non-null on the underlying row
 
-#### Scenario: Cascade delete clears all child rows
+#### Scenario: Cascade delete clears all versions and child rows
 
-- **WHEN** a pathway with phases, lanes, blocks, branches, edges, time markers, and timing values is deleted
-- **THEN** all child rows are soft-deleted with the same `deleted_at` timestamp (or removed if hard-delete is used)
+- **WHEN** a pathway with two versions, each carrying phases, lanes, blocks, branches, edges, time markers, and timing values, is deleted
+- **THEN** both `pathway_version` rows are soft-deleted with the same `deleted_at` timestamp
+- **AND** every child row (FK'd via `pathway_version_id`) is soft-deleted (or hard-removed under hard-delete) alongside its owning version
 
 ### Requirement: Pathway REST surface
 
 The backend SHALL expose REST endpoints for pathway-definition lifecycle under `/pathways`:
 
-- `GET /pathways` — list pathway summaries (`id`, `name`, `updated_at`, `block_count`).
-- `POST /pathways` — create an empty pathway and return its id.
-- `GET /pathways/{id}` — return the full pathway definition (all child entities embedded).
-- `PUT /pathways/{id}` — replace the pathway definition wholesale.
-- `DELETE /pathways/{id}` — delete the pathway aggregate.
+- `GET /pathways` — list pathway summaries (`id`, `name`, `updated_at`, `latest_published_version_no` (nullable), `has_concept` (bool), `block_count` of the resolved version, `last_edited_at`). Rollup fields are derived per `pathway-version` capability "Pathway-level rollups are derived".
+- `POST /pathways` — create an empty pathway AND its `initial` `concept` version in one transaction; return the pathway id and the initial version summary.
+- `GET /pathways/{id}` — return `{ pathway, version }` where `version` is the resolved version per `pathway-version` capability "Hybrid version resolution".
+- `PUT /pathways/{id}` — replace the structural children of the pathway's current `concept` version wholesale (autosave hot path). Routing and 409-when-no-concept behaviour are specified in `pathway-version` capability "Concept autosave on PUT".
+- `DELETE /pathways/{id}` — delete the pathway aggregate (cascades through every version and its children).
+
+Version-scoped endpoints (`GET /pathways/{id}/versions`, `GET /pathways/{id}/versions/{versionId}`, `POST /pathways/{id}/publish`, `POST /pathways/{id}/versions/{versionId}/restore`, `POST /pathways/{id}/versions/{versionId}/fork-from-publish`) are specified in the `pathway-version` capability.
 
 Endpoints SHALL follow the `openapi-contract` requirements: stable `operation_id`, declared response models, declared error responses, central router tag + prefix.
 
 #### Scenario: List pathways returns summaries
 
 - **WHEN** a client calls `GET /pathways` after creating two pathways
-- **THEN** the response contains two summaries, each with `id`, `name`, `updated_at`, and `block_count`
+- **THEN** the response contains two summaries, each with `id`, `name`, `updated_at`, `latest_published_version_no`, `has_concept`, `block_count`, and `last_edited_at`
 
-#### Scenario: Replace pathway is wholesale
+#### Scenario: Replace pathway is wholesale against the current concept
 
-- **WHEN** a client calls `PUT /pathways/{id}` with a definition that drops a previously-present block
-- **THEN** a subsequent `GET /pathways/{id}` no longer contains the dropped block or any edges that referenced it
+- **GIVEN** a pathway whose `concept` version contains block B
+- **WHEN** a client calls `PUT /pathways/{id}` with a definition that omits B
+- **THEN** a subsequent `GET /pathways/{id}` returns the `concept` version without B and without any edges that referenced it
+- **AND** any `published` versions of the same pathway still contain B
 
 #### Scenario: Delete pathway removes it
 
@@ -95,7 +100,7 @@ The backend SHALL persist lanes as two tables per D10:
 - `pathway_lane_kind` — system catalogue, seeded migration with at minimum `patient`, `caregiver`, `system`, `external`.
 - `pathway_lane` — per-pathway lane instance, FK `pathway_lane_kind_id`, with `label`, `ord`, and `is_default` flag.
 
-Every `pathway_block` SHALL reference exactly one `pathway_lane` via `lane_id` (NOT NULL). Default lanes are materialized on first block placement of a given kind; custom lanes are added by the author. Within one pathway, `(pathway_id, ord)` SHALL be unique on `pathway_lane`.
+Every `pathway_block` SHALL reference exactly one `pathway_lane` via `lane_id` (NOT NULL). Default lanes are materialized on first block placement of a given kind; custom lanes are added by the author. Within one version, `(pathway_version_id, ord)` SHALL be unique on `pathway_lane`. `pathway_lane` rows are version-scoped — a lane added in v.3 has no presence in v.2.
 
 #### Scenario: Default lane materialized on first block of that kind
 
@@ -115,7 +120,7 @@ Every `pathway_block` SHALL reference exactly one `pathway_lane` via `lane_id` (
 
 ### Requirement: Phases per pathway
 
-The backend SHALL persist phases as `pathway_phase` rows ordered by `ord` and unique within `(pathway_id, ord)`. A phase SHALL carry a `label` and an optional `template_id` (soft pointer to the phase-template catalogue, no FK constraint). Phases in PoC are decorative — no duration, no anchor event, no runtime date math (deferred per D11 / Open Questions). Every `pathway_block` SHALL reference exactly one `pathway_phase` via `phase_id` (NOT NULL). Phases are NOT navigable canvases; cross-phase edges (including loopbacks to lower-`ord` phases) are ordinary `pathway_edge` rows whose target block sits in a different phase.
+The backend SHALL persist phases as `pathway_phase` rows ordered by `ord` and unique within `(pathway_version_id, ord)`. A phase SHALL carry a `label` and an optional `template_id` (soft pointer to the phase-template catalogue, no FK constraint). Phases in PoC are decorative — no duration, no anchor event, no runtime date math (deferred per D11 / Open Questions). Every `pathway_block` SHALL reference exactly one `pathway_phase` via `phase_id` (NOT NULL); the referenced phase MUST belong to the same `pathway_version` as the block. Phases are NOT navigable canvases; cross-phase edges (including loopbacks to lower-`ord` phases) are ordinary `pathway_edge` rows whose target block sits in a different phase. Phases are version-scoped — renumbering or renaming a phase in a concept does not retroactively affect any published version.
 
 #### Scenario: Loopback edge accepted across phases
 
@@ -123,9 +128,9 @@ The backend SHALL persist phases as `pathway_phase` rows ordered by `ord` and un
 - **THEN** the backend persists the edge with no special flag
 - **AND** `GET /pathways/{id}` returns the same edge
 
-#### Scenario: Reject block referencing a phase from another pathway
+#### Scenario: Reject block referencing a phase from another version
 
-- **WHEN** a client submits a block whose `phase_id` belongs to a different pathway
+- **WHEN** a client submits a block whose `phase_id` belongs to a different `pathway_version` (whether of the same or a different pathway)
 - **THEN** the backend rejects the request with a 422 validation error
 
 ### Requirement: Timing value table
@@ -206,16 +211,13 @@ The backend SHALL persist `pathway_block_deferred_field` rows as `(block_id, fie
 - **WHEN** a client submits a field-resolution row whose `field_path` is not present in the block's `config_schema`
 - **THEN** the backend rejects the request with a 422 validation error
 
-### Requirement: Saved pathway is enrollable
-
-The backend SHALL treat any persisted pathway definition as enrollable. There SHALL be no separate publish step or draft/published distinction in the PoC. Versioning, audit trail, and publish workflow are out of scope and tracked under MVP delta.
-
-#### Scenario: Saved pathway is immediately listable as enrollable
-
-- **WHEN** a pathway is created and saved via `POST /pathways` followed by `PUT /pathways/{id}`
-- **THEN** the pathway appears in `GET /pathways` with no draft/published flag
-- **AND** there is no `publish` endpoint exposed
-
 ### Requirement: External-system blocks remain reference-only
 
 The PoC catalogue contains no external-system blocks. If/when external-system blocks (e.g. a Luscii care-path reference, FHIR pulls, HiX tasks) are reintroduced, they SHALL carry NO external-system–specific column or table. Their catalogue `config_schema` SHALL define reference fields only (IDs and optional URLs) — never the upstream payload itself. The backend SHALL validate the reference shape via the catalogue's `config_schema` like any other block type and SHALL NOT fetch, parse, or mirror upstream clinical content.
+
+#### Scenario: Catalogue rejects an external-system block whose schema embeds upstream payload fields
+
+- **GIVEN** an attempt to register an external-system block type whose `config_schema` declares fields that mirror upstream clinical content (e.g. measurement values, diagnosis text)
+- **WHEN** the catalogue is loaded at server startup
+- **THEN** the load fails with an MDR-watchlist violation pointing at the offending block type
+- **AND** the server does NOT serve `GET /pathways/blocks` until the offending type is removed or its `config_schema` is reduced to reference-only fields
