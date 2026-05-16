@@ -7,9 +7,11 @@ import dashboard from './locales/nl/dashboard.json'
 import dataTable from './locales/nl/data-table.json'
 import nav from './locales/nl/nav.json'
 import pathway from './locales/nl/pathway.json'
+import patients from './locales/nl/patients.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
 import states from './locales/nl/states.json'
+import users from './locales/nl/users.json'
 
 export const SUPPORTED_LOCALES = ['nl', 'fr', 'en'] as const
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
@@ -31,9 +33,11 @@ void i18next.use(initReactI18next).init({
     'data-table',
     'nav',
     'pathway',
+    'patients',
     'shell',
     'smart',
     'states',
+    'users',
   ],
   resources: {
     nl: {
@@ -43,9 +47,11 @@ void i18next.use(initReactI18next).init({
       'data-table': dataTable,
       nav,
       pathway,
+      patients,
       shell,
       smart,
       states,
+      users,
     },
   },
   interpolation: { escapeValue: false },

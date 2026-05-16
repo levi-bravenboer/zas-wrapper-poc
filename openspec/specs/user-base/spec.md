@@ -59,7 +59,7 @@ The backend SHALL persist a `users` table where each row represents an authentic
 
 ### Requirement: Role enum is a single canonical value
 
-The backend SHALL define exactly one Python `Role` enum at `app/core/enums/user.py` with values `admin`, `caregiver`, `external` (string-valued via `StrEnum`), re-exported from `app/core/enums/__init__.py`. This enum MUST be the source of truth for the `role` column type (`sa.Enum(Role, name="role", native_enum=True, create_constraint=True)`) and for every Pydantic `role` field in `app/schemas/`.
+The backend SHALL define exactly one Python `Role` enum at `app/core/enums/user.py` with values `admin`, `caregiver` (string-valued via `StrEnum`), re-exported from `app/core/enums/__init__.py`. The value `external` is REMOVED — the concept it conveyed (caregiver authority scoping) is now derived from organisation-tree comparison via `is_external_for(user, patient)` in `organisations-base`, not from the user's role. This enum MUST be the source of truth for the `role` column type (`sa.Enum(Role, name="role", native_enum=True, create_constraint=True)`) and for every Pydantic `role` field in `app/schemas/`.
 
 #### Scenario: ORM model imports Role from core
 
@@ -73,8 +73,13 @@ The backend SHALL define exactly one Python `Role` enum at `app/core/enums/user.
 
 #### Scenario: Postgres enum type created by migration
 
-- **WHEN** the migration runs against a fresh database
-- **THEN** a Postgres `enum` type named `role` MUST exist with exactly the values `'admin'`, `'caregiver'`, `'external'`
+- **WHEN** the migration runs against a fresh database (post-`organisations-base`)
+- **THEN** a Postgres `enum` type named `role` MUST exist with exactly the values `'admin'`, `'caregiver'`
+
+#### Scenario: Legacy `external` value is rejected
+
+- **WHEN** any insert or update sets `users.role = 'external'`
+- **THEN** the database MUST reject the operation (value not in enum)
 
 ### Requirement: Bootstrap users seeded via script
 

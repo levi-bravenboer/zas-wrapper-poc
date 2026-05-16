@@ -42,6 +42,10 @@ class User(TenantOwnedEntity):
         ),
     )
 
+    # Affiliation lives on `PractitionerRole` rows. A caregiver `User` is
+    # 1:1 with a `Practitioner` row (FK on `practitioners.user_id`); that
+    # `Practitioner` carries one or more `PractitionerRole` rows. See the
+    # `practitioner-role-split` capability spec.
     email: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     password_hash: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     display_name: Mapped[str] = mapped_column(sa.String(255), nullable=False)

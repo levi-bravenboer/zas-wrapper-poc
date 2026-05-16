@@ -7,7 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from sqlalchemy import delete, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import (
 from app.core.settings import Settings, get_settings
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.base import Base
-from app.db.models.pathway import Pathway, PathwayLaneKind
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.main import create_app
@@ -115,15 +114,16 @@ async def clean_tenants(db_session: AsyncSession) -> AsyncIterator[None]:
 
 
 async def _wipe_tenant_scoped_tables(session: AsyncSession) -> None:
-    # Order matters: every tenant-owned table must be cleared before
-    # `tenants` because the FK is `ON DELETE RESTRICT`. Pathway rows
-    # FK `users.created_by` (RESTRICT), so they must clear before users;
-    # `pathway_lane_kind` is a system catalogue referenced by lanes with
-    # RESTRICT, so it must clear after the cascade has dropped lanes.
-    await session.execute(delete(Pathway))
-    await session.execute(delete(PathwayLaneKind))
-    await session.execute(delete(User))
-    await session.execute(delete(Tenant))
+    # Users and organisations form a cycle (`users.organisation_id` ↔
+    # `organisations.created_by/updated_by/deleted_by`), so neither can be
+    # deleted while the other still references it. `TRUNCATE ... CASCADE`
+    # disables FK checking inside the truncation and atomically wipes both.
+    # `tenants` cascades along (every tenant-owned table is included or
+    # transitively cleared by the cascade — pathway rows clear via tenant
+    # FK cascade; the pathway test conftest re-seeds lane-kind rows).
+    await session.execute(
+        text("TRUNCATE TABLE users, organisations, tenants RESTART IDENTITY CASCADE")
+    )
     await session.commit()
 
 

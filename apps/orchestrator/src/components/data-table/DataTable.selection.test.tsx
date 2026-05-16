@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { DataTableState } from '@/hooks/use-data-table-state'
 import { renderWithProviders } from '@/test/renderWithProviders'
 
-import { DataTable } from './DataTable'
 import { textColumn } from './columns'
+import { DataTable } from './DataTable'
 
 interface Row {
   id: string

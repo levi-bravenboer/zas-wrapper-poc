@@ -1,3 +1,3 @@
-from app.schemas.user.user import AssignRoleRequest, UserRow
+from app.schemas.user.user import AssignRoleRequest, SetActiveRequest, UserDetail, UserRow
 
-__all__ = ["AssignRoleRequest", "UserRow"]
+__all__ = ["AssignRoleRequest", "SetActiveRequest", "UserDetail", "UserRow"]
