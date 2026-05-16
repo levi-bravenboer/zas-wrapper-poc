@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import ListQueryParamsDep
 from app.core.enums.user import Role
-from app.repositories.patient.deps import PatientRepoDep
 from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdate
@@ -29,19 +28,20 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 )
 async def list_patients(
     query: ListQueryParamsDep,
-    repo: PatientRepoDep,
-    _current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    service: PatientServiceDep,
+    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
     identifier: Annotated[
         str | None,
         Query(description="FHIR Patient.identifier short-circuit; exact value match"),
     ] = None,
 ) -> Page[PatientRead]:
     # AUTH-HARDEN: tenant scope is applied inside `BaseListRepository.list_page`
-    # via `_tenant_predicate`, which reads `session.info[SESSION_ACTOR_KEY]`.
-    # FHIR semantics: `identifier` short-circuits the other discrete params, so
-    # we drop `filter[...]` + `q` from the query before listing when set.
+    # via `_tenant_predicate`; caregiver visibility (open `CareTeamParticipant`
+    # row) is applied inside `PatientService.list_in_tenant`. FHIR semantics:
+    # `identifier` short-circuits the other discrete params, so we drop
+    # `filter[...]` + `q` from the query before listing when set.
     effective_query = query.model_copy(update={"filters": {}, "q": None}) if identifier else query
-    page = await repo.with_identifier(identifier).list_page(effective_query)
+    page = await service.list_in_tenant(current_user, effective_query, identifier=identifier)
     return Page[PatientRead](
         items=[PatientRead.model_validate(p) for p in page.items],
         page=page.page,

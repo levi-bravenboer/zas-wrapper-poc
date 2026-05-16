@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from app.core.enums.user import Role
 from app.db.models.patient import Patient, PatientIdentifier
 from app.repositories.organisation.organisation_repository import OrganisationRepository
 from app.repositories.patient.patient_repository import PatientRepository
+from app.schemas._list.list_query import ListQuery
+from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientUpdate
+from app.services.care_team.care_team_service import CareTeamService
 from app.services.organisation.errors import (
     CrossTenantOrganisationError,
     OrganisationNotFoundError,
@@ -20,20 +24,43 @@ from app.services.patient.errors import (
 class PatientService:
     """Tenant-scoped orchestration for patients.
 
-    Listing goes through `PatientRepository.list_page()` directly from the
-    router; the service owns the mutating paths (create / update / delete)
-    + the cross-tenant organisation check. Care-team-based caregiver
-    filtering lands in `care-teams-base` (chain change #3) and will hook
-    into the repository's `_extra_filters`.
+    Listing flows through this service so caregiver visibility is enforced
+    in one place: caregivers only see patients reachable via an open
+    `CareTeamParticipant` row (the participant-row predicate is the only
+    rule — no org-subtree fallback). Admins bypass and see every patient
+    in their tenant.
     """
 
     def __init__(
         self,
         repo: PatientRepository,
         organisation_repo: OrganisationRepository,
+        care_team_service: CareTeamService,
     ) -> None:
         self._repo = repo
         self._org_repo = organisation_repo
+        self._care_team_service = care_team_service
+
+    async def list_in_tenant(
+        self,
+        actor: SessionUser,
+        query: ListQuery,
+        *,
+        identifier: str | None = None,
+    ) -> Page[Patient]:
+        repo = self._repo.with_identifier(identifier)
+        if actor.role == Role.ADMIN:
+            return await repo.list_page(query)
+        visible = await self._care_team_service.visible_patient_ids_for(actor)
+        if not visible:
+            return Page[Patient](
+                items=[],
+                page=query.page,
+                page_size=query.page_size,
+                total=0,
+                total_pages=0,
+            )
+        return await repo.with_visible_ids(frozenset(visible)).list_page(query)
 
     async def get_by_id(self, tenant_id: UUID, patient_id: UUID) -> Patient | None:
         return await self._repo.get_by_id(tenant_id, patient_id)

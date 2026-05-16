@@ -374,3 +374,33 @@ Note: `patients-base` keeps a single `given_name` / `family_name` pair on the ro
 - Source: patients-base change
 
 Note: `patients-base` ships the `/_auth/patients` overview without a create-patient action to keep the PR scope tight. Backend `POST /patients` is live and tenant-scoped; the dialog needs a controlled form (demographics + at least one identifier, with INSZ Mod-97 validation surfaced inline), tied into the page header's actions slot, and invalidating the `patientsListKeyPrefix` query key on success. Should reuse shadcn Dialog + Form primitives. Pre-requisite for the Rugrevalidatie demo flow that wants ad-hoc patient creation outside the seed cohort.
+
+### BL-056 — Pathway builder + runtime (auto-assignment of patients to teams)
+- Tier: [mvp]
+- Source: care-teams-base change
+
+Note: `care-teams-base` ships manual team + participant management. MVP needs a pathway/workflow runtime that automatically assigns patients to organisations and care teams (e.g. on referral intake, on enrolment trigger). Until this lands, every team membership is hand-curated, which doesn't scale past the demo. Depends on a future workflow/pathway domain (see BL-036).
+
+### BL-057 — `Encounter.participant` per-visit modelling
+- Tier: [product]
+- Source: care-teams-base change
+
+Note: `CareTeam.participant` covers ongoing membership across the longitudinal record. FHIR `Encounter.participant` is the visit-scoped equivalent (who was actually in the room for this consult). Lands with the clinical-data change that introduces `Encounter`; out of scope for the administrative care-team chain.
+
+### BL-058 — `EpisodeOfCare` wrapping CareTeam
+- Tier: [product]
+- Source: care-teams-base change
+
+Note: FHIR `EpisodeOfCare` groups multiple care teams + encounters under one clinical reason (e.g. "rugrevalidatie 2026-Q3 cohort"). Useful when a patient has overlapping pathways or when reporting needs to aggregate across teams. Bundled into the future clinical-data work alongside `Encounter` and `Condition`.
+
+### BL-059 — Free codeable concept for `role_in_care`
+- Tier: [product]
+- Source: care-teams-base change
+
+Note: `role_in_care` is a closed Postgres enum (`primary | consulting | observer`) for PoC. FHIR `CareTeam.participant.role` is a `CodeableConcept`, allowing site-specific roles. Widen to a `(system, code, display)` tuple when a real customer needs roles beyond the three values. Additive — existing data maps cleanly onto the default coding system.
+
+### BL-060 — `CareTeam.managingOrganization` column
+- Tier: [mvp]
+- Source: care-teams-base change
+
+Note: FHIR `CareTeam.managingOrganization` records the organisation accountable for the team itself (separate from each participant's `on_behalf_of_organisation_id`). Useful for cross-organisation cases — e.g. a team owned by a specialist clinic with a GP participant on behalf of their practice. Adds a nullable FK to `organisations`; deferred until MVP customer requires the distinction.

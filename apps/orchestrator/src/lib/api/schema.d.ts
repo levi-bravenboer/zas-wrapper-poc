@@ -245,6 +245,76 @@ export interface paths {
         patch: operations["update_patient"];
         trace?: never;
     };
+    "/patients/{patient_id}/care-teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Care Teams */
+        get: operations["list_patient_care_teams"];
+        put?: never;
+        /** Create Care Team */
+        post: operations["create_care_team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/care-teams/{care_team_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Care Team */
+        patch: operations["update_care_team"];
+        trace?: never;
+    };
+    "/care-teams/{care_team_id}/participants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Care Team Participant */
+        post: operations["add_care_team_participant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/care-teams/{care_team_id}/participants/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unassign Care Team Participant */
+        delete: operations["unassign_care_team_participant"];
+        options?: never;
+        head?: never;
+        /** Change Participant Role */
+        patch: operations["change_participant_role"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -252,6 +322,78 @@ export interface components {
         /** AssignRoleRequest */
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
+        };
+        /**
+         * CareTeamCreate
+         * @description `POST /patients/{patient_id}/care-teams` payload.
+         *
+         *     `participants` is part of the create payload so a team can be born
+         *     with a primary practitioner in a single transaction. Adding or
+         *     changing participants later goes through the participant endpoints.
+         */
+        CareTeamCreate: {
+            /** Name */
+            name?: string | null;
+            /** Category */
+            category?: string | null;
+            /**
+             * Participants
+             * @default []
+             */
+            participants: components["schemas"]["ParticipantCreate"][];
+        };
+        /** CareTeamRead */
+        CareTeamRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /** Name */
+            name?: string | null;
+            status: components["schemas"]["CareTeamStatus"];
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end?: string | null;
+            /** Category */
+            category?: string | null;
+            /**
+             * Participants
+             * @default []
+             */
+            participants: components["schemas"]["ParticipantRead"][];
+        };
+        /**
+         * CareTeamStatus
+         * @enum {string}
+         */
+        CareTeamStatus: "active" | "inactive";
+        /**
+         * CareTeamUpdate
+         * @description `PATCH /care-teams/{id}` payload — team-level metadata only.
+         *
+         *     Participant changes are out of scope here; use the participant
+         *     endpoints. Setting `status = inactive` or `period_end` closes the
+         *     team but does not auto-unassign participants — the service handles
+         *     that side-effect inside the same transaction.
+         */
+        CareTeamUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Category */
+            category?: string | null;
+            status?: components["schemas"]["CareTeamStatus"] | null;
+            /** Period End */
+            period_end?: string | null;
         };
         /**
          * Gender
@@ -337,6 +479,65 @@ export interface components {
             total: number;
             /** Total Pages */
             total_pages: number;
+        };
+        /**
+         * ParticipantCreate
+         * @description `POST /care-teams/{id}/participants` payload.
+         *
+         *     Opens a new participant row. The service enforces the partial unique
+         *     constraint (`uq_care_team_participants_open_membership`) by checking
+         *     for an existing open row before insert.
+         */
+        ParticipantCreate: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            role_in_care: components["schemas"]["RoleInCare"];
+            /** On Behalf Of Organisation Id */
+            on_behalf_of_organisation_id?: string | null;
+        };
+        /** ParticipantRead */
+        ParticipantRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            role_in_care: components["schemas"]["RoleInCare"];
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end?: string | null;
+            /** On Behalf Of Organisation Id */
+            on_behalf_of_organisation_id?: string | null;
+            /**
+             * Assigned By
+             * Format: uuid
+             */
+            assigned_by: string;
+            /** Unassigned By */
+            unassigned_by?: string | null;
+        };
+        /**
+         * ParticipantRoleChange
+         * @description `PATCH /care-teams/{id}/participants/{user_id}` payload.
+         *
+         *     Role changes are append-only: the service closes the current open
+         *     row (sets `period_end`, `unassigned_by`) and inserts a new open row
+         *     with the new role in the same transaction.
+         */
+        ParticipantRoleChange: {
+            role_in_care: components["schemas"]["RoleInCare"];
         };
         /**
          * PatientCreate
@@ -491,6 +692,11 @@ export interface components {
          * @enum {string}
          */
         Role: "admin" | "caregiver";
+        /**
+         * RoleInCare
+         * @enum {string}
+         */
+        RoleInCare: "primary" | "consulting" | "observer";
         /** RootResponse */
         RootResponse: {
             /** Name */
@@ -1070,6 +1276,208 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_care_teams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareTeamRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_care_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareTeamCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareTeamRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_care_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareTeamUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareTeamRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_care_team_participant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParticipantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParticipantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unassign_care_team_participant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_participant_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                care_team_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParticipantRoleChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParticipantRead"];
                 };
             };
             /** @description Validation Error */

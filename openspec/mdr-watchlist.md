@@ -25,3 +25,9 @@ Stop. Add an entry. Propose a non-MDR alternative. Get a decision before proceed
 - **Why wanted:** demo orchestrator needs a tenant-scoped patient list + identifier upsert path for the Rugrevalidatie demo and the future HiX adapter.
 - **Non-MDR alternative:** already chosen — separate clinical-data tables (`Encounter`, `Condition`, `Observation`) are queued behind a future change; `patients-base` keeps the row purely administrative.
 - **Decision:** chosen — landed as-is. Re-verify this entry on any future field addition that introduces clinical semantics.
+
+### 2026-05-15 — care-teams-base scope check (source: care-teams-base)
+- **Trigger:** none. `care_teams` + `care_team_participants` store membership (`user_id`, `role_in_care`, `period_start/end`, `on_behalf_of_organisation_id`) only. Roles (`primary | consulting | observer`) are administrative routing labels, not clinical decision outputs; no triage logic, no automated assignment from clinical signals, no interpretation of measurements.
+- **Why wanted:** demo orchestrator needs a participant-row visibility predicate so caregivers see only the patients they are administratively assigned to. Drives the patients-base list filter rewrite.
+- **Non-MDR alternative:** already chosen — pathway-builder runtime, `Encounter.participant`, `EpisodeOfCare`, and any clinical-state-driven assignment are queued as follow-ups; this change stays administrative.
+- **Decision:** chosen — landed as-is. Re-verify if `role_in_care` ever widens to encode clinical authority (prescriber, etc.) or if assignment becomes signal-driven.

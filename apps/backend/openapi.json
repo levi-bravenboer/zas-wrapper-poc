@@ -782,6 +782,317 @@
           }
         }
       }
+    },
+    "/patients/{patient_id}/care-teams": {
+      "get": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "List Patient Care Teams",
+        "operationId": "list_patient_care_teams",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CareTeamRead"
+                  },
+                  "title": "Response List Patient Care Teams"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Create Care Team",
+        "operationId": "create_care_team",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CareTeamCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/care-teams/{care_team_id}": {
+      "patch": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Update Care Team",
+        "operationId": "update_care_team",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CareTeamUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CareTeamRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/care-teams/{care_team_id}/participants": {
+      "post": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Add Care Team Participant",
+        "operationId": "add_care_team_participant",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/care-teams/{care_team_id}/participants/{user_id}": {
+      "patch": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Change Participant Role",
+        "operationId": "change_participant_role",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantRoleChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "care-teams"
+        ],
+        "summary": "Unassign Care Team Participant",
+        "operationId": "unassign_care_team_participant",
+        "parameters": [
+          {
+            "name": "care_team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Care Team Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -797,6 +1108,176 @@
           "role"
         ],
         "title": "AssignRoleRequest"
+      },
+      "CareTeamCreate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipantCreate"
+            },
+            "type": "array",
+            "title": "Participants",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CareTeamCreate",
+        "description": "`POST /patients/{patient_id}/care-teams` payload.\n\n`participants` is part of the create payload so a team can be born\nwith a primary practitioner in a single transaction. Adding or\nchanging participants later goes through the participant endpoints."
+      },
+      "CareTeamRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CareTeamStatus"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipantRead"
+            },
+            "type": "array",
+            "title": "Participants",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "status",
+          "period_start"
+        ],
+        "title": "CareTeamRead"
+      },
+      "CareTeamStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive"
+        ],
+        "title": "CareTeamStatus"
+      },
+      "CareTeamUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CareTeamStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CareTeamUpdate",
+        "description": "`PATCH /care-teams/{id}` payload \u2014 team-level metadata only.\n\nParticipant changes are out of scope here; use the participant\nendpoints. Setting `status = inactive` or `period_end` closes the\nteam but does not auto-unassign participants \u2014 the service handles\nthat side-effect inside the same transaction."
       },
       "Gender": {
         "type": "string",
@@ -1022,6 +1503,124 @@
           "total_pages"
         ],
         "title": "Page[UserRow]"
+      },
+      "ParticipantCreate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "role_in_care": {
+            "$ref": "#/components/schemas/RoleInCare"
+          },
+          "on_behalf_of_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Behalf Of Organisation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_id",
+          "role_in_care"
+        ],
+        "title": "ParticipantCreate",
+        "description": "`POST /care-teams/{id}/participants` payload.\n\nOpens a new participant row. The service enforces the partial unique\nconstraint (`uq_care_team_participants_open_membership`) by checking\nfor an existing open row before insert."
+      },
+      "ParticipantRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "role_in_care": {
+            "$ref": "#/components/schemas/RoleInCare"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "on_behalf_of_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Behalf Of Organisation Id"
+          },
+          "assigned_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assigned By"
+          },
+          "unassigned_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unassigned By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "role_in_care",
+          "period_start",
+          "assigned_by"
+        ],
+        "title": "ParticipantRead"
+      },
+      "ParticipantRoleChange": {
+        "properties": {
+          "role_in_care": {
+            "$ref": "#/components/schemas/RoleInCare"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role_in_care"
+        ],
+        "title": "ParticipantRoleChange",
+        "description": "`PATCH /care-teams/{id}/participants/{user_id}` payload.\n\nRole changes are append-only: the service closes the current open\nrow (sets `period_end`, `unassigned_by`) and inserts a new open row\nwith the new role in the same transaction."
       },
       "PatientCreate": {
         "properties": {
@@ -1413,6 +2012,15 @@
           "caregiver"
         ],
         "title": "Role"
+      },
+      "RoleInCare": {
+        "type": "string",
+        "enum": [
+          "primary",
+          "consulting",
+          "observer"
+        ],
+        "title": "RoleInCare"
       },
       "RootResponse": {
         "properties": {

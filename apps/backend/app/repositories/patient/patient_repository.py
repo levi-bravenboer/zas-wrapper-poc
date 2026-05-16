@@ -30,9 +30,16 @@ class PatientRepository(BaseListRepository[Patient]):
     )
     default_order: ClassVar[tuple[str, str]] = ("family_name", "asc")
 
-    def __init__(self, session, *, identifier: str | None = None) -> None:  # type: ignore[no-untyped-def]
+    def __init__(
+        self,
+        session,  # type: ignore[no-untyped-def]
+        *,
+        identifier: str | None = None,
+        visible_patient_ids: frozenset[UUID] | None = None,
+    ) -> None:
         super().__init__(session)
         self._identifier = identifier
+        self._visible_patient_ids = visible_patient_ids
 
     def with_identifier(self, identifier: str | None) -> PatientRepository:
         """Return a view of this repo scoped to the given identifier value.
@@ -41,22 +48,42 @@ class PatientRepository(BaseListRepository[Patient]):
         the list call joins `patient_identifiers` and returns the at-most-one
         row matching `value == identifier` within the actor's tenant.
         """
-        clone = PatientRepository(self._session, identifier=identifier)
-        return clone
+        return PatientRepository(
+            self._session,
+            identifier=identifier,
+            visible_patient_ids=self._visible_patient_ids,
+        )
+
+    def with_visible_ids(self, ids: frozenset[UUID]) -> PatientRepository:
+        """Return a view restricted to `Patient.id IN ids`.
+
+        Used by `PatientService.list_in_tenant` to constrain caregiver
+        listings to patients reachable via an open care-team membership.
+        Admins bypass this restriction — the service does not call the
+        helper for them.
+        """
+        return PatientRepository(
+            self._session,
+            identifier=self._identifier,
+            visible_patient_ids=ids,
+        )
 
     def _extra_filters(self, query: ListQuery) -> Sequence[ColumnElement[bool]]:
         del query
-        if self._identifier is None:
-            return ()
-        subq = (
-            select(PatientIdentifier.patient_id)
-            .where(
-                PatientIdentifier.value == self._identifier,
-                PatientIdentifier.deleted_at.is_(None),
+        extras: list[ColumnElement[bool]] = []
+        if self._identifier is not None:
+            subq = (
+                select(PatientIdentifier.patient_id)
+                .where(
+                    PatientIdentifier.value == self._identifier,
+                    PatientIdentifier.deleted_at.is_(None),
+                )
+                .scalar_subquery()
             )
-            .scalar_subquery()
-        )
-        return (Patient.id.in_(subq),)
+            extras.append(Patient.id.in_(subq))
+        if self._visible_patient_ids is not None:
+            extras.append(Patient.id.in_(self._visible_patient_ids))
+        return tuple(extras)
 
     async def get_by_id(self, tenant_id: UUID, patient_id: UUID) -> Patient | None:
         result = await self._session.execute(
