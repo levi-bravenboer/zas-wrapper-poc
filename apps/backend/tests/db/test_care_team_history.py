@@ -96,15 +96,19 @@ async def test_change_role_produces_two_rows(db_session: AsyncSession) -> None:
         session_user, team.id, session_user.id, RoleInCare.CONSULTING
     )
     rows = (
-        await db_session.execute(
-            select(CareTeamParticipant)
-            .where(
-                CareTeamParticipant.care_team_id == team.id,
-                CareTeamParticipant.user_id == session_user.id,
+        (
+            await db_session.execute(
+                select(CareTeamParticipant)
+                .where(
+                    CareTeamParticipant.care_team_id == team.id,
+                    CareTeamParticipant.user_id == session_user.id,
+                )
+                .order_by(CareTeamParticipant.period_start)
             )
-            .order_by(CareTeamParticipant.period_start)
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(rows) == 2
     assert rows[0].role_in_care == RoleInCare.PRIMARY
     assert rows[0].period_end is not None

@@ -36,7 +36,9 @@ async def _make_actor(session: AsyncSession, tenant: Tenant, email: str) -> User
     return user
 
 
-async def _make_patient(session: AsyncSession, tenant: Tenant, org: Organisation, name: str) -> Patient:
+async def _make_patient(
+    session: AsyncSession, tenant: Tenant, org: Organisation, name: str
+) -> Patient:
     patient = Patient(
         tenant_id=tenant.id,
         created_by=org.created_by,

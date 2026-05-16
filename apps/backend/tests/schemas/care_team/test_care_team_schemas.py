@@ -43,9 +43,7 @@ class TestCareTeamCreate:
     def test_inline_participants(self) -> None:
         payload = CareTeamCreate(
             name="ZAS Care",
-            participants=[
-                ParticipantCreate(user_id=uuid4(), role_in_care=RoleInCare.PRIMARY)
-            ],
+            participants=[ParticipantCreate(user_id=uuid4(), role_in_care=RoleInCare.PRIMARY)],
         )
         assert payload.name == "ZAS Care"
         assert len(payload.participants) == 1

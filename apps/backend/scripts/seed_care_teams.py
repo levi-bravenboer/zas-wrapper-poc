@@ -52,18 +52,20 @@ async def seed_care_teams(session: AsyncSession) -> list[CareTeam]:
     admin = await user_repo.get_by_email(tenant.id, ADMIN_EMAIL)
     caregiver = await user_repo.get_by_email(tenant.id, CAREGIVER_EMAIL)
     if admin is None or caregiver is None:
-        raise _SeedUserMissingError(
-            "admin/caregiver missing — run seed_users first"
-        )
+        raise _SeedUserMissingError("admin/caregiver missing — run seed_users first")
 
     patients = (
-        await session.execute(
-            select(Patient).where(
-                Patient.tenant_id == tenant.id,
-                Patient.deleted_at.is_(None),
+        (
+            await session.execute(
+                select(Patient).where(
+                    Patient.tenant_id == tenant.id,
+                    Patient.deleted_at.is_(None),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = SessionUser(

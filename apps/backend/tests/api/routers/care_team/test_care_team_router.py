@@ -56,12 +56,16 @@ async def test_list_care_teams_caregiver_without_membership_404(
     target = patients[0]
     # Close the caregiver's open participant row so they lose membership.
     rows = (
-        await db_session.execute(
-            select(CareTeamParticipant).join(
-                CareTeam, CareTeam.id == CareTeamParticipant.care_team_id
-            ).where(CareTeam.patient_id == target.id)
+        (
+            await db_session.execute(
+                select(CareTeamParticipant)
+                .join(CareTeam, CareTeam.id == CareTeamParticipant.care_team_id)
+                .where(CareTeam.patient_id == target.id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for row in rows:
         row.period_end = row.period_start
         row.unassigned_by = ADMIN_USER_ID
@@ -132,12 +136,16 @@ async def test_change_participant_role_produces_two_rows(
     patients, teams = seeded_zas_care_teams
     target_team = next(t for t in teams if t.patient_id == patients[0].id)
     existing = (
-        await db_session.execute(
-            select(CareTeamParticipant).where(
-                CareTeamParticipant.care_team_id == target_team.id
+        (
+            await db_session.execute(
+                select(CareTeamParticipant).where(
+                    CareTeamParticipant.care_team_id == target_team.id
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     assert existing is not None
     user_id = existing.user_id
 
@@ -158,13 +166,17 @@ async def test_change_participant_role_produces_two_rows(
     # mark stale columns for lazy refresh, which sync-IO trips async greenlet).
     db_session.expunge_all()
     rows = (
-        await db_session.execute(
-            select(CareTeamParticipant).where(
-                CareTeamParticipant.care_team_id == target_team.id,
-                CareTeamParticipant.user_id == user_id,
+        (
+            await db_session.execute(
+                select(CareTeamParticipant).where(
+                    CareTeamParticipant.care_team_id == target_team.id,
+                    CareTeamParticipant.user_id == user_id,
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(rows) == 2
     closed = [r for r in rows if r.period_end is not None]
     open_rows = [r for r in rows if r.period_end is None]
@@ -182,19 +194,21 @@ async def test_unassign_sets_period_end_preserves_row(
     patients, teams = seeded_zas_care_teams
     target_team = next(t for t in teams if t.patient_id == patients[0].id)
     existing = (
-        await db_session.execute(
-            select(CareTeamParticipant).where(
-                CareTeamParticipant.care_team_id == target_team.id
+        (
+            await db_session.execute(
+                select(CareTeamParticipant).where(
+                    CareTeamParticipant.care_team_id == target_team.id
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     assert existing is not None
     user_id = existing.user_id
 
     await _login(async_client, ADMIN_EMAIL)
-    response = await async_client.delete(
-        f"/care-teams/{target_team.id}/participants/{user_id}"
-    )
+    response = await async_client.delete(f"/care-teams/{target_team.id}/participants/{user_id}")
     assert response.status_code == 204
 
     # API committed via its own session; clear the test session's identity
@@ -202,13 +216,17 @@ async def test_unassign_sets_period_end_preserves_row(
     # mark stale columns for lazy refresh, which sync-IO trips async greenlet).
     db_session.expunge_all()
     refreshed = (
-        await db_session.execute(
-            select(CareTeamParticipant).where(
-                CareTeamParticipant.care_team_id == target_team.id,
-                CareTeamParticipant.user_id == user_id,
+        (
+            await db_session.execute(
+                select(CareTeamParticipant).where(
+                    CareTeamParticipant.care_team_id == target_team.id,
+                    CareTeamParticipant.user_id == user_id,
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(refreshed) == 1
     assert refreshed[0].period_end is not None
     assert refreshed[0].unassigned_by is not None
@@ -222,12 +240,16 @@ async def test_add_participant_rejects_duplicate_open_row(
     patients, teams = seeded_zas_care_teams
     target_team = next(t for t in teams if t.patient_id == patients[0].id)
     existing = (
-        await db_session.execute(
-            select(CareTeamParticipant).where(
-                CareTeamParticipant.care_team_id == target_team.id
+        (
+            await db_session.execute(
+                select(CareTeamParticipant).where(
+                    CareTeamParticipant.care_team_id == target_team.id
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     assert existing is not None
     await _login(async_client, ADMIN_EMAIL)
     # Caregiver already has an open primary row from seed.

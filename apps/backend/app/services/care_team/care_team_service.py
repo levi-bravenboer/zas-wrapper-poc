@@ -223,9 +223,7 @@ class CareTeamService:
         if row_tenant is None or row_tenant != tenant_id:
             raise CrossTenantUserError()
 
-    async def _assert_organisation_in_tenant(
-        self, tenant_id: UUID, organisation_id: UUID
-    ) -> None:
+    async def _assert_organisation_in_tenant(self, tenant_id: UUID, organisation_id: UUID) -> None:
         org = await self._org_repo.get_by_id(organisation_id)
         if org is None:
             raise OrganisationNotFoundError()

@@ -88,12 +88,16 @@ async def test_caregiver_loses_visibility_after_membership_closes(
     patients, _ = seeded_zas_care_teams
     target = patients[0]
     rows = (
-        await db_session.execute(
-            select(CareTeamParticipant).join(
-                CareTeam, CareTeam.id == CareTeamParticipant.care_team_id
-            ).where(CareTeam.patient_id == target.id)
+        (
+            await db_session.execute(
+                select(CareTeamParticipant)
+                .join(CareTeam, CareTeam.id == CareTeamParticipant.care_team_id)
+                .where(CareTeam.patient_id == target.id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for row in rows:
         row.period_end = row.period_start
         row.unassigned_by = ADMIN_USER_ID
