@@ -25,6 +25,7 @@ from app.core.enums.care_team import CareTeamStatus, RoleInCare
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.patient import Patient
+from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
@@ -76,6 +77,9 @@ async def seed_care_teams(session: AsyncSession) -> list[CareTeam]:
         role=admin.role,
     )
     try:
+        caregiver_primary_role_id = await _get_caregiver_primary_role_id(
+            session, caregiver_id=caregiver.id
+        )
         seeded: list[CareTeam] = []
         for patient in patients:
             team = await _get_or_create_team(session, patient=patient)
@@ -84,6 +88,7 @@ async def seed_care_teams(session: AsyncSession) -> list[CareTeam]:
                 tenant_id=tenant.id,
                 team=team,
                 caregiver_id=caregiver.id,
+                acting_as_role_id=caregiver_primary_role_id,
             )
             seeded.append(team)
     finally:
@@ -122,6 +127,7 @@ async def _get_or_create_primary_participant(
     tenant_id: UUID,
     team: CareTeam,
     caregiver_id: UUID,
+    acting_as_role_id: UUID | None,
 ) -> CareTeamParticipant:
     existing = (
         await session.execute(
@@ -143,11 +149,36 @@ async def _get_or_create_primary_participant(
         user_id=caregiver_id,
         role_in_care=RoleInCare.PRIMARY,
         assigned_by=caregiver_id,
+        acting_as_practitioner_role_id=acting_as_role_id,
     )
     session.add(row)
     await session.flush()
     logger.info("seeded primary participant for team_id=%s", team.id)
     return row
+
+
+async def _get_caregiver_primary_role_id(
+    session: AsyncSession, *, caregiver_id: UUID
+) -> UUID | None:
+    """Resolve the caregiver's open primary `PractitionerRole.id`, if any.
+
+    Seed order guarantees the role exists when `seed_practitioners` ran
+    first, but we return `None` rather than raise so a partial seed run
+    (or a deployment that disabled the practitioner seed) still produces
+    care teams without violating the NULLable FK contract.
+    """
+
+    result = await session.execute(
+        select(PractitionerRole.id)
+        .join(Practitioner, Practitioner.id == PractitionerRole.practitioner_id)
+        .where(
+            Practitioner.user_id == caregiver_id,
+            PractitionerRole.is_primary.is_(True),
+            PractitionerRole.period_end.is_(None),
+            PractitionerRole.deleted_at.is_(None),
+        )
+    )
+    return result.scalars().first()
 
 
 async def _seed(session: AsyncSession) -> None:

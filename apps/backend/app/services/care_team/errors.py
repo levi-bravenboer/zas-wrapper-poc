@@ -33,3 +33,15 @@ class CrossTenantUserError(AppError):
     code = "invalid.care_team_participant.cross_tenant_user"
     status_code = 422
     message = "User does not belong to the actor's tenant."
+
+
+class CrossTenantPractitionerRoleError(AppError):
+    code = "invalid.care_team_participant.cross_tenant_practitioner_role"
+    status_code = 422
+    message = "PractitionerRole does not belong to the actor's tenant."
+
+
+class PractitionerRoleUserMismatchError(AppError):
+    code = "invalid.care_team_participant.practitioner_role_user_mismatch"
+    status_code = 422
+    message = "PractitionerRole does not belong to the named user."

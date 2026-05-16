@@ -88,9 +88,9 @@ class CareTeamParticipant(Entity):
         server_default=sa.func.now(),
     )
     period_end: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
-    on_behalf_of_organisation_id: Mapped[UUID | None] = mapped_column(
+    acting_as_practitioner_role_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
-        sa.ForeignKey("organisations.id", ondelete="RESTRICT"),
+        sa.ForeignKey("practitioner_roles.id", ondelete="RESTRICT"),
         nullable=True,
     )
     assigned_by: Mapped[UUID] = mapped_column(

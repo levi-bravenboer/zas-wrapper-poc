@@ -5,6 +5,7 @@
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
@@ -14,6 +15,8 @@ __all__ = [
     "Organisation",
     "Patient",
     "PatientIdentifier",
+    "Practitioner",
+    "PractitionerRole",
     "Tenant",
     "User",
 ]

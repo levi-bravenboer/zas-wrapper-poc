@@ -16,7 +16,7 @@ class ParticipantRead(BaseModel):
     role_in_care: RoleInCare
     period_start: datetime
     period_end: datetime | None = None
-    on_behalf_of_organisation_id: UUID | None = None
+    acting_as_practitioner_role_id: UUID | None = None
     assigned_by: UUID
     unassigned_by: UUID | None = None
 
@@ -26,14 +26,15 @@ class ParticipantCreate(BaseModel):
 
     Opens a new participant row. The service enforces the partial unique
     constraint (`uq_care_team_participants_open_membership`) by checking
-    for an existing open row before insert.
+    for an existing open row before insert. `acting_as_practitioner_role_id`
+    is optional (NULL permitted per `practitioner-role-split`).
     """
 
     model_config = ConfigDict(extra="forbid")
 
     user_id: UUID
     role_in_care: RoleInCare
-    on_behalf_of_organisation_id: UUID | None = None
+    acting_as_practitioner_role_id: UUID | None = None
 
 
 class ParticipantRoleChange(BaseModel):
