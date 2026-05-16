@@ -8,8 +8,9 @@ Splits authentication identity (`User`) from clinical identity
 (`Practitioner` + `PractitionerRole`). See `openspec/changes/practitioner-role-split/`.
 
 Sequence:
-1. Create `practitioner_role_code` Postgres enum.
-2. Create `practitioners` + `practitioner_roles` tables and their indexes.
+1. Create `practitioners` + `practitioner_roles` tables (the latter implicitly
+   creates the `practitioner_role_code` enum on first reference) and their
+   indexes.
 3. Add `care_team_participants.acting_as_practitioner_role_id` (nullable FK).
 4. Backfill: one `Practitioner` per caregiver `User`; one open primary
    `PractitionerRole` row at `users.organisation_id`, `period_start =
@@ -50,8 +51,6 @@ PRACTITIONER_ROLE_CODE_VALUES = (
 
 def upgrade() -> None:
     bind = op.get_bind()
-
-    sa.Enum(*PRACTITIONER_ROLE_CODE_VALUES, name="practitioner_role_code").create(bind)
 
     op.create_table(
         "practitioners",
@@ -99,11 +98,7 @@ def upgrade() -> None:
         sa.Column("organisation_id", sa.UUID(), nullable=False),
         sa.Column(
             "code",
-            sa.Enum(
-                *PRACTITIONER_ROLE_CODE_VALUES,
-                name="practitioner_role_code",
-                create_type=False,
-            ),
+            sa.Enum(*PRACTITIONER_ROLE_CODE_VALUES, name="practitioner_role_code"),
             nullable=False,
         ),
         sa.Column("specialty", sa.String(length=255), nullable=True),
