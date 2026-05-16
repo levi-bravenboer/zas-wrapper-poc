@@ -119,7 +119,18 @@ The backend SHALL persist a `patient_identifiers` table where each row links one
 
 ### Requirement: Patients API exposes tenant-scoped CRUD for authenticated caregivers and admins
 
-The backend SHALL expose under `/patients` exactly these routes: `GET /patients` (list), `GET /patients/{id}` (read), `POST /patients` (create), `PATCH /patients/{id}` (update demographics), `DELETE /patients/{id}` (soft delete). All routes SHALL require an authenticated user matching `require_role(Role.ADMIN, Role.CAREGIVER)`. All routes SHALL be tenant-scoped via the session actor's `tenant_id`. Cross-tenant reads SHALL return `404`, never `403`. Every route handler that applies an auth guard SHALL carry an `# AUTH-HARDEN` source comment so future hardening passes are grep-able.
+The backend SHALL expose under `/patients` exactly these routes: `GET /patients` (list), `GET /patients/{id}` (read), `POST /patients` (create), `PATCH /patients/{id}` (update demographics), `DELETE /patients/{id}` (soft delete). All routes SHALL require an authenticated user matching `require_role(Role.ADMIN, Role.CAREGIVER)`. All routes SHALL be tenant-scoped via the session actor's `tenant_id`. Cross-tenant reads SHALL return `404`, never `403`.
+
+**Visibility within a tenant** SHALL be filtered as follows:
+
+- `admin` users SHALL see all non-soft-deleted patients in their tenant.
+- `caregiver` users SHALL see a patient ONLY when they have at least one open `care_team_participants` row (`period_end IS NULL`) on an active `care_teams` row (`status='active'`) for that patient.
+
+There SHALL NOT be a fallback path. Caregivers without an open participant row SHALL NOT see the patient regardless of organisation-tree relationships. Patients without any care team SHALL be invisible to caregivers; an admin (or future pathway runtime) MUST explicitly create a team and assign participants.
+
+The same visibility predicate SHALL drive `require_patient_access(patient_id)` for `GET /patients/{id}`, `PATCH /patients/{id}`, `DELETE /patients/{id}`, and any care-team route whose path includes a `patient_id`.
+
+Every route handler that applies an auth guard SHALL carry an `# AUTH-HARDEN` source comment.
 
 #### Scenario: Unauthenticated request rejected
 
@@ -138,13 +149,33 @@ The backend SHALL expose under `/patients` exactly these routes: `GET /patients`
 
 #### Scenario: DELETE soft-deletes and stamps deleted_by
 
-- **WHEN** a caregiver issues `DELETE /patients/{id}`
+- **WHEN** a caregiver issues `DELETE /patients/{id}` on a patient they can access
 - **THEN** the row's `deleted_at` MUST be set to `now()`, `deleted_by` MUST be set to the caregiver's `id`, and subsequent `GET /patients/{id}` MUST return `404`
 
 #### Scenario: AUTH-HARDEN marker present on every guarded route
 
 - **WHEN** any source-level scan of `app/api/routers/patient/patient_router.py` runs
 - **THEN** every route handler that applies a role or session guard MUST carry an `# AUTH-HARDEN` comment within its function body or as a leading guard-line comment
+
+#### Scenario: Admin sees all patients in tenant
+
+- **WHEN** an admin in tenant T calls `GET /patients` with no filters
+- **THEN** the response MUST contain every non-soft-deleted patient row whose `tenant_id == T`
+
+#### Scenario: Caregiver sees patient via open care-team participant row
+
+- **WHEN** a caregiver U has an open `care_team_participants` row on an active `care_teams` row for patient P, and U calls `GET /patients` or `GET /patients/{P.id}`
+- **THEN** the response MUST include P
+
+#### Scenario: Caregiver does not see patient absent membership
+
+- **WHEN** caregiver U has NO open `care_team_participants` row on an active `care_teams` row for patient P, and U calls `GET /patients/{P.id}`
+- **THEN** the response MUST be `404` regardless of whether U's `organisation_id` is related to P's `primary_organisation_id`
+
+#### Scenario: Patient without any care team is invisible to caregivers
+
+- **WHEN** patient P exists in tenant T but has zero `care_teams` rows, and caregiver U in tenant T calls `GET /patients/{P.id}`
+- **THEN** the response MUST be `404` (admin in tenant T still sees P)
 
 ### Requirement: Patients list supports FHIR-aligned discrete search parameters
 
@@ -274,3 +305,43 @@ The backend SHALL provide `scripts/seed_patients.py` that inserts a fixed set of
 
 - **WHEN** the seed script runs after `seed_users.py` has bootstrapped the demo caregiver
 - **THEN** the script MUST set `session.info[SESSION_ACTOR_KEY]` to the demo caregiver's `SessionUser` so that audit hooks stamp `created_by`, `updated_by`, and `tenant_id` correctly
+
+### Requirement: Caregiver patient visibility is the union of care-team membership and PractitionerRole tree access
+
+The backend SHALL restrict caregiver patient visibility (both `PatientService.list_in_tenant` and the `require_patient_access(patient_id)` dependency) to patients matching at least one of the following predicates, evaluated within the caller's `tenant_id`:
+
+1. **Care-team predicate** — there exists an open `CareTeamParticipant` row for the caregiver on a `CareTeam` belonging to the patient, OR
+2. **PractitionerRole predicate** — there exists at least one organisation root `R ∈ practitioner_root_orgs_for(caregiver)` such that `root(patient.primary_organisation_id) == R`.
+
+Admin users SHALL bypass both predicates (tenant scope still enforced). Cross-tenant rows SHALL return `404`, never `403`. The predicate SHALL produce results strictly more permissive than the pre-split single-FK lookup against `users.organisation_id`: a caregiver with one open primary role at the same organisation as their pre-split `users.organisation_id` MUST see exactly the same patient set as before; a caregiver with multiple open roles MUST see the union of their roots' subtrees.
+
+#### Scenario: Caregiver sees patients via open care-team membership
+
+- **WHEN** caregiver `C` has an open `CareTeamParticipant` row on the care team of patient `P`, and `C` has no open `PractitionerRole` at the root of `P.primary_organisation_id`
+- **THEN** `GET /patients/{P.id}` for `C` MUST return `200` and `GET /patients` MUST include `P`
+
+#### Scenario: Caregiver sees patients via PractitionerRole tree access
+
+- **WHEN** caregiver `C` has at least one open `PractitionerRole` whose organisation root equals the root of `P.primary_organisation_id`, and `C` is not on any care team for `P`
+- **THEN** `GET /patients/{P.id}` for `C` MUST return `200` and `GET /patients` MUST include `P`
+
+#### Scenario: Caregiver outside both predicates gets 404
+
+- **WHEN** caregiver `C` is not on any care team for patient `P` and has no open `PractitionerRole` whose root matches `P.primary_organisation_id`'s root
+- **THEN** `GET /patients/{P.id}` for `C` MUST return `404`
+
+#### Scenario: Single-role caregiver post-migration sees identical patient set
+
+- **WHEN** caregiver `C` is migrated by `practitioner-role-split` from a pre-split state with `users.organisation_id = O` into a single open primary `PractitionerRole` at `O`
+- **THEN** `GET /patients` for `C` MUST return the same set of patient ids it returned pre-migration (no regression for single-affiliation caregivers)
+
+#### Scenario: Multi-role caregiver sees union of roots
+
+- **WHEN** caregiver `C` has two open `PractitionerRole` rows at organisations under different roots `R1` and `R2`, both within the same tenant
+- **THEN** `GET /patients` for `C` MUST include patients whose `primary_organisation_id` resolves to either `R1` or `R2`
+
+#### Scenario: Admin bypass unchanged
+
+- **WHEN** an admin user with no `PractitionerRole` rows calls `GET /patients`
+- **THEN** the response MUST contain every patient in the admin's tenant (the new predicate MUST NOT apply to admins)
+
