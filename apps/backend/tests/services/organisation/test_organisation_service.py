@@ -66,7 +66,7 @@ async def test_assert_same_tenant_parent_allows_match(db_session: AsyncSession) 
     root = await _make_org(db_session, tenant=tenant, actor=actor)
     await db_session.commit()
 
-    service = OrganisationService(OrganisationRepository(db_session))
+    service = OrganisationService(db_session, OrganisationRepository(db_session))
     await service.assert_same_tenant_parent(tenant.id, root.id)
 
 
@@ -79,7 +79,7 @@ async def test_assert_same_tenant_parent_rejects_cross_tenant(db_session: AsyncS
     await db_session.commit()
     del zas_actor
 
-    service = OrganisationService(OrganisationRepository(db_session))
+    service = OrganisationService(db_session, OrganisationRepository(db_session))
     with pytest.raises(CrossTenantOrganisationError):
         await service.assert_same_tenant_parent(zas.id, other_root.id)
 
@@ -88,7 +88,7 @@ async def test_assert_same_tenant_parent_raises_when_missing(db_session: AsyncSe
     tenant = await _make_tenant(db_session, "zas")
     await db_session.commit()
 
-    service = OrganisationService(OrganisationRepository(db_session))
+    service = OrganisationService(db_session, OrganisationRepository(db_session))
     with pytest.raises(OrganisationNotFoundError):
         await service.assert_same_tenant_parent(tenant.id, uuid.uuid4())
 
@@ -97,5 +97,5 @@ async def test_assert_same_tenant_parent_noop_when_none(db_session: AsyncSession
     tenant = await _make_tenant(db_session, "zas")
     await db_session.commit()
 
-    service = OrganisationService(OrganisationRepository(db_session))
+    service = OrganisationService(db_session, OrganisationRepository(db_session))
     await service.assert_same_tenant_parent(tenant.id, None)

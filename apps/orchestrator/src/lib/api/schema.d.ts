@@ -203,11 +203,30 @@ export interface paths {
         /** List Organisations */
         get: operations["list_organisations"];
         put?: never;
-        post?: never;
+        /** Create Organisation */
+        post: operations["create_organisation"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/organisations/{organisation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Organisation */
+        delete: operations["delete_organisation"];
+        options?: never;
+        head?: never;
+        /** Update Organisation */
+        patch: operations["update_organisation"];
         trace?: never;
     };
     "/patients": {
@@ -504,6 +523,14 @@ export interface components {
              */
             password: string;
         };
+        /** OrganisationCreate */
+        OrganisationCreate: {
+            /** Name */
+            name: string;
+            type: components["schemas"]["OrganisationType"];
+            /** Parent Organisation Id */
+            parent_organisation_id?: string | null;
+        };
         /** OrganisationListResponse */
         OrganisationListResponse: {
             /** Items */
@@ -526,6 +553,24 @@ export interface components {
             type_system: string | null;
             /** Type Display */
             type_display: string | null;
+        };
+        /**
+         * OrganisationType
+         * @description FHIR-style CodeableConcept binding for Organisation.type[0].coding[0].
+         */
+        OrganisationType: {
+            /** System */
+            system?: string | null;
+            /** Code */
+            code: string;
+            /** Display */
+            display?: string | null;
+        };
+        /** OrganisationUpdate */
+        OrganisationUpdate: {
+            /** Name */
+            name?: string | null;
+            type?: components["schemas"]["OrganisationType"] | null;
         };
         /** Page[PatientRead] */
         Page_PatientRead_: {
@@ -1408,6 +1453,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganisationListResponse"];
+                };
+            };
+        };
+    };
+    create_organisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_organisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_organisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

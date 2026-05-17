@@ -1,0 +1,81 @@
+{
+  "page": {
+    "title": "Organisaties",
+    "sub": "Beheer de organisatieboom van je tenant.",
+    "cta": {
+      "new_root": "Nieuwe root"
+    },
+    "empty": "Nog geen organisaties in dit tenant."
+  },
+  "tree": {
+    "expand": "Uitklappen",
+    "collapse": "Inklappen",
+    "actions": "Acties",
+    "no_children": "Geen sub-organisaties"
+  },
+  "node": {
+    "action": {
+      "edit": "Bewerken",
+      "create_child": "Nieuwe sub-organisatie",
+      "archive": "Archiveren"
+    }
+  },
+  "create": {
+    "title_root": "Nieuwe root organisatie",
+    "title_child": "Nieuwe sub-organisatie",
+    "submit": "Aanmaken",
+    "cancel": "Annuleren",
+    "success": "Organisatie aangemaakt.",
+    "field": {
+      "name": "Naam",
+      "type_code": "Type-code",
+      "type_system": "Type-systeem",
+      "type_display": "Type-omschrijving",
+      "parent": "Parent organisatie"
+    }
+  },
+  "edit": {
+    "title": "Organisatie bewerken",
+    "submit": "Opslaan",
+    "cancel": "Annuleren",
+    "success": "Organisatie bijgewerkt."
+  },
+  "archive": {
+    "title": "Organisatie archiveren",
+    "description": "De organisatie wordt verborgen uit lijsten. Dit kan alleen als er geen sub-organisaties, patiënten of openstaande praktijkrollen aan gekoppeld zijn.",
+    "confirm": "Archiveren",
+    "cancel": "Annuleren",
+    "success": "Organisatie gearchiveerd.",
+    "in_use": "Kan niet archiveren — nog gekoppeld aan: {{references}}",
+    "ref": {
+      "organisations": "sub-organisaties",
+      "patients": "patiënten",
+      "practitioner_roles": "praktijkrollen"
+    }
+  },
+  "sheet": {
+    "title": "Organisatiedetails",
+    "demographics": "Gegevens",
+    "field": {
+      "name": "Naam",
+      "type": "Type",
+      "parent": "Parent"
+    },
+    "affiliated": {
+      "title": "Aangesloten zorgverleners",
+      "empty": "Nog geen aangesloten zorgverleners."
+    },
+    "close": "Sluiten"
+  },
+  "error": {
+    "cross_tenant": "Deze organisatie hoort niet bij je tenant.",
+    "not_found": "Organisatie niet gevonden.",
+    "generic": "Er ging iets mis."
+  },
+  "form": {
+    "error": {
+      "required": "Verplicht veld.",
+      "too_long": "Te lang."
+    }
+  }
+}
