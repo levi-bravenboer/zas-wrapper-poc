@@ -5,11 +5,17 @@ from app.schemas.organisation.organisation import (
     OrganisationType,
     OrganisationUpdate,
 )
+from app.schemas.organisation.tree import (
+    OrganisationTreeMove,
+    OrganisationTreeUpdate,
+)
 
 __all__ = [
     "OrganisationCreate",
     "OrganisationListResponse",
     "OrganisationRead",
+    "OrganisationTreeMove",
+    "OrganisationTreeUpdate",
     "OrganisationType",
     "OrganisationUpdate",
 ]
