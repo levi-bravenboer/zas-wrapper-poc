@@ -97,4 +97,9 @@ class PatientRepository(BaseListRepository[Patient]):
 
     async def update(self, patient: Patient) -> Patient:
         await self._session.flush()
+        # `updated_at` / `updated_by` are filled by the DB (`onupdate=NOW()`) and
+        # the `before_flush` audit hook. The in-memory instance carries stale
+        # values until we refresh — pydantic v2 serialisation will otherwise
+        # trigger an async lazy-load outside the greenlet and raise.
+        await self._session.refresh(patient)
         return patient

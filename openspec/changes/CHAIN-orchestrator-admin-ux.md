@@ -70,11 +70,11 @@ The seven changes MUST land in dependency order. The parallel set (`#3 + #4 + #6
 | 2 | `caregiver-shell` | `feat/caregiver-shell` | (removed) | **archived** (PR #11 merged 2026-05-16; archive id `2026-05-16-caregiver-shell`) |
 | 2.5 | `entity-page-scaffolding` | `feat/entity-page-scaffolding` | (removed) | **archived** (PR #13 merged 2026-05-16; archive id `2026-05-16-entity-page-scaffolding`) |
 | 3 | `users-admin-ui` | `feat/users-admin-ui` | (removed) | **archived** (PR #14 merged 2026-05-17; archive id `2026-05-17-users-admin-ui`) |
-| 4 | `organisations-admin-ui` | `feat/organisations-admin-ui` | `.worktrees/feat-organisations-admin-ui` | applied (tasks complete; PR pending) |
+| 4 | `organisations-admin-ui` | `feat/organisations-admin-ui` | (removed) | **archived** (PR #15 merged 2026-05-17; archive id `2026-05-17-organisations-admin-ui`) |
 | 5 | `practitioner-roles-admin-ui` | `feat/practitioner-roles-admin-ui` | `.worktrees/feat-practitioner-roles-admin-ui` | draft (worktree not yet created) |
-| 6 | `patient-profile-ui` | `feat/patient-profile-ui` | `.worktrees/feat-patient-profile-ui` | draft (worktree not yet created) |
+| 6 | `patient-profile-ui` | `feat/patient-profile-ui` | `.worktrees/feat-patient-profile-ui` | in-progress (worktree active, PR pending) |
 | 7 | `care-teams-ui` | `feat/care-teams-ui` | `.worktrees/feat-care-teams-ui` | draft (worktree not yet created) |
-| 4.1 | `organisations-tree-dnd-editor` (post-chain follow-up) | `feat/patient-profile-ui` (riding worktree) | `.worktrees/feat-patient-profile-ui` | in-progress (groups 1-6 + 9.1 + 10.1/10.3/10.4 done; groups 7/8 deferred; 10.5 manual verify pending) |
+| 4.1 | `organisations-tree-dnd-editor` (post-chain follow-up) | `feat/organisations-tree-dnd-editor` | (removed) | **archived** (PR #16 merged 2026-05-17; archive id `2026-05-17-organisations-tree-dnd-editor`; groups 7/8 + 10.5 deferred to future change) |
 
 Update this file whenever a change advances state (draft → in-progress → applied → merged → archived).
 

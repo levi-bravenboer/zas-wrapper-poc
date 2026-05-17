@@ -793,6 +793,30 @@ export interface components {
              * @default []
              */
             identifiers: components["schemas"]["PatientIdentifierRead"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Deleted At */
+            deleted_at?: string | null;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /**
+             * Updated By
+             * Format: uuid
+             */
+            updated_by: string;
+            /** Deleted By */
+            deleted_by?: string | null;
         };
         /**
          * PatientSource
