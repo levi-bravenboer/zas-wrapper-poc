@@ -221,6 +221,6 @@ Implements `pathway-builder` requirements added in `specs/pathway-builder/spec.m
 
 ## 6. Wrap-up
 
-- [ ] 6.1 Update `openspec/backlog.md` `BL-036` entry to reference this change as promoted
-- [ ] 6.2 Run `openspec validate pathway-builder-base` and quote result
+- [x] 6.1 Update `openspec/backlog.md` `BL-036` entry to reference this change as promoted — added `Promoted: 2026-05-17` line
+- [x] 6.2 Run `openspec validate pathway-builder-base` and quote result — `Change 'pathway-builder-base' is valid`
 - [ ] 6.3 Archive the change once shipped (`/opsx:archive`)
