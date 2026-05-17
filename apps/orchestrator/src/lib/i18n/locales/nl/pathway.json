@@ -81,7 +81,8 @@
     "close": "Sluiten",
     "deleteConfirmTitle": "Blok verwijderen?",
     "deleteConfirmBody": "Dit verwijdert het blok en de bijbehorende verbindingen.",
-    "configHeader": "Configuratie"
+    "configHeader": "Configuratie",
+    "inspectorPending": "Geen inspector beschikbaar"
   },
   "minimap": {
     "fit": "Passend maken",
@@ -96,17 +97,37 @@
     "appointment": "Afspraak",
     "decision": "Beslissing",
     "milestone": "Mijlpaal",
-    "timer": "Wachten",
+    "wait": "Wachten",
     "task": "Taak",
-    "email": "E-mail"
+    "message": "Bericht",
+    "form": "Formulier",
+    "pathway_link": "Subpad"
   },
   "blockTypeDescription": {
     "appointment": "Klinische afspraak met de patiënt.",
     "decision": "Splits het pad in twee takken.",
     "milestone": "Markeer een belangrijk moment.",
-    "timer": "Wacht op tijd voordat het volgende blok start.",
+    "wait": "Wacht op een gebeurtenis of tijd voor het volgende blok.",
     "task": "Actie voor het zorgteam.",
-    "email": "Bericht naar de patiënt."
+    "message": "Bericht naar de patiënt of zorgverlener (e-mail, sms, push, in-app).",
+    "form": "Vragenlijst voor de patiënt.",
+    "pathway_link": "Koppel naar een ander zorgpad."
+  },
+  "edgeTiming": {
+    "completion": { "label": "Bij voltooiing" },
+    "marker": { "label": "Bij tijdmarker" },
+    "immediate": { "label": "Direct" },
+    "branch": { "label": "Bij vertakking" }
+  },
+  "edgeOffsetDirection": {
+    "before": "Voor",
+    "after": "Na"
+  },
+  "eventType": {
+    "pathology_report": "Pathologieverslag",
+    "scan_report": "Beeldvormingsverslag",
+    "lab_result": "Labuitslag",
+    "external_data": "Externe data"
   },
   "lane": {
     "patient": "Patiënt",
