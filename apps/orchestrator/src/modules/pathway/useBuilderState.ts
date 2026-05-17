@@ -74,7 +74,18 @@ function applySnapshot(
   return { ...base, blocks: snap.blocks, edges: snap.edges, phases: snap.phases, lanes: snap.lanes }
 }
 
+const READ_ONLY_PASSTHROUGH: ReadonlySet<BuilderAction['type']> = new Set([
+  'select',
+  'reset',
+  'mark-saved',
+  'resize-phase',
+  'resize-lane',
+])
+
 function reducer(state: BuilderState, action: BuilderAction): BuilderState {
+  if (state.version.status !== 'concept' && !READ_ONLY_PASSTHROUGH.has(action.type)) {
+    return state
+  }
   switch (action.type) {
     case 'select':
       return { ...state, selection: action.selection }

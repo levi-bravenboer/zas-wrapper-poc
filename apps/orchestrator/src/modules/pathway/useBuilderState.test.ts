@@ -106,3 +106,43 @@ describe('useBuilderState — patch-edge', () => {
     expect(result.current.state.history.future.length).toBe(1)
   })
 })
+
+describe('useBuilderState — read-only dispatch guard', () => {
+  function makePublishedVersion(): PathwayVersionDefinition {
+    return { ...makeVersion(), status: 'published' } as PathwayVersionDefinition
+  }
+
+  it('drops mutating actions when version status is not concept', () => {
+    const { result } = renderHook(() => useBuilderState(makePublishedVersion()))
+    const before = result.current.state.version
+
+    act(() => {
+      result.current.dispatch({
+        type: 'patch-edge',
+        edgeId: 'edge-1',
+        patch: { delay_value_id: 'value-X' },
+      })
+    })
+    act(() => {
+      result.current.dispatch({ type: 'delete-edge', edgeId: 'edge-1' })
+    })
+
+    expect(result.current.state.version).toBe(before)
+    expect(result.current.state.history.past.length).toBe(0)
+    expect(result.current.isDirty).toBe(false)
+  })
+
+  it('still applies non-mutating actions (select, resize, reset) when read-only', () => {
+    const { result } = renderHook(() => useBuilderState(makePublishedVersion()))
+
+    act(() => {
+      result.current.dispatch({ type: 'select', selection: { kind: 'edge', edgeId: 'edge-1' } })
+    })
+    expect(result.current.state.selection).toEqual({ kind: 'edge', edgeId: 'edge-1' })
+
+    act(() => {
+      result.current.dispatch({ type: 'resize-phase', phaseId: 'p-1', width: 200 })
+    })
+    expect(result.current.state.phaseSizes.get('p-1')).toBe(200)
+  })
+})
