@@ -11,7 +11,31 @@
     "expand": "Uitklappen",
     "collapse": "Inklappen",
     "actions": "Acties",
-    "no_children": "Geen sub-organisaties"
+    "no_children": "Geen sub-organisaties",
+    "edit": {
+      "toggle": "Bewerk volgorde",
+      "handle": "Versleep {{name}}",
+      "bar": {
+        "count": {
+          "one": "{{count}} wijziging",
+          "other": "{{count}} wijzigingen"
+        },
+        "save": "Wijzigingen opslaan",
+        "cancel": "Annuleren",
+        "hint": "Sleep met de muis, of gebruik spatie + pijltjes",
+        "save_success": "Boomstructuur bijgewerkt.",
+        "too_many": "Maximaal {{max}} wijzigingen per keer."
+      },
+      "discard": {
+        "title": "Wijzigingen verwerpen?",
+        "description": "Je openstaande verplaatsingen worden verwijderd.",
+        "confirm": "Verwerpen",
+        "cancel": "Doorgaan met bewerken"
+      },
+      "error": {
+        "cycle": "Verplaatsing afgewezen: dit zou een cyclus opleveren."
+      }
+    }
   },
   "node": {
     "action": {

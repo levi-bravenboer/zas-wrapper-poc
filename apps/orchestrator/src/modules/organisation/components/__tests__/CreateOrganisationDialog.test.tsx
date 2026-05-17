@@ -36,6 +36,7 @@ const parent: OrganisationRead = {
   type_code: 'prov',
   type_system: 'http://terminology.hl7.org/CodeSystem/organization-type',
   type_display: 'Healthcare Provider',
+  sort_index: 0,
 }
 
 describe('CreateOrganisationDialog', () => {

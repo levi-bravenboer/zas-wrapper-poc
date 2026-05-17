@@ -15,6 +15,7 @@ const root: OrganisationRead = {
   type_code: 'prov',
   type_system: 'http://terminology.hl7.org/CodeSystem/organization-type',
   type_display: 'Healthcare Provider',
+  sort_index: 0,
 }
 
 const child: OrganisationRead = {
@@ -24,6 +25,7 @@ const child: OrganisationRead = {
   type_code: 'dept',
   type_system: 'http://terminology.hl7.org/CodeSystem/organization-type',
   type_display: 'Hospital Department',
+  sort_index: 0,
 }
 
 function renderTree(overrides: Partial<Parameters<typeof OrganisationTree>[0]> = {}) {
