@@ -53,12 +53,12 @@
     "undo": "Ongedaan maken",
     "redo": "Opnieuw",
     "history": "Geschiedenis",
-    "save": "Opslaan"
+    "publish": "Versie publiceren"
   },
   "status": {
-    "clean": "Opgeslagen",
+    "clean": "Automatisch opgeslagen",
     "dirty": "Niet opgeslagen",
-    "saving": "Opslaan…",
+    "saving": "Wijzigingen opslaan…",
     "error": "Opslaan mislukt"
   },
   "subbar": {
@@ -123,7 +123,6 @@
     "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst."
   },
   "save": {
-    "success": "Zorgpad opgeslagen.",
     "error": "Opslaan mislukt."
   },
   "delete": {

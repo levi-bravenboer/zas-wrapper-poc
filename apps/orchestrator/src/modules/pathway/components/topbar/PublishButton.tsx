@@ -1,4 +1,4 @@
-import { Save } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -9,19 +9,19 @@ type Props = {
   onClick: () => void
 }
 
-export function SaveButton({ disabled, onClick }: Props): ReactElement {
+export function PublishButton({ disabled, onClick }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
     <Button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      data-testid="builder-save"
+      data-testid="builder-publish"
       className="text-white shadow-sm"
       style={{ background: 'var(--gradient-active)' }}
     >
-      <Save className="size-4" strokeWidth={1.8} />
-      {t('topbar.save')}
+      <Send className="size-4" strokeWidth={1.8} />
+      {t('topbar.publish')}
     </Button>
   )
 }

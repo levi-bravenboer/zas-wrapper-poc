@@ -1,21 +1,18 @@
 import { useEffect } from 'react'
 
-import type { SaveState } from '../components/topbar/SaveStatusPill'
 import type { BuilderAction } from '../useBuilderState'
 
 type Options = {
-  isDirty: boolean
-  saveState: SaveState
-  onSave: () => void
+  flush: () => void
   dispatch: (action: BuilderAction) => void
 }
 
-export function useBuilderKeyboard({ isDirty, saveState, onSave, dispatch }: Options): void {
+export function useBuilderKeyboard({ flush, dispatch }: Options): void {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key === 's') {
         event.preventDefault()
-        if (isDirty && saveState !== 'saving') onSave()
+        flush()
       } else if (
         (event.metaKey || event.ctrlKey) &&
         event.shiftKey &&
@@ -32,5 +29,5 @@ export function useBuilderKeyboard({ isDirty, saveState, onSave, dispatch }: Opt
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isDirty, saveState, onSave, dispatch])
+  }, [flush, dispatch])
 }

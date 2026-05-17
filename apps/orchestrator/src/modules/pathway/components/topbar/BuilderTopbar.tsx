@@ -9,7 +9,7 @@ import { formatTime } from '@/lib/utils/datetime'
 import type { PathwayBare } from '../../types'
 
 import { EditableTitle } from './EditableTitle'
-import { SaveButton } from './SaveButton'
+import { PublishButton } from './PublishButton'
 import { SaveStatusPill, type SaveState } from './SaveStatusPill'
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
-  onSave: () => void
+  onPublish: () => void
   onRename: (name: string) => void
 }
 
@@ -34,7 +34,7 @@ export function BuilderTopbar({
   canRedo,
   onUndo,
   onRedo,
-  onSave,
+  onPublish,
   onRename,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
@@ -112,7 +112,7 @@ export function BuilderTopbar({
         <span className="hidden md:inline">{t('topbar.history')}</span>
       </Button>
 
-      <SaveButton disabled={saveState === 'saving' || saveState === 'clean'} onClick={onSave} />
+      <PublishButton disabled={saveState !== 'clean'} onClick={onPublish} />
     </header>
   )
 }

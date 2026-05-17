@@ -6,8 +6,8 @@ import { toast } from 'sonner'
 import { sortByOrd } from '@/lib/utils/ordinal'
 
 import { LANE_ROW_HEIGHT } from '../canvasLayout'
+import { useAutosavePathway } from '../hooks/useAutosavePathway'
 import { useBuilderKeyboard } from '../hooks/useBuilderKeyboard'
-import { usePathwaySaveHandlers } from '../hooks/usePathwaySaveHandlers'
 import type {
   PathwayBare,
   PathwayBlockType,
@@ -15,7 +15,7 @@ import type {
   PathwayPhaseTemplate,
   PathwayVersionDefinition,
 } from '../types'
-import { useBuilderState } from '../useBuilderState'
+import { useBuilderState, type BuilderAction } from '../useBuilderState'
 import { useCollapsedSidebar } from '../useCollapsedSidebar'
 import { createBlock } from '../utils/createBlock'
 import { findSelectedBlock } from '../utils/selection'
@@ -52,18 +52,36 @@ export function PathwayBuilderShell({
   )
 }
 
+const READ_ONLY_PASSTHROUGH: ReadonlySet<BuilderAction['type']> = new Set([
+  'select',
+  'undo',
+  'redo',
+  'reset',
+  'mark-saved',
+])
+
 function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactElement {
   const { t } = useTranslation('pathway')
-  const { state, dispatch, isDirty } = useBuilderState(version)
+  const { state, dispatch: rawDispatch, isDirty } = useBuilderState(version)
 
-  const { saveState, onSave, onRename } = usePathwaySaveHandlers({
+  const isReadOnly = state.version.status !== 'concept'
+
+  const dispatch = useCallback(
+    (action: BuilderAction) => {
+      if (isReadOnly && !READ_ONLY_PASSTHROUGH.has(action.type)) return
+      rawDispatch(action)
+    },
+    [isReadOnly, rawDispatch],
+  )
+
+  const { saveState, flush, onRename } = useAutosavePathway({
     pathway,
     version: state.version,
     dispatch,
-    isDirty,
+    isDirty: isDirty && !isReadOnly,
   })
 
-  useBuilderKeyboard({ isDirty, saveState, onSave, dispatch })
+  useBuilderKeyboard({ flush, dispatch })
 
   const { phases, lanes, blocks, edges, timingValues } = useMemo(
     () => ({
@@ -158,7 +176,7 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
         canRedo={!!state.history.future.length}
         onUndo={() => dispatch({ type: 'undo' })}
         onRedo={() => dispatch({ type: 'redo' })}
-        onSave={onSave}
+        onPublish={() => undefined}
         onRename={onRename}
       />
       <BuilderSubbar
