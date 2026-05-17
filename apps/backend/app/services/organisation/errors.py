@@ -13,3 +13,9 @@ class CrossTenantOrganisationError(AppError):
     code = "forbidden.organisation.cross_tenant"
     status_code = 403
     message = "Cross-tenant organisation reference is forbidden."
+
+
+class OrganisationInUseError(AppError):
+    code = "conflict.organisation.in_use"
+    status_code = 409
+    message = "Organisation is still referenced by other resources."
