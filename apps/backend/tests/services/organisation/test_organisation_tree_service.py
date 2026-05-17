@@ -140,9 +140,7 @@ async def test_cycle_rejected_with_no_partial_write(db_session: AsyncSession) ->
     actor = await _make_actor(db_session, tenant)
     root = await _make_org(db_session, tenant=tenant, actor=actor, name="Root")
     child = await _make_org(db_session, tenant=tenant, actor=actor, name="Child", parent=root)
-    grandchild = await _make_org(
-        db_session, tenant=tenant, actor=actor, name="Grand", parent=child
-    )
+    grandchild = await _make_org(db_session, tenant=tenant, actor=actor, name="Grand", parent=child)
     root_id = root.id
     grandchild_id = grandchild.id
     await db_session.commit()
@@ -219,9 +217,7 @@ async def test_unknown_id_rejected(db_session: AsyncSession) -> None:
         await service.apply_tree_moves(
             _session_user(actor),
             [
-                OrganisationTreeMove(
-                    id=uuid.uuid4(), parent_organisation_id=None, sort_index=0
-                ),
+                OrganisationTreeMove(id=uuid.uuid4(), parent_organisation_id=None, sort_index=0),
             ],
         )
 
@@ -240,9 +236,7 @@ async def test_cross_tenant_target_rejected_as_not_found(db_session: AsyncSessio
         await service.apply_tree_moves(
             _session_user(zas_actor),
             [
-                OrganisationTreeMove(
-                    id=other_org.id, parent_organisation_id=None, sort_index=0
-                ),
+                OrganisationTreeMove(id=other_org.id, parent_organisation_id=None, sort_index=0),
             ],
         )
 

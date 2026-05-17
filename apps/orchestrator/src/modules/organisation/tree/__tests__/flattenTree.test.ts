@@ -3,12 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { OrganisationRead } from '../../schemas'
 import { flattenTree } from '../flattenTree'
 
-const org = (
-  id: string,
-  parent: string | null,
-  name: string,
-  sort = 0,
-): OrganisationRead => ({
+const org = (id: string, parent: string | null, name: string, sort = 0): OrganisationRead => ({
   id,
   parent_organisation_id: parent,
   name,

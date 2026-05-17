@@ -85,11 +85,7 @@ export const TreeRow = forwardRef<HTMLLIElement, TreeRowProps>(function TreeRow(
             aria-label={expanded ? t('tree.collapse') : t('tree.expand')}
             onClick={() => onToggleExpand?.(org.id)}
           >
-            {expanded ? (
-              <ChevronDown className="size-4" />
-            ) : (
-              <ChevronRight className="size-4" />
-            )}
+            {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
           </Button>
         ) : (
           <span className="size-9" aria-hidden="true" />
@@ -122,10 +118,7 @@ export const TreeRow = forwardRef<HTMLLIElement, TreeRowProps>(function TreeRow(
                 </DropdownMenuItem>
               )}
               {onArchive && (
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onSelect={() => onArchive(org)}
-                >
+                <DropdownMenuItem className="text-destructive" onSelect={() => onArchive(org)}>
                   {t('node.action.archive')}
                 </DropdownMenuItem>
               )}

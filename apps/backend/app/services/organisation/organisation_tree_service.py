@@ -48,15 +48,19 @@ class OrganisationTreeService:
         # Lock the rows being mutated. Concurrent editors hitting overlapping
         # ids serialise here instead of racing the cycle check.
         locked = (
-            await self._session.execute(
-                select(Organisation)
-                .where(
-                    Organisation.id.in_(move_by_id.keys()),
-                    Organisation.deleted_at.is_(None),
+            (
+                await self._session.execute(
+                    select(Organisation)
+                    .where(
+                        Organisation.id.in_(move_by_id.keys()),
+                        Organisation.deleted_at.is_(None),
+                    )
+                    .with_for_update()
                 )
-                .with_for_update()
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         locked_by_id = {o.id: o for o in locked}
 
         for move_id in move_by_id:
@@ -68,18 +72,21 @@ class OrganisationTreeService:
         parent_ids = {
             m.parent_organisation_id
             for m in moves
-            if m.parent_organisation_id is not None
-            and m.parent_organisation_id not in move_by_id
+            if m.parent_organisation_id is not None and m.parent_organisation_id not in move_by_id
         }
         if parent_ids:
             parents = (
-                await self._session.execute(
-                    select(Organisation).where(
-                        Organisation.id.in_(parent_ids),
-                        Organisation.deleted_at.is_(None),
+                (
+                    await self._session.execute(
+                        select(Organisation).where(
+                            Organisation.id.in_(parent_ids),
+                            Organisation.deleted_at.is_(None),
+                        )
                     )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             parents_by_id = {p.id: p for p in parents}
             for pid in parent_ids:
                 parent = parents_by_id.get(pid)
@@ -128,17 +135,21 @@ class OrganisationTreeService:
         await self._session.flush()
 
         refreshed = (
-            await self._session.execute(
-                select(Organisation)
-                .where(
-                    Organisation.tenant_id == tenant_id,
-                    Organisation.deleted_at.is_(None),
-                )
-                .order_by(
-                    Organisation.parent_organisation_id.asc().nulls_first(),
-                    Organisation.sort_index.asc(),
-                    Organisation.name.asc(),
+            (
+                await self._session.execute(
+                    select(Organisation)
+                    .where(
+                        Organisation.tenant_id == tenant_id,
+                        Organisation.deleted_at.is_(None),
+                    )
+                    .order_by(
+                        Organisation.parent_organisation_id.asc().nulls_first(),
+                        Organisation.sort_index.asc(),
+                        Organisation.name.asc(),
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(refreshed)

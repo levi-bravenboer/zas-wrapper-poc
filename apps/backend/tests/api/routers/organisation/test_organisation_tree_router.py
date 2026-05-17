@@ -110,9 +110,7 @@ async def test_patch_rejects_cross_tenant_parent(
     assert response.status_code in (403, 404)
 
 
-async def test_patch_rejects_caregiver(
-    async_client: AsyncClient, seeded_zas_orgs: list
-) -> None:
+async def test_patch_rejects_caregiver(async_client: AsyncClient, seeded_zas_orgs: list) -> None:
     del seeded_zas_orgs
     await _login(async_client, CAREGIVER_EMAIL)
 
@@ -166,8 +164,7 @@ async def test_patch_oversized_moves_returns_422(
     await _login(async_client, ADMIN_EMAIL)
 
     moves = [
-        {"id": str(uuid4()), "parent_organisation_id": None, "sort_index": i}
-        for i in range(501)
+        {"id": str(uuid4()), "parent_organisation_id": None, "sort_index": i} for i in range(501)
     ]
     response = await async_client.patch(_PATH, json={"moves": moves})
     assert response.status_code == 422

@@ -101,10 +101,10 @@ async def test_backfill_numbers_siblings_zero_indexed_by_name(
     db_session.expire_all()
 
     rows = (
-        await db_session.execute(
-            select(Organisation).where(Organisation.tenant_id == tenant_id)
-        )
-    ).scalars().all()
+        (await db_session.execute(select(Organisation).where(Organisation.tenant_id == tenant_id)))
+        .scalars()
+        .all()
+    )
     by_name = {o.name: o for o in rows}
 
     assert by_name["Alpha"].sort_index == 0

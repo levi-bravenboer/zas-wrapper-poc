@@ -107,10 +107,7 @@ export function OrganisationTreeEditor({
     const newParent = projection.parentId
     const siblings = overlayed
       .filter((o) => o.parent_organisation_id === newParent && o.id !== dragged)
-      .sort(
-        (a, b) =>
-          a.sort_index - b.sort_index || a.name.localeCompare(b.name),
-      )
+      .sort((a, b) => a.sort_index - b.sort_index || a.name.localeCompare(b.name))
     // Find drop position inside that sibling list. Walk the projected flat
     // list backwards from the over-item to count how many of those siblings
     // come before the drop slot.
@@ -188,8 +185,9 @@ function SortableTreeRow({
   isDropTarget,
 }: SortableTreeRowProps): ReactElement {
   const { t } = useTranslation('organisations-admin-ui')
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: item.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  })
 
   const style: CSSProperties = {
     transform: CSS.Translate.toString(transform),

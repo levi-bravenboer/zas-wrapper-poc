@@ -62,12 +62,9 @@ export function EditModeBar({
         )}
       >
         <span className="text-sm font-medium">
-          {t(
-            pendingCount === 1
-              ? 'tree.edit.bar.count.one'
-              : 'tree.edit.bar.count.other',
-            { count: pendingCount },
-          )}
+          {t(pendingCount === 1 ? 'tree.edit.bar.count.one' : 'tree.edit.bar.count.other', {
+            count: pendingCount,
+          })}
         </span>
         <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
           <Keyboard aria-hidden="true" className="size-3.5" />
@@ -93,9 +90,7 @@ export function EditModeBar({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('tree.edit.discard.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('tree.edit.discard.description')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('tree.edit.discard.description')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('tree.edit.discard.cancel')}</AlertDialogCancel>

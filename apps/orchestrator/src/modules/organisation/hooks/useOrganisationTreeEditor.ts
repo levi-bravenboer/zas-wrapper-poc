@@ -80,10 +80,7 @@ export function useOrganisationTreeEditor(
     (move: OrganisationTreeMove) => dispatch({ type: 'moveNode', move }),
     [],
   )
-  const toggleExpand = useCallback(
-    (id: string) => dispatch({ type: 'toggleExpand', id }),
-    [],
-  )
+  const toggleExpand = useCallback((id: string) => dispatch({ type: 'toggleExpand', id }), [])
   const reset = useCallback(() => dispatch({ type: 'reset' }), [])
   const setExpanded = useCallback(
     (ids: Iterable<string>) => dispatch({ type: 'setExpanded', ids }),
