@@ -80,6 +80,8 @@ export function BuilderCanvasFrame({
   const { onNodesChange, onEdgesChange, onConnect, onDrop, onDragOver, onPaneClick } =
     useCanvasHandlers({ blocks, geometry, dispatch, onDropBlockType })
 
+  const scaffoldPresent = !!phases.length && !!lanes.length
+
   return (
     <div
       role="application"
@@ -103,6 +105,14 @@ export function BuilderCanvasFrame({
         }}
         minZoom={0.4}
         maxZoom={2}
+        panOnDrag={scaffoldPresent}
+        panOnScroll={scaffoldPresent}
+        zoomOnScroll={scaffoldPresent}
+        zoomOnPinch={scaffoldPresent}
+        zoomOnDoubleClick={scaffoldPresent}
+        nodesDraggable={scaffoldPresent}
+        nodeDragThreshold={3}
+        selectNodesOnDrag={false}
         proOptions={{ hideAttribution: true }}
       >
         <Background
@@ -121,16 +131,16 @@ export function BuilderCanvasFrame({
             onResizeLane={(laneId, height) => dispatch({ type: 'resize-lane', laneId, height })}
           />
         </ViewportPortal>
-        {!blocks.length && (
-          <EmptyCanvasCTA scaffoldPresent={!!phases.length && !!lanes.length} />
+        {!blocks.length && <EmptyCanvasCTA scaffoldPresent={scaffoldPresent} />}
+        {scaffoldPresent && (
+          <NavigatorPanel
+            phases={phases}
+            lanes={lanes}
+            blocks={blocks}
+            edges={edges}
+            geometry={geometry}
+          />
         )}
-        <NavigatorPanel
-          phases={phases}
-          lanes={lanes}
-          blocks={blocks}
-          edges={edges}
-          geometry={geometry}
-        />
       </ReactFlow>
     </div>
   )

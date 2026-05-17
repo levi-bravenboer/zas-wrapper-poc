@@ -118,7 +118,8 @@
     "label": "Zorgpad-canvas",
     "emptyTitle": "Begin met een blok",
     "emptyBody": "Sleep een blok uit het palet hieronder of klik om er één toe te voegen.",
-    "emptyNoScaffold": "Voeg eerst een fase toe via + Fase.",
+    "emptyNoScaffoldTitle": "Voeg een fase toe",
+    "emptyNoScaffold": "Klik op + Fase bovenin om je zorgpad op te bouwen.",
     "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst."
   },
   "save": {

@@ -66,6 +66,8 @@ export function BuilderMiniMap({
   const bboxH = Math.max(1, bboxMaxY - bboxMinY)
   const scale = Math.min(MAP_W / bboxW, MAP_H / bboxH)
   const inv = scale > 0 ? 1 / scale : 1
+  const offsetX = (MAP_W - bboxW * scale) / 2
+  const offsetY = (MAP_H - bboxH * scale) / 2
 
   function blockBox(block: PathwayBlock): { x: number; y: number; w: number; h: number } {
     return {
@@ -79,8 +81,8 @@ export function BuilderMiniMap({
   function onClick(event: React.MouseEvent<SVGSVGElement>): void {
     if (scale <= 0) return
     const rect = event.currentTarget.getBoundingClientRect()
-    const fx = (event.clientX - rect.left) / scale + bboxMinX
-    const fy = (event.clientY - rect.top) / scale + bboxMinY
+    const fx = (event.clientX - rect.left - offsetX) / scale + bboxMinX
+    const fy = (event.clientY - rect.top - offsetY) / scale + bboxMinY
     setCenter(fx, fy, { duration: 220 })
   }
 
@@ -93,9 +95,11 @@ export function BuilderMiniMap({
       viewBox={`0 0 ${MAP_W} ${MAP_H}`}
       onClick={onClick}
       className="block cursor-pointer"
-      style={{ background: 'rgba(11,26,23,0.04)' }}
     >
-      <g transform={`translate(${-bboxMinX * scale} ${-bboxMinY * scale}) scale(${scale})`}>
+      <rect x={0} y={0} width={MAP_W} height={MAP_H} fill="rgba(11,26,23,0.04)" />
+      <g
+        transform={`translate(${offsetX - bboxMinX * scale} ${offsetY - bboxMinY * scale}) scale(${scale})`}
+      >
         {phasesByOrd.map((phase, i) => {
           const tint = phaseTint(i)
           const x = geometry.phaseX(phase.id)
