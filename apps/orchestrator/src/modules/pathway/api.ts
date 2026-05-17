@@ -7,14 +7,32 @@ import type {
   PathwayEdgeOffsetDirection,
   PathwayEdgeTimingKind,
   PathwayPhaseTemplate,
+  PathwayPublishRequest,
   PathwaySummary,
+  PathwayVersionDefinition,
+  PathwayVersionSummary,
   PathwayWithVersion,
 } from './types'
 
-function pathwayError(message: string, status: number): Error & { status: number } {
-  const err = new Error(message) as Error & { status: number }
+export type PathwayApiError = Error & { status: number; code?: string }
+
+function pathwayError(message: string, status: number, code?: string): PathwayApiError {
+  const err = new Error(message) as PathwayApiError
   err.status = status
+  if (code) err.code = code
   return err
+}
+
+function errorFromResponse(
+  fallbackMessage: string,
+  status: number,
+  body: unknown,
+): PathwayApiError {
+  if (body && typeof body === 'object' && 'code' in body) {
+    const b = body as { code?: string; message?: string }
+    return pathwayError(b.message ?? fallbackMessage, status, b.code)
+  }
+  return pathwayError(fallbackMessage, status)
 }
 
 export async function listPathways(): Promise<PathwaySummary[]> {
@@ -94,6 +112,70 @@ export async function listEdgeOffsetDirections(): Promise<PathwayEdgeOffsetDirec
   const result = await api.GET('/pathways/edge-offset-directions', {})
   if (!result.data) {
     throw pathwayError('Failed to load edge offset directions', result.response.status)
+  }
+  return result.data
+}
+
+export async function listPathwayVersions(pathwayId: string): Promise<PathwayVersionSummary[]> {
+  const result = await api.GET('/pathways/{pathway_id}/versions', {
+    params: { path: { pathway_id: pathwayId } },
+  })
+  if (!result.data) {
+    throw pathwayError('Failed to load versions', result.response.status)
+  }
+  return result.data
+}
+
+export async function getPathwayVersion(
+  pathwayId: string,
+  versionId: string,
+): Promise<PathwayVersionDefinition> {
+  const result = await api.GET('/pathways/{pathway_id}/versions/{version_id}', {
+    params: { path: { pathway_id: pathwayId, version_id: versionId } },
+  })
+  if (!result.data) {
+    throw pathwayError('Failed to load version', result.response.status)
+  }
+  return result.data
+}
+
+export async function publishPathway(
+  pathwayId: string,
+  payload: PathwayPublishRequest,
+): Promise<PathwayVersionSummary> {
+  const result = await api.POST('/pathways/{pathway_id}/publish', {
+    params: { path: { pathway_id: pathwayId } },
+    body: payload,
+  })
+  if (!result.data) {
+    throw errorFromResponse('Failed to publish pathway', result.response.status, result.error)
+  }
+  return result.data
+}
+
+export async function restorePathwayVersion(
+  pathwayId: string,
+  versionId: string,
+): Promise<PathwayVersionSummary> {
+  const result = await api.POST('/pathways/{pathway_id}/versions/{version_id}/restore', {
+    params: { path: { pathway_id: pathwayId, version_id: versionId } },
+  })
+  if (!result.data) {
+    throw errorFromResponse('Failed to restore version', result.response.status, result.error)
+  }
+  return result.data
+}
+
+export async function forkPathwayFromPublish(
+  pathwayId: string,
+  versionId: string,
+): Promise<PathwayVersionSummary> {
+  const result = await api.POST(
+    '/pathways/{pathway_id}/versions/{version_id}/fork-from-publish',
+    { params: { path: { pathway_id: pathwayId, version_id: versionId } } },
+  )
+  if (!result.data) {
+    throw errorFromResponse('Failed to fork version', result.response.status, result.error)
   }
   return result.data
 }
