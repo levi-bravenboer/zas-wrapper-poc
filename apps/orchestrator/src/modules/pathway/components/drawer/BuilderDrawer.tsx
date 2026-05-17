@@ -1,45 +1,53 @@
-import type { RJSFSchema } from '@rjsf/utils'
-import { Trash2, X } from 'lucide-react'
-import { type ReactElement } from 'react'
+import { AlertCircle, Trash2, X } from 'lucide-react'
+import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { laneAccent } from '../../canvasLayout'
+import {
+  CONFIG_SCHEMAS,
+  defaultConfig,
+  type ConfigForSemantics,
+} from '../../configSchemas'
 import type {
   BlockConfig,
-  BlockConfigSchema,
   PathwayBlock,
+  PathwayBlockBranch,
   PathwayBlockType,
   PathwayLane,
 } from '../../types'
 
-import { ConfigForm } from './ConfigForm'
+import { AppointmentInspector } from './inspectors/AppointmentInspector'
+import { DecisionInspector } from './inspectors/DecisionInspector'
+import { FormInspector } from './inspectors/FormInspector'
+import { MessageInspector } from './inspectors/MessageInspector'
+import { MilestoneInspector } from './inspectors/MilestoneInspector'
+import { PathwayLinkInspector } from './inspectors/PathwayLinkInspector'
+import { TaskInspector } from './inspectors/TaskInspector'
+import { WaitInspector } from './inspectors/WaitInspector'
 
 type Props = {
   block: PathwayBlock
   blockType: PathwayBlockType | null
   lane: PathwayLane | null
+  blocks: PathwayBlock[]
+  branches: PathwayBlockBranch[]
+  currentPathwayId: string
   onPatchConfig: (next: BlockConfig) => void
   onRename: (label: string) => void
   onClose: () => void
   onDelete: () => void
 }
 
-function toRJSFSchema(schema: BlockConfigSchema): RJSFSchema {
-  return schema as RJSFSchema
-}
-
-// Inspector is still wired through a generic JSON-Schema form. The three new
-// block types (form/wait/pathway_link) need bespoke widgets (form-questions,
-// event-type-picker, pathway-picker) — tracked in `pathway-config-forms`.
-const INSPECTOR_PENDING_SEMANTICS = new Set(['form', 'wait', 'pathway_link'])
-
 export function BuilderDrawer({
   block,
   blockType,
   lane,
+  blocks,
+  branches,
+  currentPathwayId,
   onPatchConfig,
   onRename,
   onClose,
@@ -49,8 +57,14 @@ export function BuilderDrawer({
   const accent = lane ? laneAccent(lane) : 'var(--color-primary)'
   const typeLabel = t(`blockType.${block.type}`, { defaultValue: blockType?.label ?? block.type })
 
+  const parsed = useMemo(() => {
+    if (!blockType) return null
+    return CONFIG_SCHEMAS[blockType.semantics].safeParse(block.config ?? {})
+  }, [blockType, block.config])
+
   return (
     <aside
+      data-slot="block-inspector"
       className="absolute inset-y-0 right-0 z-20 flex w-[360px] flex-col gap-3 border-l bg-white/95 shadow-xl backdrop-blur-md"
       style={{ borderLeftColor: 'var(--hairline)' }}
     >
@@ -99,23 +113,37 @@ export function BuilderDrawer({
         <h3 className="mb-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
           {t('drawer.configHeader')}
         </h3>
-        {blockType ? (
-          INSPECTOR_PENDING_SEMANTICS.has(blockType.semantics) ? (
-            <p className="text-xs text-muted-foreground">
-              {t('drawer.inspectorPending', {
-                defaultValue: 'Geen inspector beschikbaar',
-              })}
-            </p>
-          ) : (
-            <ConfigForm
-              schema={toRJSFSchema(blockType.config_schema)}
-              formData={block.config ?? {}}
-              onChange={onPatchConfig}
-            />
-          )
-        ) : (
-          <p className="text-xs text-muted-foreground">{typeLabel}</p>
+        {blockType && parsed && !parsed.success && (
+          <div
+            role="alert"
+            className="mb-3 flex flex-col gap-2 rounded-md border border-destructive/50 bg-destructive/5 p-3 text-xs text-destructive"
+          >
+            <div className="flex items-center gap-2 font-medium">
+              <AlertCircle className="size-4" />
+              {t('drawer.parseError.title')}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onPatchConfig(defaultConfig(blockType.semantics))}
+            >
+              {t('drawer.parseError.reset')}
+            </Button>
+          </div>
         )}
+        {blockType && parsed && parsed.success && (
+          <InspectorSwitch
+            blockType={blockType}
+            block={block}
+            data={parsed.data}
+            blocks={blocks}
+            branches={branches}
+            currentPathwayId={currentPathwayId}
+            onPatchConfig={onPatchConfig}
+          />
+        )}
+        {!blockType && <p className="text-xs text-muted-foreground">{typeLabel}</p>}
       </div>
 
       <footer
@@ -137,4 +165,87 @@ export function BuilderDrawer({
       </footer>
     </aside>
   )
+}
+
+type SwitchProps = {
+  blockType: PathwayBlockType
+  block: PathwayBlock
+  data: ConfigForSemantics<PathwayBlockType['semantics']>
+  blocks: PathwayBlock[]
+  branches: PathwayBlockBranch[]
+  currentPathwayId: string
+  onPatchConfig: (next: BlockConfig) => void
+}
+
+function InspectorSwitch({
+  blockType,
+  block,
+  data,
+  blocks,
+  branches,
+  currentPathwayId,
+  onPatchConfig,
+}: SwitchProps): ReactElement | null {
+  const semantics = blockType.semantics
+  switch (semantics) {
+    case 'appointment':
+      return (
+        <AppointmentInspector
+          config={data as ConfigForSemantics<'appointment'>}
+          onChange={onPatchConfig}
+        />
+      )
+    case 'task':
+      return (
+        <TaskInspector config={data as ConfigForSemantics<'task'>} onChange={onPatchConfig} />
+      )
+    case 'message':
+      return (
+        <MessageInspector
+          config={data as ConfigForSemantics<'message'>}
+          onChange={onPatchConfig}
+        />
+      )
+    case 'form':
+      return (
+        <FormInspector config={data as ConfigForSemantics<'form'>} onChange={onPatchConfig} />
+      )
+    case 'decision':
+      return (
+        <DecisionInspector
+          config={data as ConfigForSemantics<'decision'>}
+          branches={branches}
+          onChange={onPatchConfig}
+        />
+      )
+    case 'milestone':
+      return (
+        <MilestoneInspector
+          config={data as ConfigForSemantics<'milestone'>}
+          onChange={onPatchConfig}
+        />
+      )
+    case 'wait':
+      return (
+        <WaitInspector
+          config={data as ConfigForSemantics<'wait'>}
+          blocks={blocks}
+          currentBlockId={block.id}
+          onChange={onPatchConfig}
+        />
+      )
+    case 'pathway_link':
+      return (
+        <PathwayLinkInspector
+          config={data as ConfigForSemantics<'pathway_link'>}
+          currentPathwayId={currentPathwayId}
+          onChange={onPatchConfig}
+        />
+      )
+    default: {
+      // Exhaustiveness — if a new semantics is added without a case, schemas map ensures TS will catch it.
+      void (CONFIG_SCHEMAS satisfies Record<PathwayBlockType['semantics'], unknown>)
+      return null
+    }
+  }
 }

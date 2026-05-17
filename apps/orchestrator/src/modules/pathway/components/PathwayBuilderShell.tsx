@@ -11,6 +11,8 @@ import { useBuilderKeyboard } from '../hooks/useBuilderKeyboard'
 import type {
   PathwayBare,
   PathwayBlockType,
+  PathwayEdgeOffsetDirection,
+  PathwayEdgeTimingKind,
   PathwayPhase,
   PathwayPhaseTemplate,
   PathwayVersionDefinition,
@@ -25,6 +27,7 @@ import { BuilderCanvasFrame, type CanvasDropTarget } from './canvas/BuilderCanva
 import { useDragContext } from './canvas/useDragContext'
 import { BuilderDock } from './dock/BuilderDock'
 import { BuilderDrawer } from './drawer/BuilderDrawer'
+import { EdgeInspector } from './drawer/EdgeInspector'
 import { BuilderSubbar } from './subbar/BuilderSubbar'
 import { BuilderTopbar } from './topbar/BuilderTopbar'
 
@@ -33,6 +36,8 @@ type Props = {
   version: PathwayVersionDefinition
   catalogue: PathwayBlockType[]
   phaseTemplates: PathwayPhaseTemplate[]
+  timingKinds: PathwayEdgeTimingKind[]
+  offsetDirections: PathwayEdgeOffsetDirection[]
 }
 
 export function PathwayBuilderShell({
@@ -40,6 +45,8 @@ export function PathwayBuilderShell({
   version,
   catalogue,
   phaseTemplates,
+  timingKinds,
+  offsetDirections,
 }: Props): ReactElement {
   useCollapsedSidebar()
   return (
@@ -49,6 +56,8 @@ export function PathwayBuilderShell({
         version={version}
         catalogue={catalogue}
         phaseTemplates={phaseTemplates}
+        timingKinds={timingKinds}
+        offsetDirections={offsetDirections}
       />
     </ReactFlowProvider>
   )
@@ -62,7 +71,14 @@ const READ_ONLY_PASSTHROUGH: ReadonlySet<BuilderAction['type']> = new Set([
   'mark-saved',
 ])
 
-function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactElement {
+function Inner({
+  pathway,
+  version,
+  catalogue,
+  phaseTemplates,
+  timingKinds,
+  offsetDirections,
+}: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const { state, dispatch: rawDispatch, isDirty } = useBuilderState(version)
 
@@ -87,13 +103,15 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
 
   const dragApi = useDragContext()
 
-  const { phases, lanes, blocks, edges, timingValues } = useMemo(
+  const { phases, lanes, blocks, edges, timingValues, timeMarkers, branches } = useMemo(
     () => ({
       phases: state.version.phases ?? [],
       lanes: state.version.lanes ?? [],
       blocks: state.version.blocks ?? [],
       edges: state.version.edges ?? [],
       timingValues: state.version.timing_values ?? [],
+      timeMarkers: state.version.time_markers ?? [],
+      branches: state.version.branches ?? [],
     }),
     [state.version],
   )
@@ -168,6 +186,13 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
   const selectedBlock = findSelectedBlock(state.selection, blocks)
   const selectedBlockType = catalogue.find((c) => c.type === selectedBlock?.type) ?? null
   const selectedBlockLane = lanes.find((l) => l.id === selectedBlock?.lane_id) ?? null
+  const selectedBlockBranches =
+    selectedBlock ? branches.filter((b) => b.block_id === selectedBlock.id) : []
+  const selectedEdge = (() => {
+    const sel = state.selection
+    if (sel.kind !== 'edge') return null
+    return edges.find((e) => e.id === sel.edgeId) ?? null
+  })()
 
   return (
     <div
@@ -219,6 +244,9 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
             block={selectedBlock}
             blockType={selectedBlockType}
             lane={selectedBlockLane}
+            blocks={blocks}
+            branches={selectedBlockBranches}
+            currentPathwayId={pathway.id}
             onPatchConfig={(config) =>
               dispatch({ type: 'patch-block', blockId: selectedBlock.id, patch: { config } })
             }
@@ -231,6 +259,22 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
             }
             onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
             onDelete={() => dispatch({ type: 'delete-block', blockId: selectedBlock.id })}
+          />
+        )}
+        {selectedEdge && (
+          <EdgeInspector
+            edge={selectedEdge}
+            timingKinds={timingKinds}
+            offsetDirections={offsetDirections}
+            timingValues={timingValues}
+            timeMarkers={timeMarkers}
+            blocks={blocks}
+            branches={branches}
+            onPatchEdge={(patch) =>
+              dispatch({ type: 'patch-edge', edgeId: selectedEdge.id, patch })
+            }
+            onDelete={() => dispatch({ type: 'delete-edge', edgeId: selectedEdge.id })}
+            onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
           />
         )}
       </main>

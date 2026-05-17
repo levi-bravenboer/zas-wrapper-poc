@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import type {
   PathwayBare,
   PathwayBlockType,
+  PathwayEdgeOffsetDirection,
+  PathwayEdgeTimingKind,
   PathwayPhaseTemplate,
   PathwayVersionDefinition,
 } from '../types'
@@ -23,6 +25,8 @@ type ReadyProps = {
   version: PathwayVersionDefinition
   catalogue: PathwayBlockType[]
   phaseTemplates: PathwayPhaseTemplate[]
+  timingKinds: PathwayEdgeTimingKind[]
+  offsetDirections: PathwayEdgeOffsetDirection[]
 }
 
 type Props = LoadingProps | NotFoundProps | ErrorProps | ReadyProps
@@ -77,6 +81,8 @@ export function BuilderShellStateRenderer(props: Props): ReactElement {
       version={props.version}
       catalogue={props.catalogue}
       phaseTemplates={props.phaseTemplates}
+      timingKinds={props.timingKinds}
+      offsetDirections={props.offsetDirections}
     />
   )
 }

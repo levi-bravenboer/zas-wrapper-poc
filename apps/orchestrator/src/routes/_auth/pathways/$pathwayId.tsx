@@ -2,7 +2,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { type ReactElement } from 'react'
 
 import { BuilderShellStateRenderer } from '@/modules/pathway/components/BuilderShellStateRenderer'
-import { usePathway, usePathwayBlocks, usePathwayPhaseTemplates } from '@/modules/pathway/hooks'
+import {
+  useEdgeOffsetDirections,
+  useEdgeTimingKinds,
+  usePathway,
+  usePathwayBlocks,
+  usePathwayPhaseTemplates,
+} from '@/modules/pathway/hooks'
 
 export const Route = createFileRoute('/_auth/pathways/$pathwayId')({
   component: PathwayBuilderPage,
@@ -14,8 +20,16 @@ function PathwayBuilderPage(): ReactElement {
   const pathway = usePathway(pathwayId)
   const blocks = usePathwayBlocks()
   const templates = usePathwayPhaseTemplates()
+  const timingKinds = useEdgeTimingKinds()
+  const offsetDirections = useEdgeOffsetDirections()
 
-  if (pathway.isLoading || blocks.isLoading || templates.isLoading) {
+  if (
+    pathway.isLoading ||
+    blocks.isLoading ||
+    templates.isLoading ||
+    timingKinds.isLoading ||
+    offsetDirections.isLoading
+  ) {
     return <BuilderShellStateRenderer state="loading" />
   }
 
@@ -36,7 +50,13 @@ function PathwayBuilderPage(): ReactElement {
     )
   }
 
-  if (!pathway.data || !blocks.data || !templates.data) {
+  if (
+    !pathway.data ||
+    !blocks.data ||
+    !templates.data ||
+    !timingKinds.data ||
+    !offsetDirections.data
+  ) {
     return <BuilderShellStateRenderer state="loading" />
   }
 
@@ -47,6 +67,8 @@ function PathwayBuilderPage(): ReactElement {
       version={pathway.data.version}
       catalogue={blocks.data}
       phaseTemplates={templates.data}
+      timingKinds={timingKinds.data}
+      offsetDirections={offsetDirections.data}
     />
   )
 }
