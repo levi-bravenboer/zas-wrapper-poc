@@ -32,6 +32,7 @@ from app.schemas.pathway.pathway import (
     PathwayEdgeIn,
     PathwayLaneIn,
     PathwayPhaseIn,
+    PathwayPublishRequest,
 )
 from app.services.pathway.catalogue import (
     LANE_KIND_PATIENT,
@@ -39,6 +40,7 @@ from app.services.pathway.catalogue import (
     SEEDED_LANE_KINDS,
 )
 from app.services.pathway.pathway_service import PathwayService
+from app.services.pathway.pathway_version_service import PathwayVersionService
 from scripts._db import run_script
 from scripts.seed_tenant import ZAS_TENANT_SLUG
 from scripts.seed_users import ADMIN_EMAIL
@@ -273,15 +275,37 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
         session.add(initial_version)
         await session.flush()
 
-        service = PathwayService(
-            PathwayRepository(session),
-            PathwayVersionRepository(session),
-        )
+        repo = PathwayRepository(session)
+        version_repo = PathwayVersionRepository(session)
+        service = PathwayService(repo, version_repo)
         await service.replace_definition(
             pathway_id=PATHWAY_ID,
             tenant_id=tenant.id,
             payload=_build_payload(),
         )
+
+        # Promote v1 to published, then restore as v2 concept so the seed
+        # ships with both a published baseline and a current concept — gives
+        # the orchestrator version surface real rows to bind against per
+        # `openspec/changes/pathway-builder-base/tasks.md` 4.24.
+        version_service = PathwayVersionService(repo, version_repo)
+        await version_service.publish(
+            pathway_id=PATHWAY_ID,
+            tenant_id=tenant.id,
+            payload=PathwayPublishRequest(
+                label="Initiële publicatie",
+                note="Geseed met de Rugrevalidatie-bootstrap.",
+                clinically_approved=True,
+            ),
+            actor_id=admin.id,
+        )
+        published_v1 = await version_repo.get_latest_published(PATHWAY_ID)
+        if published_v1 is not None:
+            await version_service.restore(
+                pathway_id=PATHWAY_ID,
+                source_version_id=published_v1.id,
+                tenant_id=tenant.id,
+            )
         logger.info("seeded pathway id=%s name=%s", PATHWAY_ID, PATHWAY_NAME)
     finally:
         if previous_actor is None:
