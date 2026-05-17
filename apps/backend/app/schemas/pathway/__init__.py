@@ -1,5 +1,8 @@
 from app.schemas.pathway.catalogue import (
     PathwayBlockType,
+    PathwayEdgeOffsetDirection,
+    PathwayEdgeTimingKind,
+    PathwayEventType,
     PathwayPhaseTemplate,
 )
 from app.schemas.pathway.pathway import (
@@ -45,7 +48,10 @@ __all__ = [
     "PathwayCreate",
     "PathwayDefinitionReplace",
     "PathwayEdgeIn",
+    "PathwayEdgeOffsetDirection",
     "PathwayEdgeOut",
+    "PathwayEdgeTimingKind",
+    "PathwayEventType",
     "PathwayLaneIn",
     "PathwayLaneOut",
     "PathwayPhaseIn",

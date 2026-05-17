@@ -5,7 +5,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import enum
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -21,14 +22,54 @@ SEEDED_LANE_KINDS: tuple[tuple[str, str], ...] = (
     (LANE_KIND_EXTERNAL, "External"),
 )
 
+# (code, label, ord). Mirrors SEEDED_LANE_KINDS: code-owned source of truth;
+# the DB table `pathway_edge_offset_direction` is seeded from this and exists
+# only so FK integrity can be enforced on `pathway_edge.offset_direction_code`.
+SEEDED_OFFSET_DIRECTIONS: tuple[tuple[str, str, int], ...] = (
+    ("before", "Voor", 10),
+    ("after", "Na", 20),
+)
+
+
+class BlockSemantics(str, enum.Enum):
+    APPOINTMENT = "appointment"
+    TASK = "task"
+    MESSAGE = "message"
+    FORM = "form"
+    DECISION = "decision"
+    MILESTONE = "milestone"
+    WAIT = "wait"
+    PATHWAY_LINK = "pathway_link"
+
+
+@dataclass(frozen=True, slots=True)
+class EventTypeEntry:
+    code: str
+    label: str
+
+
+# Closed enum of external events the `wait` block may listen for. Promotion to
+# a tenant-extensible lookup table is deferred (see design D3).
+EVENT_TYPES: tuple[EventTypeEntry, ...] = (
+    EventTypeEntry(code="pathology_report", label="Pathologie verslag"),
+    EventTypeEntry(code="scan_report", label="Radiologie verslag"),
+    EventTypeEntry(code="lab_result", label="Lab uitslag"),
+    EventTypeEntry(code="external_data", label="Externe data"),
+)
+
+_EVENT_TYPE_CODES: tuple[str, ...] = tuple(e.code for e in EVENT_TYPES)
+
 
 @dataclass(frozen=True, slots=True)
 class BlockTypeEntry:
     type: str
     label: str
+    semantics: BlockSemantics
+    icon: str
     # First entry is the default placement when no explicit lane context exists.
     allowed_lane_kind_codes: tuple[str, ...]
     config_schema: dict[str, Any]
+    ui_schema: dict[str, Any] = field(default_factory=dict)
     supports_branches: bool = False
 
 
@@ -38,6 +79,14 @@ class PhaseTemplateEntry:
     label: str
     default_ord: int
     default_duration_days: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EdgeTimingKindEntry:
+    kind: str
+    label: str
+    config_schema: dict[str, Any]
+    ui_schema: dict[str, Any]
 
 
 def _object_schema(
@@ -55,77 +104,240 @@ def _object_schema(
     return schema
 
 
+_FORM_QUESTION_TYPES: tuple[str, ...] = (
+    "text",
+    "long_text",
+    "single_choice",
+    "multi_choice",
+    "scale",
+    "date",
+    "file",
+)
+
+_FORM_QUESTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["id", "type", "label", "required"],
+    "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 64},
+        "type": {"type": "string", "enum": list(_FORM_QUESTION_TYPES)},
+        "label": {"type": "string", "minLength": 1, "maxLength": 500},
+        "required": {"type": "boolean"},
+        "options": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["value", "label"],
+                "properties": {
+                    "value": {"type": "string", "minLength": 1, "maxLength": 128},
+                    "label": {"type": "string", "minLength": 1, "maxLength": 255},
+                },
+            },
+        },
+        "validation": {
+            "type": "object",
+            "additionalProperties": True,
+        },
+    },
+}
+
+
 BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="appointment",
-        label="Appointment",
+        label="Afspraak",
+        semantics=BlockSemantics.APPOINTMENT,
+        icon="calendar",
         allowed_lane_kind_codes=(LANE_KIND_CAREGIVER,),
         config_schema=_object_schema(
             properties={
                 "title": {"type": "string", "minLength": 1, "maxLength": 255},
+                "mode": {"type": "string", "enum": ["in_person", "video", "phone"]},
                 "location": {"type": "string", "maxLength": 255},
                 "duration_minutes": {"type": "integer", "minimum": 0},
+                "attendees_patient": {"type": "boolean"},
                 "notes": {"type": "string", "maxLength": 2000},
             },
             required=["title"],
         ),
+        ui_schema={
+            "order": [
+                "title",
+                "mode",
+                "location",
+                "duration_minutes",
+                "attendees_patient",
+                "notes",
+            ],
+        },
+    ),
+    BlockTypeEntry(
+        type="task",
+        label="Taak",
+        semantics=BlockSemantics.TASK,
+        icon="list-checks",
+        allowed_lane_kind_codes=(LANE_KIND_PATIENT, LANE_KIND_CAREGIVER),
+        config_schema=_object_schema(
+            properties={
+                "title": {"type": "string", "minLength": 1, "maxLength": 255},
+                "assignee": {"type": "string", "enum": ["patient", "caregiver"]},
+                "due_offset_days": {"type": "integer", "minimum": 0},
+                "requires_completion": {"type": "boolean"},
+                "notes": {"type": "string", "maxLength": 2000},
+            },
+            required=["title", "assignee"],
+        ),
+        ui_schema={
+            "order": [
+                "title",
+                "assignee",
+                "due_offset_days",
+                "requires_completion",
+                "notes",
+            ],
+        },
+    ),
+    BlockTypeEntry(
+        type="message",
+        label="Bericht",
+        semantics=BlockSemantics.MESSAGE,
+        icon="mail",
+        allowed_lane_kind_codes=(LANE_KIND_PATIENT,),
+        config_schema=_object_schema(
+            properties={
+                "channel": {
+                    "type": "string",
+                    "enum": ["email", "sms", "push", "in_app"],
+                },
+                "subject": {"type": "string", "minLength": 1, "maxLength": 255},
+                "body": {"type": "string", "maxLength": 5000},
+                "cta_label": {"type": "string", "maxLength": 64},
+                "cta_target": {"type": "string", "maxLength": 1024},
+            },
+            required=["channel", "subject", "body"],
+        ),
+        ui_schema={
+            "order": ["channel", "subject", "body", "cta_label", "cta_target"],
+            "widgets": {"channel": "channel-picker"},
+        },
+    ),
+    BlockTypeEntry(
+        type="form",
+        label="Formulier",
+        semantics=BlockSemantics.FORM,
+        icon="clipboard-list",
+        allowed_lane_kind_codes=(LANE_KIND_PATIENT,),
+        config_schema=_object_schema(
+            properties={
+                "title": {"type": "string", "minLength": 1, "maxLength": 255},
+                "intro": {"type": "string", "maxLength": 2000},
+                "questions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": _FORM_QUESTION_SCHEMA,
+                },
+                "submit_label": {"type": "string", "maxLength": 64},
+                "confirmation_message": {"type": "string", "maxLength": 2000},
+            },
+            required=["title", "questions"],
+        ),
+        ui_schema={
+            "order": [
+                "title",
+                "intro",
+                "questions",
+                "submit_label",
+                "confirmation_message",
+            ],
+            "widgets": {"questions": "form-questions"},
+        },
     ),
     BlockTypeEntry(
         type="decision",
-        label="Decision",
+        label="Beslissing",
+        semantics=BlockSemantics.DECISION,
+        icon="git-branch",
         allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         supports_branches=True,
         config_schema=_object_schema(
             properties={
                 "question": {"type": "string", "minLength": 1, "maxLength": 500},
+                "auto_resolve": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["source_block_id", "field_path"],
+                    "properties": {
+                        "source_block_id": {"type": "string", "format": "uuid"},
+                        "field_path": {"type": "string", "minLength": 1, "maxLength": 255},
+                    },
+                },
             },
             required=["question"],
         ),
+        ui_schema={
+            "order": ["question", "auto_resolve"],
+        },
     ),
     BlockTypeEntry(
         type="milestone",
-        label="Milestone",
+        label="Mijlpaal",
+        semantics=BlockSemantics.MILESTONE,
+        icon="flag",
         allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         config_schema=_object_schema(
             properties={
                 "label": {"type": "string", "minLength": 1, "maxLength": 255},
+                "description": {"type": "string", "maxLength": 2000},
+                "icon": {"type": "string", "maxLength": 64},
             },
             required=["label"],
         ),
+        ui_schema={
+            "order": ["label", "description", "icon"],
+        },
     ),
     BlockTypeEntry(
-        type="timer",
-        label="Timer",
+        type="wait",
+        label="Wachten op resultaat",
+        semantics=BlockSemantics.WAIT,
+        icon="hourglass",
         allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         config_schema=_object_schema(
             properties={
-                "note": {"type": "string", "maxLength": 500},
+                "event_type": {"type": "string", "enum": list(_EVENT_TYPE_CODES)},
+                "source_block_id": {"type": "string", "format": "uuid"},
+                "timeout_days": {"type": "integer", "minimum": 0},
+                "on_timeout": {"type": "string", "enum": ["continue", "escalate"]},
             },
+            required=["event_type"],
         ),
+        ui_schema={
+            "order": ["event_type", "source_block_id", "timeout_days", "on_timeout"],
+            "widgets": {"event_type": "event-type-picker"},
+        },
     ),
     BlockTypeEntry(
-        type="task",
-        label="Task",
-        allowed_lane_kind_codes=(LANE_KIND_PATIENT, LANE_KIND_CAREGIVER),
+        type="pathway_link",
+        label="Pad-koppeling",
+        semantics=BlockSemantics.PATHWAY_LINK,
+        icon="link-2",
+        allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         config_schema=_object_schema(
             properties={
-                "title": {"type": "string", "minLength": 1, "maxLength": 255},
-                "notes": {"type": "string", "maxLength": 2000},
+                "target_pathway_id": {"type": "string", "format": "uuid"},
+                "mode": {"type": "string", "enum": ["blocking", "fire_and_forget"]},
+                "context_mapping": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                },
             },
-            required=["title"],
+            required=["target_pathway_id", "mode"],
         ),
-    ),
-    BlockTypeEntry(
-        type="email",
-        label="Email",
-        allowed_lane_kind_codes=(LANE_KIND_PATIENT,),
-        config_schema=_object_schema(
-            properties={
-                "subject": {"type": "string", "minLength": 1, "maxLength": 255},
-                "body": {"type": "string", "maxLength": 5000},
-            },
-            required=["subject"],
-        ),
+        ui_schema={
+            "order": ["target_pathway_id", "mode", "context_mapping"],
+            "widgets": {"target_pathway_id": "pathway-picker"},
+        },
     ),
 )
 
@@ -134,6 +346,61 @@ _BLOCK_TYPES_BY_NAME: dict[str, BlockTypeEntry] = {entry.type: entry for entry i
 
 def get_block_type(type_name: str) -> BlockTypeEntry | None:
     return _BLOCK_TYPES_BY_NAME.get(type_name)
+
+
+def get_event_type_codes() -> tuple[str, ...]:
+    return _EVENT_TYPE_CODES
+
+
+# Edge timing kinds expose per-kind JSON Schemas. The schema validates the
+# subset of edge columns that the kind expects to see set; the service layer
+# still enforces the cross-kind invariant (`num_nonnulls(...) <= 1`).
+EDGE_TIMING_KINDS: tuple[EdgeTimingKindEntry, ...] = (
+    EdgeTimingKindEntry(
+        kind="completion",
+        label="Na voltooiing",
+        config_schema=_object_schema(
+            properties={
+                "delay_value_id": {"type": "string", "format": "uuid"},
+            },
+            required=["delay_value_id"],
+        ),
+        ui_schema={"order": ["delay_value_id"]},
+    ),
+    EdgeTimingKindEntry(
+        kind="marker",
+        label="Rond marker",
+        config_schema=_object_schema(
+            properties={
+                "time_marker_id": {"type": "string", "format": "uuid"},
+                "offset_value_id": {"type": "string", "format": "uuid"},
+                "offset_direction_code": {"type": "string", "enum": ["before", "after"]},
+            },
+            required=["time_marker_id", "offset_value_id", "offset_direction_code"],
+        ),
+        ui_schema={
+            "order": ["time_marker_id", "offset_direction_code", "offset_value_id"],
+            "widgets": {"offset_direction_code": "offset-direction-picker"},
+        },
+    ),
+    EdgeTimingKindEntry(
+        kind="immediate",
+        label="Direct",
+        config_schema=_object_schema(properties={}),
+        ui_schema={"order": []},
+    ),
+    EdgeTimingKindEntry(
+        kind="branch",
+        label="Vanaf tak",
+        config_schema=_object_schema(
+            properties={
+                "source_branch_id": {"type": "string", "format": "uuid"},
+            },
+            required=["source_branch_id"],
+        ),
+        ui_schema={"order": ["source_branch_id"]},
+    ),
+)
 
 
 PHASE_TEMPLATES: tuple[PhaseTemplateEntry, ...] = (
@@ -152,7 +419,12 @@ def get_phase_template(template_id: str) -> PhaseTemplateEntry | None:
 
 __all__ = [
     "BLOCK_TYPES",
+    "BlockSemantics",
     "BlockTypeEntry",
+    "EDGE_TIMING_KINDS",
+    "EVENT_TYPES",
+    "EdgeTimingKindEntry",
+    "EventTypeEntry",
     "LANE_KIND_CAREGIVER",
     "LANE_KIND_EXTERNAL",
     "LANE_KIND_PATIENT",
@@ -160,6 +432,8 @@ __all__ = [
     "PHASE_TEMPLATES",
     "PhaseTemplateEntry",
     "SEEDED_LANE_KINDS",
+    "SEEDED_OFFSET_DIRECTIONS",
     "get_block_type",
+    "get_event_type_codes",
     "get_phase_template",
 ]

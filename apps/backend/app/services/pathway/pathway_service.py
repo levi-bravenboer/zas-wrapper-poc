@@ -22,6 +22,8 @@ from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.schemas.pathway.catalogue import (
     PathwayBlockType,
+    PathwayEdgeOffsetDirection,
+    PathwayEdgeTimingKind,
     PathwayPhaseTemplate,
 )
 from app.schemas.pathway.pathway import (
@@ -49,7 +51,9 @@ from app.schemas.pathway.pathway import (
 )
 from app.services.pathway.catalogue import (
     BLOCK_TYPES,
+    EDGE_TIMING_KINDS,
     PHASE_TEMPLATES,
+    SEEDED_OFFSET_DIRECTIONS,
     get_block_type,
 )
 from app.services.pathway.errors import (
@@ -57,6 +61,7 @@ from app.services.pathway.errors import (
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
+    EdgeTimingValidationError,
     EdgeValidationError,
     NoConceptVersionError,
     PathwayNotFoundError,
@@ -135,8 +140,11 @@ class PathwayService:
             PathwayBlockType(
                 type=entry.type,
                 label=entry.label,
+                semantics=entry.semantics.value,
+                icon=entry.icon,
                 allowed_lane_kind_codes=list(entry.allowed_lane_kind_codes),
                 config_schema=entry.config_schema,
+                ui_schema=entry.ui_schema,
                 supports_branches=entry.supports_branches,
             )
             for entry in BLOCK_TYPES
@@ -151,6 +159,23 @@ class PathwayService:
                 default_duration_days=p.default_duration_days,
             )
             for p in PHASE_TEMPLATES
+        ]
+
+    def list_edge_timing_kinds(self) -> list[PathwayEdgeTimingKind]:
+        return [
+            PathwayEdgeTimingKind(
+                kind=entry.kind,  # type: ignore[arg-type]
+                label=entry.label,
+                config_schema=entry.config_schema,
+                ui_schema=entry.ui_schema,
+            )
+            for entry in EDGE_TIMING_KINDS
+        ]
+
+    def list_edge_offset_directions(self) -> list[PathwayEdgeOffsetDirection]:
+        return [
+            PathwayEdgeOffsetDirection(code=code, label=label, ord=ord_)
+            for code, label, ord_ in SEEDED_OFFSET_DIRECTIONS
         ]
 
     # ---- Write paths -----------------------------------------------------
@@ -369,6 +394,9 @@ class PathwayService:
                     target_block_id=e.target_block_id,
                     source_branch_id=e.source_branch_id,
                     delay_value_id=e.delay_value_id,
+                    time_marker_id=e.time_marker_id,
+                    offset_value_id=e.offset_value_id,
+                    offset_direction_code=e.offset_direction_code,
                 )
                 for e in r.edges
             ]
@@ -543,6 +571,10 @@ class _ResolvedDefinition:
             block_id_by_branch[branch.id] = branch.block_id
 
         # ---- Edges: endpoints ∈ blocks, branch ∈ source block, uniqueness
+        # Pre-collect marker ids and valid offset direction codes so edges can
+        # validate cross-references in a single pass.
+        marker_id_set: set[UUID] = {m.id for m in payload.time_markers}
+        valid_offset_codes: set[str] = {code for code, _, _ in SEEDED_OFFSET_DIRECTIONS}
         edge_ids: set[UUID] = set()
         edge_keys: set[tuple[UUID, UUID, UUID | None]] = set()
         for edge in payload.edges:
@@ -576,6 +608,62 @@ class _ResolvedDefinition:
                     field=f"edges[{edge.id}].delay_value_id",
                     reason="delay_value_id not present in payload timing_values",
                 )
+
+            # Edge timing union: at most one of (delay_value_id, time_marker_id,
+            # source_branch_id) may be set. Mirrors the DB CHECK so violations
+            # surface as 422 not 23514.
+            timing_discriminators = [
+                edge.delay_value_id is not None,
+                edge.time_marker_id is not None,
+                edge.source_branch_id is not None,
+            ]
+            if sum(timing_discriminators) > 1:
+                raise EdgeTimingValidationError(
+                    edge_id=edge.id,
+                    reason=(
+                        "edge may set at most one of delay_value_id, "
+                        "time_marker_id, source_branch_id"
+                    ),
+                )
+
+            # Marker triple: time_marker_id, offset_value_id, offset_direction_code
+            # must all be set together or all null. Avoids partially-configured
+            # marker edges sneaking past schema validation.
+            marker_parts = (
+                edge.time_marker_id is not None,
+                edge.offset_value_id is not None,
+                edge.offset_direction_code is not None,
+            )
+            if any(marker_parts) and not all(marker_parts):
+                raise EdgeTimingValidationError(
+                    edge_id=edge.id,
+                    reason=(
+                        "marker timing requires time_marker_id, offset_value_id, "
+                        "and offset_direction_code to be set together"
+                    ),
+                )
+            if edge.time_marker_id is not None and edge.time_marker_id not in marker_id_set:
+                raise EdgeTimingValidationError(
+                    edge_id=edge.id,
+                    reason="time_marker_id not present in payload time_markers",
+                )
+            if edge.offset_value_id is not None and edge.offset_value_id not in timing_ids:
+                raise EdgeTimingValidationError(
+                    edge_id=edge.id,
+                    reason="offset_value_id not present in payload timing_values",
+                )
+            if (
+                edge.offset_direction_code is not None
+                and edge.offset_direction_code not in valid_offset_codes
+            ):
+                raise EdgeTimingValidationError(
+                    edge_id=edge.id,
+                    reason=(
+                        f"offset_direction_code '{edge.offset_direction_code}' "
+                        f"is not a seeded value"
+                    ),
+                )
+
             key = (edge.source_block_id, edge.target_block_id, edge.source_branch_id)
             if key in edge_keys:
                 raise EdgeValidationError(

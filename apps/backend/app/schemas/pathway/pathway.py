@@ -165,6 +165,12 @@ class PathwayEdgeIn(BaseModel):
     target_block_id: UUID
     source_branch_id: UUID | None = None
     delay_value_id: UUID | None = None
+    # Marker-anchored timing: all three must be set together or all null.
+    # Cross-kind invariant (`completion XOR marker XOR branch XOR immediate`)
+    # is enforced in the service layer + a Postgres CHECK constraint.
+    time_marker_id: UUID | None = None
+    offset_value_id: UUID | None = None
+    offset_direction_code: str | None = Field(default=None, max_length=63)
 
 
 class PathwayEdgeOut(PathwayEdgeIn):

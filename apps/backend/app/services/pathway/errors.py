@@ -84,6 +84,17 @@ class EdgeValidationError(PathwayValidationError):
     code = "invalid.pathway.edge"
 
 
+class EdgeTimingValidationError(PathwayValidationError):
+    code = "invalid.pathway.edge-timing"
+
+    def __init__(self, *, edge_id: UUID, reason: str) -> None:
+        super().__init__(
+            field=f"edges[{edge_id}].timing",
+            reason=reason,
+            extra={"edge_id": str(edge_id)},
+        )
+
+
 class DeferredFieldError(PathwayValidationError):
     code = "invalid.pathway.deferred-field"
 
@@ -132,6 +143,7 @@ __all__ = [
     "BranchOwnershipError",
     "ConceptAlreadyExistsError",
     "DeferredFieldError",
+    "EdgeTimingValidationError",
     "EdgeValidationError",
     "ForkSourceNotPublishedError",
     "NoConceptVersionError",

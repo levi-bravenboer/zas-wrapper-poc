@@ -10,6 +10,8 @@ from app.schemas.pathway import (
     PathwayBlockType,
     PathwayCreate,
     PathwayDefinitionReplace,
+    PathwayEdgeOffsetDirection,
+    PathwayEdgeTimingKind,
     PathwayPhaseTemplate,
     PathwayPublishRequest,
     PathwaySummary,
@@ -49,6 +51,30 @@ async def list_pathway_phase_templates(
     service: PathwayServiceDep,
 ) -> list[PathwayPhaseTemplate]:
     return service.list_phase_templates()
+
+
+@router.get(
+    "/edge-timing-kinds",
+    operation_id="list_pathway_edge_timing_kinds",
+    response_model=list[PathwayEdgeTimingKind],
+)
+async def list_pathway_edge_timing_kinds(
+    _current_user: CurrentUserDep,
+    service: PathwayServiceDep,
+) -> list[PathwayEdgeTimingKind]:
+    return service.list_edge_timing_kinds()
+
+
+@router.get(
+    "/edge-offset-directions",
+    operation_id="list_pathway_edge_offset_directions",
+    response_model=list[PathwayEdgeOffsetDirection],
+)
+async def list_pathway_edge_offset_directions(
+    _current_user: CurrentUserDep,
+    service: PathwayServiceDep,
+) -> list[PathwayEdgeOffsetDirection]:
+    return service.list_edge_offset_directions()
 
 
 @router.get(
