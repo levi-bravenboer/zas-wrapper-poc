@@ -17,7 +17,7 @@ export function createBlock({ typeCode, phaseId, laneId, x, y }: CreateBlockInpu
     label: null,
     duration_value_id: null,
     config: {},
-    x,
-    y,
+    x: Math.round(x),
+    y: Math.round(y),
   }
 }

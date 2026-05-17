@@ -2,12 +2,7 @@ import { useMemo } from 'react'
 
 import { indexById } from '@/lib/utils/indexBy'
 
-import {
-  BLOCK_HEIGHT,
-  BLOCK_WIDTH,
-  blockOrigin,
-  type CanvasGeometry,
-} from '../../canvasLayout'
+import { BLOCK_HEIGHT, BLOCK_WIDTH, blockOrigin, type CanvasGeometry } from '../../canvasLayout'
 import type {
   PathwayBlock,
   PathwayBlockType,

@@ -42,8 +42,8 @@ export function useCanvasHandlers({
           dispatch({
             type: 'move-block',
             blockId: c.id,
-            x: c.position.x - baseX,
-            y: c.position.y - baseY,
+            x: Math.round(c.position.x - baseX),
+            y: Math.round(c.position.y - baseY),
           })
         }
         if (c.type === 'select' && c.selected) {

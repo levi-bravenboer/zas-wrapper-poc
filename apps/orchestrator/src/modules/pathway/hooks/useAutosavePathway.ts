@@ -102,15 +102,14 @@ export function useAutosavePathway({
   const onRename = useCallback(
     (name: string) => {
       replace.mutate(
+        { ...buildPayload(pathway, version), name },
         {
-          name,
-          clinical_goal: pathway.clinical_goal ?? null,
-          patient_goal: pathway.patient_goal ?? null,
+          onSuccess: (next) => dispatch({ type: 'reset', version: next.version }),
+          onError: () => toast.error(t('save.error')),
         },
-        { onError: () => toast.error(t('save.error')) },
       )
     },
-    [pathway, replace, t],
+    [pathway, version, replace, dispatch, t],
   )
 
   return { saveState, flush, onRename }
