@@ -24,6 +24,7 @@ class OrganisationRead(BaseModel):
     type_code: str
     type_system: str | None
     type_display: str | None
+    sort_index: int
 
 
 class OrganisationListResponse(BaseModel):

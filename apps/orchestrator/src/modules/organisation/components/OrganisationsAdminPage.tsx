@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -20,13 +20,16 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isApiError } from '@/lib/api/errors'
 
-import { useDeleteOrganisation, useOrganisations } from '../hooks'
+import { useDeleteOrganisation, useOrganisationTreeMutation, useOrganisations } from '../hooks'
+import { useOrganisationTreeEditor } from '../hooks/useOrganisationTreeEditor'
 import type { OrganisationRead } from '../schemas'
 
 import { CreateOrganisationDialog } from './CreateOrganisationDialog'
+import { EditModeBar } from './EditModeBar'
 import { EditOrganisationDialog } from './EditOrganisationDialog'
 import { OrganisationDetailSheet } from './OrganisationDetailSheet'
 import { OrganisationTree } from './OrganisationTree'
+import { OrganisationTreeEditor } from './OrganisationTreeEditor'
 
 type RefKey = 'organisations' | 'patients' | 'practitioner_roles'
 
@@ -43,6 +46,8 @@ export function OrganisationsAdminPage(): ReactElement {
   const { t } = useTranslation('organisations-admin-ui')
   const { data, isLoading, error } = useOrganisations()
   const deleteMutation = useDeleteOrganisation()
+  const treeMutation = useOrganisationTreeMutation()
+  const editor = useOrganisationTreeEditor()
   const search = useSearch({ strict: false }) as { collapsed?: unknown }
   const navigate = useNavigate()
 
@@ -101,6 +106,28 @@ export function OrganisationsAdminPage(): ReactElement {
       : null
 
   const isEmpty = !isLoading && organisations.length === 0
+  const isEditing = editor.mode === 'edit'
+
+  const handleSave = useCallback(() => {
+    if (editor.pendingMoves.size === 0) return
+    const moves = Array.from(editor.pendingMoves.values())
+    treeMutation.mutate(
+      { moves },
+      {
+        onSuccess: () => {
+          toast.success(t('tree.edit.bar.save_success'))
+          editor.exitEdit()
+        },
+        onError: (err) => {
+          if (isApiError(err) && err.code === 'organisation_tree_cycle') {
+            toast.error(t('tree.edit.error.cycle'))
+          } else {
+            toast.error(t('error.generic'))
+          }
+        },
+      },
+    )
+  }, [editor, treeMutation, t])
 
   const openCreateRoot = (): void => {
     setCreateParent(null)
@@ -138,10 +165,20 @@ export function OrganisationsAdminPage(): ReactElement {
         title={t('page.title')}
         description={t('page.sub')}
         primaryAction={
-          <Button onClick={openCreateRoot}>
-            <Plus className="size-4" aria-hidden />
-            {t('page.cta.new_root')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={isEditing ? 'default' : 'outline'}
+              onClick={() => (isEditing ? editor.exitEdit() : editor.enterEdit())}
+            >
+              <Pencil className="size-4" aria-hidden />
+              {t('tree.edit.toggle')}
+            </Button>
+            <Button onClick={openCreateRoot} disabled={isEditing}>
+              <Plus className="size-4" aria-hidden />
+              {t('page.cta.new_root')}
+            </Button>
+          </div>
         }
         table={
           isLoading ? (
@@ -153,6 +190,23 @@ export function OrganisationsAdminPage(): ReactElement {
           ) : error ? (
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
               {t('error.generic')}
+            </div>
+          ) : isEditing ? (
+            <div className="flex flex-col gap-2">
+              <OrganisationTreeEditor
+                organisations={organisations}
+                pendingMoves={editor.pendingMoves}
+                expanded={expanded}
+                onToggleExpand={onToggle}
+                onMove={editor.moveNode}
+              />
+              <EditModeBar
+                pendingCount={editor.pendingMoves.size}
+                visible
+                isSaving={treeMutation.isPending}
+                onSave={handleSave}
+                onCancel={editor.exitEdit}
+              />
             </div>
           ) : (
             <OrganisationTree

@@ -7,6 +7,7 @@ import {
   organisationReadSchema,
   type OrganisationCreatePayload,
   type OrganisationRead,
+  type OrganisationTreeUpdatePayload,
   type OrganisationUpdatePayload,
 } from './schemas'
 
@@ -66,6 +67,22 @@ export async function fetchAffiliatedPractitionerRoles(
     throw apiError('Affiliated practitioner roles failed', response.status)
   }
   return data
+}
+
+export async function patchOrganisationTree(
+  payload: OrganisationTreeUpdatePayload,
+): Promise<OrganisationRead[]> {
+  const { data, response } = await api.PATCH('/admin/organisations/tree', { body: payload })
+  if (!response.ok || !data) {
+    const body = await readErrorBody(response)
+    throw apiError(
+      body?.message ?? 'Organisation tree update failed',
+      response.status,
+      body?.code,
+      body?.details,
+    )
+  }
+  return organisationListSchema.parse(data).items
 }
 
 export async function deleteOrganisation(organisationId: string): Promise<void> {

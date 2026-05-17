@@ -1,17 +1,8 @@
-import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { useMemo, useState, type ReactElement } from 'react'
 
 import type { OrganisationRead } from '../schemas'
+
+import { TreeRow } from './TreeRow'
 
 interface OrganisationNode {
   org: OrganisationRead
@@ -31,11 +22,13 @@ function materialise(rows: OrganisationRead[]): OrganisationNode[] {
       roots.push(node)
     }
   }
+  const cmp = (a: OrganisationNode, b: OrganisationNode): number =>
+    a.org.sort_index - b.org.sort_index || a.org.name.localeCompare(b.org.name)
   const sortRecursive = (n: OrganisationNode): void => {
-    n.children.sort((a, b) => a.org.name.localeCompare(b.org.name))
+    n.children.sort(cmp)
     n.children.forEach(sortRecursive)
   }
-  roots.sort((a, b) => a.org.name.localeCompare(b.org.name))
+  roots.sort(cmp)
   roots.forEach(sortRecursive)
   return roots
 }
@@ -48,6 +41,7 @@ export interface OrganisationTreeProps {
   onArchive: (org: OrganisationRead) => void
   expanded?: ReadonlySet<string>
   onToggle?: (id: string) => void
+  actionsDisabled?: boolean | undefined
 }
 
 export function OrganisationTree({
@@ -58,7 +52,8 @@ export function OrganisationTree({
   onArchive,
   expanded,
   onToggle,
-}: OrganisationTreeProps) {
+  actionsDisabled,
+}: OrganisationTreeProps): ReactElement {
   const tree = useMemo(() => materialise(organisations), [organisations])
   const [internalExpanded, setInternalExpanded] = useState<Set<string>>(() => {
     const all = new Set<string>()
@@ -84,7 +79,7 @@ export function OrganisationTree({
   return (
     <ul className="flex flex-col gap-1" role="tree">
       {tree.map((node) => (
-        <TreeNode
+        <TreeBranch
           key={node.org.id}
           node={node}
           depth={0}
@@ -94,13 +89,14 @@ export function OrganisationTree({
           onEdit={onEdit}
           onCreateChild={onCreateChild}
           onArchive={onArchive}
+          actionsDisabled={actionsDisabled}
         />
       ))}
     </ul>
   )
 }
 
-interface TreeNodeProps {
+interface TreeBranchProps {
   node: OrganisationNode
   depth: number
   expanded: ReadonlySet<string>
@@ -109,9 +105,10 @@ interface TreeNodeProps {
   onEdit: (org: OrganisationRead) => void
   onCreateChild: (parent: OrganisationRead) => void
   onArchive: (org: OrganisationRead) => void
+  actionsDisabled?: boolean | undefined
 }
 
-function TreeNode({
+function TreeBranch({
   node,
   depth,
   expanded,
@@ -120,74 +117,45 @@ function TreeNode({
   onEdit,
   onCreateChild,
   onArchive,
-}: TreeNodeProps) {
-  const { t } = useTranslation('organisations-admin-ui')
+  actionsDisabled,
+}: TreeBranchProps): ReactElement {
   const isOpen = expanded.has(node.org.id)
   const hasChildren = node.children.length > 0
 
   return (
-    <li role="treeitem" aria-expanded={hasChildren ? isOpen : undefined}>
-      <div
-        className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5"
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
-      >
-        {hasChildren ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={isOpen ? t('tree.collapse') : t('tree.expand')}
-            onClick={() => onToggle(node.org.id)}
-          >
-            {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-          </Button>
-        ) : (
-          <span className="size-9" aria-hidden="true" />
-        )}
-        <button
-          type="button"
-          className="flex flex-1 items-center gap-2 text-left"
-          onClick={() => onOpenDetail(node.org)}
-        >
-          <span className="font-medium">{node.org.name}</span>
-          <Badge variant="outline">{node.org.type_display ?? node.org.type_code}</Badge>
-        </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="ghost" size="icon" aria-label={t('tree.actions')}>
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => onEdit(node.org)}>
-              {t('node.action.edit')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onCreateChild(node.org)}>
-              {t('node.action.create_child')}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onSelect={() => onArchive(node.org)}>
-              {t('node.action.archive')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <>
+      <TreeRow
+        org={node.org}
+        depth={depth}
+        hasChildren={hasChildren}
+        expanded={isOpen}
+        onToggleExpand={onToggle}
+        onOpenDetail={onOpenDetail}
+        onEdit={onEdit}
+        onCreateChild={onCreateChild}
+        onArchive={onArchive}
+        actionsDisabled={actionsDisabled}
+      />
       {hasChildren && isOpen && (
-        <ul className="flex flex-col gap-1 pt-1" role="group">
-          {node.children.map((child) => (
-            <TreeNode
-              key={child.org.id}
-              node={child}
-              depth={depth + 1}
-              expanded={expanded}
-              onToggle={onToggle}
-              onOpenDetail={onOpenDetail}
-              onEdit={onEdit}
-              onCreateChild={onCreateChild}
-              onArchive={onArchive}
-            />
-          ))}
-        </ul>
+        <li role="none">
+          <ul className="flex flex-col gap-1 pt-1" role="group">
+            {node.children.map((child) => (
+              <TreeBranch
+                key={child.org.id}
+                node={child}
+                depth={depth + 1}
+                expanded={expanded}
+                onToggle={onToggle}
+                onOpenDetail={onOpenDetail}
+                onEdit={onEdit}
+                onCreateChild={onCreateChild}
+                onArchive={onArchive}
+                actionsDisabled={actionsDisabled}
+              />
+            ))}
+          </ul>
+        </li>
       )}
-    </li>
+    </>
   )
 }

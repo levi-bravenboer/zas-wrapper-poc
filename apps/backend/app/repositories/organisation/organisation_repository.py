@@ -40,9 +40,15 @@ class OrganisationRepository(BaseRepository[Organisation]):
 
     async def list_in_tenant(self, tenant_id: UUID) -> list[Organisation]:
         result = await self._session.execute(
-            select(Organisation).where(
+            select(Organisation)
+            .where(
                 Organisation.tenant_id == tenant_id,
                 Organisation.deleted_at.is_(None),
+            )
+            .order_by(
+                Organisation.parent_organisation_id.asc().nulls_first(),
+                Organisation.sort_index.asc(),
+                Organisation.name.asc(),
             )
         )
         return list(result.scalars().all())

@@ -10,10 +10,14 @@ from app.schemas.organisation import (
     OrganisationCreate,
     OrganisationListResponse,
     OrganisationRead,
+    OrganisationTreeUpdate,
     OrganisationUpdate,
 )
 from app.services.auth.deps import AdminUserDep, require_role
-from app.services.organisation.deps import OrganisationServiceDep
+from app.services.organisation.deps import (
+    OrganisationServiceDep,
+    OrganisationTreeServiceDep,
+)
 
 router = APIRouter(tags=["organisations"])
 
@@ -66,6 +70,21 @@ async def update_organisation(
 ) -> OrganisationRead:
     org = await service.update(admin, organisation_id, payload)
     return OrganisationRead.model_validate(org)
+
+
+# AUTH-HARDEN: admin-only atomic tree reparent + reorder.
+@router.patch(
+    "/admin/organisations/tree",
+    operation_id="patch_organisation_tree",
+    response_model=OrganisationListResponse,
+)
+async def patch_organisation_tree(
+    payload: OrganisationTreeUpdate,
+    service: OrganisationTreeServiceDep,
+    admin: AdminUserDep,
+) -> OrganisationListResponse:
+    orgs = await service.apply_tree_moves(admin, payload.moves)
+    return OrganisationListResponse(items=[OrganisationRead.model_validate(o) for o in orgs])
 
 
 # AUTH-HARDEN: admin-only soft delete; rejects when references exist.

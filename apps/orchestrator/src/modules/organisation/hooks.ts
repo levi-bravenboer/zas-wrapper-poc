@@ -5,6 +5,7 @@ import {
   deleteOrganisation,
   fetchAffiliatedPractitionerRoles,
   fetchOrganisations,
+  patchOrganisationTree,
   updateOrganisation,
   type PractitionerRoleRead,
 } from './api'
@@ -12,6 +13,7 @@ import { organisationKeys } from './keys'
 import type {
   OrganisationCreatePayload,
   OrganisationRead,
+  OrganisationTreeUpdatePayload,
   OrganisationUpdatePayload,
 } from './schemas'
 
@@ -55,6 +57,19 @@ export function useUpdateOrganisation() {
   return useMutation<OrganisationRead, Error, UpdateOrganisationVariables>({
     mutationFn: ({ organisationId, payload }) => updateOrganisation(organisationId, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: organisationKeys.list() }),
+  })
+}
+
+export function useOrganisationTreeMutation() {
+  const qc = useQueryClient()
+  return useMutation<OrganisationRead[], Error, OrganisationTreeUpdatePayload>({
+    mutationFn: patchOrganisationTree,
+    onSuccess: (items) => {
+      // Re-seed the list cache with the server's fresh tree, then invalidate
+      // dependent queries (affiliations + detail) so they refetch.
+      qc.setQueryData(organisationKeys.list(), items)
+      qc.invalidateQueries({ queryKey: organisationKeys.all })
+    },
   })
 }
 
