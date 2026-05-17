@@ -35,7 +35,16 @@ describe('blockSemanticsSummary', () => {
     ['appointment', { kind: 'consult' }, 'consult'],
     ['task', { assignee: 'caregiver' }, 'caregiver'],
     ['message', { channel: 'email' }, 'email'],
-    ['form', { questions: [{ id: 'q1' }, { id: 'q2' }] }, '2'],
+    [
+      'form',
+      {
+        questions: [
+          { id: 'q1', type: 'text', label: 'Naam', required: true },
+          { id: 'q2', type: 'text', label: 'Datum', required: false },
+        ],
+      },
+      '2',
+    ],
     ['decision', { criterion: 'risk_score' }, 'risk_score'],
     ['milestone', { note: 'baseline' }, 'baseline'],
     ['wait', { event_type: 'pathology_report' }, 'pathology_report'],

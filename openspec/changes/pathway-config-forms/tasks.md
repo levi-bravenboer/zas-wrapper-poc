@@ -2,21 +2,21 @@
 
 ## 1. Zod schemas + parser
 
-- [ ] 1.1 Create `apps/orchestrator/src/modules/pathway/configSchemas.ts` with one Zod schema per `BlockSemantics`.
-- [ ] 1.2 Export `ConfigForSemantics<S>` type and `parseBlockConfig(block, semantics)` helper.
-- [ ] 1.3 Vitest `configSchemas.test.ts` — round-trip per semantics + one failing fixture per schema.
+- [x] 1.1 Create `apps/orchestrator/src/modules/pathway/configSchemas.ts` with one Zod schema per `BlockSemantics`.
+- [x] 1.2 Export `ConfigForSemantics<S>` type and `parseBlockConfig(block, semantics)` helper.
+- [x] 1.3 Vitest `configSchemas.test.ts` — round-trip per semantics + one failing fixture per schema.
 
 ## 2. Replace runtime-narrowing shims
 
-- [ ] 2.1 Rewrite `blockCatalogue.utils.ts` `blockSemanticsSummary` to consume parsed config (drop `asString` / `asArray`).
-- [ ] 2.2 Add `try { parse } catch` and return undefined summary on parse failure (graceful at the summary level — full inspector shows the error).
-- [ ] 2.3 Verify existing `blockCatalogue.test.ts` still passes (or update if shape shifts).
+- [x] 2.1 Rewrite `blockCatalogue.utils.ts` `blockSemanticsSummary` to consume parsed config (drop `asString` / `asArray`).
+- [x] 2.2 Add `try { parse } catch` and return undefined summary on parse failure (graceful at the summary level — full inspector shows the error).
+- [x] 2.3 Verify existing `blockCatalogue.test.ts` still passes (or update if shape shifts).
 
 ## 3. `patch-edge` reducer action
 
-- [ ] 3.1 Add `{ type: 'patch-edge'; edgeId: string; patch: Partial<PathwayEdge> }` to `BuilderAction`.
-- [ ] 3.2 Implement the reducer case (mirror `patch-block`, push history).
-- [ ] 3.3 Vitest `useBuilderState.test.ts` — `patch-edge` happy path + history push + undo restores prior edge.
+- [x] 3.1 Add `{ type: 'patch-edge'; edgeId: string; patch: Partial<PathwayEdge> }` to `BuilderAction`.
+- [x] 3.2 Implement the reducer case (mirror `patch-block`, push history).
+- [x] 3.3 Vitest `useBuilderState.test.ts` — `patch-edge` happy path + history push + undo restores prior edge.
 
 ## 4. Block inspector — bespoke per semantics
 

@@ -1,0 +1,174 @@
+import { describe, expect, it } from 'vitest'
+
+import {
+  CONFIG_SCHEMAS,
+  defaultConfig,
+  parseBlockConfig,
+  type AnyBlockConfig,
+} from './configSchemas'
+import type { BlockSemantics, PathwayBlock } from './types'
+
+function fakeBlock(config: Record<string, unknown>): PathwayBlock {
+  return {
+    id: '00000000-0000-4000-8000-000000000000',
+    type: 'task',
+    label: null,
+    phase_id: '00000000-0000-4000-8000-000000000001',
+    lane_id: '00000000-0000-4000-8000-000000000002',
+    x: 0,
+    y: 0,
+    config,
+  } as PathwayBlock
+}
+
+describe('CONFIG_SCHEMAS — every BlockSemantics has a schema', () => {
+  const semantics: BlockSemantics[] = [
+    'appointment',
+    'task',
+    'message',
+    'form',
+    'decision',
+    'milestone',
+    'wait',
+    'pathway_link',
+  ]
+
+  it.each(semantics)('%s schema exists and defaults to a parseable object', (s) => {
+    const schema = CONFIG_SCHEMAS[s]
+    expect(schema).toBeDefined()
+    expect(() => defaultConfig(s)).not.toThrow()
+  })
+})
+
+describe('parseBlockConfig — valid configs round-trip', () => {
+  it('parses an appointment config', () => {
+    const parsed = parseBlockConfig(fakeBlock({ kind: 'consult', location: 'AZ Sint-Maarten' }), 'appointment')
+    expect(parsed.kind).toBe('consult')
+    expect(parsed.location).toBe('AZ Sint-Maarten')
+  })
+
+  it('parses a task config', () => {
+    const parsed = parseBlockConfig(fakeBlock({ assignee: 'caregiver', description: 'Bel patiënt' }), 'task')
+    expect(parsed.assignee).toBe('caregiver')
+  })
+
+  it('parses a message config', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({ channel: 'sms', subject: 'Herinnering', body: 'Vergeet niet' }),
+      'message',
+    )
+    expect(parsed.channel).toBe('sms')
+  })
+
+  it('parses a form config with questions', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({
+        questions: [
+          { id: 'q1', type: 'text', label: 'Naam', required: true },
+          {
+            id: 'q2',
+            type: 'single_choice',
+            label: 'Pijn?',
+            required: false,
+            options: ['ja', 'nee'],
+          },
+        ],
+      }),
+      'form',
+    )
+    expect(parsed.questions).toHaveLength(2)
+    expect(parsed.questions[1]?.options).toEqual(['ja', 'nee'])
+  })
+
+  it('parses a wait config', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({ event_type: 'lab_result', timeout_days: 3, on_timeout: 'escalate' }),
+      'wait',
+    )
+    expect(parsed.event_type).toBe('lab_result')
+    expect(parsed.timeout_days).toBe(3)
+  })
+
+  it('parses a pathway_link config and defaults context_mapping', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({
+        target_pathway_id: '11111111-1111-4111-8111-111111111111',
+        mode: 'blocking',
+      }),
+      'pathway_link',
+    )
+    expect(parsed.mode).toBe('blocking')
+    expect(parsed.context_mapping).toEqual({})
+  })
+
+  it('parses a decision config', () => {
+    const parsed = parseBlockConfig(fakeBlock({ criterion: 'pijnscore >= 4' }), 'decision')
+    expect(parsed.criterion).toBe('pijnscore >= 4')
+  })
+
+  it('parses a milestone config', () => {
+    const parsed = parseBlockConfig(fakeBlock({ note: 'Start herstelfase' }), 'milestone')
+    expect(parsed.note).toBe('Start herstelfase')
+  })
+})
+
+describe('parseBlockConfig — invalid configs throw with the right path', () => {
+  it('wait rejects unknown event_type', () => {
+    expect(() => parseBlockConfig(fakeBlock({ event_type: 'mystery_event' }), 'wait')).toThrow(
+      /event_type/,
+    )
+  })
+
+  it('message rejects unknown channel', () => {
+    expect(() =>
+      parseBlockConfig(fakeBlock({ channel: 'carrier_pigeon' }), 'message'),
+    ).toThrow(/channel/)
+  })
+
+  it('form rejects a question with unknown type', () => {
+    expect(() =>
+      parseBlockConfig(
+        fakeBlock({ questions: [{ id: 'q1', type: 'mystery', label: 'x', required: false }] }),
+        'form',
+      ),
+    ).toThrow(/type/)
+  })
+
+  it('pathway_link rejects unknown mode', () => {
+    expect(() =>
+      parseBlockConfig(
+        fakeBlock({
+          target_pathway_id: '11111111-1111-4111-8111-111111111111',
+          mode: 'whenever',
+        }),
+        'pathway_link',
+      ),
+    ).toThrow(/mode/)
+  })
+
+  it('wait rejects non-positive timeout_days', () => {
+    expect(() =>
+      parseBlockConfig(fakeBlock({ event_type: 'lab_result', timeout_days: 0 }), 'wait'),
+    ).toThrow(/timeout_days/)
+  })
+})
+
+describe('AnyBlockConfig — type coverage smoke', () => {
+  it('compiles when assembling a record over all semantics', () => {
+    const sample: Record<BlockSemantics, AnyBlockConfig> = {
+      appointment: { kind: 'consult' },
+      task: { assignee: 'caregiver' },
+      message: { channel: 'email' },
+      form: { questions: [] },
+      decision: { criterion: 'x' },
+      milestone: { note: 'm' },
+      wait: { event_type: 'lab_result' },
+      pathway_link: {
+        target_pathway_id: '11111111-1111-4111-8111-111111111111',
+        mode: 'blocking',
+        context_mapping: {},
+      },
+    }
+    expect(Object.keys(sample)).toHaveLength(8)
+  })
+})

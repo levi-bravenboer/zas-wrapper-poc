@@ -41,6 +41,7 @@ export type BuilderAction =
   | { type: 'add-block'; block: PathwayBlock }
   | { type: 'delete-block'; blockId: string }
   | { type: 'add-edge'; edge: PathwayEdge }
+  | { type: 'patch-edge'; edgeId: string; patch: Partial<PathwayEdge> }
   | { type: 'delete-edge'; edgeId: string }
   | { type: 'add-phase'; phase: PathwayPhase }
   | { type: 'reorder-phase'; phaseId: string; toIndex: number }
@@ -117,6 +118,13 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     case 'add-edge': {
       const history = pushHistory(state)
       const edges = [...(state.version.edges ?? []), action.edge]
+      return { ...state, version: { ...state.version, edges }, history }
+    }
+    case 'patch-edge': {
+      const history = pushHistory(state)
+      const edges = (state.version.edges ?? []).map((e) =>
+        e.id === action.edgeId ? { ...e, ...action.patch } : e,
+      )
       return { ...state, version: { ...state.version, edges }, history }
     }
     case 'delete-edge': {

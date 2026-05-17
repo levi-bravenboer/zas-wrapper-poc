@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
+import { CONFIG_SCHEMAS } from './configSchemas'
 import type { BlockConfig, BlockSemantics, LaneKindCode } from './types'
 
 // String → lucide component lookup. Backend catalogue references icons by
@@ -42,39 +43,32 @@ export function resolveLucideIcon(name: string | undefined): LucideIcon {
   return LUCIDE_BY_NAME[name] ?? Workflow
 }
 
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value ? value : undefined
-}
-
-function asArray(value: unknown): unknown[] | undefined {
-  return Array.isArray(value) ? value : undefined
-}
-
 export function blockSemanticsSummary(
   semantics: BlockSemantics | undefined,
   config: BlockConfig | undefined,
 ): string | undefined {
   if (!semantics) return undefined
-  const cfg = (config ?? {}) as Record<string, unknown>
+  const schema = CONFIG_SCHEMAS[semantics]
+  const parsed = schema.safeParse(config ?? {})
+  if (!parsed.success) return undefined
+  const data = parsed.data
   switch (semantics) {
     case 'appointment':
-      return asString(cfg.kind)
+      return 'kind' in data ? data.kind : undefined
     case 'task':
-      return asString(cfg.assignee)
+      return 'assignee' in data ? data.assignee : undefined
     case 'message':
-      return asString(cfg.channel)
-    case 'form': {
-      const questions = asArray(cfg.questions)
-      return questions ? `${questions.length}` : undefined
-    }
+      return 'channel' in data ? data.channel : undefined
+    case 'form':
+      return 'questions' in data && data.questions ? `${data.questions.length}` : undefined
     case 'decision':
-      return asString(cfg.criterion)
+      return 'criterion' in data ? data.criterion : undefined
     case 'milestone':
-      return asString(cfg.note)
+      return 'note' in data ? data.note : undefined
     case 'wait':
-      return asString(cfg.event_type)
+      return 'event_type' in data ? data.event_type : undefined
     case 'pathway_link':
-      return asString(cfg.mode)
+      return 'mode' in data ? data.mode : undefined
     default:
       return undefined
   }
