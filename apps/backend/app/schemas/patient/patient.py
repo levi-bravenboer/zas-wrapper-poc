@@ -27,6 +27,16 @@ class PatientRead(BaseModel):
     external_version: str | None = None
     last_synced_at: datetime | None = None
     identifiers: list[PatientIdentifierRead] = []
+    # Audit metadata — surfaced for the patient profile history panel.
+    # These columns are stamped by the `before_flush` audit hook on the base
+    # entity classes; exposing them lets the UI render a minimal timeline
+    # without a dedicated audit-log table.
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None = None
+    created_by: UUID
+    updated_by: UUID
+    deleted_by: UUID | None = None
 
 
 class PatientCreate(BaseModel):

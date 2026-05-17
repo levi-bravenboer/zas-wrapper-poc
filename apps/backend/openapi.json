@@ -2634,6 +2634,50 @@
             "type": "array",
             "title": "Identifiers",
             "default": []
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By"
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Updated By"
+          },
+          "deleted_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted By"
           }
         },
         "type": "object",
@@ -2643,7 +2687,11 @@
           "given_name",
           "family_name",
           "gender",
-          "source"
+          "source",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
         ],
         "title": "PatientRead"
       },
