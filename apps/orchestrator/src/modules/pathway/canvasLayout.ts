@@ -1,4 +1,4 @@
-import type { PathwayLane, PathwayPhase } from './types'
+import type { PathwayBlock, PathwayLane, PathwayPhase } from './types'
 
 export const CANVAS_LEFT_PAD = 96
 export const PHASE_COL_WIDTH = 380
@@ -11,6 +11,7 @@ export const LANE_INSET = 58
 export const BLOCK_WIDTH = 240
 export const BLOCK_HEIGHT = 64
 export const BLOCK_DEFAULT_X = 70
+export const BLOCK_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT / 2
 
 export function phaseColumnX(index: number): number {
   return CANVAS_LEFT_PAD + index * PHASE_COL_WIDTH
@@ -83,6 +84,16 @@ export function buildCanvasGeometry(
       laneEntries.find((e) => flowY < e.y + e.h)?.id ?? laneEntries.at(-1)?.id ?? null,
     flowWidth,
     flowHeight,
+  }
+}
+
+export function blockOrigin(
+  block: Pick<PathwayBlock, 'phase_id' | 'lane_id' | 'x' | 'y'>,
+  geometry: CanvasGeometry,
+): { x: number; y: number } {
+  return {
+    x: geometry.phaseX(block.phase_id) + (block.x || BLOCK_DEFAULT_X),
+    y: geometry.laneY(block.lane_id) + (block.y || BLOCK_DEFAULT_Y),
   }
 }
 

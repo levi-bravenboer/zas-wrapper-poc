@@ -7,16 +7,15 @@ import { sortByOrd } from '@/lib/utils/ordinal'
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
+  blockOrigin,
   laneAccent,
   phaseTint,
   type CanvasGeometry,
 } from '../../canvasLayout'
 import type { PathwayBlock, PathwayEdge, PathwayLane, PathwayPhase } from '../../types'
 
-const MAP_W = 220
-const MAP_H = 130
-const BLOCK_DEFAULT_X = 70
-const BLOCK_DEFAULT_Y = 26
+const MINIMAP_WIDTH = 220
+const MINIMAP_HEIGHT = 130
 
 type Props = {
   phases: PathwayPhase[]
@@ -64,18 +63,13 @@ export function BuilderMiniMap({
   const bboxMaxY = Math.max(flowH, vpY + vpH)
   const bboxW = Math.max(1, bboxMaxX - bboxMinX)
   const bboxH = Math.max(1, bboxMaxY - bboxMinY)
-  const scale = Math.min(MAP_W / bboxW, MAP_H / bboxH)
+  const scale = Math.min(MINIMAP_WIDTH / bboxW, MINIMAP_HEIGHT / bboxH)
   const inv = scale > 0 ? 1 / scale : 1
-  const offsetX = (MAP_W - bboxW * scale) / 2
-  const offsetY = (MAP_H - bboxH * scale) / 2
+  const offsetX = (MINIMAP_WIDTH - bboxW * scale) / 2
+  const offsetY = (MINIMAP_HEIGHT - bboxH * scale) / 2
 
   function blockBox(block: PathwayBlock): { x: number; y: number; w: number; h: number } {
-    return {
-      x: geometry.phaseX(block.phase_id) + (block.x || BLOCK_DEFAULT_X),
-      y: geometry.laneY(block.lane_id) + (block.y || BLOCK_DEFAULT_Y),
-      w: BLOCK_WIDTH,
-      h: BLOCK_HEIGHT,
-    }
+    return { ...blockOrigin(block, geometry), w: BLOCK_WIDTH, h: BLOCK_HEIGHT }
   }
 
   function onClick(event: React.MouseEvent<SVGSVGElement>): void {
@@ -90,13 +84,13 @@ export function BuilderMiniMap({
     <svg
       role="img"
       aria-label={ariaLabel}
-      width={MAP_W}
-      height={MAP_H}
-      viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+      width={MINIMAP_WIDTH}
+      height={MINIMAP_HEIGHT}
+      viewBox={`0 0 ${MINIMAP_WIDTH} ${MINIMAP_HEIGHT}`}
       onClick={onClick}
       className="block cursor-pointer"
     >
-      <rect x={0} y={0} width={MAP_W} height={MAP_H} fill="rgba(11,26,23,0.04)" />
+      <rect x={0} y={0} width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} fill="rgba(11,26,23,0.04)" />
       <g
         transform={`translate(${offsetX - bboxMinX * scale} ${offsetY - bboxMinY * scale}) scale(${scale})`}
       >
