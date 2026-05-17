@@ -16,6 +16,7 @@ export const organisationReadSchema = z.object({
   type_code: z.string(),
   type_system: z.string().nullable(),
   type_display: z.string().nullable(),
+  sort_index: z.number().int().nonnegative(),
 }) satisfies z.ZodType<components['schemas']['OrganisationRead']>
 export type OrganisationRead = z.infer<typeof organisationReadSchema>
 
@@ -25,3 +26,11 @@ export const organisationListSchema = z.object({
 
 export type OrganisationCreatePayload = components['schemas']['OrganisationCreate']
 export type OrganisationUpdatePayload = components['schemas']['OrganisationUpdate']
+
+export type OrganisationTreeMove = components['schemas']['OrganisationTreeMove']
+export type OrganisationTreeUpdatePayload = components['schemas']['OrganisationTreeUpdate']
+
+// Frontend-only guard mirroring the backend Field(min/max). Trips the
+// Save button rather than letting a runaway editor blow past the cap.
+export const PENDING_MOVES_MIN = 1
+export const PENDING_MOVES_MAX = 500

@@ -229,6 +229,23 @@ export interface paths {
         patch: operations["update_organisation"];
         trace?: never;
     };
+    "/admin/organisations/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Organisation Tree */
+        patch: operations["patch_organisation_tree"];
+        trace?: never;
+    };
     "/patients": {
         parameters: {
             query?: never;
@@ -553,6 +570,25 @@ export interface components {
             type_system: string | null;
             /** Type Display */
             type_display: string | null;
+            /** Sort Index */
+            sort_index: number;
+        };
+        /** OrganisationTreeMove */
+        OrganisationTreeMove: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Organisation Id */
+            parent_organisation_id: string | null;
+            /** Sort Index */
+            sort_index: number;
+        };
+        /** OrganisationTreeUpdate */
+        OrganisationTreeUpdate: {
+            /** Moves */
+            moves: components["schemas"]["OrganisationTreeMove"][];
         };
         /**
          * OrganisationType
@@ -1541,6 +1577,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganisationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_organisation_tree: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationTreeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationListResponse"];
                 };
             };
             /** @description Validation Error */
