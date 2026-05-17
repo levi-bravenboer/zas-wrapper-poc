@@ -422,3 +422,9 @@ Note: `practitioner_role_code` is a closed Postgres enum (`gp | physiotherapist 
 - Source: practitioner-role-split change
 
 Note: `Practitioner` is tenant-owned (1 row per `User`). FHIR models `Practitioner` as a globally identifiable resource that can hold `PractitionerRole` rows in multiple organisations across tenants. Land when we have a real federation requirement (e.g. a GP who consults across two ZAS-style customers). Additive: introduce a tenant-shared `practitioners` projection plus a federation identifier; existing rows keep their tenant scoping.
+
+### BL-064 — Per-semantic Zod schemas for `PathwayBlock.config`
+- Tier: [mvp]
+- Source: style-check review (2026-05-17), follows pathway-block-redesign
+
+Note: Backend transmits `PathwayBlock.config` as opaque JSON validated by per-block-type JSON Schema. openapi-typescript renders it as `Record<string, unknown>`, so the frontend cannot statically narrow `config.kind`, `config.questions`, etc. — see `apps/orchestrator/src/modules/pathway/blockCatalogue.utils.ts` `asString` / `asArray` shims feeding `blockSemanticsSummary`. Proper fix: define a Zod schema per `BlockSemantics` (`AppointmentConfig`, `TaskConfig`, `FormConfig`, `WaitConfig`, `PathwayLinkConfig`, …), parse on read, and expose a discriminated union `ConfigBySemantics` keyed on `block.semantics`. Then catalogue helpers + inspector forms read strongly-typed fields, the runtime narrowing shims disappear, and divergence between backend `config_schema` and frontend rendering becomes a Zod parse error instead of a silent `undefined`. Best folded into `pathway-config-forms` — that change already needs per-semantic schemas to render form-questions / event-type-picker / pathway-picker widgets.
