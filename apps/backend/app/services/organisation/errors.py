@@ -19,3 +19,9 @@ class OrganisationInUseError(AppError):
     code = "conflict.organisation.in_use"
     status_code = 409
     message = "Organisation is still referenced by other resources."
+
+
+class OrganisationTreeCycleError(AppError):
+    code = "organisation_tree_cycle"
+    status_code = 409
+    message = "Organisation tree move would introduce a cycle."

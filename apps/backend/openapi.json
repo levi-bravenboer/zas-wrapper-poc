@@ -690,6 +690,47 @@
         }
       }
     },
+    "/admin/organisations/tree": {
+      "patch": {
+        "tags": [
+          "organisations"
+        ],
+        "summary": "Patch Organisation Tree",
+        "operationId": "patch_organisation_tree",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationTreeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/patients": {
       "get": {
         "tags": [
@@ -2014,6 +2055,10 @@
               }
             ],
             "title": "Type Display"
+          },
+          "sort_index": {
+            "type": "integer",
+            "title": "Sort Index"
           }
         },
         "type": "object",
@@ -2023,9 +2068,63 @@
           "name",
           "type_code",
           "type_system",
-          "type_display"
+          "type_display",
+          "sort_index"
         ],
         "title": "OrganisationRead"
+      },
+      "OrganisationTreeMove": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_organisation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Organisation Id"
+          },
+          "sort_index": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Sort Index"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "parent_organisation_id",
+          "sort_index"
+        ],
+        "title": "OrganisationTreeMove"
+      },
+      "OrganisationTreeUpdate": {
+        "properties": {
+          "moves": {
+            "items": {
+              "$ref": "#/components/schemas/OrganisationTreeMove"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Moves"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "moves"
+        ],
+        "title": "OrganisationTreeUpdate"
       },
       "OrganisationType": {
         "properties": {
