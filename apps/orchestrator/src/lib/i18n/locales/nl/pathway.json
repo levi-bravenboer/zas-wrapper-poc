@@ -82,7 +82,138 @@
     "deleteConfirmTitle": "Blok verwijderen?",
     "deleteConfirmBody": "Dit verwijdert het blok en de bijbehorende verbindingen.",
     "configHeader": "Configuratie",
-    "inspectorPending": "Geen inspector beschikbaar"
+    "parseError": {
+      "title": "Configuratie kan niet gelezen worden",
+      "reset": "Terugzetten naar standaard"
+    },
+    "edgeTitle": "Verbinding bewerken",
+    "edgeKindHeader": "Timing"
+  },
+  "inspector": {
+    "appointment": {
+      "kind": "Type afspraak",
+      "kindPlaceholder": "Bijv. consult",
+      "location": "Locatie",
+      "locationPlaceholder": "Bijv. AZ Sint-Maarten"
+    },
+    "task": {
+      "assignee": "Toegewezen aan",
+      "assigneePlaceholder": "Kies een rol",
+      "assigneeOption": {
+        "caregiver": "Zorgverlener",
+        "admin": "Beheerder"
+      },
+      "description": "Omschrijving",
+      "descriptionPlaceholder": "Wat moet er gebeuren?"
+    },
+    "message": {
+      "channel": "Kanaal",
+      "channelPlaceholder": "Kies een kanaal",
+      "channelOption": {
+        "email": "E-mail",
+        "sms": "Sms",
+        "push": "Push",
+        "in_app": "In-app"
+      },
+      "subject": "Onderwerp",
+      "subjectPlaceholder": "Korte titel",
+      "body": "Tekst",
+      "bodyPlaceholder": "Wat staat er in het bericht?",
+      "ctaLabel": "Knoptekst",
+      "ctaLabelPlaceholder": "Bijv. Bevestigen",
+      "ctaTarget": "Knopdoel",
+      "ctaTargetPlaceholder": "URL of pad"
+    },
+    "form": {
+      "questions": "Vragen",
+      "addQuestion": "Vraag toevoegen",
+      "empty": "Nog geen vragen toegevoegd.",
+      "questionN": "Vraag {{n}}",
+      "label": "Label",
+      "labelPlaceholder": "Wat moet de patiënt zien?",
+      "type": "Vraagtype",
+      "typeOption": {
+        "text": "Korte tekst",
+        "long_text": "Lange tekst",
+        "single_choice": "Eén keuze",
+        "multi_choice": "Meerdere keuzes",
+        "scale": "Schaal",
+        "date": "Datum",
+        "file": "Bestand"
+      },
+      "options": "Opties",
+      "optionsHint": "Komma-gescheiden",
+      "optionsPlaceholder": "Bijv. ja, nee, weet niet",
+      "required": "Verplicht",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "remove": "Verwijder vraag"
+    },
+    "decision": {
+      "criterion": "Criterium",
+      "criterionHint": "Vrije tekst voor PoC; runtime-evaluatie volgt later.",
+      "criterionPlaceholder": "Bijv. pijnscore >= 4",
+      "branches": "Takken",
+      "noBranches": "Nog geen takken gedefinieerd."
+    },
+    "milestone": {
+      "note": "Notitie",
+      "notePlaceholder": "Waarom is dit een mijlpaal?"
+    },
+    "wait": {
+      "eventType": "Wacht op",
+      "eventTypePlaceholder": "Kies een gebeurtenis",
+      "timeoutDays": "Time-out (dagen)",
+      "onTimeout": "Bij time-out",
+      "onTimeoutPlaceholder": "Kies actie",
+      "onTimeoutOption": {
+        "advance": "Doorgaan",
+        "escalate": "Escaleren"
+      },
+      "sourceBlock": "Bronblok",
+      "sourceBlockHint": "Optioneel: koppel aan het blok dat de gebeurtenis triggert.",
+      "sourceBlockPlaceholder": "Kies een blok",
+      "noOtherBlocks": "Geen andere blokken beschikbaar."
+    },
+    "pathwayLink": {
+      "target": "Doel-zorgpad",
+      "targetPlaceholder": "Kies een zorgpad",
+      "noPathways": "Geen andere zorgpaden beschikbaar.",
+      "mode": "Modus",
+      "modePlaceholder": "Kies modus",
+      "modeOption": {
+        "blocking": "Blokkerend",
+        "fire_and_forget": "Vuren en vergeten"
+      },
+      "contextMapping": "Context-koppeling",
+      "contextMappingHint": "Sleutel-waarde paren die meegegeven worden aan het sub-zorgpad.",
+      "contextMappingEmpty": "Nog geen koppelingen.",
+      "contextKeyPlaceholder": "Sleutel",
+      "contextValuePlaceholder": "Waarde",
+      "contextRemove": "Verwijder koppeling",
+      "addMapping": "Koppeling toevoegen"
+    },
+    "edge": {
+      "title": "Verbinding",
+      "kindCompletion": "Bij voltooiing",
+      "kindMarker": "Bij tijdmarker",
+      "kindImmediate": "Direct",
+      "kindBranch": "Bij vertakking",
+      "delayValue": "Vertraging",
+      "delayValuePlaceholder": "Kies een waarde",
+      "marker": "Tijdmarker",
+      "markerPlaceholder": "Kies een marker",
+      "offsetValue": "Offset",
+      "offsetValuePlaceholder": "Kies een waarde",
+      "offsetDirection": "Richting",
+      "noTimingValues": "Geen timing-waardes beschikbaar.",
+      "noMarkers": "Geen tijdmarkers beschikbaar.",
+      "noBranches": "Geen branches op bronblok",
+      "branch": "Tak",
+      "branchPlaceholder": "Kies een tak",
+      "immediateHint": "Volgend blok start direct na voltooiing.",
+      "delete": "Verbinding verwijderen"
+    }
   },
   "minimap": {
     "fit": "Passend maken",

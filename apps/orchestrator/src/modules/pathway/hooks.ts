@@ -5,6 +5,8 @@ import {
   deletePathway,
   getPathway,
   listBlockTypes,
+  listEdgeOffsetDirections,
+  listEdgeTimingKinds,
   listPathways,
   listPhaseTemplates,
   replacePathway,
@@ -14,6 +16,8 @@ import type {
   PathwayBlockType,
   PathwayCreate,
   PathwayDefinitionReplace,
+  PathwayEdgeOffsetDirection,
+  PathwayEdgeTimingKind,
   PathwayPhaseTemplate,
   PathwaySummary,
   PathwayWithVersion,
@@ -78,6 +82,22 @@ export function usePathwayPhaseTemplates() {
   return useQuery<PathwayPhaseTemplate[]>({
     queryKey: pathwayKeys.phaseTemplates(),
     queryFn: listPhaseTemplates,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+}
+
+export function useEdgeTimingKinds() {
+  return useQuery<PathwayEdgeTimingKind[]>({
+    queryKey: pathwayKeys.edgeTimingKinds(),
+    queryFn: listEdgeTimingKinds,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+}
+
+export function useEdgeOffsetDirections() {
+  return useQuery<PathwayEdgeOffsetDirection[]>({
+    queryKey: pathwayKeys.edgeOffsetDirections(),
+    queryFn: listEdgeOffsetDirections,
     staleTime: Number.POSITIVE_INFINITY,
   })
 }

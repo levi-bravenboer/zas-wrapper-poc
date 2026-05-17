@@ -4,6 +4,8 @@ import type {
   PathwayBlockType,
   PathwayCreate,
   PathwayDefinitionReplace,
+  PathwayEdgeOffsetDirection,
+  PathwayEdgeTimingKind,
   PathwayPhaseTemplate,
   PathwaySummary,
   PathwayWithVersion,
@@ -76,6 +78,22 @@ export async function listPhaseTemplates(): Promise<PathwayPhaseTemplate[]> {
   const result = await api.GET('/pathways/phase-templates', {})
   if (!result.data) {
     throw pathwayError('Failed to load phase templates', result.response.status)
+  }
+  return result.data
+}
+
+export async function listEdgeTimingKinds(): Promise<PathwayEdgeTimingKind[]> {
+  const result = await api.GET('/pathways/edge-timing-kinds', {})
+  if (!result.data) {
+    throw pathwayError('Failed to load edge timing kinds', result.response.status)
+  }
+  return result.data
+}
+
+export async function listEdgeOffsetDirections(): Promise<PathwayEdgeOffsetDirection[]> {
+  const result = await api.GET('/pathways/edge-offset-directions', {})
+  if (!result.data) {
+    throw pathwayError('Failed to load edge offset directions', result.response.status)
   }
   return result.data
 }
