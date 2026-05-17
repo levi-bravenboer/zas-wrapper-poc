@@ -117,15 +117,19 @@
 
 ### 3e. Save action
 
-- [ ] 3.14 Implement `Save` button + dirty indicator
-- [ ] 3.15 Wire save → `PUT /pathways/{id}` with the full current definition
-- [ ] 3.16 Clear dirty indicator on success; keep dirty + surface error toast on failure
-- [x] 3.17 Re-evaluate auto-save vs explicit save based on prototyping; capture decision in `design.md` (D30 + D31: concept = autosave 800ms, published = manual save per §17)
+Aligned with D30 + D31 (concept = autosave 800ms; published = read-only via fork-on-edit). No `Save` button on concept. Top-right button is `Publish version` — wired in Phase 5 (5.10). Concept builder ships with autosave + save-state pill only.
+
+- [ ] 3.14 Implement autosave hook (`useAutosavePathway`) debounced at 800ms after the last dirty-marking action; flushes on route leave + tab visibility-hidden; cancels pending flush on unmount
+- [ ] 3.15 Wire autosave → `PUT /pathways/{id}` with the full current definition; reuse mutation infra; backend resolves to the current concept version per `history-spec.md` §6
+- [ ] 3.16 Implement save-state pill (`pathway.status.{clean,dirty,saving,error}`) per `builder-ui-spec.md` §17; pill replaces explicit `Save` button in the topbar history-group cluster
+- [ ] 3.17 (DONE) Re-evaluate auto-save vs explicit save based on prototyping; capture decision in `design.md` (D30 + D31: concept = autosave 800ms, published = manual save per §17)
+- [ ] 3.17a Render `Publish version` button in the topbar right cluster as a disabled placeholder gated on Phase 5 wiring (i18n key `pathway.topbar.publish`, replaces the prior `pathway.topbar.save` key — drop `save` when no callers remain)
+- [ ] 3.17b Block all mutating actions on read-only versions at the dispatch boundary so Phase 5's fork-on-edit intercept (5.11/5.12) has a single hook point — concept builder asserts `version.status === 'concept'` before applying any reducer mutation
 
 ### 3f. Polish + tests
 
-- [ ] 3.18 Vitest coverage: palette renders catalogue, add-block-marks-dirty, save round-trip
-- [ ] 3.19 Playwright happy path: open builder → add block → configure → save → reload → state preserved
+- [ ] 3.18 Vitest coverage: palette renders catalogue, add-block-marks-dirty, autosave debounce + flush-on-leave round-trip, save-state pill transitions (clean→dirty→saving→clean / →error)
+- [ ] 3.19 Playwright happy path: open builder → add block → configure → wait for autosave-idle → reload → state preserved
 - [ ] 3.20 Update `apps/orchestrator/AGENTS.md` with a `Pathway builder` section (module layout, query-key namespace, canvas package choice)
 
 ### 3g. Phase 3 review gate
@@ -202,9 +206,9 @@ Implements `pathway-builder` requirements added in `specs/pathway-builder/spec.m
 
 ### 5d. Publish + fork-on-edit flows
 
-- [ ] 5.10 Publish modal — optional `label` (max 120) + optional `note` (max 2000) + required `clinically_approved` checkbox; confirm disabled until checkbox ticked; on success toast `Versie v.{n} gepubliceerd`
-- [ ] 5.11 Fork-on-edit intercept — any mutation against a read-only version opens the `Nieuwe versie nodig` modal; on confirm calls fork-from-publish, navigates to bare URL, replays the intercepted mutation as the first edit
-- [ ] 5.12 Surface 409 `pathway_version_immutable` from the autosave path identically to the click-intercept (same modal)
+- [ ] 5.10 `Publish version` button (`modules/pathway/components/topbar/PublishButton.tsx`) in the topbar right cluster, label `pathway.topbar.publish`, primary variant; disabled while autosave save-state ≠ `clean` or when `isReadOnly`; click opens the publish modal — optional `label` (max 120) + optional `note` (max 2000) + required `clinically_approved` checkbox; confirm disabled until checkbox ticked; on success toast `Versie v.{n} gepubliceerd`, optimistic concept-disappear so bare URL falls back to the new published
+- [ ] 5.11 Fork-on-edit intercept — the dispatch-boundary guard added in 3.17b becomes the intercept hook: when a mutation is attempted against a read-only version (banner variant `published-fallback`), open the `Nieuwe versie nodig` modal; on confirm calls `POST /pathways/{id}/versions/{versionId}/fork-from-publish`, navigates to bare URL with router state `pendingMutation`, replays it as the first edit on the new concept; cancel discards the attempted mutation and keeps the read-only view
+- [ ] 5.12 Surface 409 `pathway_version_immutable` from the autosave path identically to the click-intercept (same modal); autosave debounce flush is the race window — handler retries against the resolved new concept after fork-from-publish succeeds
 - [ ] 5.13 Restore mutation hook `useRestoreVersion()` flushes in-memory undo stack on success; toast `pathway.history.restore.success`
 
 ### 5e. Tests + review
