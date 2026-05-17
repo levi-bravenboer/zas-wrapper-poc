@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 
+import type { ReadOnlyVariant } from '../hooks/useResolvedVersion'
 import type {
   PathwayBare,
   PathwayBlockType,
@@ -23,6 +24,8 @@ type ReadyProps = {
   state: 'ready'
   pathway: PathwayBare
   version: PathwayVersionDefinition
+  isReadOnly: boolean
+  readOnlyVariant: ReadOnlyVariant | null
   catalogue: PathwayBlockType[]
   phaseTemplates: PathwayPhaseTemplate[]
   timingKinds: PathwayEdgeTimingKind[]
@@ -79,6 +82,8 @@ export function BuilderShellStateRenderer(props: Props): ReactElement {
     <PathwayBuilderShell
       pathway={props.pathway}
       version={props.version}
+      isReadOnly={props.isReadOnly}
+      readOnlyVariant={props.readOnlyVariant}
       catalogue={props.catalogue}
       phaseTemplates={props.phaseTemplates}
       timingKinds={props.timingKinds}

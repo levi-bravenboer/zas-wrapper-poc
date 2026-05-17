@@ -5,26 +5,26 @@ import { BuilderShellStateRenderer } from '@/modules/pathway/components/BuilderS
 import {
   useEdgeOffsetDirections,
   useEdgeTimingKinds,
-  usePathway,
   usePathwayBlocks,
   usePathwayPhaseTemplates,
 } from '@/modules/pathway/hooks'
+import { useResolvedVersion } from '@/modules/pathway/hooks/useResolvedVersion'
 
-export const Route = createFileRoute('/_auth/pathways/$pathwayId')({
-  component: PathwayBuilderPage,
+export const Route = createFileRoute('/_auth/pathways/$pathwayId/v/$versionId')({
+  component: PathwayBuilderHistoricalPage,
   staticData: { breadcrumb: 'Builder' },
 })
 
-function PathwayBuilderPage(): ReactElement {
-  const { pathwayId } = Route.useParams()
-  const pathway = usePathway(pathwayId)
+function PathwayBuilderHistoricalPage(): ReactElement {
+  const { pathwayId, versionId } = Route.useParams()
+  const resolved = useResolvedVersion(pathwayId, versionId)
   const blocks = usePathwayBlocks()
   const templates = usePathwayPhaseTemplates()
   const timingKinds = useEdgeTimingKinds()
   const offsetDirections = useEdgeOffsetDirections()
 
   if (
-    pathway.isLoading ||
+    resolved.status === 'loading' ||
     blocks.isLoading ||
     templates.isLoading ||
     timingKinds.isLoading ||
@@ -33,38 +33,31 @@ function PathwayBuilderPage(): ReactElement {
     return <BuilderShellStateRenderer state="loading" />
   }
 
-  if (pathway.isError) {
-    const status =
-      pathway.error && typeof pathway.error === 'object' && 'status' in pathway.error
-        ? (pathway.error as { status?: number }).status
-        : undefined
-    if (status === 404) return <BuilderShellStateRenderer state="not-found" />
+  if (resolved.status === 'not-found') {
+    return <BuilderShellStateRenderer state="not-found" />
+  }
+
+  if (resolved.status === 'error') {
     return (
       <BuilderShellStateRenderer
         state="error"
-        error={pathway.error instanceof Error ? pathway.error : new Error('Unknown error')}
-        onRetry={() => {
-          void pathway.refetch()
-        }}
+        error={resolved.error}
+        onRetry={resolved.refetch}
       />
     )
   }
 
-  if (
-    !pathway.data ||
-    !blocks.data ||
-    !templates.data ||
-    !timingKinds.data ||
-    !offsetDirections.data
-  ) {
+  if (!blocks.data || !templates.data || !timingKinds.data || !offsetDirections.data) {
     return <BuilderShellStateRenderer state="loading" />
   }
 
   return (
     <BuilderShellStateRenderer
       state="ready"
-      pathway={pathway.data.pathway}
-      version={pathway.data.version}
+      pathway={resolved.pathway}
+      version={resolved.version}
+      isReadOnly={resolved.isReadOnly}
+      readOnlyVariant={resolved.readOnlyVariant}
       catalogue={blocks.data}
       phaseTemplates={templates.data}
       timingKinds={timingKinds.data}

@@ -1,19 +1,23 @@
 import { Link } from '@tanstack/react-router'
-import { History, Redo2, Undo2, Workflow } from 'lucide-react'
+import { Redo2, Undo2, Workflow } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { formatTime } from '@/lib/utils/datetime'
 
-import type { PathwayBare } from '../../types'
+import type { PathwayBare, PathwayVersionDefinition } from '../../types'
 
+import { CrumbVersionMarker } from './CrumbVersionMarker'
 import { EditableTitle } from './EditableTitle'
 import { PublishButton } from './PublishButton'
 import { SaveStatusPill, type SaveState } from './SaveStatusPill'
+import { VersionSwitchChip } from './VersionSwitchChip'
 
 type Props = {
   pathway: PathwayBare
+  version: PathwayVersionDefinition
+  isReadOnly: boolean
   blockCount: number
   phaseCount: number
   saveState: SaveState
@@ -22,11 +26,14 @@ type Props = {
   onUndo: () => void
   onRedo: () => void
   onPublish: () => void
+  onOpenHistory: () => void
   onRename: (name: string) => void
 }
 
 export function BuilderTopbar({
   pathway,
+  version,
+  isReadOnly,
   blockCount,
   phaseCount,
   saveState,
@@ -35,10 +42,12 @@ export function BuilderTopbar({
   onUndo,
   onRedo,
   onPublish,
+  onOpenHistory,
   onRename,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const time = formatTime(pathway.updated_at)
+  const isHistorical = isReadOnly && version.status === 'published'
 
   return (
     <header
@@ -65,12 +74,15 @@ export function BuilderTopbar({
       </Link>
 
       <div className="flex min-w-0 flex-col gap-[1px]">
-        <Link
-          to="/pathways"
-          className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-        >
-          {t('crumbRoot')}
-        </Link>
+        <div className="inline-flex items-center gap-2">
+          <Link
+            to="/pathways"
+            className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+          >
+            {t('crumbRoot')}
+          </Link>
+          <CrumbVersionMarker version={version} isHistorical={isHistorical} />
+        </div>
         <div className="inline-flex items-center gap-2">
           <EditableTitle value={pathway.name} onCommit={onRename} />
           <span className="text-[11px] tabular-nums text-muted-foreground">
@@ -79,6 +91,12 @@ export function BuilderTopbar({
           </span>
         </div>
       </div>
+
+      <VersionSwitchChip
+        pathwayId={pathway.id}
+        currentVersion={version}
+        onOpenHistory={onOpenHistory}
+      />
 
       <SaveStatusPill state={saveState} />
 
@@ -107,12 +125,7 @@ export function BuilderTopbar({
         <Redo2 className="size-4" strokeWidth={1.8} />
       </Button>
 
-      <Button type="button" variant="ghost" disabled aria-label={t('topbar.history')}>
-        <History className="size-4" strokeWidth={1.8} />
-        <span className="hidden md:inline">{t('topbar.history')}</span>
-      </Button>
-
-      <PublishButton disabled={saveState !== 'clean'} onClick={onPublish} />
+      <PublishButton disabled={isReadOnly || saveState !== 'clean'} onClick={onPublish} />
     </header>
   )
 }

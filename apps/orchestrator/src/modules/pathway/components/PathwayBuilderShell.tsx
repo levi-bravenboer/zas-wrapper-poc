@@ -1,5 +1,5 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import { useCallback, useMemo, type ReactElement } from 'react'
+import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -8,6 +8,7 @@ import { sortByOrd } from '@/lib/utils/ordinal'
 import { LANE_ROW_HEIGHT } from '../canvasLayout'
 import { useAutosavePathway } from '../hooks/useAutosavePathway'
 import { useBuilderKeyboard } from '../hooks/useBuilderKeyboard'
+import type { ReadOnlyVariant } from '../hooks/useResolvedVersion'
 import type {
   PathwayBare,
   PathwayBlockType,
@@ -28,12 +29,18 @@ import { useDragContext } from './canvas/useDragContext'
 import { BuilderDock } from './dock/BuilderDock'
 import { BuilderDrawer } from './drawer/BuilderDrawer'
 import { EdgeInspector } from './drawer/EdgeInspector'
+import { GeschiedenisDrawer } from './drawer/GeschiedenisDrawer'
+import { ReadOnlyBanner } from './shell/ReadOnlyBanner'
 import { BuilderSubbar } from './subbar/BuilderSubbar'
 import { BuilderTopbar } from './topbar/BuilderTopbar'
+import { ForkOnEditDialog } from './version/ForkOnEditDialog'
+import { PublishDialog } from './version/PublishDialog'
 
 type Props = {
   pathway: PathwayBare
   version: PathwayVersionDefinition
+  isReadOnly: boolean
+  readOnlyVariant: ReadOnlyVariant | null
   catalogue: PathwayBlockType[]
   phaseTemplates: PathwayPhaseTemplate[]
   timingKinds: PathwayEdgeTimingKind[]
@@ -43,6 +50,8 @@ type Props = {
 export function PathwayBuilderShell({
   pathway,
   version,
+  isReadOnly,
+  readOnlyVariant,
   catalogue,
   phaseTemplates,
   timingKinds,
@@ -54,6 +63,8 @@ export function PathwayBuilderShell({
       <Inner
         pathway={pathway}
         version={version}
+        isReadOnly={isReadOnly}
+        readOnlyVariant={readOnlyVariant}
         catalogue={catalogue}
         phaseTemplates={phaseTemplates}
         timingKinds={timingKinds}
@@ -74,6 +85,8 @@ const READ_ONLY_PASSTHROUGH: ReadonlySet<BuilderAction['type']> = new Set([
 function Inner({
   pathway,
   version,
+  isReadOnly,
+  readOnlyVariant,
   catalogue,
   phaseTemplates,
   timingKinds,
@@ -81,15 +94,19 @@ function Inner({
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const { state, dispatch: rawDispatch, isDirty } = useBuilderState(version)
-
-  const isReadOnly = state.version.status !== 'concept'
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [publishOpen, setPublishOpen] = useState(false)
+  const [forkOnEditOpen, setForkOnEditOpen] = useState(false)
 
   const dispatch = useCallback(
     (action: BuilderAction) => {
-      if (isReadOnly && !READ_ONLY_PASSTHROUGH.has(action.type)) return
+      if (isReadOnly && !READ_ONLY_PASSTHROUGH.has(action.type)) {
+        if (readOnlyVariant === 'published-fallback') setForkOnEditOpen(true)
+        return
+      }
       rawDispatch(action)
     },
-    [isReadOnly, rawDispatch],
+    [isReadOnly, rawDispatch, readOnlyVariant],
   )
 
   const { saveState, flush, onRename } = useAutosavePathway({
@@ -197,10 +214,17 @@ function Inner({
   return (
     <div
       data-slot="pathway-builder-shell"
-      className="grid h-[100dvh] min-h-0 grid-rows-[var(--builder-row-topbar)_var(--builder-row-subbar)_1fr]"
+      data-readonly={isReadOnly ? 'true' : undefined}
+      className={
+        isReadOnly
+          ? 'is-readonly grid h-[100dvh] min-h-0 grid-rows-[var(--builder-row-topbar)_auto_var(--builder-row-subbar)_1fr]'
+          : 'grid h-[100dvh] min-h-0 grid-rows-[var(--builder-row-topbar)_var(--builder-row-subbar)_1fr]'
+      }
     >
       <BuilderTopbar
         pathway={pathway}
+        version={state.version}
+        isReadOnly={isReadOnly}
         blockCount={blocks.length}
         phaseCount={phases.length}
         saveState={saveState}
@@ -208,9 +232,17 @@ function Inner({
         canRedo={!!state.history.future.length}
         onUndo={() => dispatch({ type: 'undo' })}
         onRedo={() => dispatch({ type: 'redo' })}
-        onPublish={() => undefined}
+        onPublish={() => setPublishOpen(true)}
+        onOpenHistory={() => setHistoryOpen(true)}
         onRename={onRename}
       />
+      {isReadOnly && readOnlyVariant && (
+        <ReadOnlyBanner
+          pathwayId={pathway.id}
+          version={state.version}
+          variant={readOnlyVariant}
+        />
+      )}
       <BuilderSubbar
         phases={phases}
         templates={phaseTemplates}
@@ -278,6 +310,22 @@ function Inner({
           />
         )}
       </main>
+      <GeschiedenisDrawer
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        pathwayId={pathway.id}
+      />
+      <PublishDialog
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        pathwayId={pathway.id}
+      />
+      <ForkOnEditDialog
+        open={forkOnEditOpen}
+        onOpenChange={setForkOnEditOpen}
+        pathwayId={pathway.id}
+        sourceVersionId={version.id}
+      />
     </div>
   )
 }
