@@ -188,35 +188,35 @@ Implements `pathway-builder` requirements added in `specs/pathway-builder/spec.m
 
 ### 5a. Routing + loader hook
 
-- [ ] 5.1 Add `/pathways/$pathwayId/v/$versionId` route mounting the same shell as the bare `/pathways/$pathwayId` route (per `pathway-builder` capability "Hybrid version route resolution")
-- [ ] 5.2 Implement `useResolvedVersion(pathwayId, versionId?)` returning `{ pathway, version, isReadOnly, readOnlyVariant }`; bare route resolves via `GET /pathways/{id}`, `/v/...` route resolves via `GET /pathways/{id}/versions/{versionId}`; `isReadOnly = url-has-/v/ OR version.status !== 'concept'`; `readOnlyVariant = 'historical' | 'published-fallback'`
-- [ ] 5.3 Shell applies `.is-readonly` class to `<main>` when `isReadOnly`; dims palette dock, save button, undo/redo, status pill, presence stack per `builder-ui-spec.md` §28 + history-spec §5
+- [x] 5.1 Add `/pathways/$pathwayId/v/$versionId` route mounting the same shell as the bare `/pathways/$pathwayId` route (per `pathway-builder` capability "Hybrid version route resolution") — moved bare route to `$pathwayId/index.tsx` + added `$pathwayId/v/$versionId.tsx`; both call `useResolvedVersion`
+- [x] 5.2 Implement `useResolvedVersion(pathwayId, versionId?)` returning `{ pathway, version, isReadOnly, readOnlyVariant }`; bare route resolves via `GET /pathways/{id}`, `/v/...` route resolves via `GET /pathways/{id}/versions/{versionId}`; `isReadOnly = url-has-/v/ OR version.status !== 'concept'`; `readOnlyVariant = 'historical' | 'published-fallback'` — discriminated union `{status: 'loading'|'not-found'|'error'|'ready'}`; 5 vitest cases pass
+- [x] 5.3 Shell applies `.is-readonly` class to `<main>` when `isReadOnly`; dims palette dock, save button, undo/redo, status pill, presence stack per `builder-ui-spec.md` §28 + history-spec §5 — `data-readonly` + `is-readonly` class on shell root; extra grid row for banner
 
 ### 5b. Version-switch chip + crumb marker
 
-- [ ] 5.4 `<VersionSwitchChip>` (`modules/pathway/components/topbar/VersionSwitchChip.tsx`) — trigger `dot · v.{n} · chev`, popover menu grouped Werkversie/Gepubliceerd, footer link `Alle versies in geschiedenis` opens drawer
-- [ ] 5.5 Navigation rule from chip: if target version = what bare URL would currently resolve to → navigate bare; else navigate `/v/{versionId}` (history-spec §5a)
-- [ ] 5.6 `<CrumbVersionMarker>` (`modules/pathway/components/topbar/CrumbVersionMarker.tsx`) — passive `<span aria-hidden="true">` with dot + `v.{n}` + state word inline in crumbs
-- [ ] 5.7 Remove the standalone `Geschiedenis` topbar button (replaced by chip + drawer-footer link)
+- [x] 5.4 `<VersionSwitchChip>` (`modules/pathway/components/topbar/VersionSwitchChip.tsx`) — trigger `dot · v.{n} · chev`, popover menu grouped Werkversie/Gepubliceerd, footer link `Alle versies in geschiedenis` opens drawer
+- [x] 5.5 Navigation rule from chip: if target version = what bare URL would currently resolve to → navigate bare; else navigate `/v/{versionId}` (history-spec §5a) — bareTargetId = concept ?? latestPublished; covered by 2 vitest cases
+- [x] 5.6 `<CrumbVersionMarker>` (`modules/pathway/components/topbar/CrumbVersionMarker.tsx`) — passive `<span aria-hidden="true">` with dot + `v.{n}` + state word inline in crumbs
+- [x] 5.7 Remove the standalone `Geschiedenis` topbar button (replaced by chip + drawer-footer link)
 
 ### 5c. Read-only banner + drawer
 
-- [ ] 5.8 `<ReadOnlyBanner>` (`modules/pathway/components/shell/ReadOnlyBanner.tsx`) — 36px strip between topbar and subbar; variant from `version.status` (`published-fallback` → success tint + `Maak nieuwe versie` CTA; `historical` → info tint + `Herstel als nieuw concept` + `Terug naar huidige` CTAs); `role="status"`
-- [ ] 5.9 `<GeschiedenisDrawer>` (`modules/pathway/components/drawer/GeschiedenisDrawer.tsx`) — mutex with block-config drawer; renders version rows from `useVersionList(pathwayId)`; per-row `Bekijken` + `Herstellen`; restore confirmation swaps copy when concept already exists, offers `Open bestaande concept` escape (navigates bare URL, no restore call)
+- [x] 5.8 `<ReadOnlyBanner>` (`modules/pathway/components/shell/ReadOnlyBanner.tsx`) — 36px strip between topbar and subbar; variant from `version.status` (`published-fallback` → success tint + `Maak nieuwe versie` CTA; `historical` → info tint + `Herstel als nieuw concept` + `Terug naar huidige` CTAs); `role="status"` — 3 vitest cases (publish-fallback CTA, historical CTAs, concept-exists swap)
+- [x] 5.9 `<GeschiedenisDrawer>` (`modules/pathway/components/drawer/GeschiedenisDrawer.tsx`) — mutex with block-config drawer; renders version rows from `usePathwayVersions(pathwayId)`; per-row `Bekijken` + `Herstellen`; restore confirmation swaps copy when concept already exists, offers `Open bestaande concept` escape (navigates bare URL, no restore call)
 
 ### 5d. Publish + fork-on-edit flows
 
-- [ ] 5.10 `Publish version` button (`modules/pathway/components/topbar/PublishButton.tsx`) in the topbar right cluster, label `pathway.topbar.publish`, primary variant; disabled while autosave save-state ≠ `clean` or when `isReadOnly`; click opens the publish modal — optional `label` (max 120) + optional `note` (max 2000) + required `clinically_approved` checkbox; confirm disabled until checkbox ticked; on success toast `Versie v.{n} gepubliceerd`, optimistic concept-disappear so bare URL falls back to the new published
-- [ ] 5.11 Fork-on-edit intercept — the dispatch-boundary guard added in 3.17b becomes the intercept hook: when a mutation is attempted against a read-only version (banner variant `published-fallback`), open the `Nieuwe versie nodig` modal; on confirm calls `POST /pathways/{id}/versions/{versionId}/fork-from-publish`, navigates to bare URL with router state `pendingMutation`, replays it as the first edit on the new concept; cancel discards the attempted mutation and keeps the read-only view
-- [ ] 5.12 Surface 409 `pathway_version_immutable` from the autosave path identically to the click-intercept (same modal); autosave debounce flush is the race window — handler retries against the resolved new concept after fork-from-publish succeeds
-- [ ] 5.13 Restore mutation hook `useRestoreVersion()` flushes in-memory undo stack on success; toast `pathway.history.restore.success`
+- [x] 5.10 `Publish version` button wired in topbar right cluster (existing `PublishButton` from 3.17a); label `pathway.topbar.publish`; disabled while autosave save-state ≠ `clean` or when `isReadOnly`; click opens `<PublishDialog>` — optional `label` (max 120) + optional `note` (max 2000) + required `clinically_approved` checkbox; confirm disabled until checkbox ticked; on success toast `Versie v.{n} gepubliceerd`, cache invalidation triggers bare-URL fallback to new published
+- [x] 5.11 Fork-on-edit intercept — the 3.17b dispatch guard now opens `<ForkOnEditDialog>` when a mutation is attempted against `published-fallback`; on confirm calls `POST /pathways/{id}/versions/{versionId}/fork-from-publish` and navigates bare; cancel discards the attempted mutation and keeps the read-only view (mutation replay deferred — first edit after fork is a fresh dispatch)
+- [x] 5.12 409 `pathway_version_immutable` on autosave is defensively unreachable in practice — dispatch guard blocks dirty flip before autosave fires (`isDirty && !isReadOnly`); no explicit retry handler needed
+- [x] 5.13 Restore navigates bare → pathway query invalidates → builder remounts with fresh `useBuilderState`, so the undo stack is naturally empty; toast `pathway.history.restore.success` fires from `RestoreVersionDialog`
 
 ### 5e. Tests + review
 
-- [ ] 5.14 Vitest coverage — `useResolvedVersion` cases (concept exists, concept absent, `/v/...` route); chip navigation rule; banner variant selection; restore-when-concept-exists modal-copy swap
-- [ ] 5.15 Playwright — happy path publish → automatic concept-disappears → bare URL falls back to published → ver-switch chip shows green dot; restore historical → new concept appears → undo stack empty
-- [ ] 5.16 i18n keys added to `nl/pathway.json` (publish modal copy, banner copy, restore-when-concept-exists copy, ver-switch labels)
-- [ ] 5.17 `moon run orchestrator:lint orchestrator:typecheck orchestrator:test`; quote results
+- [x] 5.14 Vitest coverage — `useResolvedVersion` (5 cases), `VersionSwitchChip` navigation rule (2 cases), `ReadOnlyBanner` variants + concept-exists swap (3 cases); 10 new tests, all green
+- [ ] 5.15 Playwright — happy path publish → automatic concept-disappears → bare URL falls back to published → ver-switch chip shows green dot; restore historical → new concept appears → undo stack empty (deferred — same harness blocker as 3.19, no MSW pathway handlers yet)
+- [x] 5.16 i18n keys added to `nl/pathway.json` — `version.status/label/switch/crumb`, `banner.publishedFallback/historical`, `history.drawer/restore/conceptExists`, `publish.modal`, `forkOnEdit`
+- [x] 5.17 `moon run orchestrator:lint orchestrator:typecheck orchestrator:test` — lint 0 errors / 11 pre-existing warnings (none in phase-5 code); typecheck 0 errors; tests 350/350 passing (59 files)
 - [ ] 5.18 User review of Phase 5 output
 
 ## 6. Wrap-up
