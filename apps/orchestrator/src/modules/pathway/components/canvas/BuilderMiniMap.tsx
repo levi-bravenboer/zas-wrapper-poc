@@ -12,6 +12,7 @@ import {
   phaseTint,
   type CanvasGeometry,
 } from '../../canvasLayout'
+import { VIEWPORT_TRANSITION_MS } from '../../constants/animation'
 import type { PathwayBlock, PathwayEdge, PathwayLane, PathwayPhase } from '../../types'
 
 const MINIMAP_WIDTH = 220
@@ -77,7 +78,7 @@ export function BuilderMiniMap({
     const rect = event.currentTarget.getBoundingClientRect()
     const fx = (event.clientX - rect.left - offsetX) / scale + bboxMinX
     const fy = (event.clientY - rect.top - offsetY) / scale + bboxMinY
-    setCenter(fx, fy, { duration: 220 })
+    setCenter(fx, fy, { duration: VIEWPORT_TRANSITION_MS })
   }
 
   return (

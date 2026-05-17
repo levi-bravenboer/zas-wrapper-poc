@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 import type { CanvasGeometry } from '../../canvasLayout'
+import { VIEWPORT_TRANSITION_MS, ZOOM_DURATION_MS } from '../../constants/animation'
 import type { PathwayBlock, PathwayEdge, PathwayLane, PathwayPhase } from '../../types'
 
 import { BuilderMiniMap } from './BuilderMiniMap'
@@ -47,7 +48,7 @@ export function NavigatorPanel({
           size="icon"
           className="size-7"
           aria-label={t('minimap.zoomOut')}
-          onClick={() => zoomOut({ duration: 160 })}
+          onClick={() => zoomOut({ duration: ZOOM_DURATION_MS })}
         >
           <Minus className="size-3.5" />
         </Button>
@@ -57,7 +58,7 @@ export function NavigatorPanel({
           size="icon"
           className="size-7"
           aria-label={t('minimap.zoomIn')}
-          onClick={() => zoomIn({ duration: 160 })}
+          onClick={() => zoomIn({ duration: ZOOM_DURATION_MS })}
         >
           <Plus className="size-3.5" />
         </Button>
@@ -67,7 +68,7 @@ export function NavigatorPanel({
           size="icon"
           className="size-7"
           aria-label={t('minimap.fit')}
-          onClick={() => fitView({ duration: 240, padding: 0.18 })}
+          onClick={() => fitView({ duration: VIEWPORT_TRANSITION_MS, padding: 0.18 })}
         >
           <Focus className="size-3.5" />
         </Button>
