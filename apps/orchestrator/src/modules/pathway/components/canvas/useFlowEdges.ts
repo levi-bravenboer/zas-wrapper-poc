@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 
 import { indexById } from '@/lib/utils/indexBy'
 
+import { EDGE_SHAPE, HANDLE_IDS } from '../../constants/edge'
 import type {
   PathwayBlock,
   PathwayBlockType,
@@ -20,12 +21,6 @@ type Params = {
   timingValues: PathwayTimingValue[]
   selection: BuilderSelection
 }
-
-const EDGE_SHAPE = {
-  branch: { sourceHandle: 'yes', variant: 'primary' },
-  fallback: { sourceHandle: 'no', variant: 'dashed' },
-  plain: { sourceHandle: 'out', variant: 'default' },
-} as const
 
 export function useFlowEdges({
   edges,
@@ -50,7 +45,7 @@ export function useFlowEdges({
           source: edge.source_block_id,
           target: edge.target_block_id,
           sourceHandle: shape.sourceHandle,
-          targetHandle: 'in',
+          targetHandle: HANDLE_IDS.target,
           type: 'smoothstep',
           data: {
             variant: shape.variant,

@@ -1,8 +1,15 @@
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import { type ReactElement } from 'react'
 
+import {
+  EDGE_BORDER_RADIUS,
+  EDGE_SELECTED_STROKE_BUMP,
+  EDGE_VARIANT_STYLE,
+  type EdgeVariant,
+} from '../../../constants/edge'
+
 export type SmoothstepEdgeData = {
-  variant?: 'default' | 'primary' | 'dashed'
+  variant?: EdgeVariant
   label?: string | null
 }
 
@@ -18,6 +25,7 @@ export function SmoothstepEdge({
   selected,
 }: EdgeProps): ReactElement {
   const d = (data ?? {}) as SmoothstepEdgeData
+  const variantStyle = EDGE_VARIANT_STYLE[d.variant ?? 'default']
   const [path, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -25,21 +33,17 @@ export function SmoothstepEdge({
     targetY,
     sourcePosition,
     targetPosition,
-    borderRadius: 10,
+    borderRadius: EDGE_BORDER_RADIUS,
   })
-  const isDashed = d.variant === 'dashed'
-  const isPrimary = d.variant === 'primary'
-  const stroke = isPrimary ? 'var(--color-primary)' : '#cbd1d8'
-  const strokeWidth = (isPrimary ? 2 : 1.75) + (selected ? 1 : 0)
   return (
     <>
       <BaseEdge
         id={id}
         path={path}
         style={{
-          stroke,
-          strokeWidth,
-          strokeDasharray: isDashed ? '6 4' : undefined,
+          stroke: variantStyle.stroke,
+          strokeWidth: variantStyle.width + (selected ? EDGE_SELECTED_STROKE_BUMP : 0),
+          strokeDasharray: variantStyle.dash,
           fill: 'none',
           strokeLinecap: 'round',
           strokeLinejoin: 'round',

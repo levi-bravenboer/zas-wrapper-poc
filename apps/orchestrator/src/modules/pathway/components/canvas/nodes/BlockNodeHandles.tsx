@@ -1,6 +1,8 @@
 import { Position } from '@xyflow/react'
 import { type ReactElement } from 'react'
 
+import { HANDLE_IDS } from '../../../constants/edge'
+
 import { HandlePort } from './HandlePort'
 
 type Props = { isBranch: boolean }
@@ -9,7 +11,7 @@ export function BlockNodeHandles({ isBranch }: Props): ReactElement {
   return (
     <>
       <HandlePort
-        id="in"
+        id={HANDLE_IDS.target}
         type="target"
         position={Position.Left}
         ariaLabel="Verbinding in"
@@ -18,14 +20,14 @@ export function BlockNodeHandles({ isBranch }: Props): ReactElement {
       {isBranch ? (
         <>
           <HandlePort
-            id="yes"
+            id={HANDLE_IDS.source.branchYes}
             type="source"
             position={Position.Right}
             ariaLabel="Verbinding ja-tak"
             style={{ right: -6, top: '28%' }}
           />
           <HandlePort
-            id="no"
+            id={HANDLE_IDS.source.branchNo}
             type="source"
             position={Position.Right}
             ariaLabel="Verbinding nee-tak"
@@ -34,7 +36,7 @@ export function BlockNodeHandles({ isBranch }: Props): ReactElement {
         </>
       ) : (
         <HandlePort
-          id="out"
+          id={HANDLE_IDS.source.plain}
           type="source"
           position={Position.Right}
           ariaLabel="Verbinding uit"
