@@ -171,7 +171,7 @@ function findOp(
 }
 
 function primitiveToString(v: unknown): string {
-  if (v === null || v === undefined) return ''
+  if (v == null) return ''
   if (Array.isArray(v)) return v.map((x) => String(x)).join(', ')
   return String(v)
 }
@@ -467,7 +467,7 @@ function ToolbarBase<T>({
   let actionsSlot: React.ReactNode = null
 
   React.Children.forEach(children, (child) => {
-    if (child === null || child === undefined || typeof child === 'boolean') return
+    if (child == null || typeof child === 'boolean') return
     const slot = getSlotName(child)
     if (slot === 'DataTableToolbar.Search') {
       searchSlot = child

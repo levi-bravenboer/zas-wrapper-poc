@@ -53,8 +53,7 @@ export function PhasePickerPopover({ templates, onPick }: Props): ReactElement {
           {t('subbar.addPhase')}
         </DropdownMenuLabel>
         {templates
-          .slice()
-          .sort((a, b) => a.default_ord - b.default_ord)
+          .toSorted((a, b) => a.default_ord - b.default_ord)
           .map((template) => (
             <DropdownMenuItem
               key={template.id}

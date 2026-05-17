@@ -43,7 +43,7 @@ export function resolveLucideIcon(name: string | undefined): LucideIcon {
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.length > 0 ? value : undefined
+  return typeof value === 'string' && value ? value : undefined
 }
 
 function asArray(value: unknown): unknown[] | undefined {

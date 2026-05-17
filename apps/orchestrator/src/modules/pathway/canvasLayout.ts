@@ -49,7 +49,7 @@ export function buildCanvasGeometry(
   laneSizes: ReadonlyMap<string, number>,
 ): CanvasGeometry {
   const phaseEntries: Array<{ id: string; x: number; w: number; idx: number }> = []
-  const phasesByOrd = [...phases].sort((a, b) => a.ord - b.ord)
+  const phasesByOrd = phases.toSorted((a, b) => a.ord - b.ord)
   let cursorX = CANVAS_LEFT_PAD
   phasesByOrd.forEach((p, i) => {
     const w = Math.max(PHASE_COL_MIN_WIDTH, phaseSizes.get(p.id) ?? PHASE_COL_WIDTH)
@@ -59,7 +59,7 @@ export function buildCanvasGeometry(
   const flowWidth = Math.max(CANVAS_LEFT_PAD + PHASE_COL_WIDTH, cursorX)
 
   const laneEntries: Array<{ id: string; y: number; h: number; idx: number }> = []
-  const lanesByOrd = [...lanes].sort((a, b) => a.ord - b.ord)
+  const lanesByOrd = lanes.toSorted((a, b) => a.ord - b.ord)
   let cursorY = LANE_TOP_PAD
   lanesByOrd.forEach((l, i) => {
     const h = Math.max(LANE_ROW_MIN_HEIGHT, laneSizes.get(l.id) ?? LANE_ROW_HEIGHT)

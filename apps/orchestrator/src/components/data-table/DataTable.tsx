@@ -178,7 +178,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
   const tableId = useId()
 
   // -------------------------- state (controlled vs internal) --------------------------
-  const isControlled = controlledState !== undefined && onStateChange !== undefined
+  const isControlled = controlledState != null && onStateChange != null
   const [internalState, internalDispatch] = useDataTableState()
   const state = isControlled ? controlledState : internalState
 
@@ -201,7 +201,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
 
   // -------------------------- selection --------------------------
   const [internalSelected, setInternalSelected] = useState<Set<string>>(() => new Set<string>())
-  const selectionIsControlled = controlledSelectedIds !== undefined
+  const selectionIsControlled = controlledSelectedIds != null
   const selectedIds = selectionIsControlled
     ? (controlledSelectedIds as ReadonlySet<string>)
     : internalSelected
@@ -392,8 +392,8 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
     return (
       <div ref={ref} className={cn('flex flex-col', className)}>
         <ErrorState
-          title={error.message || 'Error'}
-          {...(onRetry ? { onRetry, retryLabel: 'Retry' } : {})}
+          title={error.message || t('error.title')}
+          {...(onRetry ? { onRetry, retryLabel: t('error.retry') } : {})}
         />
       </div>
     )
@@ -507,7 +507,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
               ) : (
                 data.map((row) => {
                   const rowId = getRowId ? getRowId(row) : undefined
-                  const expanded = hasExpand && rowId !== undefined && expandedId === rowId
+                  const expanded = hasExpand && rowId != null && expandedId === rowId
                   const clickable = !!onRowClick
                   const onActivate = (
                     e:
@@ -532,7 +532,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                         className={cn(clickable && 'cursor-pointer')}
                         data-state={rowId && selectedIds.has(rowId) ? 'selected' : undefined}
                       >
-                        {hasSelection && rowId !== undefined && (
+                        {hasSelection && rowId != null && (
                           <TableCell
                             data-stop-row-click=""
                             data-scrolled={scrolledAttr}
@@ -546,7 +546,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                             />
                           </TableCell>
                         )}
-                        {hasExpand && rowId !== undefined && (
+                        {hasExpand && rowId != null && (
                           <TableCell
                             data-stop-row-click=""
                             data-scrolled={scrolledAttr}
