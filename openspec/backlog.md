@@ -252,6 +252,7 @@ Promoted to `changes/add-auth-provider-seam/` on 2026-05-15 (login-screen wiring
 ### BL-036 — F3 pathway domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+- Promoted: 2026-05-17 to `changes/pathway-builder-base/` (backend pathway + version domain, orchestrator builder canvas, version surface)
 
 Note: F3 backend domain lands as its own `[poc]` change in its own worktree. Shape is designed inside that change. Orchestrator pathway module + composer skeleton land with the same change.
 
