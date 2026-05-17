@@ -4,12 +4,8 @@ import { useMemo } from 'react'
 import { indexById } from '@/lib/utils/indexBy'
 
 import { EDGE_SHAPE, HANDLE_IDS } from '../../constants/edge'
-import type {
-  PathwayBlock,
-  PathwayBlockType,
-  PathwayEdge,
-  PathwayTimingValue,
-} from '../../types'
+import { formatTimingDelay } from '../../formatTiming'
+import type { PathwayBlock, PathwayBlockType, PathwayEdge, PathwayTimingValue } from '../../types'
 import type { BuilderSelection } from '../../useBuilderState'
 
 import type { SmoothstepEdgeData } from './edges/SmoothstepEdge'
@@ -38,8 +34,7 @@ export function useFlowEdges({
       edges.map((edge) => {
         const sourceType = typesByCode.get(blocksById.get(edge.source_block_id)?.type ?? '')
         const isBranch = !!sourceType?.supports_branches
-        const shape =
-          EDGE_SHAPE[edge.source_branch_id ? 'branch' : isBranch ? 'fallback' : 'plain']
+        const shape = EDGE_SHAPE[edge.source_branch_id ? 'branch' : isBranch ? 'fallback' : 'plain']
         return {
           id: edge.id,
           source: edge.source_block_id,
@@ -50,7 +45,7 @@ export function useFlowEdges({
           data: {
             variant: shape.variant,
             label: edge.delay_value_id
-              ? formatDelay(timingById.get(edge.delay_value_id) ?? null)
+              ? formatTimingDelay(timingById.get(edge.delay_value_id) ?? null)
               : null,
           },
           selected: selection.kind === 'edge' && selection.edgeId === edge.id,
@@ -58,12 +53,4 @@ export function useFlowEdges({
       }),
     [edges, typesByCode, blocksById, timingById, selection],
   )
-}
-
-function formatDelay(value: PathwayTimingValue | null): string | null {
-  if (!value) return null
-  if (value.kind === 'enrollment') return '+0d'
-  const d = value.fixed_days
-  if (d === null || d === undefined || d === 0) return null
-  return d > 0 ? `+${d}d` : `${d}d`
 }

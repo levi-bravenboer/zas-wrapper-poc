@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react'
 
-import { formatTimingValue } from '../../../dayChip'
+import { formatTimingChip } from '../../../formatTiming'
 import type { PathwayTimingValue } from '../../../types'
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
 }
 
 export function DayChip({ value }: Props): ReactElement | null {
-  const text = formatTimingValue(value)
+  const text = formatTimingChip(value)
   if (!text) return null
   return (
     <span
