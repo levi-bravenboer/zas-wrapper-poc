@@ -518,3 +518,32 @@ When reviewing a PR that touches FHIR-shaped code, confirm:
 - Auto-generated i18n key list from the backend's `app/fhir/codes.py`.
 
 Each of these is a feature add behind the `lib/fhir/` seam — no restructure expected.
+
+## Pathway builder
+
+Authoring surface for `F3` care pathways. Module: `src/modules/pathway/`.
+
+### Module layout
+
+- `api.ts` — typed wrappers over the generated client (`listPathways`, `getPathway`, `replacePathway`, `listBlockTypes`, `listPhaseTemplates`, `listEdgeTimingKinds`, `listEdgeOffsetDirections`).
+- `hooks.ts` — react-query hooks (`usePathwayList`, `usePathway`, `useCreatePathway`, `useReplacePathway`, `usePathwayBlocks`, `usePathwayPhaseTemplates`, `useEdgeTimingKinds`, `useEdgeOffsetDirections`).
+- `keys.ts` — query-key namespace `pathwayKeys.*` (`list`, `detail(id)`, `blocks`, `phaseTemplates`, `edgeTimingKinds`, `edgeOffsetDirections`).
+- `useBuilderState.ts` — controlled-state reducer over `PathwayVersionDefinition` (selection, undo/redo, dirty tracking). Single source of truth for the canvas state passed to autosave. Read-only guard: actions other than `select` / `reset` / `mark-saved` / `resize-*` are dropped when `version.status !== 'concept'` — Phase 5 fork-on-edit will hook the intercept here.
+- `configSchemas.ts` — per-semantic Zod schemas for `PathwayBlock.config`; `parseBlockConfig(block, semantics)` returns typed config or throws. Inspectors render bespoke forms per semantics, NOT RJSF (audited then dropped per `pathway-config-forms`).
+- `edgeTiming.ts` / `formatTiming.ts` — edge-kind union helpers; `readEdgeTiming(edge)` discriminates `completion | marker | immediate | branch`.
+- `components/` — `PathwayBuilderShell` (provider + layout), `canvas/` (`BuilderCanvasFrame` + nodes/edges over `@xyflow/react`), `dock/` (block palette), `subbar/` (phase picker), `topbar/` (`BuilderTopbar`, `SaveStatusPill`, `PublishButton`, `EditableTitle`), `drawer/` (`BuilderDrawer` + `inspectors/` per semantics, `EdgeInspector`).
+- `hooks/` — `useAutosavePathway` (800ms debounce, visibility-flush, full-definition `PUT`), `useCanvasHandlers` (xyflow → reducer bridge), `useBuilderKeyboard` (Delete/Backspace, undo/redo).
+
+### Canvas package
+
+- `@xyflow/react` 12 (React Flow). Decision D5 of `openspec/changes/pathway-builder-base/design.md` — MIT, React 19 compat, controlled-state mode, custom React-component nodes. Internal `zustand ^4` co-exists with repo's `zustand 5` (separate store instance — flagged risk, not a blocker).
+- Styles imported via `@xyflow/react/dist/style.css` in `BuilderCanvasFrame`.
+
+### Save model
+
+- Concept versions autosave at 800ms after the last dirty-marking dispatch, flush on tab `visibilitychange → hidden`. No explicit `Save` button on concept (`builder-ui-spec.md` §17, design D30+D31). Save-state pill replaces the button (`status.{clean|dirty|saving|error}`).
+- Published / archived versions are read-only — the reducer's dispatch-boundary guard drops mutations; the topbar `Publish version` button is currently a disabled placeholder for Phase 5 wiring.
+
+### i18n
+
+- Dutch only at this tier — keys under `pathway.*` in `lib/i18n/locales/nl/pathway.json`. Sidebar entry: `nav.pathways`. New inspectors register copy under `pathway.inspector.<semantics>.*`.
