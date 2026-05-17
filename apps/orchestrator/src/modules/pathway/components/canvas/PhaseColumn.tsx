@@ -1,5 +1,6 @@
 import { useViewport } from '@xyflow/react'
 import { useRef, type CSSProperties, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { PHASE_COL_MIN_WIDTH, phaseTint } from '../../canvasLayout'
 import { ZOOM_SAFE_DIVISOR_FLOOR } from '../../constants/canvas'
@@ -24,6 +25,7 @@ export function PhaseColumn({
   height,
   onResize,
 }: Props): ReactElement {
+  const { t } = useTranslation('pathway')
   const tint = phaseTint(index)
   const { zoom } = useViewport()
   const dragRef = useRef<{ startW: number; startX: number } | null>(null)
@@ -81,7 +83,7 @@ export function PhaseColumn({
       <div
         role="separator"
         aria-orientation="vertical"
-        aria-label={`Verbreed fase ${phase.label}`}
+        aria-label={t('canvas.resizePhase', { label: phase.label })}
         className="pointer-events-auto absolute top-0 bottom-0 right-0 w-2 cursor-col-resize hover:bg-black/[0.06] active:bg-black/[0.1]"
         style={{ touchAction: 'none' }}
         onPointerDown={onPointerDown}

@@ -1,4 +1,5 @@
 import { type CSSProperties, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { LaneKindIcon } from '../../blockCatalogue'
 import { laneAccent } from '../../canvasLayout'
@@ -12,6 +13,7 @@ type Props = {
 }
 
 export function LaneLabel({ lane, topY, blockCount, i18nLaneName }: Props): ReactElement {
+  const { t } = useTranslation('pathway')
   const accent = laneAccent(lane)
   const style = {
     top: topY + 8,
@@ -21,7 +23,7 @@ export function LaneLabel({ lane, topY, blockCount, i18nLaneName }: Props): Reac
   return (
     <div
       role="group"
-      aria-label={`Lane ${lane.label}, ${blockCount} blokken`}
+      aria-label={t('canvas.laneLabel', { label: i18nLaneName ?? lane.label, count: blockCount })}
       className="pointer-events-auto absolute inline-flex h-7 items-center gap-2 rounded-full border bg-white/70 px-3 py-0 shadow-xs backdrop-blur-sm"
       style={{
         ...style,

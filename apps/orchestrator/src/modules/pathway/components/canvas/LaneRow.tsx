@@ -1,5 +1,6 @@
 import { useViewport } from '@xyflow/react'
 import { useRef, type CSSProperties, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { LANE_ROW_MIN_HEIGHT, laneAccent } from '../../canvasLayout'
 import { ZOOM_SAFE_DIVISOR_FLOOR } from '../../constants/canvas'
@@ -15,6 +16,7 @@ type Props = {
 }
 
 export function LaneRow({ lane, topY, height, width, isEmpty, onResize }: Props): ReactElement {
+  const { t } = useTranslation('pathway')
   const accent = laneAccent(lane)
   const { zoom } = useViewport()
   const dragRef = useRef<{ startH: number; startY: number } | null>(null)
@@ -59,7 +61,7 @@ export function LaneRow({ lane, topY, height, width, isEmpty, onResize }: Props)
       <div
         role="separator"
         aria-orientation="horizontal"
-        aria-label={`Vergroot baan ${lane.label}`}
+        aria-label={t('canvas.resizeLane', { label: lane.label })}
         className="pointer-events-auto absolute right-0 bottom-0 left-0 h-2 cursor-row-resize hover:bg-black/[0.06] active:bg-black/[0.1]"
         style={{ touchAction: 'none' }}
         onPointerDown={onPointerDown}

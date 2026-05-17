@@ -7,6 +7,7 @@ import {
   type NodeChange,
 } from '@xyflow/react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { buildCanvasGeometry, type CanvasGeometry } from '../../canvasLayout'
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
@@ -69,6 +70,7 @@ export function BuilderCanvasFrame({
   phaseSizes,
   laneSizes,
 }: Props): ReactElement {
+  const { t } = useTranslation('pathway')
   const geometry: CanvasGeometry = useMemo(
     () => buildCanvasGeometry(phases, lanes, phaseSizes, laneSizes),
     [phases, lanes, phaseSizes, laneSizes],
@@ -115,7 +117,7 @@ export function BuilderCanvasFrame({
   return (
     <div
       role="application"
-      aria-label="Zorgpad-canvas"
+      aria-label={t('canvas.label')}
       className="absolute inset-0 overflow-hidden"
       onDrop={onDrop}
       onDragOver={onDragOver}

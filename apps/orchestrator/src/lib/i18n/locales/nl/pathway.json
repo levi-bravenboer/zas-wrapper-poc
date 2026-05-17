@@ -120,7 +120,16 @@
     "emptyBody": "Sleep een blok uit het palet hieronder of klik om er één toe te voegen.",
     "emptyNoScaffoldTitle": "Voeg een fase toe",
     "emptyNoScaffold": "Klik op + Fase bovenin om je zorgpad op te bouwen.",
-    "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst."
+    "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst.",
+    "handle": {
+      "in": "Verbinding in",
+      "branchYes": "Verbinding ja-tak",
+      "branchNo": "Verbinding nee-tak",
+      "out": "Verbinding uit"
+    },
+    "resizeLane": "Vergroot baan {{label}}",
+    "resizePhase": "Verbreed fase {{label}}",
+    "laneLabel": "Baan {{label}}, {{count}} blokken"
   },
   "save": {
     "error": "Opslaan mislukt."
