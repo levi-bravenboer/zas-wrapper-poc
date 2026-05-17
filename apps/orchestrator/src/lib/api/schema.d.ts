@@ -420,6 +420,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pathways/edge-timing-kinds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Edge Timing Kinds */
+        get: operations["list_pathway_edge_timing_kinds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/edge-offset-directions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Edge Offset Directions */
+        get: operations["list_pathway_edge_offset_directions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pathways": {
         parameters: {
             query?: never;
@@ -964,12 +998,30 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Semantics
+             * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
+             * @enum {string}
+             */
+            semantics: "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link";
+            /**
+             * Icon
+             * @description Lucide icon name. Resolved client-side via a single lookup.
+             */
+            icon: string;
+            /**
              * Allowed Lane Kind Codes
              * @description Lane-kind codes this block type may be placed on. The first entry is the default placement when no explicit lane context exists.
              */
             allowed_lane_kind_codes: string[];
             /** Config Schema */
             config_schema: {
+                [key: string]: unknown;
+            };
+            /**
+             * Ui Schema
+             * @description Widget hints, field order, and labels for schema-driven inspector rendering. Consumed by the orchestrator's SchemaForm engine.
+             */
+            ui_schema?: {
                 [key: string]: unknown;
             };
             /**
@@ -1039,6 +1091,21 @@ export interface components {
             source_branch_id?: string | null;
             /** Delay Value Id */
             delay_value_id?: string | null;
+            /** Time Marker Id */
+            time_marker_id?: string | null;
+            /** Offset Value Id */
+            offset_value_id?: string | null;
+            /** Offset Direction Code */
+            offset_direction_code?: string | null;
+        };
+        /** PathwayEdgeOffsetDirection */
+        PathwayEdgeOffsetDirection: {
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
         };
         /** PathwayEdgeOut */
         PathwayEdgeOut: {
@@ -1061,6 +1128,30 @@ export interface components {
             source_branch_id?: string | null;
             /** Delay Value Id */
             delay_value_id?: string | null;
+            /** Time Marker Id */
+            time_marker_id?: string | null;
+            /** Offset Value Id */
+            offset_value_id?: string | null;
+            /** Offset Direction Code */
+            offset_direction_code?: string | null;
+        };
+        /** PathwayEdgeTimingKind */
+        PathwayEdgeTimingKind: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "completion" | "marker" | "immediate" | "branch";
+            /** Label */
+            label: string;
+            /** Config Schema */
+            config_schema: {
+                [key: string]: unknown;
+            };
+            /** Ui Schema */
+            ui_schema: {
+                [key: string]: unknown;
+            };
         };
         /** PathwayLaneIn */
         PathwayLaneIn: {
@@ -2730,6 +2821,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PathwayPhaseTemplate"][];
+                };
+            };
+        };
+    };
+    list_pathway_edge_timing_kinds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayEdgeTimingKind"][];
+                };
+            };
+        };
+    };
+    list_pathway_edge_offset_directions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayEdgeOffsetDirection"][];
                 };
             };
         };

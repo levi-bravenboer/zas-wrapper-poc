@@ -1499,6 +1499,56 @@
         }
       }
     },
+    "/pathways/edge-timing-kinds": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Edge Timing Kinds",
+        "operationId": "list_pathway_edge_timing_kinds",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayEdgeTimingKind"
+                  },
+                  "type": "array",
+                  "title": "Response List Pathway Edge Timing Kinds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/edge-offset-directions": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Edge Offset Directions",
+        "operationId": "list_pathway_edge_offset_directions",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayEdgeOffsetDirection"
+                  },
+                  "type": "array",
+                  "title": "Response List Pathway Edge Offset Directions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pathways": {
       "get": {
         "tags": [
@@ -2981,6 +3031,27 @@
             "type": "string",
             "title": "Label"
           },
+          "semantics": {
+            "type": "string",
+            "enum": [
+              "appointment",
+              "task",
+              "message",
+              "form",
+              "decision",
+              "milestone",
+              "wait",
+              "pathway_link"
+            ],
+            "title": "Semantics",
+            "description": "Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching."
+          },
+          "icon": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Icon",
+            "description": "Lucide icon name. Resolved client-side via a single lookup."
+          },
           "allowed_lane_kind_codes": {
             "items": {
               "type": "string"
@@ -2995,6 +3066,12 @@
             "type": "object",
             "title": "Config Schema"
           },
+          "ui_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ui Schema",
+            "description": "Widget hints, field order, and labels for schema-driven inspector rendering. Consumed by the orchestrator's SchemaForm engine."
+          },
           "supports_branches": {
             "type": "boolean",
             "title": "Supports Branches",
@@ -3005,6 +3082,8 @@
         "required": [
           "type",
           "label",
+          "semantics",
+          "icon",
           "allowed_lane_kind_codes",
           "config_schema"
         ],
@@ -3171,6 +3250,42 @@
               }
             ],
             "title": "Delay Value Id"
+          },
+          "time_marker_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Marker Id"
+          },
+          "offset_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Value Id"
+          },
+          "offset_direction_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Direction Code"
           }
         },
         "type": "object",
@@ -3180,6 +3295,29 @@
           "target_block_id"
         ],
         "title": "PathwayEdgeIn"
+      },
+      "PathwayEdgeOffsetDirection": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "ord": {
+            "type": "integer",
+            "title": "Ord"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "ord"
+        ],
+        "title": "PathwayEdgeOffsetDirection"
       },
       "PathwayEdgeOut": {
         "properties": {
@@ -3221,6 +3359,42 @@
               }
             ],
             "title": "Delay Value Id"
+          },
+          "time_marker_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Marker Id"
+          },
+          "offset_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Value Id"
+          },
+          "offset_direction_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Direction Code"
           }
         },
         "type": "object",
@@ -3230,6 +3404,42 @@
           "target_block_id"
         ],
         "title": "PathwayEdgeOut"
+      },
+      "PathwayEdgeTimingKind": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "completion",
+              "marker",
+              "immediate",
+              "branch"
+            ],
+            "title": "Kind"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "config_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config Schema"
+          },
+          "ui_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ui Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "label",
+          "config_schema",
+          "ui_schema"
+        ],
+        "title": "PathwayEdgeTimingKind"
       },
       "PathwayLaneIn": {
         "properties": {
