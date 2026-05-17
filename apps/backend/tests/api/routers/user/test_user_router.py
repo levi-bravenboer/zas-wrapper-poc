@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.user import Role
+from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
@@ -119,6 +120,62 @@ async def test_list_users_sort_by_email_asc(
     assert response.status_code == 200
     emails = [row["email"] for row in response.json()["items"]]
     assert emails == sorted(emails)
+
+
+async def test_list_users_has_practitioner_true_returns_only_users_with_practitioner(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    db_session.add(
+        Practitioner(
+            tenant_id=caregiver.tenant_id,
+            created_by=admin.id,
+            updated_by=admin.id,
+            user_id=caregiver.id,
+            given_name="Test",
+            family_name="Caregiver",
+        )
+    )
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get("/users", params={"filter[has_practitioner]": "true"})
+
+    assert response.status_code == 200
+    emails = {row["email"] for row in response.json()["items"]}
+    assert CAREGIVER_EMAIL in emails
+    assert ADMIN_EMAIL not in emails
+
+
+async def test_list_users_has_practitioner_false_excludes_users_with_practitioner(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    db_session.add(
+        Practitioner(
+            tenant_id=caregiver.tenant_id,
+            created_by=admin.id,
+            updated_by=admin.id,
+            user_id=caregiver.id,
+            given_name="Test",
+            family_name="Caregiver",
+        )
+    )
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get("/users", params={"filter[has_practitioner]": "false"})
+
+    assert response.status_code == 200
+    emails = {row["email"] for row in response.json()["items"]}
+    assert ADMIN_EMAIL in emails
+    assert CAREGIVER_EMAIL not in emails
 
 
 async def test_list_users_rejects_unknown_filter(

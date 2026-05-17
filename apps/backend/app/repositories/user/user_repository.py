@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import ClassVar
 from uuid import UUID
 
-from sqlalchemy import func, select
+import sqlalchemy as sa
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.orm import InstrumentedAttribute
 
+from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.user import User
 from app.repositories.base import BaseListRepository
 from app.schemas._list.list_query import Operator
@@ -21,12 +23,32 @@ class UserRepository(BaseListRepository[User]):
     filterable_fields: ClassVar[Mapping[str, frozenset[Operator]]] = {
         "role": frozenset({"eq", "in", "not"}),
         "is_active": frozenset({"eq"}),
+        "has_practitioner": frozenset({"eq"}),
     }
     searchable_fields: ClassVar[tuple[InstrumentedAttribute, ...]] = (
         User.display_name,
         User.email,
     )
     default_order: ClassVar[tuple[str, str]] = ("display_name", "asc")
+
+    def _filter_predicate(
+        self,
+        field: str,
+        operator: Operator,
+        values: Sequence[str],
+    ) -> ColumnElement[bool]:
+        if field == "has_practitioner":
+            wants = values[0].lower() in {"1", "true", "yes", "on"}
+            exists_clause = (
+                sa.select(Practitioner.id)
+                .where(
+                    Practitioner.user_id == User.id,
+                    Practitioner.deleted_at.is_(None),
+                )
+                .exists()
+            )
+            return exists_clause if wants else ~exists_clause
+        return super()._filter_predicate(field, operator, values)
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         result = await self._session.execute(
