@@ -32,8 +32,8 @@ export function BlockNode({ data, selected }: NodeProps<BlockFlowNode>): ReactEl
     defaultValue: data.blockType?.label ?? data.block.type,
   })
   const name = data.block.label?.trim() || typeLabel
-  const isBranch = Boolean(data.blockType?.supports_branches)
-  const isSelected = Boolean(selected)
+  const isBranch = !!data.blockType?.supports_branches
+  const isSelected = !!selected
   const { containerStyle, iconStyle, railStyle } = useBlockNodeStyles({
     accent,
     selected: isSelected,

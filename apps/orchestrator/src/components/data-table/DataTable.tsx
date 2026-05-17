@@ -145,10 +145,8 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   // when `onRowClick` is set, which would make every click inside the row look
   // interactive. Nested action buttons are real `<button>` elements and are
   // already caught by the `button` selector.
-  return Boolean(
-    target.closest(
-      'button, a, input, select, textarea, [role="menu"], [role="menuitem"], [role="checkbox"], [data-stop-row-click]',
-    ),
+  return !!target.closest(
+    'button, a, input, select, textarea, [role="menu"], [role="menuitem"], [role="checkbox"], [data-stop-row-click]',
   )
 }
 
@@ -343,9 +341,9 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
   useReactTable<T>(tableOptions)
 
   // -------------------------- column ordering: select | expand | data | actions --------------------------
-  const hasSelection = selectable && Boolean(getRowId)
-  const hasExpand = Boolean(renderExpandedRow) && Boolean(getRowId)
-  const hasActions = Boolean(rowActions)
+  const hasSelection = selectable && !!getRowId
+  const hasExpand = !!renderExpandedRow && !!getRowId
+  const hasActions = !!rowActions
 
   // Total visual column count (used for `colSpan` on the expanded row).
   const totalColumns =
@@ -447,7 +445,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                 {columns.map((col, idx) => {
                   const isFirstData = idx === 0 && !hasSelection && !hasExpand
                   const isSticky = col.sticky ?? isFirstData
-                  const sortable = Boolean(col.sortKey)
+                  const sortable = !!col.sortKey
                   const isSorted = sortable && state.orderBy === col.sortKey
                   const sortKey: 'none' | 'asc' | 'desc' | null = !sortable
                     ? null
@@ -510,7 +508,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                 data.map((row) => {
                   const rowId = getRowId ? getRowId(row) : undefined
                   const expanded = hasExpand && rowId !== undefined && expandedId === rowId
-                  const clickable = Boolean(onRowClick)
+                  const clickable = !!onRowClick
                   const onActivate = (
                     e:
                       | ReactMouseEvent<HTMLTableRowElement>

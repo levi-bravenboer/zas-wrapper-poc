@@ -8,7 +8,7 @@ export function useUserDetail(userId: string) {
   return useQuery<UserDetail>({
     queryKey: userKeys.detail(userId),
     queryFn: () => fetchUserDetail(userId),
-    enabled: Boolean(userId),
+    enabled: !!userId,
     staleTime: 30_000,
   })
 }

@@ -30,7 +30,7 @@ export function usePathway(id: string | undefined) {
   return useQuery<PathwayWithVersion>({
     queryKey: id ? pathwayKeys.detail(id) : pathwayKeys.detail('__none__'),
     queryFn: () => getPathway(id as string),
-    enabled: Boolean(id),
+    enabled: !!id,
   })
 }
 
