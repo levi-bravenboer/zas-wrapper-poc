@@ -6,16 +6,27 @@ import { LANE_ROW_MIN_HEIGHT, laneAccent } from '../../canvasLayout'
 import { ZOOM_SAFE_DIVISOR_FLOOR } from '../../constants/canvas'
 import type { PathwayLane } from '../../types'
 
+export type LaneDropState = 'valid' | 'invalid' | 'idle'
+
 type Props = {
   lane: PathwayLane
   topY: number
   height: number
   width: number
   isEmpty: boolean
+  dropState?: LaneDropState
   onResize: (height: number) => void
 }
 
-export function LaneRow({ lane, topY, height, width, isEmpty, onResize }: Props): ReactElement {
+export function LaneRow({
+  lane,
+  topY,
+  height,
+  width,
+  isEmpty,
+  dropState = 'idle',
+  onResize,
+}: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const accent = laneAccent(lane)
   const { zoom } = useViewport()
@@ -46,16 +57,38 @@ export function LaneRow({ lane, topY, height, width, isEmpty, onResize }: Props)
     event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
+  const isValid = dropState === 'valid'
+  const isInvalid = dropState === 'invalid'
+
+  const background = isValid
+    ? `color-mix(in srgb, ${accent} 6%, transparent)`
+    : `color-mix(in srgb, ${accent} 4%, transparent)`
+  const borderTopColor = isValid
+    ? `color-mix(in srgb, ${accent} 60%, var(--hairline))`
+    : `color-mix(in srgb, ${accent} 12%, var(--hairline))`
+  const outline = isValid
+    ? `2px solid color-mix(in srgb, ${accent} 70%, transparent)`
+    : isEmpty
+      ? `2px dashed color-mix(in srgb, ${accent} 30%, transparent)`
+      : undefined
+  const stripeImage = isInvalid
+    ? 'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 8%, transparent) 0 6px, transparent 6px 12px)'
+    : undefined
+
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute border-t"
+      data-dropstate={dropState}
+      className="pointer-events-none absolute border-t transition-[opacity,outline-color,background-color] duration-100"
       style={{
         ...style,
-        background: `color-mix(in srgb, ${accent} 4%, transparent)`,
-        borderTopColor: `color-mix(in srgb, ${accent} 12%, var(--hairline))`,
-        outline: isEmpty ? `2px dashed color-mix(in srgb, ${accent} 30%, transparent)` : undefined,
+        background,
+        borderTopColor,
+        outline,
         outlineOffset: '-12px',
+        opacity: isInvalid ? 0.45 : 1,
+        cursor: isInvalid ? 'not-allowed' : isValid ? 'copy' : undefined,
+        backgroundImage: stripeImage,
       }}
     >
       <div

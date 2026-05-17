@@ -14,9 +14,16 @@ import type { PathwayBlockType } from '../../types'
 type Props = {
   blockType: PathwayBlockType
   onAdd: () => void
+  onDragStartType?: ((blockType: PathwayBlockType) => void) | undefined
+  onDragEndType?: (() => void) | undefined
 }
 
-export function DockItem({ blockType, onAdd }: Props): ReactElement {
+export function DockItem({
+  blockType,
+  onAdd,
+  onDragStartType,
+  onDragEndType,
+}: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const { zoom } = useViewport()
   const label = t(`blockType.${blockType.type}`, { defaultValue: blockType.label })
@@ -26,6 +33,7 @@ export function DockItem({ blockType, onAdd }: Props): ReactElement {
     event.dataTransfer.setData(DRAG_TYPES.BLOCK_TYPE, blockType.type)
     event.dataTransfer.setData('text/plain', blockType.type)
     event.dataTransfer.effectAllowed = 'copy'
+    onDragStartType?.(blockType)
     const safeZoom = Math.min(
       Math.max(zoom || 1, CANVAS_VIEWPORT.minZoom),
       CANVAS_VIEWPORT.maxZoom,
@@ -50,6 +58,7 @@ export function DockItem({ blockType, onAdd }: Props): ReactElement {
     <div
       draggable
       onDragStart={onDragStart}
+      onDragEnd={onDragEndType}
       className="inline-flex cursor-grab active:cursor-grabbing"
     >
       <TooltipProvider delayDuration={150}>

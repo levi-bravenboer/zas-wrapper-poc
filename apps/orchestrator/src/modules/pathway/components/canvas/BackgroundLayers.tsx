@@ -7,7 +7,7 @@ import type { CanvasGeometry } from '../../canvasLayout'
 import type { LaneKindCode, PathwayBlock, PathwayLane, PathwayPhase } from '../../types'
 
 import { LaneLabel } from './LaneLabel'
-import { LaneRow } from './LaneRow'
+import { LaneRow, type LaneDropState } from './LaneRow'
 import { PhaseColumn } from './PhaseColumn'
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
   lanes: PathwayLane[]
   blocks: PathwayBlock[]
   geometry: CanvasGeometry
+  laneDropStates?: Record<string, LaneDropState>
   onResizePhase: (phaseId: string, width: number) => void
   onResizeLane: (laneId: string, height: number) => void
 }
@@ -24,6 +25,7 @@ export function BackgroundLayers({
   lanes,
   blocks,
   geometry,
+  laneDropStates,
   onResizePhase,
   onResizeLane,
 }: Props): ReactElement {
@@ -59,6 +61,7 @@ export function BackgroundLayers({
           height={geometry.laneH(lane.id)}
           width={geometry.flowWidth}
           isEmpty={(blockByLane.get(lane.id) ?? 0) === 0}
+          dropState={laneDropStates?.[lane.id] ?? 'idle'}
           onResize={(h) => onResizeLane(lane.id, h)}
         />
       ))}

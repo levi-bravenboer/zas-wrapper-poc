@@ -8,9 +8,16 @@ import { DockItem } from './DockItem'
 type Props = {
   catalogue: PathwayBlockType[]
   onAddBlock: (blockType: PathwayBlockType) => void
+  onDragStartType?: (blockType: PathwayBlockType) => void
+  onDragEndType?: () => void
 }
 
-export function BuilderDock({ catalogue, onAddBlock }: Props): ReactElement {
+export function BuilderDock({
+  catalogue,
+  onAddBlock,
+  onDragStartType,
+  onDragEndType,
+}: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
     <div
@@ -20,7 +27,13 @@ export function BuilderDock({ catalogue, onAddBlock }: Props): ReactElement {
       style={{ borderColor: 'var(--hairline)' }}
     >
       {catalogue.map((blockType) => (
-        <DockItem key={blockType.type} blockType={blockType} onAdd={() => onAddBlock(blockType)} />
+        <DockItem
+          key={blockType.type}
+          blockType={blockType}
+          onAdd={() => onAddBlock(blockType)}
+          onDragStartType={onDragStartType}
+          onDragEndType={onDragEndType}
+        />
       ))}
     </div>
   )

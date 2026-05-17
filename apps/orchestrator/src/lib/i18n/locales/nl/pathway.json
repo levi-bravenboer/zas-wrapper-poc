@@ -121,6 +121,7 @@
     "emptyNoScaffoldTitle": "Voeg een fase toe",
     "emptyNoScaffold": "Klik op + Fase bovenin om je zorgpad op te bouwen.",
     "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst.",
+    "invalidLaneDrop": "Dit blok past niet in deze rij.",
     "handle": {
       "in": "Verbinding in",
       "branchYes": "Verbinding ja-tak",

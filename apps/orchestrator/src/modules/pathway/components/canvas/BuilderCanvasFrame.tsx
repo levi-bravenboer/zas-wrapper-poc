@@ -22,12 +22,15 @@ import type {
   PathwayTimingValue,
 } from '../../types'
 import type { BuilderAction, BuilderSelection, DimensionMap } from '../../useBuilderState'
+import { isLaneAllowed } from '../../utils/laneRules'
 
 import { BackgroundLayers } from './BackgroundLayers'
 import { SmoothstepEdge } from './edges/SmoothstepEdge'
 import { EmptyCanvasCTA } from './EmptyCanvasCTA'
+import { type LaneDropState } from './LaneRow'
 import { NavigatorPanel } from './NavigatorPanel'
 import { BlockNode, type BlockFlowNode } from './nodes/BlockNode'
+import type { DragContextApi } from './useDragContext'
 import { useFlowEdges } from './useFlowEdges'
 import { useFlowNodes } from './useFlowNodes'
 
@@ -52,6 +55,7 @@ type Props = {
   onDropBlockType: (typeCode: string, target: CanvasDropTarget | null) => void
   phaseSizes: DimensionMap
   laneSizes: DimensionMap
+  dragApi: DragContextApi
 }
 
 const NODE_TYPES = { block: BlockNode } as const
@@ -69,6 +73,7 @@ export function BuilderCanvasFrame({
   onDropBlockType,
   phaseSizes,
   laneSizes,
+  dragApi,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const geometry: CanvasGeometry = useMemo(
@@ -102,7 +107,45 @@ export function BuilderCanvasFrame({
     onDrop,
     onDragOver,
     onPaneClick,
-  } = useCanvasHandlers({ blocks, geometry, dispatch, onDropBlockType })
+  } = useCanvasHandlers({
+    blocks,
+    blockTypes,
+    lanes,
+    geometry,
+    dispatch,
+    onDropBlockType,
+    dragApi,
+  })
+
+  const onNodeDragStart = useCallback(
+    (_event: React.MouseEvent, node: BlockFlowNode) => {
+      const block = blocks.find((b) => b.id === node.id)
+      if (!block) return
+      const bt = blockTypes.find((c) => c.type === block.type)
+      if (!bt) return
+      dragApi.startMoveDrag(block.id, bt.type, bt.allowed_lane_kind_codes)
+    },
+    [blocks, blockTypes, dragApi],
+  )
+
+  const onNodeDragStop = useCallback(() => {
+    dragApi.endDrag()
+  }, [dragApi])
+
+  const laneDropStates = useMemo<Record<string, LaneDropState>>(() => {
+    const out: Record<string, LaneDropState> = {}
+    if (dragApi.drag.kind === 'idle') {
+      for (const lane of lanes) out[lane.id] = 'idle'
+      return out
+    }
+    const allowed = dragApi.drag.allowedLaneKindCodes
+    for (const lane of lanes) {
+      out[lane.id] = isLaneAllowed({ allowed_lane_kind_codes: [...allowed] }, lane.lane_kind_code)
+        ? 'valid'
+        : 'invalid'
+    }
+    return out
+  }, [dragApi.drag, lanes])
 
   const onNodesChange = useCallback(
     (changes: NodeChange<BlockFlowNode>[]) => {
@@ -129,6 +172,8 @@ export function BuilderCanvasFrame({
         edgeTypes={EDGE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
         defaultViewport={CANVAS_VIEWPORT.initial}
@@ -159,6 +204,7 @@ export function BuilderCanvasFrame({
             lanes={lanes}
             blocks={blocks}
             geometry={geometry}
+            laneDropStates={laneDropStates}
             onResizePhase={(phaseId, width) => dispatch({ type: 'resize-phase', phaseId, width })}
             onResizeLane={(laneId, height) => dispatch({ type: 'resize-lane', laneId, height })}
           />

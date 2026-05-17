@@ -18,9 +18,11 @@ import type {
 import { useBuilderState, type BuilderAction } from '../useBuilderState'
 import { useCollapsedSidebar } from '../useCollapsedSidebar'
 import { createBlock } from '../utils/createBlock'
+import { defaultLaneKindCode } from '../utils/laneRules'
 import { findSelectedBlock } from '../utils/selection'
 
 import { BuilderCanvasFrame, type CanvasDropTarget } from './canvas/BuilderCanvasFrame'
+import { useDragContext } from './canvas/useDragContext'
 import { BuilderDock } from './dock/BuilderDock'
 import { BuilderDrawer } from './drawer/BuilderDrawer'
 import { BuilderSubbar } from './subbar/BuilderSubbar'
@@ -83,6 +85,8 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
 
   useBuilderKeyboard({ flush, dispatch })
 
+  const dragApi = useDragContext()
+
   const { phases, lanes, blocks, edges, timingValues } = useMemo(
     () => ({
       phases: state.version.phases ?? [],
@@ -96,9 +100,12 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
 
   const onAddBlock = useCallback(
     (blockType: PathwayBlockType) => {
-      const defaultLane =
-        lanes.find((l) => l.lane_kind_code === blockType.default_lane_kind_code) ?? lanes[0]
-      if (!defaultLane) return
+      const preferredCode = defaultLaneKindCode(blockType)
+      const defaultLane = lanes.find((l) => l.lane_kind_code === preferredCode)
+      if (!defaultLane) {
+        toast.error(t('canvas.invalidLaneDrop'))
+        return
+      }
       const firstPhase = sortByOrd(phases)[0]
       if (!firstPhase) {
         toast.error(t('canvas.needPhaseFirst'))
@@ -199,8 +206,14 @@ function Inner({ pathway, version, catalogue, phaseTemplates }: Props): ReactEle
           onDropBlockType={onDropBlockType}
           phaseSizes={state.phaseSizes}
           laneSizes={state.laneSizes}
+          dragApi={dragApi}
         />
-        <BuilderDock catalogue={catalogue} onAddBlock={onAddBlock} />
+        <BuilderDock
+          catalogue={catalogue}
+          onAddBlock={onAddBlock}
+          onDragStartType={(bt) => dragApi.startNewDrag(bt.type, bt.allowed_lane_kind_codes)}
+          onDragEndType={dragApi.endDrag}
+        />
         {selectedBlock && (
           <BuilderDrawer
             block={selectedBlock}

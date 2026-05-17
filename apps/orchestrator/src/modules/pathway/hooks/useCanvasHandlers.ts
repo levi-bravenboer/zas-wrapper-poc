@@ -1,17 +1,24 @@
 import { useReactFlow, type Connection, type EdgeChange, type NodeChange } from '@xyflow/react'
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { BLOCK_HEIGHT, BLOCK_WIDTH, type CanvasGeometry } from '../canvasLayout'
 import type { CanvasDropTarget } from '../components/canvas/BuilderCanvasFrame'
+import type { DragContextApi } from '../components/canvas/useDragContext'
 import { DRAG_TYPES } from '../constants/dragTypes'
-import type { PathwayBlock, PathwayEdge } from '../types'
+import type { PathwayBlock, PathwayBlockType, PathwayEdge, PathwayLane } from '../types'
 import type { BuilderAction } from '../useBuilderState'
+import { isLaneAllowed } from '../utils/laneRules'
 
 type Options = {
   blocks: PathwayBlock[]
+  blockTypes: PathwayBlockType[]
+  lanes: PathwayLane[]
   geometry: CanvasGeometry
   dispatch: (action: BuilderAction) => void
   onDropBlockType: (typeCode: string, target: CanvasDropTarget | null) => void
+  dragApi: DragContextApi
 }
 
 type CanvasHandlers = {
@@ -25,10 +32,14 @@ type CanvasHandlers = {
 
 export function useCanvasHandlers({
   blocks,
+  blockTypes,
+  lanes,
   geometry,
   dispatch,
   onDropBlockType,
+  dragApi,
 }: Options): CanvasHandlers {
+  const { t } = useTranslation('pathway')
   const { screenToFlowPosition } = useReactFlow()
 
   const onNodesChange = useCallback(
@@ -37,6 +48,13 @@ export function useCanvasHandlers({
         if (c.type === 'position' && c.position && !c.dragging) {
           const block = blocks.find((b) => b.id === c.id)
           if (!block) continue
+          const targetLaneId = geometry.laneAt(c.position.y) ?? block.lane_id
+          const targetLane = lanes.find((l) => l.id === targetLaneId)
+          const bt = blockTypes.find((bt) => bt.type === block.type)
+          if (bt && targetLane && !isLaneAllowed(bt, targetLane.lane_kind_code)) {
+            toast.error(t('canvas.invalidLaneDrop'))
+            continue
+          }
           const baseX = geometry.phaseX(block.phase_id)
           const baseY = geometry.laneY(block.lane_id)
           dispatch({
@@ -52,7 +70,7 @@ export function useCanvasHandlers({
         if (c.type === 'remove') dispatch({ type: 'delete-block', blockId: c.id })
       }
     },
-    [blocks, geometry, dispatch],
+    [blocks, blockTypes, lanes, geometry, dispatch, t],
   )
 
   const onEdgesChange = useCallback(
@@ -87,11 +105,19 @@ export function useCanvasHandlers({
       event.preventDefault()
       const code = event.dataTransfer.getData(DRAG_TYPES.BLOCK_TYPE)
       if (!code) return
+      const bt = blockTypes.find((b) => b.type === code)
       const flowPt = screenToFlowPosition({ x: event.clientX, y: event.clientY })
       const phaseId = geometry.phaseAt(flowPt.x)
       const laneId = geometry.laneAt(flowPt.y)
       if (!phaseId || !laneId) {
+        dragApi.endDrag()
         onDropBlockType(code, null)
+        return
+      }
+      const targetLane = lanes.find((l) => l.id === laneId)
+      if (bt && targetLane && !isLaneAllowed(bt, targetLane.lane_kind_code)) {
+        toast.error(t('canvas.invalidLaneDrop'))
+        dragApi.endDrag()
         return
       }
       onDropBlockType(code, {
@@ -100,8 +126,9 @@ export function useCanvasHandlers({
         x: flowPt.x - geometry.phaseX(phaseId) - BLOCK_WIDTH / 2,
         y: flowPt.y - geometry.laneY(laneId) - BLOCK_HEIGHT / 2,
       })
+      dragApi.endDrag()
     },
-    [screenToFlowPosition, geometry, onDropBlockType],
+    [blockTypes, lanes, screenToFlowPosition, geometry, onDropBlockType, dragApi, t],
   )
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
