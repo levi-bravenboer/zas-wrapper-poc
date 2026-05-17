@@ -12,6 +12,7 @@ import patients from './locales/nl/patients.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
 import states from './locales/nl/states.json'
+import usersAdminUi from './locales/nl/users-admin-ui.json'
 import users from './locales/nl/users.json'
 
 export const SUPPORTED_LOCALES = ['nl', 'fr', 'en'] as const
@@ -40,6 +41,7 @@ void i18next.use(initReactI18next).init({
     'smart',
     'states',
     'users',
+    'users-admin-ui',
   ],
   resources: {
     nl: {
@@ -55,6 +57,7 @@ void i18next.use(initReactI18next).init({
       smart,
       states,
       users,
+      'users-admin-ui': usersAdminUi,
     },
   },
   interpolation: { escapeValue: false },

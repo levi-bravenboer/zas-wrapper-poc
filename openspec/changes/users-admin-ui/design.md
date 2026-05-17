@@ -23,7 +23,7 @@ This is the first downstream consumer of #2.5 — its concrete shape locks how s
 
 ### D1 — Full-page create + edit (not dialogs)
 
-Routes `/_auth/admin/users/new` + `/_auth/admin/users/$userId/edit` both render a single `<UserFormPage mode>` component built on `<EntityFormPage>`. Single component, `mode: 'create' | 'edit'` discriminator. Form schema differs by mode (email + role only on create; is_active only on edit).
+Routes `/_auth/admin/users/new` + `/_auth/admin/users/$userId/edit` both render a single `<UserFormPage mode>` component built on `<EntityFormPage>`. Single component, `mode: 'create' | 'edit'` discriminator. Form schema differs by mode (email + role + qualification on create; display_name only on edit). Activation flips are NOT in the form — they're a separate kebab/header action calling the existing `/users/{id}/active` endpoint.
 
 **Why:** Locked in `#2.5` brainstorming. Dialogs lose dirty-guard + back-button semantics; full pages let `useDirtyGuard` block in-app nav cleanly and give a single place for permission gating later. One component avoids drift between create + edit field tree.
 
@@ -39,7 +39,7 @@ Routes `/_auth/admin/users/new` + `/_auth/admin/users/$userId/edit` both render 
 
 ### D3 — Deactivate via `useEntityDelete`-adapted soft-delete
 
-The `Deactiveren` action is a soft-delete: AlertDialog confirm → `PATCH /users/{id} { is_active: false }` → toast + invalidate. Reuses `useEntityDelete`'s dialog + state but swaps the mutation body.
+The `Deactiveren` action is a soft-delete: AlertDialog confirm → `PATCH /users/{id}/active { is_active: false }` (existing endpoint) → toast + invalidate. Reuses `useEntityDelete`'s dialog + state but swaps the mutation body and target endpoint.
 
 **Why:** Hard delete would orphan PractitionerRole + CareTeamParticipant rows. `useEntityDelete` already owns the AlertDialog + toast + invalidation flow; consumers parameterise the mutation. No new hook needed.
 
@@ -61,9 +61,17 @@ Server returns structured `ErrorResponse{ code, field? }`. Frontend maps the `co
 
 ### D6 — Zod schema source of truth, TanStack Form via `useEntityForm`
 
-`UserFormSchema` (Zod) lives in `apps/orchestrator/src/features/users/userForm.schema.ts`. Per-mode schemas are derived via `.omit()` / `.partial()`. `useEntityForm` adapts the Zod schema as the form's standard-schema validator (already proven in `#2.5`).
+`UserFormSchema` (Zod) lives in `apps/orchestrator/src/modules/user/components/userForm.schema.ts`. Per-mode schemas are derived via `.omit()` / `.partial()`. `useEntityForm` adapts the Zod schema as the form's standard-schema validator (already proven in `#2.5`).
 
 **Why:** `#2.5` locks the pattern. No new validator library.
+
+### D8 — Frontend-first prototype phase before backend wiring
+
+Build all three frontend surfaces (list, detail, form) with hardcoded mock data **before** writing the backend endpoints. Browse each route via `moon run orchestrator:dev`, lock visual decisions, then peel the mocks out and replace with `usePaginatedQuery` / `useMutation` against the real API in a later pass.
+
+**Why:** Layout / spacing / copy ambiguity surfaces only in-browser. Writing the backend first means rewinding UI choices late. Cheaper to lock visuals on mock data, then plug in real fetches.
+
+**How to apply:** Each frontend section (§2, §3, §4) opens with a `.0 Prototype pass` task that scaffolds the surface against fixture data + `// TODO(wire)` markers. Backend (§1) + openapi sync (§6) happen after the prototype is approved. The mocks then get replaced inline with the typed client.
 
 ### D7 — Filter envelope shape
 

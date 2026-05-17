@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.api._list.deps import ListQueryParamsDep
 from app.repositories.user.deps import UserRepoDep
@@ -10,8 +10,10 @@ from app.schemas._list.page import Page
 from app.schemas.user.user import (
     AssignRoleRequest,
     SetActiveRequest,
+    UserCreate,
     UserDetail,
     UserRow,
+    UserUpdate,
 )
 from app.services.auth.deps import AdminUserDep
 from app.services.user.deps import UserServiceDep
@@ -46,6 +48,38 @@ async def get_user(
 ) -> UserDetail:
     user = await service.get(admin, user_id)
     return UserDetail.model_validate(user)
+
+
+# AUTH-HARDEN: admin-only write — depends on require_role(Role.ADMIN) via AdminUserDep.
+@router.post(
+    "/users",
+    operation_id="create_user",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UserRow,
+)
+async def create_user(
+    payload: UserCreate,
+    service: UserServiceDep,
+    admin: AdminUserDep,
+) -> UserRow:
+    user = await service.create(admin, payload)
+    return UserRow.model_validate(user)
+
+
+# AUTH-HARDEN: admin-only write — depends on require_role(Role.ADMIN) via AdminUserDep.
+@router.patch(
+    "/users/{user_id}",
+    operation_id="update_user",
+    response_model=UserRow,
+)
+async def update_user(
+    user_id: UUID,
+    payload: UserUpdate,
+    service: UserServiceDep,
+    admin: AdminUserDep,
+) -> UserRow:
+    user = await service.update_demographics(admin, user_id, payload)
+    return UserRow.model_validate(user)
 
 
 @router.patch(

@@ -2,12 +2,17 @@
 
 ### Requirement: Admin can create users with atomic Practitioner materialisation
 
-The backend SHALL expose `POST /users` (admin-only, `# AUTH-HARDEN`-marked) accepting a body `UserCreate { email, display_name, role, qualification?, is_active? }`. Email uniqueness is tenant-scoped (existing constraint from `user-base`). When `role == caregiver`, the handler SHALL — in the same database transaction as the User insert — call `PractitionerService.create` to materialise a Practitioner row with `family_name` / `given_name` derived from `display_name` and the optional `qualification`. If the Practitioner insert fails, the entire transaction SHALL roll back; no orphan User without Practitioner row may persist.
+The backend SHALL expose `POST /users` (admin-only, `# AUTH-HARDEN`-marked) accepting a role-discriminated body:
+
+- `role: admin` → `UserCreate { email, role, display_name }`.
+- `role: caregiver` → `UserCreate { email, role, given_name, family_name, qualification? }`. The handler SHALL derive `user.display_name = f"{given_name} {family_name}"` server-side (clients do not send `display_name` for caregivers).
+
+Pydantic SHALL reject payloads that mix branches (e.g. an admin payload carrying `given_name`, or a caregiver payload carrying `display_name`) with `422`. Email uniqueness is tenant-scoped (existing constraint from `user-base`). When `role == caregiver`, the handler SHALL — in the same database transaction as the User insert — call `PractitionerService.create` to materialise a Practitioner row with `family_name`, `given_name`, and the optional `qualification` taken directly from the payload. If the Practitioner insert fails, the entire transaction SHALL roll back; no orphan User without Practitioner row may persist. Initial credentials are out of scope of `UserCreate` — `UserService.create` SHALL provision a placeholder `password_hash` (random token, hashed); admins onboard credentials via the separate auth-hardening track.
 
 #### Scenario: Caregiver creation materialises Practitioner atomically
 
-- **WHEN** an admin posts `{"email": "x@y", "display_name": "Dr. Smith", "role": "caregiver", "qualification": "MD"}`
-- **THEN** the response is `201 Created` with the new `UserRow`, AND a `practitioners` row exists with `user_id = response.id` and `qualification = "MD"`
+- **WHEN** an admin posts `{"email": "x@y", "role": "caregiver", "given_name": "Sanne", "family_name": "Jansen", "qualification": "Huisarts"}`
+- **THEN** the response is `201 Created` with `UserRow.display_name == "Sanne Jansen"`, AND a `practitioners` row exists with `user_id = response.id`, `given_name = "Sanne"`, `family_name = "Jansen"`, `qualification = "Huisarts"`
 
 #### Scenario: Practitioner insert failure rolls back User insert
 
@@ -16,27 +21,27 @@ The backend SHALL expose `POST /users` (admin-only, `# AUTH-HARDEN`-marked) acce
 
 #### Scenario: Admin creation does NOT create a Practitioner
 
-- **WHEN** an admin posts `{"role": "admin", ...}`
+- **WHEN** an admin posts `{"email": "bo@y", "role": "admin", "display_name": "Bo de Vries"}`
 - **THEN** the response is `201 Created` and no `practitioners` row is created for that user
+
+#### Scenario: Mixed-branch payload rejected
+
+- **WHEN** an admin posts `{"role": "admin", "display_name": "X", "given_name": "X"}` (or any other cross-branch field combo)
+- **THEN** the response is `422 Unprocessable Entity`; no row is created
 
 #### Scenario: Duplicate email surfaces 409
 
 - **WHEN** an admin posts an email that already exists in their tenant
 - **THEN** the response is `409 Conflict` with `ErrorResponse{ code: "conflict.user.email_exists" }`
 
-### Requirement: Admin can edit user demographics and active status, but not self-deactivate
+### Requirement: Admin can edit user demographics, but not self-deactivate
 
-The backend SHALL expose `PATCH /users/{user_id}` (admin-only, `# AUTH-HARDEN`-marked) accepting body `UserUpdate { display_name?, is_active? }`. Cross-tenant targets SHALL return `403`. An admin SHALL NOT deactivate their own account through this endpoint; that request SHALL return `409 Conflict` with `ErrorResponse{ code: "conflict.user.self_deactivate" }`. Role changes remain on `PATCH /users/{user_id}/role` (existing `user-base` endpoint).
+The backend SHALL expose `PATCH /users/{user_id}` (admin-only, `# AUTH-HARDEN`-marked) accepting body `UserUpdate { display_name? }`. Cross-tenant targets SHALL return `403`. Editing caregiver clinical fields (`given_name`, `family_name`, `qualification`) lives on the Practitioner update endpoint, not here — `UserUpdate` carries `display_name` only. For caregivers, the UI SHALL lock these fields (with a Lock icon + helper text pointing at the Practitioner page); the form payload sent to PATCH is always `{ display_name }`. Role changes remain on `PATCH /users/{user_id}/role` (existing `user-base` endpoint). Active flips remain on `PATCH /users/{user_id}/active` (existing `user-base` endpoint, which already rejects self-deactivation with `409 conflict.user.self_deactivate`).
 
 #### Scenario: Display name edit succeeds
 
 - **WHEN** an admin PATCHes `display_name: "New Name"` for another user in the same tenant
 - **THEN** the response is `200` with the updated `UserRow` and a follow-up GET reflects the change
-
-#### Scenario: Self-deactivation rejected
-
-- **WHEN** an admin PATCHes `is_active: false` against their own `user_id`
-- **THEN** the response is `409 Conflict` with `ErrorResponse{ code: "conflict.user.self_deactivate" }`
 
 #### Scenario: Cross-tenant edit rejected
 
@@ -49,11 +54,11 @@ The orchestrator SHALL render at `/_auth/admin/users` a `<UserListPage>` composi
 
 1. **Naam** — `display_name`, sortable, sticky.
 2. **Email** — sortable.
-3. **Rol** — badge: `Admin | Caregiver | External`. Filterable via single-select.
+3. **Rol** — badge: `Admin | Caregiver`. Filterable via single-select.
 4. **Actief** — badge: `Ja | Nee`. Filterable via toggle.
 5. **Aangemaakt** — `dd MMM HH:mm` (locale `nl-NL`), sortable.
 
-The page SHALL provide a search input (`q` over `display_name + email`), a `Rol`-filter single-select, an `Actief`-filter toggle, and a primary CTA `Gebruiker toevoegen` linking to `/_auth/admin/users/new`. Each row's kebab SHALL expose `Bewerken` (linking to `/_auth/admin/users/$userId/edit`) and `Deactiveren` (destructive confirm; calls `PATCH /users/{id}` with `is_active=false`). The `Deactiveren` action SHALL be disabled when `row.id === currentSession.user.id`. The empty state copy SHALL be `"Nog geen gebruikers in dit tenant."`. The route SHALL be reachable only via the admin route group's existing layout gate.
+The page SHALL provide a search input (`q` over `display_name + email`), a `Rol`-filter single-select, an `Actief`-filter toggle, and a primary CTA `Gebruiker toevoegen` linking to `/_auth/admin/users/new`. Each row's kebab SHALL expose `Bewerken` (linking to `/_auth/admin/users/$userId/edit`) and `Deactiveren` (destructive confirm; calls `PATCH /users/{id}/active` with `{ is_active: false }`). The `Deactiveren` action SHALL be disabled when `row.id === currentSession.user.id`. The empty state copy SHALL be `"Nog geen gebruikers in dit tenant."`. The route SHALL be reachable only via the admin route group's existing layout gate.
 
 #### Scenario: Caregiver session cannot load the page
 
@@ -77,7 +82,7 @@ The orchestrator SHALL render at `/_auth/admin/users/$userId` a `<UserDetailPage
 1. **Demographics card**: `Naam`, `Email`, `Rol`, `Actief`, `Aangemaakt`.
 2. **Practitioner card** (only when `user.role === 'caregiver'` and `GET /practitioners/{userId}` returns 200): `family_name`, `given_name`, `qualification`, and a small table of `PractitionerRole` rows showing `code`, `organisation.name`, `period_start`, `period_end` (em-dash when open), `is_primary` badge.
 
-The header `Bewerken` action SHALL navigate to `/_auth/admin/users/$userId/edit`. The header `Deactiveren` action SHALL use `useEntityDelete` semantics adapted for soft-deactivate: AlertDialog confirm → `PATCH /users/{id}` with `is_active=false` → toast + invalidate the detail query; disabled when target is the current admin. Loading state SHALL render `<EntityDetailSkeleton>`. Missing resource (404) SHALL render `<EntityNotFound>` with back link to the list.
+The header `Bewerken` action SHALL navigate to `/_auth/admin/users/$userId/edit`. The header `Deactiveren` action SHALL use `useEntityDelete` semantics adapted for soft-deactivate: AlertDialog confirm → `PATCH /users/{id}/active` with `{ is_active: false }` → toast + invalidate the detail query; disabled when target is the current admin. Loading state SHALL render `<EntityDetailSkeleton>`. Missing resource (404) SHALL render `<EntityNotFound>` with back link to the list.
 
 Affiliation editing SHALL NOT be exposed from this page — each PractitionerRole row's chip MAY link to the (placeholder until `practitioner-roles-admin-ui` ships) `/_auth/admin/practitioner-roles?practitioner_id=…` route.
 
@@ -93,12 +98,52 @@ Affiliation editing SHALL NOT be exposed from this page — each PractitionerRol
 
 ### Requirement: Create + Edit pages compose entity-page chrome with field-level errors
 
-The orchestrator SHALL render Create at `/_auth/admin/users/new` and Edit at `/_auth/admin/users/$userId/edit`. Both routes SHALL render a single `<UserFormPage>` parameterised by `mode: 'create' | 'edit'` and SHALL compose `<EntityFormPage>` (sticky footer with Cancel + Save) driven by `useEntityForm` against a Zod schema. The form body SHALL render shadcn `Form` field rows: `email` (create only), `display_name`, `role` (create only; default `caregiver`), `qualification` (only when selected `role === 'caregiver'`), `is_active` (edit only). Cancel SHALL navigate back to the source (detail for edit, list for create). On success: create POSTs `/users`, navigates to the new detail page, fires a success toast; edit PATCHes `/users/{id}`, navigates back to detail, fires a success toast. Both flows SHALL invalidate the `/users` list query key on success. API field-level errors SHALL surface inline against the relevant field (e.g. duplicate email → `email` field error). `useDirtyGuard` SHALL block in-app navigation while the form is dirty.
+The orchestrator SHALL render Create at `/_auth/admin/users/new` and Edit at `/_auth/admin/users/$userId/edit`. Both routes SHALL render a single `<UserFormPage>` parameterised by `mode: 'create' | 'edit'` and SHALL compose `<EntityFormPage>` (sticky footer with Cancel + Save) driven by `useEntityForm` against a Zod schema. The form body SHALL be organised into two cards:
 
-#### Scenario: Qualification input visibility tied to role
+1. **Identiteit**: name fields (role-discriminated — see below), `email`, `role`.
+2. **Praktijk** (rendered only when `role === 'caregiver'`): `qualification`.
 
-- **WHEN** the user picks `role: 'admin'` in `<UserFormPage mode="create">`
-- **THEN** the `qualification` input MUST be hidden and its value MUST NOT be sent in the POST body
+The name fields SHALL be role-discriminated:
+
+- `role === 'admin'` → single `display_name` input.
+- `role === 'caregiver'` → two inputs (`given_name`, `family_name`) rendered as a two-column grid. `user.display_name` is NOT a form field; the backend derives it from given+family.
+
+In **create** mode, all role-relevant required fields SHALL be editable; switching `role` SHALL swap the name field set without losing the user's other inputs. In **edit** mode, `email`, `role`, and (for caregivers) `given_name` / `family_name` / `qualification` SHALL be locked (displayed disabled with a `Lock` icon + a helper line pointing to the Practitioner page for the caregiver clinical fields). Only `display_name` (admin) flows through PATCH.
+
+Validation SHALL use a single Zod schema with role-conditional requireds enforced via `superRefine`. Validators SHALL run on blur and on submit (via `useEntityForm`). Required-field UX:
+
+- Every required, editable input SHALL render a red asterisk (`*`) immediately after its label.
+- Locked inputs SHALL NOT render an asterisk (the value is immutable in this surface).
+- Validation messages SHALL be authored as i18n keys under `form.error.*` (e.g. `form.error.required`, `form.error.email_invalid`, `form.error.too_long`) and resolved at render via `t()`; raw Zod default copy MUST NOT leak to the UI.
+
+Submit payload SHALL be built role-conditionally:
+
+- admin create → `{ email, role: 'admin', display_name }`
+- caregiver create → `{ email, role: 'caregiver', given_name, family_name, qualification? }` (qualification omitted when empty)
+- admin edit → `{ display_name }`
+- caregiver edit → `{ display_name: derived }` — but since clinical fields are locked, the only mutation surface is when the *admin's own* display_name is edited; caregiver display_name is server-derived from given/family on the Practitioner page.
+
+Cancel SHALL navigate back to the source (detail for edit, list for create). On success: create POSTs `/users`, navigates to the new detail page, fires a success toast; edit PATCHes `/users/{id}`, navigates back to detail, fires a success toast. Both flows SHALL invalidate the `/users` list query key on success. API field-level errors SHALL surface inline against the relevant field (e.g. duplicate email → `email` field error). `useDirtyGuard` SHALL block in-app navigation while the form is dirty.
+
+#### Scenario: Name fields swap with role
+
+- **WHEN** the user opens `<UserFormPage mode="create">` (defaults to `role = caregiver`) and flips the Rol select to `admin`
+- **THEN** the `given_name` + `family_name` inputs MUST disappear, a single `display_name` input MUST appear, and the eventual POST body MUST NOT carry `given_name` / `family_name` / `qualification`
+
+#### Scenario: Required asterisks render on required editable fields
+
+- **WHEN** `<UserFormPage mode="create">` is mounted with `role = caregiver`
+- **THEN** the `email`, `given_name`, and `family_name` labels MUST render a red asterisk; the `qualification` label MUST NOT; flipping to `role = admin` MUST move the asterisk from given/family to `display_name`
+
+#### Scenario: Locked fields do not render asterisks
+
+- **WHEN** the edit page loads for a caregiver
+- **THEN** `email`, `role`, `given_name`, `family_name`, and `qualification` MUST render with a Lock icon + locked-helper copy AND MUST NOT render an asterisk; `display_name` is not exposed (caregiver display_name is server-derived)
+
+#### Scenario: Validation errors render localised copy
+
+- **WHEN** the user blurs `email` with an invalid string
+- **THEN** the field error line MUST render the resolved `form.error.email_invalid` copy (Dutch: `"Vul een geldig e-mailadres in."`), NOT the raw Zod message
 
 #### Scenario: Duplicate-email error surfaces inline
 

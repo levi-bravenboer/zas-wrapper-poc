@@ -133,7 +133,8 @@ export interface paths {
         /** List Users */
         get: operations["list_users"];
         put?: never;
-        post?: never;
+        /** Create User */
+        post: operations["create_user"];
         delete?: never;
         options?: never;
         head?: never;
@@ -154,7 +155,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update User */
+        patch: operations["update_user"];
         trace?: never;
     };
     "/users/{user_id}/role": {
@@ -920,6 +922,31 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /**
+         * UserCreate
+         * @description Role-discriminated admin-create payload.
+         *
+         *     - `admin` branch: requires `display_name`; rejects clinical fields.
+         *     - `caregiver` branch: requires `given_name` + `family_name`; rejects
+         *       `display_name` (the backend derives `user.display_name` from given+family).
+         *       `qualification` is optional.
+         *
+         *     The model_validator enforces mutual exclusion so a mixed payload is a 422,
+         *     not a silent half-fill.
+         */
+        UserCreate: {
+            /** Email */
+            email: string;
+            role: components["schemas"]["Role"];
+            /** Display Name */
+            display_name?: string | null;
+            /** Given Name */
+            given_name?: string | null;
+            /** Family Name */
+            family_name?: string | null;
+            /** Qualification */
+            qualification?: string | null;
+        };
         /** UserDetail */
         UserDetail: {
             /**
@@ -968,6 +995,11 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** UserUpdate */
+        UserUpdate: {
+            /** Display Name */
+            display_name?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1191,6 +1223,39 @@ export interface operations {
             };
         };
     };
+    create_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_user: {
         parameters: {
             query?: never;
@@ -1209,6 +1274,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRow"];
                 };
             };
             /** @description Validation Error */
