@@ -26,7 +26,8 @@ SEEDED_LANE_KINDS: tuple[tuple[str, str], ...] = (
 class BlockTypeEntry:
     type: str
     label: str
-    default_lane_kind_code: str
+    # First entry is the default placement when no explicit lane context exists.
+    allowed_lane_kind_codes: tuple[str, ...]
     config_schema: dict[str, Any]
     supports_branches: bool = False
 
@@ -58,7 +59,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="appointment",
         label="Appointment",
-        default_lane_kind_code=LANE_KIND_CAREGIVER,
+        allowed_lane_kind_codes=(LANE_KIND_CAREGIVER,),
         config_schema=_object_schema(
             properties={
                 "title": {"type": "string", "minLength": 1, "maxLength": 255},
@@ -72,7 +73,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="decision",
         label="Decision",
-        default_lane_kind_code=LANE_KIND_CAREGIVER,
+        allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         supports_branches=True,
         config_schema=_object_schema(
             properties={
@@ -84,7 +85,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="milestone",
         label="Milestone",
-        default_lane_kind_code=LANE_KIND_SYSTEM,
+        allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         config_schema=_object_schema(
             properties={
                 "label": {"type": "string", "minLength": 1, "maxLength": 255},
@@ -95,7 +96,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="timer",
         label="Timer",
-        default_lane_kind_code=LANE_KIND_SYSTEM,
+        allowed_lane_kind_codes=(LANE_KIND_SYSTEM,),
         config_schema=_object_schema(
             properties={
                 "note": {"type": "string", "maxLength": 500},
@@ -105,7 +106,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="task",
         label="Task",
-        default_lane_kind_code=LANE_KIND_CAREGIVER,
+        allowed_lane_kind_codes=(LANE_KIND_PATIENT, LANE_KIND_CAREGIVER),
         config_schema=_object_schema(
             properties={
                 "title": {"type": "string", "minLength": 1, "maxLength": 255},
@@ -117,7 +118,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     BlockTypeEntry(
         type="email",
         label="Email",
-        default_lane_kind_code=LANE_KIND_PATIENT,
+        allowed_lane_kind_codes=(LANE_KIND_PATIENT,),
         config_schema=_object_schema(
             properties={
                 "subject": {"type": "string", "minLength": 1, "maxLength": 255},

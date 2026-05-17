@@ -892,7 +892,7 @@ export interface components {
             phase_id: string;
             /**
              * Lane Id
-             * @description Optional. When omitted the backend materializes the block type's default lane (see catalogue.default_lane_kind_code).
+             * @description Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0]).
              */
             lane_id?: string | null;
             /** Type */
@@ -964,10 +964,10 @@ export interface components {
             /** Label */
             label: string;
             /**
-             * Default Lane Kind Code
-             * @description Stable lane-kind code (D10): patient | caregiver | system | external
+             * Allowed Lane Kind Codes
+             * @description Lane-kind codes this block type may be placed on. The first entry is the default placement when no explicit lane context exists.
              */
-            default_lane_kind_code: string;
+            allowed_lane_kind_codes: string[];
             /** Config Schema */
             config_schema: {
                 [key: string]: unknown;

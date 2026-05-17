@@ -25,6 +25,7 @@ from app.schemas.pathway.pathway import (
 )
 from app.services.pathway.errors import (
     BlockConfigError,
+    BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
     EdgeValidationError,
@@ -176,6 +177,53 @@ async def test_unknown_lane_kind_raises(db_session: AsyncSession, empty_pathway:
         )
 
 
+async def test_block_on_disallowed_lane_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """email.allowed_lane_kind_codes = ['patient']; caregiver lane must be rejected."""
+
+    service = _service(db_session)
+    phase = _phase()
+    caregiver_lane = _lane(code="caregiver")
+    email = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=caregiver_lane.id,
+        type="email",
+        config={"subject": "Hi"},
+    )
+    with pytest.raises(BlockLaneNotAllowedError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(phases=[phase], lanes=[caregiver_lane], blocks=[email]),
+        )
+
+
+async def test_task_block_accepted_on_patient_lane(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """task.allowed_lane_kind_codes = ['patient','caregiver']; patient lane is valid."""
+
+    service = _service(db_session)
+    phase = _phase()
+    patient_lane = _lane(code="patient")
+    task = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=patient_lane.id,
+        type="task",
+        config={"title": "Hydrate"},
+    )
+    result = await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[patient_lane], blocks=[task]),
+    )
+    assert len(result.version.blocks) == 1
+    assert result.version.blocks[0].lane_id == patient_lane.id
+
+
 async def test_block_config_validates_against_schema(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -268,22 +316,23 @@ async def test_edge_source_branch_must_belong_to_source_block(
 ) -> None:
     service = _service(db_session)
     phase = _phase()
-    lane = _lane()
+    system_lane = _lane(code="system", ord_=0)
+    caregiver_lane = _lane(code="caregiver", ord_=1, is_default=False)
     decision_a = PathwayBlockIn(
         id=uuid.uuid4(),
         phase_id=phase.id,
-        lane_id=lane.id,
+        lane_id=system_lane.id,
         type="decision",
         config={"question": "?"},
     )
     decision_b = PathwayBlockIn(
         id=uuid.uuid4(),
         phase_id=phase.id,
-        lane_id=lane.id,
+        lane_id=system_lane.id,
         type="decision",
         config={"question": "?"},
     )
-    target = _appointment_block(phase.id, lane.id, "T")
+    target = _appointment_block(phase.id, caregiver_lane.id, "T")
     branch_on_a = PathwayBlockBranchIn(id=uuid.uuid4(), block_id=decision_a.id, label="goed", ord=0)
     # Edge leaves decision_b but claims branch_on_a
     edge = PathwayEdgeIn(
@@ -298,7 +347,7 @@ async def test_edge_source_branch_must_belong_to_source_block(
             empty_pathway.tenant_id,
             _minimal_payload(
                 phases=[phase],
-                lanes=[lane],
+                lanes=[system_lane, caregiver_lane],
                 blocks=[decision_a, decision_b, target],
                 branches=[branch_on_a],
                 edges=[edge],

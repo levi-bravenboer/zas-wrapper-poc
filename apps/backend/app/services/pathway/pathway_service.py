@@ -54,6 +54,7 @@ from app.services.pathway.catalogue import (
 )
 from app.services.pathway.errors import (
     BlockConfigError,
+    BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
     EdgeValidationError,
@@ -134,7 +135,7 @@ class PathwayService:
             PathwayBlockType(
                 type=entry.type,
                 label=entry.label,
-                default_lane_kind_code=entry.default_lane_kind_code,
+                allowed_lane_kind_codes=list(entry.allowed_lane_kind_codes),
                 config_schema=entry.config_schema,
                 supports_branches=entry.supports_branches,
             )
@@ -446,6 +447,7 @@ class _ResolvedDefinition:
 
         # ---- Lanes
         lane_kind_ids: dict[UUID, UUID] = {}
+        lane_kind_codes: dict[UUID, str] = {}
         resolved_lanes: list[PathwayLaneIn] = []
         for lane in payload.lanes:
             kind = lane_kinds.get(lane.lane_kind_code)
@@ -457,6 +459,7 @@ class _ResolvedDefinition:
             if lane.id in lane_kind_ids:
                 raise PathwayValidationError(field=f"lanes[{lane.id}]", reason="duplicate lane id")
             lane_kind_ids[lane.id] = kind.id
+            lane_kind_codes[lane.id] = lane.lane_kind_code
             resolved_lanes.append(lane)
 
         # ---- Timing values
@@ -495,12 +498,21 @@ class _ResolvedDefinition:
                 entry=entry,
                 lanes=resolved_lanes,
                 lane_kind_ids=lane_kind_ids,
+                lane_kind_codes=lane_kind_codes,
                 lane_kinds=lane_kinds,
             )
             if resolved_lane_id is None:
                 raise PathwayValidationError(
                     field=f"blocks[{block.id}].lane_id",
                     reason="block has no lane_id and no default lane could be materialized",
+                )
+            resolved_kind_code = lane_kind_codes[resolved_lane_id]
+            if resolved_kind_code not in entry.allowed_lane_kind_codes:
+                raise BlockLaneNotAllowedError(
+                    block_id=block.id,
+                    block_type=block.type,
+                    lane_kind_code=resolved_kind_code,
+                    allowed=entry.allowed_lane_kind_codes,
                 )
             _validate_block_config(block.id, entry.config_schema, block.config)
             block_types_by_id[block.id] = block.type
@@ -639,6 +651,7 @@ def _resolve_or_materialize_lane(
     entry: Any,  # BlockTypeEntry — typed loose to avoid circular import friction
     lanes: list[PathwayLaneIn],
     lane_kind_ids: dict[UUID, UUID],
+    lane_kind_codes: dict[UUID, str],
     lane_kinds: dict[str, PathwayLaneKind],
 ) -> UUID | None:
     if block.lane_id is not None:
@@ -649,7 +662,7 @@ def _resolve_or_materialize_lane(
             )
         return block.lane_id
 
-    default_kind_code = entry.default_lane_kind_code
+    default_kind_code = entry.allowed_lane_kind_codes[0]
     kind = lane_kinds.get(default_kind_code)
     if kind is None:
         return None
@@ -669,6 +682,7 @@ def _resolve_or_materialize_lane(
     )
     lanes.append(new_lane)
     lane_kind_ids[materialized_id] = kind.id
+    lane_kind_codes[materialized_id] = default_kind_code
     return materialized_id
 
 

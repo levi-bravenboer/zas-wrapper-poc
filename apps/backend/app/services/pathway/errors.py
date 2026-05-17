@@ -92,6 +92,32 @@ class BlockConfigError(PathwayValidationError):
     code = "invalid.pathway.block-config"
 
 
+class BlockLaneNotAllowedError(PathwayValidationError):
+    code = "invalid.pathway.block-lane"
+
+    def __init__(
+        self,
+        *,
+        block_id: UUID,
+        block_type: str,
+        lane_kind_code: str,
+        allowed: tuple[str, ...] | list[str],
+    ) -> None:
+        super().__init__(
+            field=f"blocks[{block_id}].lane_id",
+            reason=(
+                f"block type '{block_type}' cannot be placed on lane kind "
+                f"'{lane_kind_code}' (allowed: {sorted(allowed)})"
+            ),
+            extra={
+                "block_id": str(block_id),
+                "block_type": block_type,
+                "lane_kind_code": lane_kind_code,
+                "allowed_lane_kind_codes": list(allowed),
+            },
+        )
+
+
 class ForkSourceNotPublishedError(PathwayValidationError):
     code = "invalid.pathway.fork-source"
 
@@ -102,6 +128,7 @@ class PublishApprovalError(PathwayValidationError):
 
 __all__ = [
     "BlockConfigError",
+    "BlockLaneNotAllowedError",
     "BranchOwnershipError",
     "ConceptAlreadyExistsError",
     "DeferredFieldError",

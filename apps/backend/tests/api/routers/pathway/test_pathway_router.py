@@ -82,8 +82,11 @@ async def test_list_block_types(
     rows = response.json()
     codes = {row["type"] for row in rows}
     assert {"appointment", "decision", "milestone", "timer", "task", "email"}.issubset(codes)
-    lane_codes = {row["default_lane_kind_code"] for row in rows}
-    assert lane_codes <= {"patient", "caregiver", "system", "external"}
+    for row in rows:
+        codes = row["allowed_lane_kind_codes"]
+        assert isinstance(codes, list) and len(codes) >= 1
+        for code in codes:
+            assert code in {"patient", "caregiver", "system", "external"}
 
 
 async def test_list_phase_templates(
@@ -211,6 +214,31 @@ async def test_replace_invalid_payload_returns_422(
     )
 
     assert response.status_code == 422
+
+
+async def test_replace_disallowed_lane_returns_422(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """email block on caregiver lane violates allowed_lane_kind_codes."""
+
+    await _login(async_client)
+    created = await _create(async_client)
+
+    payload = _replace_payload("Bad lane", lane_kinds)
+    payload["blocks"][0]["type"] = "email"
+    payload["blocks"][0]["config"] = {"subject": "Hi"}
+    # lane stays on caregiver — email allows only patient.
+
+    response = await async_client.put(
+        f"/pathways/{created['pathway']['id']}", json=payload
+    )
+
+    assert response.status_code == 422, response.text
+    body = response.json()
+    details = body["details"]
+    assert details["block_id"] == payload["blocks"][0]["id"]
+    assert details["lane_kind_code"] == "caregiver"
+    assert details["allowed_lane_kind_codes"] == ["patient"]
 
 
 async def test_delete_pathway_returns_204_and_hides_from_list(

@@ -123,7 +123,7 @@ class PathwayBlockIn(BaseModel):
         default=None,
         description=(
             "Optional. When omitted the backend materializes the block type's "
-            "default lane (see catalogue.default_lane_kind_code)."
+            "default lane (catalogue.allowed_lane_kind_codes[0])."
         ),
     )
     type: str = Field(min_length=1, max_length=63)

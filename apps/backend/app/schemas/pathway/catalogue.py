@@ -8,8 +8,12 @@ from pydantic import BaseModel, Field
 class PathwayBlockType(BaseModel):
     type: str = Field(description="Stable kebab-case identifier")
     label: str
-    default_lane_kind_code: str = Field(
-        description="Stable lane-kind code (D10): patient | caregiver | system | external"
+    allowed_lane_kind_codes: list[str] = Field(
+        min_length=1,
+        description=(
+            "Lane-kind codes this block type may be placed on. The first entry "
+            "is the default placement when no explicit lane context exists."
+        ),
     )
     config_schema: dict[str, Any]
     supports_branches: bool = False

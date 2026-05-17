@@ -151,7 +151,7 @@ def _build_payload() -> PathwayDefinitionReplace:
             PathwayBlockIn(
                 id=BLOCK_VOORTGANG_ID,
                 phase_id=PHASE_FOLLOW_UP_ID,
-                lane_id=LANE_CAREGIVER_ID,
+                lane_id=LANE_SYSTEM_ID,
                 type="decision",
                 label="Voortgangsmeting",
                 config={"question": "Verloopt het herstel volgens plan?"},

@@ -2845,7 +2845,7 @@
               }
             ],
             "title": "Lane Id",
-            "description": "Optional. When omitted the backend materializes the block type's default lane (see catalogue.default_lane_kind_code)."
+            "description": "Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0])."
           },
           "type": {
             "type": "string",
@@ -2981,10 +2981,14 @@
             "type": "string",
             "title": "Label"
           },
-          "default_lane_kind_code": {
-            "type": "string",
-            "title": "Default Lane Kind Code",
-            "description": "Stable lane-kind code (D10): patient | caregiver | system | external"
+          "allowed_lane_kind_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Allowed Lane Kind Codes",
+            "description": "Lane-kind codes this block type may be placed on. The first entry is the default placement when no explicit lane context exists."
           },
           "config_schema": {
             "additionalProperties": true,
@@ -3001,7 +3005,7 @@
         "required": [
           "type",
           "label",
-          "default_lane_kind_code",
+          "allowed_lane_kind_codes",
           "config_schema"
         ],
         "title": "PathwayBlockType"
