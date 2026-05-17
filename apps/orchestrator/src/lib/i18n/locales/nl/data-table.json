@@ -15,7 +15,13 @@
     },
     "filters": {
       "clear": "Filters wissen",
-      "button": "Filters"
+      "button": "Filters",
+      "more": "+{{count}} meer",
+      "pill": {
+        "empty": "{{label}}",
+        "active": "{{label}}: {{value}}",
+        "clearAria": "Verwijder filter {{label}}"
+      }
     }
   },
   "sort": {
