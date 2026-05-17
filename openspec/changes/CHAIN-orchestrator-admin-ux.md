@@ -72,7 +72,7 @@ The seven changes MUST land in dependency order. The parallel set (`#3 + #4 + #6
 | 3 | `users-admin-ui` | `feat/users-admin-ui` | (removed) | **archived** (PR #14 merged 2026-05-17; archive id `2026-05-17-users-admin-ui`) |
 | 4 | `organisations-admin-ui` | `feat/organisations-admin-ui` | (removed) | **archived** (PR #15 merged 2026-05-17; archive id `2026-05-17-organisations-admin-ui`) |
 | 5 | `practitioner-roles-admin-ui` | `feat/practitioner-roles-admin-ui` | `.worktrees/feat-practitioner-roles-admin-ui` | draft (worktree not yet created) |
-| 6 | `patient-profile-ui` | `feat/patient-profile-ui` | `.worktrees/feat-patient-profile-ui` | in-progress (worktree active, PR pending) |
+| 6 | `patient-profile-ui` | `feat/patient-profile-ui` | (removed) | **archived** (PR #17 merged 2026-05-17; archive id `2026-05-17-patient-profile-ui`; task 8.4 deferred) |
 | 7 | `care-teams-ui` | `feat/care-teams-ui` | `.worktrees/feat-care-teams-ui` | draft (worktree not yet created) |
 | 4.1 | `organisations-tree-dnd-editor` (post-chain follow-up) | `feat/organisations-tree-dnd-editor` | (removed) | **archived** (PR #16 merged 2026-05-17; archive id `2026-05-17-organisations-tree-dnd-editor`; groups 7/8 + 10.5 deferred to future change) |
 
