@@ -8,6 +8,7 @@ import dashboard from './locales/nl/dashboard.json'
 import dataTable from './locales/nl/data-table.json'
 import entityPage from './locales/nl/entity-page.json'
 import nav from './locales/nl/nav.json'
+import organisationsAdminUi from './locales/nl/organisations-admin-ui.json'
 import patients from './locales/nl/patients.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
@@ -36,6 +37,7 @@ void i18next.use(initReactI18next).init({
     'data-table',
     'entity-page',
     'nav',
+    'organisations-admin-ui',
     'patients',
     'shell',
     'smart',
@@ -52,6 +54,7 @@ void i18next.use(initReactI18next).init({
       'data-table': dataTable,
       'entity-page': entityPage,
       nav,
+      'organisations-admin-ui': organisationsAdminUi,
       patients,
       shell,
       smart,
