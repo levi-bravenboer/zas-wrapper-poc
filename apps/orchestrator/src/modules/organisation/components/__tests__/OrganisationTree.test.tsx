@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string -- inline test fixtures, not user copy. */
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nextProvider } from 'react-i18next'
@@ -62,8 +61,9 @@ describe('OrganisationTree', () => {
 
   it('fires onCreateChild from action menu', async () => {
     const { onCreateChild } = renderTree()
-    const actionButtons = screen.getAllByRole('button', { name: /acties/i })
-    await userEvent.click(actionButtons[0]!)
+    const [firstAction] = screen.getAllByRole('button', { name: /acties/i })
+    if (!firstAction) throw new Error('expected at least one action button')
+    await userEvent.click(firstAction)
     await userEvent.click(await screen.findByText(/nieuwe sub-organisatie/i))
     expect(onCreateChild).toHaveBeenCalled()
   })

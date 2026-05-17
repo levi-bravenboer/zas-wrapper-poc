@@ -1,7 +1,7 @@
-import { useForm } from '@tanstack/react-form'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,17 +12,14 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useEntityForm } from '@/hooks/entity'
 
 import { useUpdateOrganisation } from '../hooks'
 import type { OrganisationRead, OrganisationUpdatePayload } from '../schemas'
 
-const ORG_TYPE_SYSTEM = 'http://terminology.hl7.org/CodeSystem/organization-type'
+import { organisationFormSchema, type OrganisationFormValues } from './organisationForm.schema'
 
-interface FormValues {
-  name: string
-  type_code: string
-  type_display: string
-}
+const ORG_TYPE_SYSTEM = 'http://terminology.hl7.org/CodeSystem/organization-type'
 
 export interface EditOrganisationDialogProps {
   open: boolean
@@ -40,20 +37,23 @@ export function EditOrganisationDialog({
   const { t } = useTranslation('organisations-admin-ui')
   const mutation = useUpdateOrganisation()
 
-  const form = useForm({
-    defaultValues: {
-      name: organisation?.name ?? '',
-      type_code: organisation?.type_code ?? 'prov',
-      type_display: organisation?.type_display ?? '',
-    } as FormValues,
-    onSubmit: async ({ value }) => {
+  const defaults: OrganisationFormValues = {
+    name: organisation?.name ?? '',
+    type_code: organisation?.type_code ?? 'prov',
+    type_display: organisation?.type_display ?? '',
+  }
+
+  const { form, isSubmitting, submit } = useEntityForm<OrganisationFormValues>({
+    schema: organisationFormSchema,
+    defaultValues: defaults,
+    onSubmit: async (value) => {
       if (!organisation) return
       const payload: OrganisationUpdatePayload = {
-        name: value.name.trim(),
+        name: value.name,
         type: {
           system: ORG_TYPE_SYSTEM,
-          code: value.type_code.trim(),
-          display: value.type_display?.trim() || null,
+          code: value.type_code,
+          display: value.type_display || null,
         },
       }
       try {
@@ -61,12 +61,15 @@ export function EditOrganisationDialog({
           organisationId: organisation.id,
           payload,
         })
-        toast.success(t('edit.success'))
         onUpdated?.(updated)
-        onOpenChange(false)
-      } catch {
+      } catch (e) {
         toast.error(t('error.generic'))
+        throw e
       }
+    },
+    onSuccess: () => {
+      toast.success(t('edit.success'))
+      onOpenChange(false)
     },
   })
 
@@ -89,7 +92,7 @@ export function EditOrganisationDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            void form.handleSubmit()
+            void submit()
           }}
           className="flex flex-col gap-4"
         >
@@ -102,8 +105,9 @@ export function EditOrganisationDialog({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  required
+                  aria-invalid={field.state.meta.errors.length > 0}
                 />
+                <FieldError errors={field.state.meta.errors} t={t} />
               </div>
             )}
           </form.Field>
@@ -116,8 +120,9 @@ export function EditOrganisationDialog({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  required
+                  aria-invalid={field.state.meta.errors.length > 0}
                 />
+                <FieldError errors={field.state.meta.errors} t={t} />
               </div>
             )}
           </form.Field>
@@ -130,7 +135,9 @@ export function EditOrganisationDialog({
                   value={field.state.value ?? ''}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
+                  aria-invalid={field.state.meta.errors.length > 0}
                 />
+                <FieldError errors={field.state.meta.errors} t={t} />
               </div>
             )}
           </form.Field>
@@ -138,12 +145,29 @@ export function EditOrganisationDialog({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t('edit.cancel')}
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
               {t('edit.submit')}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function FieldError({ errors, t }: { errors: ReadonlyArray<unknown>; t: (key: string) => string }) {
+  if (errors.length === 0) return null
+  const first = errors[0]
+  const raw =
+    typeof first === 'string'
+      ? first
+      : typeof first === 'object' && first !== null && 'message' in first
+        ? String((first as { message: unknown }).message)
+        : String(first)
+  const text = raw.startsWith('form.error.') ? t(raw) : raw
+  return (
+    <p className="text-xs text-destructive" role="alert">
+      {text}
+    </p>
   )
 }

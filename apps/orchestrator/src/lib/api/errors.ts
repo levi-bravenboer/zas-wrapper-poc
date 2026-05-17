@@ -17,6 +17,10 @@ export function apiError(
   return err
 }
 
+export function isApiError(value: unknown): value is ApiError {
+  return value instanceof Error && typeof (value as ApiError).status === 'number'
+}
+
 export async function readErrorCode(response: Response): Promise<string | undefined> {
   try {
     const body = (await response.clone().json()) as { code?: unknown }

@@ -1,7 +1,7 @@
-import { useForm } from '@tanstack/react-form'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,16 +13,19 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useEntityForm } from '@/hooks/entity'
 
 import { useCreateOrganisation } from '../hooks'
 import type { OrganisationCreatePayload, OrganisationRead } from '../schemas'
 
+import { organisationFormSchema, type OrganisationFormValues } from './organisationForm.schema'
+
 const ORG_TYPE_SYSTEM = 'http://terminology.hl7.org/CodeSystem/organization-type'
 
-interface FormValues {
-  name: string
-  type_code: string
-  type_display: string
+const CREATE_DEFAULTS: OrganisationFormValues = {
+  name: '',
+  type_code: 'prov',
+  type_display: '',
 }
 
 export interface CreateOrganisationDialogProps {
@@ -41,34 +44,36 @@ export function CreateOrganisationDialog({
   const { t } = useTranslation('organisations-admin-ui')
   const mutation = useCreateOrganisation()
 
-  const form = useForm({
-    defaultValues: { name: '', type_code: 'prov', type_display: '' } as FormValues,
-    onSubmit: async ({ value }) => {
+  const { form, isSubmitting, submit, reset } = useEntityForm<OrganisationFormValues>({
+    schema: organisationFormSchema,
+    defaultValues: CREATE_DEFAULTS,
+    onSubmit: async (value) => {
       const payload: OrganisationCreatePayload = {
-        name: value.name.trim(),
+        name: value.name,
         type: {
           system: ORG_TYPE_SYSTEM,
-          code: value.type_code.trim(),
-          display: value.type_display?.trim() || null,
+          code: value.type_code,
+          display: value.type_display || null,
         },
         parent_organisation_id: parent?.id ?? null,
       }
       try {
         const created = await mutation.mutateAsync(payload)
-        toast.success(t('create.success'))
         onCreated?.(created)
-        onOpenChange(false)
-      } catch {
+      } catch (e) {
         toast.error(t('error.generic'))
+        throw e
       }
+    },
+    onSuccess: () => {
+      toast.success(t('create.success'))
+      onOpenChange(false)
     },
   })
 
   useEffect(() => {
-    if (open) {
-      form.reset()
-    }
-  }, [open, form])
+    if (open) reset()
+  }, [open, reset])
 
   const title = parent ? t('create.title_child') : t('create.title_root')
 
@@ -86,7 +91,7 @@ export function CreateOrganisationDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            void form.handleSubmit()
+            void submit()
           }}
           className="flex flex-col gap-4"
         >
@@ -99,8 +104,9 @@ export function CreateOrganisationDialog({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  required
+                  aria-invalid={field.state.meta.errors.length > 0}
                 />
+                <FieldError errors={field.state.meta.errors} t={t} />
               </div>
             )}
           </form.Field>
@@ -113,8 +119,9 @@ export function CreateOrganisationDialog({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  required
+                  aria-invalid={field.state.meta.errors.length > 0}
                 />
+                <FieldError errors={field.state.meta.errors} t={t} />
               </div>
             )}
           </form.Field>
@@ -127,7 +134,9 @@ export function CreateOrganisationDialog({
                   value={field.state.value ?? ''}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
+                  aria-invalid={field.state.meta.errors.length > 0}
                 />
+                <FieldError errors={field.state.meta.errors} t={t} />
               </div>
             )}
           </form.Field>
@@ -135,12 +144,29 @@ export function CreateOrganisationDialog({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t('create.cancel')}
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
               {t('create.submit')}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function FieldError({ errors, t }: { errors: ReadonlyArray<unknown>; t: (key: string) => string }) {
+  if (errors.length === 0) return null
+  const first = errors[0]
+  const raw =
+    typeof first === 'string'
+      ? first
+      : typeof first === 'object' && first !== null && 'message' in first
+        ? String((first as { message: unknown }).message)
+        : String(first)
+  const text = raw.startsWith('form.error.') ? t(raw) : raw
+  return (
+    <p className="text-xs text-destructive" role="alert">
+      {text}
+    </p>
   )
 }

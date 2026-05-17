@@ -15,12 +15,17 @@ import type {
   OrganisationUpdatePayload,
 } from './schemas'
 
+const ORGANISATION_STALE_MS = 30_000
+
 export function useAffiliatedPractitionerRoles(organisationId: string | null) {
   return useQuery<PractitionerRoleRead[]>({
     queryKey: organisationKeys.affiliatedPractitionerRoles(organisationId ?? ''),
-    queryFn: () => fetchAffiliatedPractitionerRoles(organisationId as string),
+    queryFn: () => {
+      if (!organisationId) return Promise.resolve([])
+      return fetchAffiliatedPractitionerRoles(organisationId)
+    },
     enabled: !!organisationId,
-    staleTime: 30_000,
+    staleTime: ORGANISATION_STALE_MS,
   })
 }
 
@@ -28,7 +33,7 @@ export function useOrganisations() {
   return useQuery<OrganisationRead[]>({
     queryKey: organisationKeys.list(),
     queryFn: fetchOrganisations,
-    staleTime: 30_000,
+    staleTime: ORGANISATION_STALE_MS,
   })
 }
 

@@ -71,5 +71,11 @@
     "cross_tenant": "Deze organisatie hoort niet bij je tenant.",
     "not_found": "Organisatie niet gevonden.",
     "generic": "Er ging iets mis."
+  },
+  "form": {
+    "error": {
+      "required": "Verplicht veld.",
+      "too_long": "Te lang."
+    }
   }
 }

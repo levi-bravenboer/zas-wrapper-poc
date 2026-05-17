@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string -- inline test fixtures, not user copy. */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'

@@ -1,5 +1,6 @@
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { useMemo, useState, type ReactElement } from 'react'
+import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -17,7 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { ApiError } from '@/lib/api/errors'
+import { isApiError } from '@/lib/api/errors'
 
 import { useDeleteOrganisation, useOrganisations } from '../hooks'
 import type { OrganisationRead } from '../schemas'
@@ -30,9 +31,8 @@ import { OrganisationTree } from './OrganisationTree'
 type RefKey = 'organisations' | 'patients' | 'practitioner_roles'
 
 function pickReferences(err: unknown): RefKey[] {
-  if (!err || typeof err !== 'object') return []
-  const apiErr = err as ApiError
-  const refs = apiErr.details?.['references']
+  if (!isApiError(err)) return []
+  const refs = err.details?.['references']
   if (!Array.isArray(refs)) return []
   return refs.filter(
     (r): r is RefKey => r === 'organisations' || r === 'patients' || r === 'practitioner_roles',
@@ -43,6 +43,8 @@ export function OrganisationsAdminPage(): ReactElement {
   const { t } = useTranslation('organisations-admin-ui')
   const { data, isLoading, error } = useOrganisations()
   const deleteMutation = useDeleteOrganisation()
+  const search = useSearch({ strict: false }) as { collapsed?: unknown }
+  const navigate = useNavigate()
 
   const [createParent, setCreateParent] = useState<OrganisationRead | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
@@ -57,6 +59,41 @@ export function OrganisationsAdminPage(): ReactElement {
     for (const org of organisations) map.set(org.id, org)
     return map
   }, [organisations])
+
+  const collapsed = useMemo<Set<string>>(() => {
+    const raw = typeof search.collapsed === 'string' ? search.collapsed : ''
+    const ids = raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    return new Set(ids)
+  }, [search.collapsed])
+
+  const expanded = useMemo<Set<string>>(() => {
+    const next = new Set<string>()
+    for (const org of organisations) {
+      if (!collapsed.has(org.id)) next.add(org.id)
+    }
+    return next
+  }, [organisations, collapsed])
+
+  const onToggle = useCallback(
+    (id: string) => {
+      void navigate({
+        search: ((prev: unknown) => {
+          const prevObj =
+            typeof prev === 'object' && prev !== null ? (prev as Record<string, unknown>) : {}
+          const next = new Set(collapsed)
+          if (next.has(id)) next.delete(id)
+          else next.add(id)
+          const csv = Array.from(next).sort().join(',')
+          const { collapsed: _drop, ...rest } = prevObj
+          return csv ? { ...rest, collapsed: csv } : rest
+        }) as never,
+      })
+    },
+    [navigate, collapsed],
+  )
 
   const detailParent =
     detail?.parent_organisation_id != null
@@ -120,6 +157,8 @@ export function OrganisationsAdminPage(): ReactElement {
           ) : (
             <OrganisationTree
               organisations={organisations}
+              expanded={expanded}
+              onToggle={onToggle}
               onOpenDetail={(org) => setDetail(org)}
               onEdit={(org) => setEditing(org)}
               onCreateChild={openCreateChild}

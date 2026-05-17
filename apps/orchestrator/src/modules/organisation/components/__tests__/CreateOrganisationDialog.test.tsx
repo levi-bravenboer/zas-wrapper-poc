@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string -- inline test fixtures, not user copy. */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -74,7 +73,9 @@ describe('CreateOrganisationDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: /aanmaken/i }))
 
     await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1))
-    const payload = createMock.mock.calls[0]![0]
+    const firstCall = createMock.mock.calls[0]
+    if (!firstCall) throw new Error('expected createMock to be called')
+    const payload = firstCall[0]
     expect(payload.name).toBe('New Sub')
     expect(payload.parent_organisation_id).toBe(parent.id)
     expect(payload.type.code).toBe('prov')

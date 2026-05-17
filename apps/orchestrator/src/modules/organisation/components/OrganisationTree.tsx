@@ -24,8 +24,9 @@ function materialise(rows: OrganisationRead[]): OrganisationNode[] {
   const roots: OrganisationNode[] = []
   for (const node of byId.values()) {
     const parentId = node.org.parent_organisation_id
-    if (parentId && byId.has(parentId)) {
-      byId.get(parentId)!.children.push(node)
+    const parent = parentId ? byId.get(parentId) : undefined
+    if (parent) {
+      parent.children.push(node)
     } else {
       roots.push(node)
     }
@@ -45,6 +46,8 @@ export interface OrganisationTreeProps {
   onEdit: (org: OrganisationRead) => void
   onCreateChild: (parent: OrganisationRead) => void
   onArchive: (org: OrganisationRead) => void
+  expanded?: ReadonlySet<string>
+  onToggle?: (id: string) => void
 }
 
 export function OrganisationTree({
@@ -53,22 +56,27 @@ export function OrganisationTree({
   onEdit,
   onCreateChild,
   onArchive,
+  expanded,
+  onToggle,
 }: OrganisationTreeProps) {
   const tree = useMemo(() => materialise(organisations), [organisations])
-  const [expanded, setExpanded] = useState<Set<string>>(() => {
+  const [internalExpanded, setInternalExpanded] = useState<Set<string>>(() => {
     const all = new Set<string>()
     organisations.forEach((o) => all.add(o.id))
     return all
   })
 
+  const effectiveExpanded = expanded ?? internalExpanded
+
   const toggle = (id: string): void => {
-    setExpanded((prev) => {
+    if (onToggle) {
+      onToggle(id)
+      return
+    }
+    setInternalExpanded((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -80,7 +88,7 @@ export function OrganisationTree({
           key={node.org.id}
           node={node}
           depth={0}
-          expanded={expanded}
+          expanded={effectiveExpanded}
           onToggle={toggle}
           onOpenDetail={onOpenDetail}
           onEdit={onEdit}
@@ -95,7 +103,7 @@ export function OrganisationTree({
 interface TreeNodeProps {
   node: OrganisationNode
   depth: number
-  expanded: Set<string>
+  expanded: ReadonlySet<string>
   onToggle: (id: string) => void
   onOpenDetail: (org: OrganisationRead) => void
   onEdit: (org: OrganisationRead) => void

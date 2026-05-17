@@ -69,7 +69,8 @@ class OrganisationService:
             org.type_code = payload.type.code
             org.type_system = payload.type.system
             org.type_display = payload.type.display
-        return await self._repo.update(org)
+        await self._session.flush()
+        return org
 
     async def soft_delete(self, actor: SessionUser, organisation_id: UUID) -> None:
         org = await self._repo.get_by_id(organisation_id)

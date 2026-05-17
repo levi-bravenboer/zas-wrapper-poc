@@ -58,6 +58,8 @@ export function OrganisationDetailSheet({
               ) : roles && roles.length > 0 ? (
                 <ul className="flex flex-col gap-1 text-sm">
                   {roles.map((role) => (
+                    // TODO(chain slot #6 patient-profile): replace practitioner_id with
+                    // display name once /practitioners list endpoint exists.
                     <li
                       key={role.id}
                       className="flex items-center justify-between rounded-md border bg-card px-2 py-1.5"

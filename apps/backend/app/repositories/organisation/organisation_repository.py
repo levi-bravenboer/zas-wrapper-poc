@@ -96,10 +96,6 @@ class OrganisationRepository(BaseRepository[Organisation]):
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
-    async def update(self, organisation: Organisation) -> Organisation:
-        await self._session.flush()
-        return organisation
-
     async def count_child_organisations(self, organisation_id: UUID) -> int:
         result = await self._session.execute(
             select(func.count())
