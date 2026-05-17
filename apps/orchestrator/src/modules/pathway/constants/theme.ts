@@ -25,3 +25,7 @@ type PhaseTint = (typeof PHASE_TINT_VARS)[number]
 export function phaseTint(index: number): PhaseTint {
   return PHASE_TINT_VARS[index % PHASE_TINT_VARS.length] ?? PHASE_TINT_VARS[0]
 }
+
+export function inkAlpha(alpha: number): string {
+  return `rgba(11, 26, 23, ${alpha})`
+}

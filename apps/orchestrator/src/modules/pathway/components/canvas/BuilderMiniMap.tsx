@@ -13,6 +13,7 @@ import {
   type CanvasGeometry,
 } from '../../canvasLayout'
 import { VIEWPORT_TRANSITION_MS } from '../../constants/animation'
+import { inkAlpha } from '../../constants/theme'
 import type { PathwayBlock, PathwayEdge, PathwayLane, PathwayPhase } from '../../types'
 
 const MINIMAP_WIDTH = 220
@@ -91,7 +92,7 @@ export function BuilderMiniMap({
       onClick={onClick}
       className="block cursor-pointer"
     >
-      <rect x={0} y={0} width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} fill="rgba(11,26,23,0.04)" />
+      <rect x={0} y={0} width={MINIMAP_WIDTH} height={MINIMAP_HEIGHT} fill={inkAlpha(0.04)} />
       <g
         transform={`translate(${offsetX - bboxMinX * scale} ${offsetY - bboxMinY * scale}) scale(${scale})`}
       >
@@ -107,7 +108,7 @@ export function BuilderMiniMap({
                 y1={0}
                 x2={x + w}
                 y2={flowH}
-                stroke="rgba(11,26,23,0.08)"
+                stroke={inkAlpha(0.08)}
                 strokeWidth={inv}
               />
             </g>
@@ -145,7 +146,7 @@ export function BuilderMiniMap({
               y1={sb.y + sb.h / 2}
               x2={tb.x}
               y2={tb.y + tb.h / 2}
-              stroke="rgba(11,26,23,0.45)"
+              stroke={inkAlpha(0.45)}
               strokeWidth={2 * inv}
               strokeLinecap="round"
             />
@@ -187,8 +188,8 @@ export function BuilderMiniMap({
           y={vpY}
           width={vpW}
           height={vpH}
-          fill="rgba(11,26,23,0.05)"
-          stroke="rgba(11,26,23,0.55)"
+          fill={inkAlpha(0.05)}
+          stroke={inkAlpha(0.55)}
           strokeWidth={1.5 * inv}
           rx={4}
           pointerEvents="none"

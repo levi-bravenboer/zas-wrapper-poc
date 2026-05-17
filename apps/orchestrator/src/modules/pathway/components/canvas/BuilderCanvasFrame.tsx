@@ -10,6 +10,7 @@ import { useCallback, useMemo, useState, type ReactElement } from 'react'
 
 import { buildCanvasGeometry, type CanvasGeometry } from '../../canvasLayout'
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
+import { inkAlpha } from '../../constants/theme'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
 import type {
   PathwayBlock,
@@ -148,7 +149,7 @@ export function BuilderCanvasFrame({
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1}
-          color="rgba(11,26,23,0.06)"
+          color={inkAlpha(0.06)}
         />
         <ViewportPortal>
           <BackgroundLayers
