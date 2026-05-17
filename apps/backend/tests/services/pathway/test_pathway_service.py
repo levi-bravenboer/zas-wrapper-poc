@@ -23,11 +23,13 @@ from app.schemas.pathway.pathway import (
     PathwayPhaseIn,
     PathwayTimingValueIn,
 )
+from app.schemas.pathway.pathway import PathwayTimeMarkerIn
 from app.services.pathway.errors import (
     BlockConfigError,
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
+    EdgeTimingValidationError,
     EdgeValidationError,
     NoConceptVersionError,
     PathwayNotFoundError,
@@ -85,6 +87,7 @@ def _minimal_payload(
     branches: list[PathwayBlockBranchIn] | None = None,
     edges: list[PathwayEdgeIn] | None = None,
     timing_values: list[PathwayTimingValueIn] | None = None,
+    time_markers: list[PathwayTimeMarkerIn] | None = None,
     deferred_fields: list[PathwayBlockDeferredFieldIn] | None = None,
 ) -> PathwayDefinitionReplace:
     return PathwayDefinitionReplace(
@@ -95,6 +98,7 @@ def _minimal_payload(
         branches=branches or [],
         edges=edges or [],
         timing_values=timing_values or [],
+        time_markers=time_markers or [],
         deferred_fields=deferred_fields or [],
     )
 
@@ -180,23 +184,23 @@ async def test_unknown_lane_kind_raises(db_session: AsyncSession, empty_pathway:
 async def test_block_on_disallowed_lane_raises(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
-    """email.allowed_lane_kind_codes = ['patient']; caregiver lane must be rejected."""
+    """message.allowed_lane_kind_codes = ['patient']; caregiver lane must be rejected."""
 
     service = _service(db_session)
     phase = _phase()
     caregiver_lane = _lane(code="caregiver")
-    email = PathwayBlockIn(
+    message = PathwayBlockIn(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=caregiver_lane.id,
-        type="email",
-        config={"subject": "Hi"},
+        type="message",
+        config={"channel": "email", "subject": "Hi", "body": "Welcome"},
     )
     with pytest.raises(BlockLaneNotAllowedError):
         await service.replace_definition(
             empty_pathway.id,
             empty_pathway.tenant_id,
-            _minimal_payload(phases=[phase], lanes=[caregiver_lane], blocks=[email]),
+            _minimal_payload(phases=[phase], lanes=[caregiver_lane], blocks=[message]),
         )
 
 
@@ -213,7 +217,7 @@ async def test_task_block_accepted_on_patient_lane(
         phase_id=phase.id,
         lane_id=patient_lane.id,
         type="task",
-        config={"title": "Hydrate"},
+        config={"title": "Hydrate", "assignee": "patient"},
     )
     result = await service.replace_definition(
         empty_pathway.id,
@@ -245,6 +249,102 @@ async def test_block_config_validates_against_schema(
             empty_pathway.tenant_id,
             _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
         )
+
+
+# ---------- New block type validation ----------------------------------------
+
+
+async def test_message_channel_outside_enum_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane(code="patient")
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        type="message",
+        config={"channel": "fax", "subject": "Hi", "body": "Welcome"},
+    )
+    with pytest.raises(BlockConfigError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+        )
+
+
+async def test_wait_event_type_outside_enum_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane(code="system")
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        type="wait",
+        config={"event_type": "not_a_real_event"},
+    )
+    with pytest.raises(BlockConfigError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+        )
+
+
+async def test_pathway_link_mode_outside_enum_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane(code="system")
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        type="pathway_link",
+        config={
+            "target_pathway_id": str(uuid.uuid4()),
+            "mode": "broadcast",
+        },
+    )
+    with pytest.raises(BlockConfigError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+        )
+
+
+async def test_form_block_accepted_with_valid_questions(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane(code="patient")
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        type="form",
+        config={
+            "title": "Pijn vragenlijst",
+            "questions": [
+                {"id": "pain_now", "type": "scale", "label": "Pijn nu (0-10)?", "required": True},
+            ],
+        },
+    )
+    result = await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+    )
+    assert len(result.version.blocks) == 1
+    assert result.version.blocks[0].type == "form"
 
 
 # ---------- Timing validation -------------------------------------------------
@@ -351,6 +451,146 @@ async def test_edge_source_branch_must_belong_to_source_block(
                 blocks=[decision_a, decision_b, target],
                 branches=[branch_on_a],
                 edges=[edge],
+            ),
+        )
+
+
+# ---------- Edge timing union ------------------------------------------------
+
+
+async def test_edge_with_both_delay_and_marker_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """At most one of delay_value_id, time_marker_id, source_branch_id may be set."""
+
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    a = _appointment_block(phase.id, lane.id, "A")
+    b = _appointment_block(phase.id, lane.id, "B")
+    delay = PathwayTimingValueIn(id=uuid.uuid4(), kind="fixed", fixed_days=3)
+    marker_value = PathwayTimingValueIn(id=uuid.uuid4(), kind="fixed", fixed_days=0)
+    marker = PathwayTimeMarkerIn(id=uuid.uuid4(), value_id=marker_value.id, label="Surgery")
+    edge = PathwayEdgeIn(
+        id=uuid.uuid4(),
+        source_block_id=a.id,
+        target_block_id=b.id,
+        delay_value_id=delay.id,
+        time_marker_id=marker.id,
+        offset_value_id=marker_value.id,
+        offset_direction_code="after",
+    )
+    with pytest.raises(EdgeTimingValidationError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(
+                phases=[phase],
+                lanes=[lane],
+                blocks=[a, b],
+                edges=[edge],
+                timing_values=[delay, marker_value],
+            ),
+        )
+
+
+async def test_edge_marker_triple_partial_raises(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """time_marker_id without offset_value_id+offset_direction_code is invalid."""
+
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    a = _appointment_block(phase.id, lane.id, "A")
+    b = _appointment_block(phase.id, lane.id, "B")
+    marker_value = PathwayTimingValueIn(id=uuid.uuid4(), kind="fixed", fixed_days=0)
+    marker = PathwayTimeMarkerIn(id=uuid.uuid4(), value_id=marker_value.id, label="Surgery")
+    edge = PathwayEdgeIn(
+        id=uuid.uuid4(),
+        source_block_id=a.id,
+        target_block_id=b.id,
+        time_marker_id=marker.id,
+    )
+    with pytest.raises(EdgeTimingValidationError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(
+                phases=[phase],
+                lanes=[lane],
+                blocks=[a, b],
+                edges=[edge],
+                timing_values=[marker_value],
+            ),
+        )
+
+
+async def test_edge_marker_id_must_belong_to_version(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """time_marker_id referencing a marker not in this payload is rejected."""
+
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    a = _appointment_block(phase.id, lane.id, "A")
+    b = _appointment_block(phase.id, lane.id, "B")
+    offset_value = PathwayTimingValueIn(id=uuid.uuid4(), kind="fixed", fixed_days=2)
+    foreign_marker_id = uuid.uuid4()  # not in payload.time_markers
+    edge = PathwayEdgeIn(
+        id=uuid.uuid4(),
+        source_block_id=a.id,
+        target_block_id=b.id,
+        time_marker_id=foreign_marker_id,
+        offset_value_id=offset_value.id,
+        offset_direction_code="before",
+    )
+    with pytest.raises(EdgeTimingValidationError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(
+                phases=[phase],
+                lanes=[lane],
+                blocks=[a, b],
+                edges=[edge],
+                timing_values=[offset_value],
+            ),
+        )
+
+
+async def test_edge_offset_direction_code_must_be_seeded(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """offset_direction_code outside the seeded codes is rejected."""
+
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    a = _appointment_block(phase.id, lane.id, "A")
+    b = _appointment_block(phase.id, lane.id, "B")
+    marker_value = PathwayTimingValueIn(id=uuid.uuid4(), kind="fixed", fixed_days=0)
+    marker = PathwayTimeMarkerIn(id=uuid.uuid4(), value_id=marker_value.id, label="Surgery")
+    edge = PathwayEdgeIn(
+        id=uuid.uuid4(),
+        source_block_id=a.id,
+        target_block_id=b.id,
+        time_marker_id=marker.id,
+        offset_value_id=marker_value.id,
+        offset_direction_code="sideways",
+    )
+    with pytest.raises(EdgeTimingValidationError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(
+                phases=[phase],
+                lanes=[lane],
+                blocks=[a, b],
+                edges=[edge],
+                timing_values=[marker_value],
+                time_markers=[marker],
             ),
         )
 

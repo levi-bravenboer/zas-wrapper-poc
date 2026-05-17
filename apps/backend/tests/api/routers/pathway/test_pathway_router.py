@@ -65,6 +65,8 @@ async def test_endpoints_require_auth(async_client: AsyncClient) -> None:
         "/pathways",
         "/pathways/blocks",
         "/pathways/phase-templates",
+        "/pathways/edge-timing-kinds",
+        "/pathways/edge-offset-directions",
     ):
         response = await async_client.get(path)
         assert response.status_code == 401, f"{path}: {response.status_code}"
@@ -81,11 +83,32 @@ async def test_list_block_types(
     assert response.status_code == 200
     rows = response.json()
     codes = {row["type"] for row in rows}
-    assert {"appointment", "decision", "milestone", "timer", "task", "email"}.issubset(codes)
+    assert codes == {
+        "appointment",
+        "task",
+        "message",
+        "form",
+        "decision",
+        "milestone",
+        "wait",
+        "pathway_link",
+    }
     for row in rows:
-        codes = row["allowed_lane_kind_codes"]
-        assert isinstance(codes, list) and len(codes) >= 1
-        for code in codes:
+        assert row["semantics"] in {
+            "appointment",
+            "task",
+            "message",
+            "form",
+            "decision",
+            "milestone",
+            "wait",
+            "pathway_link",
+        }
+        assert isinstance(row["icon"], str) and row["icon"]
+        assert isinstance(row["ui_schema"], dict)
+        lane_codes = row["allowed_lane_kind_codes"]
+        assert isinstance(lane_codes, list) and len(lane_codes) >= 1
+        for code in lane_codes:
             assert code in {"patient", "caregiver", "system", "external"}
 
 
@@ -99,6 +122,41 @@ async def test_list_phase_templates(
 
     assert response.status_code == 200
     assert len(response.json()) > 0
+
+
+async def test_list_edge_timing_kinds(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    del lane_kinds
+    await _login(async_client)
+
+    response = await async_client.get("/pathways/edge-timing-kinds")
+
+    assert response.status_code == 200
+    rows = response.json()
+    kinds = {row["kind"] for row in rows}
+    assert kinds == {"completion", "marker", "immediate", "branch"}
+    for row in rows:
+        assert isinstance(row["label"], str) and row["label"]
+        assert row["config_schema"]["type"] == "object"
+        assert isinstance(row["ui_schema"], dict)
+
+
+async def test_list_edge_offset_directions(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    del lane_kinds
+    await _login(async_client)
+
+    response = await async_client.get("/pathways/edge-offset-directions")
+
+    assert response.status_code == 200
+    rows = response.json()
+    codes = {row["code"] for row in rows}
+    assert {"before", "after"}.issubset(codes)
+    for row in rows:
+        assert isinstance(row["label"], str) and row["label"]
+        assert isinstance(row["ord"], int)
 
 
 async def test_create_pathway_returns_definition(
@@ -219,15 +277,19 @@ async def test_replace_invalid_payload_returns_422(
 async def test_replace_disallowed_lane_returns_422(
     async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
 ) -> None:
-    """email block on caregiver lane violates allowed_lane_kind_codes."""
+    """message block on caregiver lane violates allowed_lane_kind_codes."""
 
     await _login(async_client)
     created = await _create(async_client)
 
     payload = _replace_payload("Bad lane", lane_kinds)
-    payload["blocks"][0]["type"] = "email"
-    payload["blocks"][0]["config"] = {"subject": "Hi"}
-    # lane stays on caregiver — email allows only patient.
+    payload["blocks"][0]["type"] = "message"
+    payload["blocks"][0]["config"] = {
+        "channel": "email",
+        "subject": "Hi",
+        "body": "Welcome",
+    }
+    # lane stays on caregiver — message allows only patient.
 
     response = await async_client.put(
         f"/pathways/{created['pathway']['id']}", json=payload
@@ -239,6 +301,57 @@ async def test_replace_disallowed_lane_returns_422(
     assert details["block_id"] == payload["blocks"][0]["id"]
     assert details["lane_kind_code"] == "caregiver"
     assert details["allowed_lane_kind_codes"] == ["patient"]
+
+
+async def test_replace_invalid_edge_timing_returns_422(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Edge with both delay_value_id and time_marker_id set → 422."""
+
+    await _login(async_client)
+    created = await _create(async_client)
+
+    payload = _replace_payload("Bad timing", lane_kinds)
+    second_block_id = str(uuid.uuid4())
+    delay_id = str(uuid.uuid4())
+    marker_id = str(uuid.uuid4())
+    marker_value_id = str(uuid.uuid4())
+    payload["blocks"].append(
+        {
+            "id": second_block_id,
+            "phase_id": payload["blocks"][0]["phase_id"],
+            "lane_id": payload["blocks"][0]["lane_id"],
+            "type": "appointment",
+            "label": "Follow-up",
+            "config": {"title": "Follow-up"},
+        }
+    )
+    payload["timing_values"] = [
+        {"id": delay_id, "kind": "fixed", "fixed_days": 3},
+        {"id": marker_value_id, "kind": "fixed", "fixed_days": 0},
+    ]
+    payload["time_markers"] = [
+        {"id": marker_id, "value_id": marker_value_id, "label": "Surgery"}
+    ]
+    payload["edges"] = [
+        {
+            "id": str(uuid.uuid4()),
+            "source_block_id": payload["blocks"][0]["id"],
+            "target_block_id": second_block_id,
+            "delay_value_id": delay_id,
+            "time_marker_id": marker_id,
+            "offset_value_id": marker_value_id,
+            "offset_direction_code": "after",
+        }
+    ]
+
+    response = await async_client.put(
+        f"/pathways/{created['pathway']['id']}", json=payload
+    )
+
+    assert response.status_code == 422, response.text
+    body = response.json()
+    assert body["details"]["edge_id"] == payload["edges"][0]["id"]
 
 
 async def test_delete_pathway_returns_204_and_hides_from_list(
