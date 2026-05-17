@@ -31,6 +31,11 @@ function toRJSFSchema(schema: BlockConfigSchema): RJSFSchema {
   return schema as RJSFSchema
 }
 
+// Inspector is still wired through a generic JSON-Schema form. The three new
+// block types (form/wait/pathway_link) need bespoke widgets (form-questions,
+// event-type-picker, pathway-picker) — tracked in `pathway-config-forms`.
+const INSPECTOR_PENDING_SEMANTICS = new Set(['form', 'wait', 'pathway_link'])
+
 export function BuilderDrawer({
   block,
   blockType,
@@ -60,7 +65,7 @@ export function BuilderDrawer({
             color: accent,
           }}
         >
-          <BlockTypeIcon type={block.type} className="size-4" strokeWidth={1.7} />
+          <BlockTypeIcon icon={blockType?.icon} className="size-4" strokeWidth={1.7} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           <input
@@ -95,11 +100,19 @@ export function BuilderDrawer({
           {t('drawer.configHeader')}
         </h3>
         {blockType ? (
-          <ConfigForm
-            schema={toRJSFSchema(blockType.config_schema)}
-            formData={block.config ?? {}}
-            onChange={onPatchConfig}
-          />
+          INSPECTOR_PENDING_SEMANTICS.has(blockType.semantics) ? (
+            <p className="text-xs text-muted-foreground">
+              {t('drawer.inspectorPending', {
+                defaultValue: 'Geen inspector beschikbaar',
+              })}
+            </p>
+          ) : (
+            <ConfigForm
+              schema={toRJSFSchema(blockType.config_schema)}
+              formData={block.config ?? {}}
+              onChange={onPatchConfig}
+            />
+          )
         ) : (
           <p className="text-xs text-muted-foreground">{typeLabel}</p>
         )}

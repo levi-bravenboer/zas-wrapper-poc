@@ -70,7 +70,7 @@ export function DockItem({
               aria-label={t('dock.addLabel', { label })}
               className="inline-flex h-9 w-9 items-center justify-center rounded-sm text-muted-foreground hover:bg-black/[0.05] hover:text-foreground"
             >
-              <BlockTypeIcon type={blockType.type} className="size-4" strokeWidth={1.8} />
+              <BlockTypeIcon icon={blockType.icon} className="size-4" strokeWidth={1.8} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top">

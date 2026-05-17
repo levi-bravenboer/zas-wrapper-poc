@@ -3,6 +3,7 @@ import { memo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BlockTypeIcon } from '../../../blockCatalogue'
+import { blockSemanticsSummary } from '../../../blockCatalogue.utils'
 import { laneAccent } from '../../../canvasLayout'
 import type {
   PathwayBlock,
@@ -34,6 +35,12 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
     defaultValue: data.blockType?.label ?? data.block.type,
   })
   const name = data.block.label?.trim() || typeLabel
+  const semanticsSummary = blockSemanticsSummary(data.blockType?.semantics, data.block.config)
+  const summaryLabel = semanticsSummary
+    ? t(`blockSummary.${data.blockType?.semantics}.${semanticsSummary}`, {
+        defaultValue: semanticsSummary,
+      })
+    : null
   const isBranch = !!data.blockType?.supports_branches
   const isSelected = !!selected
   const { containerStyle, iconStyle, railStyle } = useBlockNodeStyles({
@@ -56,14 +63,14 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
         className="row-span-2 my-auto ml-1 inline-flex h-7 w-7 items-center justify-center rounded-sm"
         style={iconStyle}
       >
-        <BlockTypeIcon type={data.block.type} className="size-4" strokeWidth={1.7} />
+        <BlockTypeIcon icon={data.blockType?.icon} className="size-4" strokeWidth={1.7} />
       </div>
       <div className="flex flex-col gap-0.5 pr-2.5 pt-2">
         <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">
           {name}
         </span>
         <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground">
-          <span className="truncate">{typeLabel}</span>
+          <span className="truncate">{summaryLabel ?? typeLabel}</span>
           {data.duration && (
             <>
               <span
