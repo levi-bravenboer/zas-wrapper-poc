@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 
 import type { CanvasGeometry } from '../../canvasLayout'
 import { VIEWPORT_TRANSITION_MS, ZOOM_DURATION_MS } from '../../constants/animation'
+import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import type { PathwayBlock, PathwayEdge, PathwayLane, PathwayPhase } from '../../types'
 
 import { BuilderMiniMap } from './BuilderMiniMap'
@@ -19,13 +20,7 @@ type Props = {
   geometry: CanvasGeometry
 }
 
-export function NavigatorPanel({
-  phases,
-  lanes,
-  blocks,
-  edges,
-  geometry,
-}: Props): ReactElement {
+export function NavigatorPanel({ phases, lanes, blocks, edges, geometry }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const { zoomIn, zoomOut, fitView } = useReactFlow()
   return (
@@ -68,7 +63,9 @@ export function NavigatorPanel({
           size="icon"
           className="size-7"
           aria-label={t('minimap.fit')}
-          onClick={() => fitView({ duration: VIEWPORT_TRANSITION_MS, padding: 0.18 })}
+          onClick={() =>
+            fitView({ duration: VIEWPORT_TRANSITION_MS, padding: CANVAS_VIEWPORT.fitPadding })
+          }
         >
           <Focus className="size-3.5" />
         </Button>

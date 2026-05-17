@@ -7,6 +7,7 @@ import { createBlockDragGhost } from '@/lib/utils/dragGhost'
 
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../../canvasLayout'
+import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { DRAG_TYPES } from '../../constants/dragTypes'
 import type { PathwayBlockType } from '../../types'
 
@@ -25,7 +26,10 @@ export function DockItem({ blockType, onAdd }: Props): ReactElement {
     event.dataTransfer.setData(DRAG_TYPES.BLOCK_TYPE, blockType.type)
     event.dataTransfer.setData('text/plain', blockType.type)
     event.dataTransfer.effectAllowed = 'copy'
-    const safeZoom = Math.min(Math.max(zoom || 1, 0.4), 2)
+    const safeZoom = Math.min(
+      Math.max(zoom || 1, CANVAS_VIEWPORT.minZoom),
+      CANVAS_VIEWPORT.maxZoom,
+    )
     const ghost = createBlockDragGhost({
       label,
       iconText: blockType.type.slice(0, 1).toUpperCase(),

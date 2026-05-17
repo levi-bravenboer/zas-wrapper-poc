@@ -9,6 +9,7 @@ import {
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 
 import { buildCanvasGeometry, type CanvasGeometry } from '../../canvasLayout'
+import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
 import type {
   PathwayBlock,
@@ -127,19 +128,19 @@ export function BuilderCanvasFrame({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        defaultViewport={CANVAS_VIEWPORT.initial}
         onInit={(instance) => {
-          if (blocks.length) instance.fitView({ padding: 0.18 })
+          if (blocks.length) instance.fitView({ padding: CANVAS_VIEWPORT.fitPadding })
         }}
-        minZoom={0.4}
-        maxZoom={2}
+        minZoom={CANVAS_VIEWPORT.minZoom}
+        maxZoom={CANVAS_VIEWPORT.maxZoom}
         panOnDrag={scaffoldPresent}
         panOnScroll={scaffoldPresent}
         zoomOnScroll={scaffoldPresent}
         zoomOnPinch={scaffoldPresent}
         zoomOnDoubleClick={scaffoldPresent}
         nodesDraggable={scaffoldPresent}
-        nodeDragThreshold={3}
+        nodeDragThreshold={CANVAS_VIEWPORT.dragThreshold}
         selectNodesOnDrag={false}
         proOptions={{ hideAttribution: true }}
       >

@@ -2,6 +2,7 @@ import { useViewport } from '@xyflow/react'
 import { useRef, type CSSProperties, type ReactElement } from 'react'
 
 import { PHASE_COL_MIN_WIDTH, phaseTint } from '../../canvasLayout'
+import { ZOOM_SAFE_DIVISOR_FLOOR } from '../../constants/canvas'
 import type { PathwayPhase } from '../../types'
 
 type Props = {
@@ -45,7 +46,7 @@ export function PhaseColumn({
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>): void {
     const drag = dragRef.current
     if (!drag) return
-    const dx = (event.clientX - drag.startX) / Math.max(zoom, 0.05)
+    const dx = (event.clientX - drag.startX) / Math.max(zoom, ZOOM_SAFE_DIVISOR_FLOOR)
     onResize(Math.max(PHASE_COL_MIN_WIDTH, drag.startW + dx))
   }
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>): void {

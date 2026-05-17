@@ -2,6 +2,7 @@ import { useViewport } from '@xyflow/react'
 import { useRef, type CSSProperties, type ReactElement } from 'react'
 
 import { LANE_ROW_MIN_HEIGHT, laneAccent } from '../../canvasLayout'
+import { ZOOM_SAFE_DIVISOR_FLOOR } from '../../constants/canvas'
 import type { PathwayLane } from '../../types'
 
 type Props = {
@@ -13,14 +14,7 @@ type Props = {
   onResize: (height: number) => void
 }
 
-export function LaneRow({
-  lane,
-  topY,
-  height,
-  width,
-  isEmpty,
-  onResize,
-}: Props): ReactElement {
+export function LaneRow({ lane, topY, height, width, isEmpty, onResize }: Props): ReactElement {
   const accent = laneAccent(lane)
   const { zoom } = useViewport()
   const dragRef = useRef<{ startH: number; startY: number } | null>(null)
@@ -42,7 +36,7 @@ export function LaneRow({
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>): void {
     const drag = dragRef.current
     if (!drag) return
-    const dy = (event.clientY - drag.startY) / Math.max(zoom, 0.05)
+    const dy = (event.clientY - drag.startY) / Math.max(zoom, ZOOM_SAFE_DIVISOR_FLOOR)
     onResize(Math.max(LANE_ROW_MIN_HEIGHT, drag.startH + dy))
   }
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>): void {
