@@ -1,5 +1,12 @@
-import { Background, BackgroundVariant, ReactFlow, ViewportPortal } from '@xyflow/react'
-import { useMemo, type ReactElement } from 'react'
+import {
+  applyNodeChanges,
+  Background,
+  BackgroundVariant,
+  ReactFlow,
+  ViewportPortal,
+  type NodeChange,
+} from '@xyflow/react'
+import { useCallback, useMemo, useState, type ReactElement } from 'react'
 
 import { buildCanvasGeometry, type CanvasGeometry } from '../../canvasLayout'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
@@ -17,7 +24,7 @@ import { BackgroundLayers } from './BackgroundLayers'
 import { SmoothstepEdge } from './edges/SmoothstepEdge'
 import { EmptyCanvasCTA } from './EmptyCanvasCTA'
 import { NavigatorPanel } from './NavigatorPanel'
-import { BlockNode } from './nodes/BlockNode'
+import { BlockNode, type BlockFlowNode } from './nodes/BlockNode'
 import { useFlowEdges } from './useFlowEdges'
 import { useFlowNodes } from './useFlowNodes'
 
@@ -65,7 +72,7 @@ export function BuilderCanvasFrame({
     [phases, lanes, phaseSizes, laneSizes],
   )
 
-  const nodes = useFlowNodes({
+  const derivedNodes = useFlowNodes({
     blocks,
     lanes,
     blockTypes,
@@ -75,10 +82,31 @@ export function BuilderCanvasFrame({
     selection,
   })
 
+  const [nodes, setNodes] = useState<BlockFlowNode[]>(derivedNodes)
+  const [lastDerived, setLastDerived] = useState(derivedNodes)
+  if (lastDerived !== derivedNodes) {
+    setLastDerived(derivedNodes)
+    setNodes(derivedNodes)
+  }
+
   const flowEdges = useFlowEdges({ edges, blocks, blockTypes, timingValues, selection })
 
-  const { onNodesChange, onEdgesChange, onConnect, onDrop, onDragOver, onPaneClick } =
-    useCanvasHandlers({ blocks, geometry, dispatch, onDropBlockType })
+  const {
+    onNodesChange: dispatchNodesChange,
+    onEdgesChange,
+    onConnect,
+    onDrop,
+    onDragOver,
+    onPaneClick,
+  } = useCanvasHandlers({ blocks, geometry, dispatch, onDropBlockType })
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange<BlockFlowNode>[]) => {
+      setNodes((cur) => applyNodeChanges(changes, cur))
+      dispatchNodesChange(changes)
+    },
+    [dispatchNodesChange],
+  )
 
   const scaffoldPresent = !!phases.length && !!lanes.length
 

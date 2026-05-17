@@ -1,5 +1,5 @@
 import { type Node, type NodeProps } from '@xyflow/react'
-import { type ReactElement } from 'react'
+import { memo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BlockTypeIcon } from '../../../blockCatalogue'
@@ -25,7 +25,9 @@ export type BlockNodeData = {
 
 export type BlockFlowNode = Node<BlockNodeData, 'block'>
 
-export function BlockNode({ data, selected }: NodeProps<BlockFlowNode>): ReactElement {
+export const BlockNode = memo(BlockNodeImpl)
+
+function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactElement {
   const { t } = useTranslation('pathway')
   const accent = data.lane ? laneAccent(data.lane) : 'var(--color-primary)'
   const typeLabel = t(`blockType.${data.block.type}`, {
