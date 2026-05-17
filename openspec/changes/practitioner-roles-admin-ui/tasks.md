@@ -1,6 +1,6 @@
 ## 0. Chain prerequisite
 
-- [ ] 0.1 Verify `practitioner-role-split` archived, `caregiver-shell` archived, `users-admin-ui` and `organisations-admin-ui` merged
+- [x] 0.1 Verify `practitioner-role-split` archived, `caregiver-shell` archived, `users-admin-ui` and `organisations-admin-ui` merged
 
 ## 1. Shared pickers
 
@@ -29,8 +29,8 @@
 
 ## 5. Backend filter widening
 
-- [ ] 5.1 Add `has_practitioner` boolean filter to `GET /users`; tests pass
-- [ ] 5.2 Regenerate openapi + typegen
+- [x] 5.1 Add `has_practitioner` boolean filter to `GET /users`; tests pass
+- [x] 5.2 Regenerate openapi + typegen (no-op: filter rides dynamic `filter[...]` envelope, not a typed query param)
 
 ## 6. Tests
 
