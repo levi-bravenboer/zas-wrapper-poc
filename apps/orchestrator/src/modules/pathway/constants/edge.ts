@@ -2,6 +2,11 @@ export const EDGE_BORDER_RADIUS = 10
 export const EDGE_DASH_PATTERN = '6 4'
 export const EDGE_SELECTED_STROKE_BUMP = 1
 
+export const HANDLE_SIZE = 11
+export const HANDLE_BORDER_WIDTH = 1.5
+export const HANDLE_OFFSET = -Math.round(HANDLE_SIZE / 2)
+export const BRANCH_HANDLE_OFFSET_PCT = 22
+
 export const HANDLE_IDS = {
   target: 'in',
   source: {
