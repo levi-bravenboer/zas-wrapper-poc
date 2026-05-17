@@ -289,5 +289,82 @@
   },
   "delete": {
     "success": "Blok verwijderd."
+  },
+  "version": {
+    "status": {
+      "concept": "Werkversie",
+      "published": "Gepubliceerd",
+      "archived": "Gearchiveerd"
+    },
+    "label": "v.{{n}}",
+    "switch": {
+      "triggerLabel": "Versie kiezen",
+      "groupConcept": "Werkversie",
+      "groupPublished": "Gepubliceerd",
+      "emptyConcept": "Nog geen werkversie.",
+      "emptyPublished": "Nog geen gepubliceerde versies.",
+      "footer": "Alle versies in geschiedenis"
+    },
+    "crumb": {
+      "concept": "werkversie",
+      "published": "gepubliceerd",
+      "historical": "historisch"
+    }
+  },
+  "banner": {
+    "publishedFallback": {
+      "body": "Je bekijkt de laatst gepubliceerde versie. Maak een nieuwe versie om wijzigingen te maken.",
+      "cta": "Maak nieuwe versie"
+    },
+    "historical": {
+      "body": "Je bekijkt een historische versie (v.{{n}}).",
+      "cta": "Herstel als nieuw concept",
+      "backToCurrent": "Terug naar huidige"
+    }
+  },
+  "history": {
+    "drawer": {
+      "title": "Geschiedenis",
+      "close": "Sluiten",
+      "empty": "Nog geen versies.",
+      "loadError": "Kon versies niet laden.",
+      "rowView": "Bekijken",
+      "rowRestore": "Herstellen",
+      "rowCurrent": "Huidige resolutie"
+    },
+    "restore": {
+      "title": "Versie herstellen?",
+      "body": "Hiermee maak je een nieuwe werkversie op basis van v.{{n}}. De huidige werkversie blijft behouden.",
+      "confirm": "Herstellen",
+      "cancel": "Annuleren",
+      "success": "Versie hersteld als nieuwe werkversie."
+    },
+    "conceptExists": {
+      "title": "Bestaande werkversie",
+      "body": "Er bestaat al een concept-versie (v.{{n}}). Wil je dat openen?",
+      "cancel": "Annuleren",
+      "open": "Open bestaande concept"
+    }
+  },
+  "publish": {
+    "modal": {
+      "title": "Versie publiceren",
+      "labelLabel": "Label (optioneel)",
+      "labelPlaceholder": "Bijv. Q3-release",
+      "noteLabel": "Notitie (optioneel)",
+      "notePlaceholder": "Wat is er veranderd?",
+      "approval": "Ik bevestig dat deze versie klinisch gevalideerd is.",
+      "cancel": "Annuleren",
+      "confirm": "Publiceren",
+      "success": "Versie v.{{n}} gepubliceerd.",
+      "error": "Publiceren mislukt."
+    }
+  },
+  "forkOnEdit": {
+    "title": "Nieuwe versie nodig",
+    "body": "Deze versie is gepubliceerd en kan niet meer bewerkt worden. Maak een nieuwe werkversie om wijzigingen door te voeren.",
+    "cancel": "Annuleren",
+    "confirm": "Maak nieuwe versie",
+    "error": "Nieuwe versie aanmaken mislukt."
   }
 }
