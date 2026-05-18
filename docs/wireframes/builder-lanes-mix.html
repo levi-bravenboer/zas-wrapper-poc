@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathway Builder · Lanes (Mix model, coarse 4-lane)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --line: #ececec;
+      --line-2: #e0e0e0;
+      --ink: #0a0a0a;
+      --ink-2: #525252;
+      --muted: #8a8a8a;
+      --hover: #f5f5f5;
+
+      /* lane kinds (coarse, 4 system rows) */
+      --lane-patient:   #2563eb;
+      --lane-caregiver: #b45309;
+      --lane-system:    #475569;
+      --lane-external:  #0f766e;
+      --lane-custom:    #be123c;
+
+      /* integration chips (block-level, not lanes) */
+      --int-hix:    #9333ea;
+      --int-luscii: #0f766e;
+      --int-email:  #6b7280;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink); background: var(--bg);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { display: grid; grid-template-rows: 52px 1fr; height: 100vh; }
+
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 20px; background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    .logo {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--ink); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+    }
+    .crumbs { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .crumbs .here { color: var(--ink); font-weight: 500; }
+    .variant-chip {
+      display: inline-flex; padding: 3px 8px; border-radius: 5px; background: var(--hover);
+      font-size: 11px; color: var(--ink-2); font-weight: 600;
+    }
+
+    main {
+      display: grid; grid-template-columns: 1fr 340px;
+      overflow: hidden;
+    }
+
+    section.canvas-wrap {
+      position: relative; overflow: hidden;
+      background:
+        radial-gradient(circle at 1px 1px, #e8e8e8 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    .canvas-scroll { position: absolute; inset: 0; overflow: auto; }
+    .canvas {
+      position: relative;
+      display: flex;
+      min-width: 1200px; min-height: 600px;
+      padding: 28px 32px;
+    }
+
+    .lane-rail {
+      width: 150px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+    }
+    .lane-rail .header-slot {
+      height: 28px;
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .5px;
+      padding-left: 4px;
+      display: flex; align-items: center;
+    }
+    .lane-rail .lbl {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 500; color: var(--ink);
+      padding: 0 4px;
+      height: 110px;
+    }
+    .lane-rail .lbl .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .lane-rail .lbl .badge {
+      font-size: 9px; padding: 1px 5px; border-radius: 4px;
+      background: var(--hover); color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .3px;
+      margin-left: auto;
+    }
+    .lane-rail .lbl .badge.custom   { background: #ffe4e6; color: var(--lane-custom); }
+    .lane-rail .lbl .badge.default  { background: #f5f5f5; color: var(--muted); }
+
+    .lane-rail .lbl .dot.patient   { background: var(--lane-patient); }
+    .lane-rail .lbl .dot.caregiver { background: var(--lane-caregiver); }
+    .lane-rail .lbl .dot.system    { background: var(--lane-system); }
+    .lane-rail .lbl .dot.external  { background: var(--lane-external); }
+    .lane-rail .lbl .dot.custom    { background: var(--lane-custom); }
+
+    .lane-field { position: relative; flex: 1; min-width: 1000px; }
+    .lane-field .header-slot { height: 28px; }
+
+    .lane-stripe {
+      position: absolute; left: 0; right: 0; height: 110px;
+      border-top: 1px solid var(--line);
+    }
+    .lane-stripe.alt    { background: rgba(0,0,0,.015); }
+    .lane-stripe.custom { background: rgba(190,18,60,.04); border-top: 1px dashed var(--lane-custom); }
+
+    .node {
+      position: absolute;
+      background: var(--panel);
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      padding: 10px 12px;
+      min-width: 180px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.03);
+      cursor: pointer;
+    }
+    .node:hover { border-color: var(--ink); }
+    .node .head {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 4px;
+    }
+    .node .name { font-weight: 600; font-size: 12.5px; }
+    .node .chip {
+      font-size: 9px; padding: 1px 6px; border-radius: 4px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
+      color: #fff;
+    }
+    .node .chip.hix    { background: var(--int-hix); }
+    .node .chip.luscii { background: var(--int-luscii); }
+    .node .chip.email  { background: var(--int-email); }
+    .node .meta { font-size: 11px; color: var(--muted); }
+
+    .node.override {
+      border-color: var(--lane-custom);
+      border-style: dashed;
+    }
+    .node.override::after {
+      content: "moved → Apotheek";
+      position: absolute; top: -8px; right: 8px;
+      font-size: 9px; color: var(--lane-custom);
+      background: var(--panel); padding: 0 6px;
+      border: 1px solid var(--lane-custom);
+      border-radius: 3px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
+    }
+
+    aside.notes {
+      background: var(--panel);
+      border-left: 1px solid var(--line);
+      padding: 20px 22px;
+      overflow-y: auto;
+    }
+    aside.notes h3 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+      color: var(--muted); font-weight: 700;
+      margin: 0 0 10px;
+    }
+    aside.notes h2 {
+      font-size: 15px; margin: 0 0 12px; font-weight: 700;
+    }
+    aside.notes p, aside.notes li {
+      font-size: 12.5px; line-height: 1.55; color: var(--ink-2);
+    }
+    aside.notes ul { margin: 0 0 16px; padding-left: 18px; }
+    aside.notes .legend-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0; font-size: 12px;
+    }
+    aside.notes .legend-item .swatch {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+    aside.notes .legend-item .swatch.default { background: #f5f5f5; border: 1px solid var(--line-2); }
+    aside.notes .legend-item .swatch.custom  { background: #ffe4e6; border: 1px dashed var(--lane-custom); }
+    aside.notes .legend-item .swatch.override{ background: var(--panel); border: 1px dashed var(--lane-custom); }
+    aside.notes .divider { height: 1px; background: var(--line); margin: 16px 0; }
+    aside.notes code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      background: var(--hover); padding: 1px 5px; border-radius: 3px;
+      font-size: 11px;
+    }
+    aside.notes pre {
+      background: var(--hover); padding: 10px 12px; border-radius: 6px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 11px; line-height: 1.5; color: var(--ink);
+      overflow-x: auto; margin: 0 0 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Z</div>
+    <div class="crumbs">
+      <span>Algemeen</span>
+      <span style="opacity:.4;">/</span>
+      <span class="here">Telegeneeskunde proces</span>
+    </div>
+    <span class="variant-chip">Lanes · Mix model · 4 default kinds</span>
+  </header>
+
+  <main>
+    <section class="canvas-wrap">
+      <div class="canvas-scroll">
+        <div class="canvas">
+
+          <div class="lane-rail">
+            <div class="header-slot">Lane</div>
+            <div class="lbl">
+              <span class="dot patient"></span>
+              <span>Patiënt</span>
+              <span class="badge default">default</span>
+            </div>
+            <div class="lbl">
+              <span class="dot caregiver"></span>
+              <span>Zorgverlener</span>
+              <span class="badge default">default</span>
+            </div>
+            <div class="lbl">
+              <span class="dot system"></span>
+              <span>Systeem</span>
+              <span class="badge default">default</span>
+            </div>
+            <div class="lbl">
+              <span class="dot external"></span>
+              <span>Extern</span>
+              <span class="badge default">default</span>
+            </div>
+            <div class="lbl">
+              <span class="dot custom"></span>
+              <span>Apotheek</span>
+              <span class="badge custom">custom</span>
+            </div>
+          </div>
+
+          <div class="lane-field">
+            <div class="header-slot"></div>
+
+            <div class="lane-stripe"        style="top:28px;"></div>
+            <div class="lane-stripe alt"    style="top:138px;"></div>
+            <div class="lane-stripe"        style="top:248px;"></div>
+            <div class="lane-stripe alt"    style="top:358px;"></div>
+            <div class="lane-stripe custom" style="top:468px;"></div>
+
+            <!-- Patiënt: notification block -->
+            <div class="node" style="left:40px; top:55px;">
+              <div class="head">
+                <span class="name">Informeren patiënt</span>
+              </div>
+              <div class="meta">push.notification</div>
+            </div>
+
+            <!-- Zorgverlener: HiX task (HiX = chip on block, not lane) -->
+            <div class="node" style="left:300px; top:165px;">
+              <div class="head">
+                <span class="name">Controleren gegevens</span>
+                <span class="chip hix">HiX</span>
+              </div>
+              <div class="meta">hix.task</div>
+            </div>
+
+            <!-- Zorgverlener: manual gate -->
+            <div class="node" style="left:560px; top:165px;">
+              <div class="head">
+                <span class="name">Akkoord behandelplan</span>
+              </div>
+              <div class="meta">manual.gate</div>
+            </div>
+
+            <!-- Systeem: HiX automated observation -->
+            <div class="node" style="left:40px; top:275px;">
+              <div class="head">
+                <span class="name">Wegschrijven naar HiX</span>
+                <span class="chip hix">HiX</span>
+              </div>
+              <div class="meta">hix.observation</div>
+            </div>
+
+            <!-- Systeem: timer -->
+            <div class="node" style="left:300px; top:275px;">
+              <div class="head">
+                <span class="name">Wacht 7 dagen</span>
+              </div>
+              <div class="meta">timer</div>
+            </div>
+
+            <!-- Extern: Luscii questionnaire (Luscii = chip) -->
+            <div class="node" style="left:40px; top:385px;">
+              <div class="head">
+                <span class="name">Vragenlijst</span>
+                <span class="chip luscii">Luscii</span>
+              </div>
+              <div class="meta">luscii.questionnaire</div>
+            </div>
+
+            <!-- Extern: email -->
+            <div class="node" style="left:300px; top:385px;">
+              <div class="head">
+                <span class="name">Bevestiging mailen</span>
+                <span class="chip email">Email</span>
+              </div>
+              <div class="meta">email.send</div>
+            </div>
+
+            <!-- Custom Apotheek: a manual.gate moved out of caregiver default -->
+            <div class="node override" style="left:560px; top:495px;">
+              <div class="head">
+                <span class="name">Medicatie controleren</span>
+              </div>
+              <div class="meta">manual.gate · override → Apotheek</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="notes">
+      <h3>Variant</h3>
+      <h2>Mix model · 4 default lane kinds + custom + override</h2>
+
+      <h3>How it works</h3>
+      <ul>
+        <li><b>4 default lane kinds</b> seeded in <code>lane_kind</code>: <i>Patiënt</i>, <i>Zorgverlener</i>, <i>Systeem</i>, <i>Extern</i>. Each block type declares one as its <code>default_lane_kind</code>.</li>
+        <li><b>Default lanes</b> materialize as <code>pathway_lane</code> rows on first use (<code>is_default = true</code>).</li>
+        <li><b>Custom lanes</b> are added by the author (e.g. <i>Apotheek</i> under the <code>caregiver</code> kind). Stored as <code>pathway_lane</code> with <code>is_default = false</code> and an overridden label.</li>
+        <li><b>Override</b>: drag any block into another lane → <code>pathway_block.lane_id</code> updates. Always non-NULL.</li>
+        <li><b>Integration</b> (HiX, Luscii, Email) is a <i>chip on the block</i>, not a lane — keeps the canvas readable.</li>
+      </ul>
+
+      <h3>Legend</h3>
+      <div class="legend-item">
+        <span class="swatch default"></span>
+        <span><b>default</b> — seeded lane kind, auto-shown when used</span>
+      </div>
+      <div class="legend-item">
+        <span class="swatch custom"></span>
+        <span><b>custom</b> — author-added (sub-role of a kind)</span>
+      </div>
+      <div class="legend-item">
+        <span class="swatch override"></span>
+        <span><b>moved</b> — block placed outside its default lane</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>Data model (locked, D10)</h3>
+<pre>lane_kind          -- system catalogue
+  id text PK       -- patient | caregiver
+                   -- system  | external
+  label_i18n
+  color_token
+  default_ord
+
+pathway_lane       -- per-pathway instance
+  id uuid PK
+  pathway_id FK
+  kind_id FK -> lane_kind
+  label            -- override per pathway
+  ord
+  is_default
+
+pathway_block.lane_id NOT NULL
+  -> pathway_lane</pre>
+
+      <p style="margin:0;">Adding a new lane kind = seeded migration row. No deploy-coupled enum.</p>
+    </aside>
+
+  </main>
+
+</body>
+</html>

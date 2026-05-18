@@ -21,10 +21,17 @@ BULK_ACTION_VERBS: frozenset[str] = frozenset(
 
 
 def _is_bulk_action_path(path: str) -> bool:
+    """A bulk action is `POST /<resource>/<verb>` where the resource is a
+    plain segment, not a `{id}` path param. `POST /pathways/{id}/.../restore`
+    targets a single resource and is not bulk.
+    """
+
     parts = [p for p in path.split("/") if p]
     if len(parts) < 2:
         return False
-    return parts[-1] in BULK_ACTION_VERBS and not parts[-1].startswith("{")
+    if parts[-1] not in BULK_ACTION_VERBS or parts[-1].startswith("{"):
+        return False
+    return not parts[-2].startswith("{")
 
 
 def _is_bulk_request_model(model: type) -> bool:

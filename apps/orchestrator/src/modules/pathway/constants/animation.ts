@@ -1,0 +1,2 @@
+export const ZOOM_DURATION_MS = 160
+export const VIEWPORT_TRANSITION_MS = 220

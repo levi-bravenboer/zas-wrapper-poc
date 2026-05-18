@@ -48,7 +48,7 @@ function parseFilters(raw: unknown): DataTableState['filters'] {
   for (const [field, value] of Object.entries(raw)) {
     if (Array.isArray(value)) {
       const filtered = value.filter(isListFilter)
-      if (filtered.length > 0) out[field] = filtered
+      if (filtered.length) out[field] = filtered
     } else if (isListFilter(value)) {
       out[field] = value
     }

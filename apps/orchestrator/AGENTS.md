@@ -162,6 +162,107 @@ Pick the **lowest tier that fits**. Promote up only when the type genuinely need
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
 
+## Code style
+
+These are house rules. Apply when writing or refactoring `.ts` / `.tsx`. Prefer the shorter form unless the longer form is required for clarity or a concrete reason (annotated with `// reason:`).
+
+### Control flow
+
+- **Guard clauses / early returns.** Exit early on preconditions; keep the happy path flat. React caveat: every hook must be called before any conditional return — guards go *after* hooks.
+- **Switch over long if/else chains** when mapping one value to N branches.
+- **Lookup table over switch** when each case is data or a component: `const VIEWS = { list: ListView, grid: GridView }; const View = VIEWS[mode] ?? FallbackView`.
+- **`for..of` over `forEach`** when the body needs `await`, `break`, or `return`.
+- **`Promise.all([a, b])`** when awaits are independent.
+
+### Component shape
+
+- Order inside a component: hooks → derived values (`useMemo`/local consts) → handlers → return.
+- Destructure props in the signature: `function Foo({ id, label }: Props)`. No `props.x` access.
+- Single-use components return early for loading/error before main JSX.
+- Custom hook (`use*`) for shared stateful logic. One hook = one concern.
+- No premature memoization. Add `useMemo` / `useCallback` / `React.memo` only after observing a render problem; document why next to it.
+
+### Naming
+
+- Type for props: `[Component]Props`.
+- Prop callbacks: `on*` (e.g. `onSelect`). Internal handler impl: `handle*` (e.g. `handleSelect`).
+- Booleans: `is*` / `has*` / `can*` / `should*`.
+- Custom hooks: `use*`.
+- Event types in handlers: `React.MouseEvent<HTMLButtonElement>` — never bare or `any`.
+
+### Idioms — null/undefined
+
+- `??` for defaulting on null/undefined. Use `||` only when `0`/`''`/`false` should also fall back.
+- `?.` for safe access through unknown chains.
+- `??=` / `||=` / `&&=` for "set if missing" / "set if empty" / "update if truthy": `cache.x ??= compute()`.
+
+### Idioms — boolean coercion
+
+- `!!arr?.length` over `arr.length > 0` — short and null-safe.
+- `Boolean(x)` only when `!!` hurts readability inline.
+
+### Idioms — arrays (ES2023+)
+
+- `arr.at(-1)` over `arr[arr.length - 1]`.
+- `.toSorted()` / `.toReversed()` / `.toSpliced()` — non-mutating; use these in React state derivations.
+- `.findLast(...)` over manual reverse loops.
+- `Object.groupBy(items, (x) => x.kind)` (ES2024) over hand-rolled reducers.
+- `Array.from({ length: n }, fn)` over `Array(n).fill().map(...)`.
+
+### Idioms — destructuring
+
+- Rename: `const { user_id: userId } = row`.
+- Default: `const { count = 0 } = props`.
+- Skip: `const [, second] = pair`.
+- Rest: `const { id, ...rest } = obj`.
+
+### Idioms — objects
+
+- Shorthand: `{ id, label }` not `{ id: id, label: label }`.
+- Spread merge: `{ ...base, x: 1 }`.
+- Computed key: `{ [code]: value }`.
+- `Object.fromEntries(arr.map(...))` for shape transforms.
+
+### Idioms — TypeScript
+
+- `as const` for literal narrowing: `['a','b'] as const`.
+- `satisfies` over `: T` when you want the check without widening: `const cfg = { ... } satisfies Config`.
+- Derive unions from data: `type Mode = (typeof MODES)[number]`.
+- `import type { X }` for types — erased at build.
+- Discriminated unions over flag booleans: `{ kind: 'ok' } | { kind: 'err'; message: string }`.
+- Type predicates for narrowing at boundaries: `function isUser(x: unknown): x is User`.
+- Use `Pick` / `Omit` / `Partial` / `Required` / `NonNullable` — don't retype shapes.
+
+### Idioms — functions
+
+- Arrow with implicit return for one-liners: `const double = (n: number) => n * 2`.
+- Destructure single-param objects in the arg list.
+- Avoid intermediate variables when the value is used exactly once and the expression stays readable.
+
+### JSX gotchas
+
+- `cond && <X />` is fine **only** if `cond` is boolean. Never `&&` a number — `0 && <X/>` renders `0`. Use `cond ? <X /> : null` or coerce: `!!cond && <X />`.
+- Nested ternaries: at most 2 levels. Beyond that, extract to a small function or use a lookup table.
+- Don't `key={index}` when the list can reorder, insert, or delete. Use a stable id.
+
+### Avoid
+
+- Default exports — named exports only (better refactor, better tree-shake).
+- Mutating array helpers (`sort`, `reverse`, `splice`) on values you didn't just allocate — use the `to*` variants.
+- Memoization without a measured cause.
+- `enum` — use `as const` object + derived union (also in `## Typing rules`).
+- `eval`, `with`, `Function` constructor.
+
+### AHA (Avoid Hasty Abstractions)
+
+- Three similar occurrences before extracting. Two ≠ a pattern.
+- Inline duplication beats the wrong abstraction.
+- When extracting, name by intent (`useBlockSelection`), not by mechanism (`useStateWithReducerAndCallback`).
+
+### `any` exception
+
+The `// reason:` annotation from the rule above also covers any of these idioms when you knowingly choose the longer or less-idiomatic form. One line, in plain English, why the deviation is intentional.
+
 ## Lists & DataTable
 
 - All overviews MUST use `DataTable<T>` from `@/components/data-table`. No ad-hoc `<table>` outside `@/components/ui/table`. Enforced by ESLint (`no-restricted-syntax` on `JSXOpeningElement[name.name="table"]`).
@@ -417,3 +518,32 @@ When reviewing a PR that touches FHIR-shaped code, confirm:
 - Auto-generated i18n key list from the backend's `app/fhir/codes.py`.
 
 Each of these is a feature add behind the `lib/fhir/` seam — no restructure expected.
+
+## Pathway builder
+
+Authoring surface for `F3` care pathways. Module: `src/modules/pathway/`.
+
+### Module layout
+
+- `api.ts` — typed wrappers over the generated client (`listPathways`, `getPathway`, `replacePathway`, `listBlockTypes`, `listPhaseTemplates`, `listEdgeTimingKinds`, `listEdgeOffsetDirections`).
+- `hooks.ts` — react-query hooks (`usePathwayList`, `usePathway`, `useCreatePathway`, `useReplacePathway`, `usePathwayBlocks`, `usePathwayPhaseTemplates`, `useEdgeTimingKinds`, `useEdgeOffsetDirections`).
+- `keys.ts` — query-key namespace `pathwayKeys.*` (`list`, `detail(id)`, `blocks`, `phaseTemplates`, `edgeTimingKinds`, `edgeOffsetDirections`).
+- `useBuilderState.ts` — controlled-state reducer over `PathwayVersionDefinition` (selection, undo/redo, dirty tracking). Single source of truth for the canvas state passed to autosave. Read-only guard: actions other than `select` / `reset` / `mark-saved` / `resize-*` are dropped when `version.status !== 'concept'` — Phase 5 fork-on-edit will hook the intercept here.
+- `configSchemas.ts` — per-semantic Zod schemas for `PathwayBlock.config`; `parseBlockConfig(block, semantics)` returns typed config or throws. Inspectors render bespoke forms per semantics, NOT RJSF (audited then dropped per `pathway-config-forms`).
+- `edgeTiming.ts` / `formatTiming.ts` — edge-kind union helpers; `readEdgeTiming(edge)` discriminates `completion | marker | immediate | branch`.
+- `components/` — `PathwayBuilderShell` (provider + layout), `canvas/` (`BuilderCanvasFrame` + nodes/edges over `@xyflow/react`), `dock/` (block palette), `subbar/` (phase picker), `topbar/` (`BuilderTopbar`, `SaveStatusPill`, `PublishButton`, `EditableTitle`), `drawer/` (`BuilderDrawer` + `inspectors/` per semantics, `EdgeInspector`).
+- `hooks/` — `useAutosavePathway` (800ms debounce, visibility-flush, full-definition `PUT`), `useCanvasHandlers` (xyflow → reducer bridge), `useBuilderKeyboard` (Delete/Backspace, undo/redo).
+
+### Canvas package
+
+- `@xyflow/react` 12 (React Flow). Decision D5 of `openspec/changes/pathway-builder-base/design.md` — MIT, React 19 compat, controlled-state mode, custom React-component nodes. Internal `zustand ^4` co-exists with repo's `zustand 5` (separate store instance — flagged risk, not a blocker).
+- Styles imported via `@xyflow/react/dist/style.css` in `BuilderCanvasFrame`.
+
+### Save model
+
+- Concept versions autosave at 800ms after the last dirty-marking dispatch, flush on tab `visibilitychange → hidden`. No explicit `Save` button on concept (`builder-ui-spec.md` §17, design D30+D31). Save-state pill replaces the button (`status.{clean|dirty|saving|error}`).
+- Published / archived versions are read-only — the reducer's dispatch-boundary guard drops mutations; the topbar `Publish version` button is currently a disabled placeholder for Phase 5 wiring.
+
+### i18n
+
+- Dutch only at this tier — keys under `pathway.*` in `lib/i18n/locales/nl/pathway.json`. Sidebar entry: `nav.pathways`. New inspectors register copy under `pathway.inspector.<semantics>.*`.

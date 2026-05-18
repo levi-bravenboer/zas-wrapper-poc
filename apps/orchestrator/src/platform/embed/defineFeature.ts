@@ -31,13 +31,7 @@ export function getFeatureById(id: string): AnyFeatureSpec | undefined {
 }
 
 export function getRequiredScopes(): readonly string[] {
-  const scopes = new Set<string>()
-  for (const feature of registry.values()) {
-    if (feature.smart) {
-      for (const scope of feature.smart.scopes) scopes.add(scope)
-    }
-  }
-  return Array.from(scopes)
+  return [...new Set([...registry.values()].flatMap((f) => f.smart?.scopes ?? []))]
 }
 
 // Reason: module-scoped registry must be wiped between tests to keep them isolated.

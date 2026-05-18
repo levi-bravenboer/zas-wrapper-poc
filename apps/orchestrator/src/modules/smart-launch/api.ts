@@ -28,9 +28,7 @@ const PKCE_STORAGE_PREFIX = 'smart-pkce'
 
 function getClientId(): string {
   const value = env.SMART_CLIENT_ID
-  if (value === undefined) {
-    throw new SmartLaunchError('VITE_SMART_CLIENT_ID is not configured')
-  }
+  if (!value) throw new SmartLaunchError('VITE_SMART_CLIENT_ID is not configured')
   return value
 }
 
@@ -67,9 +65,9 @@ function deriveCtx(state: fhirclient.ClientState | undefined): SmartCtx {
     ctx.encounter = { id: token.encounter, reference: `Encounter/${token.encounter}` }
   }
   const fhirUser = typeof token.fhirUser === 'string' ? token.fhirUser : undefined
-  if (fhirUser !== undefined) {
+  if (fhirUser) {
     const [resource, id] = fhirUser.split('/')
-    if (resource !== undefined && id !== undefined) {
+    if (resource && id) {
       ctx.user = { id, reference: fhirUser }
     }
   }

@@ -21,9 +21,7 @@ function resolveDestination(): string {
   const surface = ctx?.surface ?? 'smart'
   const base = SURFACES[surface].basePath
   const returnPath = ctx?.returnPath
-  if (returnPath !== null && returnPath !== undefined && returnPath !== '') {
-    return returnPath
-  }
+  if (returnPath) return returnPath
   return `${base}/`
 }
 
@@ -42,14 +40,14 @@ export function LaunchCallbackPage({
 }) {
   const { t } = useTranslation('smart')
   const [error, setError] = useState<string | null>(
-    search.error !== undefined ? (search.error_description ?? search.error) : null,
+    search.error ? (search.error_description ?? search.error) : null,
   )
   const ran = useRef(false)
 
   useEffect(() => {
     if (ran.current) return
     ran.current = true
-    if (search.error !== undefined) return
+    if (search.error) return
     let cancelled = false
     exchangeAuthCode()
       .then(() => {

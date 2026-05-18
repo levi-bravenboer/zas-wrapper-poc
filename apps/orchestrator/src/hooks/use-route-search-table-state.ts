@@ -52,7 +52,7 @@ function coerceFilters(value: unknown): DataTableState['filters'] {
   for (const [field, raw] of Object.entries(value)) {
     if (Array.isArray(raw)) {
       const filtered = raw.filter(isListFilter)
-      if (filtered.length > 0) out[field] = filtered
+      if (filtered.length) out[field] = filtered
     } else if (isListFilter(raw)) {
       out[field] = raw
     }
@@ -207,7 +207,7 @@ function serialiseState(state: DataTableState): Record<string, unknown> {
   if (state.q !== DATA_TABLE_DEFAULT_STATE.q) out['q'] = state.q
   if (state.orderBy !== DATA_TABLE_DEFAULT_STATE.orderBy) out['orderBy'] = state.orderBy
   if (state.order !== DATA_TABLE_DEFAULT_STATE.order) out['order'] = state.order
-  if (Object.keys(state.filters).length > 0) out['filters'] = state.filters
+  if (Object.keys(state.filters).length) out['filters'] = state.filters
   return out
 }
 

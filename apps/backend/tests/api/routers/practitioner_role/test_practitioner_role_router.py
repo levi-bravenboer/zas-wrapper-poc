@@ -62,10 +62,15 @@ async def test_list_filters_by_practitioner(
     )
     response = await async_client.get(
         "/practitioner-roles",
-        params={"practitioner_id": str(practitioner.id), "is_open": "true"},
+        params={
+            "filter[practitioner_id]": str(practitioner.id),
+            "filter[is_open]": "true",
+        },
     )
     assert response.status_code == 200, response.text
-    rows = response.json()
+    page = response.json()
+    rows = page["items"]
+    assert page["total"] == 1
     assert len(rows) == 1
     assert rows[0]["practitioner_id"] == str(practitioner.id)
 
@@ -104,9 +109,12 @@ async def test_opening_primary_demotes_existing_primary(
     db_session.expunge_all()
     response = await async_client.get(
         "/practitioner-roles",
-        params={"practitioner_id": str(practitioner.id), "is_open": "true"},
+        params={
+            "filter[practitioner_id]": str(practitioner.id),
+            "filter[is_open]": "true",
+        },
     )
-    rows = response.json()
+    rows = response.json()["items"]
     primaries = [r for r in rows if r["is_primary"]]
     assert len(primaries) == 1
     assert primaries[0]["organisation_id"] == str(ORTHO_DEPT_ORG_ID)

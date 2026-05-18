@@ -93,4 +93,8 @@ class PractitionerRole(TenantOwnedEntity):
     )
     period_end: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
-    practitioner: Mapped[Practitioner] = relationship("Practitioner", back_populates="roles")
+    practitioner: Mapped[Practitioner] = relationship(
+        "Practitioner",
+        back_populates="roles",
+        lazy="selectin",
+    )

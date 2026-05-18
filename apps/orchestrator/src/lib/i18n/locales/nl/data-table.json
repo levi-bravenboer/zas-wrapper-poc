@@ -51,5 +51,9 @@
   "confirm": {
     "ok": "Bevestigen",
     "cancel": "Annuleren"
+  },
+  "error": {
+    "title": "Fout",
+    "retry": "Opnieuw proberen"
   }
 }

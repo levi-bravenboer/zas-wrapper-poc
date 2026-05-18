@@ -1,0 +1,82 @@
+'use client'
+
+import { useMemo, useState, type ReactElement } from 'react'
+
+import { usePaginatedQuery } from '@/hooks/use-paginated-query'
+import { USERS_LIST_PATH } from '@/modules/user/keys'
+import type { Role, UserRow } from '@/modules/user/schemas'
+
+import { PickerCombobox } from './PickerCombobox'
+import { usePickerSelection } from './usePickerSelection'
+
+export interface UserPickerProps {
+  role: Role
+  value: string | null
+  onChange: (userId: string | null, user: UserRow | null) => void
+  disabledIds?: ReadonlyArray<string>
+  placeholder?: string
+  searchPlaceholder?: string
+  emptyLabel?: string
+  loadingLabel?: string
+  disabled?: boolean
+  pageSize?: number
+  ariaLabel?: string
+}
+
+const DEFAULT_PAGE_SIZE = 50
+
+export function UserPicker({
+  role,
+  value,
+  onChange,
+  disabledIds,
+  placeholder = 'Selecteer gebruiker',
+  searchPlaceholder = 'Zoek op naam of e-mail',
+  emptyLabel = 'Geen gebruikers gevonden',
+  loadingLabel = 'Laden…',
+  disabled,
+  pageSize = DEFAULT_PAGE_SIZE,
+  ariaLabel,
+}: UserPickerProps): ReactElement {
+  const [search, setSearch] = useState('')
+  const query = useMemo(
+    () => ({
+      page: 1,
+      page_size: pageSize,
+      q: search.trim() ? search.trim() : null,
+      filters: { role: { op: 'eq' as const, value: role } },
+    }),
+    [pageSize, role, search],
+  )
+
+  const { data, isLoading } = usePaginatedQuery<UserRow>(USERS_LIST_PATH, query)
+  const items = data?.items ?? []
+  const selected = usePickerSelection<UserRow>(USERS_LIST_PATH, value, items, (u) => u.id)
+
+  return (
+    <PickerCombobox<UserRow>
+      value={value}
+      items={items}
+      getId={(u) => u.id}
+      getLabel={(u) => u.display_name}
+      renderItem={(u) => (
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate font-medium text-foreground">{u.display_name}</span>
+          <span className="truncate text-xs text-muted-foreground">{u.email}</span>
+        </div>
+      )}
+      selected={selected}
+      search={search}
+      onSearchChange={setSearch}
+      onSelect={(u) => onChange(u.id, u)}
+      placeholder={placeholder}
+      searchPlaceholder={searchPlaceholder}
+      emptyLabel={emptyLabel}
+      loadingLabel={loadingLabel}
+      isLoading={isLoading}
+      disabled={disabled}
+      disabledIds={disabledIds}
+      ariaLabel={ariaLabel}
+    />
+  )
+}

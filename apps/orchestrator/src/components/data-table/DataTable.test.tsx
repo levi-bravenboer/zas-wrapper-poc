@@ -154,7 +154,7 @@ describe('DataTable — state composition', () => {
     // No `<table>` rendered when in error state.
     expect(screen.queryByRole('table')).toBeNull()
 
-    const retry = within(alert).getByRole('button', { name: 'Retry' })
+    const retry = within(alert).getByRole('button', { name: 'Opnieuw proberen' })
     retry.click()
     expect(onRetry).toHaveBeenCalledTimes(1)
   })

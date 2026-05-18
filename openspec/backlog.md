@@ -252,6 +252,7 @@ Promoted to `changes/add-auth-provider-seam/` on 2026-05-15 (login-screen wiring
 ### BL-036 — F3 pathway domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+- Promoted: 2026-05-17 to `changes/pathway-builder-base/` (backend pathway + version domain, orchestrator builder canvas, version surface)
 
 Note: F3 backend domain lands as its own `[poc]` change in its own worktree. Shape is designed inside that change. Orchestrator pathway module + composer skeleton land with the same change.
 
@@ -434,3 +435,9 @@ Note: `DashboardLanding` needs counts for **Open care teams** and **Recent assig
 - Source: caregiver-shell change (sidebar inventory)
 
 Note: `/inbox` route is reserved in the sidebar but unimplemented. PoC ships a placeholder; replace with an Inbox view (task list across patients) once the tasks surface is fleshed out.
+
+### ~~BL-066 — Per-semantic Zod schemas for `PathwayBlock.config`~~ — resolved by pathway-config-forms (2026-05-17)
+- Tier: [mvp]
+- Source: style-check review (2026-05-17), follows pathway-block-redesign
+
+Resolved: `apps/orchestrator/src/modules/pathway/configSchemas.ts` now defines one Zod schema per `BlockSemantics`. `blockCatalogue.utils.ts` parses on read and the `asString` / `asArray` shims are gone. Inspector forms and the drawer error banner consume the typed `ConfigForSemantics<S>` discriminated union; parse failures surface a reset-to-default UX in `BuilderDrawer.tsx`.

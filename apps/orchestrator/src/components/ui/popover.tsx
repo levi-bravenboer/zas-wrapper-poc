@@ -1,3 +1,5 @@
+'use client'
+
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import * as React from 'react'
 
@@ -6,29 +8,26 @@ import { cn } from '@/lib/style/cn'
 export const Popover = PopoverPrimitive.Root
 export const PopoverTrigger = PopoverPrimitive.Trigger
 export const PopoverAnchor = PopoverPrimitive.Anchor
-export const PopoverPortal = PopoverPrimitive.Portal
 
 export type PopoverContentProps = React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
 
-export function PopoverContent({
-  className,
-  align = 'center',
-  sideOffset = 6,
-  ...props
-}: PopoverContentProps) {
+export const PopoverContent = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Content>,
+  PopoverContentProps
+>(function PopoverContent({ className, align = 'start', sideOffset = 4, ...props }, ref) {
   return (
-    <PopoverPortal>
+    <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
+        ref={ref}
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'z-50 w-72 rounded-md border border-border bg-background p-2 text-foreground shadow-md outline-none',
+          'z-50 w-72 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-none',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
-          'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
           className,
         )}
         {...props}
       />
-    </PopoverPortal>
+    </PopoverPrimitive.Portal>
   )
-}
+})

@@ -108,7 +108,7 @@ describe('/_auth/users route', () => {
 
     renderUsersPage()
 
-    expect(await screen.findByRole('button', { name: /retry/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /opnieuw proberen/i })).toBeInTheDocument()
   })
 
   it('navigates to the detail route when a row is clicked', async () => {

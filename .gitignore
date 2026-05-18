@@ -16,6 +16,7 @@ logs/
 .env
 .env.local
 .env.*.local
+.env.worktree
 *.env
 
 # Build artefacts (per-app gitignores cover most; this is the safety net)

@@ -424,6 +424,196 @@ export interface paths {
         patch: operations["update_practitioner_role"];
         trace?: never;
     };
+    "/pathways/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Block Types */
+        get: operations["list_pathway_block_types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/phase-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Phase Templates */
+        get: operations["list_pathway_phase_templates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/edge-timing-kinds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Edge Timing Kinds */
+        get: operations["list_pathway_edge_timing_kinds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/edge-offset-directions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Edge Offset Directions */
+        get: operations["list_pathway_edge_offset_directions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathways */
+        get: operations["list_pathways"];
+        put?: never;
+        /** Create Pathway */
+        post: operations["create_pathway"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pathway */
+        get: operations["get_pathway"];
+        /** Replace Pathway */
+        put: operations["replace_pathway"];
+        post?: never;
+        /** Delete Pathway */
+        delete: operations["delete_pathway"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Versions */
+        get: operations["list_pathway_versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pathway Version */
+        get: operations["get_pathway_version"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Pathway */
+        post: operations["publish_pathway"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}/versions/{version_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Pathway Version */
+        post: operations["restore_pathway_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}/versions/{version_id}/fork-from-publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fork Pathway From Publish */
+        post: operations["fork_pathway_from_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -503,6 +693,17 @@ export interface components {
             status?: components["schemas"]["CareTeamStatus"] | null;
             /** Period End */
             period_end?: string | null;
+        };
+        /** ErrorResponse */
+        ErrorResponse: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * Gender
@@ -621,6 +822,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** Page[PractitionerRoleRead] */
+        Page_PractitionerRoleRead_: {
+            /** Items */
+            items: components["schemas"]["PractitionerRoleRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** Page[UserRow] */
         Page_UserRow_: {
             /** Items */
@@ -693,6 +907,675 @@ export interface components {
          */
         ParticipantRoleChange: {
             role_in_care: components["schemas"]["RoleInCare"];
+        };
+        /**
+         * PathwayActorRef
+         * @description Minimal user reference embedded in version summaries.
+         */
+        PathwayActorRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * PathwayBare
+         * @description Identity fields only — no version-scoped children. Returned as the
+         *     `pathway` arm of `PathwayWithVersionResponse`.
+         */
+        PathwayBare: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Clinical Goal */
+            clinical_goal?: string | null;
+            /** Patient Goal */
+            patient_goal?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PathwayBlockBranchIn */
+        PathwayBlockBranchIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Id
+             * Format: uuid
+             */
+            block_id: string;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+        };
+        /** PathwayBlockBranchOut */
+        PathwayBlockBranchOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Id
+             * Format: uuid
+             */
+            block_id: string;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+        };
+        /** PathwayBlockDeferredFieldIn */
+        PathwayBlockDeferredFieldIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Id
+             * Format: uuid
+             */
+            block_id: string;
+            /** Field Path */
+            field_path: string;
+        };
+        /** PathwayBlockDeferredFieldOut */
+        PathwayBlockDeferredFieldOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Id
+             * Format: uuid
+             */
+            block_id: string;
+            /** Field Path */
+            field_path: string;
+        };
+        /** PathwayBlockIn */
+        PathwayBlockIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * @description Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0]).
+             */
+            lane_id?: string | null;
+            /** Type */
+            type: string;
+            /** Label */
+            label?: string | null;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            };
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+        };
+        /** PathwayBlockOut */
+        PathwayBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Type */
+            type: string;
+            /** Label */
+            label?: string | null;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            };
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+        };
+        /** PathwayBlockType */
+        PathwayBlockType: {
+            /**
+             * Type
+             * @description Stable kebab-case identifier
+             */
+            type: string;
+            /** Label */
+            label: string;
+            /**
+             * Semantics
+             * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
+             * @enum {string}
+             */
+            semantics: "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link";
+            /**
+             * Icon
+             * @description Lucide icon name. Resolved client-side via a single lookup.
+             */
+            icon: string;
+            /**
+             * Allowed Lane Kind Codes
+             * @description Lane-kind codes this block type may be placed on. The first entry is the default placement when no explicit lane context exists.
+             */
+            allowed_lane_kind_codes: string[];
+            /** Config Schema */
+            config_schema: {
+                [key: string]: unknown;
+            };
+            /**
+             * Ui Schema
+             * @description Widget hints, field order, and labels for schema-driven inspector rendering. Consumed by the orchestrator's SchemaForm engine.
+             */
+            ui_schema?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Supports Branches
+             * @default false
+             */
+            supports_branches: boolean;
+        };
+        /** PathwayCreate */
+        PathwayCreate: {
+            /** Name */
+            name: string;
+            /** Clinical Goal */
+            clinical_goal: string;
+            /** Patient Goal */
+            patient_goal: string;
+        };
+        /**
+         * PathwayDefinitionReplace
+         * @description Autosave body for `PUT /pathways/{id}` — applied to the current concept
+         *     version's children. Pathway identity fields (`name`/`clinical_goal`/
+         *     `patient_goal`) live on the pathway row and are mutable regardless of
+         *     version status.
+         */
+        PathwayDefinitionReplace: {
+            /** Name */
+            name: string;
+            /** Clinical Goal */
+            clinical_goal?: string | null;
+            /** Patient Goal */
+            patient_goal?: string | null;
+            /** Phases */
+            phases?: components["schemas"]["PathwayPhaseIn"][];
+            /** Lanes */
+            lanes?: components["schemas"]["PathwayLaneIn"][];
+            /** Timing Values */
+            timing_values?: components["schemas"]["PathwayTimingValueIn"][];
+            /** Blocks */
+            blocks?: components["schemas"]["PathwayBlockIn"][];
+            /** Branches */
+            branches?: components["schemas"]["PathwayBlockBranchIn"][];
+            /** Edges */
+            edges?: components["schemas"]["PathwayEdgeIn"][];
+            /** Time Markers */
+            time_markers?: components["schemas"]["PathwayTimeMarkerIn"][];
+            /** Deferred Fields */
+            deferred_fields?: components["schemas"]["PathwayBlockDeferredFieldIn"][];
+        };
+        /** PathwayEdgeIn */
+        PathwayEdgeIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /**
+             * Target Block Id
+             * Format: uuid
+             */
+            target_block_id: string;
+            /** Source Branch Id */
+            source_branch_id?: string | null;
+            /** Delay Value Id */
+            delay_value_id?: string | null;
+            /** Time Marker Id */
+            time_marker_id?: string | null;
+            /** Offset Value Id */
+            offset_value_id?: string | null;
+            /** Offset Direction Code */
+            offset_direction_code?: string | null;
+        };
+        /** PathwayEdgeOffsetDirection */
+        PathwayEdgeOffsetDirection: {
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+        };
+        /** PathwayEdgeOut */
+        PathwayEdgeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /**
+             * Target Block Id
+             * Format: uuid
+             */
+            target_block_id: string;
+            /** Source Branch Id */
+            source_branch_id?: string | null;
+            /** Delay Value Id */
+            delay_value_id?: string | null;
+            /** Time Marker Id */
+            time_marker_id?: string | null;
+            /** Offset Value Id */
+            offset_value_id?: string | null;
+            /** Offset Direction Code */
+            offset_direction_code?: string | null;
+        };
+        /** PathwayEdgeTimingKind */
+        PathwayEdgeTimingKind: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "completion" | "marker" | "immediate" | "branch";
+            /** Label */
+            label: string;
+            /** Config Schema */
+            config_schema: {
+                [key: string]: unknown;
+            };
+            /** Ui Schema */
+            ui_schema: {
+                [key: string]: unknown;
+            };
+        };
+        /** PathwayLaneIn */
+        PathwayLaneIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lane Kind Code
+             * @description System lane-kind code (resolves to pathway_lane_kind.id server-side)
+             */
+            lane_kind_code: string;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
+        };
+        /** PathwayLaneOut */
+        PathwayLaneOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Pathway Lane Kind Id
+             * Format: uuid
+             */
+            pathway_lane_kind_id: string;
+            /** Lane Kind Code */
+            lane_kind_code: string;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+            /** Is Default */
+            is_default: boolean;
+        };
+        /** PathwayPhaseIn */
+        PathwayPhaseIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Template Id */
+            template_id?: string | null;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+        };
+        /** PathwayPhaseOut */
+        PathwayPhaseOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Template Id */
+            template_id?: string | null;
+            /** Label */
+            label: string;
+            /** Ord */
+            ord: number;
+        };
+        /** PathwayPhaseTemplate */
+        PathwayPhaseTemplate: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Default Ord */
+            default_ord: number;
+            /** Default Duration Days */
+            default_duration_days?: number | null;
+        };
+        /**
+         * PathwayPublishRequest
+         * @description Body for `POST /pathways/{id}/publish` — promotes the current concept.
+         *     `clinically_approved` is `Literal[True]`: anything else is a 422 from the
+         *     framework rather than a custom validator (keeps the error payload JSON-
+         *     serialisable without bespoke handling).
+         */
+        PathwayPublishRequest: {
+            /** Label */
+            label?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Clinically Approved
+             * @description Must be true. The frontend gates this behind an explicit checkbox.
+             * @constant
+             */
+            clinically_approved: true;
+        };
+        /**
+         * PathwaySummary
+         * @description Overview row for `GET /pathways`. Rollups derived per `pathway-version`
+         *     Requirement 11 — backend joins `pathway_version` + `pathway_block`, never
+         *     reads denormalised columns on `pathway`.
+         */
+        PathwaySummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Clinical Goal */
+            clinical_goal?: string | null;
+            /** Patient Goal */
+            patient_goal?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Block Count */
+            block_count: number;
+            /**
+             * Last Edited At
+             * Format: date-time
+             */
+            last_edited_at: string;
+            /** Has Concept */
+            has_concept: boolean;
+            /** Concept Version Id */
+            concept_version_id?: string | null;
+            /** Latest Published Version Id */
+            latest_published_version_id?: string | null;
+            /** Latest Published Version No */
+            latest_published_version_no?: number | null;
+            /** Latest Published At */
+            latest_published_at?: string | null;
+        };
+        /** PathwayTimeMarkerIn */
+        PathwayTimeMarkerIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Value Id
+             * Format: uuid
+             */
+            value_id: string;
+            /** Label */
+            label: string;
+        };
+        /** PathwayTimeMarkerOut */
+        PathwayTimeMarkerOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Value Id
+             * Format: uuid
+             */
+            value_id: string;
+            /** Label */
+            label: string;
+        };
+        /** PathwayTimingValueIn */
+        PathwayTimingValueIn: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fixed" | "enrollment";
+            /** Fixed Days */
+            fixed_days?: number | null;
+            /** Enrollment Default Days */
+            enrollment_default_days?: number | null;
+            /** Enrollment Min Days */
+            enrollment_min_days?: number | null;
+            /** Enrollment Max Days */
+            enrollment_max_days?: number | null;
+        };
+        /** PathwayTimingValueOut */
+        PathwayTimingValueOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fixed" | "enrollment";
+            /** Fixed Days */
+            fixed_days?: number | null;
+            /** Enrollment Default Days */
+            enrollment_default_days?: number | null;
+            /** Enrollment Min Days */
+            enrollment_min_days?: number | null;
+            /** Enrollment Max Days */
+            enrollment_max_days?: number | null;
+        };
+        /**
+         * PathwayVersionDefinition
+         * @description Snapshot of one pathway version — meta + children. Returned by version
+         *     detail endpoints and embedded as `version` in `PathwayWithVersionResponse`.
+         */
+        PathwayVersionDefinition: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Pathway Id
+             * Format: uuid
+             */
+            pathway_id: string;
+            /** Version No */
+            version_no: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "concept" | "published" | "archived";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "initial" | "fork-from-publish" | "restore-from-version";
+            /** Label */
+            label?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Derived From Version Id */
+            derived_from_version_id?: string | null;
+            /** Published At */
+            published_at?: string | null;
+            /** Published By */
+            published_by?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Phases */
+            phases?: components["schemas"]["PathwayPhaseOut"][];
+            /** Lanes */
+            lanes?: components["schemas"]["PathwayLaneOut"][];
+            /** Timing Values */
+            timing_values?: components["schemas"]["PathwayTimingValueOut"][];
+            /** Blocks */
+            blocks?: components["schemas"]["PathwayBlockOut"][];
+            /** Branches */
+            branches?: components["schemas"]["PathwayBlockBranchOut"][];
+            /** Edges */
+            edges?: components["schemas"]["PathwayEdgeOut"][];
+            /** Time Markers */
+            time_markers?: components["schemas"]["PathwayTimeMarkerOut"][];
+            /** Deferred Fields */
+            deferred_fields?: components["schemas"]["PathwayBlockDeferredFieldOut"][];
+        };
+        /**
+         * PathwayVersionSummary
+         * @description One row of `GET /pathways/{id}/versions` (reverse-chrono).
+         */
+        PathwayVersionSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Pathway Id
+             * Format: uuid
+             */
+            pathway_id: string;
+            /** Version No */
+            version_no: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "concept" | "published" | "archived";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "initial" | "fork-from-publish" | "restore-from-version";
+            /** Label */
+            label?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Derived From Version Id */
+            derived_from_version_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            created_by?: components["schemas"]["PathwayActorRef"] | null;
+            /** Published At */
+            published_at?: string | null;
+            published_by?: components["schemas"]["PathwayActorRef"] | null;
+        };
+        /**
+         * PathwayWithVersionResponse
+         * @description Resolved-version envelope for `GET /pathways/{id}` and `POST /pathways`.
+         *
+         *     `version` is the current concept if one exists, else the latest published
+         *     (per `pathway-version` spec Requirement 9).
+         */
+        PathwayWithVersionResponse: {
+            pathway: components["schemas"]["PathwayBare"];
+            version: components["schemas"]["PathwayVersionDefinition"];
         };
         /**
          * PatientCreate
@@ -937,6 +1820,7 @@ export interface components {
             period_start: string;
             /** Period End */
             period_end?: string | null;
+            practitioner?: components["schemas"]["PractitionerSummary"] | null;
         };
         /**
          * PractitionerRoleUpdate
@@ -953,6 +1837,32 @@ export interface components {
             specialty?: string | null;
             /** Is Primary */
             is_primary?: boolean | null;
+        };
+        /**
+         * PractitionerSummary
+         * @description Denormalised practitioner identity for list views.
+         *
+         *     Populated by serialising a `Practitioner` ORM row whose `user`
+         *     relationship is loaded (selectinload). The `display_name` field is
+         *     pulled from the linked `User`; the rest are direct columns.
+         */
+        PractitionerSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
         };
         /** PractitionerUpdate */
         PractitionerUpdate: {
@@ -2121,9 +3031,16 @@ export interface operations {
     list_practitioner_roles: {
         parameters: {
             query?: {
-                practitioner_id?: string | null;
-                organisation_id?: string | null;
-                is_open?: boolean | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
             };
             header?: never;
             path?: never;
@@ -2137,7 +3054,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PractitionerRoleRead"][];
+                    "application/json": components["schemas"]["Page_PractitionerRoleRead_"];
                 };
             };
             /** @description Validation Error */
@@ -2246,6 +3163,504 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pathway_block_types: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayBlockType"][];
+                };
+            };
+        };
+    };
+    list_pathway_phase_templates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayPhaseTemplate"][];
+                };
+            };
+        };
+    };
+    list_pathway_edge_timing_kinds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayEdgeTimingKind"][];
+                };
+            };
+        };
+    };
+    list_pathway_edge_offset_directions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayEdgeOffsetDirection"][];
+                };
+            };
+        };
+    };
+    list_pathways: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwaySummary"][];
+                };
+            };
+        };
+    };
+    create_pathway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PathwayCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayWithVersionResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_pathway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayWithVersionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_pathway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PathwayDefinitionReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayWithVersionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_pathway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pathway_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayVersionSummary"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pathway_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayVersionDefinition"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_pathway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PathwayPublishRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayVersionSummary"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    restore_pathway_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayVersionSummary"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fork_pathway_from_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayVersionSummary"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

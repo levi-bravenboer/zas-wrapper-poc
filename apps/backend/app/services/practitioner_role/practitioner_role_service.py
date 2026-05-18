@@ -45,33 +45,6 @@ class PractitionerRoleService:
         self._practitioner_service = practitioner_service
         self._organisation_service = organisation_service
 
-    async def list_for_tenant(
-        self,
-        actor: SessionUser,
-        *,
-        practitioner_id: UUID | None = None,
-        organisation_id: UUID | None = None,
-        is_open: bool | None = None,
-    ) -> list[PractitionerRole]:
-        stmt = select(PractitionerRole).where(
-            PractitionerRole.tenant_id == actor.tenant_id,
-            PractitionerRole.deleted_at.is_(None),
-        )
-        if practitioner_id is not None:
-            stmt = stmt.where(PractitionerRole.practitioner_id == practitioner_id)
-        if organisation_id is not None:
-            stmt = stmt.where(PractitionerRole.organisation_id == organisation_id)
-        if is_open is True:
-            stmt = stmt.where(PractitionerRole.period_end.is_(None))
-        elif is_open is False:
-            stmt = stmt.where(PractitionerRole.period_end.is_not(None))
-        stmt = stmt.order_by(
-            PractitionerRole.is_primary.desc(),
-            PractitionerRole.period_start.desc(),
-        )
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all())
-
     async def open_role(
         self, actor: SessionUser, payload: PractitionerRoleCreate
     ) -> PractitionerRole:
@@ -92,6 +65,7 @@ class PractitionerRoleService:
         )
         self._session.add(row)
         await self._session.flush()
+        await self._session.refresh(row, attribute_names=["practitioner"])
         return row
 
     async def update(
@@ -106,6 +80,7 @@ class PractitionerRoleService:
         for field, value in data.items():
             setattr(row, field, value)
         await self._session.flush()
+        await self._session.refresh(row, attribute_names=["practitioner"])
         return row
 
     async def close_role(self, actor: SessionUser, role_id: UUID) -> PractitionerRole:
@@ -114,6 +89,7 @@ class PractitionerRoleService:
             row.period_end = datetime.now(UTC)
             row.is_primary = False
             await self._session.flush()
+        await self._session.refresh(row, attribute_names=["practitioner"])
         return row
 
     async def _get_owned(self, actor: SessionUser, role_id: UUID) -> PractitionerRole:
