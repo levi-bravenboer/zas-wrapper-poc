@@ -1,5 +1,4 @@
-export const tableCard =
-  'overflow-hidden rounded-lg border border-border bg-background shadow-xs'
+export const tableCard = 'overflow-hidden rounded-lg border border-border bg-background shadow-xs'
 
 export const tableEl = 'w-full caption-bottom text-sm'
 
@@ -30,8 +29,7 @@ export const pillActive =
 export const pillX =
   'inline-flex h-4 w-4 items-center justify-center rounded text-primary hover:bg-primary/10'
 
-export const clearAllBtn =
-  'text-xs text-foreground-muted hover:text-primary px-1.5 py-1 rounded-md'
+export const clearAllBtn = 'text-xs text-foreground-muted hover:text-primary px-1.5 py-1 rounded-md'
 
 // table footer / pagination chrome
 export const tableFooter =

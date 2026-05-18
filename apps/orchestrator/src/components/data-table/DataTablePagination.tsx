@@ -49,9 +49,7 @@ export function DataTablePagination({
   }
 
   return (
-    <div
-      className={cn(tableFooter, 'flex-col gap-3 sm:flex-row', className)}
-    >
+    <div className={cn(tableFooter, 'flex-col gap-3 sm:flex-row', className)}>
       <div className="flex items-center gap-2">
         <span id={pageSizeLabelId} className="text-sm text-foreground-muted">
           {t('pagination.pageSize')}

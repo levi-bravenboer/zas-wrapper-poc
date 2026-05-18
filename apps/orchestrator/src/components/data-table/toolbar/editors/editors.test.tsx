@@ -22,9 +22,7 @@ describe('SelectEditor', () => {
   it('emits { op: eq, value }', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
-    renderWithProviders(
-      <SelectEditor def={selectDef} current={undefined} onChange={onChange} />,
-    )
+    renderWithProviders(<SelectEditor def={selectDef} current={undefined} onChange={onChange} />)
     await user.click(await screen.findByRole('combobox'))
     await user.click(await screen.findByRole('option', { name: 'Admin' }))
     expect(onChange).toHaveBeenCalledWith('role', { op: 'eq', value: 'admin' })

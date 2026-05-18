@@ -13,12 +13,7 @@ export interface DebouncedSearchProps {
   className?: string
 }
 
-export function DebouncedSearch({
-  value,
-  onChange,
-  placeholder,
-  className,
-}: DebouncedSearchProps) {
+export function DebouncedSearch({ value, onChange, placeholder, className }: DebouncedSearchProps) {
   const [local, setLocal] = React.useState<string>(value ?? '')
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastEmitted = React.useRef<string | null>(value)

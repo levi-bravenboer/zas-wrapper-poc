@@ -47,13 +47,7 @@ export const Root = forwardRef<HTMLDivElement, RootProps>(function Root(
   )
 })
 
-export function Header({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
+export function Header({ children, className }: { children: ReactNode; className?: string }) {
   return <thead className={cn(headerRow, className)}>{children}</thead>
 }
 
@@ -73,13 +67,7 @@ export function HeaderCell({ children, className, ...rest }: HeaderCellProps) {
   )
 }
 
-export function Body({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
+export function Body({ children, className }: { children: ReactNode; className?: string }) {
   return <tbody className={className}>{children}</tbody>
 }
 

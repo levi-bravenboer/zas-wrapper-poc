@@ -89,9 +89,7 @@ describe('DataTableToolbar — inline filter strip', () => {
     )
     expect(await screen.findByText(/role:/i)).toBeInTheDocument()
     expect(screen.getByText('Admin')).toBeInTheDocument()
-    await user.click(
-      await screen.findByRole('button', { name: /verwijder filter role/i }),
-    )
+    await user.click(await screen.findByRole('button', { name: /verwijder filter role/i }))
     expect(onFilterChange).toHaveBeenCalledWith('role', null)
   })
 

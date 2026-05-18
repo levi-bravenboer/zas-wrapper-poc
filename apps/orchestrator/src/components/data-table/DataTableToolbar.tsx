@@ -48,12 +48,7 @@ export function DataTableToolbar<T>({
       </Toolbar.Search>
       <Toolbar.Filters>
         {inline.map((def) => (
-          <FilterPill
-            key={def.key}
-            def={def}
-            value={filters[def.key]}
-            onChange={onFilterChange}
-          />
+          <FilterPill key={def.key} def={def} value={filters[def.key]} onChange={onFilterChange} />
         ))}
         <FilterOverflow defs={overflow} filters={filters} onChange={onFilterChange} />
         {hasActive && <ClearAll onClick={onClearFilters} />}

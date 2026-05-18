@@ -1,4 +1,8 @@
-import { getCoreRowModel, useReactTable, type ColumnDef as TanstackColumnDef } from '@tanstack/react-table'
+import {
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef as TanstackColumnDef,
+} from '@tanstack/react-table'
 import {
   Children,
   Fragment,
@@ -248,10 +252,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                   )
                 }
                 return (
-                  <HeaderCell
-                    key={col.id}
-                    className={cn(col.className, isSticky && stickyFirst)}
-                  >
+                  <HeaderCell key={col.id} className={cn(col.className, isSticky && stickyFirst)}>
                     {headerNode}
                   </HeaderCell>
                 )
@@ -267,16 +268,18 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
             {isLoading ? (
               <LoadingRows columnCount={totalColumns} />
             ) : data.length === 0 ? (
-              <EmptyRow columnCount={totalColumns} title={t('empty.title')} body={t('empty.body')} />
+              <EmptyRow
+                columnCount={totalColumns}
+                title={t('empty.title')}
+                body={t('empty.body')}
+              />
             ) : (
               data.map((row) => {
                 const rowId = getRowId ? getRowId(row) : undefined
                 const expanded = hasExpand && rowId !== undefined && exp.expandedId === rowId
                 const clickable = Boolean(onRowClick)
                 const onActivate = (
-                  e:
-                    | ReactMouseEvent<HTMLTableRowElement>
-                    | ReactKeyboardEvent<HTMLTableRowElement>,
+                  e: ReactMouseEvent<HTMLTableRowElement> | ReactKeyboardEvent<HTMLTableRowElement>,
                 ) => {
                   if (!onRowClick) return
                   if (isInteractiveTarget(e.target)) return
@@ -313,10 +316,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                         const isFirstData = idx === 0 && !hasSelection && !hasExpand
                         const isSticky = col.sticky ?? isFirstData
                         return (
-                          <Cell
-                            key={col.id}
-                            className={cn(col.className, isSticky && stickyFirst)}
-                          >
+                          <Cell key={col.id} className={cn(col.className, isSticky && stickyFirst)}>
                             {col.cell(row)}
                           </Cell>
                         )

@@ -182,10 +182,7 @@ function UsersPage(): ReactElement {
                     </Table.Cell>
                   ))}
                   <Table.Cell data-stop-row-click="" className="text-right">
-                    <RowActions
-                      actions={rowActions(row)}
-                      ariaLabel={tTable('actions.menu.aria')}
-                    />
+                    <RowActions actions={rowActions(row)} ariaLabel={tTable('actions.menu.aria')} />
                   </Table.Cell>
                 </Table.Row>
               ))

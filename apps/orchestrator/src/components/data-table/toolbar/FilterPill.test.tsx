@@ -29,7 +29,9 @@ describe('FilterPill', () => {
     )
     expect(await screen.findByText(/role:/i)).toBeInTheDocument()
     expect(screen.getByText('Admin')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /remove role filter|verwijder filter role/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /remove role filter|verwijder filter role/i }),
+    ).toBeInTheDocument()
   })
 
   it('clicking inactive pill opens popover with the right editor', async () => {
@@ -45,9 +47,7 @@ describe('FilterPill', () => {
     renderWithProviders(
       <FilterPill def={def} value={{ op: 'eq', value: 'admin' }} onChange={onChange} />,
     )
-    await user.click(
-      await screen.findByRole('button', { name: /verwijder filter role/i }),
-    )
+    await user.click(await screen.findByRole('button', { name: /verwijder filter role/i }))
     expect(onChange).toHaveBeenCalledWith('role', null)
   })
 })
