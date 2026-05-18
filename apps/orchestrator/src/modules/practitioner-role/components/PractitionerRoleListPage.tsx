@@ -5,25 +5,22 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import {
+  ClearAll,
   DataTable,
   DataTablePagination,
+  DebouncedSearch,
+  FilterPill,
+  Toolbar,
   defineColumn,
   type BrandedColumnDef,
+  type DataTableFilter,
   type DataTableRowAction,
 } from '@/components/data-table'
 import { FilterableListPage } from '@/components/list/FilterableListPage'
-import { OrganisationPicker, PractitionerPicker } from '@/components/pickers'
+import { PractitionerPicker } from '@/components/pickers'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { ListFilter } from '@/hooks/use-data-table-state'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
@@ -244,60 +241,75 @@ export function PractitionerRoleListPage(): ReactElement {
   )
 
   const practitionerId = firstFilterValue(state.filters, 'practitioner_id')
-  const organisationId = firstFilterValue(state.filters, 'organisation_id')
-  const codeFilter = firstFilterValue(state.filters, 'code') ?? '__all__'
   const isOpenOnly = firstFilterValue(state.filters, 'is_open') === 'true'
 
-  const setEqFilter = (field: string, value: string | null) => {
+  const setEqFilter = (field: string, value: string | null): void => {
     if (value === null) dispatch.clearFilter(field)
     else dispatch.setFilter(field, { op: 'eq', value })
   }
 
+  const onFilter = (field: string, f: ListFilter | ListFilter[] | null): void => {
+    if (f === null) dispatch.clearFilter(field)
+    else dispatch.setFilter(field, f)
+  }
+
+  const filterDefs = useMemo<ReadonlyArray<DataTableFilter<PractitionerRoleRead>>>(
+    () => [
+      {
+        type: 'select',
+        key: 'organisation_id',
+        label: t('filter.organisation'),
+        options: (orgs ?? []).map((o) => ({
+          value: o.id,
+          label: orgPaths.get(o.id) ?? o.name,
+        })),
+      },
+      {
+        type: 'select',
+        key: 'code',
+        label: t('filter.code'),
+        options: ROLE_CODES.map((c) => ({ value: c, label: t(`code.${c}`) })),
+      },
+    ],
+    [orgs, orgPaths, t],
+  )
+
+  const hasActive = Object.keys(state.filters).length > 0
+
   const filters = (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex w-64 flex-col gap-1">
-        <Label className="text-xs">{t('filter.practitioner')}</Label>
+    <Toolbar.Root>
+      <Toolbar.Search>
+        <DebouncedSearch
+          value={state.q}
+          onChange={(q) => dispatch.setSearch(q)}
+          placeholder={t('filter.search_placeholder', { defaultValue: 'Zoek…' })}
+        />
+      </Toolbar.Search>
+      <Toolbar.Filters>
         <PractitionerPicker
           value={practitionerId}
           onChange={(id) => setEqFilter('practitioner_id', id)}
           ariaLabel={t('filter.practitioner')}
+          placeholder={t('filter.practitioner')}
         />
-      </div>
-      <div className="flex w-64 flex-col gap-1">
-        <Label className="text-xs">{t('filter.organisation')}</Label>
-        <OrganisationPicker
-          value={organisationId}
-          onChange={(id) => setEqFilter('organisation_id', id)}
-          ariaLabel={t('filter.organisation')}
-        />
-      </div>
-      <div className="flex w-40 flex-col gap-1">
-        <Label className="text-xs">{t('filter.code')}</Label>
-        <Select
-          value={codeFilter}
-          onValueChange={(v) => setEqFilter('code', v === '__all__' ? null : v)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">{t('filter.all')}</SelectItem>
-            {ROLE_CODES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {t(`code.${c}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <label className="flex items-center gap-2 text-sm">
-        <Checkbox
-          checked={isOpenOnly}
-          onCheckedChange={(v) => setEqFilter('is_open', v === true ? 'true' : null)}
-        />
-        <span>{t('filter.open_only')}</span>
-      </label>
-    </div>
+        {filterDefs.map((def) => (
+          <FilterPill
+            key={def.key}
+            def={def}
+            value={state.filters[def.key]}
+            onChange={onFilter}
+          />
+        ))}
+        <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
+          <Checkbox
+            checked={isOpenOnly}
+            onCheckedChange={(v) => setEqFilter('is_open', v === true ? 'true' : null)}
+          />
+          <span>{t('filter.open_only')}</span>
+        </label>
+        {hasActive && <ClearAll onClick={() => dispatch.clearAll()} />}
+      </Toolbar.Filters>
+    </Toolbar.Root>
   )
 
   const rows = data?.items ?? []
