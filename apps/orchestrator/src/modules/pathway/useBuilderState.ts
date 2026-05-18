@@ -23,15 +23,11 @@ type EditableSnapshot = {
   lanes: PathwayLane[]
 }
 
-export type DimensionMap = ReadonlyMap<string, number>
-
 export type BuilderState = {
   version: PathwayVersionDefinition
   baseline: PathwayVersionDefinition
   selection: BuilderSelection
   history: { past: EditableSnapshot[]; future: EditableSnapshot[] }
-  phaseSizes: DimensionMap
-  laneSizes: DimensionMap
 }
 
 export type BuilderAction =
@@ -78,8 +74,6 @@ const READ_ONLY_PASSTHROUGH: ReadonlySet<BuilderAction['type']> = new Set([
   'select',
   'reset',
   'mark-saved',
-  'resize-phase',
-  'resize-lane',
 ])
 
 function reducer(state: BuilderState, action: BuilderAction): BuilderState {
@@ -153,16 +147,20 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
       const phases = sortByOrd([...(state.version.phases ?? []), action.phase])
       return { ...state, version: { ...state.version, phases }, history }
     }
-    case 'resize-phase':
-      return {
-        ...state,
-        phaseSizes: new Map(state.phaseSizes).set(action.phaseId, action.width),
-      }
-    case 'resize-lane':
-      return {
-        ...state,
-        laneSizes: new Map(state.laneSizes).set(action.laneId, action.height),
-      }
+    case 'resize-phase': {
+      const history = pushHistory(state)
+      const phases = (state.version.phases ?? []).map((p) =>
+        p.id === action.phaseId ? { ...p, width_px: action.width } : p,
+      )
+      return { ...state, version: { ...state.version, phases }, history }
+    }
+    case 'resize-lane': {
+      const history = pushHistory(state)
+      const lanes = (state.version.lanes ?? []).map((l) =>
+        l.id === action.laneId ? { ...l, height_px: action.height } : l,
+      )
+      return { ...state, version: { ...state.version, lanes }, history }
+    }
     case 'reorder-phase': {
       const current = sortByOrd(state.version.phases ?? [])
       const fromIndex = current.findIndex((p) => p.id === action.phaseId)
@@ -198,8 +196,6 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         baseline: ensured,
         selection: { kind: 'none' },
         history: { past: [], future: [] },
-        phaseSizes: new Map(),
-        laneSizes: new Map(),
       }
     }
     case 'mark-saved':
@@ -226,6 +222,7 @@ function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinitio
     label: entry.label,
     ord: (i + 1) * 10,
     is_default: entry.is_default,
+    height_px: 180,
   }))
   return { ...version, lanes }
 }
@@ -237,8 +234,6 @@ function init(version: PathwayVersionDefinition): BuilderState {
     baseline: ensured,
     selection: { kind: 'none' },
     history: { past: [], future: [] },
-    phaseSizes: new Map(),
-    laneSizes: new Map(),
   }
 }
 
