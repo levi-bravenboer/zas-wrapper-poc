@@ -3,9 +3,12 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 
+from app.api._list.deps import ListQueryParamsDep
 from app.core.enums.user import Role
+from app.repositories.practitioner_role.deps import PractitionerRoleRepoDep
+from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
 from app.schemas.practitioner_role.practitioner_role import (
     PractitionerRoleCreate,
@@ -24,22 +27,16 @@ _READ_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 @router.get(
     "/practitioner-roles",
     operation_id="list_practitioner_roles",
-    response_model=list[PractitionerRoleRead],
+    response_model=Page[PractitionerRoleRead],
 )
 async def list_practitioner_roles(
-    service: PractitionerRoleServiceDep,
-    current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN
-    practitioner_id: UUID | None = Query(default=None),
-    organisation_id: UUID | None = Query(default=None),
-    is_open: bool | None = Query(default=None),
-) -> list[PractitionerRoleRead]:
-    rows = await service.list_for_tenant(
-        current_user,
-        practitioner_id=practitioner_id,
-        organisation_id=organisation_id,
-        is_open=is_open,
-    )
-    return [PractitionerRoleRead.model_validate(r) for r in rows]
+    query: ListQueryParamsDep,
+    repo: PractitionerRoleRepoDep,
+    _current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN
+) -> Page[PractitionerRoleRead]:
+    # Repository yields Page[PractitionerRole] (ORM rows); FastAPI's response_model
+    # converts to Page[PractitionerRoleRead] via Pydantic's `from_attributes`.
+    return await repo.list_page(query)  # type: ignore[return-value]
 
 
 @router.post(

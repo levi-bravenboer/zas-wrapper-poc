@@ -1,0 +1,84 @@
+{
+  "list": {
+    "title": "Praktijkrollen",
+    "sub": "Beheer affiliaties van zorgverleners met organisaties.",
+    "cta": {
+      "create": "Nieuwe affiliatie"
+    },
+    "empty": "Nog geen affiliaties."
+  },
+  "column": {
+    "practitioner": "Zorgverlener",
+    "organisation": "Organisatie",
+    "code": "Rol",
+    "specialty": "Specialiteit",
+    "is_primary": "Primair",
+    "period": "Periode"
+  },
+  "filter": {
+    "practitioner": "Zorgverlener",
+    "organisation": "Organisatie",
+    "code": "Rol",
+    "open_only": "Alleen open",
+    "all": "Alle"
+  },
+  "field": {
+    "practitioner": "Zorgverlener",
+    "organisation": "Organisatie",
+    "code": "Rol",
+    "specialty": "Specialiteit",
+    "specialty_placeholder": "Bijv. Cardiologie",
+    "is_primary": "Primaire affiliatie",
+    "period_start": "Startdatum"
+  },
+  "code": {
+    "gp": "Huisarts",
+    "physiotherapist": "Fysiotherapeut",
+    "psychologist": "Psycholoog",
+    "nurse": "Verpleegkundige",
+    "physician": "Arts",
+    "other": "Anders"
+  },
+  "primary": {
+    "yes": "Ja",
+    "no": "Nee"
+  },
+  "period": {
+    "open": "—"
+  },
+  "open": {
+    "title": "Nieuwe affiliatie",
+    "sub": "Voeg een nieuwe rol toe voor een zorgverlener binnen een organisatie.",
+    "submit": "Toevoegen"
+  },
+  "edit": {
+    "title": "Affiliatie bewerken",
+    "submit": "Opslaan"
+  },
+  "close": {
+    "title": "Affiliatie beëindigen?",
+    "description": "De rol wordt afgesloten en kan niet worden heropend. Maak een nieuwe rol aan om opnieuw te openen.",
+    "confirm": "Beëindigen"
+  },
+  "actions": {
+    "edit": "Bewerken",
+    "close": "Beëindigen",
+    "view": "Bekijken",
+    "cancel": "Annuleren"
+  },
+  "toast": {
+    "opened": "Affiliatie geopend",
+    "updated": "Affiliatie bijgewerkt",
+    "closed": "Affiliatie beëindigd",
+    "open_failed": "Openen mislukt",
+    "update_failed": "Bijwerken mislukt",
+    "close_failed": "Beëindigen mislukt",
+    "error": "Actie mislukt"
+  },
+  "form": {
+    "error": {
+      "required": "Verplicht veld.",
+      "too_long": "Te lang."
+    }
+  }
+}
