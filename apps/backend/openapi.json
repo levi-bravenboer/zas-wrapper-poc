@@ -3963,6 +3963,12 @@
             "type": "boolean",
             "title": "Is Default",
             "default": false
+          },
+          "height_px": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Height Px",
+            "default": 180
           }
         },
         "type": "object",
@@ -4001,6 +4007,10 @@
           "is_default": {
             "type": "boolean",
             "title": "Is Default"
+          },
+          "height_px": {
+            "type": "integer",
+            "title": "Height Px"
           }
         },
         "type": "object",
@@ -4010,7 +4020,8 @@
           "lane_kind_code",
           "label",
           "ord",
-          "is_default"
+          "is_default",
+          "height_px"
         ],
         "title": "PathwayLaneOut"
       },
@@ -4043,6 +4054,12 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Ord"
+          },
+          "width_px": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Width Px",
+            "default": 380
           }
         },
         "type": "object",
@@ -4082,6 +4099,12 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Ord"
+          },
+          "width_px": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Width Px",
+            "default": 380
           }
         },
         "type": "object",

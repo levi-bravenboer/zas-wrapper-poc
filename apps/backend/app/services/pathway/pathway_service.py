@@ -286,6 +286,7 @@ class PathwayService:
                     label=lane.label,
                     ord=lane.ord,
                     is_default=lane.is_default,
+                    height_px=lane.height_px,
                 )
             )
         return PathwayVersionDefinition(
@@ -324,6 +325,7 @@ class PathwayService:
                     template_id=p.template_id,
                     label=p.label,
                     ord=p.ord,
+                    width_px=p.width_px,
                 )
                 for p in r.phases
             ]
@@ -337,6 +339,7 @@ class PathwayService:
                     label=lane.label,
                     ord=lane.ord,
                     is_default=lane.is_default,
+                    height_px=lane.height_px,
                 )
                 for lane in r.lanes
             ]

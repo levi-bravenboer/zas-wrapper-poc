@@ -50,7 +50,7 @@ export function LaneRow({
     const drag = dragRef.current
     if (!drag) return
     const dy = (event.clientY - drag.startY) / Math.max(zoom, ZOOM_SAFE_DIVISOR_FLOOR)
-    onResize(Math.max(LANE_ROW_MIN_HEIGHT, drag.startH + dy))
+    onResize(Math.round(Math.max(LANE_ROW_MIN_HEIGHT, drag.startH + dy)))
   }
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>): void {
     dragRef.current = null

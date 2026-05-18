@@ -132,17 +132,12 @@ describe('useBuilderState — read-only dispatch guard', () => {
     expect(result.current.isDirty).toBe(false)
   })
 
-  it('still applies non-mutating actions (select, resize, reset) when read-only', () => {
+  it('still applies non-mutating actions (select) when read-only', () => {
     const { result } = renderHook(() => useBuilderState(makePublishedVersion()))
 
     act(() => {
       result.current.dispatch({ type: 'select', selection: { kind: 'edge', edgeId: 'edge-1' } })
     })
     expect(result.current.state.selection).toEqual({ kind: 'edge', edgeId: 'edge-1' })
-
-    act(() => {
-      result.current.dispatch({ type: 'resize-phase', phaseId: 'p-1', width: 200 })
-    })
-    expect(result.current.state.phaseSizes.get('p-1')).toBe(200)
   })
 })

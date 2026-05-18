@@ -49,7 +49,7 @@ export function PhaseColumn({
     const drag = dragRef.current
     if (!drag) return
     const dx = (event.clientX - drag.startX) / Math.max(zoom, ZOOM_SAFE_DIVISOR_FLOOR)
-    onResize(Math.max(PHASE_COL_MIN_WIDTH, drag.startW + dx))
+    onResize(Math.round(Math.max(PHASE_COL_MIN_WIDTH, drag.startW + dx)))
   }
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>): void {
     dragRef.current = null

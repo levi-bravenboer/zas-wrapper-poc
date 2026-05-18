@@ -39,3 +39,6 @@ class PathwayLane(TenantOwnedEntity):
     label: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     ord: Mapped[int] = mapped_column(sa.Integer, nullable=False)
     is_default: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.false())
+    height_px: Mapped[int] = mapped_column(
+        sa.Integer, nullable=False, server_default=sa.text("180")
+    )

@@ -120,4 +120,31 @@ describe('useAutosavePathway', () => {
     rerender({ isDirty: false, pending: false, error: true })
     expect(result.current.saveState).toBe('error')
   })
+
+  it('does not retry the same version after a failed save', () => {
+    mutateMock.mockImplementation((_payload, opts) => opts?.onError?.())
+    const { rerender } = renderHook(
+      ({ v }: { v: PathwayVersionDefinition }) =>
+        useAutosavePathway({ pathway, version: v, dispatch: vi.fn(), isDirty: true }),
+      { initialProps: { v: version } },
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(800)
+    })
+    expect(mutateMock).toHaveBeenCalledTimes(1)
+
+    rerender({ v: version })
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+    expect(mutateMock).toHaveBeenCalledTimes(1)
+
+    const nextVersion = { ...version } as PathwayVersionDefinition
+    rerender({ v: nextVersion })
+    act(() => {
+      vi.advanceTimersByTime(800)
+    })
+    expect(mutateMock).toHaveBeenCalledTimes(2)
+  })
 })

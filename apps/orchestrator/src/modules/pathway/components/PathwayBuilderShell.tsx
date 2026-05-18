@@ -149,7 +149,7 @@ function Inner({
       dispatch({
         type: 'add-block',
         block: createBlock({
-          typeCode: blockType.type,
+          blockType,
           phaseId: firstPhase.id,
           laneId: defaultLane.id,
           x: 70,
@@ -171,7 +171,7 @@ function Inner({
       dispatch({
         type: 'add-block',
         block: createBlock({
-          typeCode: bt.type,
+          blockType: bt,
           phaseId: target.phaseId,
           laneId: target.laneId,
           x: target.x,
@@ -194,6 +194,7 @@ function Inner({
         template_id: template?.id ?? null,
         label: template?.label ?? customLabel?.trim() ?? t('subbar.customPhase'),
         ord: nextOrd,
+        width_px: 380,
       }
       dispatch({ type: 'add-phase', phase })
     },
@@ -258,8 +259,6 @@ function Inner({
           selection={state.selection}
           dispatch={dispatch}
           onDropBlockType={onDropBlockType}
-          phaseSizes={state.phaseSizes}
-          laneSizes={state.laneSizes}
           dragApi={dragApi}
         />
         <BuilderDock

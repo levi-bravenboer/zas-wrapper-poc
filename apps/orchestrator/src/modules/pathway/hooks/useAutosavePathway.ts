@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -34,6 +34,7 @@ function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
       label: l.label,
       ord: l.ord,
       is_default: l.is_default,
+      height_px: l.height_px ?? 180,
     })),
     timing_values: (version.timing_values ?? []).map((tv) => ({ ...tv })),
     blocks: (version.blocks ?? []).map((b) => ({
@@ -71,11 +72,23 @@ export function useAutosavePathway({
         ? 'dirty'
         : 'clean'
 
+  // Holds the last version reference that failed to save. Autosave skips
+  // re-attempts while the version reference is unchanged, so an unrecoverable
+  // payload doesn't loop the PUT every 800ms. A fresh edit changes the
+  // reference and unlocks the next retry.
+  const lastErroredVersion = useRef<PathwayVersionDefinition | null>(null)
+
   const performSave = useCallback(
     (p: PathwayBare, v: PathwayVersionDefinition) => {
       replace.mutate(buildPayload(p, v), {
-        onSuccess: (next) => dispatch({ type: 'reset', version: next.version }),
-        onError: () => toast.error(t('save.error')),
+        onSuccess: (next) => {
+          lastErroredVersion.current = null
+          dispatch({ type: 'reset', version: next.version })
+        },
+        onError: () => {
+          lastErroredVersion.current = v
+          toast.error(t('save.error'))
+        },
       })
     },
     [replace, dispatch, t],
@@ -87,6 +100,7 @@ export function useAutosavePathway({
 
   useEffect(() => {
     if (!isDirty || replace.isPending) return
+    if (lastErroredVersion.current === version) return
     const id = setTimeout(() => performSave(pathway, version), AUTOSAVE_DEBOUNCE_MS)
     return () => clearTimeout(id)
   }, [isDirty, replace.isPending, performSave, pathway, version])
