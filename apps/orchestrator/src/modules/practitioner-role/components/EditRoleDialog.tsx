@@ -26,10 +26,7 @@ import { ROLE_CODES } from '../constants'
 import { useUpdatePractitionerRole } from '../hooks'
 import type { PractitionerRoleRead, PractitionerRoleUpdatePayload } from '../schemas'
 
-import {
-  editRoleFormSchema,
-  type EditRoleFormValues,
-} from './practitionerRoleForm.schema'
+import { editRoleFormSchema, type EditRoleFormValues } from './practitionerRoleForm.schema'
 
 export interface EditRoleDialogProps {
   open: boolean

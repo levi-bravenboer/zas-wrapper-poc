@@ -28,10 +28,7 @@ import { ROLE_CODES } from '../constants'
 import { useOpenPractitionerRole } from '../hooks'
 import type { PractitionerRoleCreatePayload } from '../schemas'
 
-import {
-  openRoleFormSchema,
-  type OpenRoleFormValues,
-} from './practitionerRoleForm.schema'
+import { openRoleFormSchema, type OpenRoleFormValues } from './practitionerRoleForm.schema'
 
 export interface OpenRoleDialogProps {
   open: boolean
