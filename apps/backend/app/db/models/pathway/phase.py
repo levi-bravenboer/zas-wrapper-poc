@@ -33,3 +33,6 @@ class PathwayPhase(TenantOwnedEntity):
     template_id: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     label: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     ord: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    width_px: Mapped[int] = mapped_column(
+        sa.Integer, nullable=False, server_default=sa.text("380")
+    )

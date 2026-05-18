@@ -1270,6 +1270,11 @@ export interface components {
              * @default false
              */
             is_default: boolean;
+            /**
+             * Height Px
+             * @default 180
+             */
+            height_px: number;
         };
         /** PathwayLaneOut */
         PathwayLaneOut: {
@@ -1291,6 +1296,8 @@ export interface components {
             ord: number;
             /** Is Default */
             is_default: boolean;
+            /** Height Px */
+            height_px: number;
         };
         /** PathwayPhaseIn */
         PathwayPhaseIn: {
@@ -1305,6 +1312,11 @@ export interface components {
             label: string;
             /** Ord */
             ord: number;
+            /**
+             * Width Px
+             * @default 380
+             */
+            width_px: number;
         };
         /** PathwayPhaseOut */
         PathwayPhaseOut: {
@@ -1319,6 +1331,11 @@ export interface components {
             label: string;
             /** Ord */
             ord: number;
+            /**
+             * Width Px
+             * @default 380
+             */
+            width_px: number;
         };
         /** PathwayPhaseTemplate */
         PathwayPhaseTemplate: {

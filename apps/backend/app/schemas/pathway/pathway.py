@@ -87,6 +87,7 @@ class PathwayPhaseIn(BaseModel):
     template_id: str | None = Field(default=None, max_length=63)
     label: str = Field(min_length=1, max_length=255)
     ord: int = Field(ge=0)
+    width_px: int = Field(default=380, ge=1)
 
 
 class PathwayPhaseOut(PathwayPhaseIn):
@@ -103,6 +104,7 @@ class PathwayLaneIn(BaseModel):
     label: str = Field(min_length=1, max_length=255)
     ord: int = Field(ge=0)
     is_default: bool = False
+    height_px: int = Field(default=180, ge=1)
 
 
 class PathwayLaneOut(BaseModel):
@@ -114,6 +116,7 @@ class PathwayLaneOut(BaseModel):
     label: str
     ord: int
     is_default: bool
+    height_px: int
 
 
 class PathwayBlockIn(BaseModel):

@@ -175,6 +175,7 @@ class PathwayVersionService:
                     template_id=p.template_id,
                     label=p.label,
                     ord=p.ord,
+                    width_px=p.width_px,
                 )
                 for p in src.phases
             ]
@@ -188,6 +189,7 @@ class PathwayVersionService:
                     label=lane.label,
                     ord=lane.ord,
                     is_default=lane.is_default,
+                    height_px=lane.height_px,
                 )
                 for lane in src.lanes
             ]
