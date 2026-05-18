@@ -15,7 +15,6 @@
     },
     "filters": {
       "clear": "Filters wissen",
-      "button": "Filters",
       "more": "+{{count}} meer",
       "pill": {
         "empty": "{{label}}",

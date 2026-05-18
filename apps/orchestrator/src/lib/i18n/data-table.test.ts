@@ -11,7 +11,6 @@ const REQUIRED_KEYS = [
   'pagination.pageSize',
   'toolbar.search.placeholder',
   'toolbar.filters.clear',
-  'toolbar.filters.button',
   'sort.ariaAscending',
   'sort.ariaDescending',
   'sort.ariaNone',
