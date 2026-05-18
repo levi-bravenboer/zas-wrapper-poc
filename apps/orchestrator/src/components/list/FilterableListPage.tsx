@@ -20,6 +20,10 @@ export type FilterableListPageProps = {
    * `emptyState`. Default: `false` (always render `table`).
    */
   isEmpty?: boolean
+  /**
+   * Optional decorative mint blur orb mirroring `UserHero`. Default: `false`.
+   */
+  accent?: boolean
 }
 
 /**
@@ -37,13 +41,20 @@ export function FilterableListPage<_T>({
   table,
   emptyState,
   isEmpty = false,
+  accent = false,
 }: FilterableListPageProps): ReactElement {
   const showEmptyState = isEmpty && emptyState !== undefined
 
   return (
     <>
       <PageHeader title={title} sub={description} />
-      <div className="flex flex-col gap-3 px-6 pb-8">
+      <div className="relative flex flex-col gap-3 px-6 pb-8">
+        {accent && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-10 -top-4 size-40 rounded-full bg-primary/10 blur-3xl"
+          />
+        )}
         {(filters !== undefined || primaryAction !== undefined) && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-2">{filters}</div>

@@ -3,11 +3,26 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { DataTable, DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import {
+  ClearAll,
+  DataTablePagination,
+  DebouncedSearch,
+  EmptyRow,
+  FilterOverflow,
+  FilterPill,
+  LoadingRows,
+  RowActions,
+  SortHeader,
+  Table,
+  Toolbar,
+  useTableSort,
+} from '@/components/data-table'
+import { stickyFirst } from '@/components/data-table/styles'
 import { FilterableListPage } from '@/components/list/FilterableListPage'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
 import { api } from '@/lib/api/client'
+import { cn } from '@/lib/style/cn'
 import { useSoftDeletePatient } from '@/modules/patient/api'
 import {
   patientColumns,
@@ -32,6 +47,7 @@ async function fetchOrganisations(): Promise<OrganisationOption[]> {
 
 function PatientsOverviewRoute(): ReactElement {
   const { t, i18n } = useTranslation('patients')
+  const { t: tTable } = useTranslation('data-table')
   const navigate = useNavigate()
   const [state, dispatch] = useRouteSearchTableState()
 
@@ -47,10 +63,7 @@ function PatientsOverviewRoute(): ReactElement {
     [state],
   )
 
-  const { data, isLoading, isFetching, error, refetch } = usePaginatedQuery<PatientRow>(
-    '/patients',
-    query,
-  )
+  const { data, isLoading } = usePaginatedQuery<PatientRow>('/patients', query)
 
   const organisationsQuery = useQuery({
     queryKey: ['organisations', 'list'] as const,
@@ -87,42 +100,125 @@ function PatientsOverviewRoute(): ReactElement {
     [t, softDelete],
   )
 
+  const sort = useTableSort({
+    state: { orderBy: state.orderBy, order: state.order },
+    setSort: (orderBy, order) => {
+      if (orderBy === null) dispatch.clearSort()
+      else dispatch.setSort(orderBy, order)
+    },
+  })
+
+  const rows = data?.items ?? []
+  const totalColumns = columns.length + 1
+  const inlineDefs = filterDefs.slice(0, 3)
+  const overflowDefs = filterDefs.slice(3)
+  const onFilter = (field: string, f: Parameters<typeof dispatch.setFilter>[1] | null) => {
+    if (f === null) dispatch.clearFilter(field)
+    else dispatch.setFilter(field, f)
+  }
+
   return (
     <FilterableListPage<PatientRow>
       title={t('page.title')}
       description={t('page.sub')}
       filters={
-        <DataTableToolbar<PatientRow>
-          q={state.q}
-          filters={state.filters}
-          filterDefs={filterDefs}
-          onSearchChange={(q) => dispatch.setSearch(q)}
-          onFilterChange={(field, filter) => {
-            if (filter === null) dispatch.clearFilter(field)
-            else dispatch.setFilter(field, filter)
-          }}
-          onClearFilters={() => dispatch.clearAll()}
-        />
+        <Toolbar.Root>
+          <Toolbar.Search>
+            <DebouncedSearch
+              value={state.q}
+              onChange={(q) => dispatch.setSearch(q)}
+              placeholder={tTable('toolbar.search.placeholder')}
+            />
+          </Toolbar.Search>
+          <Toolbar.Filters>
+            {inlineDefs.map((def) => (
+              <FilterPill
+                key={def.key}
+                def={def}
+                value={state.filters[def.key]}
+                onChange={onFilter}
+              />
+            ))}
+            <FilterOverflow defs={overflowDefs} filters={state.filters} onChange={onFilter} />
+            {Object.keys(state.filters).length > 0 && (
+              <ClearAll onClick={() => dispatch.clearAll()} />
+            )}
+          </Toolbar.Filters>
+        </Toolbar.Root>
       }
       table={
         <>
-          <DataTable<PatientRow>
-            data={data?.items ?? []}
-            columns={columns}
-            getRowId={(p) => p.id}
-            isLoading={isLoading}
-            isFetching={isFetching}
-            error={error}
-            onRetry={() => void refetch()}
-            selectable={false}
-            rowActions={rowActions}
-            onRowClick={(row) =>
-              void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
-            }
-            realtimeTopic="patients"
-            state={state}
-            onStateChange={(next) => dispatch.reset(next)}
-          />
+          <Table.Root>
+            <Table.Header>
+              <Table.HeaderRow>
+                {columns.map((col, idx) => {
+                  const headerNode =
+                    typeof col.header === 'function' ? col.header({ columnId: col.id }) : col.header
+                  const cls = cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)
+                  if (col.sortKey) {
+                    return (
+                      <SortHeader
+                        key={col.id}
+                        sortKey={col.sortKey}
+                        iconState={sort.iconState(col.sortKey)}
+                        ariaSort={sort.ariaSort(col.sortKey)}
+                        onCycle={sort.cycle}
+                        className={cls}
+                      >
+                        {headerNode}
+                      </SortHeader>
+                    )
+                  }
+                  return (
+                    <Table.HeaderCell key={col.id} className={cls}>
+                      {headerNode}
+                    </Table.HeaderCell>
+                  )
+                })}
+                <Table.HeaderCell className="w-10">
+                  <span className="sr-only">{tTable('actions.menu.aria')}</span>
+                </Table.HeaderCell>
+              </Table.HeaderRow>
+            </Table.Header>
+            <Table.Body>
+              {isLoading ? (
+                <LoadingRows columnCount={totalColumns} />
+              ) : rows.length === 0 ? (
+                <EmptyRow
+                  columnCount={totalColumns}
+                  title={tTable('empty.title')}
+                  body={tTable('empty.body')}
+                />
+              ) : (
+                rows.map((row) => (
+                  <Table.Row
+                    key={row.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
+                    }
+                    className="cursor-pointer"
+                  >
+                    {columns.map((col, idx) => (
+                      <Table.Cell
+                        key={col.id}
+                        className={cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)}
+                      >
+                        {col.cell(row)}
+                      </Table.Cell>
+                    ))}
+                    <Table.Cell data-stop-row-click="" className="text-right">
+                      <RowActions
+                        actions={rowActions(row)}
+                        ariaLabel={tTable('actions.menu.aria')}
+                      />
+                    </Table.Cell>
+                  </Table.Row>
+                ))
+              )}
+            </Table.Body>
+          </Table.Root>
           <DataTablePagination
             page={state.page}
             pageSize={state.pageSize}
