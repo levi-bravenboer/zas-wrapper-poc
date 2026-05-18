@@ -221,7 +221,11 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
     <RefetchOverlay active={isFetching && !isLoading}>
       <div ref={ref} className={cn('flex flex-col', className)}>
         <Root {...(labelledBy ? { ariaLabelledBy: labelledBy } : {})}>
-          {caption ? <caption id={captionId}>{caption}</caption> : null}
+          {caption ? (
+            <caption id={captionId} className="sr-only">
+              {caption}
+            </caption>
+          ) : null}
           <Header>
             <HeaderRow>
               {hasSelection ? (
