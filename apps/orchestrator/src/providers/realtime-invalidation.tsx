@@ -109,7 +109,7 @@ export function RealtimeInvalidationProvider({
       const now = Date.now()
       failureTimestamps.push(now)
       // Drop anything older than the rolling window.
-      while (failureTimestamps.length > 0 && now - failureTimestamps[0]! > FAILURE_WINDOW_MS) {
+      while (failureTimestamps.length && now - failureTimestamps[0]! > FAILURE_WINDOW_MS) {
         failureTimestamps.shift()
       }
       if (!warned && failureTimestamps.length >= FAILURE_THRESHOLD) {

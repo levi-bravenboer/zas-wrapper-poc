@@ -239,6 +239,39 @@ Before claiming a task complete:
 3. `uv run pytest -q` — green.
 4. For new routes: hit them via `curl` or the FastAPI `/docs` Swagger UI and verify the response shape.
 
+## Pathway domain
+
+The pathway domain models a hospital's editable patient journey: phases (time bands), lanes (actor swimlanes), blocks (steps), block branches (decision outcomes), edges (transitions), timing values (delays + windows), time markers, and deferred fields (block-config fields filled at enrollment instead of design-time). Catalogues — block types and phase templates — are code-side registries seeded into `app/services/pathway/catalogue.py`; `pathway_lane_kind` is the only catalogue persisted in Postgres (FK target). The full domain ships behind one router: `app/api/routers/pathway/pathway_router.py`, mounted at `/pathways`.
+
+### Layout
+
+- `app/db/models/pathway/` — ORM models for `pathway`, `pathway_phase`, `pathway_lane`, `pathway_lane_kind`, `pathway_block`, `pathway_block_branch`, `pathway_edge`, `pathway_timing_value`, `pathway_time_marker`, `pathway_block_deferred_field`. All children FK back to `pathway` with `ON DELETE CASCADE`; lanes hold an `ON DELETE RESTRICT` FK to `pathway_lane_kind`.
+- `app/repositories/pathway/pathway_repository.py` — read paths plus `delete_children()` (FK-safe order, `synchronize_session=False`).
+- `app/services/pathway/`
+  - `catalogue.py` — `BLOCK_TYPES`, `PHASE_TEMPLATES`, `SEEDED_LANE_KINDS`. Adding a block type means a new entry here + a JSON Schema for its `config`.
+  - `pathway_service.py` — `replace_definition()` is the single write path: validates payload against catalogues, persists, refreshes `updated_at`, returns a fully-shaped `PathwayDefinition`.
+  - `errors.py` — `PathwayNotFoundError`, `PathwayValidationError`, `UnknownBlockTypeError`, `UnknownPhaseError`, `UnknownLaneKindError`, `BlockConfigError`, `BranchOwnershipError`, `EdgeValidationError`, `DeferredFieldError`.
+- `app/schemas/pathway/pathway.py` — request/response models (`PathwayCreate`, `PathwayDefinition`, `PathwayDefinitionReplace`, plus all child `*In` / `*Out` rows).
+- `scripts/seed_pathway.py` — idempotent Rugrevalidatie demo seed wired into `scripts/seed_all.py`.
+
+### Conventions
+
+- **Replace, not patch.** Edits to a pathway go through `PUT /pathways/{id}` with a full `PathwayDefinitionReplace`. The service hard-deletes children + replays the payload in one transaction. There is no per-child PATCH endpoint; the frontend computes the next definition and submits it whole.
+- **Block config is opaque to SQL.** Each block carries a `config: dict[str, Any]` validated against the block type's JSON Schema at service write time. New keys land in the registry's schema; the DB is type-agnostic.
+- **Edge uniqueness** is enforced by a partial unique constraint with `postgresql_nulls_not_distinct=True` on `(source_block_id, target_block_id, source_branch_id)` — see D20 in `openspec/changes/pathway-builder-base/design.md`.
+- **Lane materialization.** Blocks may omit `lane_id`; `replace_definition` resolves the default lane for the block type at write time and persists the materialized FK.
+- **Soft-delete.** `DELETE /pathways/{id}` soft-deletes the root *and* hard-deletes children (resurrection would re-introduce stale graph state). `BaseRepository.list()` filters `deleted_at IS NULL` by default.
+
+### Tests
+
+- `tests/services/pathway/` — service-level validation, lifecycle, replace semantics.
+- `tests/api/routers/pathway/` — every REST endpoint, auth, 404/422 paths.
+- Both suites seed the four canonical `pathway_lane_kind` rows via a `lane_kinds` fixture (migrations seed via `op.execute`; `Base.metadata.create_all` in tests does not run those, so the fixture re-seeds).
+
+### MDR reminder
+
+Pathway changes that move us toward interpreting clinical measurements, computing diagnostic output, or automating dosing/titration are MDR-adjacent. **Block-catalogue additions must clear `openspec/mdr-watchlist.md`** before landing — add an entry, propose a non-MDR alternative, and get a decision. Any external-system block we add (e.g. a future re-introduction of a Luscii care-path reference) must stay reference-only — config carries IDs/URLs, never mirrored clinical payloads.
+
 ## Adding a login provider (MVP path)
 
 The auth seam is built around two Protocols. `Authenticator` (`app/services/auth/authenticator.py`) returns `AuthenticationResult` for a credential check; `LoginProvider` (`app/services/auth/providers/base.py`) owns route-shape concerns — `key`, `label`, `kind` class attributes plus an `async authenticate(*, email, password) -> SessionUser` method. `LoginProviderRegistry` returns the list of providers `GET /auth/providers` exposes to the frontend.

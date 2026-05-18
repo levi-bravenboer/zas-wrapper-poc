@@ -124,15 +124,18 @@ interface InternalChildren {
   bulkBar: ReactNode | null
 }
 
+const PAGE_CHECKED = { all: true, some: 'indeterminate', none: false } as const
+
+const SORT_INFO = {
+  none: { aria: 'none', labelKey: 'sort.ariaNone' },
+  asc: { aria: 'ascending', labelKey: 'sort.ariaAscending' },
+  desc: { aria: 'descending', labelKey: 'sort.ariaDescending' },
+} as const
+
 /** Splits compound-slot children into their named buckets. */
 function splitChildren(children: ReactNode): InternalChildren {
-  let bulkBar: ReactNode | null = null
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child)) return
-    if (child.type === BulkBar) {
-      bulkBar = child
-    }
-  })
+  const bulkBar =
+    Children.toArray(children).find((c) => isValidElement(c) && c.type === BulkBar) ?? null
   return { bulkBar }
 }
 
@@ -142,10 +145,8 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   // when `onRowClick` is set, which would make every click inside the row look
   // interactive. Nested action buttons are real `<button>` elements and are
   // already caught by the `button` selector.
-  return Boolean(
-    target.closest(
-      'button, a, input, select, textarea, [role="menu"], [role="menuitem"], [role="checkbox"], [data-stop-row-click]',
-    ),
+  return !!target.closest(
+    'button, a, input, select, textarea, [role="menu"], [role="menuitem"], [role="checkbox"], [data-stop-row-click]',
   )
 }
 
@@ -177,7 +178,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
   const tableId = useId()
 
   // -------------------------- state (controlled vs internal) --------------------------
-  const isControlled = controlledState !== undefined && onStateChange !== undefined
+  const isControlled = controlledState != null && onStateChange != null
   const [internalState, internalDispatch] = useDataTableState()
   const state = isControlled ? controlledState : internalState
 
@@ -200,7 +201,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
 
   // -------------------------- selection --------------------------
   const [internalSelected, setInternalSelected] = useState<Set<string>>(() => new Set<string>())
-  const selectionIsControlled = controlledSelectedIds !== undefined
+  const selectionIsControlled = controlledSelectedIds != null
   const selectedIds = selectionIsControlled
     ? (controlledSelectedIds as ReadonlySet<string>)
     : internalSelected
@@ -259,13 +260,8 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
     // Page navigation: skip reconcile so cross-page selection persists.
     if (previousPage !== state.page) return
     // For each id we previously rendered on this page but no longer do, drop it.
-    const stale: string[] = []
-    previousIds.forEach((id) => {
-      if (!currentPageIds.has(id) && selectedIds.has(id)) {
-        stale.push(id)
-      }
-    })
-    if (stale.length === 0) return
+    const stale = [...previousIds].filter((id) => !currentPageIds.has(id) && selectedIds.has(id))
+    if (!stale.length) return
     updateSelection((prev) => {
       const next = new Set(prev)
       stale.forEach((id) => next.delete(id))
@@ -287,12 +283,9 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
   )
 
   const pageSelectionState = useMemo<'all' | 'some' | 'none'>(() => {
-    if (!selectable || !getRowId || data.length === 0) return 'none'
-    let selectedOnPage = 0
-    for (const row of data) {
-      if (selectedIds.has(getRowId(row))) selectedOnPage += 1
-    }
-    if (selectedOnPage === 0) return 'none'
+    if (!selectable || !getRowId || !data.length) return 'none'
+    const selectedOnPage = data.filter((r) => selectedIds.has(getRowId(r))).length
+    if (!selectedOnPage) return 'none'
     if (selectedOnPage === data.length) return 'all'
     return 'some'
   }, [data, getRowId, selectable, selectedIds])
@@ -301,11 +294,8 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
     if (!getRowId) return
     updateSelection((prev) => {
       const next = new Set(prev)
-      if (pageSelectionState === 'all') {
-        for (const row of data) next.delete(getRowId(row))
-      } else {
-        for (const row of data) next.add(getRowId(row))
-      }
+      const op = pageSelectionState === 'all' ? 'delete' : 'add'
+      data.forEach((row) => next[op](getRowId(row)))
       return next
     })
   }, [data, getRowId, pageSelectionState, updateSelection])
@@ -351,9 +341,9 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
   useReactTable<T>(tableOptions)
 
   // -------------------------- column ordering: select | expand | data | actions --------------------------
-  const hasSelection = selectable && Boolean(getRowId)
-  const hasExpand = Boolean(renderExpandedRow) && Boolean(getRowId)
-  const hasActions = Boolean(rowActions)
+  const hasSelection = selectable && !!getRowId
+  const hasExpand = !!renderExpandedRow && !!getRowId
+  const hasActions = !!rowActions
 
   // Total visual column count (used for `colSpan` on the expanded row).
   const totalColumns =
@@ -361,7 +351,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
 
   // -------------------------- compound slots --------------------------
   const slots = useMemo(() => splitChildren(children), [children])
-  const bulkBarVisible = hasSelection && selectedIds.size > 0
+  const bulkBarVisible = hasSelection && !!selectedIds.size
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
   // Pad the scrolling container while the BulkBar is visible so the bar does
@@ -402,8 +392,8 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
     return (
       <div ref={ref} className={cn('flex flex-col', className)}>
         <ErrorState
-          title={error.message || 'Error'}
-          {...(onRetry ? { onRetry, retryLabel: 'Retry' } : {})}
+          title={error.message || t('error.title')}
+          {...(onRetry ? { onRetry, retryLabel: t('error.retry') } : {})}
         />
       </div>
     )
@@ -414,6 +404,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
 
   const stickyFirstClasses =
     'sticky left-0 z-10 bg-background data-[scrolled=true]:shadow-[inset_-8px_0_8px_-8px_rgba(0,0,0,0.15)]'
+  const scrolledAttr = scrolled ? 'true' : 'false'
 
   return (
     <RefetchOverlay active={isFetching && !isLoading}>
@@ -421,7 +412,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
         <div
           ref={scrollerRef}
           className="relative w-full overflow-auto"
-          data-scrolled={scrolled ? 'true' : 'false'}
+          data-scrolled={scrolledAttr}
         >
           <table
             className="w-full caption-bottom text-sm"
@@ -433,18 +424,12 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
               <TableRow>
                 {hasSelection && (
                   <TableHead
-                    data-scrolled={scrolled ? 'true' : 'false'}
+                    data-scrolled={scrolledAttr}
                     className={cn('w-10', stickyFirstClasses)}
                   >
                     <Checkbox
                       aria-label="Select page"
-                      checked={
-                        pageSelectionState === 'all'
-                          ? true
-                          : pageSelectionState === 'some'
-                            ? 'indeterminate'
-                            : false
-                      }
+                      checked={PAGE_CHECKED[pageSelectionState]}
                       onCheckedChange={() => togglePageSelection()}
                     />
                   </TableHead>
@@ -452,7 +437,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                 {hasExpand && (
                   <TableHead
                     className={cn('w-10', !hasSelection && stickyFirstClasses)}
-                    data-scrolled={scrolled ? 'true' : 'false'}
+                    data-scrolled={scrolledAttr}
                   >
                     <span className="sr-only">{t('expand.toggle')}</span>
                   </TableHead>
@@ -460,27 +445,21 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                 {columns.map((col, idx) => {
                   const isFirstData = idx === 0 && !hasSelection && !hasExpand
                   const isSticky = col.sticky ?? isFirstData
-                  const sortable = Boolean(col.sortKey)
+                  const sortable = !!col.sortKey
                   const isSorted = sortable && state.orderBy === col.sortKey
-                  const ariaSort = !sortable
-                    ? undefined
+                  const sortKey: 'none' | 'asc' | 'desc' | null = !sortable
+                    ? null
                     : !isSorted
                       ? 'none'
-                      : state.order === 'asc'
-                        ? 'ascending'
-                        : 'descending'
-                  const ariaSortLabel = !sortable
-                    ? undefined
-                    : !isSorted
-                      ? t('sort.ariaNone')
-                      : state.order === 'asc'
-                        ? t('sort.ariaAscending')
-                        : t('sort.ariaDescending')
+                      : state.order
+                  const sortInfo = sortKey ? SORT_INFO[sortKey] : null
+                  const ariaSort = sortInfo?.aria
+                  const ariaSortLabel = sortInfo ? t(sortInfo.labelKey) : undefined
                   return (
                     <TableHead
                       key={col.id}
                       aria-sort={ariaSort}
-                      data-scrolled={scrolled ? 'true' : 'false'}
+                      data-scrolled={scrolledAttr}
                       className={cn(col.className, isSticky && stickyFirstClasses)}
                     >
                       {sortable ? (
@@ -519,7 +498,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
             <TableBody>
               {isLoading ? (
                 <LoadingRows columnCount={totalColumns} />
-              ) : data.length === 0 ? (
+              ) : !data.length ? (
                 <TableRow>
                   <TableCell colSpan={totalColumns} className="p-0">
                     <EmptyState title={t('empty.title')} body={t('empty.body')} />
@@ -528,8 +507,8 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
               ) : (
                 data.map((row) => {
                   const rowId = getRowId ? getRowId(row) : undefined
-                  const expanded = hasExpand && rowId !== undefined && expandedId === rowId
-                  const clickable = Boolean(onRowClick)
+                  const expanded = hasExpand && rowId != null && expandedId === rowId
+                  const clickable = !!onRowClick
                   const onActivate = (
                     e:
                       | ReactMouseEvent<HTMLTableRowElement>
@@ -553,10 +532,10 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                         className={cn(clickable && 'cursor-pointer')}
                         data-state={rowId && selectedIds.has(rowId) ? 'selected' : undefined}
                       >
-                        {hasSelection && rowId !== undefined && (
+                        {hasSelection && rowId != null && (
                           <TableCell
                             data-stop-row-click=""
-                            data-scrolled={scrolled ? 'true' : 'false'}
+                            data-scrolled={scrolledAttr}
                             className={stickyFirstClasses}
                           >
                             <Checkbox
@@ -567,10 +546,10 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                             />
                           </TableCell>
                         )}
-                        {hasExpand && rowId !== undefined && (
+                        {hasExpand && rowId != null && (
                           <TableCell
                             data-stop-row-click=""
-                            data-scrolled={scrolled ? 'true' : 'false'}
+                            data-scrolled={scrolledAttr}
                             className={cn(!hasSelection && stickyFirstClasses)}
                           >
                             <button
@@ -604,7 +583,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
                           return (
                             <TableCell
                               key={col.id}
-                              data-scrolled={scrolled ? 'true' : 'false'}
+                              data-scrolled={scrolledAttr}
                               className={cn(col.className, isSticky && stickyFirstClasses)}
                             >
                               {col.cell(row)}
@@ -685,7 +664,7 @@ function RowActionsMenu({
   const { t } = useTranslation('data-table')
   const [pending, setPending] = useState<DataTableRowAction | null>(null)
 
-  if (actions.length === 0) return null
+  if (!actions.length) return null
 
   return (
     <>

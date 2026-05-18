@@ -119,7 +119,8 @@ async def _wipe_tenant_scoped_tables(session: AsyncSession) -> None:
     # deleted while the other still references it. `TRUNCATE ... CASCADE`
     # disables FK checking inside the truncation and atomically wipes both.
     # `tenants` cascades along (every tenant-owned table is included or
-    # transitively cleared by the cascade).
+    # transitively cleared by the cascade — pathway rows clear via tenant
+    # FK cascade; the pathway test conftest re-seeds lane-kind rows).
     await session.execute(
         text("TRUNCATE TABLE users, organisations, tenants RESTART IDENTITY CASCADE")
     )

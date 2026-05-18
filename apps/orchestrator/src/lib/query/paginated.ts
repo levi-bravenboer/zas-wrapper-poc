@@ -47,7 +47,7 @@ function compareValues(a: ListFilterPrimitive, b: ListFilterPrimitive): number {
 function canonicalValue(value: ListFilterValue): ListFilterValue {
   if (Array.isArray(value)) {
     // Sort by string projection so mixed primitive arrays compare stably.
-    return [...value].sort(compareValues)
+    return value.toSorted(compareValues)
   }
   return value
 }
@@ -90,7 +90,7 @@ function canonicalFilters(
 export function serializeListQuery(query: ListQuery): string {
   const parts: string[] = []
   const push = (k: string, v: unknown): void => {
-    if (v === null || v === undefined) return
+    if (v == null) return
     parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
   }
   push('page', query.page)

@@ -33,13 +33,12 @@ function useAutoCrumbs(): readonly Crumb[] {
   const matches = useMatches()
   if (matches.length <= 2) return []
 
-  const labelled = matches.flatMap<Crumb>((match, i) => {
+  const labelled = matches.flatMap<Omit<Crumb, 'isLast'>>((match) => {
     const label = readBreadcrumb(match.staticData)
-    if (!label) return []
-    return [{ label, to: match.pathname, isLast: i === matches.length - 1 }]
+    return label ? [{ label, to: match.pathname }] : []
   })
 
-  return labelled.map((crumb, i, arr) => ({ ...crumb, isLast: i === arr.length - 1 }))
+  return labelled.map((c, i, arr) => ({ ...c, isLast: i === arr.length - 1 }))
 }
 
 export function PageHeader({
@@ -55,7 +54,7 @@ export function PageHeader({
 
   return (
     <header data-slot="page-header" className={cn('flex flex-col gap-4 px-6 pt-6 pb-4', className)}>
-      {crumbs.length > 0 && (
+      {!!crumbs.length && (
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>

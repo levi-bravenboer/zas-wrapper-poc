@@ -105,15 +105,12 @@ export function useUserRowActions(
   const assignRole = useAssignUserRole()
 
   return (row) => {
-    const isSelf = row.id === params.currentUserId
-    const actions: DataTableRowAction[] = [
-      {
-        label: t('actions.view'),
-        icon: <UserCog className="h-4 w-4" aria-hidden />,
-        onClick: () => params.onView(row),
-      },
-    ]
-    if (isSelf) return actions
+    const viewAction: DataTableRowAction = {
+      label: t('actions.view'),
+      icon: <UserCog className="h-4 w-4" aria-hidden />,
+      onClick: () => params.onView(row),
+    }
+    if (row.id === params.currentUserId) return [viewAction]
 
     const runRole = (role: Role) =>
       assignRole.mutate(
@@ -133,7 +130,7 @@ export function useUserRowActions(
         },
       )
 
-    actions.push(
+    const roleAction: DataTableRowAction =
       row.role === 'admin'
         ? {
             label: t('actions.demote_to_caregiver'),
@@ -149,28 +146,26 @@ export function useUserRowActions(
             label: t('actions.promote_to_admin'),
             icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
             onClick: () => runRole('admin'),
-          },
-    )
-
-    actions.push(
-      row.is_active
-        ? {
-            label: t('actions.deactivate'),
-            icon: <UserMinus className="h-4 w-4" aria-hidden />,
-            destructive: true,
-            onClick: () => runActive(false),
-            confirm: {
-              title: t('confirm.deactivate.title'),
-              description: t('confirm.deactivate.description'),
-              confirmLabel: t('confirm.deactivate.confirmLabel'),
-            },
           }
-        : {
-            label: t('actions.activate'),
-            icon: <UserPlus className="h-4 w-4" aria-hidden />,
-            onClick: () => runActive(true),
+
+    const activeAction: DataTableRowAction = row.is_active
+      ? {
+          label: t('actions.deactivate'),
+          icon: <UserMinus className="h-4 w-4" aria-hidden />,
+          destructive: true,
+          onClick: () => runActive(false),
+          confirm: {
+            title: t('confirm.deactivate.title'),
+            description: t('confirm.deactivate.description'),
+            confirmLabel: t('confirm.deactivate.confirmLabel'),
           },
-    )
-    return actions
+        }
+      : {
+          label: t('actions.activate'),
+          icon: <UserPlus className="h-4 w-4" aria-hidden />,
+          onClick: () => runActive(true),
+        }
+
+    return [viewAction, roleAction, activeAction]
   }
 }

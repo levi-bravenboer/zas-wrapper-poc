@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pathway domain — schema review</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+      :root {
+        --bg: #0f1116;
+        --panel: #161a22;
+        --panel-2: #1c2230;
+        --border: #2a3142;
+        --text: #e6e9ef;
+        --muted: #8a93a4;
+        --accent: #7aa2ff;
+        --accent-2: #b389ff;
+        --pill-root: #f59e0b;
+        --pill-catalogue: #34d399;
+        --pill-shared: #60a5fa;
+        --pill-audit: #f472b6;
+        --code-bg: #0b0d12;
+        --warn: #fbbf24;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      body { padding: 32px clamp(16px, 4vw, 56px); max-width: 1400px; margin: 0 auto; }
+      h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+      h2 {
+        font-size: 18px;
+        margin: 40px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+      }
+      h3 {
+        font-size: 14px;
+        margin: 0 0 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--accent);
+      }
+      p, li { color: var(--muted); }
+      p.lead { color: var(--text); }
+      code, pre, .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .tagline { color: var(--muted); margin: 0 0 24px; }
+
+      .erd-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        overflow: auto;
+      }
+      .mermaid { background: transparent; }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 12px 0 0;
+        font-size: 12px;
+      }
+      .legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .dot.root      { background: var(--pill-root); }
+      .dot.catalogue { background: var(--pill-catalogue); }
+      .dot.shared    { background: var(--pill-shared); }
+      .dot.tenant    { background: var(--pill-audit); }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .card .head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .pill {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #0f1116;
+      }
+      .pill.root      { background: var(--pill-root); }
+      .pill.catalogue { background: var(--pill-catalogue); }
+      .pill.shared    { background: var(--pill-shared); }
+      .pill.tenant    { background: var(--pill-audit); }
+      .desc { color: var(--muted); font-size: 12px; margin: 0; }
+      .desc code { color: var(--text); background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
+
+      table.cols {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      table.cols th, table.cols td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      table.cols th {
+        background: var(--panel-2);
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      table.cols td.col-name {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      table.cols td.col-type {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--accent);
+        white-space: nowrap;
+      }
+      table.cols td.col-note {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 4px;
+        margin-right: 4px;
+        letter-spacing: 0.03em;
+      }
+      .badge.pk { background: #1f2937; color: #fcd34d; }
+      .badge.fk { background: #1f2937; color: #93c5fd; }
+      .badge.uq { background: #1f2937; color: #c4b5fd; }
+      .badge.ck { background: #1f2937; color: #f9a8d4; }
+      .badge.nn { background: #1f2937; color: #86efac; }
+      .badge.null { background: #1f2937; color: #fda4af; }
+      .badge.idx { background: #1f2937; color: #67e8f9; }
+
+      .constraints {
+        margin: 6px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .constraints li { padding: 2px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+      .inherits {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 0;
+      }
+      .inherits b { color: var(--text); }
+
+      details.base {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-top: 12px;
+      }
+      details.base summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--accent-2);
+      }
+      details.base table.cols { margin-top: 10px; }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin: 16px 0 24px;
+      }
+      .stat {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+      }
+      .stat .n {
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .stat .l {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Pathway domain — schema review</h1>
+    <p class="tagline">Phase 1 of <span class="mono">pathway-builder-base</span> · 10 tables · D-decisions D9–D20 · all FKs labelled</p>
+
+    <div class="stats">
+      <div class="stat"><div class="n">10</div><div class="l">tables</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">jsonb column (Exception 1)</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">CHECK constraints</div></div>
+      <div class="stat"><div class="n">5</div><div class="l">UNIQUE constraints</div></div>
+      <div class="stat"><div class="n">9</div><div class="l">ON DELETE CASCADE FKs</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">ON DELETE RESTRICT FKs</div></div>
+    </div>
+
+    <h2>Entity relationship diagram</h2>
+    <div class="erd-card">
+      <div class="mermaid">
+erDiagram
+  pathway ||--o{ pathway_phase             : "has phases"
+  pathway ||--o{ pathway_lane              : "has lanes"
+  pathway ||--o{ pathway_block             : "owns blocks"
+  pathway ||--o{ pathway_edge              : "owns edges"
+  pathway ||--o{ pathway_timing_value      : "owns timing values"
+  pathway ||--o{ pathway_time_marker       : "has markers"
+
+  pathway_lane_kind ||--o{ pathway_lane    : "kind code"
+  pathway_phase     ||--o{ pathway_block   : "groups (RESTRICT)"
+  pathway_lane      ||--o{ pathway_block   : "places (RESTRICT)"
+
+  pathway_block     ||--o{ pathway_block_branch                  : "decision branches"
+  pathway_block     ||--o{ pathway_block_deferred_field  : "deferred fields"
+
+  pathway_block     ||--o{ pathway_edge : "source"
+  pathway_block     ||--o{ pathway_edge : "target"
+  pathway_block_branch    ||--o{ pathway_edge : "from branch (opt)"
+
+  pathway_timing_value ||--o{ pathway_block       : "duration (opt)"
+  pathway_timing_value ||--o{ pathway_edge        : "delay (opt)"
+  pathway_timing_value ||--o{ pathway_time_marker : "value"
+      </div>
+      <div class="legend">
+        <span><span class="dot root"></span> aggregate root</span>
+        <span><span class="dot catalogue"></span> system-wide catalogue</span>
+        <span><span class="dot shared"></span> shared value (per pathway)</span>
+        <span><span class="dot tenant"></span> tenant-owned + audited</span>
+      </div>
+    </div>
+
+    <h2>Inherited columns</h2>
+    <p>Every table below inherits from a SQLAlchemy abstract base — these columns are present on every row but not repeated in each card.</p>
+    <details class="base" open>
+      <summary>Entity → AuditableEntity → TenantOwnedEntity</summary>
+      <p class="inherits"><b>Entity</b> (root for all rows): <code>id</code>, <code>created_at</code>, <code>updated_at</code>, <code>deleted_at</code>.</p>
+      <p class="inherits"><b>AuditableEntity</b> (adds): <code>created_by</code>, <code>updated_by</code>, <code>deleted_by</code> — FK <code>users.id</code> ON DELETE RESTRICT.</p>
+      <p class="inherits"><b>TenantOwnedEntity</b> (adds): <code>tenant_id</code> — FK <code>tenants.id</code> ON DELETE RESTRICT, NOT NULL, indexed.</p>
+      <p class="inherits">Soft delete: <code>deleted_at IS NOT NULL</code> means logically removed. <code>BaseRepository.list()</code> filters them by default.</p>
+    </details>
+
+    <h2>Tables</h2>
+    <div class="grid">
+
+      <!-- pathway -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway</h3>
+          <span class="pill root">root</span>
+        </div>
+        <p class="desc">Aggregate root (D1, D16). No <code>entry_block_id</code> — enrollment picks the start at runtime, not at design time. Inherits <code>TenantOwnedEntity</code>.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">name</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- pathway_lane_kind -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_lane_kind</h3>
+          <span class="pill catalogue">catalogue</span>
+        </div>
+        <p class="desc">System-wide kind catalogue (D10). Seeded with <code>patient</code>, <code>caregiver</code>, <code>system</code>, <code>external</code>. Inherits plain <code>Entity</code> — NOT tenant-owned.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">code</td><td class="col-type">varchar(63)</td><td class="col-note"><span class="badge uq">UQ</span><span class="badge nn">NN</span><span class="badge ck">CK</span> kebab-case</td></tr>
+            <tr><td class="col-name">label</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>CK: <code>code ~ '^[a-z][a-z0-9-]{0,62}$'</code></li>
+        </ul>
+      </div>
+
+      <!-- pathway_phase -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_phase</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">Decorative chapter grouping (D11) — no duration, no anchor in PoC. <code>template_id</code> is a soft pointer to the code-side phase-template registry (D14); no FK, so renaming a template never breaks existing pathways.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pathway_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">template_id</td><td class="col-type">varchar(63)</td><td class="col-note"><span class="badge null">NULL</span> soft pointer (no FK)</td></tr>
+            <tr><td class="col-name">label</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+            <tr><td class="col-name">ord</td><td class="col-type">integer</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>UQ: (pathway_id, ord)</li>
+        </ul>
+      </div>
+
+      <!-- pathway_lane -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_lane</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">Per-pathway lane instance (D9 + D10). Default lanes materialize on first block placement of that kind. Author can add custom lanes with <code>is_default=false</code>.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pathway_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">pathway_lane_kind_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_lane_kind.id <code>RESTRICT</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">label</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+            <tr><td class="col-name">ord</td><td class="col-type">integer</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+            <tr><td class="col-name">is_default</td><td class="col-type">boolean</td><td class="col-note"><span class="badge nn">NN</span> default <code>false</code></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>UQ: (pathway_id, ord)</li>
+        </ul>
+      </div>
+
+      <!-- pathway_block -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_block</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">Node on the canvas. <code>type</code> validated app-side against the code-owned block-type catalogue (D2). <code>config</code> is the <b>one jsonb</b> column in the schema (Exception 1) — Pydantic validates it against the catalogue's per-type <code>config_schema</code> on save.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pathway_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">phase_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_phase.id <code>RESTRICT</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">lane_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_lane.id <code>RESTRICT</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">type</td><td class="col-type">varchar(63)</td><td class="col-note"><span class="badge nn">NN</span> validated against catalogue</td></tr>
+            <tr><td class="col-name">label</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge null">NULL</span></td></tr>
+            <tr><td class="col-name">duration_value_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_timing_value.id <code>CASCADE</code> · <span class="badge null">NULL</span></td></tr>
+            <tr><td class="col-name">config</td><td class="col-type">jsonb</td><td class="col-note"><span class="badge nn">NN</span> default <code>{}</code> · Exception 1</td></tr>
+            <tr><td class="col-name">x</td><td class="col-type">integer</td><td class="col-note"><span class="badge nn">NN</span> canvas X</td></tr>
+            <tr><td class="col-name">y</td><td class="col-type">integer</td><td class="col-note"><span class="badge nn">NN</span> canvas Y</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- pathway_block_branch -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_block_branch</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">First-class decision-block branches. App-side validation (D19) rejects branch creation on blocks whose catalogue entry does not advertise <code>supports_branches</code>.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">block_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_block.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">label</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+            <tr><td class="col-name">ord</td><td class="col-type">integer</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>UQ: (block_id, ord)</li>
+        </ul>
+      </div>
+
+      <!-- pathway_edge -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_edge</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">Connector between two blocks. One model handles forward, branch, and loopback uniformly. <code>source_branch_id</code> (optional) disambiguates which branch of a decision block the edge leaves from. UNIQUE NULLS NOT DISTINCT (D20) blocks duplicate connectors at the DB layer.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pathway_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">source_block_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_block.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">target_block_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_block.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">source_branch_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_block_branch.id <code>CASCADE</code> · <span class="badge null">NULL</span></td></tr>
+            <tr><td class="col-name">delay_value_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_timing_value.id <code>CASCADE</code> · <span class="badge null">NULL</span></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>UQ: (source_block_id, target_block_id, source_branch_id) NULLS NOT DISTINCT</li>
+        </ul>
+      </div>
+
+      <!-- pathway_timing_value -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_timing_value</h3>
+          <span class="pill shared">shared</span>
+        </div>
+        <p class="desc">Shared by <code>pathway_block.duration_value_id</code>, <code>pathway_edge.delay_value_id</code>, <code>pathway_time_marker.value_id</code>. <code>kind</code> is a text discriminator (D12) — only <code>fixed</code> / <code>enrollment</code> in PoC (D17, runtime parked). CHECK enforces exactly the column-set per kind.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pathway_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">kind</td><td class="col-type">varchar(32)</td><td class="col-note"><span class="badge nn">NN</span><span class="badge ck">CK</span> <code>fixed | enrollment</code></td></tr>
+            <tr><td class="col-name">fixed_days</td><td class="col-type">integer</td><td class="col-note"><span class="badge null">NULL</span> required when <code>kind='fixed'</code></td></tr>
+            <tr><td class="col-name">enrollment_default_days</td><td class="col-type">integer</td><td class="col-note"><span class="badge null">NULL</span> required when <code>kind='enrollment'</code></td></tr>
+            <tr><td class="col-name">enrollment_min_days</td><td class="col-type">integer</td><td class="col-note"><span class="badge null">NULL</span></td></tr>
+            <tr><td class="col-name">enrollment_max_days</td><td class="col-type">integer</td><td class="col-note"><span class="badge null">NULL</span></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>CK: <code>kind IN ('fixed','enrollment')</code></li>
+          <li>CK: column-set per kind (fixed: only fixed_days; enrollment: default_days + opt min/max)</li>
+          <li>CK: <code>min_days &lt;= max_days</code> when both set</li>
+        </ul>
+      </div>
+
+      <!-- pathway_time_marker -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_time_marker</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">Vertical day marker on the canvas (e.g. <code>Surgery + 30d</code>). Presentation only — does not influence routing.</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pathway_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">value_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_timing_value.id <code>CASCADE</code> · <span class="badge nn">NN</span></td></tr>
+            <tr><td class="col-name">label</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- pathway_block_deferred_field -->
+      <div class="card">
+        <div class="head">
+          <h3>pathway_block_deferred_field</h3>
+          <span class="pill tenant">tenant-owned</span>
+        </div>
+        <p class="desc">Marks <code>field_path</code> (which must exist in the owning block's <code>config_schema</code>) as filled at enrollment instead of design-time (D18). Runtime resolution parked with the runtime timing kind (D17).</p>
+        <table class="cols">
+          <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">block_id</td><td class="col-type">uuid</td><td class="col-note"><span class="badge fk">FK</span> pathway_block.id <code>CASCADE</code> · <span class="badge idx">idx</span></td></tr>
+            <tr><td class="col-name">field_path</td><td class="col-type">varchar(255)</td><td class="col-note"><span class="badge nn">NN</span></td></tr>
+          </tbody>
+        </table>
+        <ul class="constraints">
+          <li>UQ: (block_id, field_path)</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h2>Code-owned catalogues (no DB rows)</h2>
+    <p>The block-type and phase-template registries live in <code>app/services/pathway/catalogue.py</code>, not the database (D2 + D14). Endpoints <code>GET /pathways/blocks</code> and <code>GET /pathways/phase-templates</code> serve them so the orchestrator never hardcodes names/labels/shapes.</p>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="head">
+          <h3>BLOCK_TYPES (5)</h3>
+          <span class="pill catalogue">code</span>
+        </div>
+        <table class="cols">
+          <thead><tr><th>type</th><th>default lane</th><th>branches?</th><th>config_schema</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">appointment</td><td class="col-type">caregiver</td><td>no</td><td class="col-note">title*, location, duration_minutes, notes</td></tr>
+            <tr><td class="col-name">decision</td><td class="col-type">caregiver</td><td><b>yes</b></td><td class="col-note">question*</td></tr>
+            <tr><td class="col-name">milestone</td><td class="col-type">system</td><td>no</td><td class="col-note">label*</td></tr>
+            <tr><td class="col-name">timer</td><td class="col-type">system</td><td>no</td><td class="col-note">note</td></tr>
+          </tbody>
+        </table>
+        <p class="desc">All schemas <code>additionalProperties: false</code> · <code>*</code> = required field</p>
+      </div>
+
+      <div class="card">
+        <div class="head">
+          <h3>PHASE_TEMPLATES (4 — Rugrevalidatie)</h3>
+          <span class="pill catalogue">code</span>
+        </div>
+        <table class="cols">
+          <thead><tr><th>id</th><th>label</th><th>default ord</th><th>duration (days)</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">pre-op</td><td>Pre-op</td><td>10</td><td>14</td></tr>
+            <tr><td class="col-name">surgery</td><td>Surgery</td><td>20</td><td>1</td></tr>
+            <tr><td class="col-name">recovery</td><td>Recovery</td><td>30</td><td>30</td></tr>
+            <tr><td class="col-name">follow-up</td><td>Follow-up</td><td>40</td><td>90</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="head">
+          <h3>SEEDED_LANE_KINDS (4)</h3>
+          <span class="pill catalogue">seeded</span>
+        </div>
+        <table class="cols">
+          <thead><tr><th>code</th><th>label</th></tr></thead>
+          <tbody>
+            <tr><td class="col-name">patient</td><td>Patient</td></tr>
+            <tr><td class="col-name">caregiver</td><td>Caregiver</td></tr>
+            <tr><td class="col-name">system</td><td>System</td></tr>
+            <tr><td class="col-name">external</td><td>External</td></tr>
+          </tbody>
+        </table>
+        <p class="desc">Inserted into <code>pathway_lane_kind</code> by migration. Catalogue table, not tenant-scoped.</p>
+      </div>
+
+    </div>
+
+    <h2>Cascade map (delete behaviour)</h2>
+    <div class="erd-card">
+      <div class="mermaid">
+flowchart LR
+  subgraph cascade["DELETE pathway → cascades"]
+    P[pathway] --> PH[pathway_phase]
+    P --> LN[pathway_lane]
+    P --> BL[pathway_block]
+    P --> ED[pathway_edge]
+    P --> TV[pathway_timing_value]
+    P --> TM[pathway_time_marker]
+    BL --> BR[pathway_block_branch]
+    BL --> FR[pathway_block_deferred_field]
+    BR --> ED
+    TV --> BL
+    TV --> ED
+    TV --> TM
+  end
+
+  classDef root fill:#f59e0b,stroke:#f59e0b,color:#0f1116;
+  class P root;
+      </div>
+      <p class="desc" style="margin-top:8px;">Tenant FKs stay <code>RESTRICT</code> — dropping a tenant never cascades. <code>pathway_phase</code> and <code>pathway_lane</code> are also <code>RESTRICT</code> as parents of blocks (deleting a phase/lane is rejected if any block still uses it).</p>
+    </div>
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        themeVariables: {
+          background: "#161a22",
+          primaryColor: "#1c2230",
+          primaryBorderColor: "#2a3142",
+          primaryTextColor: "#e6e9ef",
+          lineColor: "#7aa2ff",
+          tertiaryColor: "#161a22"
+        },
+        er: { useMaxWidth: true },
+        flowchart: { useMaxWidth: true }
+      });
+    </script>
+  </body>
+</html>

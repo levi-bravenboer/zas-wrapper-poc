@@ -1,0 +1,370 @@
+{
+  "overview": {
+    "title": "Zorgpaden",
+    "sub": "Beheer en ontwerp van klinische zorgpaden.",
+    "createButton": "Nieuw zorgpad",
+    "empty": {
+      "title": "Nog geen zorgpaden",
+      "body": "Maak je eerste zorgpad aan om te beginnen.",
+      "action": "Nieuw zorgpad"
+    },
+    "table": {
+      "name": "Naam",
+      "blocks": "Blokken",
+      "updated": "Laatst gewijzigd"
+    },
+    "loadError": "Kon zorgpaden niet laden."
+  },
+  "create": {
+    "title": "Nieuw zorgpad",
+    "sub": "Geef je zorgpad een naam en omschrijf de klinische en patiëntdoelen.",
+    "nameLabel": "Naam",
+    "namePlaceholder": "Bijv. Rugrevalidatie",
+    "clinicalGoalLabel": "Klinisch doel",
+    "clinicalGoalPlaceholder": "Wat wil het zorgteam medisch bereiken?",
+    "patientGoalLabel": "Patiëntdoel",
+    "patientGoalPlaceholder": "Wat wil de patiënt zelf bereiken?",
+    "submit": "Aanmaken",
+    "cancel": "Annuleren",
+    "error": "Aanmaken mislukt."
+  },
+  "crumbRoot": "ZORGPADEN",
+  "stubTitle": "Builder komt in fase 3",
+  "stubBody": "Het zorgpad is aangemaakt. De canvas-editor volgt in een latere fase.",
+  "clinicalGoal": "Klinisch doel",
+  "patientGoal": "Patiëntdoel",
+  "blocks": "Blokken",
+  "phases": "Fasen",
+  "editedAt": "bewerkt {{time}}",
+  "loading": "Zorgpad laden…",
+  "notFound": {
+    "title": "Zorgpad niet gevonden",
+    "body": "Dit zorgpad bestaat niet of is verwijderd.",
+    "back": "Terug naar overzicht"
+  },
+  "error": {
+    "title": "Kan zorgpad niet laden",
+    "body": "Er ging iets mis bij het laden van dit zorgpad.",
+    "retry": "Opnieuw proberen",
+    "back": "Terug naar overzicht"
+  },
+  "topbar": {
+    "renameLabel": "Naam wijzigen",
+    "undo": "Ongedaan maken",
+    "redo": "Opnieuw",
+    "history": "Geschiedenis",
+    "publish": "Versie publiceren"
+  },
+  "status": {
+    "clean": "Automatisch opgeslagen",
+    "dirty": "Niet opgeslagen",
+    "saving": "Wijzigingen opslaan…",
+    "error": "Opslaan mislukt"
+  },
+  "subbar": {
+    "jumpTo": "SPRING NAAR",
+    "addPhase": "Fase",
+    "customPhase": "Eigen fase",
+    "customPhasePlaceholder": "Naam van fase",
+    "customPhaseHint": "Druk Enter om toe te voegen",
+    "phaseLabel": "Fase {{idx}}",
+    "navLabel": "Fasen"
+  },
+  "dock": {
+    "toolbarLabel": "Blok-palet",
+    "addLabel": "Voeg {{label}} toe"
+  },
+  "drawer": {
+    "title": "Blok bewerken",
+    "delete": "Verwijderen",
+    "done": "Klaar",
+    "close": "Sluiten",
+    "deleteConfirmTitle": "Blok verwijderen?",
+    "deleteConfirmBody": "Dit verwijdert het blok en de bijbehorende verbindingen.",
+    "configHeader": "Configuratie",
+    "parseError": {
+      "title": "Configuratie kan niet gelezen worden",
+      "reset": "Terugzetten naar standaard"
+    },
+    "edgeTitle": "Verbinding bewerken",
+    "edgeKindHeader": "Timing"
+  },
+  "inspector": {
+    "appointment": {
+      "kind": "Type afspraak",
+      "kindPlaceholder": "Bijv. consult",
+      "location": "Locatie",
+      "locationPlaceholder": "Bijv. AZ Sint-Maarten"
+    },
+    "task": {
+      "assignee": "Toegewezen aan",
+      "assigneePlaceholder": "Kies een rol",
+      "assigneeOption": {
+        "caregiver": "Zorgverlener",
+        "admin": "Beheerder"
+      },
+      "description": "Omschrijving",
+      "descriptionPlaceholder": "Wat moet er gebeuren?"
+    },
+    "message": {
+      "channel": "Kanaal",
+      "channelPlaceholder": "Kies een kanaal",
+      "channelOption": {
+        "email": "E-mail",
+        "sms": "Sms",
+        "push": "Push",
+        "in_app": "In-app"
+      },
+      "subject": "Onderwerp",
+      "subjectPlaceholder": "Korte titel",
+      "body": "Tekst",
+      "bodyPlaceholder": "Wat staat er in het bericht?",
+      "ctaLabel": "Knoptekst",
+      "ctaLabelPlaceholder": "Bijv. Bevestigen",
+      "ctaTarget": "Knopdoel",
+      "ctaTargetPlaceholder": "URL of pad"
+    },
+    "form": {
+      "questions": "Vragen",
+      "addQuestion": "Vraag toevoegen",
+      "empty": "Nog geen vragen toegevoegd.",
+      "questionN": "Vraag {{n}}",
+      "label": "Label",
+      "labelPlaceholder": "Wat moet de patiënt zien?",
+      "type": "Vraagtype",
+      "typeOption": {
+        "text": "Korte tekst",
+        "long_text": "Lange tekst",
+        "single_choice": "Eén keuze",
+        "multi_choice": "Meerdere keuzes",
+        "scale": "Schaal",
+        "date": "Datum",
+        "file": "Bestand"
+      },
+      "options": "Opties",
+      "optionsHint": "Komma-gescheiden",
+      "optionsPlaceholder": "Bijv. ja, nee, weet niet",
+      "required": "Verplicht",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "remove": "Verwijder vraag"
+    },
+    "decision": {
+      "criterion": "Criterium",
+      "criterionHint": "Vrije tekst voor PoC; runtime-evaluatie volgt later.",
+      "criterionPlaceholder": "Bijv. pijnscore >= 4",
+      "branches": "Takken",
+      "noBranches": "Nog geen takken gedefinieerd."
+    },
+    "milestone": {
+      "note": "Notitie",
+      "notePlaceholder": "Waarom is dit een mijlpaal?"
+    },
+    "wait": {
+      "eventType": "Wacht op",
+      "eventTypePlaceholder": "Kies een gebeurtenis",
+      "timeoutDays": "Time-out (dagen)",
+      "onTimeout": "Bij time-out",
+      "onTimeoutPlaceholder": "Kies actie",
+      "onTimeoutOption": {
+        "advance": "Doorgaan",
+        "escalate": "Escaleren"
+      },
+      "sourceBlock": "Bronblok",
+      "sourceBlockHint": "Optioneel: koppel aan het blok dat de gebeurtenis triggert.",
+      "sourceBlockPlaceholder": "Kies een blok",
+      "noOtherBlocks": "Geen andere blokken beschikbaar."
+    },
+    "pathwayLink": {
+      "target": "Doel-zorgpad",
+      "targetPlaceholder": "Kies een zorgpad",
+      "noPathways": "Geen andere zorgpaden beschikbaar.",
+      "mode": "Modus",
+      "modePlaceholder": "Kies modus",
+      "modeOption": {
+        "blocking": "Blokkerend",
+        "fire_and_forget": "Vuren en vergeten"
+      },
+      "contextMapping": "Context-koppeling",
+      "contextMappingHint": "Sleutel-waarde paren die meegegeven worden aan het sub-zorgpad.",
+      "contextMappingEmpty": "Nog geen koppelingen.",
+      "contextKeyPlaceholder": "Sleutel",
+      "contextValuePlaceholder": "Waarde",
+      "contextRemove": "Verwijder koppeling",
+      "addMapping": "Koppeling toevoegen"
+    },
+    "edge": {
+      "title": "Verbinding",
+      "kindCompletion": "Bij voltooiing",
+      "kindMarker": "Bij tijdmarker",
+      "kindImmediate": "Direct",
+      "kindBranch": "Bij vertakking",
+      "delayValue": "Vertraging",
+      "delayValuePlaceholder": "Kies een waarde",
+      "marker": "Tijdmarker",
+      "markerPlaceholder": "Kies een marker",
+      "offsetValue": "Offset",
+      "offsetValuePlaceholder": "Kies een waarde",
+      "offsetDirection": "Richting",
+      "noTimingValues": "Geen timing-waardes beschikbaar.",
+      "noMarkers": "Geen tijdmarkers beschikbaar.",
+      "noBranches": "Geen branches op bronblok",
+      "branch": "Tak",
+      "branchPlaceholder": "Kies een tak",
+      "immediateHint": "Volgend blok start direct na voltooiing.",
+      "delete": "Verbinding verwijderen"
+    }
+  },
+  "minimap": {
+    "fit": "Passend maken",
+    "zoomIn": "Inzoomen",
+    "zoomOut": "Uitzoomen",
+    "label": "Overzicht"
+  },
+  "entry": {
+    "badge": "START"
+  },
+  "blockType": {
+    "appointment": "Afspraak",
+    "decision": "Beslissing",
+    "milestone": "Mijlpaal",
+    "wait": "Wachten",
+    "task": "Taak",
+    "message": "Bericht",
+    "form": "Formulier",
+    "pathway_link": "Subpad"
+  },
+  "blockTypeDescription": {
+    "appointment": "Klinische afspraak met de patiënt.",
+    "decision": "Splits het pad in twee takken.",
+    "milestone": "Markeer een belangrijk moment.",
+    "wait": "Wacht op een gebeurtenis of tijd voor het volgende blok.",
+    "task": "Actie voor het zorgteam.",
+    "message": "Bericht naar de patiënt of zorgverlener (e-mail, sms, push, in-app).",
+    "form": "Vragenlijst voor de patiënt.",
+    "pathway_link": "Koppel naar een ander zorgpad."
+  },
+  "edgeTiming": {
+    "completion": { "label": "Bij voltooiing" },
+    "marker": { "label": "Bij tijdmarker" },
+    "immediate": { "label": "Direct" },
+    "branch": { "label": "Bij vertakking" }
+  },
+  "edgeOffsetDirection": {
+    "before": "Voor",
+    "after": "Na"
+  },
+  "eventType": {
+    "pathology_report": "Pathologieverslag",
+    "scan_report": "Beeldvormingsverslag",
+    "lab_result": "Labuitslag",
+    "external_data": "Externe data"
+  },
+  "lane": {
+    "patient": "Patiënt",
+    "caregiver": "Zorgteam",
+    "system": "Systeem",
+    "external": "Extern"
+  },
+  "canvas": {
+    "label": "Zorgpad-canvas",
+    "emptyTitle": "Begin met een blok",
+    "emptyBody": "Sleep een blok uit het palet hieronder of klik om er één toe te voegen.",
+    "emptyNoScaffoldTitle": "Voeg een fase toe",
+    "emptyNoScaffold": "Klik op + Fase bovenin om je zorgpad op te bouwen.",
+    "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst.",
+    "invalidLaneDrop": "Dit blok past niet in deze rij.",
+    "handle": {
+      "in": "Verbinding in",
+      "branchYes": "Verbinding ja-tak",
+      "branchNo": "Verbinding nee-tak",
+      "out": "Verbinding uit"
+    },
+    "resizeLane": "Vergroot baan {{label}}",
+    "resizePhase": "Verbreed fase {{label}}",
+    "laneLabel": "Baan {{label}}, {{count}} blokken"
+  },
+  "save": {
+    "error": "Opslaan mislukt."
+  },
+  "delete": {
+    "success": "Blok verwijderd."
+  },
+  "version": {
+    "status": {
+      "concept": "Werkversie",
+      "published": "Gepubliceerd",
+      "archived": "Gearchiveerd"
+    },
+    "label": "v.{{n}}",
+    "switch": {
+      "triggerLabel": "Versie kiezen",
+      "groupConcept": "Werkversie",
+      "groupPublished": "Gepubliceerd",
+      "emptyConcept": "Nog geen werkversie.",
+      "emptyPublished": "Nog geen gepubliceerde versies.",
+      "footer": "Alle versies in geschiedenis"
+    },
+    "crumb": {
+      "concept": "werkversie",
+      "published": "gepubliceerd",
+      "historical": "historisch"
+    }
+  },
+  "banner": {
+    "publishedFallback": {
+      "body": "Je bekijkt de laatst gepubliceerde versie. Maak een nieuwe versie om wijzigingen te maken.",
+      "cta": "Maak nieuwe versie"
+    },
+    "historical": {
+      "body": "Je bekijkt een historische versie (v.{{n}}).",
+      "cta": "Herstel als nieuw concept",
+      "backToCurrent": "Terug naar huidige"
+    }
+  },
+  "history": {
+    "drawer": {
+      "title": "Geschiedenis",
+      "close": "Sluiten",
+      "empty": "Nog geen versies.",
+      "loadError": "Kon versies niet laden.",
+      "rowView": "Bekijken",
+      "rowRestore": "Herstellen",
+      "rowCurrent": "Huidige resolutie"
+    },
+    "restore": {
+      "title": "Versie herstellen?",
+      "body": "Hiermee maak je een nieuwe werkversie op basis van v.{{n}}. De huidige werkversie blijft behouden.",
+      "confirm": "Herstellen",
+      "cancel": "Annuleren",
+      "success": "Versie hersteld als nieuwe werkversie."
+    },
+    "conceptExists": {
+      "title": "Bestaande werkversie",
+      "body": "Er bestaat al een concept-versie (v.{{n}}). Wil je dat openen?",
+      "cancel": "Annuleren",
+      "open": "Open bestaande concept"
+    }
+  },
+  "publish": {
+    "modal": {
+      "title": "Versie publiceren",
+      "labelLabel": "Label (optioneel)",
+      "labelPlaceholder": "Bijv. Q3-release",
+      "noteLabel": "Notitie (optioneel)",
+      "notePlaceholder": "Wat is er veranderd?",
+      "approval": "Ik bevestig dat deze versie klinisch gevalideerd is.",
+      "cancel": "Annuleren",
+      "confirm": "Publiceren",
+      "success": "Versie v.{{n}} gepubliceerd.",
+      "error": "Publiceren mislukt."
+    }
+  },
+  "forkOnEdit": {
+    "title": "Nieuwe versie nodig",
+    "body": "Deze versie is gepubliceerd en kan niet meer bewerkt worden. Maak een nieuwe werkversie om wijzigingen door te voeren.",
+    "cancel": "Annuleren",
+    "confirm": "Maak nieuwe versie",
+    "error": "Nieuwe versie aanmaken mislukt."
+  }
+}

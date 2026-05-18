@@ -11,7 +11,7 @@ import { env } from '@/config/env'
 import { getFeatures } from '@/platform/embed/defineFeature'
 import '@/styles/globals.css'
 
-if (env.PROD && getFeatures().length === 0) {
+if (env.PROD && !getFeatures().length) {
   throw new Error(
     'Feature registry is empty at boot — ensure each feature module is re-exported from @/modules.',
   )

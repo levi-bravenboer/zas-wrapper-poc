@@ -106,13 +106,25 @@ Full openspec rules + usage examples: `openspec/AGENTS.md`.
 - Match existing patterns in neighbouring code before introducing new ones.
 - Verify before claiming done: run typecheck / tests / lint commands listed in the per-app AGENTS.md.
 
+### Style spirit (language-agnostic)
+
+These apply to TS, Python, SQL — wherever they fit. Concrete TS/JSX idioms are listed in `apps/orchestrator/AGENTS.md` `## Code style`.
+
+- **Guard clauses / early returns.** Exit early on preconditions; keep the happy path flat.
+- **Switch / dispatch over long if/else chains** when mapping one value to N branches. Lookup table when each case is data.
+- **AHA — Avoid Hasty Abstractions.** Three similar occurrences before extracting. Inline duplication beats the wrong abstraction.
+- **No premature optimization.** Memoization, caching, indexes — only with a measured cause documented next to the change.
+- **Destructure / unpack in signatures** when the host language supports it (TS object params, Python `**kwargs` only when truly variable).
+- **Stable, intent-named identifiers.** Booleans read as predicates (`is_active`, `hasAccess`). Functions read as verbs.
+- **Prefer non-mutating builders** when an immutable form exists (TS `.toSorted`, Python `sorted(...)`).
+
 ### Frontend (`apps/orchestrator`)
 
 - TypeScript strict. No `any` without a `// reason` next to it.
 - React 19 idioms: function components only, no class components, no legacy refs.
 - Stack: TanStack Router/Query/Form, Zod, openapi-fetch (typed from backend OpenAPI), Tailwind v4 + shadcn/ui, i18next (`nl`), Vitest + Playwright + MSW.
 - Module isolation enforced by ESLint `no-restricted-paths`; no barrel `index.ts`; `@/*` is the only path alias.
-- See `apps/orchestrator/AGENTS.md` for folder rules, casing table, coding rules, agentic testing workflow, and per-task moon commands. ADRs live under `apps/orchestrator/docs/adr/`.
+- See `apps/orchestrator/AGENTS.md` for folder rules, casing table, coding rules, **`## Code style`** (canonical list of style idioms — guard clauses, lookup tables, `??` / `?.` / `!!arr?.length`, non-mutating array helpers, `satisfies`, AHA, naming, JSX gotchas), agentic testing workflow, and per-task moon commands. ADRs live under `apps/orchestrator/docs/adr/`.
 
 ### Backend (`apps/backend`)
 

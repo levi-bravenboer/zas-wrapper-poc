@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from scripts._db import run_script
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
+from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
 from scripts.seed_patients import seed_patients
 from scripts.seed_practitioners import seed_practitioners
 from scripts.seed_tenant import seed_zas_tenant
@@ -30,6 +31,8 @@ SeedStep = Callable[[AsyncSession], Awaitable[object]]
 # (attaches to Rugrevalidatie team org seeded above; caregiver actor) →
 # care_teams (one active team + caregiver primary participant per patient,
 # satisfies the visibility predicate so the demo caregiver can see patients).
+# Pathway lane-kind catalogue + Rugrevalidatie demo pathway seed last so the
+# pathway rows reference the seeded admin actor.
 SEED_STEPS: list[SeedStep] = [
     seed_zas_tenant,
     seed_users,
@@ -37,6 +40,8 @@ SEED_STEPS: list[SeedStep] = [
     seed_practitioners,
     seed_patients,
     seed_care_teams,
+    seed_lane_kinds,
+    seed_rugrevalidatie,
 ]
 
 
