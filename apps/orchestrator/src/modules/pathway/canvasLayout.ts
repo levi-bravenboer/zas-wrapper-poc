@@ -42,17 +42,12 @@ export type CanvasGeometry = {
   flowHeight: number
 }
 
-export function buildCanvasGeometry(
-  phases: PathwayPhase[],
-  lanes: PathwayLane[],
-  phaseSizes: ReadonlyMap<string, number>,
-  laneSizes: ReadonlyMap<string, number>,
-): CanvasGeometry {
+export function buildCanvasGeometry(phases: PathwayPhase[], lanes: PathwayLane[]): CanvasGeometry {
   const phaseEntries: Array<{ id: string; x: number; w: number; idx: number }> = []
   const phasesByOrd = phases.toSorted((a, b) => a.ord - b.ord)
   let cursorX = CANVAS_LEFT_PAD
   phasesByOrd.forEach((p, i) => {
-    const w = Math.max(PHASE_COL_MIN_WIDTH, phaseSizes.get(p.id) ?? PHASE_COL_WIDTH)
+    const w = Math.max(PHASE_COL_MIN_WIDTH, p.width_px ?? PHASE_COL_WIDTH)
     phaseEntries.push({ id: p.id, x: cursorX, w, idx: i })
     cursorX += w
   })
@@ -62,7 +57,7 @@ export function buildCanvasGeometry(
   const lanesByOrd = lanes.toSorted((a, b) => a.ord - b.ord)
   let cursorY = LANE_TOP_PAD
   lanesByOrd.forEach((l, i) => {
-    const h = Math.max(LANE_ROW_MIN_HEIGHT, laneSizes.get(l.id) ?? LANE_ROW_HEIGHT)
+    const h = Math.max(LANE_ROW_MIN_HEIGHT, l.height_px ?? LANE_ROW_HEIGHT)
     laneEntries.push({ id: l.id, y: cursorY, h, idx: i })
     cursorY += h
   })

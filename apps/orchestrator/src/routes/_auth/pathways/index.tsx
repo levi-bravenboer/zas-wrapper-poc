@@ -3,12 +3,17 @@ import { Plus, Workflow } from 'lucide-react'
 import { type ReactElement, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { DataTable } from '@/components/data-table'
+import { DataTable, DataTableToolbar, type DataTableFilter } from '@/components/data-table'
 import { defineColumn } from '@/components/data-table/columns'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { EmptyState } from '@/components/states/EmptyState'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  useDataTableState,
+  type ListFilter,
+  type ListFilterPrimitive,
+} from '@/hooks/use-data-table-state'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { CreatePathwayDialog } from '@/modules/pathway/components/CreatePathwayDialog'
 import { usePathwayList } from '@/modules/pathway/hooks'
@@ -19,12 +24,64 @@ export const Route = createFileRoute('/_auth/pathways/')({
   staticData: { breadcrumb: 'Zorgpaden' },
 })
 
+type PathwayStatus = 'concept' | 'conceptOnPublished' | 'published' | 'draft'
+
+type PathwayFilterRow = PathwaySummary & { status: PathwayStatus }
+
+function pathwayStatus(p: PathwaySummary): PathwayStatus {
+  if (p.has_concept && p.latest_published_version_no != null) return 'conceptOnPublished'
+  if (p.has_concept) return 'concept'
+  if (p.latest_published_version_no != null) return 'published'
+  return 'draft'
+}
+
+function matchesSearch(p: PathwaySummary, q: string): boolean {
+  const needle = q.toLowerCase()
+  return (
+    p.name.toLowerCase().includes(needle) ||
+    (p.clinical_goal ?? '').toLowerCase().includes(needle) ||
+    (p.patient_goal ?? '').toLowerCase().includes(needle)
+  )
+}
+
+function statusValues(filter: ListFilter | ListFilter[] | undefined): Set<string> | null {
+  if (filter === undefined) return null
+  const filters = Array.isArray(filter) ? filter : [filter]
+  const out = new Set<string>()
+  for (const f of filters) {
+    const raw: ReadonlyArray<ListFilterPrimitive> = Array.isArray(f.value) ? f.value : [f.value]
+    for (const v of raw) out.add(String(v))
+  }
+  return out
+}
+
 function PathwayOverviewPage(): ReactElement {
   const { t } = useTranslation('pathway')
   const navigate = useNavigate()
   const list = usePathwayList()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { locale } = useLocale()
+  const [state, dispatch] = useDataTableState()
+
+  const filterDefs = useMemo<ReadonlyArray<DataTableFilter<PathwayFilterRow>>>(
+    () => [
+      {
+        type: 'select',
+        key: 'status',
+        label: t('overview.toolbar.filter.status.label'),
+        options: [
+          { value: 'concept', label: t('overview.toolbar.filter.status.concept') },
+          {
+            value: 'conceptOnPublished',
+            label: t('overview.toolbar.filter.status.conceptOnPublished'),
+          },
+          { value: 'published', label: t('overview.toolbar.filter.status.published') },
+          { value: 'draft', label: t('overview.toolbar.filter.status.draft') },
+        ],
+      },
+    ],
+    [t],
+  )
 
   const columns = useMemo(() => {
     const dateTime = new Intl.DateTimeFormat(locale, {
@@ -94,8 +151,20 @@ function PathwayOverviewPage(): ReactElement {
     ]
   }, [locale, t])
 
-  const items = list.data ?? []
+  const items = useMemo(() => list.data ?? [], [list.data])
+
+  const filteredItems = useMemo(() => {
+    const q = state.q?.trim() ?? ''
+    const statusFilter = statusValues(state.filters.status)
+    return items.filter((row) => {
+      if (q && !matchesSearch(row, q)) return false
+      if (statusFilter && !statusFilter.has(pathwayStatus(row))) return false
+      return true
+    })
+  }, [items, state.q, state.filters])
+
   const showEmpty = list.isSuccess && !items.length
+  const hasActiveFilter = state.q != null || Object.keys(state.filters).length > 0
 
   return (
     <>
@@ -124,21 +193,37 @@ function PathwayOverviewPage(): ReactElement {
             }
           />
         ) : (
-          <DataTable<PathwaySummary>
-            data={items}
-            columns={columns}
-            getRowId={(row) => row.id}
-            isLoading={list.isLoading}
-            isFetching={list.isFetching}
-            error={list.error}
-            onRetry={() => {
-              void list.refetch()
-            }}
-            onRowClick={(row) =>
-              void navigate({ to: '/pathways/$pathwayId', params: { pathwayId: row.id } })
-            }
-            caption={t('overview.title')}
-          />
+          <>
+            <DataTableToolbar<PathwayFilterRow>
+              q={state.q}
+              filters={state.filters}
+              filterDefs={filterDefs}
+              onSearchChange={(q) => dispatch.setSearch(q)}
+              onFilterChange={(field, filter) => {
+                if (filter === null) dispatch.clearFilter(field)
+                else dispatch.setFilter(field, filter)
+              }}
+              onClearFilters={() => dispatch.clearAll()}
+            />
+            <DataTable<PathwaySummary>
+              data={filteredItems}
+              columns={columns}
+              getRowId={(row) => row.id}
+              isLoading={list.isLoading}
+              isFetching={list.isFetching}
+              error={list.error}
+              onRetry={() => {
+                void list.refetch()
+              }}
+              onRowClick={(row) =>
+                void navigate({ to: '/pathways/$pathwayId', params: { pathwayId: row.id } })
+              }
+              caption={t('overview.title')}
+            />
+            {!filteredItems.length && hasActiveFilter && items.length > 0 ? (
+              <p className="px-1 text-sm text-foreground-muted">{t('overview.table.empty')}</p>
+            ) : null}
+          </>
         )}
       </div>
 

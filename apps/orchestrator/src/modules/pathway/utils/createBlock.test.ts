@@ -1,30 +1,162 @@
 import { describe, expect, it } from 'vitest'
 
+import type { PathwayBlockType } from '../types'
+
+import { buildDefaultBlockConfig, createBlock } from './createBlock'
 import { isLaneAllowed } from './laneRules'
-import { createBlock } from './createBlock'
+
+function makeBlockType(overrides: Partial<PathwayBlockType> & { type: string }): PathwayBlockType {
+  return {
+    type: overrides.type,
+    label: overrides.label ?? overrides.type,
+    semantics: overrides.semantics ?? 'task',
+    icon: overrides.icon ?? 'square',
+    allowed_lane_kind_codes: overrides.allowed_lane_kind_codes ?? ['patient'],
+    config_schema: overrides.config_schema ?? {},
+    ui_schema: overrides.ui_schema ?? {},
+    supports_branches: overrides.supports_branches ?? false,
+  }
+}
 
 describe('createBlock', () => {
-  it.each([
-    'form',
-    'wait',
-    'pathway_link',
-  ])('creates %s block with empty config (backend supplies defaults)', (typeCode) => {
+  it('produces empty config when schema has no required properties', () => {
     const block = createBlock({
-      typeCode,
+      blockType: makeBlockType({ type: 'wait', config_schema: { type: 'object', properties: {} } }),
       phaseId: 'p1',
       laneId: 'l1',
       x: 10,
       y: 20,
     })
-    expect(block.type).toBe(typeCode)
+    expect(block.type).toBe('wait')
     expect(block.config).toEqual({})
     expect(block.label).toBeNull()
   })
 
   it('rounds non-integer coordinates', () => {
-    const block = createBlock({ typeCode: 'task', phaseId: 'p', laneId: 'l', x: 4.6, y: 9.4 })
+    const block = createBlock({
+      blockType: makeBlockType({ type: 'task' }),
+      phaseId: 'p',
+      laneId: 'l',
+      x: 4.6,
+      y: 9.4,
+    })
     expect(block.x).toBe(5)
     expect(block.y).toBe(9)
+  })
+
+  it('seeds required string with placeholder when minLength > 0', () => {
+    const block = createBlock({
+      blockType: makeBlockType({
+        type: 'appointment',
+        label: 'Afspraak',
+        config_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', minLength: 1, maxLength: 255 },
+            notes: { type: 'string' },
+          },
+          required: ['title'],
+        },
+      }),
+      phaseId: 'p',
+      laneId: 'l',
+      x: 0,
+      y: 0,
+    })
+    expect(block.config).toEqual({ title: 'Afspraak' })
+  })
+
+  it('picks first enum value for required enum fields', () => {
+    const block = createBlock({
+      blockType: makeBlockType({
+        type: 'task',
+        label: 'Taak',
+        config_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', minLength: 1 },
+            assignee: { type: 'string', enum: ['patient', 'caregiver'] },
+          },
+          required: ['title', 'assignee'],
+        },
+      }),
+      phaseId: 'p',
+      laneId: 'l',
+      x: 0,
+      y: 0,
+    })
+    expect(block.config).toEqual({ title: 'Taak', assignee: 'patient' })
+  })
+})
+
+describe('buildDefaultBlockConfig', () => {
+  it('returns {} for null/undefined schema', () => {
+    expect(buildDefaultBlockConfig(undefined, 'x')).toEqual({})
+    expect(buildDefaultBlockConfig(null, 'x')).toEqual({})
+  })
+
+  it('fills required array with minItems items recursively', () => {
+    const result = buildDefaultBlockConfig(
+      {
+        type: 'object',
+        properties: {
+          questions: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              required: ['id', 'type', 'label', 'required'],
+              properties: {
+                id: { type: 'string', minLength: 1 },
+                type: { type: 'string', enum: ['text', 'long_text'] },
+                label: { type: 'string', minLength: 1 },
+                required: { type: 'boolean' },
+              },
+            },
+          },
+        },
+        required: ['questions'],
+      },
+      'Formulier',
+    )
+    expect(Array.isArray(result.questions)).toBe(true)
+    const questions = result.questions as Array<Record<string, unknown>>
+    expect(questions).toHaveLength(1)
+    const q = questions[0]!
+    expect(q.type).toBe('text')
+    expect(q.label).toBe('Formulier')
+    expect(q.required).toBe(false)
+    expect(typeof q.id).toBe('string')
+    expect((q.id as string).length).toBeGreaterThan(0)
+  })
+
+  it('defaults numeric required to minimum when present, else 0', () => {
+    expect(
+      buildDefaultBlockConfig(
+        {
+          type: 'object',
+          properties: {
+            a: { type: 'integer', minimum: 5 },
+            b: { type: 'number' },
+          },
+          required: ['a', 'b'],
+        },
+        '',
+      ),
+    ).toEqual({ a: 5, b: 0 })
+  })
+
+  it('generates uuid for required string with format uuid', () => {
+    const out = buildDefaultBlockConfig(
+      {
+        type: 'object',
+        properties: { target_id: { type: 'string', format: 'uuid' } },
+        required: ['target_id'],
+      },
+      '',
+    )
+    expect(typeof out.target_id).toBe('string')
+    expect((out.target_id as string).length).toBeGreaterThan(0)
   })
 })
 

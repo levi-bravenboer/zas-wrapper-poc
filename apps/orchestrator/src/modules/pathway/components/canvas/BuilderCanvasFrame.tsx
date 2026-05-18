@@ -21,7 +21,7 @@ import type {
   PathwayPhase,
   PathwayTimingValue,
 } from '../../types'
-import type { BuilderAction, BuilderSelection, DimensionMap } from '../../useBuilderState'
+import type { BuilderAction, BuilderSelection } from '../../useBuilderState'
 import { isLaneAllowed } from '../../utils/laneRules'
 
 import { BackgroundLayers } from './BackgroundLayers'
@@ -53,8 +53,6 @@ type Props = {
   selection: BuilderSelection
   dispatch: (action: BuilderAction) => void
   onDropBlockType: (typeCode: string, target: CanvasDropTarget | null) => void
-  phaseSizes: DimensionMap
-  laneSizes: DimensionMap
   dragApi: DragContextApi
 }
 
@@ -71,14 +69,12 @@ export function BuilderCanvasFrame({
   selection,
   dispatch,
   onDropBlockType,
-  phaseSizes,
-  laneSizes,
   dragApi,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const geometry: CanvasGeometry = useMemo(
-    () => buildCanvasGeometry(phases, lanes, phaseSizes, laneSizes),
-    [phases, lanes, phaseSizes, laneSizes],
+    () => buildCanvasGeometry(phases, lanes),
+    [phases, lanes],
   )
 
   const derivedNodes = useFlowNodes({
