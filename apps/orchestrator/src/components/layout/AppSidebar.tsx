@@ -280,9 +280,15 @@ function UserBlock(): ReactElement {
               {displayName}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <User aria-hidden="true" className="size-4" />
-              {t('shell:user.profile')}
+            <DropdownMenuItem asChild disabled={!session?.id}>
+              <Link
+                to="/users/$user_id"
+                params={{ user_id: session?.id ?? '' }}
+                aria-disabled={!session?.id}
+              >
+                <User aria-hidden="true" className="size-4" />
+                {t('shell:user.profile')}
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem disabled>
               <Settings aria-hidden="true" className="size-4" />

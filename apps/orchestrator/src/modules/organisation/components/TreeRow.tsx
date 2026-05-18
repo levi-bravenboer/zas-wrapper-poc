@@ -21,14 +21,14 @@ export interface TreeRowProps extends Omit<HTMLAttributes<HTMLLIElement>, 'onTog
   depth: number
   hasChildren: boolean
   expanded: boolean
-  onToggleExpand?: (id: string) => void
-  onOpenDetail?: (org: OrganisationRead) => void
-  onEdit?: (org: OrganisationRead) => void
-  onCreateChild?: (parent: OrganisationRead) => void
-  onArchive?: (org: OrganisationRead) => void
-  dragHandle?: ReactElement
-  isDragging?: boolean
-  isDropTarget?: boolean
+  onToggleExpand?: ((id: string) => void) | undefined
+  onOpenDetail?: ((org: OrganisationRead) => void) | undefined
+  onEdit?: ((org: OrganisationRead) => void) | undefined
+  onCreateChild?: ((parent: OrganisationRead) => void) | undefined
+  onArchive?: ((org: OrganisationRead) => void) | undefined
+  dragHandle?: ReactElement | undefined
+  isDragging?: boolean | undefined
+  isDropTarget?: boolean | undefined
   actionsDisabled?: boolean | undefined
 }
 

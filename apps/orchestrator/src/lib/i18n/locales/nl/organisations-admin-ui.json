@@ -3,7 +3,7 @@
     "title": "Organisaties",
     "sub": "Beheer de organisatieboom van je tenant.",
     "cta": {
-      "new_root": "Nieuwe root"
+      "add": "Nieuwe organisatie"
     },
     "empty": "Nog geen organisaties in dit tenant."
   },
@@ -13,7 +13,6 @@
     "actions": "Acties",
     "no_children": "Geen sub-organisaties",
     "edit": {
-      "toggle": "Bewerk volgorde",
       "handle": "Versleep {{name}}",
       "bar": {
         "count": {

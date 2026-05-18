@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Pencil, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -28,7 +28,6 @@ import { CreateOrganisationDialog } from './CreateOrganisationDialog'
 import { EditModeBar } from './EditModeBar'
 import { EditOrganisationDialog } from './EditOrganisationDialog'
 import { OrganisationDetailSheet } from './OrganisationDetailSheet'
-import { OrganisationTree } from './OrganisationTree'
 import { OrganisationTreeEditor } from './OrganisationTreeEditor'
 
 type RefKey = 'organisations' | 'patients' | 'practitioner_roles'
@@ -106,7 +105,7 @@ export function OrganisationsAdminPage(): ReactElement {
       : null
 
   const isEmpty = !isLoading && organisations.length === 0
-  const isEditing = editor.mode === 'edit'
+  const pendingCount = editor.pendingMoves.size
 
   const handleSave = useCallback(() => {
     if (editor.pendingMoves.size === 0) return
@@ -116,7 +115,7 @@ export function OrganisationsAdminPage(): ReactElement {
       {
         onSuccess: () => {
           toast.success(t('tree.edit.bar.save_success'))
-          editor.exitEdit()
+          editor.reset()
         },
         onError: (err) => {
           if (isApiError(err) && err.code === 'organisation_tree_cycle') {
@@ -165,20 +164,10 @@ export function OrganisationsAdminPage(): ReactElement {
         title={t('page.title')}
         description={t('page.sub')}
         primaryAction={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant={isEditing ? 'default' : 'outline'}
-              onClick={() => (isEditing ? editor.exitEdit() : editor.enterEdit())}
-            >
-              <Pencil className="size-4" aria-hidden />
-              {t('tree.edit.toggle')}
-            </Button>
-            <Button onClick={openCreateRoot} disabled={isEditing}>
-              <Plus className="size-4" aria-hidden />
-              {t('page.cta.new_root')}
-            </Button>
-          </div>
+          <Button onClick={openCreateRoot}>
+            <Plus className="size-4" aria-hidden />
+            {t('page.cta.add')}
+          </Button>
         }
         table={
           isLoading ? (
@@ -191,7 +180,7 @@ export function OrganisationsAdminPage(): ReactElement {
             <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
               {t('error.generic')}
             </div>
-          ) : isEditing ? (
+          ) : (
             <div className="flex flex-col gap-2">
               <OrganisationTreeEditor
                 organisations={organisations}
@@ -199,25 +188,19 @@ export function OrganisationsAdminPage(): ReactElement {
                 expanded={expanded}
                 onToggleExpand={onToggle}
                 onMove={editor.moveNode}
+                onOpenDetail={(org) => setDetail(org)}
+                onEdit={(org) => setEditing(org)}
+                onCreateChild={openCreateChild}
+                onArchive={(org) => setArchiveTarget(org)}
               />
               <EditModeBar
-                pendingCount={editor.pendingMoves.size}
-                visible
+                pendingCount={pendingCount}
+                visible={pendingCount > 0}
                 isSaving={treeMutation.isPending}
                 onSave={handleSave}
-                onCancel={editor.exitEdit}
+                onCancel={editor.reset}
               />
             </div>
-          ) : (
-            <OrganisationTree
-              organisations={organisations}
-              expanded={expanded}
-              onToggle={onToggle}
-              onOpenDetail={(org) => setDetail(org)}
-              onEdit={(org) => setEditing(org)}
-              onCreateChild={openCreateChild}
-              onArchive={(org) => setArchiveTarget(org)}
-            />
           )
         }
         emptyState={
@@ -225,7 +208,7 @@ export function OrganisationsAdminPage(): ReactElement {
             <Badge variant="soft">{t('page.empty')}</Badge>
             <Button onClick={openCreateRoot} variant="outline" size="sm">
               <Plus className="size-4" aria-hidden />
-              {t('page.cta.new_root')}
+              {t('page.cta.add')}
             </Button>
           </div>
         }

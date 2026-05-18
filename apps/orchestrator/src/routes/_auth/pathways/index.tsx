@@ -57,9 +57,7 @@ function PathwayOverviewPage(): ReactElement {
           }
           if (publishedNo != null) {
             return (
-              <Badge variant="success">
-                {t('overview.status.published', { n: publishedNo })}
-              </Badge>
+              <Badge variant="success">{t('overview.status.published', { n: publishedNo })}</Badge>
             )
           }
           return <Badge variant="muted">{t('overview.status.draft')}</Badge>
