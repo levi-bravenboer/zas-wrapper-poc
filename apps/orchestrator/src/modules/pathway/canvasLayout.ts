@@ -42,10 +42,7 @@ export type CanvasGeometry = {
   flowHeight: number
 }
 
-export function buildCanvasGeometry(
-  phases: PathwayPhase[],
-  lanes: PathwayLane[],
-): CanvasGeometry {
+export function buildCanvasGeometry(phases: PathwayPhase[], lanes: PathwayLane[]): CanvasGeometry {
   const phaseEntries: Array<{ id: string; x: number; w: number; idx: number }> = []
   const phasesByOrd = phases.toSorted((a, b) => a.ord - b.ord)
   let cursorX = CANVAS_LEFT_PAD

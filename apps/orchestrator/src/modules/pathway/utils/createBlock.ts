@@ -8,13 +8,7 @@ type CreateBlockInput = {
   y: number
 }
 
-export function createBlock({
-  blockType,
-  phaseId,
-  laneId,
-  x,
-  y,
-}: CreateBlockInput): PathwayBlock {
+export function createBlock({ blockType, phaseId, laneId, x, y }: CreateBlockInput): PathwayBlock {
   return {
     id: crypto.randomUUID(),
     phase_id: phaseId,
