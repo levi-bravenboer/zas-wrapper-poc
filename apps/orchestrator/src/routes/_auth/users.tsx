@@ -84,7 +84,11 @@ function UsersPage(): ReactElement {
       <>
         <PageHeader title={t('title')} sub={t('sub')} />
         <div className="px-6 pb-8">
-          <ErrorState title={t('toast.error')} onRetry={() => void refetch()} retryLabel="Retry" />
+          <ErrorState
+            title={t('toast.error')}
+            onRetry={() => void refetch()}
+            retryLabel={tTable('error.retry')}
+          />
         </div>
       </>
     )

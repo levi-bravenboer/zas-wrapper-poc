@@ -204,7 +204,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactElement {
       <div ref={ref} className={cn('flex flex-col', className)}>
         <ErrorState
           title={error.message || 'Error'}
-          {...(onRetry ? { onRetry, retryLabel: 'Retry' } : {})}
+          {...(onRetry ? { onRetry, retryLabel: t('error.retry') } : {})}
         />
       </div>
     )
