@@ -7,6 +7,7 @@ import { DataTable } from '@/components/data-table'
 import { defineColumn } from '@/components/data-table/columns'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { EmptyState } from '@/components/states/EmptyState'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { CreatePathwayDialog } from '@/modules/pathway/components/CreatePathwayDialog'
@@ -26,25 +27,71 @@ function PathwayOverviewPage(): ReactElement {
   const { locale } = useLocale()
 
   const columns = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat(locale, {
+    const dateTime = new Intl.DateTimeFormat(locale, {
       dateStyle: 'medium',
       timeStyle: 'short',
     })
+    const dateOnly = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' })
+    const empty = t('overview.table.empty')
+
     return [
       defineColumn<PathwaySummary>({
         id: 'name',
         header: t('overview.table.name'),
-        cell: (row) => row.name,
+        cell: (row) => <span className="font-medium">{row.name}</span>,
+      }),
+      defineColumn<PathwaySummary>({
+        id: 'status',
+        header: t('overview.table.status'),
+        cell: (row) => {
+          const publishedNo = row.latest_published_version_no
+          if (row.has_concept && publishedNo != null) {
+            return (
+              <Badge variant="warning">
+                {t('overview.status.conceptOnPublished', { n: publishedNo })}
+              </Badge>
+            )
+          }
+          if (row.has_concept) {
+            return <Badge variant="warning">{t('overview.status.concept')}</Badge>
+          }
+          if (publishedNo != null) {
+            return (
+              <Badge variant="success">
+                {t('overview.status.published', { n: publishedNo })}
+              </Badge>
+            )
+          }
+          return <Badge variant="muted">{t('overview.status.draft')}</Badge>
+        },
       }),
       defineColumn<PathwaySummary>({
         id: 'blocks',
         header: t('overview.table.blocks'),
         cell: (row) => row.block_count,
+        className: 'w-20 text-right tabular-nums',
       }),
       defineColumn<PathwaySummary>({
-        id: 'updated',
-        header: t('overview.table.updated'),
-        cell: (row) => formatter.format(new Date(row.updated_at)),
+        id: 'clinicalGoal',
+        header: t('overview.table.clinicalGoal'),
+        cell: (row) => (
+          <span className="block max-w-[28ch] truncate text-foreground-muted">
+            {row.clinical_goal || empty}
+          </span>
+        ),
+      }),
+      defineColumn<PathwaySummary>({
+        id: 'lastPublished',
+        header: t('overview.table.lastPublished'),
+        cell: (row) =>
+          row.latest_published_at ? dateOnly.format(new Date(row.latest_published_at)) : empty,
+        className: 'whitespace-nowrap',
+      }),
+      defineColumn<PathwaySummary>({
+        id: 'lastEdited',
+        header: t('overview.table.lastEdited'),
+        cell: (row) => dateTime.format(new Date(row.last_edited_at)),
+        className: 'whitespace-nowrap',
       }),
     ]
   }, [locale, t])
