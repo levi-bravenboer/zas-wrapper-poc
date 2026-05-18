@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/style/cn'
 
+import { tableFooter } from './styles'
+
 export interface DataTablePaginationProps {
   page: number
   pageSize: number
@@ -48,10 +50,7 @@ export function DataTablePagination({
 
   return (
     <div
-      className={cn(
-        'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
-        className,
-      )}
+      className={cn(tableFooter, 'flex-col gap-3 sm:flex-row', className)}
     >
       <div className="flex items-center gap-2">
         <span id={pageSizeLabelId} className="text-sm text-foreground-muted">
