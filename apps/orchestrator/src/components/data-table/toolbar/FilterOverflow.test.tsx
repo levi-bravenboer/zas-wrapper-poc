@@ -5,15 +5,17 @@ import { describe, expect, it } from 'vitest'
 import { renderWithProviders } from '@/test/renderWithProviders'
 
 import { FilterOverflow } from './FilterOverflow'
+import type { DataTableFilter } from './Toolbar'
 
-const defs = [
+type Row = { role: string; note: string }
+const defs: DataTableFilter<Row>[] = [
   {
-    type: 'select' as const,
+    type: 'select',
     key: 'role',
     label: 'Role',
     options: [{ value: 'admin', label: 'Admin' }],
   },
-  { type: 'text' as const, key: 'note', label: 'Note' },
+  { type: 'text', key: 'note', label: 'Note' },
 ]
 
 describe('FilterOverflow', () => {

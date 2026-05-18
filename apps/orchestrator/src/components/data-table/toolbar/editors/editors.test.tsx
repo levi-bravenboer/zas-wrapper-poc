@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/renderWithProviders'
 
+import type { DataTableFilter } from '../Toolbar'
+
 import { DateRangeEditor, MultiEditor, SelectEditor, TextEditor } from './'
 
-const selectDef = {
-  type: 'select' as const,
+const selectDef: DataTableFilter<{ role: string }> = {
+  type: 'select',
   key: 'role',
   label: 'Role',
   options: [
@@ -30,8 +32,8 @@ describe('SelectEditor', () => {
 })
 
 describe('MultiEditor', () => {
-  const def = {
-    type: 'multi' as const,
+  const def: DataTableFilter<{ tag: string }> = {
+    type: 'multi',
     key: 'tag',
     label: 'Tag',
     options: [
@@ -59,7 +61,11 @@ describe('MultiEditor', () => {
 
 describe('DateRangeEditor', () => {
   it('emits gte when from-date typed', async () => {
-    const def = { type: 'date-range' as const, key: 'created', label: 'Created' }
+    const def: DataTableFilter<{ created: string }> = {
+      type: 'date-range',
+      key: 'created',
+      label: 'Created',
+    }
     const onChange = vi.fn()
     const user = userEvent.setup()
     render(<DateRangeEditor def={def} current={undefined} onChange={onChange} />)
@@ -72,7 +78,7 @@ describe('DateRangeEditor', () => {
 
 describe('TextEditor', () => {
   it('emits { op: contains } on input, null on clear', async () => {
-    const def = { type: 'text' as const, key: 'q', label: 'Q' }
+    const def: DataTableFilter<{ q: string }> = { type: 'text', key: 'q', label: 'Q' }
     const onChange = vi.fn()
     const user = userEvent.setup()
     render(<TextEditor def={def} current={undefined} onChange={onChange} />)

@@ -5,9 +5,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/renderWithProviders'
 
 import { FilterPill } from './FilterPill'
+import type { DataTableFilter } from './Toolbar'
 
-const def = {
-  type: 'select' as const,
+const def: DataTableFilter<{ role: string }> = {
+  type: 'select',
   key: 'role',
   label: 'Role',
   options: [
