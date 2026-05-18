@@ -24,6 +24,4 @@ def get_pathway_version_service(
 
 
 PathwayServiceDep = Annotated[PathwayService, Depends(get_pathway_service)]
-PathwayVersionServiceDep = Annotated[
-    PathwayVersionService, Depends(get_pathway_version_service)
-]
+PathwayVersionServiceDep = Annotated[PathwayVersionService, Depends(get_pathway_version_service)]

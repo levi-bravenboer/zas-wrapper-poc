@@ -282,9 +282,7 @@ class PathwayRepository(BaseRepository[Pathway]):
             execution_options=opts,
         )
         await self._session.execute(
-            delete(PathwayBlock).where(
-                PathwayBlock.pathway_version_id == pathway_version_id
-            ),
+            delete(PathwayBlock).where(PathwayBlock.pathway_version_id == pathway_version_id),
             execution_options=opts,
         )
         await self._session.execute(

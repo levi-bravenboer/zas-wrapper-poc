@@ -46,9 +46,7 @@ class PathwayVersionService:
         self._repo = repo
         self._version_repo = version_repo
 
-    async def list_versions(
-        self, pathway_id: UUID, tenant_id: UUID
-    ) -> list[PathwayVersionSummary]:
+    async def list_versions(self, pathway_id: UUID, tenant_id: UUID) -> list[PathwayVersionSummary]:
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
@@ -259,9 +257,7 @@ class PathwayVersionService:
                         else None
                     ),
                     delay_value_id=(
-                        timing_id_map[e.delay_value_id]
-                        if e.delay_value_id is not None
-                        else None
+                        timing_id_map[e.delay_value_id] if e.delay_value_id is not None else None
                     ),
                 )
                 for e in src.edges
@@ -297,7 +293,8 @@ class PathwayVersionService:
         session = self._repo._session  # noqa: SLF001
         result = await session.execute(select(User).where(User.id.in_(clean_ids)))
         return {
-            user.id: PathwayActorRef(id=user.id, name=user.display_name) for user in result.scalars()
+            user.id: PathwayActorRef(id=user.id, name=user.display_name)
+            for user in result.scalars()
         }
 
     def _to_summary(

@@ -10,11 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import {
-  WAIT_EVENT_TYPES,
-  WAIT_ON_TIMEOUT,
-  type ConfigForSemantics,
-} from '../../../configSchemas'
+import { WAIT_EVENT_TYPES, WAIT_ON_TIMEOUT, type ConfigForSemantics } from '../../../configSchemas'
 import type { PathwayBlock } from '../../../types'
 
 import { InspectorField } from './InspectorField'

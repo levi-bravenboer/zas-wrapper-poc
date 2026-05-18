@@ -230,9 +230,7 @@ async def fork_pathway_from_publish(
     current_user: CurrentUserDep,
     version_service: PathwayVersionServiceDep,
 ) -> PathwayVersionSummary:
-    return await version_service.fork_from_publish(
-        pathway_id, version_id, current_user.tenant_id
-    )
+    return await version_service.fork_from_publish(pathway_id, version_id, current_user.tenant_id)
 
 
 __all__ = ["router"]

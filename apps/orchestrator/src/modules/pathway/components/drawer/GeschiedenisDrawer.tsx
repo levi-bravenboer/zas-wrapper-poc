@@ -71,9 +71,7 @@ export function GeschiedenisDrawer({ open, onOpenChange, pathwayId }: Props): Re
           )}
 
           {!versions.isError && rows.length === 0 && (
-            <p className="px-4 py-2 text-sm text-muted-foreground">
-              {t('history.drawer.empty')}
-            </p>
+            <p className="px-4 py-2 text-sm text-muted-foreground">{t('history.drawer.empty')}</p>
           )}
 
           <ul className="flex flex-col gap-0 overflow-y-auto px-2 py-2">
@@ -90,9 +88,7 @@ export function GeschiedenisDrawer({ open, onOpenChange, pathwayId }: Props): Re
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="text-sm font-medium">
                     {t('version.label', { n: row.version_no })}
-                    {row.label && (
-                      <span className="ml-1 text-muted-foreground">· {row.label}</span>
-                    )}
+                    {row.label && <span className="ml-1 text-muted-foreground">· {row.label}</span>}
                   </span>
                   <span className="text-[11px] text-muted-foreground">
                     {row.published_at ?? row.created_at}

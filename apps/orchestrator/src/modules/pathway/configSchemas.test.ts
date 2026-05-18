@@ -42,13 +42,19 @@ describe('CONFIG_SCHEMAS — every BlockSemantics has a schema', () => {
 
 describe('parseBlockConfig — valid configs round-trip', () => {
   it('parses an appointment config', () => {
-    const parsed = parseBlockConfig(fakeBlock({ kind: 'consult', location: 'AZ Sint-Maarten' }), 'appointment')
+    const parsed = parseBlockConfig(
+      fakeBlock({ kind: 'consult', location: 'AZ Sint-Maarten' }),
+      'appointment',
+    )
     expect(parsed.kind).toBe('consult')
     expect(parsed.location).toBe('AZ Sint-Maarten')
   })
 
   it('parses a task config', () => {
-    const parsed = parseBlockConfig(fakeBlock({ assignee: 'caregiver', description: 'Bel patiënt' }), 'task')
+    const parsed = parseBlockConfig(
+      fakeBlock({ assignee: 'caregiver', description: 'Bel patiënt' }),
+      'task',
+    )
     expect(parsed.assignee).toBe('caregiver')
   })
 
@@ -120,9 +126,9 @@ describe('parseBlockConfig — invalid configs throw with the right path', () =>
   })
 
   it('message rejects unknown channel', () => {
-    expect(() =>
-      parseBlockConfig(fakeBlock({ channel: 'carrier_pigeon' }), 'message'),
-    ).toThrow(/channel/)
+    expect(() => parseBlockConfig(fakeBlock({ channel: 'carrier_pigeon' }), 'message')).toThrow(
+      /channel/,
+    )
   })
 
   it('form rejects a question with unknown type', () => {

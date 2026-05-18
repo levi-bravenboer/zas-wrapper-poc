@@ -70,9 +70,7 @@ class PathwayVersion(TenantOwnedEntity):
     )
     label: Mapped[str | None] = mapped_column(sa.String(120), nullable=True)
     note: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
-    published_at: Mapped[datetime | None] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
+    published_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     published_by: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         sa.ForeignKey("users.id", ondelete="RESTRICT"),

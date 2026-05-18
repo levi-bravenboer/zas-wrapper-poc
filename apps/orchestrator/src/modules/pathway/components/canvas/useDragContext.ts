@@ -19,12 +19,9 @@ export type DragContextApi = {
 export function useDragContext(): DragContextApi {
   const [drag, setDrag] = useState<DragContext>({ kind: 'idle' })
 
-  const startNewDrag = useCallback(
-    (typeCode: string, allowedLaneKindCodes: readonly string[]) => {
-      setDrag({ kind: 'new', typeCode, allowedLaneKindCodes })
-    },
-    [],
-  )
+  const startNewDrag = useCallback((typeCode: string, allowedLaneKindCodes: readonly string[]) => {
+    setDrag({ kind: 'new', typeCode, allowedLaneKindCodes })
+  }, [])
 
   const startMoveDrag = useCallback(
     (blockId: string, typeCode: string, allowedLaneKindCodes: readonly string[]) => {

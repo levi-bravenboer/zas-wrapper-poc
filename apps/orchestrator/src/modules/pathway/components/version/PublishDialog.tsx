@@ -72,9 +72,7 @@ export function PublishDialog({ open, onOpenChange, pathwayId }: Props): ReactEl
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <DialogHeader>
             <DialogTitle>{t('publish.modal.title')}</DialogTitle>
-            <DialogDescription className="sr-only">
-              {t('publish.modal.title')}
-            </DialogDescription>
+            <DialogDescription className="sr-only">{t('publish.modal.title')}</DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">

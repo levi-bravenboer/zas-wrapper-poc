@@ -39,11 +39,7 @@ function PathwayBuilderPage(): ReactElement {
 
   if (resolved.status === 'error') {
     return (
-      <BuilderShellStateRenderer
-        state="error"
-        error={resolved.error}
-        onRetry={resolved.refetch}
-      />
+      <BuilderShellStateRenderer state="error" error={resolved.error} onRetry={resolved.refetch} />
     )
   }
 

@@ -6,11 +6,7 @@ import { Button } from '@/components/ui/button'
 
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { laneAccent } from '../../canvasLayout'
-import {
-  CONFIG_SCHEMAS,
-  defaultConfig,
-  type ConfigForSemantics,
-} from '../../configSchemas'
+import { CONFIG_SCHEMAS, defaultConfig, type ConfigForSemantics } from '../../configSchemas'
 import type {
   BlockConfig,
   PathwayBlock,
@@ -196,20 +192,13 @@ function InspectorSwitch({
         />
       )
     case 'task':
-      return (
-        <TaskInspector config={data as ConfigForSemantics<'task'>} onChange={onPatchConfig} />
-      )
+      return <TaskInspector config={data as ConfigForSemantics<'task'>} onChange={onPatchConfig} />
     case 'message':
       return (
-        <MessageInspector
-          config={data as ConfigForSemantics<'message'>}
-          onChange={onPatchConfig}
-        />
+        <MessageInspector config={data as ConfigForSemantics<'message'>} onChange={onPatchConfig} />
       )
     case 'form':
-      return (
-        <FormInspector config={data as ConfigForSemantics<'form'>} onChange={onPatchConfig} />
-      )
+      return <FormInspector config={data as ConfigForSemantics<'form'>} onChange={onPatchConfig} />
     case 'decision':
       return (
         <DecisionInspector

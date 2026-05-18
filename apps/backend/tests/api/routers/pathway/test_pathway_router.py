@@ -235,9 +235,7 @@ async def test_replace_pathway_overwrites(
     created = await _create(async_client, name="Before")
 
     payload = _replace_payload("After", lane_kinds)
-    response = await async_client.put(
-        f"/pathways/{created['pathway']['id']}", json=payload
-    )
+    response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
 
     assert response.status_code == 200, response.text
     body = response.json()
@@ -267,9 +265,7 @@ async def test_replace_invalid_payload_returns_422(
     payload = _replace_payload("Bad", lane_kinds)
     payload["blocks"][0]["type"] = "not-a-real-block-type"
 
-    response = await async_client.put(
-        f"/pathways/{created['pathway']['id']}", json=payload
-    )
+    response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
 
     assert response.status_code == 422
 
@@ -291,9 +287,7 @@ async def test_replace_disallowed_lane_returns_422(
     }
     # lane stays on caregiver — message allows only patient.
 
-    response = await async_client.put(
-        f"/pathways/{created['pathway']['id']}", json=payload
-    )
+    response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
 
     assert response.status_code == 422, response.text
     body = response.json()
@@ -330,9 +324,7 @@ async def test_replace_invalid_edge_timing_returns_422(
         {"id": delay_id, "kind": "fixed", "fixed_days": 3},
         {"id": marker_value_id, "kind": "fixed", "fixed_days": 0},
     ]
-    payload["time_markers"] = [
-        {"id": marker_id, "value_id": marker_value_id, "label": "Surgery"}
-    ]
+    payload["time_markers"] = [{"id": marker_id, "value_id": marker_value_id, "label": "Surgery"}]
     payload["edges"] = [
         {
             "id": str(uuid.uuid4()),
@@ -345,9 +337,7 @@ async def test_replace_invalid_edge_timing_returns_422(
         }
     ]
 
-    response = await async_client.put(
-        f"/pathways/{created['pathway']['id']}", json=payload
-    )
+    response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
 
     assert response.status_code == 422, response.text
     body = response.json()
@@ -479,9 +469,7 @@ async def test_restore_creates_new_concept_from_published(
     await _login(async_client)
     created = await _create(async_client)
     payload = _replace_payload("Restorable", lane_kinds)
-    put_resp = await async_client.put(
-        f"/pathways/{created['pathway']['id']}", json=payload
-    )
+    put_resp = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
     assert put_resp.status_code == 200, put_resp.text
     publish = await async_client.post(
         f"/pathways/{created['pathway']['id']}/publish",

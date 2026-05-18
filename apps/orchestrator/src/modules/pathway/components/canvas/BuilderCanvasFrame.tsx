@@ -192,12 +192,7 @@ export function BuilderCanvasFrame({
         selectNodesOnDrag={false}
         proOptions={{ hideAttribution: true }}
       >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={24}
-          size={1}
-          color={inkAlpha(0.06)}
-        />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={inkAlpha(0.06)} />
         <ViewportPortal>
           <BackgroundLayers
             phases={phases}

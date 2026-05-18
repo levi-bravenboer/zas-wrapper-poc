@@ -25,11 +25,7 @@ type Props = {
   onChange: (next: ConfigForSemantics<'pathway_link'>) => void
 }
 
-export function PathwayLinkInspector({
-  config,
-  currentPathwayId,
-  onChange,
-}: Props): ReactElement {
+export function PathwayLinkInspector({ config, currentPathwayId, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const { data: pathways = [] } = useQuery({
     queryKey: pathwayKeys.list(),

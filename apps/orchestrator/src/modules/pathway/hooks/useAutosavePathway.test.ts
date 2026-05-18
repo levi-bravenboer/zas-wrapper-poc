@@ -64,9 +64,7 @@ describe('useAutosavePathway', () => {
 
   it('debounces a save 800ms after isDirty flips true', () => {
     const dispatch = vi.fn()
-    renderHook(() =>
-      useAutosavePathway({ pathway, version, dispatch, isDirty: true }),
-    )
+    renderHook(() => useAutosavePathway({ pathway, version, dispatch, isDirty: true }))
     expect(mutateMock).not.toHaveBeenCalled()
 
     act(() => {

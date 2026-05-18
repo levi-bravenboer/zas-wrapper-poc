@@ -4,21 +4,22 @@ import { isLaneAllowed } from './laneRules'
 import { createBlock } from './createBlock'
 
 describe('createBlock', () => {
-  it.each(['form', 'wait', 'pathway_link'])(
-    'creates %s block with empty config (backend supplies defaults)',
-    (typeCode) => {
-      const block = createBlock({
-        typeCode,
-        phaseId: 'p1',
-        laneId: 'l1',
-        x: 10,
-        y: 20,
-      })
-      expect(block.type).toBe(typeCode)
-      expect(block.config).toEqual({})
-      expect(block.label).toBeNull()
-    },
-  )
+  it.each([
+    'form',
+    'wait',
+    'pathway_link',
+  ])('creates %s block with empty config (backend supplies defaults)', (typeCode) => {
+    const block = createBlock({
+      typeCode,
+      phaseId: 'p1',
+      laneId: 'l1',
+      x: 10,
+      y: 20,
+    })
+    expect(block.type).toBe(typeCode)
+    expect(block.config).toEqual({})
+    expect(block.label).toBeNull()
+  })
 
   it('rounds non-integer coordinates', () => {
     const block = createBlock({ typeCode: 'task', phaseId: 'p', laneId: 'l', x: 4.6, y: 9.4 })

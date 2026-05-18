@@ -122,7 +122,9 @@ describe('EdgeInspector', () => {
 
   it('pre-selects the only branch when switching to branch on a block with one branch', async () => {
     const onPatchEdge = vi.fn()
-    const oneBranch: PathwayBlockBranch[] = [{ id: 'only', block_id: 'src-block', label: 'Ja', ord: 10 }]
+    const oneBranch: PathwayBlockBranch[] = [
+      { id: 'only', block_id: 'src-block', label: 'Ja', ord: 10 },
+    ]
     const edge = makeEdge()
     render(
       wrap(
@@ -140,7 +142,9 @@ describe('EdgeInspector', () => {
         />,
       ),
     )
-    const branchTab = screen.getAllByRole('tab').find((b) => /vertakking/i.test(b.textContent ?? ''))
+    const branchTab = screen
+      .getAllByRole('tab')
+      .find((b) => /vertakking/i.test(b.textContent ?? ''))
     await userEvent.click(branchTab!)
     expect(onPatchEdge).toHaveBeenCalledWith(
       expect.objectContaining({

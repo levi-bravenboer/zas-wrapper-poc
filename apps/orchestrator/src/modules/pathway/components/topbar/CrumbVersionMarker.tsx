@@ -8,10 +8,7 @@ type Props = {
   isHistorical: boolean
 }
 
-function dotColor(
-  status: 'concept' | 'published' | 'archived',
-  isHistorical: boolean,
-): string {
+function dotColor(status: 'concept' | 'published' | 'archived', isHistorical: boolean): string {
   if (isHistorical) return '#3a7d8d'
   if (status === 'concept') return '#d97706'
   if (status === 'published') return '#16a34a'

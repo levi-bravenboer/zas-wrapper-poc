@@ -170,10 +170,9 @@ export async function forkPathwayFromPublish(
   pathwayId: string,
   versionId: string,
 ): Promise<PathwayVersionSummary> {
-  const result = await api.POST(
-    '/pathways/{pathway_id}/versions/{version_id}/fork-from-publish',
-    { params: { path: { pathway_id: pathwayId, version_id: versionId } } },
-  )
+  const result = await api.POST('/pathways/{pathway_id}/versions/{version_id}/fork-from-publish', {
+    params: { path: { pathway_id: pathwayId, version_id: versionId } },
+  })
   if (!result.data) {
     throw errorFromResponse('Failed to fork version', result.response.status, result.error)
   }

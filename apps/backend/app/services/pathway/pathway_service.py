@@ -272,9 +272,7 @@ class PathwayService:
 
     # ---- Helpers ---------------------------------------------------------
 
-    async def _build_version_definition(
-        self, version: PathwayVersion
-    ) -> PathwayVersionDefinition:
+    async def _build_version_definition(self, version: PathwayVersion) -> PathwayVersionDefinition:
         children = await self._repo.fetch_children(version.id)
         lane_kinds = await self._repo.lane_kinds_by_code()
         code_by_id = {kind.id: code for code, kind in lane_kinds.items()}
@@ -316,9 +314,7 @@ class PathwayService:
             ],
         )
 
-    async def _persist_children(
-        self, pathway_version_id: UUID, r: _ResolvedDefinition
-    ) -> None:
+    async def _persist_children(self, pathway_version_id: UUID, r: _ResolvedDefinition) -> None:
         session = self._repo._session  # noqa: SLF001 — service owns repo internals here
         session.add_all(
             [
@@ -414,9 +410,7 @@ class PathwayService:
         )
         session.add_all(
             [
-                PathwayBlockDeferredField(
-                    id=fr.id, block_id=fr.block_id, field_path=fr.field_path
-                )
+                PathwayBlockDeferredField(id=fr.id, block_id=fr.block_id, field_path=fr.field_path)
                 for fr in r.deferred_fields
             ]
         )

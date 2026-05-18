@@ -172,7 +172,11 @@ export function EdgeInspector({
           {t('drawer.edgeKindHeader')}
         </h3>
 
-        <div role="tablist" aria-label={t('drawer.edgeKindHeader')} className="mb-4 grid grid-cols-2 gap-1.5">
+        <div
+          role="tablist"
+          aria-label={t('drawer.edgeKindHeader')}
+          className="mb-4 grid grid-cols-2 gap-1.5"
+        >
           {orderedKinds.map((kind) => (
             <Button
               key={kind}

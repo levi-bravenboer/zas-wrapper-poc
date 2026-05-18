@@ -385,7 +385,10 @@ def upgrade() -> None:
         op.f("ix_pathway_block_branch_block_id"), "pathway_block_branch", ["block_id"], unique=False
     )
     op.create_index(
-        op.f("ix_pathway_block_branch_tenant_id"), "pathway_block_branch", ["tenant_id"], unique=False
+        op.f("ix_pathway_block_branch_tenant_id"),
+        "pathway_block_branch",
+        ["tenant_id"],
+        unique=False,
     )
     op.create_table(
         "pathway_edge",
@@ -419,7 +422,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["deleted_by"], ["users.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["pathway_id"], ["pathway.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["source_block_id"], ["pathway_block.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["source_branch_id"], ["pathway_block_branch.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["source_branch_id"], ["pathway_block_branch.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["target_block_id"], ["pathway_block.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["updated_by"], ["users.id"], ondelete="RESTRICT"),

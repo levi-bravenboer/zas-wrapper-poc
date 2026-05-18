@@ -9,6 +9,7 @@ structural snapshot. Structural children (phase/lane/block/edge/time_marker/
 timing_value) move from `pathway_id` to `pathway_version_id`. Any pre-existing
 pathway gets one initial concept version backfilled and its children reparented.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -144,9 +145,7 @@ def upgrade() -> None:
         ["pathway_version_id"],
         unique=False,
     )
-    op.drop_constraint(
-        op.f("pathway_block_pathway_id_fkey"), "pathway_block", type_="foreignkey"
-    )
+    op.drop_constraint(op.f("pathway_block_pathway_id_fkey"), "pathway_block", type_="foreignkey")
     op.create_foreign_key(
         None,
         "pathway_block",

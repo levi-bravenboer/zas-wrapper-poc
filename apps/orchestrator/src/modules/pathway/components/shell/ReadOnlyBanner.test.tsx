@@ -30,9 +30,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 import { ReadOnlyBanner } from './ReadOnlyBanner'
 
-function makeVersion(
-  overrides: Partial<PathwayVersionDefinition> = {},
-): PathwayVersionDefinition {
+function makeVersion(overrides: Partial<PathwayVersionDefinition> = {}): PathwayVersionDefinition {
   return {
     id: 'v-1',
     pathway_id: 'p-1',
@@ -75,10 +73,9 @@ describe('ReadOnlyBanner', () => {
   })
 
   it('historical variant shows restore CTA + back-to-current ghost', () => {
-    render(
-      <ReadOnlyBanner pathwayId="p-1" version={makeVersion()} variant="historical" />,
-      { wrapper: Wrapper },
-    )
+    render(<ReadOnlyBanner pathwayId="p-1" version={makeVersion()} variant="historical" />, {
+      wrapper: Wrapper,
+    })
     expect(screen.getByText(/herstel als nieuw concept/i)).toBeInTheDocument()
     expect(screen.getByText(/terug naar huidige/i)).toBeInTheDocument()
   })
@@ -94,10 +91,9 @@ describe('ReadOnlyBanner', () => {
         created_at: '2026-01-01',
       } as unknown as PathwayVersionSummary,
     ]
-    render(
-      <ReadOnlyBanner pathwayId="p-1" version={makeVersion()} variant="historical" />,
-      { wrapper: Wrapper },
-    )
+    render(<ReadOnlyBanner pathwayId="p-1" version={makeVersion()} variant="historical" />, {
+      wrapper: Wrapper,
+    })
     await userEvent.click(screen.getByText(/herstel als nieuw concept/i))
     expect(screen.getByText(/open bestaande concept/i)).toBeInTheDocument()
     expect(screen.getByText(/v\.5/i)).toBeInTheDocument()

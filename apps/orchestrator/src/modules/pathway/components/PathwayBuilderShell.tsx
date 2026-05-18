@@ -203,8 +203,9 @@ function Inner({
   const selectedBlock = findSelectedBlock(state.selection, blocks)
   const selectedBlockType = catalogue.find((c) => c.type === selectedBlock?.type) ?? null
   const selectedBlockLane = lanes.find((l) => l.id === selectedBlock?.lane_id) ?? null
-  const selectedBlockBranches =
-    selectedBlock ? branches.filter((b) => b.block_id === selectedBlock.id) : []
+  const selectedBlockBranches = selectedBlock
+    ? branches.filter((b) => b.block_id === selectedBlock.id)
+    : []
   const selectedEdge = (() => {
     const sel = state.selection
     if (sel.kind !== 'edge') return null
@@ -237,11 +238,7 @@ function Inner({
         onRename={onRename}
       />
       {isReadOnly && readOnlyVariant && (
-        <ReadOnlyBanner
-          pathwayId={pathway.id}
-          version={state.version}
-          variant={readOnlyVariant}
-        />
+        <ReadOnlyBanner pathwayId={pathway.id} version={state.version} variant={readOnlyVariant} />
       )}
       <BuilderSubbar
         phases={phases}
@@ -310,16 +307,8 @@ function Inner({
           />
         )}
       </main>
-      <GeschiedenisDrawer
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        pathwayId={pathway.id}
-      />
-      <PublishDialog
-        open={publishOpen}
-        onOpenChange={setPublishOpen}
-        pathwayId={pathway.id}
-      />
+      <GeschiedenisDrawer open={historyOpen} onOpenChange={setHistoryOpen} pathwayId={pathway.id} />
+      <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} pathwayId={pathway.id} />
       <ForkOnEditDialog
         open={forkOnEditOpen}
         onOpenChange={setForkOnEditOpen}

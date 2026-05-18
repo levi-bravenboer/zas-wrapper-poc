@@ -630,7 +630,9 @@ async def test_deferred_field_rejects_unknown_path(
     phase = _phase()
     lane = _lane()
     block = _appointment_block(phase.id, lane.id)
-    bad = PathwayBlockDeferredFieldIn(id=uuid.uuid4(), block_id=block.id, field_path="not_in_schema")
+    bad = PathwayBlockDeferredFieldIn(
+        id=uuid.uuid4(), block_id=block.id, field_path="not_in_schema"
+    )
     with pytest.raises(DeferredFieldError):
         await service.replace_definition(
             empty_pathway.id,
@@ -663,9 +665,7 @@ async def test_deferred_field_accepts_declared_path(
 # ---------- Soft delete + replace cascade ------------------------------------
 
 
-async def test_soft_delete_hides_pathway(
-    db_session: AsyncSession, empty_pathway: Pathway
-) -> None:
+async def test_soft_delete_hides_pathway(db_session: AsyncSession, empty_pathway: Pathway) -> None:
     service = _service(db_session)
     phase = _phase()
     lane = _lane()
@@ -797,9 +797,7 @@ async def test_replace_without_concept_raises(
 
     service = _service(db_session)
     with pytest.raises(NoConceptVersionError):
-        await service.replace_definition(
-            pathway.id, pathway.tenant_id, _minimal_payload()
-        )
+        await service.replace_definition(pathway.id, pathway.tenant_id, _minimal_payload())
 
 
 async def test_get_version_definition_unknown_version_raises(

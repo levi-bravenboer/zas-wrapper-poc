@@ -34,10 +34,7 @@ export function DockItem({
     event.dataTransfer.setData('text/plain', blockType.type)
     event.dataTransfer.effectAllowed = 'copy'
     onDragStartType?.(blockType)
-    const safeZoom = Math.min(
-      Math.max(zoom || 1, CANVAS_VIEWPORT.minZoom),
-      CANVAS_VIEWPORT.maxZoom,
-    )
+    const safeZoom = Math.min(Math.max(zoom || 1, CANVAS_VIEWPORT.minZoom), CANVAS_VIEWPORT.maxZoom)
     const ghost = createBlockDragGhost({
       label,
       iconText: blockType.type.slice(0, 1).toUpperCase(),

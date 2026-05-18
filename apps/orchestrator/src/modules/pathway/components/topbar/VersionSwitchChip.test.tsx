@@ -24,9 +24,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 import { VersionSwitchChip } from './VersionSwitchChip'
 
-function makeVersion(
-  overrides: Partial<PathwayVersionDefinition> = {},
-): PathwayVersionDefinition {
+function makeVersion(overrides: Partial<PathwayVersionDefinition> = {}): PathwayVersionDefinition {
   return {
     id: 'v-concept',
     pathway_id: 'p-1',

@@ -83,9 +83,7 @@ def _build_payload() -> PathwayDefinitionReplace:
             "Restore pain-free lumbar mobility and return patient to "
             "pre-op function within 12 weeks."
         ),
-        patient_goal=(
-            "Walk my daughter down the aisle without back pain in three months."
-        ),
+        patient_goal=("Walk my daughter down the aisle without back pain in three months."),
         phases=[
             PathwayPhaseIn(id=PHASE_PRE_OP_ID, template_id="pre-op", label="Pre-op", ord=10),
             PathwayPhaseIn(id=PHASE_SURGERY_ID, template_id="surgery", label="Surgery", ord=20),
@@ -186,7 +184,9 @@ def _build_payload() -> PathwayDefinitionReplace:
             ),
         ],
         branches=[
-            PathwayBlockBranchIn(id=BRANCH_GOED_ID, block_id=BLOCK_VOORTGANG_ID, label="Goed", ord=0),
+            PathwayBlockBranchIn(
+                id=BRANCH_GOED_ID, block_id=BLOCK_VOORTGANG_ID, label="Goed", ord=0
+            ),
             PathwayBlockBranchIn(
                 id=BRANCH_SLECHT_ID, block_id=BLOCK_VOORTGANG_ID, label="Onvoldoende", ord=1
             ),
@@ -258,10 +258,7 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
                 "Restore pain-free lumbar mobility and return patient to "
                 "pre-op function within 12 weeks."
             ),
-            patient_goal=(
-                "Walk my daughter down the aisle without back pain "
-                "in three months."
-            ),
+            patient_goal=("Walk my daughter down the aisle without back pain in three months."),
         )
         session.add(pathway)
         await session.flush()

@@ -4,9 +4,9 @@ import { defaultLaneKindCode, isLaneAllowed } from './laneRules'
 
 describe('isLaneAllowed', () => {
   it('allows a lane whose kind code is in the block type allowed list', () => {
-    expect(
-      isLaneAllowed({ allowed_lane_kind_codes: ['patient', 'caregiver'] }, 'patient'),
-    ).toBe(true)
+    expect(isLaneAllowed({ allowed_lane_kind_codes: ['patient', 'caregiver'] }, 'patient')).toBe(
+      true,
+    )
   })
 
   it('rejects a lane whose kind code is not in the allowed list', () => {

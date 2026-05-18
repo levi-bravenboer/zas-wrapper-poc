@@ -36,8 +36,7 @@ export function useResolvedVersion(
     if (statusOf(pathwayQuery.error) === 404) return { status: 'not-found' }
     return {
       status: 'error',
-      error:
-        pathwayQuery.error instanceof Error ? pathwayQuery.error : new Error('Unknown error'),
+      error: pathwayQuery.error instanceof Error ? pathwayQuery.error : new Error('Unknown error'),
       refetch: () => {
         void pathwayQuery.refetch()
       },

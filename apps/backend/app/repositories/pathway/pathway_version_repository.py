@@ -12,9 +12,7 @@ from app.repositories.base import BaseRepository
 class PathwayVersionRepository(BaseRepository[PathwayVersion]):
     model = PathwayVersion
 
-    async def get_in_pathway(
-        self, version_id: UUID, pathway_id: UUID
-    ) -> PathwayVersion | None:
+    async def get_in_pathway(self, version_id: UUID, pathway_id: UUID) -> PathwayVersion | None:
         result = await self._session.execute(
             select(PathwayVersion).where(
                 PathwayVersion.id == version_id,

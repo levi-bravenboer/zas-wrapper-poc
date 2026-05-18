@@ -18,6 +18,4 @@ def get_pathway_version_repository(session: SessionDep) -> PathwayVersionReposit
 
 
 PathwayRepoDep = Annotated[PathwayRepository, Depends(get_pathway_repository)]
-PathwayVersionRepoDep = Annotated[
-    PathwayVersionRepository, Depends(get_pathway_version_repository)
-]
+PathwayVersionRepoDep = Annotated[PathwayVersionRepository, Depends(get_pathway_version_repository)]
