@@ -2,10 +2,26 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { DataTable, DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import {
+  ClearAll,
+  DataTablePagination,
+  DebouncedSearch,
+  EmptyRow,
+  FilterOverflow,
+  FilterPill,
+  LoadingRows,
+  RowActions,
+  SortHeader,
+  Table,
+  Toolbar,
+  useTableSort,
+} from '@/components/data-table'
+import { stickyFirst } from '@/components/data-table/styles'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { ErrorState } from '@/components/states'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
+import { cn } from '@/lib/style/cn'
 import { useSession } from '@/modules/auth/hooks'
 import {
   useUserColumns,
@@ -21,6 +37,7 @@ export const Route = createFileRoute('/_auth/users')({
 
 function UsersPage(): ReactElement {
   const { t } = useTranslation('users')
+  const { t: tTable } = useTranslation('data-table')
   const navigate = useNavigate()
   const session = useSession()
   const [state, dispatch] = useRouteSearchTableState()
@@ -36,12 +53,7 @@ function UsersPage(): ReactElement {
     filters: state.filters,
   }
 
-  const { data, isLoading, isFetching, error, refetch } = usePaginatedQuery<UserRow>(
-    USERS_LIST_PATH,
-    query,
-  )
-
-  const displayError = error ? new Error(t('toast.error')) : null
+  const { data, isLoading, error, refetch } = usePaginatedQuery<UserRow>(USERS_LIST_PATH, query)
 
   const rowActions = useUserRowActions({
     currentUserId: session.data?.id ?? '',
@@ -50,47 +62,139 @@ function UsersPage(): ReactElement {
     },
   })
 
+  const sort = useTableSort({
+    state: { orderBy: state.orderBy, order: state.order },
+    setSort: (orderBy, order) => {
+      if (orderBy === null) dispatch.clearSort()
+      else dispatch.setSort(orderBy, order)
+    },
+  })
+
+  const rows = data?.items ?? []
+  const totalColumns = columns.length + 1
+  const inlineDefs = filterDefs.slice(0, 3)
+  const overflowDefs = filterDefs.slice(3)
+  const onFilter = (field: string, f: Parameters<typeof dispatch.setFilter>[1] | null) => {
+    if (f === null) dispatch.clearFilter(field)
+    else dispatch.setFilter(field, f)
+  }
+
+  if (error) {
+    return (
+      <>
+        <PageHeader title={t('title')} sub={t('sub')} />
+        <div className="px-6 pb-8">
+          <ErrorState title={t('toast.error')} onRetry={() => void refetch()} retryLabel="Retry" />
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <PageHeader title={t('title')} sub={t('sub')} />
-      <div className="flex flex-col gap-4 px-6 pb-8">
-        <div className="rounded-xl border border-border bg-background overflow-hidden">
-          <DataTableToolbar<UserRow>
-            q={state.q}
-            filters={state.filters}
-            filterDefs={filterDefs}
-            onSearchChange={(q) => dispatch.setSearch(q)}
-            onFilterChange={(field, filter) => {
-              if (filter === null) dispatch.clearFilter(field)
-              else dispatch.setFilter(field, filter)
-            }}
-            onClearFilters={() => dispatch.clearAll()}
-          />
-          <DataTable<UserRow>
-            data={data?.items ?? []}
-            columns={columns}
-            getRowId={(row) => row.id}
-            isLoading={isLoading}
-            isFetching={isFetching}
-            error={displayError}
-            onRetry={() => void refetch()}
-            state={state}
-            onStateChange={(next) => dispatch.reset(next)}
-            rowActions={rowActions}
-            onRowClick={(row) =>
-              void navigate({ to: '/users/$user_id', params: { user_id: row.id } })
-            }
-            realtimeTopic="users"
-            ariaLabelledBy="page-title"
-          />
-          <DataTablePagination
-            page={state.page}
-            pageSize={state.pageSize}
-            totalPages={data?.total_pages ?? 1}
-            onPageChange={(page) => dispatch.setPage(page)}
-            onPageSizeChange={(pageSize) => dispatch.setPageSize(pageSize)}
-          />
-        </div>
+      <div className="flex flex-col gap-3 px-6 pb-8">
+        <Toolbar.Root>
+          <Toolbar.Search>
+            <DebouncedSearch
+              value={state.q}
+              onChange={(q) => dispatch.setSearch(q)}
+              placeholder={tTable('toolbar.search.placeholder')}
+            />
+          </Toolbar.Search>
+          <Toolbar.Filters>
+            {inlineDefs.map((def) => (
+              <FilterPill
+                key={def.key}
+                def={def}
+                value={state.filters[def.key]}
+                onChange={onFilter}
+              />
+            ))}
+            <FilterOverflow defs={overflowDefs} filters={state.filters} onChange={onFilter} />
+            {Object.keys(state.filters).length > 0 && (
+              <ClearAll onClick={() => dispatch.clearAll()} />
+            )}
+          </Toolbar.Filters>
+        </Toolbar.Root>
+        <Table.Root ariaLabelledBy="page-title">
+          <Table.Header>
+            <Table.HeaderRow>
+              {columns.map((col, idx) => {
+                const headerNode =
+                  typeof col.header === 'function' ? col.header({ columnId: col.id }) : col.header
+                const cls = cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)
+                if (col.sortKey) {
+                  return (
+                    <SortHeader
+                      key={col.id}
+                      sortKey={col.sortKey}
+                      iconState={sort.iconState(col.sortKey)}
+                      ariaSort={sort.ariaSort(col.sortKey)}
+                      onCycle={sort.cycle}
+                      className={cls}
+                    >
+                      {headerNode}
+                    </SortHeader>
+                  )
+                }
+                return (
+                  <Table.HeaderCell key={col.id} className={cls}>
+                    {headerNode}
+                  </Table.HeaderCell>
+                )
+              })}
+              <Table.HeaderCell className="w-10">
+                <span className="sr-only">{tTable('actions.menu.aria')}</span>
+              </Table.HeaderCell>
+            </Table.HeaderRow>
+          </Table.Header>
+          <Table.Body>
+            {isLoading ? (
+              <LoadingRows columnCount={totalColumns} />
+            ) : rows.length === 0 ? (
+              <EmptyRow
+                columnCount={totalColumns}
+                title={tTable('empty.title')}
+                body={tTable('empty.body')}
+              />
+            ) : (
+              rows.map((row) => (
+                <Table.Row
+                  key={row.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    void navigate({ to: '/users/$user_id', params: { user_id: row.id } })
+                  }
+                  className="cursor-pointer"
+                >
+                  {columns.map((col, idx) => (
+                    <Table.Cell
+                      key={col.id}
+                      className={cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)}
+                    >
+                      {col.cell(row)}
+                    </Table.Cell>
+                  ))}
+                  <Table.Cell data-stop-row-click="" className="text-right">
+                    <RowActions
+                      actions={rowActions(row)}
+                      ariaLabel={tTable('actions.menu.aria')}
+                    />
+                  </Table.Cell>
+                </Table.Row>
+              ))
+            )}
+          </Table.Body>
+        </Table.Root>
+        <DataTablePagination
+          page={state.page}
+          pageSize={state.pageSize}
+          totalPages={data?.total_pages ?? 1}
+          onPageChange={(page) => dispatch.setPage(page)}
+          onPageSizeChange={(pageSize) => dispatch.setPageSize(pageSize)}
+        />
       </div>
     </>
   )
