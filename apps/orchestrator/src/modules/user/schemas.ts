@@ -27,3 +27,6 @@ export type SetActiveRequest = z.infer<typeof setActiveRequestSchema>
 
 export const assignRoleRequestSchema = z.object({ role: roleSchema })
 export type AssignRoleRequest = z.infer<typeof assignRoleRequestSchema>
+
+export type UserCreatePayload = components['schemas']['UserCreate']
+export type UserUpdatePayload = components['schemas']['UserUpdate']

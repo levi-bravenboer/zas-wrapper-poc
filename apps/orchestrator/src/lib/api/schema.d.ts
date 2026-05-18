@@ -133,7 +133,8 @@ export interface paths {
         /** List Users */
         get: operations["list_users"];
         put?: never;
-        post?: never;
+        /** Create User */
+        post: operations["create_user"];
         delete?: never;
         options?: never;
         head?: never;
@@ -154,7 +155,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update User */
+        patch: operations["update_user"];
         trace?: never;
     };
     "/users/{user_id}/role": {
@@ -201,11 +203,47 @@ export interface paths {
         /** List Organisations */
         get: operations["list_organisations"];
         put?: never;
-        post?: never;
+        /** Create Organisation */
+        post: operations["create_organisation"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/organisations/{organisation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Organisation */
+        delete: operations["delete_organisation"];
+        options?: never;
+        head?: never;
+        /** Update Organisation */
+        patch: operations["update_organisation"];
+        trace?: never;
+    };
+    "/admin/organisations/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Organisation Tree */
+        patch: operations["patch_organisation_tree"];
         trace?: never;
     };
     "/patients": {
@@ -703,6 +741,14 @@ export interface components {
              */
             password: string;
         };
+        /** OrganisationCreate */
+        OrganisationCreate: {
+            /** Name */
+            name: string;
+            type: components["schemas"]["OrganisationType"];
+            /** Parent Organisation Id */
+            parent_organisation_id?: string | null;
+        };
         /** OrganisationListResponse */
         OrganisationListResponse: {
             /** Items */
@@ -725,6 +771,43 @@ export interface components {
             type_system: string | null;
             /** Type Display */
             type_display: string | null;
+            /** Sort Index */
+            sort_index: number;
+        };
+        /** OrganisationTreeMove */
+        OrganisationTreeMove: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Organisation Id */
+            parent_organisation_id: string | null;
+            /** Sort Index */
+            sort_index: number;
+        };
+        /** OrganisationTreeUpdate */
+        OrganisationTreeUpdate: {
+            /** Moves */
+            moves: components["schemas"]["OrganisationTreeMove"][];
+        };
+        /**
+         * OrganisationType
+         * @description FHIR-style CodeableConcept binding for Organisation.type[0].coding[0].
+         */
+        OrganisationType: {
+            /** System */
+            system?: string | null;
+            /** Code */
+            code: string;
+            /** Display */
+            display?: string | null;
+        };
+        /** OrganisationUpdate */
+        OrganisationUpdate: {
+            /** Name */
+            name?: string | null;
+            type?: components["schemas"]["OrganisationType"] | null;
         };
         /** Page[PatientRead] */
         Page_PatientRead_: {
@@ -1580,6 +1663,30 @@ export interface components {
              * @default []
              */
             identifiers: components["schemas"]["PatientIdentifierRead"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Deleted At */
+            deleted_at?: string | null;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /**
+             * Updated By
+             * Format: uuid
+             */
+            updated_by: string;
+            /** Deleted By */
+            deleted_by?: string | null;
         };
         /**
          * PatientSource
@@ -1790,6 +1897,31 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /**
+         * UserCreate
+         * @description Role-discriminated admin-create payload.
+         *
+         *     - `admin` branch: requires `display_name`; rejects clinical fields.
+         *     - `caregiver` branch: requires `given_name` + `family_name`; rejects
+         *       `display_name` (the backend derives `user.display_name` from given+family).
+         *       `qualification` is optional.
+         *
+         *     The model_validator enforces mutual exclusion so a mixed payload is a 422,
+         *     not a silent half-fill.
+         */
+        UserCreate: {
+            /** Email */
+            email: string;
+            role: components["schemas"]["Role"];
+            /** Display Name */
+            display_name?: string | null;
+            /** Given Name */
+            given_name?: string | null;
+            /** Family Name */
+            family_name?: string | null;
+            /** Qualification */
+            qualification?: string | null;
+        };
         /** UserDetail */
         UserDetail: {
             /**
@@ -1838,6 +1970,11 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** UserUpdate */
+        UserUpdate: {
+            /** Display Name */
+            display_name?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2061,6 +2198,39 @@ export interface operations {
             };
         };
     };
+    create_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_user: {
         parameters: {
             query?: never;
@@ -2079,6 +2249,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRow"];
                 };
             };
             /** @description Validation Error */
@@ -2178,6 +2383,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganisationListResponse"];
+                };
+            };
+        };
+    };
+    create_organisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_organisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_organisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_organisation_tree: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganisationTreeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

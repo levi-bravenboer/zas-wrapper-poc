@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.user import Role
+from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
@@ -119,6 +120,62 @@ async def test_list_users_sort_by_email_asc(
     assert response.status_code == 200
     emails = [row["email"] for row in response.json()["items"]]
     assert emails == sorted(emails)
+
+
+async def test_list_users_has_practitioner_true_returns_only_users_with_practitioner(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    db_session.add(
+        Practitioner(
+            tenant_id=caregiver.tenant_id,
+            created_by=admin.id,
+            updated_by=admin.id,
+            user_id=caregiver.id,
+            given_name="Test",
+            family_name="Caregiver",
+        )
+    )
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get("/users", params={"filter[has_practitioner]": "true"})
+
+    assert response.status_code == 200
+    emails = {row["email"] for row in response.json()["items"]}
+    assert CAREGIVER_EMAIL in emails
+    assert ADMIN_EMAIL not in emails
+
+
+async def test_list_users_has_practitioner_false_excludes_users_with_practitioner(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    db_session.add(
+        Practitioner(
+            tenant_id=caregiver.tenant_id,
+            created_by=admin.id,
+            updated_by=admin.id,
+            user_id=caregiver.id,
+            given_name="Test",
+            family_name="Caregiver",
+        )
+    )
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.get("/users", params={"filter[has_practitioner]": "false"})
+
+    assert response.status_code == 200
+    emails = {row["email"] for row in response.json()["items"]}
+    assert ADMIN_EMAIL in emails
+    assert CAREGIVER_EMAIL not in emails
 
 
 async def test_list_users_rejects_unknown_filter(
@@ -352,6 +409,172 @@ async def test_set_user_active_rejects_caregiver_caller(
     await _login(async_client, CAREGIVER_EMAIL)
 
     response = await async_client.patch(f"/users/{caregiver.id}/active", json={"is_active": False})
+    assert response.status_code == 403
+
+
+async def test_create_user_admin_branch(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": "new.admin@zas.local",
+            "role": Role.ADMIN.value,
+            "display_name": "New Admin",
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["email"] == "new.admin@zas.local"
+    assert body["display_name"] == "New Admin"
+    assert body["role"] == Role.ADMIN.value
+
+
+async def test_create_user_caregiver_materialises_practitioner(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": "new.care@zas.local",
+            "role": Role.CAREGIVER.value,
+            "given_name": "Eva",
+            "family_name": "Bos",
+            "qualification": "Verpleegkundige",
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["email"] == "new.care@zas.local"
+    assert body["display_name"] == "Eva Bos"
+
+    practitioner = await async_client.get(f"/practitioners/{body['id']}")
+    assert practitioner.status_code == 200, practitioner.text
+    pbody = practitioner.json()
+    assert pbody["given_name"] == "Eva"
+    assert pbody["family_name"] == "Bos"
+    assert pbody["qualification"] == "Verpleegkundige"
+
+
+async def test_create_user_rejects_mixed_branch_payload(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": "mixed@zas.local",
+            "role": Role.ADMIN.value,
+            "display_name": "Mixed",
+            "given_name": "Should",
+            "family_name": "Fail",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_user_rejects_duplicate_email(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": ADMIN_EMAIL,
+            "role": Role.ADMIN.value,
+            "display_name": "Dup",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "conflict.user.email_exists"
+
+
+async def test_create_user_rejects_caregiver_caller(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    del seeded_zas_users
+    await _login(async_client, CAREGIVER_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": "denied@zas.local",
+            "role": Role.ADMIN.value,
+            "display_name": "Denied",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+async def test_update_user_demographics(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.patch(
+        f"/users/{caregiver.id}",
+        json={"display_name": "Renamed Caregiver"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["display_name"] == "Renamed Caregiver"
+
+
+async def test_update_user_rejects_cross_tenant(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+) -> None:
+    del seeded_zas_users
+    other = Tenant(id=uuid.uuid4(), slug="other-update", name="OTHER")
+    db_session.add(other)
+    await db_session.flush()
+    alien_id = uuid.uuid4()
+    alien = User(
+        id=alien_id,
+        tenant_id=other.id,
+        created_by=alien_id,
+        updated_by=alien_id,
+        email="alien@other.local",
+        password_hash="hash",
+        display_name="Alien",
+        role=Role.CAREGIVER,
+        is_active=True,
+    )
+    db_session.add(alien)
+    await db_session.commit()
+
+    await _login(async_client, ADMIN_EMAIL)
+    response = await async_client.patch(f"/users/{alien.id}", json={"display_name": "Hack"})
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "forbidden.user.cross_tenant"
+
+
+async def test_update_user_rejects_caregiver_caller(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    await _login(async_client, CAREGIVER_EMAIL)
+
+    response = await async_client.patch(f"/users/{caregiver.id}", json={"display_name": "Hack"})
+
     assert response.status_code == 403
 
 

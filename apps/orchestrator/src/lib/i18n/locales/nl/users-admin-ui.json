@@ -1,0 +1,170 @@
+{
+  "list": {
+    "title": "Gebruikers",
+    "sub": "Beheer gebruikers, rollen en activatie binnen je tenant.",
+    "cta": {
+      "create": "Gebruiker toevoegen"
+    },
+    "empty": "Nog geen gebruikers in dit tenant.",
+    "search": {
+      "placeholder": "Zoek op naam of e-mail"
+    },
+    "filter": {
+      "role": "Rol",
+      "is_active": "Actief",
+      "all": "Alle"
+    },
+    "column": {
+      "display_name": "Naam",
+      "email": "Email",
+      "role": "Rol",
+      "is_active": "Actief",
+      "created_at": "Aangemaakt"
+    },
+    "row": {
+      "action": {
+        "edit": "Bewerken",
+        "deactivate": "Deactiveren"
+      }
+    }
+  },
+  "detail": {
+    "back": "Terug naar gebruikers",
+    "action": {
+      "edit": "Bewerken",
+      "deactivate": "Deactiveren"
+    },
+    "card": {
+      "demographics": {
+        "title": "Demografie",
+        "field": {
+          "display_name": "Naam",
+          "email": "Email",
+          "role": "Rol",
+          "is_active": "Actief",
+          "created_at": "Aangemaakt"
+        }
+      },
+      "practitioner": {
+        "title": "Praktijk",
+        "field": {
+          "family_name": "Achternaam",
+          "given_name": "Voornaam",
+          "qualification": "Kwalificatie"
+        },
+        "roles": {
+          "title": "Rollen",
+          "empty": "Geen rollen.",
+          "column": {
+            "code": "Code",
+            "organisation": "Organisatie",
+            "period": "Periode",
+            "primary": "Primair"
+          },
+          "open": "—",
+          "closed_chip": "Beëindigd",
+          "primary_chip": "Primair"
+        }
+      }
+    },
+    "notFound": "Gebruiker niet gevonden."
+  },
+  "form": {
+    "create": {
+      "title": "Gebruiker toevoegen",
+      "sub": "Maak een nieuwe gebruiker aan binnen dit tenant.",
+      "submit": "Aanmaken"
+    },
+    "edit": {
+      "title": "Gebruiker bewerken",
+      "sub": "Werk de gegevens van {{name}} bij.",
+      "submit": "Wijzigingen opslaan"
+    },
+    "cancel": "Annuleren",
+    "hero": {
+      "placeholder_name": "Nieuwe gebruiker",
+      "placeholder_email": "naam@voorbeeld.nl",
+      "new_chip": "Nieuw"
+    },
+    "section": {
+      "identity": {
+        "title": "Identiteit",
+        "sub": "Basisgegevens en toegang."
+      },
+      "practitioner": {
+        "title": "Praktijk",
+        "sub": "Praktijkgegevens voor zorgverleners."
+      }
+    },
+    "field": {
+      "email": {
+        "label": "Email",
+        "placeholder": "naam@voorbeeld.nl",
+        "hint": "Wordt gebruikt om in te loggen.",
+        "locked": "Niet aanpasbaar na aanmaken."
+      },
+      "display_name": {
+        "label": "Naam",
+        "placeholder": "Volledige naam",
+        "hint": "Zichtbaar voor andere gebruikers."
+      },
+      "given_name": {
+        "label": "Voornaam",
+        "placeholder": "Voornaam",
+        "hint": "Zoals op het identiteitsbewijs.",
+        "locked": "Bewerk via de Praktijk-pagina."
+      },
+      "family_name": {
+        "label": "Achternaam",
+        "placeholder": "Achternaam",
+        "hint": "Zoals op het identiteitsbewijs.",
+        "locked": "Bewerk via de Praktijk-pagina."
+      },
+      "role": {
+        "label": "Rol",
+        "hint": "Beheerders mogen alles; zorgverleners alleen patiëntendata.",
+        "locked": "Verander rol via een aparte actie.",
+        "option": {
+          "admin": "Beheerder",
+          "caregiver": "Zorgverlener"
+        }
+      },
+      "qualification": {
+        "label": "Kwalificatie",
+        "placeholder": "Bijv. Huisarts, Verpleegkundige",
+        "hint": "Wordt gebruikt op de Praktijk-pagina.",
+        "locked": "Bewerk via de Praktijk-pagina."
+      }
+    },
+    "error": {
+      "required": "Verplicht veld.",
+      "email_invalid": "Vul een geldig e-mailadres in.",
+      "too_long": "Te lang.",
+      "email_exists": "Dit e-mailadres bestaat al in dit tenant.",
+      "cross_tenant": "Geen toegang tot deze gebruiker."
+    }
+  },
+  "role": {
+    "admin": "Beheerder",
+    "caregiver": "Zorgverlener"
+  },
+  "active": {
+    "true": "Ja",
+    "false": "Nee"
+  },
+  "deactivate": {
+    "title": "Gebruiker deactiveren?",
+    "description": "Deze gebruiker kan niet meer inloggen. Je kunt het later weer ongedaan maken.",
+    "confirm": "Deactiveren",
+    "cancel": "Annuleren",
+    "self_disabled": "Je kunt je eigen account niet deactiveren."
+  },
+  "toast": {
+    "created": "Gebruiker aangemaakt",
+    "updated": "Gebruiker bijgewerkt",
+    "deactivated": "Gebruiker gedeactiveerd",
+    "error": "Actie mislukt",
+    "create_failed": "Aanmaken mislukt",
+    "update_failed": "Bijwerken mislukt"
+  }
+}

@@ -76,7 +76,7 @@ def _register_exception_handlers(app: FastAPI) -> None:
         payload = ErrorResponse(
             code="invalid.validation.body",
             message="Request body failed validation",
-            details={"errors": exc.errors()},
+            details={"errors": [{k: v for k, v in e.items() if k != "ctx"} for e in exc.errors()]},
         )
         return _error_response(422, payload)
 

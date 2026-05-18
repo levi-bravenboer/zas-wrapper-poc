@@ -7,7 +7,7 @@
 1. **Block inspector forms** — `form`, `wait`, `pathway_link` blocks render a "Geen inspector beschikbaar" placeholder in `BuilderDrawer`. Authors can drag them onto the canvas but cannot configure them.
 2. **Edge inspector** — selecting an edge has no UI at all. Edges persist `delay_value_id` / `time_marker_id` / `offset_value_id` / `offset_direction_code` / `source_branch_id`, but authors cannot pick a timing kind or any of its fields.
 
-This change closes both gaps so a pathway author can actually configure the new block types and the new edge timing. It also folds in per-semantic Zod schemas for `PathwayBlock.config`, which kills the `asString` / `asArray` runtime-narrowing shims (`BL-064`) and turns silent config divergence into a parse error at the surface.
+This change closes both gaps so a pathway author can actually configure the new block types and the new edge timing. It also folds in per-semantic Zod schemas for `PathwayBlock.config`, which kills the `asString` / `asArray` runtime-narrowing shims (`BL-066`) and turns silent config divergence into a parse error at the surface.
 
 Tier: `[poc]` — F3 Carepath builder PoC scope. Same chain slot as `pathway-block-redesign`; this is the immediate follow-up.
 
@@ -22,7 +22,7 @@ Tier: `[poc]` — F3 Carepath builder PoC scope. Same chain slot as `pathway-blo
   - New builder action `patch-edge`; reducer updates a single edge in place, applying the "exactly one timing union" invariant by clearing the columns of the non-selected kind.
 - **Per-semantic Zod schemas** (`modules/pathway/configSchemas.ts`)
   - One Zod schema per `BlockSemantics`; `parseBlockConfig(block)` returns a discriminated union keyed on `block.semantics`. Replaces `asString` / `asArray` shims in `blockCatalogue.utils.ts`.
-  - Closes backlog entry `BL-064`.
+  - Closes backlog entry `BL-066`.
 - **i18n**
   - Inspector copy lives under `pathway` namespace: `inspector.form.*`, `inspector.wait.*`, `inspector.pathwayLink.*`, `inspector.edge.*`. Dutch only (consistent with rest of orchestrator).
 - **Tests**
@@ -47,5 +47,5 @@ Tier: `[poc]` — F3 Carepath builder PoC scope. Same chain slot as `pathway-blo
 - `apps/orchestrator/src/modules/pathway/components/drawer/inspectors/*` (new — per-semantic)
 - `apps/orchestrator/src/modules/pathway/components/PathwayBuilderShell.tsx` (render `EdgeInspector` when selection is an edge)
 - `apps/orchestrator/src/lib/i18n/locales/nl/pathway.json` (inspector copy)
-- `openspec/backlog.md` (close BL-064)
+- `openspec/backlog.md` (close BL-066)
 - `openspec/scope.md` (drop "placeholders pending" caveat from F3 row)

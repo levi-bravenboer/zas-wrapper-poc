@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import literal, select
+from sqlalchemy import func, literal, select
 
 from app.db.models.organisation import Organisation
+from app.db.models.patient.patient import Patient
+from app.db.models.practitioner.practitioner_role import PractitionerRole
 from app.repositories.base import BaseRepository
 
 # Defensive cap on recursive-CTE depth. PoC has 3 levels; real hospital
@@ -38,9 +40,15 @@ class OrganisationRepository(BaseRepository[Organisation]):
 
     async def list_in_tenant(self, tenant_id: UUID) -> list[Organisation]:
         result = await self._session.execute(
-            select(Organisation).where(
+            select(Organisation)
+            .where(
                 Organisation.tenant_id == tenant_id,
                 Organisation.deleted_at.is_(None),
+            )
+            .order_by(
+                Organisation.parent_organisation_id.asc().nulls_first(),
+                Organisation.sort_index.asc(),
+                Organisation.name.asc(),
             )
         )
         return list(result.scalars().all())
@@ -93,6 +101,40 @@ class OrganisationRepository(BaseRepository[Organisation]):
             )
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def count_child_organisations(self, organisation_id: UUID) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(Organisation)
+            .where(
+                Organisation.parent_organisation_id == organisation_id,
+                Organisation.deleted_at.is_(None),
+            )
+        )
+        return int(result.scalar_one())
+
+    async def count_patients_with_primary(self, organisation_id: UUID) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(Patient)
+            .where(
+                Patient.primary_organisation_id == organisation_id,
+                Patient.deleted_at.is_(None),
+            )
+        )
+        return int(result.scalar_one())
+
+    async def count_open_practitioner_roles(self, organisation_id: UUID) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(PractitionerRole)
+            .where(
+                PractitionerRole.organisation_id == organisation_id,
+                PractitionerRole.deleted_at.is_(None),
+                PractitionerRole.period_end.is_(None),
+            )
+        )
+        return int(result.scalar_one())
 
     async def get_descendant_ids(self, organisation_id: UUID) -> list[UUID]:
         """Walk `parent_organisation_id` downward and return the input id

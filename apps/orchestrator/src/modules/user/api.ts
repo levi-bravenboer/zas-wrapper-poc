@@ -1,5 +1,5 @@
 import { api } from '@/lib/api/client'
-import { apiError } from '@/lib/api/errors'
+import { apiError, readErrorCode } from '@/lib/api/errors'
 
 import {
   assignRoleRequestSchema,
@@ -9,8 +9,10 @@ import {
   type AssignRoleRequest,
   type Role,
   type SetActiveRequest,
+  type UserCreatePayload,
   type UserDetail,
   type UserRow,
+  type UserUpdatePayload,
 } from './schemas'
 
 export async function fetchUserDetail(userId: string): Promise<UserDetail> {
@@ -47,4 +49,36 @@ export async function assignUserRole(userId: string, payload: AssignRoleRequest)
   return userRowSchema.parse(data)
 }
 
-export type { AssignRoleRequest, Role, SetActiveRequest, UserDetail, UserRow }
+export async function createUser(payload: UserCreatePayload): Promise<UserRow> {
+  const { data, response } = await api.POST('/users', { body: payload })
+  if (!response.ok || !data) {
+    const code = await readErrorCode(response)
+    throw apiError('User create failed', response.status, code)
+  }
+  return userRowSchema.parse(data)
+}
+
+export async function updateUserDemographics(
+  userId: string,
+  payload: UserUpdatePayload,
+): Promise<UserRow> {
+  const { data, response } = await api.PATCH('/users/{user_id}', {
+    params: { path: { user_id: userId } },
+    body: payload,
+  })
+  if (!response.ok || !data) {
+    const code = await readErrorCode(response)
+    throw apiError('User update failed', response.status, code)
+  }
+  return userRowSchema.parse(data)
+}
+
+export type {
+  AssignRoleRequest,
+  Role,
+  SetActiveRequest,
+  UserCreatePayload,
+  UserDetail,
+  UserRow,
+  UserUpdatePayload,
+}

@@ -424,7 +424,19 @@ Note: `practitioner_role_code` is a closed Postgres enum (`gp | physiotherapist 
 
 Note: `Practitioner` is tenant-owned (1 row per `User`). FHIR models `Practitioner` as a globally identifiable resource that can hold `PractitionerRole` rows in multiple organisations across tenants. Land when we have a real federation requirement (e.g. a GP who consults across two ZAS-style customers). Additive: introduce a tenant-shared `practitioners` projection plus a federation identifier; existing rows keep their tenant scoping.
 
-### ~~BL-064 — Per-semantic Zod schemas for `PathwayBlock.config`~~ — resolved by pathway-config-forms (2026-05-17)
+### BL-064 — Dashboard KPI list endpoints
+- Tier: [poc]
+- Source: caregiver-shell change (`F2` Dashboard tile wiring)
+
+Note: `DashboardLanding` needs counts for **Open care teams** and **Recent assignments**, but the backend only exposes patient-scoped `/patients/{id}/care-teams` and care-team-scoped `/care-teams/{id}/participants` — no global `GET /care-teams?is_open=true` or `GET /care-team-participants?period_start_gte=…`. PoC ships the tiles with `enabled: false` so they render em-dashes; promote when `care-teams-ui` exposes the global list routes (or when a thin aggregate endpoint is added).
+
+### BL-065 — Real Inbox surface
+- Tier: [poc]
+- Source: caregiver-shell change (sidebar inventory)
+
+Note: `/inbox` route is reserved in the sidebar but unimplemented. PoC ships a placeholder; replace with an Inbox view (task list across patients) once the tasks surface is fleshed out.
+
+### ~~BL-066 — Per-semantic Zod schemas for `PathwayBlock.config`~~ — resolved by pathway-config-forms (2026-05-17)
 - Tier: [mvp]
 - Source: style-check review (2026-05-17), follows pathway-block-redesign
 

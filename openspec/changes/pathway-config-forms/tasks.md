@@ -67,7 +67,7 @@
 
 - [x] 10.1 Drop the `INSPECTOR_PENDING_SEMANTICS` constant from `BuilderDrawer.tsx`.
 - [x] 10.2 Drop `asString` / `asArray` from `blockCatalogue.utils.ts` if not referenced elsewhere.
-- [x] 10.3 Mark `BL-064` resolved in `openspec/backlog.md` (move to "Closed" section or strike, per backlog convention).
+- [x] 10.3 Mark `BL-066` resolved in `openspec/backlog.md` (move to "Closed" section or strike, per backlog convention).
 - [x] 10.4 Update `openspec/scope.md` F3 row — drop the "Inspector forms for `form` / `wait` / `pathway_link` are placeholders pending `pathway-config-forms`" caveat.
 
 ## 11. Verification

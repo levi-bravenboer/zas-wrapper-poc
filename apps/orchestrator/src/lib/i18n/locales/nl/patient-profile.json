@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Patiëntprofiel",
+    "subtitle": "Demografie, identificatoren en geschiedenis"
+  },
+  "header": {
+    "insz": "INSZ",
+    "noInsz": "Geen INSZ",
+    "born": "Geboren {{date}}",
+    "unknownOrg": "Onbekende organisatie",
+    "actions": "Acties"
+  },
+  "tabs": {
+    "overview": "Overzicht",
+    "careTeam": "Zorgteam",
+    "history": "Geschiedenis"
+  },
+  "demographics": {
+    "title": "Demografie",
+    "name": "Naam",
+    "birthDate": "Geboortedatum",
+    "gender": "Geslacht",
+    "primaryOrg": "Primaire organisatie",
+    "empty": "—"
+  },
+  "gender": {
+    "male": "Man",
+    "female": "Vrouw",
+    "other": "Anders",
+    "unknown": "Onbekend"
+  },
+  "identifiers": {
+    "title": "Identificatoren",
+    "empty": "Geen identificatoren",
+    "insz": "INSZ",
+    "system": "Systeem",
+    "value": "Waarde",
+    "use": "Gebruik"
+  },
+  "careTeam": {
+    "title": "Zorgteam",
+    "soon": "Komt binnenkort — wordt geleverd door care-teams-ui",
+    "current": "Huidige zorgteams",
+    "empty": "Nog geen zorgteam toegewezen",
+    "participants": "{{count}} deelnemer",
+    "participants_plural": "{{count}} deelnemers",
+    "loadFailed": "Zorgteams konden niet worden geladen"
+  },
+  "history": {
+    "title": "Geschiedenis",
+    "created": "Aangemaakt op {{date}} door {{by}}",
+    "updated": "Laatst bewerkt op {{date}} door {{by}}",
+    "deleted": "Verwijderd op {{date}} door {{by}}",
+    "unknownUser": "—"
+  },
+  "edit": {
+    "trigger": "Bewerken",
+    "title": "Patiënt bewerken",
+    "description": "Pas demografische gegevens aan. INSZ wijzigt hier niet.",
+    "submit": "Opslaan",
+    "cancel": "Annuleren",
+    "fields": {
+      "given_name": "Voornaam",
+      "family_name": "Achternaam",
+      "birth_date": "Geboortedatum",
+      "gender": "Geslacht"
+    },
+    "toast": {
+      "success": "Patiënt bijgewerkt",
+      "error": "Bijwerken is niet gelukt"
+    }
+  },
+  "delete": {
+    "trigger": "Verwijderen",
+    "title": "{{name}} verwijderen?",
+    "message": "Patiënt wordt soft-deleted. Deze actie kan niet ongedaan worden gemaakt.",
+    "confirm": "Verwijderen",
+    "cancel": "Annuleren",
+    "toast": {
+      "success": "Patiënt verwijderd",
+      "error": "Verwijderen is niet gelukt"
+    }
+  },
+  "state": {
+    "loading": "Laden…",
+    "notFound": "Patiënt niet gevonden",
+    "error": "Patiënt kon niet worden geladen",
+    "retry": "Opnieuw proberen"
+  },
+  "form": {
+    "error": {
+      "required": "Verplicht veld.",
+      "too_long": "Te lang."
+    }
+  }
+}

@@ -25,6 +25,11 @@ class Organisation(TenantOwnedEntity):
             "parent_organisation_id IS NULL OR parent_organisation_id <> id",
             name="ck_organisations_parent_not_self",
         ),
+        sa.Index(
+            "ix_organisations_parent_sort",
+            "parent_organisation_id",
+            "sort_index",
+        ),
     )
 
     parent_organisation_id: Mapped[UUID | None] = mapped_column(
@@ -41,3 +46,8 @@ class Organisation(TenantOwnedEntity):
         server_default=sa.text(f"'{ORGANISATION_TYPE_SYSTEM}'"),
     )
     type_display: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    sort_index: Mapped[int] = mapped_column(
+        sa.Integer,
+        nullable=False,
+        server_default=sa.text("0"),
+    )

@@ -4,7 +4,7 @@ import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DataTable, DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { FilterableListPage } from '@/components/list/FilterableListPage'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
 import { api } from '@/lib/api/client'
@@ -88,9 +88,10 @@ function PatientsOverviewRoute(): ReactElement {
   )
 
   return (
-    <>
-      <PageHeader title={t('page.title')} sub={t('page.sub')} />
-      <div className="flex flex-col gap-3 px-6 pb-8">
+    <FilterableListPage<PatientRow>
+      title={t('page.title')}
+      description={t('page.sub')}
+      filters={
         <DataTableToolbar<PatientRow>
           q={state.q}
           filters={state.filters}
@@ -102,31 +103,35 @@ function PatientsOverviewRoute(): ReactElement {
           }}
           onClearFilters={() => dispatch.clearAll()}
         />
-        <DataTable<PatientRow>
-          data={data?.items ?? []}
-          columns={columns}
-          getRowId={(p) => p.id}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          error={error}
-          onRetry={() => void refetch()}
-          selectable={false}
-          rowActions={rowActions}
-          onRowClick={(row) =>
-            void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
-          }
-          realtimeTopic="patients"
-          state={state}
-          onStateChange={(next) => dispatch.reset(next)}
-        />
-        <DataTablePagination
-          page={state.page}
-          pageSize={state.pageSize}
-          totalPages={data?.total_pages ?? 1}
-          onPageChange={(p) => dispatch.setPage(p)}
-          onPageSizeChange={(s) => dispatch.setPageSize(s)}
-        />
-      </div>
-    </>
+      }
+      table={
+        <>
+          <DataTable<PatientRow>
+            data={data?.items ?? []}
+            columns={columns}
+            getRowId={(p) => p.id}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            error={error}
+            onRetry={() => void refetch()}
+            selectable={false}
+            rowActions={rowActions}
+            onRowClick={(row) =>
+              void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
+            }
+            realtimeTopic="patients"
+            state={state}
+            onStateChange={(next) => dispatch.reset(next)}
+          />
+          <DataTablePagination
+            page={state.page}
+            pageSize={state.pageSize}
+            totalPages={data?.total_pages ?? 1}
+            onPageChange={(p) => dispatch.setPage(p)}
+            onPageSizeChange={(s) => dispatch.setPageSize(s)}
+          />
+        </>
+      }
+    />
   )
 }

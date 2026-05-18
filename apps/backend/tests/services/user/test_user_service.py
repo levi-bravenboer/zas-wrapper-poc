@@ -10,8 +10,19 @@ from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
+from app.services.auth.password import PasswordHasher
+from app.services.practitioner.practitioner_service import PractitionerService
 from app.services.user.errors import CrossTenantAccessError, UserNotFoundError
 from app.services.user.user_service import UserService
+
+
+def _make_service(db_session: AsyncSession) -> UserService:
+    return UserService(
+        db_session,
+        UserRepository(db_session),
+        PractitionerService(db_session),
+        PasswordHasher(),
+    )
 
 
 async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
@@ -62,7 +73,7 @@ async def test_get_returns_tenant_scoped_user(db_session: AsyncSession) -> None:
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     found = await service.get(_actor(admin), target.id)
 
     assert found.id == target.id
@@ -75,7 +86,7 @@ async def test_get_rejects_cross_tenant(db_session: AsyncSession) -> None:
     target = await _make_user(db_session, tenant=other, email="user@other.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     with pytest.raises(CrossTenantAccessError):
         await service.get(_actor(admin), target.id)
 
@@ -85,7 +96,7 @@ async def test_get_raises_for_missing(db_session: AsyncSession) -> None:
     admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     with pytest.raises(UserNotFoundError):
         await service.get(_actor(admin), uuid.uuid4())
 
@@ -96,7 +107,7 @@ async def test_assign_role_updates_target(db_session: AsyncSession) -> None:
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     updated = await service.assign_role(_actor(admin), target.id, Role.ADMIN)
     await db_session.commit()
 
@@ -112,7 +123,7 @@ async def test_assign_role_rejects_cross_tenant_target(
     target = await _make_user(db_session, tenant=other, email="user@other.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     with pytest.raises(CrossTenantAccessError):
         await service.assign_role(_actor(admin), target.id, Role.ADMIN)
 
@@ -124,7 +135,7 @@ async def test_assign_role_raises_for_missing_target(
     admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     with pytest.raises(UserNotFoundError):
         await service.assign_role(_actor(admin), uuid.uuid4(), Role.CAREGIVER)
 
@@ -134,7 +145,7 @@ async def test_assign_role_permits_self_target(db_session: AsyncSession) -> None
     admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     updated = await service.assign_role(_actor(admin), admin.id, Role.CAREGIVER)
     await db_session.commit()
 
@@ -158,7 +169,7 @@ async def test_assign_role_audit_hook_stamps_updated_by(
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     db_session.info[SESSION_ACTOR_KEY] = _actor(admin)
     try:
         await service.assign_role(_actor(admin), target.id, Role.ADMIN)
@@ -176,7 +187,7 @@ async def test_set_active_toggles(db_session: AsyncSession) -> None:
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     deactivated = await service.set_active(_actor(admin), target.id, is_active=False)
     await db_session.commit()
     assert deactivated.is_active is False
@@ -193,7 +204,7 @@ async def test_set_active_rejects_cross_tenant_target(db_session: AsyncSession) 
     target = await _make_user(db_session, tenant=other, email="user@other.local")
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     with pytest.raises(CrossTenantAccessError):
         await service.set_active(_actor(admin), target.id, is_active=False)
 
@@ -203,6 +214,6 @@ async def test_set_active_raises_for_missing(db_session: AsyncSession) -> None:
     admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
     await db_session.commit()
 
-    service = UserService(UserRepository(db_session))
+    service = _make_service(db_session)
     with pytest.raises(UserNotFoundError):
         await service.set_active(_actor(admin), uuid.uuid4(), is_active=False)
