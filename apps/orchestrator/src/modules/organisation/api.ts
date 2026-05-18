@@ -1,6 +1,7 @@
 import { api } from '@/lib/api/client'
 import { apiError, readErrorBody } from '@/lib/api/errors'
 import type { components } from '@/lib/api/schema'
+import { serializeListQuery } from '@/lib/query/paginated'
 
 import {
   organisationListSchema,
@@ -60,13 +61,35 @@ export async function updateOrganisation(
 export async function fetchAffiliatedPractitionerRoles(
   organisationId: string,
 ): Promise<PractitionerRoleRead[]> {
-  const { data, response } = await api.GET('/practitioner-roles', {
-    params: { query: { organisation_id: organisationId, is_open: true } },
+  // List endpoint returns `Page<PractitionerRoleRead>` and filters via the
+  // bracket-key envelope. PoC scale: bump `page_size` so the sheet sees the
+  // full open set in one shot, no virtualisation.
+  const client = api as unknown as {
+    GET: (
+      p: string,
+      init: {
+        params: { query: Parameters<typeof serializeListQuery>[0] }
+        querySerializer?: typeof serializeListQuery
+      },
+    ) => Promise<{ data?: { items: PractitionerRoleRead[] }; response: Response }>
+  }
+  const { data, response } = await client.GET('/practitioner-roles', {
+    params: {
+      query: {
+        page: 1,
+        page_size: 200,
+        filters: {
+          organisation_id: { op: 'eq', value: organisationId },
+          is_open: { op: 'eq', value: true },
+        },
+      },
+    },
+    querySerializer: serializeListQuery,
   })
   if (!response.ok || !data) {
     throw apiError('Affiliated practitioner roles failed', response.status)
   }
-  return data
+  return data.items
 }
 
 export async function patchOrganisationTree(

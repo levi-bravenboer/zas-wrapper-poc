@@ -21,6 +21,7 @@ from app.db.base import TenantOwnedEntity
 
 if TYPE_CHECKING:
     from app.db.models.practitioner.practitioner_role import PractitionerRole
+    from app.db.models.user.user import User
 
 
 class Practitioner(TenantOwnedEntity):
@@ -50,4 +51,9 @@ class Practitioner(TenantOwnedEntity):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="(PractitionerRole.is_primary.desc(), PractitionerRole.period_start.desc())",
+    )
+    user: Mapped[User] = relationship(
+        "User",
+        foreign_keys=[user_id],
+        lazy="selectin",
     )

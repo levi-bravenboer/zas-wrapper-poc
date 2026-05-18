@@ -621,6 +621,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** Page[PractitionerRoleRead] */
+        Page_PractitionerRoleRead_: {
+            /** Items */
+            items: components["schemas"]["PractitionerRoleRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** Page[UserRow] */
         Page_UserRow_: {
             /** Items */
@@ -937,6 +950,7 @@ export interface components {
             period_start: string;
             /** Period End */
             period_end?: string | null;
+            practitioner?: components["schemas"]["PractitionerSummary"] | null;
         };
         /**
          * PractitionerRoleUpdate
@@ -953,6 +967,32 @@ export interface components {
             specialty?: string | null;
             /** Is Primary */
             is_primary?: boolean | null;
+        };
+        /**
+         * PractitionerSummary
+         * @description Denormalised practitioner identity for list views.
+         *
+         *     Populated by serialising a `Practitioner` ORM row whose `user`
+         *     relationship is loaded (selectinload). The `display_name` field is
+         *     pulled from the linked `User`; the rest are direct columns.
+         */
+        PractitionerSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
         };
         /** PractitionerUpdate */
         PractitionerUpdate: {
@@ -2121,9 +2161,16 @@ export interface operations {
     list_practitioner_roles: {
         parameters: {
             query?: {
-                practitioner_id?: string | null;
-                organisation_id?: string | null;
-                is_open?: boolean | null;
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
             };
             header?: never;
             path?: never;
@@ -2137,7 +2184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PractitionerRoleRead"][];
+                    "application/json": components["schemas"]["Page_PractitionerRoleRead_"];
                 };
             };
             /** @description Validation Error */
