@@ -9,9 +9,6 @@
   "group": {
     "beheer": "Beheer"
   },
-  "badge": {
-    "adminOnly": "Alleen voor admins"
-  },
   "placeholder": {
     "body": "Komt binnenkort — wordt geleverd door {{spec}}",
     "back": "Terug naar overzicht"

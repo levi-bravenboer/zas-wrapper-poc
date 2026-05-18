@@ -1,7 +1,5 @@
 import { type ReactNode } from 'react'
 
-import { type DataTableState } from '@/hooks/use-data-table-state'
-
 /** Confirm prompt rendered before invoking a row action's `onClick`. */
 export interface DataTableRowActionConfirm {
   title: ReactNode
@@ -59,9 +57,3 @@ export type BrandedColumnDef<T> = DataTableColumnDef<T> & {
  * documentation prop — no subscription is opened by the table itself.
  */
 export type RealtimeTopic = string
-
-/** Controlled-state surface. */
-export interface DataTableStateControl {
-  state: DataTableState
-  onStateChange: (next: DataTableState) => void
-}

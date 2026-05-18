@@ -11,7 +11,6 @@ export type {
   BrandedColumnDef,
   DataTableColumnDef,
   DataTableRowAction,
-  DataTableStateControl,
   GetRowId,
   RealtimeTopic,
 } from './types'

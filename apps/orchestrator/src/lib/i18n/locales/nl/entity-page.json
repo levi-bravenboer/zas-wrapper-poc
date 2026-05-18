@@ -26,9 +26,5 @@
   "error": {
     "title": "Er ging iets mis",
     "message": "Het laden is niet gelukt. Probeer het opnieuw."
-  },
-  "form": {
-    "required": "Dit veld is verplicht",
-    "submitFailed": "Opslaan is niet gelukt"
   }
 }
