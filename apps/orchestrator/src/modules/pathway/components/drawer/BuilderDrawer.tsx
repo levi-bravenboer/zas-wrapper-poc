@@ -79,6 +79,7 @@ export function BuilderDrawer({
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           <input
+            aria-label={t('drawer.labelInput')}
             value={block.label ?? ''}
             placeholder={typeLabel}
             onChange={(e) => onRename(e.target.value)}

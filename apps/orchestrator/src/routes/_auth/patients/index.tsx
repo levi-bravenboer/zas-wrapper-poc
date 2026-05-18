@@ -198,6 +198,14 @@ function PatientsOverviewRoute(): ReactElement {
                     onClick={() =>
                       void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
                     }
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return
+                      e.preventDefault()
+                      void navigate({
+                        to: '/patients/$patientId',
+                        params: { patientId: row.id },
+                      })
+                    }}
                     className="cursor-pointer"
                   >
                     {columns.map((col, idx) => (

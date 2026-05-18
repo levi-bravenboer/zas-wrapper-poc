@@ -283,6 +283,14 @@ export function UserListPage(): ReactElement {
                         params: { userId: row.id },
                       })
                     }
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return
+                      e.preventDefault()
+                      void navigate({
+                        to: '/admin/users/$userId',
+                        params: { userId: row.id },
+                      })
+                    }}
                     className="cursor-pointer"
                   >
                     {columns.map((col, idx) => (

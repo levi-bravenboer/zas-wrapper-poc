@@ -171,6 +171,11 @@ function UsersPage(): ReactElement {
                   onClick={() =>
                     void navigate({ to: '/users/$user_id', params: { user_id: row.id } })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    void navigate({ to: '/users/$user_id', params: { user_id: row.id } })
+                  }}
                   className="cursor-pointer"
                 >
                   {columns.map((col, idx) => (
