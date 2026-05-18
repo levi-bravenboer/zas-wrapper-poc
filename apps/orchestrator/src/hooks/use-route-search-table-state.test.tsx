@@ -119,6 +119,57 @@ describe('useRouteSearchTableState', () => {
     }
   })
 
+  it('clears stale q from the URL when search is reset to null', async () => {
+    const { ref, unmount } = mountTableRoute('/table?q=foo')
+    try {
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await act(async () => {
+        const [, dispatch] = ref.current as readonly [DataTableState, HookReturn[1]]
+        dispatch.setSearch(null)
+      })
+
+      await waitFor(() => {
+        const [state] = ref.current as readonly [DataTableState, HookReturn[1]]
+        expect(state.q).toBeNull()
+      })
+    } finally {
+      unmount()
+    }
+  })
+
+  it('clears stale filters from the URL when clearAll is dispatched', async () => {
+    const { ref, unmount } = mountTableRoute('/table')
+    try {
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await act(async () => {
+        const [, dispatch] = ref.current as readonly [DataTableState, HookReturn[1]]
+        dispatch.setFilter('status', { op: 'eq', value: 'active' })
+      })
+      await waitFor(() => {
+        const [state] = ref.current as readonly [DataTableState, HookReturn[1]]
+        expect(state.filters['status']).toBeDefined()
+      })
+
+      await act(async () => {
+        const [, dispatch] = ref.current as readonly [DataTableState, HookReturn[1]]
+        dispatch.clearAll()
+      })
+
+      await waitFor(() => {
+        const [state] = ref.current as readonly [DataTableState, HookReturn[1]]
+        expect(state.filters).toEqual({})
+      })
+    } finally {
+      unmount()
+    }
+  })
+
   it('persists dispatched filters through the URL', async () => {
     const { ref, unmount } = mountTableRoute('/table')
     try {
