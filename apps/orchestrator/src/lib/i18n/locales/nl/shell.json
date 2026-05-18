@@ -4,7 +4,8 @@
   },
   "sidebar": {
     "collapse": "Zijbalk inklappen",
-    "expand": "Zijbalk uitklappen"
+    "expand": "Zijbalk uitklappen",
+    "toggle": "Zijbalk wisselen"
   },
   "user": {
     "roleFallback": "Zorgverlener",

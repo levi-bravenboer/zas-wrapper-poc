@@ -20,6 +20,10 @@
         "empty": "{{label}}",
         "active": "{{label}}: {{value}}",
         "clearAria": "Verwijder filter {{label}}"
+      },
+      "dateRange": {
+        "from": "{{label}} — van",
+        "to": "{{label}} — tot"
       }
     }
   },

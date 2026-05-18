@@ -1,4 +1,5 @@
 import { type Node, type NodeProps } from '@xyflow/react'
+import type { TFunction } from 'i18next'
 import { memo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,11 +7,34 @@ import { BlockTypeIcon } from '../../../blockCatalogue'
 import { blockSemanticsSummary } from '../../../blockCatalogue.utils'
 import { laneAccent } from '../../../canvasLayout'
 import type {
+  BlockSemantics,
   PathwayBlock,
   PathwayBlockType,
   PathwayLane,
   PathwayTimingValue,
 } from '../../../types'
+
+function translateSemanticsSummary(
+  t: TFunction<'pathway'>,
+  semantics: BlockSemantics | undefined,
+  value: string,
+): string {
+  // For enum-valued semantics, reuse the inspector option keys already
+  // present in the pathway namespace. Free-text summaries (criterion, note,
+  // appointment kind, form question count) pass through unchanged.
+  switch (semantics) {
+    case 'task':
+      return t(`inspector.task.assigneeOption.${value}`, { defaultValue: value })
+    case 'message':
+      return t(`inspector.message.channelOption.${value}`, { defaultValue: value })
+    case 'wait':
+      return t(`eventType.${value}`, { defaultValue: value })
+    case 'pathway_link':
+      return t(`inspector.pathwayLink.modeOption.${value}`, { defaultValue: value })
+    default:
+      return value
+  }
+}
 
 import { BlockNodeHandles } from './BlockNodeHandles'
 import { DayChip } from './DayChip'
@@ -37,9 +61,7 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
   const name = data.block.label?.trim() || typeLabel
   const semanticsSummary = blockSemanticsSummary(data.blockType?.semantics, data.block.config)
   const summaryLabel = semanticsSummary
-    ? t(`blockSummary.${data.blockType?.semantics}.${semanticsSummary}`, {
-        defaultValue: semanticsSummary,
-      })
+    ? translateSemanticsSummary(t, data.blockType?.semantics, semanticsSummary)
     : null
   const isBranch = !!data.blockType?.supports_branches
   const isSelected = !!selected

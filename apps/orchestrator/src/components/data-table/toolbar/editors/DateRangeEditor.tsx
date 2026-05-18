@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Input } from '@/components/ui/input'
 import type { ListFilter } from '@/hooks/use-data-table-state'
 
@@ -11,6 +13,7 @@ export interface DateRangeEditorProps<T> {
 }
 
 export function DateRangeEditor<T>({ def, current, onChange }: DateRangeEditorProps<T>) {
+  const { t } = useTranslation('data-table')
   if (def.type !== 'date-range') return null
   const gte = findOp(current, 'gte')
   const lte = findOp(current, 'lte')
@@ -31,7 +34,7 @@ export function DateRangeEditor<T>({ def, current, onChange }: DateRangeEditorPr
   return (
     <div className="flex flex-col gap-2 p-2">
       <label className="flex flex-col gap-1 text-xs text-foreground-muted">
-        {def.label} — van
+        {t('toolbar.filters.dateRange.from', { label: def.label })}
         <Input
           type="date"
           value={from}
@@ -40,7 +43,7 @@ export function DateRangeEditor<T>({ def, current, onChange }: DateRangeEditorPr
         />
       </label>
       <label className="flex flex-col gap-1 text-xs text-foreground-muted">
-        {def.label} — tot
+        {t('toolbar.filters.dateRange.to', { label: def.label })}
         <Input
           type="date"
           value={to}
