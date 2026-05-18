@@ -23,6 +23,18 @@
       "conceptOnPublished": "Concept op v.{{n}}",
       "draft": "Geen versie"
     },
+    "toolbar": {
+      "searchPlaceholder": "Zoek op naam of doel…",
+      "filter": {
+        "status": {
+          "label": "Status",
+          "concept": "Concept",
+          "conceptOnPublished": "Concept op versie",
+          "published": "Gepubliceerd",
+          "draft": "Geen versie"
+        }
+      }
+    },
     "loadError": "Kon zorgpaden niet laden."
   },
   "create": {
