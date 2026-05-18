@@ -35,6 +35,10 @@ export interface OrganisationTreeEditorProps {
   expanded: ReadonlySet<string>
   onToggleExpand: (id: string) => void
   onMove: (move: OrganisationTreeMove) => void
+  onOpenDetail?: ((org: OrganisationRead) => void) | undefined
+  onEdit?: ((org: OrganisationRead) => void) | undefined
+  onCreateChild?: ((parent: OrganisationRead) => void) | undefined
+  onArchive?: ((org: OrganisationRead) => void) | undefined
 }
 
 export function OrganisationTreeEditor({
@@ -43,6 +47,10 @@ export function OrganisationTreeEditor({
   expanded,
   onToggleExpand,
   onMove,
+  onOpenDetail,
+  onEdit,
+  onCreateChild,
+  onArchive,
 }: OrganisationTreeEditorProps): ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -158,6 +166,10 @@ export function OrganisationTreeEditor({
                 expanded={expanded.has(item.id)}
                 onToggleExpand={onToggleExpand}
                 isDropTarget={overId === item.id && !isActive}
+                onOpenDetail={onOpenDetail}
+                onEdit={onEdit}
+                onCreateChild={onCreateChild}
+                onArchive={onArchive}
               />
             )
           })}
@@ -174,6 +186,10 @@ interface SortableTreeRowProps {
   expanded: boolean
   onToggleExpand: (id: string) => void
   isDropTarget: boolean
+  onOpenDetail?: ((org: OrganisationRead) => void) | undefined
+  onEdit?: ((org: OrganisationRead) => void) | undefined
+  onCreateChild?: ((parent: OrganisationRead) => void) | undefined
+  onArchive?: ((org: OrganisationRead) => void) | undefined
 }
 
 function SortableTreeRow({
@@ -183,6 +199,10 @@ function SortableTreeRow({
   expanded,
   onToggleExpand,
   isDropTarget,
+  onOpenDetail,
+  onEdit,
+  onCreateChild,
+  onArchive,
 }: SortableTreeRowProps): ReactElement {
   const { t } = useTranslation('organisations-admin-ui')
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -202,7 +222,10 @@ function SortableTreeRow({
       hasChildren={item.hasChildren}
       expanded={expanded}
       onToggleExpand={onToggleExpand}
-      actionsDisabled
+      onOpenDetail={onOpenDetail}
+      onEdit={onEdit}
+      onCreateChild={onCreateChild}
+      onArchive={onArchive}
       isDragging={isDragging}
       isDropTarget={isDropTarget}
       style={style}
