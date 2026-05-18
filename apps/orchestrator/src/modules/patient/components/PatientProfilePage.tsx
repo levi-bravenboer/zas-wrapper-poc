@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useEntityDelete } from '@/hooks/entity'
 import { api } from '@/lib/api/client'
+import { formatDateOrDash } from '@/lib/utils/datetime'
 
 import { softDeletePatient } from '../api'
 import { usePatient } from '../hooks'
@@ -50,13 +51,6 @@ function pickInsz(identifiers: ReadonlyArray<PatientIdentifierRow>): string | nu
     return system.includes('ssin') || system.includes('insz') || system.includes('2.16.56')
   })
   return match?.value ?? null
-}
-
-function formatDate(value: string | null | undefined, locale: string): string {
-  if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export interface PatientProfilePageProps {
@@ -115,7 +109,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
         <Badge variant="soft">{t('header.noInsz')}</Badge>
       )}
       <span className="text-sm text-muted-foreground">
-        {t('header.born', { date: formatDate(patient.birth_date, i18n.language) })}
+        {t('header.born', { date: formatDateOrDash(patient.birth_date, i18n.language) })}
       </span>
       <Badge variant="soft">{organisation?.name ?? t('header.unknownOrg')}</Badge>
     </div>

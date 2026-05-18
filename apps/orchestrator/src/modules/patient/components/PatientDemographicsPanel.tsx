@@ -2,15 +2,9 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatDateOrDash } from '@/lib/utils/datetime'
 
 import type { OrganisationOption, PatientRow } from '../types'
-
-function formatDate(value: string | null | undefined, locale: string): string {
-  if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
 
 export interface PatientDemographicsPanelProps {
   patient: PatientRow
@@ -25,7 +19,7 @@ export function PatientDemographicsPanel({
 
   const rows: ReadonlyArray<{ label: string; value: string }> = [
     { label: t('demographics.name'), value: `${patient.family_name}, ${patient.given_name}` },
-    { label: t('demographics.birthDate'), value: formatDate(patient.birth_date, i18n.language) },
+    { label: t('demographics.birthDate'), value: formatDateOrDash(patient.birth_date, i18n.language) },
     { label: t('demographics.gender'), value: t(`gender.${patient.gender}`) },
     {
       label: t('demographics.primaryOrg'),

@@ -10,7 +10,7 @@ import type { PatientRow } from '../types'
 
 const USER_LOOKUP_STALE_MS = 5 * 60_000
 
-function formatDateTime(value: string | null | undefined, locale: string): string {
+function formatDateTimeOrDash(value: string | null | undefined, locale: string): string {
   if (!value) return '—'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
@@ -62,14 +62,14 @@ export function PatientHistoryPanel({ patient }: PatientHistoryPanelProps): Reac
     {
       key: 'created',
       text: t('history.created', {
-        date: formatDateTime(patient.created_at, i18n.language),
+        date: formatDateTimeOrDash(patient.created_at, i18n.language),
         by: labelFor(patient.created_by),
       }),
     },
     {
       key: 'updated',
       text: t('history.updated', {
-        date: formatDateTime(patient.updated_at, i18n.language),
+        date: formatDateTimeOrDash(patient.updated_at, i18n.language),
         by: labelFor(patient.updated_by),
       }),
     },
@@ -78,7 +78,7 @@ export function PatientHistoryPanel({ patient }: PatientHistoryPanelProps): Reac
           {
             key: 'deleted',
             text: t('history.deleted', {
-              date: formatDateTime(patient.deleted_at, i18n.language),
+              date: formatDateTimeOrDash(patient.deleted_at, i18n.language),
               by: labelFor(patient.deleted_by),
             }),
           },
