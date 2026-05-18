@@ -78,6 +78,7 @@ export function useTableSelection<T>({
       if (!currentIds.has(id) && selectedIds.has(id)) stale.push(id)
     })
     if (stale.length === 0) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     update((prev) => {
       const next = new Set(prev)
       stale.forEach((id) => next.delete(id))
