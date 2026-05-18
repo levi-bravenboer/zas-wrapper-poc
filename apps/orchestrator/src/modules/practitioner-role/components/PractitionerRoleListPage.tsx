@@ -282,7 +282,7 @@ export function PractitionerRoleListPage(): ReactElement {
         <DebouncedSearch
           value={state.q}
           onChange={(q) => dispatch.setSearch(q)}
-          placeholder={t('filter.search_placeholder', { defaultValue: 'Zoek…' })}
+          placeholder={t('filter.search_placeholder')}
         />
       </Toolbar.Search>
       <Toolbar.Filters>
