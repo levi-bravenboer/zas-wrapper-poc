@@ -19,7 +19,10 @@ export function PatientDemographicsPanel({
 
   const rows: ReadonlyArray<{ label: string; value: string }> = [
     { label: t('demographics.name'), value: `${patient.family_name}, ${patient.given_name}` },
-    { label: t('demographics.birthDate'), value: formatDateOrDash(patient.birth_date, i18n.language) },
+    {
+      label: t('demographics.birthDate'),
+      value: formatDateOrDash(patient.birth_date, i18n.language),
+    },
     { label: t('demographics.gender'), value: t(`gender.${patient.gender}`) },
     {
       label: t('demographics.primaryOrg'),

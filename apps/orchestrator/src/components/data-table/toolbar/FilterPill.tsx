@@ -159,7 +159,8 @@ export function FilterPill<T>({ def, value, onChange }: FilterPillProps<T>): Rea
     const falseLabel = def.falseLabel ?? t('toolbar.filters.boolean.false')
     const allLabel = t('toolbar.filters.boolean.all')
     const eq = findOp(value, 'eq')
-    const choice = eq === undefined ? '' : eq.value === true || eq.value === 'true' ? 'true' : 'false'
+    const choice =
+      eq === undefined ? '' : eq.value === true || eq.value === 'true' ? 'true' : 'false'
     return (
       <FilterShell def={def} value={value} onChange={onChange}>
         <DropdownMenu>

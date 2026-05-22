@@ -67,11 +67,7 @@ export function PickerCombobox<T>({
 
   const body = (
     <Command shouldFilter={false}>
-      <CommandInput
-        placeholder={searchPlaceholder}
-        value={search}
-        onValueChange={onSearchChange}
-      />
+      <CommandInput placeholder={searchPlaceholder} value={search} onValueChange={onSearchChange} />
       <CommandList>
         <CommandEmpty>{isLoading ? (loadingLabel ?? emptyLabel) : emptyLabel}</CommandEmpty>
         <CommandGroup>
@@ -104,7 +100,10 @@ export function PickerCombobox<T>({
 
   if (inline) {
     return (
-      <div className={cn('overflow-hidden', contentClassName)} aria-label={ariaLabel ?? placeholder}>
+      <div
+        className={cn('overflow-hidden', contentClassName)}
+        aria-label={ariaLabel ?? placeholder}
+      >
         {body}
       </div>
     )
