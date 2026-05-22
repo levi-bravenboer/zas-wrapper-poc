@@ -64,7 +64,7 @@
 - [ ] 5.2 Implement `apps/orchestrator/scripts/gen-feature.ts` supporting flags `--id`, `--path`, `--surfaces`, `--fhir-scopes`, `--requires`, `--title-nl`, `--dry-run`
 - [ ] 5.3 Add a `gen:feature` script to `apps/orchestrator/package.json` invoking the generator with `tsx`
 - [ ] 5.4 Implement template writers that produce the file set defined in the `feature-generator` spec
-- [ ] 5.5 Implement registry-side mutations: append to `modules/index.ts` in alphabetical order, add `nav.<id>` entry to `locales/nl/nav.json`, append nav item to `navItems.ts` when `app` surface is selected
+- [ ] 5.5 Implement registry-side mutations: append `export { default as <id>Feature } from './<id>'` to `modules/index.ts` in alphabetical order and add the `nav.<id>` entry to `locales/nl/nav.json`. Do NOT touch `navItems.ts` — the sidebar already merges `getFeaturesForSurface('app')` with the hard-wired group (see `components/layout/AppSidebar.tsx`); appending there would double-register the nav item.
 - [ ] 5.6 Add unit tests for the generator covering: app-only file set, embed-only file set, refusal to overwrite existing module, dry-run output
 - [ ] 5.7 Add ESLint `no-restricted-imports` rules forbidding `modules/** → components/layout/**`, cross-module imports, and `platform/** → modules/**`
 - [ ] 5.8 Add a custom ESLint rule (or `no-restricted-syntax`) flagging route stub files whose body is not a `renderFeature(...)` call
@@ -72,28 +72,35 @@
 
 ## 6. Agent rules and commit hook
 
-- [ ] 6.1 Add `## Feature surface gating` section to `AGENTS.md` with the verbatim user prompt, four rules, and reference to `pnpm gen:feature`
+- [ ] 6.1 Add `## Feature surface gating` section to `AGENTS.md` with the verbatim user prompt, four rules, reference to `pnpm gen:feature`, and a link to `openspec/changes/multi-surface-feature-framework/page-surface-catalogue.md` (until archived; thereafter the archived path) as the source of truth for current page → surface decisions.
 - [ ] 6.2 Add `## Feature surface gating` section to `CLAUDE.md` repeating the verbatim user prompt and pointing to `AGENTS.md`
 - [ ] 6.3 Add per-app `apps/orchestrator/AGENTS.md` reminder referencing the gating section
-- [ ] 6.4 Create `.claude/skills/new-feature/SKILL.md` with frontmatter `name: new-feature` and the four-step workflow (ask surfaces → ask scopes → run generator → verify)
+- [ ] 6.4 Create `.claude/skills/new-feature/SKILL.md` with frontmatter `name: new-feature` and the four-step workflow (consult `page-surface-catalogue.md` → ask surfaces if not pre-decided → ask scopes → run generator → verify). Skill MUST short-circuit when the requested path matches an admin opt-out prefix (`/_auth/admin/*`, `/_auth/settings`, `/_auth/pathways/*`) and instruct the agent to hand-write the route without `defineFeature`.
 - [ ] 6.5 Add `.claude/hooks/check-feature-surfaces.sh` that greps staged diff for new `defineFeature(` calls missing `surfaces:` and exits non-zero
 - [ ] 6.6 Wire the hook in `.claude/settings.json` (`PreToolUse` for `Bash` `git commit` matchers) AND/OR add a git `pre-commit` hook installer
 - [ ] 6.7 Save a `feedback` memory at `~/.claude/projects/<slug>/memory/feedback_feature_surface_gating.md` with the rule and link from `MEMORY.md`
 - [ ] 6.8 Manual verification: open a fresh Claude session, ask "add a new view for medications", confirm the agent asks the surface question before writing code
 
-## 7. Migrate remaining placeholder features
+## 7. Migrate clinical-entity features to the registry
 
-- [ ] 7.1 Run `pnpm gen:feature pathways --surfaces app --title-nl "Zorgpaden"` (keep app-only until a clinical owner requests embed)
-- [ ] 7.2 Move existing `routes/_auth/pathways.tsx` content into the generated module's page and delete the old placeholder
-- [ ] 7.3 Repeat 7.1–7.2 for `patients` (`--title-nl "Mijn patiënten"`)
-- [ ] 7.4 Repeat 7.1–7.2 for `settings` (`--title-nl "Instellingen"`)
-- [ ] 7.5 Migrate `dashboard` last, only if it stays surface-stable; otherwise keep hand-written and document the exception in the routing spec
-- [ ] 7.6 Run `pnpm tsc -b --noEmit`, `pnpm eslint .`, `pnpm vitest run` and quote results
+Scope tightened from the original plan: when this change was drafted, `pathways` / `patients` / `settings` / `dashboard` were placeholder routes. Between then and now, separate workstreams shipped them as full modules (`modules/pathway/`, `modules/patient/`, `modules/organisation/`, `modules/practitioner-role/`, `modules/user/`). Per `page-surface-catalogue.md`, only clinical-entity pages benefit from registry-driven multi-surface; admin pages and proprietary workflows stay hand-written and are out of scope for this change. Section 7 is therefore limited to the two pages that genuinely target `smart` / `embed`: `tasks` (restore on `app`) and `patients`.
+
+- [ ] 7.1 Restore `tasks` on the `app` surface: update `modules/tasks/index.ts` `surfaces` to `['app', 'smart', 'embed']`, add `routes/_auth/tasks.tsx` calling `renderFeature(tasksFeature)`, and confirm the sidebar nav item reappears via `getFeaturesForSurface('app')` (catalogue row `tasks`).
+- [ ] 7.2 Migrate `patients` to a registry feature:
+  - Run `pnpm gen:feature patients --surfaces app,smart --fhir-scopes "patient/Patient.read" --requires patient --title-nl "Patiënten"`.
+  - Move list + detail components from `routes/_auth/patients/**` into the generated `modules/patients/` (preserve existing tests).
+  - Replace `routes/_auth/patients/index.tsx` + `routes/_auth/patients/$patientId/index.tsx` bodies with `renderFeature(patientsFeature)` and a `useParams` shim for the detail page.
+  - Add `routes/s/patients.tsx` + `routes/s/patients/$patientId.tsx` stubs calling `renderFeature(patientsFeature)`.
+  - Implement `adapters/fhir.ts` returning stub `Patient` rows (real adapter deferred to the post-PoC FHIR-integration change, matching the 4.6–4.8 carve-out).
+- [ ] 7.3 Document the admin opt-out in code: add `// surface-opt-out: app-only` markers at the top of every `routes/_auth/admin/*` file, `routes/_auth/pathways/*` files, `routes/_auth/index.tsx`, and any future hand-written `_auth` route so the lint rule from 5.8 / 6.5 can recognise the exception explicitly.
+- [ ] 7.4 Update the section 6 commit hook + new-feature skill to consult `page-surface-catalogue.md`: admin paths (`/_auth/admin/*`, `/_auth/settings`, `/_auth/pathways/*`) MUST skip the surface prompt and MUST NOT generate `defineFeature` scaffolding.
+- [ ] 7.5 Run `moon run orchestrator:typecheck`, `moon run orchestrator:lint`, `moon run orchestrator:test` and quote results.
+- [ ] 7.6 Manual smoke: load `/_auth/tasks`, `/s/tasks`, `/embed/tasks`, `/_auth/patients`, `/s/patients` and confirm each renders the expected shell + a non-empty list (stub data is fine for FHIR surfaces).
 
 ## 8. Documentation and release
 
-- [ ] 8.1 Update `apps/orchestrator/README.md` route table to list `_auth`, `_smart`, `_embed` segments and mention surface gating
-- [ ] 8.2 Add a short `apps/orchestrator/src/platform/README.md` covering surfaces, ports, defining a new feature, and writing tests
-- [ ] 8.3 Add a section to `apps/orchestrator/AGENTS.md` linking to the platform README and the `new-feature` skill
+- [ ] 8.1 Update `apps/orchestrator/README.md` route table to list `_auth`, `s`, `embed` segments (path-bearing, not pathless `_smart` / `_embed`), reference `page-surface-catalogue.md` for current page → surface decisions, and mention surface gating.
+- [ ] 8.2 Add a short `apps/orchestrator/src/platform/README.md` covering surfaces, ports, defining a new feature, and writing tests, plus a "when NOT to use `defineFeature`" subsection that points at the admin opt-out list.
+- [ ] 8.3 Add a section to `apps/orchestrator/AGENTS.md` linking to the platform README, the `new-feature` skill, and `page-surface-catalogue.md`.
 - [ ] 8.4 Confirm `openspec validate multi-surface-feature-framework --strict` passes
 - [ ] 8.5 Archive the change via `openspec archive multi-surface-feature-framework` once shipped
