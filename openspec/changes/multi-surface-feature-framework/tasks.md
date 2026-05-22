@@ -51,12 +51,12 @@
 - [~] 4.6 ~~Replace stub `fhirTasksPort` with a real adapter mapping FHIR `Task` via a zod schema~~ **Deferred to post-PoC FHIR integration change.** PoC scope tightened to "frontend base that *can* host FHIR-backed screens once embedded in HiX". `fhirTasksPort` stays a stub returning static rows; real schema/mapping/read-write happens when an actual EPD wiring task lands.
 - [~] 4.7 ~~Implement `useFhirQuery` and `useFhirMutation` helpers~~ **Deferred (same rationale as 4.6).** Plain `useQuery` is sufficient until a real FHIR backend exists to design helper ergonomics against.
 - [~] 4.8 ~~Implement `fhirPager`~~ **Deferred (same rationale as 4.6).** No production traffic, no pagination concern yet. `platform/fhir/` directory stays empty until the integration change.
-- [ ] 4.9 Add `platform/embed/host.ts` postMessage protocol with origin verification and `EMBED_HOST_ORIGIN` env wiring
-- [ ] 4.10 Add `createMemoryHistory` fallback inside `EmbedShell` when `window !== window.parent`
-- [ ] 4.11 Add Vite `manualChunks` config splitting an `embed` chunk; ensure devtools are excluded from it
-- [ ] 4.12 Document required CSP headers (`frame-ancestors`, no `X-Frame-Options`) in `apps/orchestrator/README.md` referencing `EMBED_FRAME_ANCESTORS` env var
-- [ ] 4.13 Add launch + callback tests (Zod validation, token store population, redirect target by surface)
-- [ ] 4.14 Run `pnpm tsc -b --noEmit`, `pnpm eslint .`, `pnpm vitest run` and quote results
+- [x] 4.9 Add `platform/embed/host.ts` postMessage protocol with origin verification and `EMBED_HOST_ORIGIN` env wiring
+- [x] 4.10 Add `createMemoryHistory` fallback inside `EmbedShell` when `window !== window.parent`
+- [x] 4.11 Add Vite `manualChunks` config splitting an `embed` chunk; ensure devtools are excluded from it
+- [x] 4.12 Document required CSP headers (`frame-ancestors`, no `X-Frame-Options`) in `apps/orchestrator/README.md` referencing `EMBED_FRAME_ANCESTORS` env var
+- [x] 4.13 Add launch + callback tests (Zod validation, token store population, redirect target by surface)
+- [x] 4.14 Run `pnpm tsc -b --noEmit`, `pnpm eslint .`, `pnpm vitest run` and quote results
 
 ## 5. Feature generator + lint guardrails
 
