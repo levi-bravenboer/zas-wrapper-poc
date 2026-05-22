@@ -23,7 +23,6 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTypeCode
@@ -61,15 +60,7 @@ async def _get_or_create(
     type_display: str,
     parent_organisation_id: UUID | None,
 ) -> Organisation:
-    stmt = select(Organisation).where(
-        Organisation.tenant_id == tenant_id,
-        Organisation.name == name,
-        Organisation.parent_organisation_id.is_(parent_organisation_id)
-        if parent_organisation_id is None
-        else Organisation.parent_organisation_id == parent_organisation_id,
-        Organisation.deleted_at.is_(None),
-    )
-    existing = (await session.execute(stmt)).scalar_one_or_none()
+    existing = await session.get(Organisation, org_id)
     if existing is not None:
         logger.info("organisation name=%s already present", name)
         return existing
