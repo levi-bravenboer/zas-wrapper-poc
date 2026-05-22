@@ -38,7 +38,7 @@ describe('FilterPill', () => {
     const user = userEvent.setup()
     renderWithProviders(<FilterPill def={def} value={undefined} onChange={() => {}} />)
     await user.click(await screen.findByRole('button', { name: /role/i }))
-    expect(await screen.findByRole('combobox')).toBeInTheDocument()
+    expect(await screen.findByRole('menuitemradio', { name: /admin/i })).toBeInTheDocument()
   })
 
   it('clear button emits null', async () => {

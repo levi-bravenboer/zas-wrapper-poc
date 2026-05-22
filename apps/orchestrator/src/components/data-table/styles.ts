@@ -23,11 +23,11 @@ export const toolbarSearchInput =
   'w-full rounded-md border border-input bg-background/70 py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-foreground-muted focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20'
 
 export const pillEmpty =
-  'inline-flex items-center gap-1.5 rounded-md border border-border bg-background/60 px-2.5 py-1 text-xs font-medium text-foreground-muted hover:border-accent-mint hover:text-primary'
+  'inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 data-[state=open]:bg-muted'
 export const pillActive =
-  'inline-flex items-center gap-1.5 rounded-md border border-accent-mint bg-primary-subtle py-1 pl-2.5 pr-1 text-xs font-medium text-primary-pressed'
+  'inline-flex h-9 items-center gap-1.5 rounded-md border border-primary/30 bg-primary-subtle pl-3 pr-1 text-sm font-medium text-primary-pressed transition-colors hover:bg-primary-subtle/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 data-[state=open]:bg-primary-subtle/70'
 export const pillX =
-  'inline-flex h-4 w-4 items-center justify-center rounded text-primary hover:bg-primary/10'
+  'inline-flex h-6 w-6 items-center justify-center rounded-sm text-primary-pressed hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30'
 
 export const clearAllBtn = 'text-xs text-foreground-muted hover:text-primary px-1.5 py-1 rounded-md'
 

@@ -55,5 +55,20 @@ export function summariseFilter<T>(
       if (!f) return null
       return { display: primitiveToString(f.value) }
     }
+    case 'typeahead': {
+      const f = findOp(value, 'eq')
+      if (!f) return null
+      const raw = primitiveToString(f.value)
+      const formatted = def.formatValue ? def.formatValue(raw) : null
+      return { display: formatted ?? raw }
+    }
+    case 'boolean': {
+      const f = findOp(value, 'eq')
+      if (!f) return null
+      const truthy = f.value === true || f.value === 'true'
+      const trueLabel = def.trueLabel ?? 'Yes'
+      const falseLabel = def.falseLabel ?? 'No'
+      return { display: truthy ? trueLabel : falseLabel }
+    }
   }
 }
