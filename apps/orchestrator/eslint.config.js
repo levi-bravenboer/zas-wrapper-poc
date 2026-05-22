@@ -67,6 +67,18 @@ export default defineConfig([
               message:
                 'modules/* cannot import sibling modules. Promote to lib/, components/, or hooks/.',
             },
+            {
+              target: './src/modules',
+              from: './src/components/layout',
+              message:
+                'modules/* cannot import components/layout/*. Layout chrome is owned by surface shells (AppShell / SmartShell / EmbedShell).',
+            },
+            {
+              target: './src/platform',
+              from: ['./src/modules/!(smart-launch)/**'],
+              message:
+                'platform/* cannot import modules/*. The platform is upstream of features; reverse the dependency. (smart-launch is infrastructure and carved out pending refactor.)',
+            },
           ],
         },
       ],
@@ -142,10 +154,12 @@ export default defineConfig([
     },
   },
   {
-    // Tests may import the `Table` primitive directly for rendering assertions.
-    files: ['src/**/*.test.{ts,tsx}'],
+    // Tests may import the `Table` primitive directly for rendering assertions
+    // and reach across module/platform boundaries to stage realistic fixtures.
+    files: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': 'off',
+      'import-x/no-restricted-paths': 'off',
     },
   },
   {

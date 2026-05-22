@@ -3,6 +3,7 @@ import { ListTodo } from 'lucide-react'
 import { defineFeature } from '@/platform/embed/defineFeature'
 
 import { fhirTasksPort } from './adapters/fhir'
+import { orchestratorTasksPort } from './adapters/orchestrator'
 import { tasksPort } from './ports'
 import { TasksPage } from './TasksPage'
 
@@ -12,8 +13,9 @@ export const tasksFeature = defineFeature({
   titleKey: 'nav.tasks',
   page: TasksPage,
   port: tasksPort,
-  surfaces: ['smart', 'embed'] as const,
+  surfaces: ['app', 'smart', 'embed'] as const,
   adapters: {
+    orchestrator: orchestratorTasksPort,
     fhir: fhirTasksPort,
   },
   smart: {

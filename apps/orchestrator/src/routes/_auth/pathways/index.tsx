@@ -1,3 +1,4 @@
+// surface-opt-out: app-only
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Plus, Workflow } from 'lucide-react'
 import { type ReactElement, useMemo, useState } from 'react'

@@ -36,6 +36,12 @@ Prefer these over manual recipes — they encode the canonical sequence:
 
 - Always create git worktrees under `.worktrees/<branch-name>` in this repo. Directory is gitignored.
 
+## Feature surface gating
+
+Before writing the first line of any new clinical view, ask the user which surfaces it targets (`app`, `smart`, `embed`, or any combination). Surface intent is the single most important early decision — do not infer it from context. Then run `pnpm gen:feature` (or, for admin/pathway/dashboard/settings opt-outs, hand-write the route and skip the prompt).
+
+Full rules + admin opt-out list live in `AGENTS.md` under `## Feature surface gating`. The `.claude/skills/new-feature` skill walks the workflow.
+
 ## Behavioural Reminders
 
 - Honour the user's global `~/.claude/CLAUDE.md` rules: semantic commits, no AI attribution, no pushing without permission, lowercase after colon, one-liner messages ≤72 chars, present tense.

@@ -1,3 +1,4 @@
+// surface-opt-out: app-only
 import { createFileRoute } from '@tanstack/react-router'
 import { type ReactElement } from 'react'
 
