@@ -72,14 +72,14 @@
 
 ## 6. Agent rules and commit hook
 
-- [ ] 6.1 Add `## Feature surface gating` section to `AGENTS.md` with the verbatim user prompt, four rules, reference to `pnpm gen:feature`, and a link to `openspec/changes/multi-surface-feature-framework/page-surface-catalogue.md` (until archived; thereafter the archived path) as the source of truth for current page → surface decisions.
-- [ ] 6.2 Add `## Feature surface gating` section to `CLAUDE.md` repeating the verbatim user prompt and pointing to `AGENTS.md`
-- [ ] 6.3 Add per-app `apps/orchestrator/AGENTS.md` reminder referencing the gating section
-- [ ] 6.4 Create `.claude/skills/new-feature/SKILL.md` with frontmatter `name: new-feature` and the four-step workflow (consult `page-surface-catalogue.md` → ask surfaces if not pre-decided → ask scopes → run generator → verify). Skill MUST short-circuit when the requested path matches an admin opt-out prefix (`/_auth/admin/*`, `/_auth/settings`, `/_auth/pathways/*`) and instruct the agent to hand-write the route without `defineFeature`.
-- [ ] 6.5 Add `.claude/hooks/check-feature-surfaces.sh` that greps staged diff for new `defineFeature(` calls missing `surfaces:` and exits non-zero
-- [ ] 6.6 Wire the hook in `.claude/settings.json` (`PreToolUse` for `Bash` `git commit` matchers) AND/OR add a git `pre-commit` hook installer
-- [ ] 6.7 Save a `feedback` memory at `~/.claude/projects/<slug>/memory/feedback_feature_surface_gating.md` with the rule and link from `MEMORY.md`
-- [ ] 6.8 Manual verification: open a fresh Claude session, ask "add a new view for medications", confirm the agent asks the surface question before writing code
+- [x] 6.1 Add `## Feature surface gating` section to `AGENTS.md` with the verbatim user prompt, four rules, reference to `pnpm gen:feature`, and a link to `openspec/changes/multi-surface-feature-framework/page-surface-catalogue.md` (until archived; thereafter the archived path) as the source of truth for current page → surface decisions.
+- [x] 6.2 Add `## Feature surface gating` section to `CLAUDE.md` repeating the verbatim user prompt and pointing to `AGENTS.md`
+- [x] 6.3 Add per-app `apps/orchestrator/AGENTS.md` reminder referencing the gating section _(extended existing `## Surfaces — ask before building a new page` section with generator + catalogue + opt-out subsection)_
+- [x] 6.4 Create `.claude/skills/new-feature/SKILL.md` with frontmatter `name: new-feature` and the four-step workflow (consult `page-surface-catalogue.md` → ask surfaces if not pre-decided → ask scopes → run generator → verify). Skill MUST short-circuit when the requested path matches an admin opt-out prefix (`/_auth/admin/*`, `/_auth/settings`, `/_auth/pathways/*`) and instruct the agent to hand-write the route without `defineFeature`.
+- [x] 6.5 Add `.claude/hooks/check-feature-surfaces.sh` that greps staged diff for new `defineFeature(` calls missing `surfaces:` and exits non-zero
+- [x] 6.6 Wire the hook in `.claude/settings.json` (`PreToolUse` for `Bash` `git commit` matchers) AND/OR add a git `pre-commit` hook installer _(wired as a second PreToolUse `Bash` hook alongside `pre-bash-rewrite.sh`)_
+- [x] 6.7 Save a `feedback` memory at `~/.claude/projects/<slug>/memory/feedback_feature_surface_gating.md` with the rule and link from `MEMORY.md`
+- [~] 6.8 ~~Manual verification: open a fresh Claude session, ask "add a new view for medications", confirm the agent asks the surface question before writing code.~~ **Deferred to manual end-to-end test by the user** — automated harness for "fresh Claude session" is out of scope for this change.
 
 ## 7. Migrate clinical-entity features to the registry
 
