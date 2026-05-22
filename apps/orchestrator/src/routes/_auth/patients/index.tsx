@@ -33,6 +33,7 @@ import type { OrganisationOption, PatientRow } from '@/modules/patient/types'
 
 export const Route = createFileRoute('/_auth/patients/')({
   component: PatientsOverviewRoute,
+  staticData: { breadcrumb: 'Mijn patiënten' },
 })
 
 async function fetchOrganisations(): Promise<OrganisationOption[]> {
