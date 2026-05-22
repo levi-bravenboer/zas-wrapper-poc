@@ -63,10 +63,17 @@ function parseArgs(argv: readonly string[]): Args {
   if (surfaces.length === 0) fail('--surfaces must list at least one surface')
 
   const fhirNeeded = surfaces.some((s) => s === 'smart' || s === 'embed')
-  const fhirScopes = (flags.get('fhir-scopes') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
-  const requires = ((flags.get('requires') ?? '').split(',').map((s) => s.trim()).filter(Boolean)) as Requirement[]
+  const fhirScopes = (flags.get('fhir-scopes') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const requires = (flags.get('requires') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean) as Requirement[]
   if (fhirNeeded) {
-    if (fhirScopes.length === 0) fail('--fhir-scopes is required when smart/embed surfaces are selected')
+    if (fhirScopes.length === 0)
+      fail('--fhir-scopes is required when smart/embed surfaces are selected')
     if (requires.length === 0) fail('--requires is required when smart/embed surfaces are selected')
     for (const r of requires) {
       if (!REQUIRES.includes(r)) fail(`unknown requirement '${r}'`)
@@ -314,7 +321,10 @@ function updateModulesBarrel(id: string): { path: string; before: string; after:
   return { path: file, before, after: after + trailing.slice(0, 0) }
 }
 
-function updateNavLocale(id: string, titleNl: string): { path: string; before: string; after: string } {
+function updateNavLocale(
+  id: string,
+  titleNl: string,
+): { path: string; before: string; after: string } {
   const file = resolve(SRC, 'lib/i18n/locales/nl/nav.json')
   const before = readFileSync(file, 'utf8')
   const parsed = JSON.parse(before) as Record<string, string>
