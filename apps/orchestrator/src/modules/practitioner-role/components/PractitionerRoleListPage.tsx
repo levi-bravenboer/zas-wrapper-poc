@@ -6,12 +6,9 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import {
-  ClearAll,
   DataTable,
   DataTablePagination,
-  DebouncedSearch,
-  FilterPill,
-  Toolbar,
+  DataTableToolbar,
   defineColumn,
   type BrandedColumnDef,
   type DataTableFilter,
@@ -287,29 +284,16 @@ export function PractitionerRoleListPage(): ReactElement {
     [orgPaths, t, queryClient],
   )
 
-  const hasActive = Object.keys(state.filters).length > 0
-
   const filters = (
-    <Toolbar.Root>
-      <Toolbar.Search>
-        <DebouncedSearch
-          value={state.q}
-          onChange={(q) => dispatch.setSearch(q)}
-          placeholder={t('filter.search_placeholder')}
-        />
-      </Toolbar.Search>
-      <Toolbar.Filters>
-        {filterDefs.map((def) => (
-          <FilterPill
-            key={def.key}
-            def={def}
-            value={state.filters[def.key]}
-            onChange={onFilter}
-          />
-        ))}
-        {hasActive && <ClearAll onClick={() => dispatch.clearAll()} />}
-      </Toolbar.Filters>
-    </Toolbar.Root>
+    <DataTableToolbar<PractitionerRoleRead>
+      q={state.q}
+      filters={state.filters}
+      filterDefs={filterDefs}
+      onSearchChange={(q) => dispatch.setSearch(q)}
+      onFilterChange={onFilter}
+      onClearFilters={() => dispatch.clearAll()}
+      searchPlaceholder={t('filter.search_placeholder')}
+    />
   )
 
   const rows = data?.items ?? []

@@ -17,11 +17,5 @@ export { RowActions } from './primitives/RowActions'
 export { LoadingRows } from './primitives/LoadingRows'
 export { EmptyRow } from './primitives/EmptyRow'
 
-// toolbar primitives
-export { Toolbar } from './toolbar/Toolbar'
+// toolbar
 export type { DataTableFilter } from './toolbar/Toolbar'
-export { DebouncedSearch } from './toolbar/DebouncedSearch'
-export { FilterPill } from './toolbar/FilterPill'
-export { FilterOverflow } from './toolbar/FilterOverflow'
-export { ClearAll } from './toolbar/ClearAll'
-export * from './toolbar/editors'

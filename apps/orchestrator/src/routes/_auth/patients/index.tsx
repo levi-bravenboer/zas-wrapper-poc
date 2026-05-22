@@ -4,17 +4,13 @@ import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  ClearAll,
   DataTablePagination,
-  DebouncedSearch,
+  DataTableToolbar,
   EmptyRow,
-  FilterOverflow,
-  FilterPill,
   LoadingRows,
   RowActions,
   SortHeader,
   Table,
-  Toolbar,
   useTableSort,
 } from '@/components/data-table'
 import { stickyFirst } from '@/components/data-table/styles'
@@ -111,8 +107,6 @@ function PatientsOverviewRoute(): ReactElement {
 
   const rows = data?.items ?? []
   const totalColumns = columns.length + 1
-  const inlineDefs = filterDefs.slice(0, 3)
-  const overflowDefs = filterDefs.slice(3)
   const onFilter = (field: string, f: Parameters<typeof dispatch.setFilter>[1] | null) => {
     if (f === null) dispatch.clearFilter(field)
     else dispatch.setFilter(field, f)
@@ -123,29 +117,14 @@ function PatientsOverviewRoute(): ReactElement {
       title={t('page.title')}
       description={t('page.sub')}
       filters={
-        <Toolbar.Root>
-          <Toolbar.Search>
-            <DebouncedSearch
-              value={state.q}
-              onChange={(q) => dispatch.setSearch(q)}
-              placeholder={tTable('toolbar.search.placeholder')}
-            />
-          </Toolbar.Search>
-          <Toolbar.Filters>
-            {inlineDefs.map((def) => (
-              <FilterPill
-                key={def.key}
-                def={def}
-                value={state.filters[def.key]}
-                onChange={onFilter}
-              />
-            ))}
-            <FilterOverflow defs={overflowDefs} filters={state.filters} onChange={onFilter} />
-            {Object.keys(state.filters).length > 0 && (
-              <ClearAll onClick={() => dispatch.clearAll()} />
-            )}
-          </Toolbar.Filters>
-        </Toolbar.Root>
+        <DataTableToolbar<PatientRow>
+          q={state.q}
+          filters={state.filters}
+          filterDefs={filterDefs}
+          onSearchChange={(q) => dispatch.setSearch(q)}
+          onFilterChange={onFilter}
+          onClearFilters={() => dispatch.clearAll()}
+        />
       }
       table={
         <>
