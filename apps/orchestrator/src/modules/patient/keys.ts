@@ -1,4 +1,4 @@
-export const PATIENT_KEYS_SCOPE = 'patient' as const
+const PATIENT_KEYS_SCOPE = 'patient' as const
 
 export const patientKeys = {
   all: [PATIENT_KEYS_SCOPE] as const,

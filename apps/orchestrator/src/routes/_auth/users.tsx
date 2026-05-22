@@ -3,17 +3,13 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  ClearAll,
   DataTablePagination,
-  DebouncedSearch,
+  DataTableToolbar,
   EmptyRow,
-  FilterOverflow,
-  FilterPill,
   LoadingRows,
   RowActions,
   SortHeader,
   Table,
-  Toolbar,
   useTableSort,
 } from '@/components/data-table'
 import { stickyFirst } from '@/components/data-table/styles'
@@ -72,8 +68,6 @@ function UsersPage(): ReactElement {
 
   const rows = data?.items ?? []
   const totalColumns = columns.length + 1
-  const inlineDefs = filterDefs.slice(0, 3)
-  const overflowDefs = filterDefs.slice(3)
   const onFilter = (field: string, f: Parameters<typeof dispatch.setFilter>[1] | null) => {
     if (f === null) dispatch.clearFilter(field)
     else dispatch.setFilter(field, f)
@@ -98,29 +92,14 @@ function UsersPage(): ReactElement {
     <>
       <PageHeader title={t('title')} sub={t('sub')} />
       <div className="flex flex-col gap-3 px-6 pb-8">
-        <Toolbar.Root>
-          <Toolbar.Search>
-            <DebouncedSearch
-              value={state.q}
-              onChange={(q) => dispatch.setSearch(q)}
-              placeholder={tTable('toolbar.search.placeholder')}
-            />
-          </Toolbar.Search>
-          <Toolbar.Filters>
-            {inlineDefs.map((def) => (
-              <FilterPill
-                key={def.key}
-                def={def}
-                value={state.filters[def.key]}
-                onChange={onFilter}
-              />
-            ))}
-            <FilterOverflow defs={overflowDefs} filters={state.filters} onChange={onFilter} />
-            {Object.keys(state.filters).length > 0 && (
-              <ClearAll onClick={() => dispatch.clearAll()} />
-            )}
-          </Toolbar.Filters>
-        </Toolbar.Root>
+        <DataTableToolbar<UserRow>
+          q={state.q}
+          filters={state.filters}
+          filterDefs={filterDefs}
+          onSearchChange={(q) => dispatch.setSearch(q)}
+          onFilterChange={onFilter}
+          onClearFilters={() => dispatch.clearAll()}
+        />
         <Table.Root ariaLabelledBy="page-title">
           <Table.Header>
             <Table.HeaderRow>
@@ -171,6 +150,11 @@ function UsersPage(): ReactElement {
                   onClick={() =>
                     void navigate({ to: '/users/$user_id', params: { user_id: row.id } })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    void navigate({ to: '/users/$user_id', params: { user_id: row.id } })
+                  }}
                   className="cursor-pointer"
                 >
                   {columns.map((col, idx) => (

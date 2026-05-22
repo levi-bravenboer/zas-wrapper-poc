@@ -3,7 +3,7 @@ import type { PathwayBare, PathwayVersionDefinition } from '../types'
 
 export type ReadOnlyVariant = 'historical' | 'published-fallback'
 
-export type ResolvedVersionState =
+type ResolvedVersionState =
   | { status: 'loading' }
   | { status: 'not-found' }
   | { status: 'error'; error: Error; refetch: () => void }

@@ -46,7 +46,7 @@ export function RestoreVersionDialog({
           onOpenChange(false)
           onAfterRestore?.()
         },
-        onError: () => toast.error(t('history.restore.success')),
+        onError: () => toast.error(t('history.restore.error')),
       },
     )
   }

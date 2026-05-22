@@ -8,12 +8,12 @@ import {
   type SetStateAction,
 } from 'react'
 
-export interface UseTableSelectionControlled {
+interface UseTableSelectionControlled {
   selectedIds: ReadonlySet<string>
   onSelectionChange: (next: Set<string>) => void
 }
 
-export interface UseTableSelectionParams<T> {
+interface UseTableSelectionParams<T> {
   data: ReadonlyArray<T>
   getRowId?: (row: T) => string
   selectable: boolean
@@ -22,7 +22,7 @@ export interface UseTableSelectionParams<T> {
   page: number
 }
 
-export interface UseTableSelectionApi {
+interface UseTableSelectionApi {
   selectedIds: ReadonlySet<string>
   toggleRow: (id: string) => void
   togglePage: () => void

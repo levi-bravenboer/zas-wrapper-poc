@@ -20,7 +20,8 @@
     "organisation": "Organisatie",
     "code": "Rol",
     "open_only": "Alleen open",
-    "all": "Alle"
+    "all": "Alle",
+    "search_placeholder": "Zoek…"
   },
   "field": {
     "practitioner": "Zorgverlener",

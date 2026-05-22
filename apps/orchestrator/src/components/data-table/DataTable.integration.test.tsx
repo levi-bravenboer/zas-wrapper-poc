@@ -395,7 +395,7 @@ describe('DataTable — end-to-end integration (MSW + mocked SSE)', () => {
 
     // Confirm filter chip appears in the toolbar.
     await waitFor(() => {
-      expect(screen.getByText(/Status:/)).toBeInTheDocument()
+      expect(screen.getByText('Open')).toBeInTheDocument()
     })
 
     // Confirm the new MSW request carries the filter using the backend's
@@ -416,7 +416,7 @@ describe('DataTable — end-to-end integration (MSW + mocked SSE)', () => {
       dispatchRef.current!.clearFilter('status')
     })
     await waitFor(() => {
-      expect(screen.queryByText(/Status:/)).not.toBeInTheDocument()
+      expect(screen.queryByText('Open')).not.toBeInTheDocument()
     })
 
     // --- pagination: click next ------------------------------------------

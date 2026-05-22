@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Pencil, Plus, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
@@ -7,28 +8,25 @@ import { toast } from 'sonner'
 import {
   DataTable,
   DataTablePagination,
+  DataTableToolbar,
   defineColumn,
   type BrandedColumnDef,
+  type DataTableFilter,
   type DataTableRowAction,
 } from '@/components/data-table'
 import { FilterableListPage } from '@/components/list/FilterableListPage'
 import { OrganisationPicker, PractitionerPicker } from '@/components/pickers'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { ListFilter } from '@/hooks/use-data-table-state'
+import type { Page } from '@/hooks/use-paginated-query'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
+import { formatDate } from '@/lib/utils/datetime'
 import { useOrganisations } from '@/modules/organisation/hooks'
 import type { OrganisationRead } from '@/modules/organisation/schemas'
+import { USERS_LIST_PATH } from '@/modules/user/keys'
+import type { UserRow } from '@/modules/user/schemas'
 
 import { ROLE_CODES } from '../constants'
 import { useClosePractitionerRole } from '../hooks'
@@ -62,30 +60,6 @@ function buildOrgPaths(orgs: ReadonlyArray<OrganisationRead>): Map<string, strin
   return cache
 }
 
-function formatDateOnly(iso: string): string {
-  return new Date(iso).toLocaleDateString('nl-NL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function firstFilterValue(
-  filters: Record<string, ListFilter | ListFilter[]>,
-  field: string,
-): string | null {
-  const v = filters[field]
-  if (!v) return null
-  const f = Array.isArray(v) ? v[0] : v
-  if (!f) return null
-  const val = f.value
-  if (Array.isArray(val)) {
-    const first = val[0]
-    return first == null ? null : String(first)
-  }
-  return val == null ? null : String(val)
-}
-
 export function PractitionerRoleListPage(): ReactElement {
   const { t } = useTranslation('practitioner-roles-admin-ui')
   const [state, dispatch] = useRouteSearchTableState()
@@ -94,6 +68,7 @@ export function PractitionerRoleListPage(): ReactElement {
   const search = useSearch({ strict: false }) as Record<string, unknown>
   const navigate = useNavigate()
   const deepLinkAppliedRef = useRef(false)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     if (deepLinkAppliedRef.current) return
@@ -195,8 +170,8 @@ export function PractitionerRoleListPage(): ReactElement {
         sortKey: 'period_start',
         cell: (row) => (
           <span className="text-xs text-muted-foreground">
-            {formatDateOnly(row.period_start)} →{' '}
-            {row.period_end ? formatDateOnly(row.period_end) : t('period.open')}
+            {formatDate(row.period_start, 'nl-NL')} →{' '}
+            {row.period_end ? formatDate(row.period_end, 'nl-NL') : t('period.open')}
           </span>
         ),
       }),
@@ -243,61 +218,82 @@ export function PractitionerRoleListPage(): ReactElement {
     [closeRole, t],
   )
 
-  const practitionerId = firstFilterValue(state.filters, 'practitioner_id')
-  const organisationId = firstFilterValue(state.filters, 'organisation_id')
-  const codeFilter = firstFilterValue(state.filters, 'code') ?? '__all__'
-  const isOpenOnly = firstFilterValue(state.filters, 'is_open') === 'true'
-
-  const setEqFilter = (field: string, value: string | null) => {
-    if (value === null) dispatch.clearFilter(field)
-    else dispatch.setFilter(field, { op: 'eq', value })
+  const onFilter = (field: string, f: ListFilter | ListFilter[] | null): void => {
+    if (f === null) dispatch.clearFilter(field)
+    else dispatch.setFilter(field, f)
   }
 
+  const practitionerLabelFor = (id: string): string | null => {
+    const cached = queryClient.getQueriesData<Page<UserRow>>({
+      queryKey: ['paginated', USERS_LIST_PATH],
+    })
+    for (const [, page] of cached) {
+      if (!page) continue
+      const hit = page.items.find((u) => u.id === id)
+      if (hit) return hit.display_name
+    }
+    return null
+  }
+
+  const filterDefs = useMemo<ReadonlyArray<DataTableFilter<PractitionerRoleRead>>>(
+    () => [
+      {
+        type: 'typeahead',
+        key: 'practitioner_id',
+        label: t('filter.practitioner'),
+        formatValue: practitionerLabelFor,
+        renderEditor: ({ value, onChange }) => (
+          <PractitionerPicker
+            value={value}
+            onChange={(id) => onChange(id)}
+            ariaLabel={t('filter.practitioner')}
+            placeholder={t('filter.practitioner')}
+            inline
+          />
+        ),
+      },
+      {
+        type: 'typeahead',
+        key: 'organisation_id',
+        label: t('filter.organisation'),
+        formatValue: (id) => orgPaths.get(id) ?? null,
+        renderEditor: ({ value, onChange }) => (
+          <OrganisationPicker
+            value={value}
+            onChange={(id) => onChange(id)}
+            ariaLabel={t('filter.organisation')}
+            placeholder={t('filter.organisation')}
+            inline
+          />
+        ),
+      },
+      {
+        type: 'select',
+        key: 'code',
+        label: t('filter.code'),
+        options: ROLE_CODES.map((c) => ({ value: c, label: t(`code.${c}`) })),
+      },
+      {
+        type: 'boolean',
+        key: 'is_open',
+        label: t('filter.open_only'),
+      },
+    ],
+    // practitionerLabelFor closes over queryClient (stable) — safe to omit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orgPaths, t, queryClient],
+  )
+
   const filters = (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex w-64 flex-col gap-1">
-        <Label className="text-xs">{t('filter.practitioner')}</Label>
-        <PractitionerPicker
-          value={practitionerId}
-          onChange={(id) => setEqFilter('practitioner_id', id)}
-          ariaLabel={t('filter.practitioner')}
-        />
-      </div>
-      <div className="flex w-64 flex-col gap-1">
-        <Label className="text-xs">{t('filter.organisation')}</Label>
-        <OrganisationPicker
-          value={organisationId}
-          onChange={(id) => setEqFilter('organisation_id', id)}
-          ariaLabel={t('filter.organisation')}
-        />
-      </div>
-      <div className="flex w-40 flex-col gap-1">
-        <Label className="text-xs">{t('filter.code')}</Label>
-        <Select
-          value={codeFilter}
-          onValueChange={(v) => setEqFilter('code', v === '__all__' ? null : v)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">{t('filter.all')}</SelectItem>
-            {ROLE_CODES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {t(`code.${c}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <label className="flex items-center gap-2 text-sm">
-        <Checkbox
-          checked={isOpenOnly}
-          onCheckedChange={(v) => setEqFilter('is_open', v === true ? 'true' : null)}
-        />
-        <span>{t('filter.open_only')}</span>
-      </label>
-    </div>
+    <DataTableToolbar<PractitionerRoleRead>
+      q={state.q}
+      filters={state.filters}
+      filterDefs={filterDefs}
+      onSearchChange={(q) => dispatch.setSearch(q)}
+      onFilterChange={onFilter}
+      onClearFilters={() => dispatch.clearAll()}
+      searchPlaceholder={t('filter.search_placeholder')}
+    />
   )
 
   const rows = data?.items ?? []

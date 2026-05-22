@@ -15,7 +15,6 @@ import patients from './locales/nl/patients.json'
 import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
-import states from './locales/nl/states.json'
 import usersAdminUi from './locales/nl/users-admin-ui.json'
 import users from './locales/nl/users.json'
 
@@ -47,7 +46,6 @@ void i18next.use(initReactI18next).init({
     'practitioner-roles-admin-ui',
     'shell',
     'smart',
-    'states',
     'users',
     'users-admin-ui',
   ],
@@ -67,7 +65,6 @@ void i18next.use(initReactI18next).init({
       'practitioner-roles-admin-ui': practitionerRolesAdminUi,
       shell,
       smart,
-      states,
       users,
       'users-admin-ui': usersAdminUi,
     },

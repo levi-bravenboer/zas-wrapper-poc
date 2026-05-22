@@ -98,6 +98,7 @@
   },
   "drawer": {
     "title": "Blok bewerken",
+    "labelInput": "Bloknaam",
     "delete": "Verwijderen",
     "done": "Klaar",
     "close": "Sluiten",
@@ -359,7 +360,8 @@
       "body": "Hiermee maak je een nieuwe werkversie op basis van v.{{n}}. De huidige werkversie blijft behouden.",
       "confirm": "Herstellen",
       "cancel": "Annuleren",
-      "success": "Versie hersteld als nieuwe werkversie."
+      "success": "Versie hersteld als nieuwe werkversie.",
+      "error": "Versie herstellen mislukt."
     },
     "conceptExists": {
       "title": "Bestaande werkversie",

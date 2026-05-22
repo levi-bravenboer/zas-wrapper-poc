@@ -1,25 +1,16 @@
 import { type TFunction } from 'i18next'
 import { Trash2 } from 'lucide-react'
 
-import { defineColumn, type BrandedColumnDef } from '@/components/data-table/columns'
-import { type DataTableFilter } from '@/components/data-table/DataTableToolbar'
-import { type DataTableRowAction } from '@/components/data-table/types'
+import {
+  defineColumn,
+  type BrandedColumnDef,
+  type DataTableFilter,
+  type DataTableRowAction,
+} from '@/components/data-table'
+import { OrganisationPicker } from '@/components/pickers'
+import { formatDateOrDash } from '@/lib/utils/datetime'
 
 import type { OrganisationOption, PatientRow } from '../types'
-
-function formatBirthDate(value: string | null | undefined, locale: string): string {
-  if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
-function formatUpdatedAt(value: string | null | undefined, locale: string): string {
-  if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
 
 export interface PatientColumnContext {
   t: TFunction<'patients'>
@@ -43,7 +34,7 @@ export function patientColumns(
       id: 'birth_date',
       header: t('columns.birthDate'),
       sortKey: 'birth_date',
-      cell: (row) => formatBirthDate(row.birth_date, locale),
+      cell: (row) => formatDateOrDash(row.birth_date, locale),
     }),
     defineColumn<PatientRow>({
       id: 'gender',
@@ -59,7 +50,7 @@ export function patientColumns(
       id: 'updated_at',
       header: t('columns.updatedAt'),
       sortKey: 'updated_at',
-      cell: (row) => formatUpdatedAt(row.last_synced_at, locale),
+      cell: (row) => formatDateOrDash(row.last_synced_at, locale),
     }),
   ]
 }
@@ -73,13 +64,23 @@ export function patientFilters(
   ctx: PatientFilterContext,
 ): ReadonlyArray<DataTableFilter<PatientRow>> {
   const { t, organisations } = ctx
+  const labelsById = new Map(organisations.map((o) => [o.id, o.name]))
   return [
     { type: 'date-range', key: 'birth_date', label: t('filters.birthDate') },
     {
-      type: 'select',
+      type: 'typeahead',
       key: 'primary_organisation_id',
       label: t('filters.organisation'),
-      options: organisations.map((o) => ({ value: o.id, label: o.name })),
+      formatValue: (id) => labelsById.get(id) ?? null,
+      renderEditor: ({ value, onChange }) => (
+        <OrganisationPicker
+          value={value}
+          onChange={(id) => onChange(id)}
+          ariaLabel={t('filters.organisation')}
+          placeholder={t('filters.organisation')}
+          inline
+        />
+      ),
     },
   ]
 }

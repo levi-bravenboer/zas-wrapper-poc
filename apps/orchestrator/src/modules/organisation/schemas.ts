@@ -32,5 +32,4 @@ export type OrganisationTreeUpdatePayload = components['schemas']['OrganisationT
 
 // Frontend-only guard mirroring the backend Field(min/max). Trips the
 // Save button rather than letting a runaway editor blow past the cap.
-export const PENDING_MOVES_MIN = 1
 export const PENDING_MOVES_MAX = 500

@@ -14,7 +14,7 @@ import type {
   PathwayWithVersion,
 } from './types'
 
-export type PathwayApiError = Error & { status: number; code?: string }
+type PathwayApiError = Error & { status: number; code?: string }
 
 function pathwayError(message: string, status: number, code?: string): PathwayApiError {
   const err = new Error(message) as PathwayApiError
@@ -73,15 +73,6 @@ export async function replacePathway(
     throw pathwayError('Failed to update pathway', result.response.status)
   }
   return result.data
-}
-
-export async function deletePathway(id: string): Promise<void> {
-  const result = await api.DELETE('/pathways/{pathway_id}', {
-    params: { path: { pathway_id: id } },
-  })
-  if (!result.response.ok) {
-    throw pathwayError('Failed to delete pathway', result.response.status)
-  }
 }
 
 export async function listBlockTypes(): Promise<PathwayBlockType[]> {

@@ -79,13 +79,11 @@ export function useUserFilterDefs(): ReadonlyArray<DataTableFilter<UserRow>> {
         options: ROLE_VALUES.map((value) => ({ value, label: t(`role.${value}`) })),
       },
       {
-        type: 'select',
+        type: 'boolean',
         key: 'is_active',
         label: t('filters.is_active'),
-        options: [
-          { value: 'true', label: t('status.active') },
-          { value: 'false', label: t('status.inactive') },
-        ],
+        trueLabel: t('status.active'),
+        falseLabel: t('status.inactive'),
       },
     ],
     [t],

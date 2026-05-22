@@ -23,7 +23,7 @@ export interface Page<T> {
 }
 
 /** Subset of `UseQueryOptions` we forward to callers; we own queryKey + queryFn. */
-export type UsePaginatedQueryOptions<T> = Omit<
+type UsePaginatedQueryOptions<T> = Omit<
   UseQueryOptions<Page<T>, Error, Page<T>, readonly unknown[]>,
   'queryKey' | 'queryFn'
 >

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-export interface UseTableExpansionApi {
+interface UseTableExpansionApi {
   expandedId: string | null
   toggle: (id: string) => void
 }
