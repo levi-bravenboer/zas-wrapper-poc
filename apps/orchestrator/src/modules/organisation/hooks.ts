@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import type { PractitionerRoleRead } from '@/modules/practitioner-role/schemas'
+
 import {
   createOrganisation,
   deleteOrganisation,
@@ -7,7 +9,6 @@ import {
   fetchOrganisations,
   patchOrganisationTree,
   updateOrganisation,
-  type PractitionerRoleRead,
 } from './api'
 import { organisationKeys } from './keys'
 import type {

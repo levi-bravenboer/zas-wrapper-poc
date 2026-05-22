@@ -1,7 +1,7 @@
 import { api } from '@/lib/api/client'
 import { apiError, readErrorBody } from '@/lib/api/errors'
-import type { components } from '@/lib/api/schema'
 import { serializeListQuery } from '@/lib/query/paginated'
+import type { PractitionerRoleRead } from '@/modules/practitioner-role/schemas'
 
 import {
   organisationListSchema,
@@ -11,8 +11,6 @@ import {
   type OrganisationTreeUpdatePayload,
   type OrganisationUpdatePayload,
 } from './schemas'
-
-export type PractitionerRoleRead = components['schemas']['PractitionerRoleRead']
 
 export async function fetchOrganisations(): Promise<OrganisationRead[]> {
   const { data, response } = await api.GET('/organisations', {})

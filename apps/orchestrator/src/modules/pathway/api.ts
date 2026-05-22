@@ -14,7 +14,7 @@ import type {
   PathwayWithVersion,
 } from './types'
 
-export type PathwayApiError = Error & { status: number; code?: string }
+type PathwayApiError = Error & { status: number; code?: string }
 
 function pathwayError(message: string, status: number, code?: string): PathwayApiError {
   const err = new Error(message) as PathwayApiError
