@@ -30,7 +30,7 @@ import {
  * for every field it owns; localStorage supplies fallbacks for the rest.
  */
 
-export interface SearchCoercer {
+interface SearchCoercer {
   parse: (value: unknown) => Partial<DataTableState>
 }
 
@@ -64,7 +64,7 @@ function coerceFilters(value: unknown): DataTableState['filters'] {
  * Best-effort coercion from an unknown search object into a partial
  * `DataTableState`. Unknown / malformed fields are dropped silently.
  */
-export function coerceSearchToState(search: unknown): Partial<DataTableState> {
+function coerceSearchToState(search: unknown): Partial<DataTableState> {
   if (!isPlainObject(search)) return {}
   const out: Partial<DataTableState> = {}
   if (typeof search['page'] === 'number') out.page = search['page']
@@ -88,23 +88,6 @@ export function coerceSearchToState(search: unknown): Partial<DataTableState> {
 
 function applyAction(state: DataTableState, action: DataTableAction): DataTableState {
   return dataTableReducer(state, action)
-}
-
-/**
- * Resolve effective state. The URL (`routeState`) wins for any field it
- * actually defines; `localState` fills in the rest. This is the recommended
- * pattern when persisting `pageSize` to localStorage while letting the URL
- * own `page`, `q`, `orderBy`, `order`, and `filters`.
- *
- * Example:
- *   URL: ?page=3 + localStorage: { pageSize: 50 }
- *   -> { ...defaults, pageSize: 50, page: 3 }
- */
-export function composeTableState(
-  routeState: Partial<DataTableState> | undefined,
-  localState: Partial<DataTableState> | undefined,
-): DataTableState {
-  return mergeInitialState({ ...(localState ?? {}), ...(routeState ?? {}) })
 }
 
 /**

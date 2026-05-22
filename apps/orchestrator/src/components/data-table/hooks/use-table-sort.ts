@@ -1,11 +1,11 @@
 import { useCallback } from 'react'
 
-export interface UseTableSortParams {
+interface UseTableSortParams {
   state: { orderBy: string | null; order: 'asc' | 'desc' }
   setSort: (orderBy: string | null, order: 'asc' | 'desc') => void
 }
 
-export interface UseTableSortApi {
+interface UseTableSortApi {
   cycle: (sortKey: string) => void
   iconState: (sortKey: string) => 'asc' | 'desc' | null
   ariaSort: (sortKey: string) => 'ascending' | 'descending' | 'none'

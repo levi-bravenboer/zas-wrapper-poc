@@ -2,9 +2,9 @@ import { useCallback, useMemo, useReducer } from 'react'
 
 import type { OrganisationTreeMove } from '../schemas'
 
-export type EditorMode = 'read' | 'edit'
+type EditorMode = 'read' | 'edit'
 
-export interface EditorState {
+interface EditorState {
   mode: EditorMode
   // Map keyed by org id so multiple moves on the same node collapse to
   // the latest one — matches the backend's "1 move per id" invariant.
@@ -57,7 +57,7 @@ function initialState(initialExpanded?: Iterable<string>): EditorState {
   }
 }
 
-export interface UseOrganisationTreeEditor {
+interface UseOrganisationTreeEditor {
   mode: EditorMode
   pendingMoves: ReadonlyMap<string, OrganisationTreeMove>
   expanded: ReadonlySet<string>

@@ -10,7 +10,7 @@ import * as React from 'react'
 import { describe, expect, it } from 'vitest'
 
 import { DATA_TABLE_DEFAULT_STATE, type DataTableState } from './use-data-table-state'
-import { composeTableState, useRouteSearchTableState } from './use-route-search-table-state'
+import { useRouteSearchTableState } from './use-route-search-table-state'
 
 type HookReturn = ReturnType<typeof useRouteSearchTableState>
 
@@ -51,24 +51,6 @@ function mountTableRoute(initialPath: string): {
   const utils = render(<RouterProvider router={router} />)
   return { ref, unmount: utils.unmount }
 }
-
-describe('composeTableState', () => {
-  it('merges defaults under localStorage under URL', () => {
-    const merged = composeTableState({ page: 3 }, { pageSize: 50 })
-    expect(merged.page).toBe(3)
-    expect(merged.pageSize).toBe(50)
-    expect(merged.q).toBeNull()
-  })
-
-  it('URL wins over localStorage on shared fields', () => {
-    const merged = composeTableState({ pageSize: 100 }, { pageSize: 50 })
-    expect(merged.pageSize).toBe(100)
-  })
-
-  it('returns plain defaults when both inputs are empty', () => {
-    expect(composeTableState(undefined, undefined)).toEqual(DATA_TABLE_DEFAULT_STATE)
-  })
-})
 
 describe('useRouteSearchTableState', () => {
   it('initialises state from the URL search params on mount', async () => {
