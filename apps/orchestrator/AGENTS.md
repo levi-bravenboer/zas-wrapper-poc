@@ -383,7 +383,8 @@ Default assumption is `app` only. If the user says "also for HiX" or "embedded" 
 
 ### Generator and catalogue
 
-- Run `pnpm gen:feature <id> --surfaces <list> --fhir-scopes <scopes> --requires <ctx> --title-nl <label>` to scaffold a new feature. The generator wires `defineFeature`, ports, adapters, route shims, the modules barrel, and the `nav.<id>` i18n key. See `scripts/gen-feature.ts`.
+- Platform architecture lives in [`src/platform/README.md`](./src/platform/README.md) — read it before touching surfaces, ports, or shells.
+- Run `pnpm gen:feature <id> --surfaces <list> --fhir-scopes <scopes> --requires <ctx> --title-nl <label>` to scaffold a new feature. The generator wires `defineFeature`, ports, adapters, route shims, the modules barrel, and the `nav.<id>` i18n key. See `scripts/gen-feature.ts` and `.claude/skills/new-feature/`.
 - The canonical page → surface decisions live in `openspec/changes/multi-surface-feature-framework/page-surface-catalogue.md` (post-archive: under `openspec/changes/archive/<date>-multi-surface-feature-framework/`). Read it before introducing a new view in an existing area.
 - **Admin opt-out:** routes under `/_auth/admin/*`, `/_auth/settings`, and `/_auth/pathways/*` are app-only by intent. They MUST NOT call `defineFeature` and MUST NOT pass through `pnpm gen:feature`. Hand-write the route, skip the surface prompt, and add `// surface-opt-out: app-only` as the first line so future scanners recognise the exception.
 
