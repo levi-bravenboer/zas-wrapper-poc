@@ -94,8 +94,8 @@ Scope tightened from the original plan: when this change was drafted, `pathways`
 
 ## 8. Documentation and release
 
-- [ ] 8.1 Update `apps/orchestrator/README.md` route table to list `_auth`, `s`, `embed` segments (path-bearing, not pathless `_smart` / `_embed`), reference `page-surface-catalogue.md` for current page → surface decisions, and mention surface gating.
-- [ ] 8.2 Add a short `apps/orchestrator/src/platform/README.md` covering surfaces, ports, defining a new feature, and writing tests, plus a "when NOT to use `defineFeature`" subsection that points at the admin opt-out list.
-- [ ] 8.3 Add a section to `apps/orchestrator/AGENTS.md` linking to the platform README, the `new-feature` skill, and `page-surface-catalogue.md`.
-- [ ] 8.4 Confirm `openspec validate multi-surface-feature-framework --strict` passes
-- [ ] 8.5 Archive the change via `openspec archive multi-surface-feature-framework` once shipped
+- [x] 8.1 Updated `apps/orchestrator/README.md` route table with `_auth` / `s` / `embed` segments (path-bearing), per-route surface, opt-out callouts, and a pointer to `page-surface-catalogue.md`.
+- [x] 8.2 Added `apps/orchestrator/src/platform/README.md` covering surfaces, ports, `defineFeature`, route shims, testing, generator, and a "when NOT to use `defineFeature`" admin opt-out subsection.
+- [x] 8.3 Extended `apps/orchestrator/AGENTS.md` `## Surfaces …` with links to the platform README, `pnpm gen:feature`, the `new-feature` skill, and `page-surface-catalogue.md`.
+- [x] 8.4 `openspec validate multi-surface-feature-framework --strict` → "Change 'multi-surface-feature-framework' is valid".
+- [ ] 8.5 Archive the change via `openspec archive multi-surface-feature-framework` once the user signs off on the PoC scope.
