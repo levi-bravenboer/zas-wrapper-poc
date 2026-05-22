@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Pencil, Plus, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
@@ -17,15 +18,17 @@ import {
   type DataTableRowAction,
 } from '@/components/data-table'
 import { FilterableListPage } from '@/components/list/FilterableListPage'
-import { PractitionerPicker } from '@/components/pickers'
+import { OrganisationPicker, PractitionerPicker } from '@/components/pickers'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import type { ListFilter } from '@/hooks/use-data-table-state'
+import type { Page } from '@/hooks/use-paginated-query'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
 import { useOrganisations } from '@/modules/organisation/hooks'
 import type { OrganisationRead } from '@/modules/organisation/schemas'
+import { USERS_LIST_PATH } from '@/modules/user/keys'
+import type { UserRow } from '@/modules/user/schemas'
 
 import { ROLE_CODES } from '../constants'
 import { useClosePractitionerRole } from '../hooks'
@@ -67,22 +70,6 @@ function formatDateOnly(iso: string): string {
   })
 }
 
-function firstFilterValue(
-  filters: Record<string, ListFilter | ListFilter[]>,
-  field: string,
-): string | null {
-  const v = filters[field]
-  if (!v) return null
-  const f = Array.isArray(v) ? v[0] : v
-  if (!f) return null
-  const val = f.value
-  if (Array.isArray(val)) {
-    const first = val[0]
-    return first == null ? null : String(first)
-  }
-  return val == null ? null : String(val)
-}
-
 export function PractitionerRoleListPage(): ReactElement {
   const { t } = useTranslation('practitioner-roles-admin-ui')
   const [state, dispatch] = useRouteSearchTableState()
@@ -91,6 +78,7 @@ export function PractitionerRoleListPage(): ReactElement {
   const search = useSearch({ strict: false }) as Record<string, unknown>
   const navigate = useNavigate()
   const deepLinkAppliedRef = useRef(false)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     if (deepLinkAppliedRef.current) return
@@ -240,29 +228,54 @@ export function PractitionerRoleListPage(): ReactElement {
     [closeRole, t],
   )
 
-  const practitionerId = firstFilterValue(state.filters, 'practitioner_id')
-  const isOpenOnly = firstFilterValue(state.filters, 'is_open') === 'true'
-
-  const setEqFilter = (field: string, value: string | null): void => {
-    if (value === null) dispatch.clearFilter(field)
-    else dispatch.setFilter(field, { op: 'eq', value })
-  }
-
   const onFilter = (field: string, f: ListFilter | ListFilter[] | null): void => {
     if (f === null) dispatch.clearFilter(field)
     else dispatch.setFilter(field, f)
   }
 
+  const practitionerLabelFor = (id: string): string | null => {
+    const cached = queryClient.getQueriesData<Page<UserRow>>({
+      queryKey: ['paginated', USERS_LIST_PATH],
+    })
+    for (const [, page] of cached) {
+      if (!page) continue
+      const hit = page.items.find((u) => u.id === id)
+      if (hit) return hit.display_name
+    }
+    return null
+  }
+
   const filterDefs = useMemo<ReadonlyArray<DataTableFilter<PractitionerRoleRead>>>(
     () => [
       {
-        type: 'select',
+        type: 'typeahead',
+        key: 'practitioner_id',
+        label: t('filter.practitioner'),
+        formatValue: practitionerLabelFor,
+        renderEditor: ({ value, onChange }) => (
+          <PractitionerPicker
+            value={value}
+            onChange={(id) => onChange(id)}
+            ariaLabel={t('filter.practitioner')}
+            placeholder={t('filter.practitioner')}
+            inline
+          />
+        ),
+      },
+      {
+        type: 'typeahead',
         key: 'organisation_id',
         label: t('filter.organisation'),
-        options: (orgs ?? []).map((o) => ({
-          value: o.id,
-          label: orgPaths.get(o.id) ?? o.name,
-        })),
+        formatValue: (id) => orgPaths.get(id) ?? null,
+        renderEditor: ({ value, onChange }) => (
+          <OrganisationPicker
+            value={value}
+            onChange={(id) => onChange(id)}
+            ariaLabel={t('filter.organisation')}
+            placeholder={t('filter.organisation')}
+            inline
+          />
+        ),
       },
       {
         type: 'select',
@@ -270,8 +283,15 @@ export function PractitionerRoleListPage(): ReactElement {
         label: t('filter.code'),
         options: ROLE_CODES.map((c) => ({ value: c, label: t(`code.${c}`) })),
       },
+      {
+        type: 'boolean',
+        key: 'is_open',
+        label: t('filter.open_only'),
+      },
     ],
-    [orgs, orgPaths, t],
+    // practitionerLabelFor closes over queryClient (stable) — safe to omit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orgPaths, t, queryClient],
   )
 
   const hasActive = Object.keys(state.filters).length > 0
@@ -286,12 +306,6 @@ export function PractitionerRoleListPage(): ReactElement {
         />
       </Toolbar.Search>
       <Toolbar.Filters>
-        <PractitionerPicker
-          value={practitionerId}
-          onChange={(id) => setEqFilter('practitioner_id', id)}
-          ariaLabel={t('filter.practitioner')}
-          placeholder={t('filter.practitioner')}
-        />
         {filterDefs.map((def) => (
           <FilterPill
             key={def.key}
@@ -300,13 +314,6 @@ export function PractitionerRoleListPage(): ReactElement {
             onChange={onFilter}
           />
         ))}
-        <label className="inline-flex items-center gap-2 text-xs text-foreground-muted">
-          <Checkbox
-            checked={isOpenOnly}
-            onCheckedChange={(v) => setEqFilter('is_open', v === true ? 'true' : null)}
-          />
-          <span>{t('filter.open_only')}</span>
-        </label>
         {hasActive && <ClearAll onClick={() => dispatch.clearAll()} />}
       </Toolbar.Filters>
     </Toolbar.Root>

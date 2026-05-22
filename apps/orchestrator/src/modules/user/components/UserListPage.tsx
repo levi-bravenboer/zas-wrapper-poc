@@ -122,13 +122,11 @@ export function UserListPage(): ReactElement {
         ],
       },
       {
-        type: 'select',
+        type: 'boolean',
         key: 'is_active',
         label: t('list.filter.is_active'),
-        options: [
-          { value: 'true', label: t('active.true') },
-          { value: 'false', label: t('active.false') },
-        ],
+        trueLabel: t('active.true'),
+        falseLabel: t('active.false'),
       },
     ],
     [t],

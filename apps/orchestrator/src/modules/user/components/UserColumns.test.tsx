@@ -42,14 +42,14 @@ describe('useUserColumns', () => {
 })
 
 describe('useUserFilterDefs', () => {
-  it('produces role multi + is_active select with full enum values', () => {
+  it('produces role multi + is_active boolean with full enum values', () => {
     const { result } = renderHook(() => useUserFilterDefs(), { wrapper: I18nWrap })
     const role = result.current.find((d) => d.key === 'role')
     expect(role?.type).toBe('multi')
     const roleOptions = role && role.type === 'multi' ? role.options.map((o) => o.value).sort() : []
     expect(roleOptions).toEqual(['admin', 'caregiver'])
     const active = result.current.find((d) => d.key === 'is_active')
-    expect(active?.type).toBe('select')
+    expect(active?.type).toBe('boolean')
   })
 })
 

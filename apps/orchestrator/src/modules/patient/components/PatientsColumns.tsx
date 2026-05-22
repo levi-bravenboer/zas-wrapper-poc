@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react'
 import { defineColumn, type BrandedColumnDef } from '@/components/data-table/columns'
 import { type DataTableFilter } from '@/components/data-table/DataTableToolbar'
 import { type DataTableRowAction } from '@/components/data-table/types'
+import { OrganisationPicker } from '@/components/pickers'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 
 import type { OrganisationOption, PatientRow } from '../types'
@@ -60,13 +61,23 @@ export function patientFilters(
   ctx: PatientFilterContext,
 ): ReadonlyArray<DataTableFilter<PatientRow>> {
   const { t, organisations } = ctx
+  const labelsById = new Map(organisations.map((o) => [o.id, o.name]))
   return [
     { type: 'date-range', key: 'birth_date', label: t('filters.birthDate') },
     {
-      type: 'select',
+      type: 'typeahead',
       key: 'primary_organisation_id',
       label: t('filters.organisation'),
-      options: organisations.map((o) => ({ value: o.id, label: o.name })),
+      formatValue: (id) => labelsById.get(id) ?? null,
+      renderEditor: ({ value, onChange }) => (
+        <OrganisationPicker
+          value={value}
+          onChange={(id) => onChange(id)}
+          ariaLabel={t('filters.organisation')}
+          placeholder={t('filters.organisation')}
+          inline
+        />
+      ),
     },
   ]
 }
