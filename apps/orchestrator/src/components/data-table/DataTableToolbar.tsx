@@ -56,5 +56,3 @@ export function DataTableToolbar<T>({
     </Toolbar.Root>
   )
 }
-
-export { DataTableToolbar as Toolbar }

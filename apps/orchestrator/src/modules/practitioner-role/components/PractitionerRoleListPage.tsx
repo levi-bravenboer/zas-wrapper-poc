@@ -25,6 +25,7 @@ import type { ListFilter } from '@/hooks/use-data-table-state'
 import type { Page } from '@/hooks/use-paginated-query'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
+import { formatDate } from '@/lib/utils/datetime'
 import { useOrganisations } from '@/modules/organisation/hooks'
 import type { OrganisationRead } from '@/modules/organisation/schemas'
 import { USERS_LIST_PATH } from '@/modules/user/keys'
@@ -60,14 +61,6 @@ function buildOrgPaths(orgs: ReadonlyArray<OrganisationRead>): Map<string, strin
   }
   for (const org of orgs) visit(org.id, new Set())
   return cache
-}
-
-function formatDateOnly(iso: string): string {
-  return new Date(iso).toLocaleDateString('nl-NL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
 }
 
 export function PractitionerRoleListPage(): ReactElement {
@@ -180,8 +173,8 @@ export function PractitionerRoleListPage(): ReactElement {
         sortKey: 'period_start',
         cell: (row) => (
           <span className="text-xs text-muted-foreground">
-            {formatDateOnly(row.period_start)} →{' '}
-            {row.period_end ? formatDateOnly(row.period_end) : t('period.open')}
+            {formatDate(row.period_start, 'nl-NL')} →{' '}
+            {row.period_end ? formatDate(row.period_end, 'nl-NL') : t('period.open')}
           </span>
         ),
       }),

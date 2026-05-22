@@ -1,9 +1,12 @@
 import { type TFunction } from 'i18next'
 import { Trash2 } from 'lucide-react'
 
-import { defineColumn, type BrandedColumnDef } from '@/components/data-table/columns'
-import { type DataTableFilter } from '@/components/data-table/DataTableToolbar'
-import { type DataTableRowAction } from '@/components/data-table/types'
+import {
+  defineColumn,
+  type BrandedColumnDef,
+  type DataTableFilter,
+  type DataTableRowAction,
+} from '@/components/data-table'
 import { OrganisationPicker } from '@/components/pickers'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 

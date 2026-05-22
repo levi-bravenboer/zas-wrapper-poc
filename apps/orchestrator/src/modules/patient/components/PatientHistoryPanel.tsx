@@ -3,25 +3,13 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 import { fetchUserDetail } from '@/modules/user/api'
 import { userKeys } from '@/modules/user/keys'
 
 import type { PatientRow } from '../types'
 
 const USER_LOOKUP_STALE_MS = 5 * 60_000
-
-function formatDateTimeOrDash(value: string | null | undefined, locale: string): string {
-  if (!value) return '—'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleString(locale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 export interface PatientHistoryPanelProps {
   patient: PatientRow
