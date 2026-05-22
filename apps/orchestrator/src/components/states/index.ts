@@ -1,5 +1,4 @@
 export { RowSkeleton } from './Skeleton'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
 export { ErrorState, type ErrorStateProps } from './ErrorState'
-export { InlineAlert, type InlineAlertProps } from './InlineAlert'
 export { RefetchOverlay, type RefetchOverlayProps } from './RefetchOverlay'
