@@ -13,6 +13,22 @@ export const BLOCK_HEIGHT = 64
 export const BLOCK_DEFAULT_X = 70
 export const BLOCK_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT / 2
 
+/**
+ * Default y-offset (relative to lane top) for a block of `blockHeight` inside
+ * a lane of `laneHeight`. Generalises the historic `LANE_INSET - BLOCK_HEIGHT/2`
+ * formula so variable-size blocks (external-provider blocks like Luscii) place
+ * sensibly without overflowing the lane top.
+ *
+ * Native 240×64 blocks in the 180-tall default lane return the historic 26 —
+ * unchanged behaviour. Taller blocks clamp to `0` (lane top) so they never
+ * float above the lane band.
+ */
+export function laneInset(blockHeight: number, laneHeight: number): number {
+  const referenceOffset = LANE_INSET - blockHeight / 2
+  const maxInset = Math.max(0, laneHeight - blockHeight)
+  return Math.round(Math.max(0, Math.min(maxInset, referenceOffset)))
+}
+
 export function phaseColumnX(index: number): number {
   return CANVAS_LEFT_PAD + index * PHASE_COL_WIDTH
 }
@@ -85,10 +101,13 @@ export function buildCanvasGeometry(phases: PathwayPhase[], lanes: PathwayLane[]
 export function blockOrigin(
   block: Pick<PathwayBlock, 'phase_id' | 'lane_id' | 'x' | 'y'>,
   geometry: CanvasGeometry,
+  dimensions?: { width: number; height: number },
 ): { x: number; y: number } {
+  const blockHeight = dimensions?.height ?? BLOCK_HEIGHT
+  const defaultY = laneInset(blockHeight, geometry.laneH(block.lane_id))
   return {
     x: geometry.phaseX(block.phase_id) + (block.x || BLOCK_DEFAULT_X),
-    y: geometry.laneY(block.lane_id) + (block.y || BLOCK_DEFAULT_Y),
+    y: geometry.laneY(block.lane_id) + (block.y || defaultY),
   }
 }
 
