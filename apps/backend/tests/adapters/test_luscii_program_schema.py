@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from app.adapters.luscii.program import (
     LusciiAlertThreshold,
     LusciiInstrument,
-    LusciiLayout,
     LusciiLayoutEdge,
     LusciiLayoutLane,
     LusciiLayoutNode,
