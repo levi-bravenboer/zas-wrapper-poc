@@ -19,6 +19,8 @@ export interface OrganisationPickerProps {
   ariaLabel?: string
   /** Filter to a subtree (the given id and all its descendants). */
   rootId?: string
+  /** Render the Command body inline (no Popover/Trigger). */
+  inline?: boolean
 }
 
 const PATH_SEP = ' / '
@@ -73,6 +75,7 @@ export function OrganisationPicker({
   disabled,
   ariaLabel,
   rootId,
+  inline,
 }: OrganisationPickerProps): ReactElement {
   const [search, setSearch] = useState('')
   const { data, isLoading } = useOrganisations()
@@ -117,6 +120,7 @@ export function OrganisationPicker({
       disabled={disabled}
       disabledIds={disabledIds}
       ariaLabel={ariaLabel}
+      inline={inline}
     />
   )
 }
