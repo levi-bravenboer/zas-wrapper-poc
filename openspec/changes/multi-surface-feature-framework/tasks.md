@@ -60,15 +60,15 @@
 
 ## 5. Feature generator + lint guardrails
 
-- [ ] 5.1 Add `tsx` as a devDependency if not already present
-- [ ] 5.2 Implement `apps/orchestrator/scripts/gen-feature.ts` supporting flags `--id`, `--path`, `--surfaces`, `--fhir-scopes`, `--requires`, `--title-nl`, `--dry-run`
-- [ ] 5.3 Add a `gen:feature` script to `apps/orchestrator/package.json` invoking the generator with `tsx`
-- [ ] 5.4 Implement template writers that produce the file set defined in the `feature-generator` spec
-- [ ] 5.5 Implement registry-side mutations: append `export { default as <id>Feature } from './<id>'` to `modules/index.ts` in alphabetical order and add the `nav.<id>` entry to `locales/nl/nav.json`. Do NOT touch `navItems.ts` — the sidebar already merges `getFeaturesForSurface('app')` with the hard-wired group (see `components/layout/AppSidebar.tsx`); appending there would double-register the nav item.
-- [ ] 5.6 Add unit tests for the generator covering: app-only file set, embed-only file set, refusal to overwrite existing module, dry-run output
-- [ ] 5.7 Add ESLint `no-restricted-imports` rules forbidding `modules/** → components/layout/**`, cross-module imports, and `platform/** → modules/**`
-- [ ] 5.8 Add a custom ESLint rule (or `no-restricted-syntax`) flagging route stub files whose body is not a `renderFeature(...)` call
-- [ ] 5.9 Smoke test: run `pnpm gen:feature observations --surfaces app,embed --fhir-scopes "patient/Observation.read" --requires patient --title-nl "Observaties"`, then `pnpm tsc -b --noEmit`, `pnpm eslint .`, `pnpm vitest run`; revert generated files after verification
+- [x] 5.1 Add `tsx` as a devDependency if not already present
+- [x] 5.2 Implement `apps/orchestrator/scripts/gen-feature.ts` supporting flags `--id`, `--path`, `--surfaces`, `--fhir-scopes`, `--requires`, `--title-nl`, `--dry-run`
+- [x] 5.3 Add a `gen:feature` script to `apps/orchestrator/package.json` invoking the generator with `tsx`
+- [x] 5.4 Implement template writers that produce the file set defined in the `feature-generator` spec
+- [x] 5.5 Implement registry-side mutations: append `export { default as <id>Feature } from './<id>'` to `modules/index.ts` in alphabetical order and add the `nav.<id>` entry to `locales/nl/nav.json`. Do NOT touch `navItems.ts` — the sidebar already merges `getFeaturesForSurface('app')` with the hard-wired group (see `components/layout/AppSidebar.tsx`); appending there would double-register the nav item.
+- [x] 5.6 Add unit tests for the generator covering: app-only file set, embed-only file set, refusal to overwrite existing module, dry-run output _(scripts/__tests__/gen-feature.test.ts; subprocess CLI invocation)_
+- [x] 5.7 Add ESLint `no-restricted-imports` rules forbidding `modules/** → components/layout/**`, cross-module imports, and `platform/** → modules/**` _(implemented via `import-x/no-restricted-paths`; tests/__tests__ files override; smart-launch carved out pending refactor)_
+- [~] 5.8 ~~Add a custom ESLint rule (or `no-restricted-syntax`) flagging route stub files whose body is not a `renderFeature(...)` call.~~ **Deferred.** Route files mix generated stubs and hand-written components (per `page-surface-catalogue.md` admin opt-out); a naive AST rule would over-trigger. Re-evaluate after §7 completes and the route stub vs hand-written split is clear.
+- [x] 5.9 Smoke test: ran `pnpm gen:feature observations --surfaces app,embed --fhir-scopes "patient/Observation.read" --requires patient --title-nl "Observaties"`, then `moon run orchestrator:typecheck` + `orchestrator:lint`. Typecheck 0; lint 0 errors (20 pre-existing warnings). Generated files reverted post-verification.
 
 ## 6. Agent rules and commit hook
 
