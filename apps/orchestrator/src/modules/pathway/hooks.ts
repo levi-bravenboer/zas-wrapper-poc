@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   createPathway,
-  deletePathway,
   forkPathwayFromPublish,
   getPathway,
   getPathwayVersion,
@@ -63,16 +62,6 @@ export function useReplacePathway(id: string) {
     mutationFn: (payload) => replacePathway(id, payload),
     onSuccess: (data) => {
       qc.setQueryData(pathwayKeys.detail(id), data)
-      void qc.invalidateQueries({ queryKey: pathwayKeys.list() })
-    },
-  })
-}
-
-export function useDeletePathway() {
-  const qc = useQueryClient()
-  return useMutation<void, Error, string>({
-    mutationFn: deletePathway,
-    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: pathwayKeys.list() })
     },
   })

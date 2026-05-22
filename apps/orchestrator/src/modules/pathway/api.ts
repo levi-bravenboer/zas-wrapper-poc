@@ -75,15 +75,6 @@ export async function replacePathway(
   return result.data
 }
 
-export async function deletePathway(id: string): Promise<void> {
-  const result = await api.DELETE('/pathways/{pathway_id}', {
-    params: { path: { pathway_id: id } },
-  })
-  if (!result.response.ok) {
-    throw pathwayError('Failed to delete pathway', result.response.status)
-  }
-}
-
 export async function listBlockTypes(): Promise<PathwayBlockType[]> {
   const result = await api.GET('/pathways/blocks', {})
   if (!result.data) {

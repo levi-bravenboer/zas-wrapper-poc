@@ -13,22 +13,6 @@ export const BLOCK_HEIGHT = 64
 export const BLOCK_DEFAULT_X = 70
 export const BLOCK_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT / 2
 
-export function phaseColumnX(index: number): number {
-  return CANVAS_LEFT_PAD + index * PHASE_COL_WIDTH
-}
-
-export function laneRowY(index: number): number {
-  return LANE_TOP_PAD + index * LANE_ROW_HEIGHT
-}
-
-export function canvasInnerWidth(phaseCount: number): number {
-  return CANVAS_LEFT_PAD + Math.max(phaseCount, 1) * PHASE_COL_WIDTH
-}
-
-export function canvasInnerHeight(laneCount: number): number {
-  return LANE_TOP_PAD + Math.max(laneCount, 1) * LANE_ROW_HEIGHT
-}
-
 export type CanvasGeometry = {
   phaseX: (phaseId: string) => number
   phaseW: (phaseId: string) => number

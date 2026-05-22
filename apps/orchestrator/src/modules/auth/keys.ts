@@ -1,4 +1,4 @@
-export const AUTH_KEYS_SCOPE = 'auth' as const
+const AUTH_KEYS_SCOPE = 'auth' as const
 
 export const authKeys = {
   all: [AUTH_KEYS_SCOPE] as const,
