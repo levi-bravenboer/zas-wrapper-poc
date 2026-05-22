@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — luscii-block-large v2 (30% smaller)</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style type="text/tailwindcss">
+  @theme {
+    --color-background: oklch(1 0 0);
+    --color-surface-1: oklch(0.985 0.003 175);
+    --color-surface-2: oklch(0.97 0.01 175);
+    --color-foreground: oklch(0.21 0.04 265);
+    --color-foreground-muted: oklch(0.5 0.02 265);
+    --color-card: var(--color-background);
+    --color-primary: oklch(0.46 0.07 175);
+    --color-primary-soft: oklch(0.93 0.04 175);
+    --color-primary-subtle: oklch(0.97 0.01 175);
+    --color-border: oklch(0.91 0.005 265);
+    --color-border-strong: oklch(0.82 0.01 265);
+    --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+    --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+    --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --font-size-base: 0.875rem;
+    --tracking-tight: -0.011em;
+  }
+  :root {
+    --lane-external: #b45309;
+    --lane-patient: #266b5e;
+    --lane-caregiver: #2563eb;
+    --lane-system: #7c3aed;
+    --ph-1-ink: #08453c; --ph-1-soft: #cfede8;
+    --ph-2-ink: #5b21b6; --ph-2-soft: #ede9fe;
+    --ph-3-ink: #1d4ed8; --ph-3-soft: #dbeafe;
+    --ph-4-ink: #92400e; --ph-4-soft: #fef3c7;
+    --hairline: rgba(16, 24, 40, 0.06);
+    --gradient-aurora:
+      radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+      linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-foreground);
+    background: var(--gradient-aurora);
+    min-height: 100vh;
+    letter-spacing: var(--tracking-tight);
+    padding: 48px 24px;
+  }
+
+  /* Large block — v2 is 30% smaller than v1 (720×400 → 504×280, ~4× native footprint) */
+  .block-luscii-big {
+    position: relative;
+    width: 504px;
+    height: 280px;
+    border-radius: 11px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    --lane-accent: var(--lane-external);
+    background:
+      radial-gradient(circle, rgba(11,26,23,0.08) 1px, transparent 1px) 0 0 / 14px 14px,
+      var(--color-surface-1);
+  }
+  .block-luscii-big .rail {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--lane-accent) 0%, color-mix(in srgb, var(--lane-accent) 70%, black) 100%);
+    z-index: 4;
+  }
+  .block-luscii-big .pathway-svg {
+    position: absolute;
+    inset: 0 0 0 4px;
+    width: calc(100% - 4px);
+    height: 100%;
+    display: block;
+  }
+  .block-luscii-big .title-overlay {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 11px 6px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.7);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 1px 3px rgba(0,0,0,0.07);
+  }
+  .block-luscii-big .title-overlay .icon-box {
+    width: 24px; height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--lane-accent) 16%, white);
+    color: var(--lane-accent);
+  }
+  .block-luscii-big .title-overlay .name { font-size: 12.5px; font-weight: 600; }
+  .block-luscii-big .title-overlay .sub {
+    font-size: 10px;
+    color: var(--color-foreground-muted);
+    margin-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .block-luscii-big .meta-overlay {
+    position: absolute;
+    bottom: 10px; right: 12px; z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.7);
+    box-shadow: var(--shadow-xs);
+    font-size: 10px;
+    color: var(--color-foreground-muted);
+  }
+  .block-luscii-big .meta-overlay .pill {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 6px; border-radius: 999px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    font-size: 9px;
+    color: var(--color-foreground);
+  }
+  .provider-badge {
+    position: absolute;
+    top: -1px; right: -1px;
+    z-index: 7;
+    padding: 4px 9px;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: white;
+    background: oklch(0.45 0.18 250);
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+  }
+
+  /* Pathway sub-elements — same vocabulary as the parent builder, scaled */
+  .phase-pill-big {
+    fill: rgba(255,255,255,0.6);
+    stroke: rgba(0,0,0,0.06);
+  }
+  .lane-pill-big {
+    fill: rgba(255,255,255,0.78);
+    stroke: rgba(0,0,0,0.06);
+  }
+  .pa-node {
+    rx: 5; ry: 5;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.08));
+  }
+  .pa-edge {
+    fill: none;
+    stroke: rgba(11,26,23,0.45);
+    stroke-width: 1.4;
+  }
+  .pa-edge.bold {
+    stroke: rgba(11,26,23,0.6);
+    stroke-width: 1.6;
+  }
+
+  .compare-wrap { max-width: 800px; margin: 0 auto; }
+  .compare-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .compare-sub { font-size: 12px; color: var(--color-foreground-muted); margin-bottom: 24px; line-height: 1.5; }
+
+  /* Tiny inline native block for size comparison */
+  .size-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 28px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+  .native-stub {
+    position: relative;
+    width: 240px; height: 64px;
+    display: grid;
+    grid-template-columns: 4px 36px 1fr;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    box-shadow: var(--shadow-sm);
+    --lane-accent: var(--lane-patient);
+  }
+  .native-stub .rail { grid-row: 1 / -1; background: var(--lane-accent); border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+  .native-stub .icon-cell { grid-row: 1 / -1; display: flex; align-items: center; justify-content: center; color: var(--lane-accent); background: color-mix(in srgb, var(--lane-accent) 10%, var(--color-card)); }
+  .native-stub .content { padding: 8px 10px 0 0; display: flex; flex-direction: column; gap: 2px; }
+  .native-stub .name { font-size: 13px; font-weight: 600; }
+  .native-stub .sum { font-size: 11.5px; color: var(--color-foreground-muted); }
+</style>
+</head>
+
+<body class="antialiased">
+<!--
+  MOCK DATA — Luscii block (BIG size, side design) v1
+  Block size = ~6× the native default (240×64). Big enough to actually render
+  a readable pathway with labeled nodes, phase headers, lane labels, edges,
+  day chips. Demonstrates what the zoom-to-full or "selected" state could
+  look like — and what live-data-driven rendering can show.
+  Frame, header chip, provider badge match the small block so the swap from
+  small ↔ big is visually continuous.
+-->
+
+<div class="compare-wrap">
+  <h1 class="compare-title">Luscii block — large readable design (v2, 30% smaller)</h1>
+  <p class="compare-sub">Side design: block scaled to 504×280 (~4× native footprint, 30% smaller than v1's 720×400). Still big enough to read the Luscii pathway clearly. Same chrome (rail / title overlay / Luscii badge) as the small variants so the transition between sizes is continuous.</p>
+
+  <div class="block-luscii-big">
+    <div class="rail"></div>
+    <svg class="pathway-svg" viewBox="0 0 715 400" preserveAspectRatio="none">
+
+      <!-- ===== Phase column tints (4 phases) ===== -->
+      <rect x="0"   y="0" width="179" height="400" fill="var(--ph-1-soft)" opacity="0.45"/>
+      <rect x="179" y="0" width="179" height="400" fill="var(--ph-2-soft)" opacity="0.45"/>
+      <rect x="358" y="0" width="179" height="400" fill="var(--ph-3-soft)" opacity="0.45"/>
+      <rect x="537" y="0" width="178" height="400" fill="var(--ph-4-soft)" opacity="0.45"/>
+
+      <!-- phase dashed dividers -->
+      <line x1="179" y1="0" x2="179" y2="400" stroke="rgba(0,0,0,0.07)" stroke-dasharray="3 4"/>
+      <line x1="358" y1="0" x2="358" y2="400" stroke="rgba(0,0,0,0.07)" stroke-dasharray="3 4"/>
+      <line x1="537" y1="0" x2="537" y2="400" stroke="rgba(0,0,0,0.07)" stroke-dasharray="3 4"/>
+
+      <!-- ===== Lane row bands (4 lanes: Patient · Care team · External · System) ===== -->
+      <rect x="0" y="80"  width="715" height="80" fill="var(--lane-patient)" opacity="0.06"/>
+      <rect x="0" y="160" width="715" height="80" fill="var(--lane-caregiver)" opacity="0.06"/>
+      <rect x="0" y="240" width="715" height="80" fill="var(--lane-external)" opacity="0.08"/>
+      <rect x="0" y="320" width="715" height="80" fill="var(--lane-system)" opacity="0.05"/>
+
+      <!-- lane top borders -->
+      <line x1="0" y1="80"  x2="715" y2="80"  stroke="var(--lane-patient)" stroke-width="1" opacity="0.25"/>
+      <line x1="0" y1="160" x2="715" y2="160" stroke="var(--lane-caregiver)" stroke-width="1" opacity="0.25"/>
+      <line x1="0" y1="240" x2="715" y2="240" stroke="var(--lane-external)" stroke-width="1" opacity="0.3"/>
+      <line x1="0" y1="320" x2="715" y2="320" stroke="var(--lane-system)" stroke-width="1" opacity="0.25"/>
+
+      <!-- ===== Phase header pills ===== -->
+      <g font-family="var(--font-sans)" font-size="11" font-weight="600">
+        <g transform="translate(120, 50)">
+          <rect x="-58" y="-13" width="116" height="26" rx="13" class="phase-pill-big"/>
+          <circle cx="-46" cy="0" r="9" fill="var(--ph-1-soft)"/>
+          <text x="-46" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ph-1-ink)">1</text>
+          <text x="-30" y="3" fill="#0b1a17">Onboarding</text>
+          <rect x="34" y="-7" width="20" height="14" rx="7" fill="rgba(0,0,0,0.05)"/>
+          <text x="44" y="3" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">2</text>
+        </g>
+        <g transform="translate(268, 50)">
+          <rect x="-50" y="-13" width="100" height="26" rx="13" class="phase-pill-big"/>
+          <circle cx="-38" cy="0" r="9" fill="var(--ph-2-soft)"/>
+          <text x="-38" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ph-2-ink)">2</text>
+          <text x="-22" y="3" fill="#0b1a17">Pre-op</text>
+          <rect x="22" y="-7" width="20" height="14" rx="7" fill="rgba(0,0,0,0.05)"/>
+          <text x="32" y="3" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">3</text>
+        </g>
+        <g transform="translate(447, 50)">
+          <rect x="-50" y="-13" width="100" height="26" rx="13" class="phase-pill-big"/>
+          <circle cx="-38" cy="0" r="9" fill="var(--ph-3-soft)"/>
+          <text x="-38" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ph-3-ink)">3</text>
+          <text x="-22" y="3" fill="#0b1a17">Monitor</text>
+          <rect x="26" y="-7" width="20" height="14" rx="7" fill="rgba(0,0,0,0.05)"/>
+          <text x="36" y="3" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">5</text>
+        </g>
+        <g transform="translate(626, 50)">
+          <rect x="-50" y="-13" width="100" height="26" rx="13" class="phase-pill-big"/>
+          <circle cx="-38" cy="0" r="9" fill="var(--ph-4-soft)"/>
+          <text x="-38" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ph-4-ink)">4</text>
+          <text x="-22" y="3" fill="#0b1a17">Close-out</text>
+          <rect x="30" y="-7" width="18" height="14" rx="7" fill="rgba(0,0,0,0.05)"/>
+          <text x="39" y="3" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">2</text>
+        </g>
+      </g>
+
+      <!-- ===== Lane label pills (floating left edge of each lane band) ===== -->
+      <g font-family="var(--font-sans)" font-size="11" font-weight="600">
+        <g transform="translate(50, 96)">
+          <rect x="-38" y="-12" width="76" height="24" rx="12" class="lane-pill-big" stroke="color-mix(in srgb, var(--lane-patient) 24%, var(--hairline))"/>
+          <rect x="-32" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-patient) 14%, transparent)"/>
+          <text x="-25" y="4" text-anchor="middle" font-size="9.5" fill="var(--lane-patient)">P</text>
+          <text x="-12" y="4" fill="#0b1a17">Patient</text>
+          <text x="28" y="4" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">4</text>
+        </g>
+        <g transform="translate(50, 176)">
+          <rect x="-44" y="-12" width="88" height="24" rx="12" class="lane-pill-big" stroke="color-mix(in srgb, var(--lane-caregiver) 24%, var(--hairline))"/>
+          <rect x="-38" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-caregiver) 14%, transparent)"/>
+          <text x="-31" y="4" text-anchor="middle" font-size="9.5" fill="var(--lane-caregiver)">C</text>
+          <text x="-18" y="4" fill="#0b1a17">Care team</text>
+          <text x="34" y="4" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">3</text>
+        </g>
+        <g transform="translate(50, 256)">
+          <rect x="-40" y="-12" width="80" height="24" rx="12" class="lane-pill-big" stroke="color-mix(in srgb, var(--lane-external) 24%, var(--hairline))"/>
+          <rect x="-34" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-external) 14%, transparent)"/>
+          <text x="-27" y="4" text-anchor="middle" font-size="9.5" fill="var(--lane-external)">E</text>
+          <text x="-14" y="4" fill="#0b1a17">External</text>
+          <text x="30" y="4" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">3</text>
+        </g>
+        <g transform="translate(50, 336)">
+          <rect x="-38" y="-12" width="76" height="24" rx="12" class="lane-pill-big" stroke="color-mix(in srgb, var(--lane-system) 24%, var(--hairline))"/>
+          <rect x="-32" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-system) 14%, transparent)"/>
+          <text x="-25" y="4" text-anchor="middle" font-size="9.5" fill="var(--lane-system)">S</text>
+          <text x="-12" y="4" fill="#0b1a17">System</text>
+          <text x="28" y="4" text-anchor="middle" font-size="10" fill="var(--color-foreground-muted)">2</text>
+        </g>
+      </g>
+
+      <!-- ===== Edges (smoothstep curves) ===== -->
+      <g>
+        <!-- onboarding chain -->
+        <path class="pa-edge" d="M 156 358 C 200 358, 200 358, 220 358"/>
+        <path class="pa-edge" d="M 156 358 C 200 358, 200 118, 220 118"/>
+        <path class="pa-edge" d="M 156 358 C 200 358, 200 198, 220 198"/>
+        <path class="pa-edge" d="M 336 118 C 380 118, 380 118, 399 118"/>
+        <path class="pa-edge" d="M 336 198 C 380 198, 380 278, 399 278"/>
+        <path class="pa-edge" d="M 515 118 C 560 118, 560 118, 578 118"/>
+        <path class="pa-edge" d="M 515 278 C 560 278, 560 198, 578 198"/>
+        <path class="pa-edge bold" d="M 515 278 C 560 278, 560 278, 578 278"/>
+        <path class="pa-edge" d="M 399 278 C 460 278, 460 278, 515 278"/>
+        <path class="pa-edge" d="M 694 118 C 705 118, 705 118, 715 118"/>
+      </g>
+
+      <!-- ===== Block nodes (12, labeled) ===== -->
+      <g font-family="var(--font-sans)" font-size="10.5" font-weight="600">
+
+        <!-- Onboarding × System: Welkomstmail (ENTRY) -->
+        <g transform="translate(96, 358)">
+          <rect class="pa-node" x="-60" y="-12" width="120" height="32" fill="white" stroke="var(--lane-system)" stroke-width="1.4"/>
+          <rect x="-60" y="-12" width="4" height="32" fill="var(--lane-system)" rx="2"/>
+          <rect x="-50" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-system) 14%, white)"/>
+          <text x="-43" y="3" font-size="9" font-weight="700" fill="var(--lane-system)" text-anchor="middle">M</text>
+          <text x="-30" y="0" fill="#0b1a17">Welkomstmail</text>
+          <text x="-30" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">D0 · email</text>
+          <!-- entry badge -->
+          <rect x="-60" y="-12" width="22" height="11" fill="var(--color-primary)" rx="0" style="border-radius: 5px 0"/>
+          <text x="-49" y="-3.5" text-anchor="middle" font-size="7" font-weight="700" fill="white">START</text>
+        </g>
+
+        <!-- Pre-op × Patient: Intake-vragenlijst -->
+        <g transform="translate(278, 118)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-patient)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-patient)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-patient) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-patient)" text-anchor="middle">F</text>
+          <text x="-28" y="0" fill="#0b1a17">Intake-vragenlijst</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">D1 · 8 vragen</text>
+        </g>
+
+        <!-- Pre-op × Care team: Telefonische intake -->
+        <g transform="translate(278, 198)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-caregiver)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-caregiver)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-caregiver) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-caregiver)" text-anchor="middle">A</text>
+          <text x="-28" y="0" fill="#0b1a17">Telefonische intake</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">D2 · 30 min</text>
+        </g>
+
+        <!-- Pre-op × Care team: Pre-op education -->
+        <g transform="translate(278, 358)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-system)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-system)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-system) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-system)" text-anchor="middle">M</text>
+          <text x="-28" y="0" fill="#0b1a17">Pre-op uitleg</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">D3 · push</text>
+        </g>
+
+        <!-- Monitor × Patient: BP daily -->
+        <g transform="translate(457, 118)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-patient)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-patient)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-patient) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-patient)" text-anchor="middle">M</text>
+          <text x="-28" y="0" fill="#0b1a17">Bloeddruk meting</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">W1-12 · 1×/dag</text>
+        </g>
+
+        <!-- Monitor × External: Luscii nested marker -->
+        <g transform="translate(457, 278)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-external)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-external)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-external) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-external)" text-anchor="middle">L</text>
+          <text x="-28" y="0" fill="#0b1a17">KCCQ wekelijks</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">W1-12 · 1×/wk</text>
+        </g>
+
+        <!-- Monitor × Care team: Alerts review -->
+        <g transform="translate(636, 118)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-patient)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-patient)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-patient) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-patient)" text-anchor="middle">M</text>
+          <text x="-28" y="0" fill="#0b1a17">Gewicht meting</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">W1-12 · 1×/dag</text>
+        </g>
+
+        <g transform="translate(636, 198)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-caregiver)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-caregiver)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-caregiver) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-caregiver)" text-anchor="middle">T</text>
+          <text x="-28" y="0" fill="#0b1a17">Review alerts</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">async · ≥ med</text>
+        </g>
+
+        <g transform="translate(636, 278)">
+          <rect class="pa-node" x="-58" y="-12" width="116" height="32" fill="white" stroke="var(--lane-external)" stroke-width="1.4"/>
+          <rect x="-58" y="-12" width="4" height="32" fill="var(--lane-external)" rx="2"/>
+          <rect x="-48" y="-7" width="14" height="14" rx="3" fill="color-mix(in srgb, var(--lane-external) 14%, white)"/>
+          <text x="-41" y="3" font-size="9" font-weight="700" fill="var(--lane-external)" text-anchor="middle">L</text>
+          <text x="-28" y="0" fill="#0b1a17">Self-care content</text>
+          <text x="-28" y="13" font-size="9" font-weight="500" fill="var(--color-foreground-muted)">W2-12 · ad-hoc</text>
+        </g>
+
+      </g>
+
+    </svg>
+
+    <div class="title-overlay">
+      <span class="icon-box"><i data-lucide="activity" class="w-4 h-4"></i></span>
+      <div>
+        <div class="name">Hartfalen thuismonitoring</div>
+        <div class="sub">Standaard 12 weken · Blocking · pin v4.2</div>
+      </div>
+    </div>
+
+    <div class="meta-overlay">
+      <span class="pill"><i data-lucide="shield-check" class="w-3 h-3"></i> CE Class IIa</span>
+      <span class="pill">12 weken</span>
+      <span class="pill">4 instruments</span>
+    </div>
+
+    <span class="provider-badge">Luscii</span>
+  </div>
+
+  <!-- Size reference -->
+  <div class="size-row">
+    <div>
+      <div class="text-[10px] font-semibold tracking-wider uppercase text-[--color-foreground-muted] mb-1">Native block (reference)</div>
+      <div class="native-stub">
+        <div class="rail"></div>
+        <div class="icon-cell"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+        <div class="content">
+          <div class="name">Appointment</div>
+          <div class="sum">10 min · clinician</div>
+        </div>
+      </div>
+    </div>
+    <div class="text-xs text-[--color-foreground-muted] leading-relaxed">
+      Above: <strong class="text-[--color-foreground]">504 × 280</strong> Luscii block — ~4× the native 240×64 footprint (30% smaller than v1's 720×400). Use this size for the <em>selected / zoomed-in</em> state, or for an inspector-preview panel. The small 360×200 variant remains the default on-canvas size; this is what the author sees when they want to read the program.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  if (window.lucide) window.lucide.createIcons();
+</script>
+</body>
+</html>
