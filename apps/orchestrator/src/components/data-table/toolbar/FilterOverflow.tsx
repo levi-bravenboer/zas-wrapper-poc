@@ -1,10 +1,10 @@
 import { ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type { ListFilter } from '@/hooks/use-data-table-state'
 
-import { pillEmpty } from '../styles'
 import { FilterPill } from './FilterPill'
 import type { DataTableFilter } from './Toolbar'
 
@@ -19,9 +19,11 @@ export function FilterOverflow<T>({ defs, filters, onChange }: FilterOverflowPro
   if (defs.length === 0) return null
   return (
     <Popover>
-      <PopoverTrigger className={pillEmpty}>
-        <span>{t('toolbar.filters.more', { count: defs.length })}</span>
-        <ChevronDown aria-hidden className="size-3.5 opacity-60" />
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="h-8 border-dashed font-normal">
+          <span>{t('toolbar.filters.more', { count: defs.length })}</span>
+          <ChevronDown aria-hidden className="size-3.5 opacity-60" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="flex w-72 flex-col gap-2 p-2">
         {defs.map((def) => (
