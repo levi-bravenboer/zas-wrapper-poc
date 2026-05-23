@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
+import {
+  LUSCII_PROGRAM_BLOCK_TYPE,
+  LUSCII_PROGRAM_KIND,
+  LUSCII_PROVIDER,
+} from '../components/canvas/nodes/external/luscii/types'
 import type { PathwayBlock, PathwayBlockType } from '../types'
 
 import {
@@ -57,12 +62,12 @@ describe('getBlockDimensions', () => {
   })
 
   it('returns the Luscii minimum dimensions for luscii.program (per-instance size lives in the renderer)', () => {
-    const block = makeBlock({ type: 'luscii.program' })
+    const block = makeBlock({ type: LUSCII_PROGRAM_BLOCK_TYPE })
     const blockType = {
-      ...makeBlockType({ type: 'luscii.program' }),
+      ...makeBlockType({ type: LUSCII_PROGRAM_BLOCK_TYPE }),
       source: 'external',
-      provider: 'luscii',
-      kind: 'program',
+      provider: LUSCII_PROVIDER,
+      kind: LUSCII_PROGRAM_KIND,
     } as unknown as PathwayBlockType
     expect(getBlockDimensions(block, blockType)).toEqual({ width: 360, height: 200 })
   })

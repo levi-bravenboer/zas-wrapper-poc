@@ -4,6 +4,7 @@ import uuid
 
 from httpx import AsyncClient
 
+from app.adapters.luscii import LUSCII_PROGRAM_BLOCK_TYPE
 from app.db.models.pathway import PathwayLaneKind
 from scripts.seed_users import ADMIN_EMAIL
 
@@ -92,7 +93,7 @@ async def test_list_block_types(
         "milestone",
         "wait",
         "pathway_link",
-        "luscii.program",
+        LUSCII_PROGRAM_BLOCK_TYPE,
     }
     for row in rows:
         assert row["semantics"] in {

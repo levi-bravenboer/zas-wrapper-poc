@@ -12,6 +12,11 @@ import jsonschema.protocols
 import jsonschema.validators
 import pytest
 
+from app.adapters.luscii import (
+    LUSCII_PROGRAM_BLOCK_TYPE,
+    LUSCII_PROGRAM_KIND,
+    LUSCII_PROVIDER,
+)
 from app.services.pathway.catalogue import (
     BLOCK_TYPES,
     EDGE_TIMING_KINDS,
@@ -38,7 +43,7 @@ _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
         "milestone",
         "wait",
         "pathway_link",
-        "luscii.program",
+        LUSCII_PROGRAM_BLOCK_TYPE,
     }
 )
 
@@ -125,10 +130,10 @@ def test_native_bare_codes_contain_no_dot() -> None:
 
 
 def test_luscii_program_entry_present_with_expected_provenance() -> None:
-    luscii = next(b for b in BLOCK_TYPES if b.type == "luscii.program")
+    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     assert luscii.source == "external"
-    assert luscii.provider == "luscii"
-    assert luscii.kind == "program"
+    assert luscii.provider == LUSCII_PROVIDER
+    assert luscii.kind == LUSCII_PROGRAM_KIND
     assert luscii.semantics == BlockSemantics.EXTERNAL_PROGRAM
     assert luscii.icon == "activity"
     assert luscii.allowed_lane_kind_codes == (LANE_KIND_EXTERNAL,)
@@ -136,7 +141,7 @@ def test_luscii_program_entry_present_with_expected_provenance() -> None:
 
 
 def test_luscii_program_config_schema_is_author_time_only() -> None:
-    luscii = next(b for b in BLOCK_TYPES if b.type == "luscii.program")
+    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     props = luscii.config_schema["properties"]
     required = luscii.config_schema["required"]
     assert set(props.keys()) == {"program_id", "protocol_id", "mode"}
@@ -148,7 +153,7 @@ def test_luscii_program_config_schema_excludes_per_patient_fields() -> None:
     """Hard guard against accidentally exposing patient-level config at design
     time. Per-patient values belong to the enrollment surface, not block config.
     """
-    luscii = next(b for b in BLOCK_TYPES if b.type == "luscii.program")
+    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     forbidden_prefixes = ("patient_", "target_", "dose")
     forbidden_suffix = "_per_patient"
     for prop in luscii.config_schema["properties"]:
@@ -169,15 +174,15 @@ def test_get_block_type_resolves_luscii_program() -> None:
     `BlockTypeCode` parsing and `BLOCK_TYPES` registry stay in lockstep."""
     from app.services.pathway.catalogue import get_block_type
 
-    entry = get_block_type("luscii.program")
+    entry = get_block_type(LUSCII_PROGRAM_BLOCK_TYPE)
     assert entry is not None
-    assert entry.type == "luscii.program"
+    assert entry.type == LUSCII_PROGRAM_BLOCK_TYPE
     assert entry.source == "external"
 
 
 def _luscii_validator() -> jsonschema.protocols.Validator:
     """Build a Draft 2020-12 validator from the luscii.program config_schema."""
-    luscii = next(b for b in BLOCK_TYPES if b.type == "luscii.program")
+    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     cls = jsonschema.validators.validator_for(luscii.config_schema)
     cls.check_schema(luscii.config_schema)
     return cls(luscii.config_schema)

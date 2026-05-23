@@ -2,8 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from app.adapters.luscii.program import LusciiProgramData
-from app.adapters.luscii.programs import LUSCII_STUB_PROGRAMS, LUSCII_STUB_PROGRAMS_BY_ID
+from app.adapters.luscii import (
+    LUSCII_STUB_ID_PREFIX,
+    LUSCII_STUB_PROGRAMS,
+    LUSCII_STUB_PROGRAMS_BY_ID,
+    LusciiProgramData,
+)
+
 
 
 EXPECTED_IDS = (
@@ -31,7 +36,7 @@ class TestStubRegistry:
         """Every stub id must start with `luscii-` so they are visibly
         synthetic and won't collide with anything real Luscii ever publishes."""
         for program in LUSCII_STUB_PROGRAMS:
-            assert program.id.startswith("luscii-"), program.id
+            assert program.id.startswith(LUSCII_STUB_ID_PREFIX), program.id
 
 
 class TestPayloadValidity:

@@ -12,13 +12,13 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.adapters.luscii import LusciiProgramData
+from app.adapters.luscii import LUSCII_PROVIDER, LusciiProgramData
 from app.core.errors import ErrorResponse
 from app.schemas.luscii import LusciiProgramSummary
 from app.services.auth.deps import CurrentUserDep
 from app.services.luscii.deps import LusciiServiceDep
 
-router = APIRouter(prefix="/luscii", tags=["luscii"])
+router = APIRouter(prefix=f"/{LUSCII_PROVIDER}", tags=[LUSCII_PROVIDER])
 
 _ERRORS_404: dict[int | str, dict[str, Any]] = {404: {"model": ErrorResponse}}
 

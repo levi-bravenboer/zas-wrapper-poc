@@ -9,6 +9,11 @@ import enum
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.adapters.luscii import (
+    LUSCII_PROGRAM_BLOCK_TYPE,
+    LUSCII_PROGRAM_KIND,
+    LUSCII_PROVIDER,
+)
 from app.schemas.pathway.catalogue import BlockSourceLiteral as BlockSource
 
 # Shared link-mode enum reused across every block whose runtime semantics
@@ -369,14 +374,14 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
     # not at design-time — see design.md "Per-patient values stay at
     # enrollment runtime".
     BlockTypeEntry(
-        type="luscii.program",
+        type=LUSCII_PROGRAM_BLOCK_TYPE,
         label="Luscii Program",
         semantics=BlockSemantics.EXTERNAL_PROGRAM,
         icon="activity",
         allowed_lane_kind_codes=(LANE_KIND_EXTERNAL,),
         source="external",
-        provider="luscii",
-        kind="program",
+        provider=LUSCII_PROVIDER,
+        kind=LUSCII_PROGRAM_KIND,
         config_schema=_object_schema(
             properties={
                 "program_id": {"type": "string", "minLength": 1, "maxLength": 128},
