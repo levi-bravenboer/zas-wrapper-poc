@@ -94,7 +94,11 @@
   },
   "dock": {
     "toolbarLabel": "Blok-palet",
-    "addLabel": "Voeg {{label}} toe"
+    "addLabel": "Voeg {{label}} toe",
+    "groupNative": "Standaard blokken",
+    "groupProvider": {
+      "luscii": "Luscii-programma's"
+    }
   },
   "drawer": {
     "title": "Blok bewerken",
