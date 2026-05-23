@@ -382,13 +382,15 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
         source="external",
         provider=LUSCII_PROVIDER,
         kind=LUSCII_PROGRAM_KIND,
+        # No `required` here — autosave persists drafts mid-edit (program
+        # picked but no protocol yet). Publish-time validation (Phase 5)
+        # re-asserts completeness against the same three keys.
         config_schema=_object_schema(
             properties={
                 "program_id": {"type": "string", "minLength": 1, "maxLength": 128},
                 "protocol_id": {"type": "string", "minLength": 1, "maxLength": 128},
                 "mode": {"type": "string", "enum": list(BLOCKING_MODES)},
             },
-            required=["program_id", "protocol_id", "mode"],
         ),
         ui_schema={
             "order": ["program_id", "protocol_id", "mode"],

@@ -141,11 +141,14 @@ def test_luscii_program_entry_present_with_expected_provenance() -> None:
 
 
 def test_luscii_program_config_schema_is_author_time_only() -> None:
+    """The block carries the three author-time keys and nothing else. No
+    `required` constraint — autosave persists in-progress drafts (program
+    picked but no protocol yet); publish-time validation re-asserts
+    completeness."""
     luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     props = luscii.config_schema["properties"]
-    required = luscii.config_schema["required"]
     assert set(props.keys()) == {"program_id", "protocol_id", "mode"}
-    assert set(required) == {"program_id", "protocol_id", "mode"}
+    assert "required" not in luscii.config_schema
     assert props["mode"]["enum"] == ["blocking", "fire_and_forget"]
 
 
@@ -199,11 +202,14 @@ def test_luscii_program_config_validates_well_formed_payload() -> None:
     assert errors == []
 
 
-def test_luscii_program_config_rejects_missing_required_program_id() -> None:
+def test_luscii_program_config_accepts_partial_payload() -> None:
+    """Author-time draft state — program picked, protocol not yet — must
+    persist. Publish-time validation (Phase 5) is the gate that requires
+    the full triple."""
     validator = _luscii_validator()
-    payload = {"protocol_id": "proto-std-12w", "mode": "blocking"}
+    payload = {"program_id": "luscii-x", "mode": "blocking"}
     errors = list(validator.iter_errors(payload))
-    assert any("program_id" in str(err.message) for err in errors), errors
+    assert errors == []
 
 
 def test_luscii_program_config_rejects_unknown_field() -> None:
