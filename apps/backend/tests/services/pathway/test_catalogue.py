@@ -7,6 +7,9 @@ integrity) and the closed enums (event types, timing kinds, lane kinds).
 
 from __future__ import annotations
 
+import jsonschema
+import jsonschema.protocols
+import jsonschema.validators
 import pytest
 
 from app.services.pathway.catalogue import (
@@ -156,6 +159,72 @@ def test_luscii_program_config_schema_excludes_per_patient_fields() -> None:
         assert not prop.endswith(forbidden_suffix), (
             f"luscii.program config_schema must not declare per-patient field {prop!r}"
         )
+
+
+# ---- Catalogue lookup + JSON-Schema validation for luscii.program --------
+
+
+def test_get_block_type_resolves_luscii_program() -> None:
+    """Dotted code resolves via the same lookup path as bare codes —
+    `BlockTypeCode` parsing and `BLOCK_TYPES` registry stay in lockstep."""
+    from app.services.pathway.catalogue import get_block_type
+
+    entry = get_block_type("luscii.program")
+    assert entry is not None
+    assert entry.type == "luscii.program"
+    assert entry.source == "external"
+
+
+def _luscii_validator() -> jsonschema.protocols.Validator:
+    """Build a Draft 2020-12 validator from the luscii.program config_schema."""
+    luscii = next(b for b in BLOCK_TYPES if b.type == "luscii.program")
+    cls = jsonschema.validators.validator_for(luscii.config_schema)
+    cls.check_schema(luscii.config_schema)
+    return cls(luscii.config_schema)
+
+
+def test_luscii_program_config_validates_well_formed_payload() -> None:
+    validator = _luscii_validator()
+    payload = {
+        "program_id": "luscii-hartfalen-monitoring-v4",
+        "protocol_id": "proto-std-12w",
+        "mode": "blocking",
+    }
+    errors = list(validator.iter_errors(payload))
+    assert errors == []
+
+
+def test_luscii_program_config_rejects_missing_required_program_id() -> None:
+    validator = _luscii_validator()
+    payload = {"protocol_id": "proto-std-12w", "mode": "blocking"}
+    errors = list(validator.iter_errors(payload))
+    assert any("program_id" in str(err.message) for err in errors), errors
+
+
+def test_luscii_program_config_rejects_unknown_field() -> None:
+    """`additionalProperties: false` keeps per-patient sneaks out of block
+    config. Adding `patient_id` here would silently expose a per-patient
+    field on the wrong UX surface."""
+    validator = _luscii_validator()
+    payload = {
+        "program_id": "luscii-x",
+        "protocol_id": "proto-y",
+        "mode": "blocking",
+        "patient_id": "smuggled-in",
+    }
+    errors = list(validator.iter_errors(payload))
+    assert any("patient_id" in str(err.message) for err in errors), errors
+
+
+def test_luscii_program_config_rejects_invalid_mode_enum() -> None:
+    validator = _luscii_validator()
+    payload = {
+        "program_id": "luscii-x",
+        "protocol_id": "proto-y",
+        "mode": "yolo",
+    }
+    errors = list(validator.iter_errors(payload))
+    assert any("yolo" in str(err.message) for err in errors), errors
 
 
 def test_event_types_are_unique_and_dutch() -> None:
