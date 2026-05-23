@@ -9,7 +9,7 @@ import {
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { buildCanvasGeometry, type CanvasGeometry } from '../../canvasLayout'
+import { buildCanvasGeometry, type CanvasGeometry, type BlockFitInput } from '../../canvasLayout'
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { inkAlpha } from '../../constants/theme'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
@@ -22,6 +22,7 @@ import type {
   PathwayTimingValue,
 } from '../../types'
 import type { BuilderAction, BuilderSelection } from '../../useBuilderState'
+import { getBlockDimensions } from '../../utils/blockDimensions'
 import { isLaneAllowed } from '../../utils/laneRules'
 
 import { BackgroundLayers } from './BackgroundLayers'
@@ -78,9 +79,23 @@ export function BuilderCanvasFrame({
   dragApi,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
+  const fitInputs = useMemo<BlockFitInput[]>(() => {
+    const byCode = new Map(blockTypes.map((bt) => [bt.type, bt]))
+    return blocks.map((b) => {
+      const dims = getBlockDimensions(b, byCode.get(b.type) ?? null)
+      return {
+        phase_id: b.phase_id,
+        lane_id: b.lane_id,
+        x: b.x,
+        y: b.y,
+        width: dims.width,
+        height: dims.height,
+      }
+    })
+  }, [blocks, blockTypes])
   const geometry: CanvasGeometry = useMemo(
-    () => buildCanvasGeometry(phases, lanes),
-    [phases, lanes],
+    () => buildCanvasGeometry(phases, lanes, fitInputs),
+    [phases, lanes, fitInputs],
   )
 
   const derivedNodes = useFlowNodes({

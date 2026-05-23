@@ -32,11 +32,16 @@ export function LaneRow({
   const { zoom } = useViewport()
   const dragRef = useRef<{ startH: number; startY: number } | null>(null)
 
+  // Keep lane backgrounds beneath blocks. xyflow nodes render in
+  // `.react-flow__nodes` (default z-index 0); ViewportPortal contents share
+  // the same stacking context but are emitted later in the DOM, so without
+  // an explicit negative z they paint on top of unselected blocks.
   const style = {
     top: topY,
     left: 0,
     width,
     height,
+    zIndex: -1,
     '--lane-accent': accent,
   } as CSSProperties
 
