@@ -28,6 +28,15 @@ const DEFAULT_LUSCII_DIMENSIONS: BlockDimensions = {
   height: LUSCII_MIN_HEIGHT,
 }
 
+// Worst-case footprint used when the geometry hook needs to reserve space
+// for a Luscii block *before* its program payload resolves. Sizing the lane
+// for the maximum (rather than the minimum) guarantees the rendered block
+// never overflows its lane during the fetch → render → resize window.
+const LUSCII_MAX_DIMENSIONS: BlockDimensions = {
+  width: LUSCII_MAX_WIDTH,
+  height: LUSCII_MAX_HEIGHT,
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
@@ -98,12 +107,13 @@ export function getBlockDimensions(
     blockType.provider === LUSCII_PROVIDER &&
     blockType.kind === LUSCII_PROGRAM_KIND
   ) {
-    // Without a resolved program payload in this signature, fall back to
-    // the minimum size. `LusciiProgramBlockNode` itself computes the real
-    // dimensions from the resolved program data via
-    // `computeLusciiProgramDimensions` and sets xyflow's node size override.
+    // Reserve the maximum (540×300) for layout reservations since the
+    // resolved program is fetched asynchronously inside the node. The node
+    // itself overrides xyflow's width/height to the actual program-driven
+    // size via `computeLusciiProgramDimensions`; this larger estimate just
+    // keeps lane/phase auto-grow from under-allocating space pre-fetch.
     void block
-    return DEFAULT_LUSCII_DIMENSIONS
+    return LUSCII_MAX_DIMENSIONS
   }
   return NATIVE_DIMENSIONS
 }

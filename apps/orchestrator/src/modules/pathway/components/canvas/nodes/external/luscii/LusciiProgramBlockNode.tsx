@@ -8,6 +8,7 @@ import {
   type BlockDimensions,
 } from '../../../../../utils/blockDimensions'
 import type { BlockNodeData } from '../../BlockNode'
+import { BlockNodeHandles } from '../../BlockNodeHandles'
 
 import { getLusciiProgram } from './api'
 import { lusciiKeys } from './keys'
@@ -91,6 +92,9 @@ function LusciiProgramBlockNodeImpl({
       >
         Luscii
       </span>
+      {/* Edge handles — Luscii programs never branch (sub-flow lives in
+          Luscii Builder), so the non-branch variant fits. */}
+      <BlockNodeHandles isBranch={false} />
     </div>
   )
 }

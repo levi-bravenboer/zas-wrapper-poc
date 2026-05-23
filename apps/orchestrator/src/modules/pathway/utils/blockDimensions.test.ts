@@ -61,7 +61,7 @@ describe('getBlockDimensions', () => {
     })
   })
 
-  it('returns the Luscii minimum dimensions for luscii.program (per-instance size lives in the renderer)', () => {
+  it('reserves the Luscii maximum (540×300) for luscii.program so lanes pre-fetch never underallocate', () => {
     const block = makeBlock({ type: LUSCII_PROGRAM_BLOCK_TYPE })
     const blockType = {
       ...makeBlockType({ type: LUSCII_PROGRAM_BLOCK_TYPE }),
@@ -69,7 +69,7 @@ describe('getBlockDimensions', () => {
       provider: LUSCII_PROVIDER,
       kind: LUSCII_PROGRAM_KIND,
     } as unknown as PathwayBlockType
-    expect(getBlockDimensions(block, blockType)).toEqual({ width: 360, height: 200 })
+    expect(getBlockDimensions(block, blockType)).toEqual({ width: 540, height: 300 })
   })
 })
 
