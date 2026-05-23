@@ -6,7 +6,7 @@ The existing pathway builder hardcodes `BLOCK_WIDTH=240` / `BLOCK_HEIGHT=64` in 
 - [x] 0.2 Refactor `useFlowNodes.ts` to read width/height from `getBlockDimensions(block, blockType)` instead of the bare constants.
 - [x] 0.3 Add `laneInset(blockHeight, laneHeight)` function in `canvasLayout.ts`. Update `blockOrigin` to accept optional `dimensions` and compute the default y via `laneInset`. Native 240×64 placement unchanged.
 - [x] 0.4 Vitest regression coverage (`canvasLayout.test.ts` + `blockDimensions.test.ts` — 11 tests).
-- [ ] 0.5 Document `getBlockDimensions` extension point in `apps/orchestrator/AGENTS.md` so future providers know where to register their size computer.
+- [x] 0.5 Document `getBlockDimensions` extension point in `apps/orchestrator/AGENTS.md` so future providers know where to register their size computer.
 
 ## 1. Backend foundation
 
@@ -73,9 +73,9 @@ The generic catalogue-of-providers endpoints (`GET /external-block-providers/...
   - Empty state (`config.program_id=null`) renders at 360×200 with CTA
 - [x] 6.2 Extend `BuilderDrawer.tsx` dispatch with a new `'external_program'` semantics branch that picks the provider-specific inspector from an inner map keyed on `block.provider` (today: `{luscii: LusciiProgramInspector}`).
 - [x] 6.2a `LusciiProgramInspector.tsx` follows the same Props shape as existing inspectors (`config`, `onChange`), uses `InspectorField` wrapper around shadcn `Select`. Header surface gets a provider chip + kind label + stub badge. **No "Manage in Luscii" link, no "Open Viewer" link** — see design.md.
-- [ ] 6.2b Inspector footer metadata strip: monospace, copy-paste-able row showing `program_id · version · protocol_id`. Copy-to-clipboard button uses shadcn `Button` size=icon variant.
+- [x] 6.2b Inspector footer metadata strip: monospace, copy-paste-able row showing `program_id · version · protocol_id`. Copy-to-clipboard button uses shadcn `Button` size=icon variant.
 - [x] 6.2c Extend `BlockSemantics` enum (derived from OpenAPI) with `'external_program'` and add a matching entry to `CONFIG_SCHEMAS` in `configSchemas.ts` (Zod schema for program_id / protocol_id / mode). Existing `safeParse` flow in `BuilderDrawer` works unchanged.
-- [ ] 6.3 Read-only "Program contents" inspector card below the form, rendering instruments + alert thresholds + care network from the `GET /luscii/programs/{id}` payload. Card copy explicitly notes: *"Thresholds and schedules are part of the Luscii program — change them in Luscii Builder."*
+- [x] 6.3 Read-only "Program contents" inspector card below the form, rendering instruments + alert thresholds + care network from the `GET /luscii/programs/{id}` payload. Card copy explicitly notes: *"Thresholds and schedules are part of the Luscii program — change them in Luscii Builder."*
 - [x] 6.4 TanStack Query keys at `apps/orchestrator/src/modules/pathway/components/canvas/nodes/external/luscii/keys.ts` (`lusciiKeys = { ... }`):
   - `['luscii', 'programs']` — picker list
   - `['luscii', 'programs', programId]` — single program payload
@@ -84,5 +84,5 @@ The generic catalogue-of-providers endpoints (`GET /external-block-providers/...
 ## 7. Tests + verification
 
 - [x] 7.1 Backend: pytest covers `BlockTypeCode` (done), `LusciiProgramData` (done), `LUSCII_STUB_PROGRAMS` (done), catalogue extension (`luscii.program` appears in `GET /pathway-block-types` with correct provenance + config schema), block-lane validation (rejects `luscii.program` outside `external`), Luscii routes (list + resolve + 404), CHECK widening migration round-trip.
-- [ ] 7.2 Orchestrator: vitest covers palette grouping by source/provider, lane-kind drop-blocking for Luscii Program (external-only), inspector header rendering, picker dropdown fetch, thumbnail Fake render at multiple sizes per the clamp rule.
+- [~] 7.2 Orchestrator: vitest covers palette grouping by source/provider (done — `groupCatalogue.test.ts`), thumbnail / dimensions clamp rule (done — `blockDimensions.test.ts`), sub-line builder (done — `subLine.test.ts`). **Open:** inspector header render + picker fetch require `QueryClientProvider` scaffolding — defer to a follow-up RTL pass.
 - [ ] 7.3 Run `/verify` and quote results before marking the change apply-complete.
