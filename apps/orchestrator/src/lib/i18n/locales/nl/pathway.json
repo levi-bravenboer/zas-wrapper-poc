@@ -242,6 +242,21 @@
         "twoWayNo": "Uit",
         "instruments": "Instrumenten"
       },
+      "idStrip": {
+        "ariaLabel": "Programma-identificatie",
+        "copy": "Kopieer programma-identificatie",
+        "copied": "Gekopieerd"
+      },
+      "contents": {
+        "heading": "Programma-inhoud",
+        "luscii_authored": "Drempelwaardes en cadans zijn onderdeel van het Luscii-programma — beheer ze in Luscii Builder.",
+        "instrumentsHeader": "Instrumenten",
+        "instrumentsEmpty": "Geen instrumenten in dit programma.",
+        "thresholdsHeader": "Alert-drempels",
+        "thresholdsEmpty": "Geen drempels gedefinieerd.",
+        "careNetworkHeader": "Zorgnetwerk",
+        "careNetworkEmpty": "Geen zorgnetwerk gespecificeerd."
+      },
       "perPatientHint": "Patiëntspecifieke waarden (BSN, contactgegevens) worden bij inschrijving ingevuld — niet hier."
     },
     "edge": {

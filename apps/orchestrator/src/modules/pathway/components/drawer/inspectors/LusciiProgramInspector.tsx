@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import type { ReactElement } from 'react'
+import { Check, Copy } from 'lucide-react'
+import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -19,6 +21,7 @@ import {
 } from '../../canvas/nodes/external/luscii/types'
 
 import { InspectorField } from './InspectorField'
+import { LusciiProgramContentsCard } from './LusciiProgramContentsCard'
 
 type Props = {
   config: ConfigForSemantics<'external_program'>
@@ -137,7 +140,58 @@ export function LusciiProgramInspector({ config, onChange }: Props): ReactElemen
         {t('inspector.lusciiProgram.perPatientHint')}
       </p>
 
-      {programQuery.data && <ProgramMetadataStrip program={programQuery.data} />}
+      {programQuery.data && (
+        <>
+          <ProgramMetadataStrip program={programQuery.data} />
+          <ProgramIdStrip
+            programId={programQuery.data.id}
+            version={programQuery.data.version}
+            protocolId={config.protocol_id ?? null}
+          />
+          <LusciiProgramContentsCard program={programQuery.data} />
+        </>
+      )}
+    </div>
+  )
+}
+
+function ProgramIdStrip({
+  programId,
+  version,
+  protocolId,
+}: {
+  programId: string
+  version: string
+  protocolId: string | null
+}): ReactElement {
+  const { t } = useTranslation('pathway')
+  const [copied, setCopied] = useState(false)
+  const parts = [programId, version, protocolId].filter(Boolean) as string[]
+  const text = parts.join(' · ')
+
+  async function copy() {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div
+      aria-label={t('inspector.lusciiProgram.idStrip.ariaLabel')}
+      className="mt-1 flex items-center gap-2 rounded-md border bg-muted/40 px-2.5 py-1.5"
+      style={{ borderColor: 'var(--hairline)' }}
+    >
+      <code className="flex-1 truncate font-mono text-[10.5px] text-foreground">{text}</code>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={t('inspector.lusciiProgram.idStrip.copy')}
+        onClick={copy}
+        className="size-6"
+      >
+        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+      </Button>
     </div>
   )
 }

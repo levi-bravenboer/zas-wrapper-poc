@@ -24,7 +24,7 @@ describe('groupCatalogueBySource', () => {
     const groups = groupCatalogueBySource([entry({ type: 'appointment' }), entry({ type: 'task' })])
     expect(groups).toHaveLength(1)
     expect(groups[0]).toMatchObject({ source: 'native' })
-    expect(groups[0].items.map((e) => e.type)).toEqual(['appointment', 'task'])
+    expect(groups[0]?.items.map((e) => e.type)).toEqual(['appointment', 'task'])
   })
 
   it('buckets external entries per provider after the native group', () => {
@@ -37,7 +37,7 @@ describe('groupCatalogueBySource', () => {
     expect(groups).toHaveLength(3)
     expect(groups[0]).toMatchObject({ source: 'native' })
     expect(groups[1]).toMatchObject({ source: 'external', provider: 'luscii' })
-    expect(groups[1].items.map((e) => e.type)).toEqual(['luscii.program', 'luscii.intake'])
+    expect(groups[1]?.items.map((e) => e.type)).toEqual(['luscii.program', 'luscii.intake'])
     expect(groups[2]).toMatchObject({ source: 'external', provider: 'hix' })
   })
 
