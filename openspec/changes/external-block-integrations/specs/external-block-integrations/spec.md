@@ -1,44 +1,29 @@
 ## ADDED Requirements
 
-### Requirement: External block provider registry
-
-The system SHALL persist registered external block providers in an `external_block_provider` table keyed by a kebab-case `code` (e.g. `luscii`) with `label`, `status` (`enabled`, `disabled`), and `capabilities_json` describing the block kinds the provider contributes. The API SHALL expose providers via `GET /external-block-providers`.
-
-#### Scenario: Provider registry lists enabled Luscii provider
-
-- **WHEN** a client calls `GET /external-block-providers`
-- **THEN** the response contains an entry with `code='luscii'`, `status='enabled'`, and a `capabilities` array listing the single `program` kind
-
-#### Scenario: Disabled provider is hidden from catalogue but present in registry
-
-- **GIVEN** a provider row with `status='disabled'`
-- **WHEN** a client calls `GET /pathway-block-types`
-- **THEN** no entry with `source='external'` and that provider's `code` is present
-- **AND** `GET /external-block-providers` still returns the row with `status='disabled'`
-
 ### Requirement: Namespaced external block-type codes
 
-The pathway block-type catalogue SHALL accept external entries whose `type` code uses the form `<provider>.<kind>` (lowercase, dotted) where `<provider>` matches an `external_block_provider.code` and `<kind>` matches one of the kinds declared in that provider's `capabilities_json`. Native block types SHALL continue to use bare codes without a dot.
+The pathway block-type catalogue SHALL accept external entries whose `type` code uses the form `<provider>.<kind>` (lowercase, dotted) where `<provider>` is a stable kebab/snake-case vendor identifier and `<kind>` is the vendor-defined kind code (e.g. `luscii.program`). Native block types SHALL continue to use bare codes without a dot.
+
+The persisted `pathway_block.type` column SHALL enforce the lexical shape via a DB CHECK constraint matching `^[a-z_]+(\.[a-z_]+)?$`. Application-level validation SHALL continue to enforce that the parsed code resolves to an entry in the catalogue.
 
 #### Scenario: External code parses provider and kind
 
 - **GIVEN** a catalogue entry with `type='luscii.program'`
-- **WHEN** the backend parses the code
+- **WHEN** the backend parses the code via `BlockTypeCode.parse`
 - **THEN** it resolves to `(source='external', provider='luscii', kind='program')`
 
-#### Scenario: Unknown provider in code is rejected
+#### Scenario: Unknown code in payload is rejected at the catalogue layer
 
 - **WHEN** a client submits a `PUT /pathways/{id}` payload containing a block with `type='unknownvendor.thing'`
 - **THEN** the server responds with HTTP 422
-- **AND** the error payload identifies the unknown provider code
+- **AND** the error payload identifies the unknown block-type code
 
-#### Scenario: Unknown kind for known provider is rejected
+#### Scenario: Malformed type code is rejected at the DB layer
 
-- **WHEN** a client submits a block with `type='luscii.questionnaire'`
-- **THEN** the server responds with HTTP 422
-- **AND** the error payload identifies the unknown kind for provider `luscii` and lists the valid kinds (`program`)
+- **WHEN** a write bypassing the API attempts to insert `type='Luscii.Program'` (uppercase) or `type='luscii..program'`
+- **THEN** the DB CHECK constraint rejects the row
 
-### Requirement: Catalogue surfaces external entries with provenance metadata
+### Requirement: Catalogue surfaces entries with provenance metadata
 
 `GET /pathway-block-types` SHALL return external block entries alongside native ones. Every entry SHALL include `source` (`'native'` or `'external'`), and external entries SHALL additionally include non-null `provider` and `kind` fields. Native entries SHALL have `provider=null` and `kind=null`.
 
@@ -47,60 +32,54 @@ The pathway block-type catalogue SHALL accept external entries whose `type` code
 - **WHEN** a client calls `GET /pathway-block-types`
 - **THEN** the entry with `type='appointment'` has `source='native'`, `provider=null`, `kind=null`
 
-#### Scenario: External entry exposes provider and kind
+#### Scenario: Luscii program entry exposes provider and kind
 
 - **WHEN** a client calls `GET /pathway-block-types`
-- **THEN** the entry with `type='luscii.program'` has `source='external'`, `provider='luscii'`, `kind='program'`
+- **THEN** the response array contains exactly one entry with `type='luscii.program'`, `source='external'`, `provider='luscii'`, `kind='program'`
+- **AND** that entry's `allowed_lane_kind_codes` equals `['external']`
+- **AND** that entry's `semantics` equals `'external_program'`
 
-### Requirement: External block client Protocol
+### Requirement: Author-time block config schema excludes per-patient fields
 
-The system SHALL provide an `ExternalBlockClient` Protocol exposing `list_blocks(kind) -> list[ExternalBlockOption]`, `get_block_schema(kind) -> dict`, and `resolve_block(kind, ref) -> ExternalBlockResolution`. A factory `get_external_block_client(provider_code, settings) -> ExternalBlockClient` SHALL dispatch on the provider code; an unknown code SHALL raise `ExternalProviderNotRegisteredError`.
+External block catalogue entries SHALL declare a `config_schema` that contains only **author-time** fields — selections, references, and policy toggles set by the pathway author at build time. It SHALL NOT contain fields that vary per enrolled patient (demographics, identifiers, contact info, per-patient clinical targets, per-patient measurement cadence, or any value that would differ between two patients enrolled into the same pathway version).
 
-#### Scenario: Luscii stub client implements the Protocol
+Per-patient values are captured at runtime via the vendor's enrollment surface (e.g. Luscii's `POST /v1/patients`) and are out of scope for the block config.
 
-- **WHEN** `get_external_block_client('luscii', settings)` is called with `BACKEND_LUSCII_MODE='stub'`
-- **THEN** it returns an instance of `LusciiStubClient`
-- **AND** `await client.list_blocks('program')` returns a non-empty list of fixture program options
+#### Scenario: Luscii program config schema contains only author-time fields
 
-#### Scenario: Unknown provider raises typed error
-
-- **WHEN** `get_external_block_client('nonexistent', settings)` is called
-- **THEN** the function raises `ExternalProviderNotRegisteredError` naming the unknown code
-
-### Requirement: Instance-level schema and option fetch endpoints
-
-The API SHALL expose `GET /external-block-providers/{provider}/kinds/{kind}/schema` returning the JSON Schema for **author-time** instance configuration, and `GET /external-block-providers/{provider}/kinds/{kind}/options` returning the list of selectable references (e.g. program IDs and labels). Both endpoints SHALL delegate to the provider's adapter via the Protocol.
-
-#### Scenario: Schema endpoint returns author-time JSON Schema for Luscii program
-
-- **WHEN** a client calls `GET /external-block-providers/luscii/kinds/program/schema`
-- **THEN** the response body is a JSON Schema object whose `properties` contains exactly `program_id` (string, required), `protocol_id` (string, required), and `mode` (string enum of `blocking`/`fire_and_forget`, required)
+- **WHEN** a client calls `GET /pathway-block-types` and inspects the `luscii.program` entry
+- **THEN** its `config_schema.properties` contains exactly `program_id` (string, required), `protocol_id` (string, required), and `mode` (string enum of `blocking`/`fire_and_forget`, required)
 - **AND** the schema does NOT contain `patient_identifier_system` (org-level, not per-block)
 - **AND** the schema does NOT contain `version_pin` (implicit in `program_id` — Luscii's API treats each version as a distinct program id)
+- **AND** the schema does NOT contain any per-patient field (`patient_*`, `target_*`, `dose*`, `*_per_patient`)
 
-#### Scenario: Options endpoint returns fixture programs in stub mode
+### Requirement: Luscii programs are served via per-vendor routes
 
-- **GIVEN** `BACKEND_LUSCII_MODE='stub'`
-- **WHEN** a client calls `GET /external-block-providers/luscii/kinds/program/options`
-- **THEN** the response is an array of objects each with `ref` (string program id) and `label` (string program name)
+The system SHALL expose two Luscii-specific HTTP routes that read program payloads from `app/adapters/luscii/programs.py` (a `# POC ONLY` static constant in stub mode; a real fetch + cache layer in a future live-adapter change):
 
-### Requirement: Author-time block config_schema excludes per-patient fields
+- `GET /luscii/programs` — picker list. Returns an array of objects each carrying at least `id`, `name`, `version`, `description`, `enrolled_count_org_wide`.
+- `GET /luscii/programs/{id}` — full payload. Returns a `LusciiProgramData` object covering program metadata, protocols, instruments, alert thresholds, care network, and layout.
 
-The JSON Schema returned by `get_block_schema(kind)` (and surfaced via `GET /external-block-providers/{provider}/kinds/{kind}/schema`) SHALL contain only **author-time** fields — selections, references, and policy toggles set by the pathway author at build time. It SHALL NOT contain fields that vary per enrolled patient (demographics, identifiers, contact info, per-patient clinical targets, per-patient measurement cadence, or any value that would differ between two patients enrolled into the same pathway version).
+The route shape SHALL stay unchanged across the stub → live transition.
 
-Per-patient values are captured at runtime via the vendor's enrollment surface (e.g. Luscii's `POST /v1/patients`) and are out of scope for the block config. A separate `enrollment_schema` contract MAY be introduced later for the caregiver-side enrollment dialog; it is not part of `config_schema`.
+#### Scenario: Picker route returns the synthetic stub programs
 
-#### Scenario: Luscii program schema excludes per-patient fields
+- **WHEN** a client calls `GET /luscii/programs`
+- **THEN** the response is an array of at least one entry
+- **AND** each entry carries `id` starting with `luscii-` (synthetic-id prefix)
+- **AND** the entries are stably ordered
 
-- **WHEN** a client calls `GET /external-block-providers/luscii/kinds/program/schema`
-- **THEN** the returned JSON Schema's `properties` does NOT contain any of: `patient_id`, `patient_dob`, `patient_name`, `patient_email`, `patient_phone`, `patient_bsn`, `target_value`, `dose`, `measurement_frequency`
+#### Scenario: Resolve route returns the full LusciiProgramData
 
-#### Scenario: Registration of a provider declaring per-patient fields is rejected
+- **GIVEN** a Luscii program with `id='luscii-hartfalen-monitoring-v4'`
+- **WHEN** a client calls `GET /luscii/programs/luscii-hartfalen-monitoring-v4`
+- **THEN** the response validates against `LusciiProgramData`
+- **AND** the response includes non-empty `protocols`, `instruments`, `alert_thresholds`, and `layout`
 
-- **GIVEN** a provider seed whose `capabilities_json` for some kind declares a `config_schema.properties` containing a field whose name matches a known per-patient pattern (`patient_*`, `*_per_patient`, `target_*`, `dose*`)
-- **WHEN** the registry loads the provider at startup
-- **THEN** the registry SHALL raise `ProviderConfigSchemaScopeError` naming the offending field and the kind
-- **AND** the provider SHALL NOT be served from `GET /external-block-providers`
+#### Scenario: Resolve route on unknown id returns 404
+
+- **WHEN** a client calls `GET /luscii/programs/does-not-exist`
+- **THEN** the response status is 404 with an error envelope identifying the unknown id
 
 ### Requirement: External-block canvas visualization is a content-sized thumbnail of the program
 
@@ -116,14 +95,6 @@ The block size SHALL be computed from `LusciiProgramData.layout` (phases + lanes
 
 The outer chrome SHALL be identical at every size: rail, title-overlay glass chip, Luscii corner badge, meta-overlay chip. Only the inner SVG body density differs.
 
-The block component SHALL accept the resolved program data as input and produce the computed-size rendering from it.
-
-In **stub mode** (this change), the renderer SHALL emit a **fake placeholder visualization** — synthetic markers / shapes sized against the lane accent — because the stub adapter does not return real program-structure data. The fake SHALL occupy the same body slot, dimensions, and surrounding chrome (header + provider corner badge) that the live-mode renderer will use.
-
-In **live mode** (future change), the renderer SHALL replace the fake with a real miniature derived from `resolve_block(program_id)` output — instruments, schedule, and milestones rendered at thumbnail scale. The header SHALL continue to show program name + protocol + mode + version-pin in both modes.
-
-Program-internal text content (full instrument list with cadence, alert-threshold values, care network, CE marking) SHALL continue to be surfaced in the inspector's read-only Program contents card in both modes. The canvas thumbnail is a *visual summary*; the inspector is the authoritative read-only detail.
-
 #### Scenario: Block size auto-scales with program layout density
 
 - **GIVEN** a Luscii Program block whose resolved program layout has 2 phases and 2 lanes
@@ -134,12 +105,12 @@ Program-internal text content (full instrument list with cadence, alert-threshol
 - **GIVEN** a block resolved to a program with 6 phases and 5 lanes
 - **THEN** the rendered block is 540×300 (clamped at maximum)
 
-#### Scenario: Stub-mode Luscii block renders fake placeholder, not real program internals
+#### Scenario: Stub-mode Luscii block renders fake placeholder built from the program's layout
 
-- **GIVEN** the Luscii adapter is in stub mode and a Luscii Program block is placed on the canvas
+- **GIVEN** the Luscii routes are serving stub data and a Luscii Program block is placed on the canvas with `program_id='luscii-hartfalen-monitoring-v4'`
 - **WHEN** the orchestrator renders the block node
-- **THEN** the rendered DOM contains a placeholder visual sized per the auto-scale rule (between 360×200 and 540×300) with synthetic markers / shapes (phase × lane miniature)
-- **AND** the rendered DOM does NOT contain any real instrument names, real alert-threshold values, or real moment labels (because the stub does not return them as separate fields — they are only in the inspector card)
+- **THEN** the rendered DOM contains a placeholder visual sized per the auto-scale rule with synthetic markers / shapes derived from the program's `layout` (phase × lane × node structure)
+- **AND** the rendered DOM does NOT contain any inspector-only text (instrument labels, alert threshold values, care-network description)
 - **AND** the inspector's Program contents card, when the block is selected, shows the stub's synthetic summary as text
 
 #### Scenario: Empty Luscii block (no program picked) renders honest CTA at minimum size
@@ -147,7 +118,7 @@ Program-internal text content (full instrument list with cadence, alert-threshol
 - **GIVEN** a Luscii Program block placed on the canvas whose `config.program_id` is null
 - **WHEN** the orchestrator renders the block node
 - **THEN** the rendered block is 360×200 (minimum, because there's no layout to scale from)
-- **AND** the body of the block SHALL render a centered CTA text "Pick a Luscii program" with no fake pathway shapes (no nodes, no edges, no lane bands inside the SVG body)
+- **AND** the body of the block SHALL render a centered CTA text "Pick a Luscii program" with no fake pathway shapes
 - **AND** the title overlay SHALL read "Luscii Program · Pick one" (or i18n equivalent)
 - **AND** clicking the body SHALL open the inspector's program picker focused
 
@@ -155,16 +126,15 @@ Program-internal text content (full instrument list with cadence, alert-threshol
 
 - **GIVEN** the Luscii block component
 - **WHEN** the renderer is migrated from stub data to live data (future change)
-- **THEN** the outer block frame, header layout, header content fields (name, protocol, mode, version-pin), provider corner badge, and body-slot dimensions SHALL be unchanged
+- **THEN** the outer block frame, header layout, header content fields (name, protocol, mode), provider corner badge, and body-slot dimensions SHALL be unchanged
 - **AND** only the inner body visualization SHALL switch from synthetic placeholder to data-driven rendering
 
-### Requirement: Allowed lane kinds carry through from provider capabilities
+### Requirement: Allowed lane kinds carry through from catalogue entry
 
-Each external block kind SHALL declare `allowed_lane_kind_codes` in the provider's `capabilities_json`. Block-lane-snap validation SHALL apply the same way as for native blocks: a payload is rejected when the block's lane kind is not in the kind's allowed set.
+Each block type SHALL declare `allowed_lane_kind_codes` in its catalogue entry. The `luscii.program` entry SHALL declare `allowed_lane_kind_codes=['external']`. Block-lane-snap validation SHALL apply the same way as for native blocks: a payload is rejected when the block's lane kind is not in the kind's allowed set.
 
 #### Scenario: Luscii program is restricted to external lane
 
-- **GIVEN** the `luscii.program` capability declares `allowed_lane_kind_codes=['external']`
 - **WHEN** a client submits a payload placing a `luscii.program` block on a patient lane
 - **THEN** the server responds with HTTP 422 (`BlockLaneNotAllowedError`)
 - **AND** the error payload lists `external` as the only allowed lane kind
