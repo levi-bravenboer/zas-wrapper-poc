@@ -1,3 +1,8 @@
+# POC ONLY — hard-coded synthetic Luscii programs.
+# Replaced by a live fetch + cache layer in the future live-Luscii adapter
+# change. Until then this constant is the only source of program payloads
+# served by `GET /luscii/programs` and `GET /luscii/programs/{id}`.
+
 """Synthetic Luscii program payloads served by the stub adapter.
 
 Static in-memory registry — no DB table backing it. Routes that need
