@@ -17,6 +17,10 @@ BlockSemanticsLiteral = Literal[
     "external_program",
 ]
 
+# Single-source-of-truth for the native-vs-external provenance literal.
+# Lives in the schemas layer (safe to import from services per layer
+# rules); the services-layer code-side catalogue + the block-type-code
+# parser re-export this as `BlockSource` for terser local names.
 BlockSourceLiteral = Literal["native", "external"]
 
 

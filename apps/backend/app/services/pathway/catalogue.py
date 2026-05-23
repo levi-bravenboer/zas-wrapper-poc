@@ -7,10 +7,15 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any
 
+from app.schemas.pathway.catalogue import BlockSourceLiteral as BlockSource
 
-BlockSource = Literal["native", "external"]
+# Shared link-mode enum reused across every block whose runtime semantics
+# include "do I wait for the linked execution to finish, or fire and continue?"
+# Today: `pathway_link` + `luscii.program`. Future link-shaped blocks (HiX
+# task delegation, registry follow-up) plug in here without a new constant.
+BLOCKING_MODES: tuple[str, ...] = ("blocking", "fire_and_forget")
 
 
 LANE_KIND_PATIENT = "patient"
@@ -343,7 +348,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
         config_schema=_object_schema(
             properties={
                 "target_pathway_id": {"type": "string", "format": "uuid"},
-                "mode": {"type": "string", "enum": ["blocking", "fire_and_forget"]},
+                "mode": {"type": "string", "enum": list(BLOCKING_MODES)},
                 "context_mapping": {
                     "type": "object",
                     "additionalProperties": {"type": "string"},
@@ -376,7 +381,7 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
             properties={
                 "program_id": {"type": "string", "minLength": 1, "maxLength": 128},
                 "protocol_id": {"type": "string", "minLength": 1, "maxLength": 128},
-                "mode": {"type": "string", "enum": ["blocking", "fire_and_forget"]},
+                "mode": {"type": "string", "enum": list(BLOCKING_MODES)},
             },
             required=["program_id", "protocol_id", "mode"],
         ),

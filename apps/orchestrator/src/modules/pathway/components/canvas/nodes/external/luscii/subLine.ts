@@ -8,7 +8,7 @@ const MODE_LABELS = {
   fire_and_forget: 'Fire-and-forget',
 } as const satisfies Record<LusciiProgramMode, string>
 
-function isLusciiProgramMode(value: unknown): value is LusciiProgramMode {
+function isLusciiProgramMode(value: string | null | undefined): value is LusciiProgramMode {
   return value === 'blocking' || value === 'fire_and_forget'
 }
 

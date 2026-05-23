@@ -1,4 +1,8 @@
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
+import {
+  LUSCII_PROGRAM_KIND,
+  LUSCII_PROVIDER,
+} from '../components/canvas/nodes/external/luscii'
 import type {
   LusciiLayout,
   LusciiProgramData,
@@ -92,7 +96,11 @@ export function getBlockDimensions(
   block: PathwayBlock,
   blockType: PathwayBlockType | null,
 ): BlockDimensions {
-  if (blockType?.source === 'external' && blockType.provider === 'luscii' && blockType.kind === 'program') {
+  if (
+    blockType?.source === 'external' &&
+    blockType.provider === LUSCII_PROVIDER &&
+    blockType.kind === LUSCII_PROGRAM_KIND
+  ) {
     // Without a resolved program payload in this signature, fall back to
     // the minimum size. `LusciiProgramBlockNode` itself computes the real
     // dimensions from the resolved program data via

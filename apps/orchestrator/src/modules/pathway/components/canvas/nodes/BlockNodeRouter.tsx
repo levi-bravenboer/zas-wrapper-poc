@@ -2,7 +2,7 @@ import { type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
 import { BlockNode, type BlockFlowNode } from './BlockNode'
-import { LusciiProgramBlockNode } from './external/luscii'
+import { LUSCII_PROGRAM_BLOCK_TYPE, LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
 
 /**
@@ -22,7 +22,7 @@ export const BlockNodeRouter = memo(BlockNodeRouterImpl)
 
 function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
   const blockType = props.data.block.type
-  if (blockType === 'luscii.program') {
+  if (blockType === LUSCII_PROGRAM_BLOCK_TYPE) {
     // reason: variance erasure between two heterogeneous xyflow node-data
     // shapes that share the same xyflow type key. `LusciiProgramBlockNodeData`
     // extends `BlockNodeData` with an optional `resolvedProgram` field that

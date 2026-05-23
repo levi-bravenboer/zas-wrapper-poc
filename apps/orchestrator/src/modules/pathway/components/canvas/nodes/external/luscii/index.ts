@@ -8,7 +8,12 @@ export { buildSubLine } from './subLine'
 export { LusciiProgramThumbnail } from './LusciiProgramThumbnail'
 export { LusciiProgramThumbnailFake } from './LusciiProgramThumbnailFake'
 export { LusciiProgramThumbnailLive } from './LusciiProgramThumbnailLive'
-export { LUSCII_PROGRAM_MODES } from './types'
+export {
+  LUSCII_PROGRAM_BLOCK_TYPE,
+  LUSCII_PROGRAM_KIND,
+  LUSCII_PROGRAM_MODES,
+  LUSCII_PROVIDER,
+} from './types'
 export type {
   LusciiAlertThreshold,
   LusciiInstrument,
@@ -18,7 +23,10 @@ export type {
   LusciiLayoutLane,
   LusciiLayoutNode,
   LusciiLayoutPhase,
+  LusciiProgramBlockType,
   LusciiProgramData,
+  LusciiProgramKind,
   LusciiProgramMode,
   LusciiProtocol,
+  LusciiProvider,
 } from './types'

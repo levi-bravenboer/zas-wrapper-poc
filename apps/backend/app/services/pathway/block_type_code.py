@@ -22,9 +22,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Literal
 
-BlockSource = Literal["native", "external"]
+# Re-export of the schemas-layer source-of-truth (layer rule:
+# services may import schemas; schemas may not import services).
+from app.schemas.pathway.catalogue import BlockSourceLiteral as BlockSource
+
+__all__ = ["BLOCK_TYPE_CODE_PATTERN", "BlockSource", "BlockTypeCode", "InvalidBlockTypeCodeError"]
 
 # Bare:    appointment, task, pathway_link, ...
 # Dotted:  luscii.program, hix.task, ...

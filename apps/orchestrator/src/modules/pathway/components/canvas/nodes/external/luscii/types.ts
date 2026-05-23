@@ -19,7 +19,21 @@ export type LusciiAlertThreshold = components['schemas']['LusciiAlertThreshold']
 // the kinds in a string literal.
 export type LusciiLaneKind = LusciiLayoutLane['kind']
 
-// Author-time `mode` enum on the Luscii block config. Mirrors the catalogue
-// entry's JSON Schema enum + the existing `PATHWAY_LINK_MODES` constant.
-export const LUSCII_PROGRAM_MODES = ['blocking', 'fire_and_forget'] as const
+import { PATHWAY_LINK_MODES } from '../../../../../configSchemas'
+
+// Author-time `mode` enum on the Luscii block config. Identical to the
+// existing pathway-link link-mode constant — re-exported here so Luscii
+// callsites don't reach across into pathway-link internals.
+export const LUSCII_PROGRAM_MODES = PATHWAY_LINK_MODES
 export type LusciiProgramMode = (typeof LUSCII_PROGRAM_MODES)[number]
+
+// Canonical identifiers for this provider + its single kind. Keep these
+// constants in one place so the router, dimensions dispatcher, palette
+// grouping, and any future site stay aligned on the dotted code form.
+export const LUSCII_PROVIDER = 'luscii' as const
+export const LUSCII_PROGRAM_KIND = 'program' as const
+export const LUSCII_PROGRAM_BLOCK_TYPE = `${LUSCII_PROVIDER}.${LUSCII_PROGRAM_KIND}` as const
+
+export type LusciiProvider = typeof LUSCII_PROVIDER
+export type LusciiProgramKind = typeof LUSCII_PROGRAM_KIND
+export type LusciiProgramBlockType = typeof LUSCII_PROGRAM_BLOCK_TYPE

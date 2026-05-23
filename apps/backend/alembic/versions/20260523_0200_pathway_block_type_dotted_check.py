@@ -24,6 +24,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
+from app.services.pathway.block_type_code import BLOCK_TYPE_CODE_PATTERN
+
 revision: str = "5f1a8b3c9d24"
 down_revision: str | None = "35685b9389c1"
 branch_labels: str | Sequence[str] | None = None
@@ -31,7 +33,9 @@ depends_on: str | Sequence[str] | None = None
 
 
 CONSTRAINT_NAME = "ck_pathway_block_type_format"
-CONSTRAINT_EXPR = "type ~ '^[a-z_]+(\\.[a-z_]+)?$'"
+# Pull the regex from the application-side parser so the DB CHECK and the
+# Python validator can never drift. `re.Pattern.pattern` is the raw string.
+CONSTRAINT_EXPR = f"type ~ '{BLOCK_TYPE_CODE_PATTERN.pattern}'"
 
 
 def upgrade() -> None:
