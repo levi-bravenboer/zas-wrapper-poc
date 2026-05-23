@@ -1,16 +1,19 @@
-"""Synthetic Luscii program payloads used by the stub adapter.
+"""Synthetic Luscii program payloads served by the stub adapter.
 
-These four programs are inserted into `luscii_program` by the data
-migration `20260523_0115_seed_luscii_programs.py` and also re-applied by
-`moon run backend:seed-luscii` for idempotent reseeding.
+Static in-memory registry — no DB table backing it. Routes that need
+Luscii programs (e.g. the picker `GET /luscii/programs` and the
+per-id resolve `GET /luscii/programs/{id}`) read from this constant.
 
 All synthetic — no real patient data, no real Luscii ids. Naming pattern
 ``luscii-<kebab-slug>-v<n>`` mirrors how live Luscii ids look without
 colliding with anything actually published by Luscii.
 
 Each payload validates against :class:`app.adapters.luscii.program.LusciiProgramData`
-at module import; the unit test
-:mod:`tests.adapters.test_luscii_seed_programs` enforces this.
+at module import; the unit test :mod:`tests.adapters.test_luscii_programs`
+enforces this.
+
+When the live Luscii adapter lands, this constant is replaced by a real
+fetch + cache layer; the routes' response shape stays unchanged.
 """
 
 from __future__ import annotations

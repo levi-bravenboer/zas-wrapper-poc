@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from app.adapters.luscii.program import LusciiProgramData
-from app.adapters.luscii.seed import LUSCII_STUB_PROGRAMS, LUSCII_STUB_PROGRAMS_BY_ID
+from app.adapters.luscii.programs import LUSCII_STUB_PROGRAMS, LUSCII_STUB_PROGRAMS_BY_ID
 
 
 EXPECTED_IDS = (

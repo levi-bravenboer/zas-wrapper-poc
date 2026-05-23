@@ -3,7 +3,6 @@
 """
 
 from app.db.models.care_team import CareTeam, CareTeamParticipant
-from app.db.models.luscii_program import LusciiProgram
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient, PatientIdentifier
 from app.db.models.pathway import (
@@ -26,7 +25,6 @@ from app.db.models.user import User
 __all__ = [
     "CareTeam",
     "CareTeamParticipant",
-    "LusciiProgram",
     "Organisation",
     "Pathway",
     "PathwayBlock",
