@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { type Node, type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
@@ -8,6 +9,8 @@ import {
 } from '../../../../../utils/blockDimensions'
 import type { BlockNodeData } from '../../BlockNode'
 
+import { getLusciiProgram } from './api'
+import { lusciiKeys } from './keys'
 import { LusciiProgramHeader } from './LusciiProgramHeader'
 import { LusciiProgramThumbnail } from './LusciiProgramThumbnail'
 import { buildSubLine } from './subLine'
@@ -18,8 +21,9 @@ import type { LusciiProgramData } from './types'
 // `BlockNodeRouter` instead of `as unknown as`) and inherits future
 // additions (duration / isEntry) without redeclaration.
 export type LusciiProgramBlockNodeData = BlockNodeData & {
-  /** Resolved Luscii program — null until the picker fetches one. Wired in
-   * a later change (TanStack picker integration). For now stays null. */
+  /** Optional eager-resolved program — when supplied by the parent (e.g. a
+   * preview surface), the node renders it directly. When absent, the node
+   * fetches via TanStack against `config.program_id`. */
   resolvedProgram?: LusciiProgramData | null
 }
 
@@ -33,14 +37,23 @@ function LusciiProgramBlockNodeImpl({
   data,
   selected,
 }: NodeProps<LusciiProgramFlowNode>): ReactElement {
-  const program = data.resolvedProgram ?? null
-  const dims: BlockDimensions = computeLusciiProgramDimensions(program)
   // reason: `block.config` is the union of all per-semantics configs at the
   // generic site; narrow to the Luscii-shaped variant here. The runtime
   // contract is enforced by `CONFIG_SCHEMAS.external_program` at the
   // BuilderDrawer save path, so this narrowing is safe to perform with `as`.
   const config = (data.block.config ?? {}) as LusciiConfig
   const empty = !config.program_id
+
+  // Resolve the program: parent override wins (preview/test surfaces), else
+  // fetch via TanStack so the same cache feeds the inspector and the node.
+  const programQuery = useQuery({
+    queryKey: lusciiKeys.program(config.program_id ?? ''),
+    queryFn: () => getLusciiProgram(config.program_id ?? ''),
+    enabled: data.resolvedProgram === undefined && Boolean(config.program_id),
+  })
+  const program = data.resolvedProgram ?? programQuery.data ?? null
+
+  const dims: BlockDimensions = computeLusciiProgramDimensions(program)
   const subLine = buildSubLine(program, config.protocol_id ?? null, config.mode ?? null)
 
   return (
