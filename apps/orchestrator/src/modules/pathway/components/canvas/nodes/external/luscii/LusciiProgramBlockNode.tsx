@@ -71,13 +71,13 @@ function LusciiProgramBlockNodeImpl({
           : `Luscii Program: ${program?.name ?? config.program_id ?? 'unknown'}`
       }
       data-slot="luscii-program-block"
-      data-selected={selected ? 'true' : 'false'}
+      data-selected={selected || undefined}
       className="relative"
       style={{ width: dims.width, height: dims.height }}
     >
       <div
-        data-selected={selected ? 'true' : 'false'}
-        className="absolute inset-0 overflow-hidden rounded-[10px] border border-border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected=true]:border-[color:var(--lane-external)] data-[selected=true]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-external)_22%,transparent),var(--shadow-md)]"
+        data-selected={selected || undefined}
+        className="absolute inset-0 overflow-hidden rounded-[10px] border border-border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected]:border-[color:var(--lane-external)] data-[selected]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-external)_22%,transparent),var(--shadow-md)]"
       >
         {/* Rail */}
         <div
