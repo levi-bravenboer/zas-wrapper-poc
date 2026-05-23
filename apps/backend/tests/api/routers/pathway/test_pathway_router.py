@@ -92,6 +92,7 @@ async def test_list_block_types(
         "milestone",
         "wait",
         "pathway_link",
+        "luscii.program",
     }
     for row in rows:
         assert row["semantics"] in {
@@ -103,6 +104,7 @@ async def test_list_block_types(
             "milestone",
             "wait",
             "pathway_link",
+            "external_program",
         }
         assert isinstance(row["icon"], str) and row["icon"]
         assert isinstance(row["ui_schema"], dict)
@@ -110,6 +112,12 @@ async def test_list_block_types(
         assert isinstance(lane_codes, list) and len(lane_codes) >= 1
         for code in lane_codes:
             assert code in {"patient", "caregiver", "system", "external"}
+        assert row["source"] in {"native", "external"}
+        if row["source"] == "external":
+            assert row["provider"] and row["kind"]
+        else:
+            assert row["provider"] is None
+            assert row["kind"] is None
 
 
 async def test_list_phase_templates(
