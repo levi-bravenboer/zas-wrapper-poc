@@ -80,21 +80,19 @@ describe('blockOrigin', () => {
   })
 
   it('recomputes the default y for a custom (taller) block height when block.y is falsy', () => {
-    const origin = blockOrigin(
-      { phase_id: 'p1', lane_id: 'l1', x: 0, y: 0 },
-      geometry,
-      { width: 360, height: 200 },
-    )
+    const origin = blockOrigin({ phase_id: 'p1', lane_id: 'l1', x: 0, y: 0 }, geometry, {
+      width: 360,
+      height: 200,
+    })
     // 200-tall block in 180-tall lane → laneInset clamps to 0 → block sits at lane top
     expect(origin.y).toBe(geometry.laneY('l1') + 0)
   })
 
   it('preserves native (240×64) placement when explicit native dimensions are passed', () => {
-    const origin = blockOrigin(
-      { phase_id: 'p1', lane_id: 'l1', x: 0, y: 0 },
-      geometry,
-      { width: BLOCK_WIDTH, height: BLOCK_HEIGHT },
-    )
+    const origin = blockOrigin({ phase_id: 'p1', lane_id: 'l1', x: 0, y: 0 }, geometry, {
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+    })
     expect(origin.y).toBe(geometry.laneY('l1') + BLOCK_DEFAULT_Y)
   })
 })

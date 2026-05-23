@@ -10,7 +10,6 @@ from app.adapters.luscii import (
 )
 
 
-
 EXPECTED_IDS = (
     "luscii-hartfalen-monitoring-v4",
     "luscii-copd-self-management-v2",
@@ -59,27 +58,23 @@ class TestPayloadValidity:
         assert len(defaults) == 1, f"{program.id}: expected 1 default protocol, got {len(defaults)}"
 
     @pytest.mark.parametrize("program", LUSCII_STUB_PROGRAMS, ids=lambda p: p.id)
-    def test_layout_phase_ords_are_consecutive_from_zero(
-        self, program: LusciiProgramData
-    ) -> None:
+    def test_layout_phase_ords_are_consecutive_from_zero(self, program: LusciiProgramData) -> None:
         ords = sorted(p.ord for p in program.layout.phases)
         assert ords == list(range(len(ords)))
 
     @pytest.mark.parametrize("program", LUSCII_STUB_PROGRAMS, ids=lambda p: p.id)
-    def test_layout_lane_ords_are_consecutive_from_zero(
-        self, program: LusciiProgramData
-    ) -> None:
+    def test_layout_lane_ords_are_consecutive_from_zero(self, program: LusciiProgramData) -> None:
         ords = sorted(lane.ord for lane in program.layout.lanes)
         assert ords == list(range(len(ords)))
 
     @pytest.mark.parametrize("program", LUSCII_STUB_PROGRAMS, ids=lambda p: p.id)
-    def test_layout_nodes_reference_known_phase_and_lane(
-        self, program: LusciiProgramData
-    ) -> None:
+    def test_layout_nodes_reference_known_phase_and_lane(self, program: LusciiProgramData) -> None:
         phase_ids = {p.id for p in program.layout.phases}
         lane_ids = {lane.id for lane in program.layout.lanes}
         for node in program.layout.nodes:
-            assert node.phase_id in phase_ids, f"{program.id}/{node.id}: unknown phase {node.phase_id}"
+            assert node.phase_id in phase_ids, (
+                f"{program.id}/{node.id}: unknown phase {node.phase_id}"
+            )
             assert node.lane_id in lane_ids, f"{program.id}/{node.id}: unknown lane {node.lane_id}"
 
     @pytest.mark.parametrize("program", LUSCII_STUB_PROGRAMS, ids=lambda p: p.id)
@@ -92,9 +87,7 @@ class TestPayloadValidity:
     @pytest.mark.parametrize("program", LUSCII_STUB_PROGRAMS, ids=lambda p: p.id)
     def test_exactly_one_entry_node(self, program: LusciiProgramData) -> None:
         entries = [n for n in program.layout.nodes if n.is_entry]
-        assert len(entries) == 1, (
-            f"{program.id}: expected 1 entry node, got {len(entries)}"
-        )
+        assert len(entries) == 1, f"{program.id}: expected 1 entry node, got {len(entries)}"
 
     @pytest.mark.parametrize("program", LUSCII_STUB_PROGRAMS, ids=lambda p: p.id)
     def test_at_least_one_instrument(self, program: LusciiProgramData) -> None:

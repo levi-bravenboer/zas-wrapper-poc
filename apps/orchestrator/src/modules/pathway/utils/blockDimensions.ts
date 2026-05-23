@@ -1,8 +1,5 @@
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
-import {
-  LUSCII_PROGRAM_KIND,
-  LUSCII_PROVIDER,
-} from '../components/canvas/nodes/external/luscii'
+import { LUSCII_PROGRAM_KIND, LUSCII_PROVIDER } from '../components/canvas/nodes/external/luscii'
 import type {
   LusciiLayout,
   LusciiProgramData,

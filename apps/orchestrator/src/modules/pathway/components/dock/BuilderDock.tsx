@@ -43,11 +43,7 @@ export function BuilderDock({
                 style={{ background: 'var(--hairline)' }}
               />
             )}
-            <div
-              role="group"
-              aria-label={groupLabel}
-              className="inline-flex items-center gap-2"
-            >
+            <div role="group" aria-label={groupLabel} className="inline-flex items-center gap-2">
               {group.items.map((blockType) => (
                 <DockItem
                   key={blockType.type}

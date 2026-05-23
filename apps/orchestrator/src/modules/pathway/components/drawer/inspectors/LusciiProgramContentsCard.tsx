@@ -62,10 +62,7 @@ export function LusciiProgramContentsCard({ program }: Props): ReactElement {
         <ul className="flex flex-col gap-1.5">
           {thresholds.map((th, idx) => (
             <li key={`${th.label}-${idx}`} className="flex items-start gap-2">
-              <AlertTriangle
-                className="mt-px size-3.5 text-amber-500 shrink-0"
-                strokeWidth={1.7}
-              />
+              <AlertTriangle className="mt-px size-3.5 text-amber-500 shrink-0" strokeWidth={1.7} />
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-foreground">{th.label}</span>
                 <span className="truncate font-mono text-[10.5px] text-muted-foreground">

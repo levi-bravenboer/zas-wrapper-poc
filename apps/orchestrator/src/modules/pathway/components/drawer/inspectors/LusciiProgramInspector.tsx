@@ -203,10 +203,7 @@ function ProgramMetadataStrip({ program }: { program: LusciiProgramData }): Reac
       className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 rounded-md border bg-muted/30 px-3 py-2 text-[11px]"
       style={{ borderColor: 'var(--hairline)' }}
     >
-      <MetadataRow
-        label={t('inspector.lusciiProgram.metadata.version')}
-        value={program.version}
-      />
+      <MetadataRow label={t('inspector.lusciiProgram.metadata.version')} value={program.version} />
       <MetadataRow
         label={t('inspector.lusciiProgram.metadata.enrolledCount')}
         value={String(program.enrolled_count_org_wide)}

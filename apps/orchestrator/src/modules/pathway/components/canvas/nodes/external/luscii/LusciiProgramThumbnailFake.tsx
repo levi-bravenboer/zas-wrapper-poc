@@ -1,11 +1,6 @@
 import { type ReactElement } from 'react'
 
-import type {
-  LusciiLaneKind,
-  LusciiLayout,
-  LusciiLayoutNode,
-  LusciiProgramData,
-} from './types'
+import type { LusciiLaneKind, LusciiLayout, LusciiLayoutNode, LusciiProgramData } from './types'
 
 type Props = {
   data: LusciiProgramData | null
@@ -132,14 +127,7 @@ export function LusciiProgramThumbnailFake({ data, width, height }: Props): Reac
           const accent = resolveLaneAccent(lane.kind)
           return (
             <g key={lane.id}>
-              <rect
-                x={0}
-                y={i * laneH}
-                width={vbW}
-                height={laneH}
-                fill={accent}
-                opacity={0.06}
-              />
+              <rect x={0} y={i * laneH} width={vbW} height={laneH} fill={accent} opacity={0.06} />
               <line
                 x1={0}
                 y1={i * laneH}

@@ -82,11 +82,7 @@ function LusciiProgramBlockNodeImpl({
       {/* Body thumbnail (under the title chip + provider badge) */}
       <LusciiProgramThumbnail data={program} width={dims.width} height={dims.height} />
       {/* Title overlay */}
-      <LusciiProgramHeader
-        programName={program?.name ?? null}
-        subLine={subLine}
-        empty={empty}
-      />
+      <LusciiProgramHeader programName={program?.name ?? null} subLine={subLine} empty={empty} />
       {/* Provider corner badge */}
       <span
         aria-hidden="true"
