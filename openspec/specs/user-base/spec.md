@@ -179,7 +179,7 @@ The backend SHALL expose a `UserService` under `app/services/user/` whose constr
 
 The backend SHALL expose a router under `app/api/routers/user/` tagged `users` providing:
 
-- `GET /users` — operation id `list_tenant_users`. Returns `list[UserRow]` (id, email, display_name, role, is_active, created_at). Tenant-scoped to `current_user.tenant_id`. Admin-only. Accepts optional `?active=true|false` query.
+- `GET /users` — operation id `list_tenant_users`. Returns `list[UserRow]` (id, email, display_name, role, is_active, created_at). Tenant-scoped to `current_user.tenant_id`. Admin-only. Accepts optional `?active=true|false`, `?role=<Role>`, `?q=<text>`, and `?has_practitioner=true|false` query filters.
 - `PATCH /users/{user_id}/role` — operation id `update_user_role`. Body: `AssignRoleRequest { role: Role }`. Returns the updated `UserRow`. Admin-only. Cross-tenant targets return 403. Self-targets are permitted and return 200 with the updated row.
 
 Both endpoints MUST be guarded with `Depends(require_role(Role.ADMIN))`.
@@ -207,7 +207,12 @@ Both endpoints MUST be guarded with `Depends(require_role(Role.ADMIN))`.
 #### Scenario: Admin self role update permitted
 
 - **WHEN** an admin sends `PATCH /users/<own_id>/role` with body `{"role": "caregiver"}`
-- **THEN** the response is 200 with the updated `UserRow` showing `role = "caregiver"`. Subsequent admin-only requests by that session MUST return 403 (the role guard reads the freshly-loaded `SessionUser.role`)
+- **THEN** the response is 200 with the updated `UserRow` showing `role = "caregiver"`
+
+#### Scenario: has_practitioner filter scopes the list
+
+- **WHEN** an admin calls `GET /users?has_practitioner=true`
+- **THEN** the response MUST include only users whose `Practitioner` row exists (joined on `practitioners.user_id`), excluding any admin or caregiver with no Practitioner materialised
 
 ### Requirement: User repository supports external-identity lookup
 

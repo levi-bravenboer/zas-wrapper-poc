@@ -105,17 +105,54 @@ apps/orchestrator/
 
 ## Routes
 
-| Path             | Auth | Component               | Notes                                                      |
-| ---------------- | ---- | ----------------------- | ---------------------------------------------------------- |
-| `/login`         | no   | `LoginForm`             | Reads `?redirect` to restore intended destination          |
-| `/`              | yes  | redirect → `/dashboard` | `_auth/index.tsx` `beforeLoad` redirect, no UI             |
-| `/dashboard`     | yes  | `DashboardPage`         | Real content lands here first                              |
-| `/tasks`         | yes  | `SectionPlaceholder`    | Placeholder until tasks module ships                       |
-| `/pathways`      | yes  | `SectionPlaceholder`    | Pathway composer entry point                               |
-| `/patients`      | yes  | `SectionPlaceholder`    | Patient list entry point                                   |
-| `/settings`      | yes  | `SectionPlaceholder`    | Settings entry point                                       |
+Routes are split across three surface segments:
 
-All authed routes mount `AppLayout` (sidebar + main content) via `_auth.tsx`.
+- `_auth/*` — `app` surface (orchestrator session, sidebar chrome). Hand-written for admin/pathway pages; `renderFeature` shim for registry-driven features.
+- `s/*` — `smart` surface (SMART-on-FHIR launch, sidebar chrome). Always `renderFeature` shim.
+- `embed/*` — `embed` surface (HiX iframe, bare chrome). Always `renderFeature` shim.
+
+| Path                       | Surface | Auth | Notes                                                              |
+| -------------------------- | ------- | ---- | ------------------------------------------------------------------ |
+| `/login`                   | —       | no   | Reads `?redirect` to restore intended destination                  |
+| `/launch`, `/launch/callback` | —    | no   | SMART-on-FHIR PKCE entry + callback                                |
+| `/`                        | app     | yes  | redirect → `/dashboard` (`_auth/index.tsx` `beforeLoad`)           |
+| `/dashboard`               | app     | yes  | Caregiver workspace home (hand-written, app-only)                  |
+| `/tasks`                   | app     | yes  | Registry feature (`tasksFeature`); also `/s/tasks`, `/embed/tasks` |
+| `/patients/*`              | app     | yes  | Patient list + detail (`modules/patient/`, hand-written)           |
+| `/pathways/*`              | app     | yes  | Pathway composer (admin opt-out, app-only forever)                 |
+| `/admin/*`                 | app     | yes  | Organisations, practitioner roles, users (admin opt-out)           |
+| `/s/tasks`                 | smart   | yes  | Registry feature mounted on `SmartShell`                           |
+| `/embed/tasks`             | embed   | yes  | Registry feature mounted on `EmbedShell`                           |
+
+`_auth/*` mounts `AppShell` (sidebar + main). `s/*` mounts `SmartShell` (sidebar + SMART context). `embed/*` mounts `EmbedShell` (bare + SMART context + postMessage host bridge). See `src/platform/README.md` for the platform model and `page-surface-catalogue.md` in the active or archived `multi-surface-feature-framework` openspec change for canonical page → surface decisions.
+
+## Embed surface (HiX iframe)
+
+Routes under `/embed/*` are designed to be hosted inside an EPD iframe. The orchestrator origin MUST be served with a CSP header that allow-lists the host:
+
+```
+Content-Security-Policy: frame-ancestors https://hix.example.com https://*.epd.example;
+```
+
+- **Do not** set `X-Frame-Options: DENY` / `SAMEORIGIN` — it overrides `frame-ancestors` and breaks the iframe surface.
+- The allow-list lives in `VITE_EMBED_FRAME_ANCESTORS` (space-separated origins); the deployment manifest (reverse proxy, S3 metadata, edge worker, …) reads it and emits the CSP header verbatim.
+- `VITE_EMBED_HOST_ORIGIN` is the **single** origin the embed surface uses as `postMessage` target and inbound-message origin check. It MUST be one of the origins in `VITE_EMBED_FRAME_ANCESTORS`. When unset, the host bridge is a no-op (development default).
+
+## postMessage host protocol
+
+The embed shell exchanges typed JSON messages with the parent window. Every message carries `{ source: 'zas-embed', type, ... }`.
+
+Outbound (embed → host):
+
+| `type`     | Payload                | Sent when                                    |
+| ---------- | ---------------------- | -------------------------------------------- |
+| `ready`    | —                      | Embed boot completes                         |
+| `resize`   | `{ height: number }`   | Root container content size changes          |
+| `navigate` | `{ path: string }`     | Router resolves a new location               |
+| `close`    | —                      | Caregiver dismisses the embed                |
+| `error`    | `{ code, message }`    | SMART exchange or render-time failure        |
+
+Inbound (host → embed) is restricted to `host-navigate` / `host-context`. The bridge verifies `event.origin === VITE_EMBED_HOST_ORIGIN` before dispatching.
 
 ## Conventions
 

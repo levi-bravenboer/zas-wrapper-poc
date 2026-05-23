@@ -1,3 +1,4 @@
+// surface-opt-out: app-only
 import { createFileRoute } from '@tanstack/react-router'
 
 import { PractitionerRoleListPage } from '@/modules/practitioner-role/components/PractitionerRoleListPage'
@@ -19,4 +20,5 @@ export const Route = createFileRoute('/_auth/admin/practitioner-roles')({
     return out
   },
   component: PractitionerRoleListPage,
+  staticData: { breadcrumb: 'Affiliaties' },
 })

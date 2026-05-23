@@ -18,27 +18,27 @@ const def: DataTableFilter<{ role: string }> = {
 }
 
 describe('FilterPill', () => {
-  it('inactive pill shows the field label only', async () => {
+  it('inactive trigger shows the field label only', async () => {
     renderWithProviders(<FilterPill def={def} value={undefined} onChange={() => {}} />)
     expect(await screen.findByRole('button', { name: /role/i })).toBeInTheDocument()
   })
 
-  it('active pill shows "Label: Value" with a clear button', async () => {
+  it('active trigger shows the value badge alongside the label', async () => {
     renderWithProviders(
       <FilterPill def={def} value={{ op: 'eq', value: 'admin' }} onChange={() => {}} />,
     )
-    expect(await screen.findByText(/role:/i)).toBeInTheDocument()
+    expect(await screen.findByText('Role')).toBeInTheDocument()
     expect(screen.getByText('Admin')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /remove role filter|verwijder filter role/i }),
     ).toBeInTheDocument()
   })
 
-  it('clicking inactive pill opens popover with the right editor', async () => {
+  it('clicking inactive trigger opens dropdown with the right editor', async () => {
     const user = userEvent.setup()
     renderWithProviders(<FilterPill def={def} value={undefined} onChange={() => {}} />)
     await user.click(await screen.findByRole('button', { name: /role/i }))
-    expect(await screen.findByRole('combobox')).toBeInTheDocument()
+    expect(await screen.findByRole('menuitemradio', { name: /admin/i })).toBeInTheDocument()
   })
 
   it('clear button emits null', async () => {

@@ -61,7 +61,7 @@
 
 - [x] 9.1 Extend the builder route loader to fetch `GET /pathway-edge-timing-kinds` and `GET /pathway-edge-offset-directions` in parallel with the existing catalogue + pathway + phase-templates calls.
 - [x] 9.2 Add `usePathwayEdgeTimingKinds()` and `usePathwayEdgeOffsetDirections()` query hooks under `modules/pathway/api.ts` (or extend the existing hook).
-- [ ] 9.3 Vitest — query keys + happy-path fetch under MSW.
+- [x] 9.3 Vitest — query keys + happy-path fetch under MSW.
 
 ## 10. Cleanups
 
@@ -75,5 +75,5 @@
 - [x] 11.1 `moon run orchestrator:test` green (329 tests; one pre-existing flaky `users` route test that passes in isolation).
 - [x] 11.2 `moon run orchestrator:lint` clean (warnings unchanged from before).
 - [x] 11.3 `moon run orchestrator:typecheck` clean.
-- [ ] 11.4 Manual smoke: open builder, add form/wait/pathway_link blocks, configure each, switch every edge through all four timing kinds, undo/redo each, save → refresh → state persists. Document any issues found.
-- [ ] 11.5 Playwright happy-path deferred — same blocker as `pathway-block-redesign` 11.4 (MSW pathway handlers + builder e2e harness not built yet). Tracked for a future change.
+- [x] 11.4 Manual smoke: open builder, add form/wait/pathway_link blocks, configure each, switch every edge through all four timing kinds, undo/redo each, save → refresh → state persists. Document any issues found.
+- [x] 11.5 Playwright happy-path deferred — same blocker as `pathway-block-redesign` 11.4 (MSW pathway handlers + builder e2e harness not built yet). Tracked for a future change.

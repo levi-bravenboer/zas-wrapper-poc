@@ -1,4 +1,4 @@
-export const ORGANISATION_KEYS_SCOPE = 'organisations' as const
+const ORGANISATION_KEYS_SCOPE = 'organisations' as const
 
 export const organisationKeys = {
   all: [ORGANISATION_KEYS_SCOPE] as const,

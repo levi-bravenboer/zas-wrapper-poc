@@ -30,7 +30,7 @@ import {
  * for every field it owns; localStorage supplies fallbacks for the rest.
  */
 
-export interface SearchCoercer {
+interface SearchCoercer {
   parse: (value: unknown) => Partial<DataTableState>
 }
 
@@ -64,7 +64,7 @@ function coerceFilters(value: unknown): DataTableState['filters'] {
  * Best-effort coercion from an unknown search object into a partial
  * `DataTableState`. Unknown / malformed fields are dropped silently.
  */
-export function coerceSearchToState(search: unknown): Partial<DataTableState> {
+function coerceSearchToState(search: unknown): Partial<DataTableState> {
   if (!isPlainObject(search)) return {}
   const out: Partial<DataTableState> = {}
   if (typeof search['page'] === 'number') out.page = search['page']
@@ -88,23 +88,6 @@ export function coerceSearchToState(search: unknown): Partial<DataTableState> {
 
 function applyAction(state: DataTableState, action: DataTableAction): DataTableState {
   return dataTableReducer(state, action)
-}
-
-/**
- * Resolve effective state. The URL (`routeState`) wins for any field it
- * actually defines; `localState` fills in the rest. This is the recommended
- * pattern when persisting `pageSize` to localStorage while letting the URL
- * own `page`, `q`, `orderBy`, `order`, and `filters`.
- *
- * Example:
- *   URL: ?page=3 + localStorage: { pageSize: 50 }
- *   -> { ...defaults, pageSize: 50, page: 3 }
- */
-export function composeTableState(
-  routeState: Partial<DataTableState> | undefined,
-  localState: Partial<DataTableState> | undefined,
-): DataTableState {
-  return mergeInitialState({ ...(localState ?? {}), ...(routeState ?? {}) })
 }
 
 /**
@@ -196,19 +179,22 @@ export function useRouteSearchTableState(
 }
 
 /**
- * Serialise state for round-tripping through the URL. We drop fields whose
- * value matches the default so the URL stays clean (no `?page=1&order=asc`
- * litter on every navigation).
+ * Serialise state for round-tripping through the URL. Fields whose value
+ * matches the default are emitted as `undefined` so TanStack Router strips
+ * them from the URL. Emitting `undefined` (rather than omitting the key)
+ * matters when merging into a previous search object — otherwise stale
+ * values from prior state would survive transitions like
+ * `q: "foo"` → `q: null` or `filters: {a}` → `clearAll()`.
  */
 function serialiseState(state: DataTableState): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
-  if (state.page !== DATA_TABLE_DEFAULT_STATE.page) out['page'] = state.page
-  if (state.pageSize !== DATA_TABLE_DEFAULT_STATE.pageSize) out['pageSize'] = state.pageSize
-  if (state.q !== DATA_TABLE_DEFAULT_STATE.q) out['q'] = state.q
-  if (state.orderBy !== DATA_TABLE_DEFAULT_STATE.orderBy) out['orderBy'] = state.orderBy
-  if (state.order !== DATA_TABLE_DEFAULT_STATE.order) out['order'] = state.order
-  if (Object.keys(state.filters).length) out['filters'] = state.filters
-  return out
+  return {
+    page: state.page !== DATA_TABLE_DEFAULT_STATE.page ? state.page : undefined,
+    pageSize: state.pageSize !== DATA_TABLE_DEFAULT_STATE.pageSize ? state.pageSize : undefined,
+    q: state.q !== DATA_TABLE_DEFAULT_STATE.q ? state.q : undefined,
+    orderBy: state.orderBy !== DATA_TABLE_DEFAULT_STATE.orderBy ? state.orderBy : undefined,
+    order: state.order !== DATA_TABLE_DEFAULT_STATE.order ? state.order : undefined,
+    filters: Object.keys(state.filters).length ? state.filters : undefined,
+  }
 }
 
 export { serialiseState as __serialiseTableStateForTest }

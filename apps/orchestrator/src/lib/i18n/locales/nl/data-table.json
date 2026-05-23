@@ -20,6 +20,24 @@
         "empty": "{{label}}",
         "active": "{{label}}: {{value}}",
         "clearAria": "Verwijder filter {{label}}"
+      },
+      "dateRange": {
+        "from": "{{label}} — van",
+        "to": "{{label}} — tot"
+      },
+      "boolean": {
+        "all": "Alle",
+        "true": "Ja",
+        "false": "Nee"
+      },
+      "typeahead": {
+        "selected": "Geselecteerd"
+      },
+      "list": {
+        "search": "Zoek {{label}}…",
+        "empty": "Geen opties",
+        "selectedCount_one": "{{count}} geselecteerd",
+        "selectedCount_other": "{{count}} geselecteerd"
       }
     }
   },

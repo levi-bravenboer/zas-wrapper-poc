@@ -5,18 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import {
-  ClearAll,
-  DebouncedSearch,
+  DataTablePagination,
+  DataTableToolbar,
   defineColumn,
   EmptyRow,
-  FilterOverflow,
-  FilterPill,
   LoadingRows,
   RowActions,
   SortHeader,
   Table,
-  Toolbar,
-  DataTablePagination,
   useTableSort,
   type BrandedColumnDef,
   type DataTableFilter,
@@ -122,13 +118,11 @@ export function UserListPage(): ReactElement {
         ],
       },
       {
-        type: 'select',
+        type: 'boolean',
         key: 'is_active',
         label: t('list.filter.is_active'),
-        options: [
-          { value: 'true', label: t('active.true') },
-          { value: 'false', label: t('active.false') },
-        ],
+        trueLabel: t('active.true'),
+        falseLabel: t('active.false'),
       },
     ],
     [t],
@@ -184,8 +178,6 @@ export function UserListPage(): ReactElement {
   const rows = data?.items ?? []
   const isEmpty = !isLoading && rows.length === 0 && !error
   const totalColumns = columns.length + 1
-  const inlineDefs = filterDefs.slice(0, 3)
-  const overflowDefs = filterDefs.slice(3)
   const onFilter = (field: string, f: Parameters<typeof dispatch.setFilter>[1] | null) => {
     if (f === null) dispatch.clearFilter(field)
     else dispatch.setFilter(field, f)
@@ -204,29 +196,14 @@ export function UserListPage(): ReactElement {
         </Button>
       }
       filters={
-        <Toolbar.Root>
-          <Toolbar.Search>
-            <DebouncedSearch
-              value={state.q}
-              onChange={(q) => dispatch.setSearch(q)}
-              placeholder={tTable('toolbar.search.placeholder')}
-            />
-          </Toolbar.Search>
-          <Toolbar.Filters>
-            {inlineDefs.map((def) => (
-              <FilterPill
-                key={def.key}
-                def={def}
-                value={state.filters[def.key]}
-                onChange={onFilter}
-              />
-            ))}
-            <FilterOverflow defs={overflowDefs} filters={state.filters} onChange={onFilter} />
-            {Object.keys(state.filters).length > 0 && (
-              <ClearAll onClick={() => dispatch.clearAll()} />
-            )}
-          </Toolbar.Filters>
-        </Toolbar.Root>
+        <DataTableToolbar<UserRow>
+          q={state.q}
+          filters={state.filters}
+          filterDefs={filterDefs}
+          onSearchChange={(q) => dispatch.setSearch(q)}
+          onFilterChange={onFilter}
+          onClearFilters={() => dispatch.clearAll()}
+        />
       }
       table={
         <>
@@ -283,6 +260,14 @@ export function UserListPage(): ReactElement {
                         params: { userId: row.id },
                       })
                     }
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return
+                      e.preventDefault()
+                      void navigate({
+                        to: '/admin/users/$userId',
+                        params: { userId: row.id },
+                      })
+                    }}
                     className="cursor-pointer"
                   >
                     {columns.map((col, idx) => (

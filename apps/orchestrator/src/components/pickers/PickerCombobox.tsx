@@ -35,6 +35,8 @@ export interface PickerComboboxProps<T> {
   triggerClassName?: string | undefined
   contentClassName?: string | undefined
   ariaLabel?: string | undefined
+  /** When true, render the Command body inline (no Popover/Trigger). */
+  inline?: boolean | undefined
 }
 
 export function PickerCombobox<T>({
@@ -57,10 +59,56 @@ export function PickerCombobox<T>({
   triggerClassName,
   contentClassName,
   ariaLabel,
+  inline = false,
 }: PickerComboboxProps<T>) {
   const [open, setOpen] = useState(false)
   const disabledSet = disabledIds ? new Set(disabledIds) : null
   const triggerLabel = selected ? getLabel(selected) : value ? value : placeholder
+
+  const body = (
+    <Command shouldFilter={false}>
+      <CommandInput placeholder={searchPlaceholder} value={search} onValueChange={onSearchChange} />
+      <CommandList>
+        <CommandEmpty>{isLoading ? (loadingLabel ?? emptyLabel) : emptyLabel}</CommandEmpty>
+        <CommandGroup>
+          {items.map((item) => {
+            const id = getId(item)
+            const isSelected = id === value
+            const isDisabled = disabledSet?.has(id) ?? false
+            return (
+              <CommandItem
+                key={id}
+                value={id}
+                disabled={isDisabled}
+                onSelect={() => {
+                  onSelect(item)
+                  setOpen(false)
+                }}
+              >
+                <Check
+                  className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')}
+                  aria-hidden
+                />
+                {renderItem ? renderItem(item) : <span>{getLabel(item)}</span>}
+              </CommandItem>
+            )
+          })}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  )
+
+  if (inline) {
+    return (
+      <div
+        className={cn('overflow-hidden', contentClassName)}
+        aria-label={ariaLabel ?? placeholder}
+      >
+        {body}
+      </div>
+    )
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -82,40 +130,7 @@ export function PickerCombobox<T>({
         </Button>
       </PopoverTrigger>
       <PopoverContent className={cn('w-(--radix-popover-trigger-width) p-0', contentClassName)}>
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={searchPlaceholder}
-            value={search}
-            onValueChange={onSearchChange}
-          />
-          <CommandList>
-            <CommandEmpty>{isLoading ? (loadingLabel ?? emptyLabel) : emptyLabel}</CommandEmpty>
-            <CommandGroup>
-              {items.map((item) => {
-                const id = getId(item)
-                const isSelected = id === value
-                const isDisabled = disabledSet?.has(id) ?? false
-                return (
-                  <CommandItem
-                    key={id}
-                    value={id}
-                    disabled={isDisabled}
-                    onSelect={() => {
-                      onSelect(item)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check
-                      className={cn('mr-2 size-4', isSelected ? 'opacity-100' : 'opacity-0')}
-                      aria-hidden
-                    />
-                    {renderItem ? renderItem(item) : <span>{getLabel(item)}</span>}
-                  </CommandItem>
-                )
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+        {body}
       </PopoverContent>
     </Popover>
   )

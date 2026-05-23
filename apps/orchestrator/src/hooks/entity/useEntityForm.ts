@@ -15,7 +15,7 @@ export type UseEntityFormOptions<TValues> = {
   onSuccess?: (values: TValues) => void
 }
 
-export type EntityFormApi<TValues> = ReactFormExtendedApi<
+type EntityFormApi<TValues> = ReactFormExtendedApi<
   TValues,
   undefined,
   undefined,

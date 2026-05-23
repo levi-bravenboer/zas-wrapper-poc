@@ -22,6 +22,8 @@ export interface PractitionerPickerProps {
   ariaLabel?: string
   /** Defaults to `true` (only users with a Practitioner row materialised). */
   hasPractitioner?: boolean
+  /** Render the Command body inline (no Popover/Trigger). */
+  inline?: boolean
 }
 
 const DEFAULT_PAGE_SIZE = 50
@@ -42,6 +44,7 @@ export function PractitionerPicker({
   pageSize = DEFAULT_PAGE_SIZE,
   ariaLabel,
   hasPractitioner = true,
+  inline,
 }: PractitionerPickerProps): ReactElement {
   const [search, setSearch] = useState('')
   const query = useMemo(
@@ -82,6 +85,7 @@ export function PractitionerPicker({
       disabled={disabled}
       disabledIds={disabledIds}
       ariaLabel={ariaLabel}
+      inline={inline}
     />
   )
 }

@@ -153,6 +153,23 @@ These apply to TS, Python, SQL — wherever they fit. Concrete TS/JSX idioms are
 - Report what you ran, what you observed, and what is still untested. Never claim success without verifying.
 - When recommending an irreversible action (force push, branch deletion, schema migration), pause and confirm.
 
+## Feature surface gating
+
+Verbatim user instruction: **"surface is the single most important early decision; never start a new clinical view without confirming which surfaces it targets."**
+
+The orchestrator ships clinical features across three runtime surfaces:
+
+- `app` — standalone web app, orchestrator session, sidebar chrome
+- `smart` — SMART-on-FHIR launch, FHIR data, sidebar chrome
+- `embed` — iframe inside HiX EPD, FHIR data, no chrome
+
+Rules:
+
+1. **Ask before code.** Before writing the first line of a new feature, ask the user which surfaces it targets (`app`, `smart`, `embed`, or any combination). Do not guess from context.
+2. **Use the generator.** Run `pnpm gen:feature <id> --surfaces <list> --fhir-scopes <scopes> --requires <ctx> --title-nl <label>` (see `apps/orchestrator/scripts/gen-feature.ts`). Hand-written `defineFeature(...)` calls are allowed but discouraged.
+3. **Consult the catalogue.** `openspec/changes/multi-surface-feature-framework/page-surface-catalogue.md` (post-archive: `openspec/changes/archive/<date>-multi-surface-feature-framework/page-surface-catalogue.md`) is the source of truth for current page → surface decisions and the admin opt-out list.
+4. **Admin opt-out.** Pages under `/_auth/admin/*`, `/_auth/settings`, and `/_auth/pathways/*` are app-only by intent. They MUST NOT call `defineFeature` and MUST NOT pass through `pnpm gen:feature`. Hand-write the route and skip the surface prompt.
+
 ## Tool-specific Notes
 
 - **Claude Code**: skills live under `.claude/skills/`; commands under `.claude/commands/`. The OpenSpec scaffold provides `opsx` commands. See `CLAUDE.md`.

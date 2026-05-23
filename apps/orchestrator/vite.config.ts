@@ -16,4 +16,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (
+            id.includes('/@tanstack/react-router-devtools/') ||
+            id.includes('/@tanstack/react-query-devtools/')
+          ) {
+            return 'devtools'
+          }
+          if (id.includes('/src/platform/embed/') || id.includes('/src/routes/embed')) {
+            return 'embed'
+          }
+          return undefined
+        },
+      },
+    },
+  },
 })

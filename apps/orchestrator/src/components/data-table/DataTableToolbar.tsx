@@ -20,6 +20,8 @@ export interface DataTableToolbarProps<T> {
   onFilterChange: (field: string, filter: ListFilter | ListFilter[] | null) => void
   onClearFilters: () => void
   className?: string
+  searchPlaceholder?: string
+  inlineLimit?: number
 }
 
 export function DataTableToolbar<T>({
@@ -30,11 +32,13 @@ export function DataTableToolbar<T>({
   onFilterChange,
   onClearFilters,
   className,
+  searchPlaceholder,
+  inlineLimit = INLINE_LIMIT,
 }: DataTableToolbarProps<T>) {
   const { t } = useTranslation('data-table')
   const defs = filterDefs ?? []
-  const inline = defs.slice(0, INLINE_LIMIT)
-  const overflow = defs.slice(INLINE_LIMIT)
+  const inline = defs.slice(0, inlineLimit)
+  const overflow = defs.slice(inlineLimit)
   const hasActive = defs.some((def) => filters[def.key] !== undefined)
 
   return (
@@ -43,7 +47,7 @@ export function DataTableToolbar<T>({
         <DebouncedSearch
           value={q}
           onChange={onSearchChange}
-          placeholder={t('toolbar.search.placeholder')}
+          placeholder={searchPlaceholder ?? t('toolbar.search.placeholder')}
         />
       </Toolbar.Search>
       <Toolbar.Filters>
@@ -56,5 +60,3 @@ export function DataTableToolbar<T>({
     </Toolbar.Root>
   )
 }
-
-export { DataTableToolbar as Toolbar }

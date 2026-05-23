@@ -10,6 +10,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useSurface } from '@/platform/surface/hooks'
 
 import { AppSidebar } from './AppSidebar'
+import { RouteBreadcrumbs } from './RouteBreadcrumbs'
 
 const STORAGE_KEY = 'orchestrator.sidebar.collapsed'
 
@@ -50,6 +51,7 @@ function MenuShell(): ReactElement {
         <SidebarInset data-shell="menu" className="bg-transparent">
           <RouteCommandsRegistry />
           <CommandPalette />
+          <RouteBreadcrumbs />
           <Outlet />
         </SidebarInset>
       </CommandPaletteProvider>

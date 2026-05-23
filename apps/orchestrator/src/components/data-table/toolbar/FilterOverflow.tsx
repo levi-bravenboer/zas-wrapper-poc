@@ -1,12 +1,11 @@
-import { Fragment } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Separator } from '@/components/ui/separator'
 import type { ListFilter } from '@/hooks/use-data-table-state'
 
-import { pillEmpty } from '../styles'
-import { DateRangeEditor, MultiEditor, SelectEditor, TextEditor } from './editors'
+import { FilterPill } from './FilterPill'
 import type { DataTableFilter } from './Toolbar'
 
 export interface FilterOverflowProps<T> {
@@ -20,30 +19,15 @@ export function FilterOverflow<T>({ defs, filters, onChange }: FilterOverflowPro
   if (defs.length === 0) return null
   return (
     <Popover>
-      <PopoverTrigger className={pillEmpty}>
-        <span>{t('toolbar.filters.more', { count: defs.length })}</span>
-        <span aria-hidden className="text-[10px] opacity-60">
-          ▾
-        </span>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="h-8 border-dashed font-normal">
+          <span>{t('toolbar.filters.more', { count: defs.length })}</span>
+          <ChevronDown aria-hidden className="size-3.5 opacity-60" />
+        </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-2">
-        {defs.map((def, i) => (
-          <Fragment key={def.key}>
-            {i > 0 ? <Separator className="my-2" /> : null}
-            <div className="px-1 text-xs font-medium text-foreground-muted">{def.label}</div>
-            {def.type === 'select' ? (
-              <SelectEditor def={def} current={filters[def.key]} onChange={onChange} />
-            ) : null}
-            {def.type === 'multi' ? (
-              <MultiEditor def={def} current={filters[def.key]} onChange={onChange} />
-            ) : null}
-            {def.type === 'date-range' ? (
-              <DateRangeEditor def={def} current={filters[def.key]} onChange={onChange} />
-            ) : null}
-            {def.type === 'text' ? (
-              <TextEditor def={def} current={filters[def.key]} onChange={onChange} />
-            ) : null}
-          </Fragment>
+      <PopoverContent align="start" className="flex w-72 flex-col gap-2 p-2">
+        {defs.map((def) => (
+          <FilterPill key={def.key} def={def} value={filters[def.key]} onChange={onChange} />
         ))}
       </PopoverContent>
     </Popover>

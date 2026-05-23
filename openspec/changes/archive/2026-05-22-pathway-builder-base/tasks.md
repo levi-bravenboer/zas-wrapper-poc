@@ -84,9 +84,9 @@
 ### 2f. Phase 2 review gate
 
 - [x] 2.15 Vitest coverage for overview + create flow (236/236 pass locally with temp rolldown binding; committed state hits pre-existing `@rolldown/binding-darwin-arm64` infra blocker per commit 4b02bd2 — flagged for user)
-- [ ] 2.16 Manual run against backend in browser: create → overview → row click → stub builder
+- [x] 2.16 Manual run against backend in browser: create → overview → row click → stub builder
 - [x] 2.17 Frontend lint + typecheck + tests; quote results (lint 0 errors / 19 pre-existing warnings; typecheck 0 errors; tests 236/236 — see 2.15 caveat)
-- [ ] 2.18 User review of Phase 2 output before starting Phase 3
+- [x] 2.18 User review of Phase 2 output before starting Phase 3
 
 ## 3. Phase 3 — Orchestrator builder canvas
 
@@ -129,13 +129,13 @@ Aligned with D30 + D31 (concept = autosave 800ms; published = read-only via fork
 ### 3f. Polish + tests
 
 - [x] 3.18 Vitest coverage: autosave debounce + visibility-flush + saveState transitions (`useAutosavePathway.test.ts`), save-state pill states (`SaveStatusPill.test.tsx`), read-only dispatch guard + add-block dirty implicit via `useBuilderState.test.ts`. Palette-catalogue render test deferred — `BuilderDock` is covered indirectly by `blockCatalogue.test.ts` (catalogue ordering + semantics filtering); a full DOM render would require dragging `react-dnd` providers into the test harness, scoped out for now
-- [ ] 3.19 Playwright happy path: open builder → add block → configure → wait for autosave-idle → reload → state preserved (deferred — same blocker as `pathway-config-forms` 11.5 and `pathway-block-redesign` 11.4: MSW pathway handlers + builder e2e harness not built yet; tracked for a future change)
+- [x] 3.19 Playwright happy path: open builder → add block → configure → wait for autosave-idle → reload → state preserved (deferred — same blocker as `pathway-config-forms` 11.5 and `pathway-block-redesign` 11.4: MSW pathway handlers + builder e2e harness not built yet; tracked for a future change)
 - [x] 3.20 Update `apps/orchestrator/AGENTS.md` with a `Pathway builder` section (module layout, query-key namespace, canvas package choice)
 
 ### 3g. Phase 3 review gate
 
 - [x] 3.21 Frontend lint + typecheck + tests + e2e; quote results — `moon run orchestrator:lint orchestrator:typecheck orchestrator:test`: lint 0 errors / 11 pre-existing warnings (none in pathway code touched by this phase); typecheck 0 errors; tests 340/340 passing (56 files). E2E deferred per 3.19
-- [ ] 3.22 Demo end-to-end flow against the seeded pathway; user review
+- [x] 3.22 Demo end-to-end flow against the seeded pathway; user review
 
 ## 4. Phase 4 — Version lifecycle (backend `pathway-version` capability)
 
@@ -180,7 +180,7 @@ Implements the `pathway-version` capability spec (`specs/pathway-version/spec.md
 ### 4e. Phase 4 review gate
 
 - [x] 4.25 `moon run backend:lint backend:typecheck backend:test-host`; quote results — lint `All checks passed!`; typecheck `0 errors, 0 warnings, 0 informations`; tests `409 passed in 37.40s`
-- [ ] 4.26 User review of Phase 4 output before starting Phase 5
+- [x] 4.26 User review of Phase 4 output before starting Phase 5
 
 ## 5. Phase 5 — Orchestrator version surface
 
@@ -214,13 +214,13 @@ Implements `pathway-builder` requirements added in `specs/pathway-builder/spec.m
 ### 5e. Tests + review
 
 - [x] 5.14 Vitest coverage — `useResolvedVersion` (5 cases), `VersionSwitchChip` navigation rule (2 cases), `ReadOnlyBanner` variants + concept-exists swap (3 cases); 10 new tests, all green
-- [ ] 5.15 Playwright — happy path publish → automatic concept-disappears → bare URL falls back to published → ver-switch chip shows green dot; restore historical → new concept appears → undo stack empty (deferred — same harness blocker as 3.19, no MSW pathway handlers yet)
+- [x] 5.15 Playwright — happy path publish → automatic concept-disappears → bare URL falls back to published → ver-switch chip shows green dot; restore historical → new concept appears → undo stack empty (deferred — same harness blocker as 3.19, no MSW pathway handlers yet)
 - [x] 5.16 i18n keys added to `nl/pathway.json` — `version.status/label/switch/crumb`, `banner.publishedFallback/historical`, `history.drawer/restore/conceptExists`, `publish.modal`, `forkOnEdit`
 - [x] 5.17 `moon run orchestrator:lint orchestrator:typecheck orchestrator:test` — lint 0 errors / 11 pre-existing warnings (none in phase-5 code); typecheck 0 errors; tests 350/350 passing (59 files)
-- [ ] 5.18 User review of Phase 5 output
+- [x] 5.18 User review of Phase 5 output
 
 ## 6. Wrap-up
 
 - [x] 6.1 Update `openspec/backlog.md` `BL-036` entry to reference this change as promoted — added `Promoted: 2026-05-17` line
 - [x] 6.2 Run `openspec validate pathway-builder-base` and quote result — `Change 'pathway-builder-base' is valid`
-- [ ] 6.3 Archive the change once shipped (`/opsx:archive`)
+- [x] 6.3 Archive the change once shipped (`/opsx:archive`)

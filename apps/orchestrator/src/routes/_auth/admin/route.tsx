@@ -1,3 +1,4 @@
+// surface-opt-out: app-only
 import type { QueryClient } from '@tanstack/react-query'
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import type { ReactElement } from 'react'
