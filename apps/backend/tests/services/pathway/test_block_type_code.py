@@ -8,6 +8,10 @@ from app.services.pathway.block_type_code import (
     InvalidBlockTypeCodeError,
 )
 
+# Pure value-object tests — no ORM, no DB. Opt out of the pathway-conftest
+# autouse cleanup fixture (which would otherwise pull in `db_session`).
+pytestmark = pytest.mark.no_db
+
 
 class TestParseBare:
     @pytest.mark.parametrize(

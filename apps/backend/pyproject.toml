@@ -34,6 +34,9 @@ addopts = "-ra --strict-markers"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
+markers = [
+    "no_db: pure unit test — opts out of any conftest autouse fixture that would otherwise demand a `db_session`. Use only for value-object / parser / formatter tests that touch zero ORM models.",
+]
 
 [tool.ruff]
 line-length = 100

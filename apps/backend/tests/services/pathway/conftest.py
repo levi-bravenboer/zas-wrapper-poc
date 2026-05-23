@@ -18,7 +18,7 @@ from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
 
 
 @pytest.fixture(autouse=True)
-async def _autoclean_pathway_tables(db_session: AsyncSession) -> AsyncIterator[None]:
+async def _autoclean_pathway_tables(request: pytest.FixtureRequest) -> AsyncIterator[None]:
     """Wipe pathway domain rows around every test.
 
     Order matters: `pathway_lane.pathway_lane_kind_id` is ON DELETE RESTRICT,
@@ -26,8 +26,17 @@ async def _autoclean_pathway_tables(db_session: AsyncSession) -> AsyncIterator[N
     child tables via `pathway_id` FK ON DELETE CASCADE. Tenants/users come
     from the global `clean_tenants` fixture but pathway rows would block
     that wipe (pathway.tenant_id is RESTRICT), so we run first.
+
+    Tests marked with `@pytest.mark.no_db` opt out — used for pure
+    value-object / parser unit tests that touch zero ORM models and
+    therefore should not pay the DB-fixture cost (which also fails when
+    the test session runs without a live database).
     """
 
+    if request.node.get_closest_marker("no_db") is not None:
+        yield
+        return
+    db_session: AsyncSession = request.getfixturevalue("db_session")
     await _wipe(db_session)
     yield
     await _wipe(db_session)
