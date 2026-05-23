@@ -5,7 +5,12 @@ export const PHASE_COL_WIDTH = 380
 export const PHASE_COL_MIN_WIDTH = 240
 export const PHASE_HEADER_HEIGHT = 36
 export const LANE_TOP_PAD = PHASE_HEADER_HEIGHT + 12
-export const LANE_ROW_HEIGHT = 180
+// Bumped from 180 → 320 to accommodate variable-size external-provider
+// blocks (Luscii's program block can grow up to 540×300 — see
+// `openspec/changes/external-block-integrations/design.md`). Native 240×64
+// blocks are unaffected functionally; lanes simply carry more vertical
+// breathing room. Author-resizable lane heights still apply on top.
+export const LANE_ROW_HEIGHT = 320
 export const LANE_ROW_MIN_HEIGHT = 110
 export const LANE_INSET = 58
 export const BLOCK_WIDTH = 240

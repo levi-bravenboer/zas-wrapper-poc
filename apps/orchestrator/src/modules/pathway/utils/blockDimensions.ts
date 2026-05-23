@@ -5,24 +5,58 @@ export type BlockDimensions = { width: number; height: number }
 
 const NATIVE_DIMENSIONS: BlockDimensions = { width: BLOCK_WIDTH, height: BLOCK_HEIGHT }
 
-/**
- * Forward-looking shape for catalogue entries once the external-block
- * provenance fields (`source` / `provider` / `kind`) land in the backend
- * schema (`external-block-integrations` change). Until that schema widens,
- * the fields are absent — narrow via a defensive read.
- */
-type ExternalProvenance = {
-  source?: 'native' | 'external' | null
-  provider?: string | null
-  kind?: string | null
+// ---- Luscii Program size computer ----------------------------------------
+// Auto-scales the Luscii block based on the resolved program's layout density
+// (phases × lanes). Range 360×200 → 540×300. See
+// `openspec/changes/external-block-integrations/design.md` §"Luscii block
+// visualization: fake-now, data-driven-later".
+
+const LUSCII_MIN_WIDTH = 360
+const LUSCII_MAX_WIDTH = 540
+const LUSCII_MIN_HEIGHT = 200
+const LUSCII_MAX_HEIGHT = 300
+const LUSCII_WIDTH_PER_EXTRA_PHASE = 60
+const LUSCII_HEIGHT_PER_EXTRA_LANE = 50
+
+const DEFAULT_LUSCII_DIMENSIONS: BlockDimensions = {
+  width: LUSCII_MIN_WIDTH,
+  height: LUSCII_MIN_HEIGHT,
 }
 
-function readProvenance(blockType: PathwayBlockType | null): ExternalProvenance {
-  // reason: PathwayBlockType is regenerated from openapi; the provenance
-  // fields are added by the external-block-integrations change. Read them
-  // optimistically so this helper is the extension point on day one, then
-  // becomes type-safe automatically when the schema widens.
-  return (blockType ?? {}) as ExternalProvenance
+type LusciiLayoutShape = {
+  phases?: ReadonlyArray<unknown> | null
+  lanes?: ReadonlyArray<unknown> | null
+} | null
+
+type LusciiResolvedShape = {
+  layout?: LusciiLayoutShape
+} | null | undefined
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+export function computeLusciiProgramDimensions(
+  resolved: LusciiResolvedShape,
+): BlockDimensions {
+  // No resolved program yet (empty state) → minimum size with the
+  // "Pick a Luscii program" CTA.
+  const layout = resolved?.layout
+  if (!layout) return DEFAULT_LUSCII_DIMENSIONS
+  const phaseCount = layout.phases?.length ?? 0
+  const laneCount = layout.lanes?.length ?? 0
+  return {
+    width: clamp(
+      LUSCII_MIN_WIDTH + LUSCII_WIDTH_PER_EXTRA_PHASE * Math.max(0, phaseCount - 2),
+      LUSCII_MIN_WIDTH,
+      LUSCII_MAX_WIDTH,
+    ),
+    height: clamp(
+      LUSCII_MIN_HEIGHT + LUSCII_HEIGHT_PER_EXTRA_LANE * Math.max(0, laneCount - 2),
+      LUSCII_MIN_HEIGHT,
+      LUSCII_MAX_HEIGHT,
+    ),
+  }
 }
 
 /**
@@ -45,14 +79,13 @@ export function getBlockDimensions(
   block: PathwayBlock,
   blockType: PathwayBlockType | null,
 ): BlockDimensions {
-  const provenance = readProvenance(blockType)
-  if (provenance.source === 'external' && provenance.provider && provenance.kind) {
-    // Future: register per-provider/kind size computers here. For now no
-    // external provider has shipped a real renderer — return native dims so
-    // xyflow has consistent geometry until the provider's own renderer + size
-    // computer lands (see external-block-integrations change).
+  if (blockType?.source === 'external' && blockType.provider === 'luscii' && blockType.kind === 'program') {
+    // Without a resolved program payload in this signature, fall back to
+    // the minimum size. `LusciiProgramBlockNode` itself computes the real
+    // dimensions from the resolved program data via
+    // `computeLusciiProgramDimensions` and sets xyflow's node size override.
     void block
-    return NATIVE_DIMENSIONS
+    return DEFAULT_LUSCII_DIMENSIONS
   }
   return NATIVE_DIMENSIONS
 }

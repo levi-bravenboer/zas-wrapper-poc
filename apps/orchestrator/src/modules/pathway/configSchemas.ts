@@ -78,6 +78,16 @@ const PathwayLinkConfig = z.object({
   context_mapping: z.record(z.string(), z.string()).default({}),
 })
 
+// Author-time fields only. Per-patient values (BSN, contact, locale) live at
+// the runtime enrollment surface, not in the block config — see
+// `openspec/changes/external-block-integrations/design.md` "Per-patient values
+// stay at enrollment runtime".
+const ExternalProgramConfig = z.object({
+  program_id: z.string().min(1).optional(),
+  protocol_id: z.string().min(1).optional(),
+  mode: z.enum(PATHWAY_LINK_MODES).optional(),
+})
+
 export const CONFIG_SCHEMAS = {
   appointment: AppointmentConfig,
   task: TaskConfig,
@@ -87,6 +97,7 @@ export const CONFIG_SCHEMAS = {
   milestone: MilestoneConfig,
   wait: WaitConfig,
   pathway_link: PathwayLinkConfig,
+  external_program: ExternalProgramConfig,
 } as const satisfies Record<BlockSemantics, z.ZodObject>
 
 export type ConfigForSemantics<S extends BlockSemantics> = z.infer<(typeof CONFIG_SCHEMAS)[S]>

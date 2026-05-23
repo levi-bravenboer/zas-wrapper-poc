@@ -174,7 +174,12 @@ describe('AnyBlockConfig — type coverage smoke', () => {
         mode: 'blocking',
         context_mapping: {},
       },
+      external_program: {
+        program_id: 'luscii-hartfalen-monitoring-v4',
+        protocol_id: 'proto-std-12w',
+        mode: 'blocking',
+      },
     }
-    expect(Object.keys(sample)).toHaveLength(8)
+    expect(Object.keys(sample)).toHaveLength(9)
   })
 })
