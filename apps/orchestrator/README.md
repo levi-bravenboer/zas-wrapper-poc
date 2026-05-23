@@ -119,6 +119,7 @@ Routes are split across three surface segments:
 | `/dashboard`               | app     | yes  | Caregiver workspace home (hand-written, app-only)                  |
 | `/tasks`                   | app     | yes  | Registry feature (`tasksFeature`); also `/s/tasks`, `/embed/tasks` |
 | `/patients/*`              | app     | yes  | Patient list + detail (`modules/patient/`, hand-written)           |
+| `/users`, `/users/$id`     | app     | yes  | User list + detail (`modules/user/`, hand-written, app-only)       |
 | `/pathways/*`              | app     | yes  | Pathway composer (admin opt-out, app-only forever)                 |
 | `/admin/*`                 | app     | yes  | Organisations, practitioner roles, users (admin opt-out)           |
 | `/s/tasks`                 | smart   | yes  | Registry feature mounted on `SmartShell`                           |

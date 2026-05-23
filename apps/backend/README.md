@@ -46,8 +46,10 @@ Through moon (preferred):
 
 ```bash
 moon run backend:dev                        # docker compose up (just the backend service)
-moon run backend:test                       # full pytest suite, ephemeral test_db, zero env config
-moon run backend:test -- -k <pattern>       # subset (args pass through to pytest)
+moon run backend:test-host                  # host pytest → localhost:5433 (fast, agent-default)
+moon run backend:test-host -- -k <pattern>  # subset (args pass through to pytest)
+moon run backend:test                       # full pytest suite in ephemeral test_runner container
+moon run backend:test -- -k <pattern>       # container variant (args pass through to pytest)
 moon run backend:shell                      # bash inside zas_backend
 moon run backend:psql                       # interactive psql against zas_db
 moon run backend:migrate                    # alembic upgrade head
