@@ -1,6 +1,11 @@
 import { type ReactElement } from 'react'
 
-import type { LusciiLayout, LusciiLayoutNode, LusciiProgramData } from './types'
+import type {
+  LusciiLaneKind,
+  LusciiLayout,
+  LusciiLayoutNode,
+  LusciiProgramData,
+} from './types'
 
 type Props = {
   data: LusciiProgramData | null
@@ -16,25 +21,28 @@ type Props = {
 // Built from the program's `layout` so even the "fake" reflects which program
 // is selected; when no program is picked the empty-state CTA renders instead.
 
-const PHASE_TINTS: ReadonlyArray<{ soft: string; ink: string }> = [
+// Phase column tints + lane accents — matches the parent canvas vocabulary
+// (`apps/orchestrator/src/styles/builder.css`). Hex literals stay co-located
+// here because at thumbnail scale we never read the live CSS variables.
+const PHASE_TINTS = [
   { soft: '#cfede8', ink: '#08453c' },
   { soft: '#ede9fe', ink: '#5b21b6' },
   { soft: '#dbeafe', ink: '#1d4ed8' },
   { soft: '#fef3c7', ink: '#92400e' },
-]
+] as const
 
-const LANE_ACCENTS: Record<string, string> = {
+// Typed against the generated `LusciiLaneKind` union so adding a new kind
+// in the OpenAPI schema forces a compile error here — we cannot silently
+// drop a lane kind into the fallback bucket.
+const LANE_ACCENTS = {
   patient: '#266b5e',
   caregiver: '#2563eb',
   external: '#b45309',
   system: '#7c3aed',
-}
+} as const satisfies Record<LusciiLaneKind, string>
 
-const LANE_ACCENT_FALLBACK = LANE_ACCENTS.external as string
-
-function resolveLaneAccent(kind: string | undefined): string {
-  if (!kind) return LANE_ACCENT_FALLBACK
-  return LANE_ACCENTS[kind] ?? LANE_ACCENT_FALLBACK
+function resolveLaneAccent(kind: LusciiLaneKind | undefined): string {
+  return kind ? LANE_ACCENTS[kind] : LANE_ACCENTS.external
 }
 
 /** Pixel rect for one node inside the thumbnail viewBox. */

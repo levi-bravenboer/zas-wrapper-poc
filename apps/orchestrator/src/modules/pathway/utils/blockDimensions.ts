@@ -1,4 +1,8 @@
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
+import type {
+  LusciiLayout,
+  LusciiProgramData,
+} from '../components/canvas/nodes/external/luscii/types'
 import type { PathwayBlock, PathwayBlockType } from '../types'
 
 export type BlockDimensions = { width: number; height: number }
@@ -23,28 +27,21 @@ const DEFAULT_LUSCII_DIMENSIONS: BlockDimensions = {
   height: LUSCII_MIN_HEIGHT,
 }
 
-type LusciiLayoutShape = {
-  phases?: ReadonlyArray<unknown> | null
-  lanes?: ReadonlyArray<unknown> | null
-} | null
-
-type LusciiResolvedShape = {
-  layout?: LusciiLayoutShape
-} | null | undefined
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
 
-export function computeLusciiProgramDimensions(
-  resolved: LusciiResolvedShape,
+/**
+ * Pure clamp-rule from phase + lane counts. Extracted so tests can drive the
+ * sizing math without constructing full `LusciiProgramData` fixtures.
+ *
+ * - `width = clamp(360, 360 + 60×max(0, p-2), 540)`
+ * - `height = clamp(200, 200 + 50×max(0, l-2), 300)`
+ */
+export function computeLusciiProgramDimensionsFromCounts(
+  phaseCount: number,
+  laneCount: number,
 ): BlockDimensions {
-  // No resolved program yet (empty state) → minimum size with the
-  // "Pick a Luscii program" CTA.
-  const layout = resolved?.layout
-  if (!layout) return DEFAULT_LUSCII_DIMENSIONS
-  const phaseCount = layout.phases?.length ?? 0
-  const laneCount = layout.lanes?.length ?? 0
   return {
     width: clamp(
       LUSCII_MIN_WIDTH + LUSCII_WIDTH_PER_EXTRA_PHASE * Math.max(0, phaseCount - 2),
@@ -57,6 +54,22 @@ export function computeLusciiProgramDimensions(
       LUSCII_MAX_HEIGHT,
     ),
   }
+}
+
+/**
+ * Compute the Luscii block dimensions for a resolved-program payload.
+ * Returns the minimum 360×200 when no program is resolved (empty state).
+ *
+ * Production sites pass a typed `LusciiProgramData` (or any subset carrying
+ * `layout`). Tests should prefer
+ * {@link computeLusciiProgramDimensionsFromCounts} for synthetic fixtures.
+ */
+export function computeLusciiProgramDimensions(
+  resolved: LusciiProgramData | { layout?: LusciiLayout | null } | null | undefined,
+): BlockDimensions {
+  const layout = resolved?.layout
+  if (!layout) return DEFAULT_LUSCII_DIMENSIONS
+  return computeLusciiProgramDimensionsFromCounts(layout.phases.length, layout.lanes.length)
 }
 
 /**

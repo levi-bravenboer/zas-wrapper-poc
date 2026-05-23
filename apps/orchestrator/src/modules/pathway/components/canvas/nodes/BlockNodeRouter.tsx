@@ -23,12 +23,13 @@ export const BlockNodeRouter = memo(BlockNodeRouterImpl)
 function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
   const blockType = props.data.block.type
   if (blockType === 'luscii.program') {
-    // The Luscii node augments `data` with a `resolvedProgram` field that
-    // the generic `useFlowNodes` mapper does not populate today. The picker
-    // integration change writes it in; until then the Luscii component
-    // treats a missing field as `null` (empty state). We cast the props
-    // here rather than mutate them — xyflow re-renders with stable identity.
-    return <LusciiProgramBlockNode {...(props as unknown as NodeProps<LusciiProgramFlowNode>)} />
+    // reason: variance erasure between two heterogeneous xyflow node-data
+    // shapes that share the same xyflow type key. `LusciiProgramBlockNodeData`
+    // extends `BlockNodeData` with an optional `resolvedProgram` field that
+    // the generic `useFlowNodes` mapper does not populate today (the picker
+    // integration change writes it in). The Luscii component treats a
+    // missing field as `null` (empty state).
+    return <LusciiProgramBlockNode {...(props as NodeProps<LusciiProgramFlowNode>)} />
   }
   return <BlockNode {...props} />
 }

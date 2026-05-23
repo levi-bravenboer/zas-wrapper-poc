@@ -13,3 +13,13 @@ export type LusciiLayoutEdge = components['schemas']['LusciiLayoutEdge']
 export type LusciiProtocol = components['schemas']['LusciiProtocol']
 export type LusciiInstrument = components['schemas']['LusciiInstrument']
 export type LusciiAlertThreshold = components['schemas']['LusciiAlertThreshold']
+
+// Derived literal-union for the Luscii layout's lane kinds. Keeps consumers
+// type-safe against the generated OpenAPI source of truth — never hand-list
+// the kinds in a string literal.
+export type LusciiLaneKind = LusciiLayoutLane['kind']
+
+// Author-time `mode` enum on the Luscii block config. Mirrors the catalogue
+// entry's JSON Schema enum + the existing `PATHWAY_LINK_MODES` constant.
+export const LUSCII_PROGRAM_MODES = ['blocking', 'fire_and_forget'] as const
+export type LusciiProgramMode = (typeof LUSCII_PROGRAM_MODES)[number]

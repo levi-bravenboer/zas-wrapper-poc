@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
 import type { PathwayBlock, PathwayBlockType } from '../types'
 
-import { computeLusciiProgramDimensions, getBlockDimensions } from './blockDimensions'
+import {
+  computeLusciiProgramDimensions,
+  computeLusciiProgramDimensionsFromCounts,
+  getBlockDimensions,
+} from './blockDimensions'
 
 function makeBlock(overrides: Partial<PathwayBlock> = {}): PathwayBlock {
   return {
@@ -64,6 +68,24 @@ describe('getBlockDimensions', () => {
   })
 })
 
+describe('computeLusciiProgramDimensionsFromCounts', () => {
+  it('returns 360×200 for the smallest layout (≤2 phases × ≤2 lanes)', () => {
+    expect(computeLusciiProgramDimensionsFromCounts(2, 2)).toEqual({ width: 360, height: 200 })
+    expect(computeLusciiProgramDimensionsFromCounts(0, 0)).toEqual({ width: 360, height: 200 })
+    expect(computeLusciiProgramDimensionsFromCounts(1, 2)).toEqual({ width: 360, height: 200 })
+  })
+
+  it('grows width by 60px per phase beyond 2, height by 50px per lane beyond 2', () => {
+    expect(computeLusciiProgramDimensionsFromCounts(4, 3)).toEqual({ width: 480, height: 250 })
+    expect(computeLusciiProgramDimensionsFromCounts(3, 4)).toEqual({ width: 420, height: 300 })
+  })
+
+  it('clamps to the maximum 540×300 for very dense programs', () => {
+    expect(computeLusciiProgramDimensionsFromCounts(6, 5)).toEqual({ width: 540, height: 300 })
+    expect(computeLusciiProgramDimensionsFromCounts(10, 10)).toEqual({ width: 540, height: 300 })
+  })
+})
+
 describe('computeLusciiProgramDimensions', () => {
   it('returns the minimum 360×200 when no resolved program is supplied', () => {
     expect(computeLusciiProgramDimensions(null)).toEqual({ width: 360, height: 200 })
@@ -72,39 +94,16 @@ describe('computeLusciiProgramDimensions', () => {
     expect(computeLusciiProgramDimensions({ layout: null })).toEqual({ width: 360, height: 200 })
   })
 
-  it('returns 360×200 for the smallest layout (≤2 phases × ≤2 lanes)', () => {
-    expect(
-      computeLusciiProgramDimensions({
-        layout: { phases: [{}, {}], lanes: [{}, {}] },
-      }),
-    ).toEqual({ width: 360, height: 200 })
-  })
-
-  it('grows width by 60px per phase beyond 2, height by 50px per lane beyond 2', () => {
-    expect(
-      computeLusciiProgramDimensions({
-        layout: { phases: [{}, {}, {}, {}], lanes: [{}, {}, {}] },
-      }),
-    ).toEqual({ width: 480, height: 250 })
-  })
-
-  it('clamps to the maximum 540×300 for very dense programs', () => {
-    expect(
-      computeLusciiProgramDimensions({
-        layout: {
-          phases: [{}, {}, {}, {}, {}, {}],
-          lanes: [{}, {}, {}, {}, {}],
-        },
-      }),
-    ).toEqual({ width: 540, height: 300 })
-  })
-
-  it('handles partial layouts (missing phases or lanes)', () => {
-    expect(
-      computeLusciiProgramDimensions({ layout: { phases: [{}, {}, {}] } }),
-    ).toEqual({ width: 420, height: 200 })
-    expect(
-      computeLusciiProgramDimensions({ layout: { lanes: [{}, {}, {}, {}] } }),
-    ).toEqual({ width: 360, height: 300 })
+  it('delegates to the counts-based computer when a layout is present', () => {
+    // Typed minimally — we only read phases.length + lanes.length.
+    const layout = {
+      phases: Array.from({ length: 4 }, (_, i) => ({ id: `p${i}`, ord: i, label: `P${i}` })),
+      lanes: Array.from({ length: 3 }, (_, i) => ({
+        id: `l${i}`,
+        ord: i,
+        kind: 'patient' as const,
+      })),
+    }
+    expect(computeLusciiProgramDimensions({ layout })).toEqual({ width: 480, height: 250 })
   })
 })

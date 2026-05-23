@@ -1,27 +1,31 @@
 import { type Node, type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
-import type { PathwayBlock, PathwayBlockType, PathwayLane } from '../../../../../types'
+import type { ConfigForSemantics } from '../../../../../configSchemas'
 import {
   computeLusciiProgramDimensions,
   type BlockDimensions,
 } from '../../../../../utils/blockDimensions'
+import type { BlockNodeData } from '../../BlockNode'
 
 import { LusciiProgramHeader } from './LusciiProgramHeader'
 import { LusciiProgramThumbnail } from './LusciiProgramThumbnail'
 import { buildSubLine } from './subLine'
 import type { LusciiProgramData } from './types'
 
-export type LusciiProgramBlockNodeData = {
-  block: PathwayBlock
-  blockType: PathwayBlockType | null
-  lane: PathwayLane | null
+// Extend the generic `BlockNodeData` rather than reinvent it — keeps the
+// router's prop-shape variance manageable (a plain `as` cast in
+// `BlockNodeRouter` instead of `as unknown as`) and inherits future
+// additions (duration / isEntry) without redeclaration.
+export type LusciiProgramBlockNodeData = BlockNodeData & {
   /** Resolved Luscii program — null until the picker fetches one. Wired in
    * a later change (TanStack picker integration). For now stays null. */
   resolvedProgram?: LusciiProgramData | null
 }
 
 export type LusciiProgramFlowNode = Node<LusciiProgramBlockNodeData, 'block'>
+
+type LusciiConfig = ConfigForSemantics<'external_program'>
 
 export const LusciiProgramBlockNode = memo(LusciiProgramBlockNodeImpl)
 
@@ -31,11 +35,11 @@ function LusciiProgramBlockNodeImpl({
 }: NodeProps<LusciiProgramFlowNode>): ReactElement {
   const program = data.resolvedProgram ?? null
   const dims: BlockDimensions = computeLusciiProgramDimensions(program)
-  const config = (data.block.config ?? {}) as {
-    program_id?: string
-    protocol_id?: string
-    mode?: string
-  }
+  // reason: `block.config` is the union of all per-semantics configs at the
+  // generic site; narrow to the Luscii-shaped variant here. The runtime
+  // contract is enforced by `CONFIG_SCHEMAS.external_program` at the
+  // BuilderDrawer save path, so this narrowing is safe to perform with `as`.
+  const config = (data.block.config ?? {}) as LusciiConfig
   const empty = !config.program_id
   const subLine = buildSubLine(program, config.protocol_id ?? null, config.mode ?? null)
 
