@@ -146,6 +146,9 @@ class PathwayService:
                 config_schema=entry.config_schema,
                 ui_schema=entry.ui_schema,
                 supports_branches=entry.supports_branches,
+                source=entry.source,
+                provider=entry.provider,
+                kind=entry.kind,
             )
             for entry in BLOCK_TYPES
         ]

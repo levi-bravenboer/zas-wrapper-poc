@@ -7,7 +7,10 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
+
+
+BlockSource = Literal["native", "external"]
 
 
 LANE_KIND_PATIENT = "patient"
@@ -40,6 +43,12 @@ class BlockSemantics(str, enum.Enum):
     MILESTONE = "milestone"
     WAIT = "wait"
     PATHWAY_LINK = "pathway_link"
+    # External-provider blocks whose body is a reference to a vendor program
+    # (e.g. a Luscii care path). Dispatch key shared across vendors so the
+    # builder inspector picks the provider-specific React component from an
+    # inner `{provider: Component}` map — no per-vendor switch in
+    # `BuilderDrawer`. See `openspec/changes/external-block-integrations/design.md`.
+    EXTERNAL_PROGRAM = "external_program"
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +80,14 @@ class BlockTypeEntry:
     config_schema: dict[str, Any]
     ui_schema: dict[str, Any] = field(default_factory=dict)
     supports_branches: bool = False
+    # Provenance — drives frontend palette grouping + per-provider thumbnail
+    # / inspector dispatch. Native blocks default to source='native' with no
+    # provider/kind. External blocks contributed via dotted codes (e.g.
+    # `luscii.program`) declare source='external' + the provider/kind pair
+    # parsed from the dotted code.
+    source: BlockSource = "native"
+    provider: str | None = None
+    kind: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -337,6 +354,38 @@ BLOCK_TYPES: tuple[BlockTypeEntry, ...] = (
         ui_schema={
             "order": ["target_pathway_id", "mode", "context_mapping"],
             "widgets": {"target_pathway_id": "pathway-picker"},
+        },
+    ),
+    # External-provider block: Luscii Program. The block stores a reference
+    # to a Luscii care path (`program_id` + `protocol_id`) plus the wait
+    # mode; everything else (instruments, thresholds, schedule, education)
+    # is authored inside Luscii Builder and is read-only here. Per-patient
+    # values (BSN, contact, locale) are filled at runtime by the caregiver,
+    # not at design-time — see design.md "Per-patient values stay at
+    # enrollment runtime".
+    BlockTypeEntry(
+        type="luscii.program",
+        label="Luscii Program",
+        semantics=BlockSemantics.EXTERNAL_PROGRAM,
+        icon="activity",
+        allowed_lane_kind_codes=(LANE_KIND_EXTERNAL,),
+        source="external",
+        provider="luscii",
+        kind="program",
+        config_schema=_object_schema(
+            properties={
+                "program_id": {"type": "string", "minLength": 1, "maxLength": 128},
+                "protocol_id": {"type": "string", "minLength": 1, "maxLength": 128},
+                "mode": {"type": "string", "enum": ["blocking", "fire_and_forget"]},
+            },
+            required=["program_id", "protocol_id", "mode"],
+        ),
+        ui_schema={
+            "order": ["program_id", "protocol_id", "mode"],
+            "widgets": {
+                "program_id": "luscii-program-picker",
+                "protocol_id": "luscii-protocol-picker",
+            },
         },
     ),
 )
