@@ -229,6 +229,7 @@ A model opts in by declaring `__realtime_resource__: ClassVar[str | None]` on th
 - Fixtures with synthetic clinical data live under `tests/fixtures/`. Never commit data from real patients.
 - Common fixtures (`settings`, `app`, `client`, `db_session`) live in `tests/conftest.py`. Prefer them over hand-rolled `TestClient` setup in new tests.
 - For time-sensitive code, use `freezegun.freeze_time(...)`. Wrap the smallest scope that needs the frozen clock; never leave it freezing across whole modules.
+- **`@pytest.mark.no_db` for pure unit tests under a DB-bound conftest.** Domain conftests (e.g. `tests/services/pathway/conftest.py`) have an autouse cleanup fixture that pulls in `db_session`. Pure value-object / parser / formatter tests that touch zero ORM models should not pay that cost (and the dependency fails when the test session has no live Postgres). Add `pytestmark = pytest.mark.no_db` at the top of such files; the conftest autouse short-circuits via `request.node.get_closest_marker("no_db")` and skips the DB-bound branch. The marker is registered in `pyproject.toml` so `--strict-markers` accepts it. Use it only for tests with no ORM interaction — anything touching a model or repository still needs `db_session`.
 
 ## Quality Gates
 
@@ -288,8 +289,37 @@ The `external_idp` + `external_subject` columns on `users` carry IdP identifiers
 
 ## External Integrations
 
+### Why `app/adapters/`
+
+Every third-party system we talk to (HiX EHR, Luscii care-pathway platform, future registries, MCP, etc.) lives under `app/adapters/<vendor>/`. The name is the ports-and-adapters / hexagonal-architecture term — an adapter sits between our domain types and a vendor's API/SDK, translating in both directions.
+
+We picked `adapters/` over alternatives (`integrations/`, `vendors/`, `clients/`, `external/`) because:
+
+- It's the established hex-arch vocabulary; layer rules in this doc (`app/adapters/<vendor>/*`) inherit the well-understood "no domain knowledge, no HTTP framework, just translation" constraint.
+- It's neutral about *how* we talk to the vendor — HTTP client, file reader, message-bus consumer, in-process SDK — all are adapters. `clients/` would mislead.
+- It's neutral about commercial relationship — `vendors/` would not fit free/standards-based integrations (FHIR registries, eHealth).
+- `external` is already overloaded (we use `source='external'` on pathway block types) — reusing it as a directory name would invite confusion.
+
+**What goes in `app/adapters/<vendor>/`:**
+
+- `protocol.py` — `Protocol` class declaring the methods we call on the vendor.
+- `stub.py` — in-memory stub satisfying the Protocol, served in PoC.
+- `<vendor>.py` (future) — live HTTP/SDK implementation also satisfying the Protocol.
+- Per-vendor schemas / fixtures / mappers as needed (e.g. `program.py` + `programs.py` for Luscii's care-path payloads).
+- `__init__.py` re-exports the public API of the package (Protocol class, stub class, schema types, any constants surfaced to other layers).
+
+**What does NOT go in `app/adapters/<vendor>/`:**
+
+- HTTP routes (those are in `app/api/routers/<domain>/`).
+- Business logic / orchestration (that is in `app/services/<domain>/`).
+- ORM models or repositories (those layers don't import adapters).
+
+DI wiring lives in `app/adapters/deps.py` — typed factories (`get_<vendor>_client`, `<Vendor>ClientDep`) that routers/services depend on, never reaching into `app/adapters/<vendor>/*` directly.
+
+### Per-vendor notes
+
 - **HiX**: stub behind an adapter from day one. PoC Protocol exposes `ping()` only; FHIR verbs return at `[mvp]` via the future `hix-fhir-proxy` change.
-- **Luscii API**: stub behind an adapter from day one. PoC stores the clinical care path as opaque static JSON; FHIR mapping returns at `[mvp]`.
+- **Luscii API**: stub behind an adapter from day one. PoC stores the clinical care path as opaque static JSON (`app/adapters/luscii/programs.py` — `# POC ONLY` constant), served by a dedicated `/luscii/programs` route. FHIR mapping returns at `[mvp]`.
 - **MCP**: planned via the official Python SDK. Land as a separate FastAPI sub-app or standalone process once scoped.
 
 ## FHIR-Readiness Rules
