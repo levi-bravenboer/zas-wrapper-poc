@@ -29,7 +29,8 @@ import { SmoothstepEdge } from './edges/SmoothstepEdge'
 import { EmptyCanvasCTA } from './EmptyCanvasCTA'
 import { type LaneDropState } from './LaneRow'
 import { NavigatorPanel } from './NavigatorPanel'
-import { BlockNode, type BlockFlowNode } from './nodes/BlockNode'
+import { type BlockFlowNode } from './nodes/BlockNode'
+import { BlockNodeRouter } from './nodes/BlockNodeRouter'
 import type { DragContextApi } from './useDragContext'
 import { useFlowEdges } from './useFlowEdges'
 import { useFlowNodes } from './useFlowNodes'
@@ -56,7 +57,12 @@ type Props = {
   dragApi: DragContextApi
 }
 
-const NODE_TYPES = { block: BlockNode } as const
+// One xyflow node type, ever. The router dispatches on `data.block.type`
+// (bare vs dotted) to the per-provider component. Future providers register
+// inside `BlockNodeRouter`, not here — see
+// `openspec/changes/external-block-integrations/design.md` §"One xyflow
+// node type, dispatcher inside".
+const NODE_TYPES = { block: BlockNodeRouter } as const
 const EDGE_TYPES = { smoothstep: SmoothstepEdge } as const
 
 export function BuilderCanvasFrame({

@@ -1,0 +1,83 @@
+import { type Node, type NodeProps } from '@xyflow/react'
+import { memo, type ReactElement } from 'react'
+
+import type { PathwayBlock, PathwayBlockType, PathwayLane } from '../../../../../types'
+import {
+  computeLusciiProgramDimensions,
+  type BlockDimensions,
+} from '../../../../../utils/blockDimensions'
+
+import { LusciiProgramHeader } from './LusciiProgramHeader'
+import { LusciiProgramThumbnail } from './LusciiProgramThumbnail'
+import { buildSubLine } from './subLine'
+import type { LusciiProgramData } from './types'
+
+export type LusciiProgramBlockNodeData = {
+  block: PathwayBlock
+  blockType: PathwayBlockType | null
+  lane: PathwayLane | null
+  /** Resolved Luscii program — null until the picker fetches one. Wired in
+   * a later change (TanStack picker integration). For now stays null. */
+  resolvedProgram?: LusciiProgramData | null
+}
+
+export type LusciiProgramFlowNode = Node<LusciiProgramBlockNodeData, 'block'>
+
+export const LusciiProgramBlockNode = memo(LusciiProgramBlockNodeImpl)
+
+function LusciiProgramBlockNodeImpl({
+  data,
+  selected,
+}: NodeProps<LusciiProgramFlowNode>): ReactElement {
+  const program = data.resolvedProgram ?? null
+  const dims: BlockDimensions = computeLusciiProgramDimensions(program)
+  const config = (data.block.config ?? {}) as {
+    program_id?: string
+    protocol_id?: string
+    mode?: string
+  }
+  const empty = !config.program_id
+  const subLine = buildSubLine(program, config.protocol_id ?? null, config.mode ?? null)
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={
+        empty
+          ? 'Luscii Program — pick a program'
+          : `Luscii Program: ${program?.name ?? config.program_id ?? 'unknown'}`
+      }
+      data-slot="luscii-program-block"
+      data-selected={selected ? 'true' : 'false'}
+      className="relative overflow-hidden rounded-[10px] border border-border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected=true]:border-[color:var(--lane-external)] data-[selected=true]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-external)_22%,transparent),var(--shadow-md)]"
+      style={{ width: dims.width, height: dims.height }}
+    >
+      {/* Rail */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-y-0 left-0 z-[1] w-1 rounded-l-[9px]"
+        style={{
+          background:
+            'linear-gradient(180deg, var(--lane-external) 0%, color-mix(in srgb, var(--lane-external) 70%, black) 100%)',
+        }}
+      />
+      {/* Body thumbnail (under the title chip + provider badge) */}
+      <LusciiProgramThumbnail data={program} width={dims.width} height={dims.height} />
+      {/* Title overlay */}
+      <LusciiProgramHeader
+        programName={program?.name ?? null}
+        subLine={subLine}
+        empty={empty}
+      />
+      {/* Provider corner badge */}
+      <span
+        aria-hidden="true"
+        className="absolute -right-px -top-px z-[5] inline-flex items-center gap-[3px] rounded-bl-[8px] rounded-tr-[10px] px-1.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.09em] text-white"
+        style={{ background: 'oklch(0.45 0.18 250)' }}
+      >
+        Luscii
+      </span>
+    </div>
+  )
+}
