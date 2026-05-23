@@ -215,6 +215,31 @@
       "contextRemove": "Verwijder koppeling",
       "addMapping": "Koppeling toevoegen"
     },
+    "lusciiProgram": {
+      "program": "Luscii-programma",
+      "programPlaceholder": "Kies een programma",
+      "programLoading": "Programma's laden…",
+      "programError": "Kon programma's niet laden.",
+      "programEmpty": "Geen programma's beschikbaar.",
+      "protocol": "Protocol",
+      "protocolPlaceholder": "Kies een protocol",
+      "protocolLoading": "Programmadetails laden…",
+      "mode": "Modus",
+      "modePlaceholder": "Kies modus",
+      "modeOption": {
+        "blocking": "Blokkerend",
+        "fire_and_forget": "Vuren en vergeten"
+      },
+      "metadata": {
+        "version": "Versie",
+        "enrolledCount": "Ingeschreven patiënten",
+        "twoWay": "Twee-wegs berichten",
+        "twoWayYes": "Aan",
+        "twoWayNo": "Uit",
+        "instruments": "Instrumenten"
+      },
+      "perPatientHint": "Patiëntspecifieke waarden (BSN, contactgegevens) worden bij inschrijving ingevuld — niet hier."
+    },
     "edge": {
       "title": "Verbinding",
       "kindCompletion": "Bij voltooiing",

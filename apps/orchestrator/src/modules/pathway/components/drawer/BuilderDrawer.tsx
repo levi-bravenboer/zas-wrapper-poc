@@ -18,6 +18,7 @@ import type {
 import { AppointmentInspector } from './inspectors/AppointmentInspector'
 import { DecisionInspector } from './inspectors/DecisionInspector'
 import { FormInspector } from './inspectors/FormInspector'
+import { LusciiProgramInspector } from './inspectors/LusciiProgramInspector'
 import { MessageInspector } from './inspectors/MessageInspector'
 import { MilestoneInspector } from './inspectors/MilestoneInspector'
 import { PathwayLinkInspector } from './inspectors/PathwayLinkInspector'
@@ -228,6 +229,13 @@ function InspectorSwitch({
         <PathwayLinkInspector
           config={data as ConfigForSemantics<'pathway_link'>}
           currentPathwayId={currentPathwayId}
+          onChange={onPatchConfig}
+        />
+      )
+    case 'external_program':
+      return (
+        <LusciiProgramInspector
+          config={data as ConfigForSemantics<'external_program'>}
           onChange={onPatchConfig}
         />
       )
