@@ -73,7 +73,7 @@ src/
     components/   module-internal components
     __tests__/    integration tests for module flows
   components/
-    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Table, Tabs, Textarea, Toast, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
+    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Table, Tabs, Textarea, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
     layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
