@@ -1,12 +1,4 @@
-import {
-  Building2,
-  HeartPulse,
-  Home,
-  Settings,
-  Users,
-  UsersRound,
-  Workflow,
-} from 'lucide-react'
+import { Building2, HeartPulse, Home, Settings, Users, UsersRound, Workflow } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import type { Role } from '@/modules/auth/schemas'

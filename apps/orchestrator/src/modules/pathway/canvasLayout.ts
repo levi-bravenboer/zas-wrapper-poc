@@ -75,9 +75,10 @@ export type BlockFitInput = Pick<PathwayBlock, 'phase_id' | 'lane_id' | 'x' | 'y
 /** Compute the max (x + width) per phase + max (y + height) per lane. Callers
  * supply per-block dimensions (variable-size blocks like Luscii) so the
  * fit-grow is correct for every block type. */
-function aggregateBlockFits(
-  blocks: BlockFitInput[],
-): { perPhase: Map<string, number>; perLane: Map<string, number> } {
+function aggregateBlockFits(blocks: BlockFitInput[]): {
+  perPhase: Map<string, number>
+  perLane: Map<string, number>
+} {
   const perPhase = new Map<string, number>()
   const perLane = new Map<string, number>()
   for (const b of blocks) {

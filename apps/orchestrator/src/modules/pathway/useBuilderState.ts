@@ -226,7 +226,8 @@ function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinitio
   const existing = version.lanes ?? []
   const presentCodes = new Set(existing.map((l) => l.lane_kind_code))
   const missing = DEFAULT_LANE_SCAFFOLD.filter((entry) => !presentCodes.has(entry.code))
-  if (missing.length === 0) return existing === version.lanes ? version : { ...version, lanes: existing }
+  if (missing.length === 0)
+    return existing === version.lanes ? version : { ...version, lanes: existing }
   const maxOrd = existing.reduce((acc, l) => Math.max(acc, l.ord), 0)
   const appended: PathwayLane[] = missing.map((entry, i) => ({
     id: crypto.randomUUID(),
@@ -248,14 +249,10 @@ function preserveSelection(
   next: PathwayVersionDefinition,
 ): BuilderSelection {
   if (current.kind === 'block') {
-    return (next.blocks ?? []).some((b) => b.id === current.blockId)
-      ? current
-      : { kind: 'none' }
+    return (next.blocks ?? []).some((b) => b.id === current.blockId) ? current : { kind: 'none' }
   }
   if (current.kind === 'edge') {
-    return (next.edges ?? []).some((e) => e.id === current.edgeId)
-      ? current
-      : { kind: 'none' }
+    return (next.edges ?? []).some((e) => e.id === current.edgeId) ? current : { kind: 'none' }
   }
   return current
 }
