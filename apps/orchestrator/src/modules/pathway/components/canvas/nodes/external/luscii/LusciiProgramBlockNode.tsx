@@ -73,7 +73,13 @@ function LusciiProgramBlockNodeImpl({
       data-slot="luscii-program-block"
       data-selected={selected || undefined}
       className="relative"
-      style={{ width: dims.width, height: dims.height }}
+      style={{
+        width: dims.width,
+        height: dims.height,
+        // Handles read `var(--lane-accent)` for their border — set it to the
+        // external-lane accent so the dots stay visible against the card.
+        ['--lane-accent' as string]: 'var(--lane-external)',
+      }}
     >
       <div
         data-selected={selected || undefined}
