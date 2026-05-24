@@ -191,10 +191,14 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'reset': {
       const ensured = ensureLanes(action.version)
+      // Preserve the active selection when its target survives the incoming
+      // version. Autosave dispatches `reset` on every successful PUT; without
+      // this guard the inspector slams shut mid-edit and the user loses focus.
+      const preserved = preserveSelection(state.selection, ensured)
       return {
         version: ensured,
         baseline: ensured,
-        selection: { kind: 'none' },
+        selection: preserved,
         history: { past: [], future: [] },
       }
     }
@@ -234,6 +238,26 @@ function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinitio
     height_px: 180,
   }))
   return { ...version, lanes: [...existing, ...appended] }
+}
+
+/** Keep an active selection alive across a `reset` when its target still
+ * exists in the incoming version. Drops to `{ kind: 'none' }` otherwise so
+ * the inspector closes when the underlying block / edge disappears. */
+function preserveSelection(
+  current: BuilderSelection,
+  next: PathwayVersionDefinition,
+): BuilderSelection {
+  if (current.kind === 'block') {
+    return (next.blocks ?? []).some((b) => b.id === current.blockId)
+      ? current
+      : { kind: 'none' }
+  }
+  if (current.kind === 'edge') {
+    return (next.edges ?? []).some((e) => e.id === current.edgeId)
+      ? current
+      : { kind: 'none' }
+  }
+  return current
 }
 
 function init(version: PathwayVersionDefinition): BuilderState {
