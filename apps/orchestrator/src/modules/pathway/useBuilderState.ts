@@ -191,10 +191,14 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'reset': {
       const ensured = ensureLanes(action.version)
+      // Preserve the active selection when its target survives the incoming
+      // version. Autosave dispatches `reset` on every successful PUT; without
+      // this guard the inspector slams shut mid-edit and the user loses focus.
+      const preserved = preserveSelection(state.selection, ensured)
       return {
         version: ensured,
         baseline: ensured,
-        selection: { kind: 'none' },
+        selection: preserved,
         history: { past: [], future: [] },
       }
     }
@@ -211,20 +215,46 @@ const DEFAULT_LANE_SCAFFOLD: Array<{
   { code: 'patient', label: 'Patiënt', is_default: true },
   { code: 'caregiver', label: 'Zorgteam', is_default: false },
   { code: 'system', label: 'Systeem', is_default: false },
+  { code: 'external', label: 'Extern', is_default: false },
 ]
 
+/** Ensure every kind in `DEFAULT_LANE_SCAFFOLD` has a corresponding lane row.
+ * Pre-existing lanes are preserved; only the missing kinds are appended at the
+ * tail. Lets pathways authored before a kind was introduced (e.g. `external`)
+ * become drop-targets for that kind's blocks without a manual backfill. */
 function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinition {
-  if (version.lanes?.length) return version
-  const lanes: PathwayLane[] = DEFAULT_LANE_SCAFFOLD.map((entry, i) => ({
+  const existing = version.lanes ?? []
+  const presentCodes = new Set(existing.map((l) => l.lane_kind_code))
+  const missing = DEFAULT_LANE_SCAFFOLD.filter((entry) => !presentCodes.has(entry.code))
+  if (missing.length === 0)
+    return existing === version.lanes ? version : { ...version, lanes: existing }
+  const maxOrd = existing.reduce((acc, l) => Math.max(acc, l.ord), 0)
+  const appended: PathwayLane[] = missing.map((entry, i) => ({
     id: crypto.randomUUID(),
     pathway_lane_kind_id: crypto.randomUUID(),
     lane_kind_code: entry.code,
     label: entry.label,
-    ord: (i + 1) * 10,
-    is_default: entry.is_default,
+    ord: maxOrd + (i + 1) * 10,
+    is_default: existing.length === 0 && entry.is_default,
     height_px: 180,
   }))
-  return { ...version, lanes }
+  return { ...version, lanes: [...existing, ...appended] }
+}
+
+/** Keep an active selection alive across a `reset` when its target still
+ * exists in the incoming version. Drops to `{ kind: 'none' }` otherwise so
+ * the inspector closes when the underlying block / edge disappears. */
+function preserveSelection(
+  current: BuilderSelection,
+  next: PathwayVersionDefinition,
+): BuilderSelection {
+  if (current.kind === 'block') {
+    return (next.blocks ?? []).some((b) => b.id === current.blockId) ? current : { kind: 'none' }
+  }
+  if (current.kind === 'edge') {
+    return (next.edges ?? []).some((e) => e.id === current.edgeId) ? current : { kind: 'none' }
+  }
+  return current
 }
 
 function init(version: PathwayVersionDefinition): BuilderState {

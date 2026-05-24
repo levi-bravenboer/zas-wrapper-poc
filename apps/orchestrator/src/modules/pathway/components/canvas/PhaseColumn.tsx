@@ -30,11 +30,14 @@ export function PhaseColumn({
   const { zoom } = useViewport()
   const dragRef = useRef<{ startW: number; startX: number } | null>(null)
 
+  // See `LaneRow` for the z-index rationale — phase columns sit beneath
+  // unselected blocks so the canvas reads as nodes-over-bands.
   const style = {
     left: xStart,
     top: 0,
     width,
     height,
+    zIndex: -1,
     '--ph-soft': tint.soft,
     '--ph-ink': tint.ink,
   } as CSSProperties

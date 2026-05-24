@@ -4,6 +4,7 @@ import uuid
 
 from httpx import AsyncClient
 
+from app.adapters.luscii import LUSCII_PROGRAM_BLOCK_TYPE
 from app.db.models.pathway import PathwayLaneKind
 from scripts.seed_users import ADMIN_EMAIL
 
@@ -92,6 +93,7 @@ async def test_list_block_types(
         "milestone",
         "wait",
         "pathway_link",
+        LUSCII_PROGRAM_BLOCK_TYPE,
     }
     for row in rows:
         assert row["semantics"] in {
@@ -103,6 +105,7 @@ async def test_list_block_types(
             "milestone",
             "wait",
             "pathway_link",
+            "external_program",
         }
         assert isinstance(row["icon"], str) and row["icon"]
         assert isinstance(row["ui_schema"], dict)
@@ -110,6 +113,12 @@ async def test_list_block_types(
         assert isinstance(lane_codes, list) and len(lane_codes) >= 1
         for code in lane_codes:
             assert code in {"patient", "caregiver", "system", "external"}
+        assert row["source"] in {"native", "external"}
+        if row["source"] == "external":
+            assert row["provider"] and row["kind"]
+        else:
+            assert row["provider"] is None
+            assert row["kind"] is None
 
 
 async def test_list_phase_templates(

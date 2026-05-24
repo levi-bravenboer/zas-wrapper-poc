@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — luscii-block-mini-pathway v3 (phase×lane refinements)</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style type="text/tailwindcss">
+  @theme {
+    --color-background: oklch(1 0 0);
+    --color-surface-1: oklch(0.985 0.003 175);
+    --color-surface-2: oklch(0.97 0.01 175);
+    --color-foreground: oklch(0.21 0.04 265);
+    --color-foreground-muted: oklch(0.5 0.02 265);
+    --color-card: var(--color-background);
+    --color-primary: oklch(0.46 0.07 175);
+    --color-primary-soft: oklch(0.93 0.04 175);
+    --color-primary-subtle: oklch(0.97 0.01 175);
+    --color-border: oklch(0.91 0.005 265);
+    --color-border-strong: oklch(0.82 0.01 265);
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+    --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --font-size-base: 0.875rem;
+    --tracking-tight: -0.011em;
+  }
+  :root {
+    --lane-external: #b45309;
+    --lane-patient: #266b5e;
+    --lane-caregiver: #2563eb;
+    --gradient-aurora:
+      radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+      linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-foreground);
+    background: var(--gradient-aurora);
+    min-height: 100vh;
+    letter-spacing: var(--tracking-tight);
+    padding: 48px 24px;
+  }
+  .block-luscii {
+    position: relative;
+    width: 360px;
+    height: 200px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    background:
+      radial-gradient(circle, rgba(11,26,23,0.07) 1px, transparent 1px) 0 0 / 12px 12px,
+      var(--color-surface-1);
+    --lane-accent: var(--lane-external);
+  }
+  .block-luscii .rail {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--lane-accent) 0%, color-mix(in srgb, var(--lane-accent) 70%, black) 100%);
+    z-index: 4;
+  }
+  .block-luscii .pathway-svg {
+    position: absolute;
+    inset: 0 0 0 4px;
+    width: calc(100% - 4px);
+    height: 100%;
+    display: block;
+  }
+  .block-luscii .title-overlay {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 6px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.7);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 1px 3px rgba(0,0,0,0.06);
+    max-width: calc(100% - 80px);
+  }
+  .block-luscii .title-overlay .icon-box {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--lane-accent) 16%, white);
+    color: var(--lane-accent);
+  }
+  .block-luscii .title-overlay .stack { min-width: 0; line-height: 1.15; }
+  .block-luscii .title-overlay .name {
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+    color: var(--color-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .block-luscii .title-overlay .sub {
+    font-size: 10px;
+    color: var(--color-foreground-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .block-luscii .meta-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.6);
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--color-foreground-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .provider-badge {
+    position: absolute;
+    top: -1px; right: -1px;
+    z-index: 7;
+    padding: 4px 8px;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: white;
+    background: oklch(0.45 0.18 250);
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+  }
+  .mini-node { rx: 3; ry: 3; }
+  .mini-edge {
+    fill: none;
+    stroke: rgba(11,26,23,0.4);
+    stroke-width: 1.1;
+  }
+  .mini-edge.bold {
+    stroke: rgba(11,26,23,0.55);
+    stroke-width: 1.4;
+  }
+
+  .compare-wrap { max-width: 820px; margin: 0 auto; }
+  .compare-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .compare-sub { font-size: 12px; color: var(--color-foreground-muted); margin-bottom: 24px; line-height: 1.5; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+  .compare-cell { display: flex; flex-direction: column; gap: 10px; }
+  .compare-cell .label-row { display: flex; align-items: center; gap: 8px; }
+  .compare-cell .opt-key {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    padding: 2px 6px;
+    background: var(--color-primary-soft);
+    border-radius: 3px;
+  }
+  .compare-cell .opt-name { font-size: 13px; font-weight: 600; }
+  .compare-cell .opt-desc { font-size: 11.5px; color: var(--color-foreground-muted); line-height: 1.4; }
+</style>
+</head>
+
+<body class="antialiased">
+<!--
+  MOCK DATA — Luscii block, phase×lane miniature refinements (v3)
+  v2's variant C picked. 4 refinements of that direction:
+   C1: clean balanced baseline
+   C2: nodes with type glyphs (tiny shapes inside)
+   C3: dense / branching (9 nodes, multiple branches)
+   C4: annotated with timing chips (D0 / D7 / W3 / W12)
+  All 360×200, full-bleed, same overlay chrome, atomic interaction.
+-->
+
+<div class="compare-wrap">
+  <h1 class="compare-title">Luscii block — phase × lane refinements (v3)</h1>
+  <p class="compare-sub">Round 5: 4 refinements of v2's chosen direction (C). Same full-bleed phase×lane miniature, varying density / annotation / node detail. Pick winner → locks into <code class="font-mono text-[11px]">LusciiProgramThumbnailFake.tsx</code> + defines the <code class="font-mono text-[11px]">LusciiProgramData</code> shape.</p>
+
+  <div class="compare-grid">
+
+    <!-- C1 — Clean baseline -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">C1</span>
+        <span class="opt-name">Clean baseline</span>
+      </div>
+      <div class="opt-desc">Refined v2-C: better-balanced node placement, cleaner edges, lighter lane labels. Same complexity, cleaner execution. Calm.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <svg class="pathway-svg" viewBox="0 0 356 200" preserveAspectRatio="none">
+          <rect x="0"   y="0" width="119" height="200" fill="#cfede8" opacity="0.5"/>
+          <rect x="119" y="0" width="119" height="200" fill="#ede9fe" opacity="0.5"/>
+          <rect x="238" y="0" width="118" height="200" fill="#dbeafe" opacity="0.5"/>
+          <rect x="0" y="50"  width="356" height="55" fill="var(--lane-patient)" opacity="0.06"/>
+          <rect x="0" y="110" width="356" height="50" fill="var(--lane-caregiver)" opacity="0.06"/>
+          <rect x="0" y="165" width="356" height="35" fill="var(--lane-external)" opacity="0.08"/>
+          <line x1="0" y1="50"  x2="356" y2="50"  stroke="var(--lane-patient)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="110" x2="356" y2="110" stroke="var(--lane-caregiver)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="165" x2="356" y2="165" stroke="var(--lane-external)" stroke-width="0.8" opacity="0.28"/>
+          <line x1="119" y1="0" x2="119" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <line x1="238" y1="0" x2="238" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <path class="mini-edge" d="M 78 78 C 100 78, 100 78, 130 78"/>
+          <path class="mini-edge" d="M 197 78 C 220 78, 220 135, 250 135"/>
+          <path class="mini-edge" d="M 197 78 C 220 78, 220 182, 250 182"/>
+          <path class="mini-edge" d="M 308 135 C 322 135, 322 78, 340 78"/>
+          <rect class="mini-node" x="24" y="70" width="54" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="130" y="70" width="67" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="340" y="70" width="16" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="250" y="127" width="62" height="16" fill="var(--lane-caregiver)" opacity="0.85"/>
+          <rect class="mini-node" x="250" y="174" width="62" height="16" fill="var(--lane-external)" opacity="0.85"/>
+          <g font-size="7" font-weight="700">
+            <circle cx="12" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="12" y="16.5" text-anchor="middle" fill="#08453c">1</text>
+            <circle cx="131" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="131" y="16.5" text-anchor="middle" fill="#5b21b6">2</text>
+            <circle cx="250" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="250" y="16.5" text-anchor="middle" fill="#1d4ed8">3</text>
+          </g>
+        </svg>
+        <div class="title-overlay">
+          <span class="icon-box"><i data-lucide="activity" class="w-3.5 h-3.5"></i></span>
+          <div class="stack">
+            <div class="name">Hartfalen thuismonitoring</div>
+            <div class="sub">Standaard 12w · v4.2</div>
+          </div>
+        </div>
+        <div class="meta-overlay">Blocking · 12w</div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+    <!-- C2 — Nodes with type glyphs -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">C2</span>
+        <span class="opt-name">Nodes with type glyphs</span>
+      </div>
+      <div class="opt-desc">Same layout as C1 + tiny white glyphs inside each node hinting at block type (form / measurement / flag / alert / external). Adds at-a-glance kind info without text.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <svg class="pathway-svg" viewBox="0 0 356 200" preserveAspectRatio="none">
+          <rect x="0"   y="0" width="119" height="200" fill="#cfede8" opacity="0.5"/>
+          <rect x="119" y="0" width="119" height="200" fill="#ede9fe" opacity="0.5"/>
+          <rect x="238" y="0" width="118" height="200" fill="#dbeafe" opacity="0.5"/>
+          <rect x="0" y="50"  width="356" height="55" fill="var(--lane-patient)" opacity="0.06"/>
+          <rect x="0" y="110" width="356" height="50" fill="var(--lane-caregiver)" opacity="0.06"/>
+          <rect x="0" y="165" width="356" height="35" fill="var(--lane-external)" opacity="0.08"/>
+          <line x1="0" y1="50"  x2="356" y2="50"  stroke="var(--lane-patient)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="110" x2="356" y2="110" stroke="var(--lane-caregiver)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="165" x2="356" y2="165" stroke="var(--lane-external)" stroke-width="0.8" opacity="0.28"/>
+          <line x1="119" y1="0" x2="119" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <line x1="238" y1="0" x2="238" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <path class="mini-edge" d="M 78 78 C 100 78, 100 78, 130 78"/>
+          <path class="mini-edge" d="M 197 78 C 220 78, 220 135, 250 135"/>
+          <path class="mini-edge" d="M 197 78 C 220 78, 220 182, 250 182"/>
+          <path class="mini-edge" d="M 308 135 C 322 135, 322 78, 340 78"/>
+          <g>
+            <rect class="mini-node" x="24" y="70" width="54" height="16" fill="var(--lane-patient)" opacity="0.9"/>
+            <line x1="32" y1="76" x2="42" y2="76" stroke="white" stroke-width="1.2"/>
+            <line x1="32" y1="79" x2="40" y2="79" stroke="white" stroke-width="1.2"/>
+            <line x1="32" y1="82" x2="44" y2="82" stroke="white" stroke-width="1.2"/>
+          </g>
+          <g>
+            <rect class="mini-node" x="130" y="70" width="67" height="16" fill="var(--lane-patient)" opacity="0.9"/>
+            <polyline points="138,82 142,76 146,79 150,73 154,78 158,75" stroke="white" stroke-width="1.3" fill="none"/>
+            <circle cx="160" cy="78" r="1.5" fill="white"/>
+          </g>
+          <g>
+            <rect class="mini-node" x="340" y="70" width="16" height="16" fill="var(--lane-patient)" opacity="0.9"/>
+            <polygon points="345,75 351,77 345,79" fill="white"/>
+            <line x1="345" y1="75" x2="345" y2="82" stroke="white" stroke-width="1"/>
+          </g>
+          <g>
+            <rect class="mini-node" x="250" y="127" width="62" height="16" fill="var(--lane-caregiver)" opacity="0.9"/>
+            <polygon points="259,140 262,133 265,140" fill="white"/>
+            <circle cx="262" cy="138" r="0.7" fill="var(--lane-caregiver)"/>
+          </g>
+          <g>
+            <rect class="mini-node" x="250" y="174" width="62" height="16" fill="var(--lane-external)" opacity="0.9"/>
+            <rect x="258" y="179" width="6" height="6" stroke="white" stroke-width="1" fill="none"/>
+            <line x1="265" y1="180" x2="268" y2="180" stroke="white" stroke-width="1"/>
+            <line x1="265" y1="184" x2="270" y2="184" stroke="white" stroke-width="1"/>
+          </g>
+          <g font-size="7" font-weight="700">
+            <circle cx="12" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="12" y="16.5" text-anchor="middle" fill="#08453c">1</text>
+            <circle cx="131" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="131" y="16.5" text-anchor="middle" fill="#5b21b6">2</text>
+            <circle cx="250" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="250" y="16.5" text-anchor="middle" fill="#1d4ed8">3</text>
+          </g>
+        </svg>
+        <div class="title-overlay">
+          <span class="icon-box"><i data-lucide="activity" class="w-3.5 h-3.5"></i></span>
+          <div class="stack">
+            <div class="name">Hartfalen thuismonitoring</div>
+            <div class="sub">Standaard 12w · v4.2</div>
+          </div>
+        </div>
+        <div class="meta-overlay">Blocking · 12w</div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+    <!-- C3 — Dense / branching -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">C3</span>
+        <span class="opt-name">Dense pathway</span>
+      </div>
+      <div class="opt-desc">10 nodes across phases + lanes, multiple branches. Communicates "this is a substantial care path" at a glance. Closer to what a real Luscii program will look like.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <svg class="pathway-svg" viewBox="0 0 356 200" preserveAspectRatio="none">
+          <rect x="0"   y="0" width="119" height="200" fill="#cfede8" opacity="0.5"/>
+          <rect x="119" y="0" width="119" height="200" fill="#ede9fe" opacity="0.5"/>
+          <rect x="238" y="0" width="118" height="200" fill="#dbeafe" opacity="0.5"/>
+          <rect x="0" y="50"  width="356" height="55" fill="var(--lane-patient)" opacity="0.06"/>
+          <rect x="0" y="110" width="356" height="50" fill="var(--lane-caregiver)" opacity="0.06"/>
+          <rect x="0" y="165" width="356" height="35" fill="var(--lane-external)" opacity="0.08"/>
+          <line x1="0" y1="50"  x2="356" y2="50"  stroke="var(--lane-patient)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="110" x2="356" y2="110" stroke="var(--lane-caregiver)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="165" x2="356" y2="165" stroke="var(--lane-external)" stroke-width="0.8" opacity="0.28"/>
+          <line x1="119" y1="0" x2="119" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <line x1="238" y1="0" x2="238" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <path class="mini-edge" d="M 52 78 C 70 78, 70 78, 88 78"/>
+          <path class="mini-edge" d="M 52 78 C 70 78, 70 135, 88 135"/>
+          <path class="mini-edge" d="M 111 78 C 125 78, 125 78, 140 78"/>
+          <path class="mini-edge" d="M 111 135 C 125 135, 125 135, 140 135"/>
+          <path class="mini-edge" d="M 163 78 C 180 78, 180 135, 199 135"/>
+          <path class="mini-edge" d="M 163 78 C 180 78, 180 78, 199 78"/>
+          <path class="mini-edge" d="M 222 135 C 240 135, 240 182, 260 182"/>
+          <path class="mini-edge" d="M 222 78 C 240 78, 240 78, 260 78"/>
+          <path class="mini-edge" d="M 283 78 C 300 78, 300 135, 318 135"/>
+          <path class="mini-edge" d="M 283 78 C 300 78, 300 78, 318 78"/>
+          <rect class="mini-node" x="22" y="70" width="30" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="88" y="70" width="23" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="88" y="127" width="23" height="16" fill="var(--lane-caregiver)" opacity="0.85"/>
+          <rect class="mini-node" x="140" y="70" width="23" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="140" y="127" width="23" height="16" fill="var(--lane-caregiver)" opacity="0.85"/>
+          <rect class="mini-node" x="199" y="70" width="23" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="199" y="127" width="23" height="16" fill="var(--lane-caregiver)" opacity="0.85"/>
+          <rect class="mini-node" x="260" y="70" width="23" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="260" y="174" width="23" height="16" fill="var(--lane-external)" opacity="0.85"/>
+          <rect class="mini-node" x="318" y="70" width="38" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="318" y="127" width="38" height="16" fill="var(--lane-caregiver)" opacity="0.85"/>
+          <g font-size="7" font-weight="700">
+            <circle cx="12" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="12" y="16.5" text-anchor="middle" fill="#08453c">1</text>
+            <circle cx="131" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="131" y="16.5" text-anchor="middle" fill="#5b21b6">2</text>
+            <circle cx="250" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="250" y="16.5" text-anchor="middle" fill="#1d4ed8">3</text>
+          </g>
+        </svg>
+        <div class="title-overlay">
+          <span class="icon-box"><i data-lucide="activity" class="w-3.5 h-3.5"></i></span>
+          <div class="stack">
+            <div class="name">Hartfalen thuismonitoring</div>
+            <div class="sub">Standaard 12w · v4.2</div>
+          </div>
+        </div>
+        <div class="meta-overlay">Blocking · 12w</div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+    <!-- C4 — Annotated with timing -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">C4</span>
+        <span class="opt-name">Annotated with timing</span>
+      </div>
+      <div class="opt-desc">Baseline + tiny D/W timing chips below nodes (D0 / D7 / W3 / W12). Adds time dimension. Entry node carries a primary "START" dot top-left.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <svg class="pathway-svg" viewBox="0 0 356 200" preserveAspectRatio="none">
+          <rect x="0"   y="0" width="119" height="200" fill="#cfede8" opacity="0.5"/>
+          <rect x="119" y="0" width="119" height="200" fill="#ede9fe" opacity="0.5"/>
+          <rect x="238" y="0" width="118" height="200" fill="#dbeafe" opacity="0.5"/>
+          <rect x="0" y="50"  width="356" height="55" fill="var(--lane-patient)" opacity="0.06"/>
+          <rect x="0" y="110" width="356" height="50" fill="var(--lane-caregiver)" opacity="0.06"/>
+          <rect x="0" y="165" width="356" height="35" fill="var(--lane-external)" opacity="0.08"/>
+          <line x1="0" y1="50"  x2="356" y2="50"  stroke="var(--lane-patient)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="110" x2="356" y2="110" stroke="var(--lane-caregiver)" stroke-width="0.8" opacity="0.22"/>
+          <line x1="0" y1="165" x2="356" y2="165" stroke="var(--lane-external)" stroke-width="0.8" opacity="0.28"/>
+          <line x1="119" y1="0" x2="119" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <line x1="238" y1="0" x2="238" y2="200" stroke="rgba(0,0,0,0.07)" stroke-dasharray="2 3"/>
+          <path class="mini-edge" d="M 78 78 C 100 78, 100 78, 130 78"/>
+          <path class="mini-edge" d="M 197 78 C 220 78, 220 135, 250 135"/>
+          <path class="mini-edge" d="M 197 78 C 220 78, 220 182, 250 182"/>
+          <path class="mini-edge" d="M 308 135 C 322 135, 322 78, 340 78"/>
+          <rect class="mini-node" x="24" y="70" width="54" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="130" y="70" width="67" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="340" y="70" width="16" height="16" fill="var(--lane-patient)" opacity="0.85"/>
+          <rect class="mini-node" x="250" y="127" width="62" height="16" fill="var(--lane-caregiver)" opacity="0.85"/>
+          <rect class="mini-node" x="250" y="174" width="62" height="16" fill="var(--lane-external)" opacity="0.85"/>
+          <circle cx="24" cy="70" r="3" fill="var(--color-primary)" stroke="white" stroke-width="1.2"/>
+          <g font-size="7" font-weight="600" fill="var(--color-foreground-muted)">
+            <rect x="38" y="92" width="20" height="9" rx="3" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.05)"/>
+            <text x="48" y="98.5" text-anchor="middle">D0</text>
+            <rect x="148" y="92" width="20" height="9" rx="3" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.05)"/>
+            <text x="158" y="98.5" text-anchor="middle">D7</text>
+            <rect x="262" y="149" width="22" height="9" rx="3" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.05)"/>
+            <text x="273" y="155.5" text-anchor="middle">W3</text>
+            <rect x="334" y="92" width="22" height="9" rx="3" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.05)"/>
+            <text x="345" y="98.5" text-anchor="middle">W12</text>
+          </g>
+          <g font-size="7" font-weight="700">
+            <circle cx="12" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="12" y="16.5" text-anchor="middle" fill="#08453c">1</text>
+            <circle cx="131" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="131" y="16.5" text-anchor="middle" fill="#5b21b6">2</text>
+            <circle cx="250" cy="14" r="6" fill="rgba(255,255,255,0.85)"/>
+            <text x="250" y="16.5" text-anchor="middle" fill="#1d4ed8">3</text>
+          </g>
+        </svg>
+        <div class="title-overlay">
+          <span class="icon-box"><i data-lucide="activity" class="w-3.5 h-3.5"></i></span>
+          <div class="stack">
+            <div class="name">Hartfalen thuismonitoring</div>
+            <div class="sub">Standaard 12w · v4.2</div>
+          </div>
+        </div>
+        <div class="meta-overlay">Blocking · 12w</div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-8 text-xs text-[--color-foreground-muted] text-center">
+    All four = same direction (phase × lane miniature, full-bleed, overlay chrome). Differ on density / glyphs / annotation. Pick one — that's the locked visual.
+  </div>
+</div>
+
+<script>
+  if (window.lucide) window.lucide.createIcons();
+</script>
+</body>
+</html>

@@ -218,9 +218,13 @@ function Inner({
       data-slot="pathway-builder-shell"
       data-readonly={isReadOnly ? 'true' : undefined}
       className={
+        // `flex-1 min-h-0` lets the shell fill the SidebarInset's remaining
+        // flex space (breadcrumbs already consumed their slice). `h-[100dvh]`
+        // would push the page past the viewport and re-introduce the body
+        // scroll bug.
         isReadOnly
-          ? 'is-readonly grid h-[100dvh] min-h-0 grid-rows-[var(--builder-row-topbar)_auto_var(--builder-row-subbar)_1fr]'
-          : 'grid h-[100dvh] min-h-0 grid-rows-[var(--builder-row-topbar)_var(--builder-row-subbar)_1fr]'
+          ? 'is-readonly grid min-h-0 flex-1 grid-rows-[var(--builder-row-topbar)_auto_var(--builder-row-subbar)_1fr]'
+          : 'grid min-h-0 flex-1 grid-rows-[var(--builder-row-topbar)_var(--builder-row-subbar)_1fr]'
       }
     >
       <BuilderTopbar

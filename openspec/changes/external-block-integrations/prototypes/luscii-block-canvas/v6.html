@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — luscii-block-canvas v6 (Luscii-shape options)</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style type="text/tailwindcss">
+  @theme {
+    --color-background: oklch(1 0 0);
+    --color-surface-1: oklch(0.985 0.003 175);
+    --color-surface-2: oklch(0.97 0.01 175);
+    --color-foreground: oklch(0.21 0.04 265);
+    --color-foreground-muted: oklch(0.5 0.02 265);
+    --color-card: var(--color-background);
+    --color-primary: oklch(0.46 0.07 175);
+    --color-primary-soft: oklch(0.93 0.04 175);
+    --color-primary-subtle: oklch(0.97 0.01 175);
+    --color-border: oklch(0.91 0.005 265);
+    --color-border-strong: oklch(0.82 0.01 265);
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+    --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --font-size-base: 0.875rem;
+    --tracking-tight: -0.011em;
+  }
+  :root {
+    --lane-external: #b45309;
+    --gradient-aurora:
+      radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+      linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-foreground);
+    background: var(--gradient-aurora);
+    min-height: 100vh;
+    letter-spacing: var(--tracking-tight);
+    padding: 48px 24px;
+  }
+
+  /* ---- Shared block shell ---- */
+  .block-luscii {
+    position: relative;
+    width: 300px;
+    height: 140px;
+    display: grid;
+    grid-template-columns: 4px 1fr;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    --lane-accent: var(--lane-external);
+  }
+  .block-luscii .rail {
+    background: linear-gradient(180deg, var(--lane-accent) 0%, color-mix(in srgb, var(--lane-accent) 70%, black) 100%);
+    border-top-left-radius: 7px;
+    border-bottom-left-radius: 7px;
+  }
+  .block-luscii .inner {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .block-luscii .header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+  .icon-box-program {
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--lane-accent) 14%, var(--color-card));
+    color: var(--lane-accent);
+    border: 1px solid color-mix(in srgb, var(--lane-accent) 24%, transparent);
+  }
+  .title-stack { min-width: 0; flex: 1; }
+  .title-stack .name {
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+    color: var(--color-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .title-stack .sub {
+    margin-top: 1px;
+    font-size: 11px;
+    color: var(--color-foreground-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .provider-badge {
+    position: absolute;
+    top: -1px; right: -1px;
+    z-index: 5;
+    padding: 3px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: white;
+    background: oklch(0.45 0.18 250);
+    border-top-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+  }
+  .body-wrap {
+    flex: 1;
+    border-radius: 5px;
+    overflow: hidden;
+    color: var(--lane-accent);
+    background: var(--color-surface-1);
+    border: 1px solid color-mix(in srgb, var(--lane-accent) 12%, var(--color-border));
+  }
+
+  /* ---- VARIANT A: Calendar heatmap (weeks × instruments grid) ---- */
+  .body-heatmap {
+    padding: 6px 8px;
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    grid-template-rows: 10px 1fr;
+    gap: 3px 4px;
+    background: var(--color-card);
+  }
+  .body-heatmap .col-axis {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+  }
+  .body-heatmap .col-axis .wk {
+    font-size: 7.5px;
+    color: var(--color-foreground-muted);
+    text-align: center;
+    line-height: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .body-heatmap .row-axis {
+    grid-column: 1;
+    grid-row: 2;
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+    align-items: center;
+  }
+  .body-heatmap .row-axis .lbl {
+    font-size: 8px;
+    color: var(--color-foreground-muted);
+    text-align: right;
+    padding-right: 2px;
+    line-height: 1;
+    font-weight: 500;
+  }
+  .body-heatmap .heat {
+    grid-column: 2; grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+  }
+  .body-heatmap .heat .cell {
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--lane-accent) 8%, var(--color-surface-2));
+  }
+  .body-heatmap .heat .cell.l1 { background: color-mix(in srgb, var(--lane-accent) 22%, var(--color-surface-2)); }
+  .body-heatmap .heat .cell.l2 { background: color-mix(in srgb, var(--lane-accent) 45%, transparent); }
+  .body-heatmap .heat .cell.l3 { background: color-mix(in srgb, var(--lane-accent) 70%, transparent); }
+  .body-heatmap .heat .cell.l4 { background: var(--lane-accent); }
+
+  /* ---- VARIANT B: Weekly agenda rows ---- */
+  .body-agenda {
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-card);
+  }
+  .body-agenda .row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 2px;
+    border-bottom: 1px solid var(--color-border);
+    min-height: 0;
+    flex: 1;
+  }
+  .body-agenda .row:last-child { border-bottom: none; }
+  .body-agenda .wk-tag {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: var(--lane-accent);
+    background: color-mix(in srgb, var(--lane-accent) 12%, transparent);
+    border-radius: 3px;
+    padding: 1px 4px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  .body-agenda .events {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+  }
+  .body-agenda .ev {
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--lane-accent) 35%, transparent);
+  }
+  .body-agenda .ev.solid { background: var(--lane-accent); }
+  .body-agenda .ev.faint { background: color-mix(in srgb, var(--lane-accent) 18%, transparent); }
+
+  /* ---- VARIANT C: Clinician table thumbnail ---- */
+  .body-table {
+    padding: 0;
+    background: var(--color-card);
+    display: flex;
+    flex-direction: column;
+  }
+  .body-table .thead {
+    display: grid;
+    grid-template-columns: 50px repeat(6, 1fr);
+    background: color-mix(in srgb, var(--lane-accent) 6%, var(--color-surface-1));
+    border-bottom: 1px solid color-mix(in srgb, var(--lane-accent) 18%, var(--color-border));
+    font-size: 8px;
+    color: var(--color-foreground-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 6px;
+  }
+  .body-table .thead span { padding: 0 2px; }
+  .body-table .tbody {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 0 6px;
+  }
+  .body-table .tr {
+    display: grid;
+    grid-template-columns: 50px repeat(6, 1fr);
+    align-items: center;
+    border-bottom: 1px dashed var(--color-border);
+    padding: 2px 0;
+    min-height: 0;
+    flex: 1;
+  }
+  .body-table .tr:last-child { border-bottom: none; }
+  .body-table .tr .label {
+    font-size: 8.5px;
+    color: var(--color-foreground);
+    font-weight: 500;
+    padding: 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .body-table .tr .cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 2px;
+  }
+  .body-table .dot {
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--lane-accent) 35%, transparent);
+  }
+  .body-table .dot.strong { background: var(--lane-accent); }
+  .body-table .dot.empty { background: var(--color-border); }
+  .body-table .dot.bar { width: 12px; height: 3px; border-radius: 1px; }
+
+  /* ---- VARIANT D: Patient app screen thumbnail ---- */
+  .body-app {
+    padding: 6px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--lane-accent) 4%, var(--color-card)) 0%, var(--color-card) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .phone {
+    width: 84px;
+    height: 76px;
+    border-radius: 6px;
+    background: var(--color-card);
+    border: 1px solid color-mix(in srgb, var(--lane-accent) 18%, var(--color-border));
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .phone .status {
+    height: 8px;
+    background: color-mix(in srgb, var(--lane-accent) 14%, var(--color-surface-1));
+    border-bottom: 1px solid var(--color-border);
+  }
+  .phone .body-p {
+    flex: 1;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .phone .ttl {
+    height: 4px;
+    background: color-mix(in srgb, var(--lane-accent) 40%, transparent);
+    border-radius: 1px;
+    width: 60%;
+  }
+  .phone .card {
+    height: 10px;
+    background: color-mix(in srgb, var(--lane-accent) 8%, var(--color-surface-2));
+    border-radius: 2px;
+    border-left: 2px solid var(--lane-accent);
+  }
+  .phone .card.checked { background: color-mix(in srgb, var(--lane-accent) 18%, var(--color-surface-2)); }
+  .body-app .side-meta {
+    flex: 1;
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .body-app .meta-line {
+    height: 4px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--lane-accent) 25%, transparent);
+  }
+  .body-app .meta-line.w-1 { width: 70%; }
+  .body-app .meta-line.w-2 { width: 50%; }
+  .body-app .meta-line.w-3 { width: 80%; background: color-mix(in srgb, var(--lane-accent) 12%, transparent); }
+  .body-app .meta-line.w-4 { width: 40%; background: color-mix(in srgb, var(--lane-accent) 12%, transparent); }
+
+  /* Layout */
+  .compare-wrap { max-width: 760px; margin: 0 auto; }
+  .compare-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .compare-sub { font-size: 12px; color: var(--color-foreground-muted); margin-bottom: 24px; line-height: 1.5; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .compare-cell { display: flex; flex-direction: column; gap: 8px; }
+  .compare-cell .label-row { display: flex; align-items: center; gap: 8px; }
+  .compare-cell .opt-key {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    padding: 2px 6px;
+    background: var(--color-primary-soft);
+    border-radius: 3px;
+  }
+  .compare-cell .opt-name { font-size: 13px; font-weight: 600; }
+  .compare-cell .opt-desc { font-size: 11.5px; color: var(--color-foreground-muted); line-height: 1.4; }
+</style>
+</head>
+
+<body class="antialiased">
+<!--
+  MOCK DATA — Luscii block visual options v6 (Luscii-pathway-shape direction)
+  All 4 variants try to mimic *what a Luscii care path looks like* in miniature
+  — calendar/agenda/clinician-table/patient-app — rather than abstracting it
+  to our own canvas idiom. Fake data today; swap to real `resolve_block(...)`
+  output later. Same 300×140 frame, atomic interaction, same header.
+-->
+
+<div class="compare-wrap">
+  <h1 class="compare-title">Luscii block — Luscii-shape options (v6)</h1>
+  <p class="compare-sub">Round 2: visual idioms that evoke <em>how Luscii itself shows a care path</em>. All four are fake renderings today; the intent is that real Luscii pathway data fills them in once the live adapter lands. Zoom-to-full-view is a follow-up — the small visual must hint at the zoomed-in shape.</p>
+
+  <div class="compare-grid">
+
+    <!-- VARIANT A — Calendar heatmap -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">A</span>
+        <span class="opt-name">Calendar heatmap</span>
+      </div>
+      <div class="opt-desc">Weeks across (x) × instruments down (y). Cell density = measurement frequency. Reads as "12 weeks of monitoring, here's what gets measured when". Closest to a real Luscii data grid.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <div class="inner">
+          <div class="header">
+            <span class="icon-box-program"><i data-lucide="activity" class="w-4 h-4"></i></span>
+            <div class="title-stack">
+              <div class="name">Hartfalen thuismonitoring</div>
+              <div class="sub">Standaard 12 weken · Blocking · v4.2</div>
+            </div>
+          </div>
+          <div class="body-wrap body-heatmap">
+            <div class="col-axis">
+              <span class="wk">1</span><span class="wk"></span><span class="wk"></span><span class="wk">4</span>
+              <span class="wk"></span><span class="wk"></span><span class="wk"></span><span class="wk">8</span>
+              <span class="wk"></span><span class="wk"></span><span class="wk"></span><span class="wk">12</span>
+            </div>
+            <div class="row-axis">
+              <span class="lbl">BP</span><span class="lbl">W</span><span class="lbl">S</span><span class="lbl">Q</span>
+            </div>
+            <div class="heat">
+              <!-- BP row: daily → heavy -->
+              <span class="cell l4"></span><span class="cell l4"></span><span class="cell l4"></span><span class="cell l4"></span>
+              <span class="cell l3"></span><span class="cell l3"></span><span class="cell l3"></span><span class="cell l3"></span>
+              <span class="cell l2"></span><span class="cell l2"></span><span class="cell l2"></span><span class="cell l1"></span>
+              <!-- Weight row: daily then taper -->
+              <span class="cell l3"></span><span class="cell l3"></span><span class="cell l3"></span><span class="cell l3"></span>
+              <span class="cell l2"></span><span class="cell l2"></span><span class="cell l2"></span><span class="cell l2"></span>
+              <span class="cell l1"></span><span class="cell l1"></span><span class="cell"></span><span class="cell"></span>
+              <!-- SpO2 row: medium -->
+              <span class="cell l2"></span><span class="cell l2"></span><span class="cell l2"></span><span class="cell l2"></span>
+              <span class="cell l2"></span><span class="cell l1"></span><span class="cell l1"></span><span class="cell l1"></span>
+              <span class="cell"></span><span class="cell"></span><span class="cell"></span><span class="cell"></span>
+              <!-- Questionnaire row: weekly sparse -->
+              <span class="cell"></span><span class="cell l1"></span><span class="cell"></span><span class="cell l1"></span>
+              <span class="cell"></span><span class="cell l1"></span><span class="cell"></span><span class="cell l1"></span>
+              <span class="cell"></span><span class="cell l1"></span><span class="cell"></span><span class="cell l2"></span>
+            </div>
+          </div>
+        </div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+    <!-- VARIANT B — Weekly agenda -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">B</span>
+        <span class="opt-name">Weekly agenda</span>
+      </div>
+      <div class="opt-desc">Row per week with a tiny week tag + variable-width event bars showing intensity of clinician-facing activity. Reads like a journey breakdown — close to how a CMD planned the path.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <div class="inner">
+          <div class="header">
+            <span class="icon-box-program"><i data-lucide="activity" class="w-4 h-4"></i></span>
+            <div class="title-stack">
+              <div class="name">Hartfalen thuismonitoring</div>
+              <div class="sub">Standaard 12 weken · Blocking · v4.2</div>
+            </div>
+          </div>
+          <div class="body-wrap body-agenda">
+            <div class="row">
+              <span class="wk-tag">W1</span>
+              <div class="events">
+                <span class="ev solid" style="width: 24px"></span>
+                <span class="ev solid" style="width: 14px"></span>
+                <span class="ev" style="width: 32px"></span>
+                <span class="ev faint" style="width: 18px"></span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="wk-tag">W3</span>
+              <div class="events">
+                <span class="ev solid" style="width: 18px"></span>
+                <span class="ev" style="width: 22px"></span>
+                <span class="ev faint" style="width: 28px"></span>
+                <span class="ev" style="width: 12px"></span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="wk-tag">W6</span>
+              <div class="events">
+                <span class="ev" style="width: 16px"></span>
+                <span class="ev faint" style="width: 24px"></span>
+                <span class="ev faint" style="width: 20px"></span>
+              </div>
+            </div>
+            <div class="row">
+              <span class="wk-tag">W12</span>
+              <div class="events">
+                <span class="ev solid" style="width: 20px"></span>
+                <span class="ev faint" style="width: 14px"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+    <!-- VARIANT C — Clinician table thumbnail -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">C</span>
+        <span class="opt-name">Clinician table</span>
+      </div>
+      <div class="opt-desc">Tiny spreadsheet-style preview — rows = instruments, columns = checkpoints, cells = dots/bars. Matches the data-grid feel of Luscii Vitals' clinician viewer. Zoom-to-full = expand the table.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <div class="inner">
+          <div class="header">
+            <span class="icon-box-program"><i data-lucide="activity" class="w-4 h-4"></i></span>
+            <div class="title-stack">
+              <div class="name">Hartfalen thuismonitoring</div>
+              <div class="sub">Standaard 12 weken · Blocking · v4.2</div>
+            </div>
+          </div>
+          <div class="body-wrap body-table">
+            <div class="thead">
+              <span></span>
+              <span>W1</span><span>W3</span><span>W5</span><span>W7</span><span>W9</span><span>W12</span>
+            </div>
+            <div class="tbody">
+              <div class="tr">
+                <span class="label">BP</span>
+                <span class="cell"><span class="dot bar strong"></span></span>
+                <span class="cell"><span class="dot bar strong"></span></span>
+                <span class="cell"><span class="dot bar"></span></span>
+                <span class="cell"><span class="dot bar"></span></span>
+                <span class="cell"><span class="dot bar"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+              </div>
+              <div class="tr">
+                <span class="label">Gewicht</span>
+                <span class="cell"><span class="dot strong"></span></span>
+                <span class="cell"><span class="dot strong"></span></span>
+                <span class="cell"><span class="dot"></span></span>
+                <span class="cell"><span class="dot"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+              </div>
+              <div class="tr">
+                <span class="label">SpO₂</span>
+                <span class="cell"><span class="dot"></span></span>
+                <span class="cell"><span class="dot"></span></span>
+                <span class="cell"><span class="dot"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+              </div>
+              <div class="tr">
+                <span class="label">KCCQ</span>
+                <span class="cell"><span class="dot empty"></span></span>
+                <span class="cell"><span class="dot strong"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+                <span class="cell"><span class="dot strong"></span></span>
+                <span class="cell"><span class="dot empty"></span></span>
+                <span class="cell"><span class="dot strong"></span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+    <!-- VARIANT D — Patient app preview -->
+    <div class="compare-cell">
+      <div class="label-row">
+        <span class="opt-key">D</span>
+        <span class="opt-name">Patient app preview</span>
+      </div>
+      <div class="opt-desc">Mini phone screen mock + program metadata stack. Reads as "this is what the patient experiences in Luscii's app". Strongest brand cue for "we're sending them to Luscii". Most likely to feel canonical at a glance.</div>
+      <div class="block-luscii">
+        <div class="rail"></div>
+        <div class="inner">
+          <div class="header">
+            <span class="icon-box-program"><i data-lucide="activity" class="w-4 h-4"></i></span>
+            <div class="title-stack">
+              <div class="name">Hartfalen thuismonitoring</div>
+              <div class="sub">Standaard 12 weken · Blocking · v4.2</div>
+            </div>
+          </div>
+          <div class="body-wrap body-app">
+            <div class="phone">
+              <div class="status"></div>
+              <div class="body-p">
+                <div class="ttl"></div>
+                <div class="card checked"></div>
+                <div class="card"></div>
+                <div class="card"></div>
+              </div>
+            </div>
+            <div class="side-meta">
+              <div class="meta-line w-1"></div>
+              <div class="meta-line w-2"></div>
+              <div class="meta-line w-3"></div>
+              <div class="meta-line w-4"></div>
+              <div class="meta-line w-3"></div>
+              <div class="meta-line w-2"></div>
+            </div>
+          </div>
+        </div>
+        <span class="provider-badge">Luscii</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-8 text-xs text-[--color-foreground-muted] text-center">
+    All fake data. Real-data variant arrives with the live Luscii adapter — at that point the same renderer fills in real instruments / measurements / weeks. Zoom-to-full view = follow-up change.
+  </div>
+</div>
+
+<script>
+  if (window.lucide) window.lucide.createIcons();
+</script>
+</body>
+</html>

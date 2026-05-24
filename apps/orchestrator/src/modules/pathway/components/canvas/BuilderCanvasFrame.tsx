@@ -9,7 +9,7 @@ import {
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { buildCanvasGeometry, type CanvasGeometry } from '../../canvasLayout'
+import { buildCanvasGeometry, type CanvasGeometry, type BlockFitInput } from '../../canvasLayout'
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { inkAlpha } from '../../constants/theme'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
@@ -22,6 +22,7 @@ import type {
   PathwayTimingValue,
 } from '../../types'
 import type { BuilderAction, BuilderSelection } from '../../useBuilderState'
+import { getBlockDimensions } from '../../utils/blockDimensions'
 import { isLaneAllowed } from '../../utils/laneRules'
 
 import { BackgroundLayers } from './BackgroundLayers'
@@ -29,7 +30,8 @@ import { SmoothstepEdge } from './edges/SmoothstepEdge'
 import { EmptyCanvasCTA } from './EmptyCanvasCTA'
 import { type LaneDropState } from './LaneRow'
 import { NavigatorPanel } from './NavigatorPanel'
-import { BlockNode, type BlockFlowNode } from './nodes/BlockNode'
+import { type BlockFlowNode } from './nodes/BlockNode'
+import { BlockNodeRouter } from './nodes/BlockNodeRouter'
 import type { DragContextApi } from './useDragContext'
 import { useFlowEdges } from './useFlowEdges'
 import { useFlowNodes } from './useFlowNodes'
@@ -56,7 +58,12 @@ type Props = {
   dragApi: DragContextApi
 }
 
-const NODE_TYPES = { block: BlockNode } as const
+// One xyflow node type, ever. The router dispatches on `data.block.type`
+// (bare vs dotted) to the per-provider component. Future providers register
+// inside `BlockNodeRouter`, not here — see
+// `openspec/changes/external-block-integrations/design.md` §"One xyflow
+// node type, dispatcher inside".
+const NODE_TYPES = { block: BlockNodeRouter } as const
 const EDGE_TYPES = { smoothstep: SmoothstepEdge } as const
 
 export function BuilderCanvasFrame({
@@ -72,9 +79,23 @@ export function BuilderCanvasFrame({
   dragApi,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
+  const fitInputs = useMemo<BlockFitInput[]>(() => {
+    const byCode = new Map(blockTypes.map((bt) => [bt.type, bt]))
+    return blocks.map((b) => {
+      const dims = getBlockDimensions(b, byCode.get(b.type) ?? null)
+      return {
+        phase_id: b.phase_id,
+        lane_id: b.lane_id,
+        x: b.x,
+        y: b.y,
+        width: dims.width,
+        height: dims.height,
+      }
+    })
+  }, [blocks, blockTypes])
   const geometry: CanvasGeometry = useMemo(
-    () => buildCanvasGeometry(phases, lanes),
-    [phases, lanes],
+    () => buildCanvasGeometry(phases, lanes, fitInputs),
+    [phases, lanes, fitInputs],
   )
 
   const derivedNodes = useFlowNodes({

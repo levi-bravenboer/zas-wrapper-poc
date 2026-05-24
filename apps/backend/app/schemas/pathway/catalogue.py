@@ -14,7 +14,14 @@ BlockSemanticsLiteral = Literal[
     "milestone",
     "wait",
     "pathway_link",
+    "external_program",
 ]
+
+# Single-source-of-truth for the native-vs-external provenance literal.
+# Lives in the schemas layer (safe to import from services per layer
+# rules); the services-layer code-side catalogue + the block-type-code
+# parser re-export this as `BlockSource` for terser local names.
+BlockSourceLiteral = Literal["native", "external"]
 
 
 class PathwayBlockType(BaseModel):
@@ -46,6 +53,30 @@ class PathwayBlockType(BaseModel):
         ),
     )
     supports_branches: bool = False
+    source: BlockSourceLiteral = Field(
+        default="native",
+        description=(
+            "Provenance of this catalogue entry. Native blocks live in our own "
+            "code-side `BLOCK_TYPES` registry; external blocks are contributed "
+            "by per-vendor catalogue extensions (Luscii first). The frontend "
+            "palette groups by `source` then by `provider`."
+        ),
+    )
+    provider: str | None = Field(
+        default=None,
+        description=(
+            "Vendor identifier for external blocks (e.g. `luscii`). Null for "
+            "native blocks. Combined with `kind`, identifies which per-provider "
+            "React component renders the block on canvas / in the inspector."
+        ),
+    )
+    kind: str | None = Field(
+        default=None,
+        description=(
+            "Vendor-specific block kind for external blocks (e.g. `program`). "
+            "Null for native blocks."
+        ),
+    )
 
 
 class PathwayPhaseTemplate(BaseModel):

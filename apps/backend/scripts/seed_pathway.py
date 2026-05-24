@@ -35,6 +35,8 @@ from app.schemas.pathway.pathway import (
     PathwayPublishRequest,
 )
 from app.services.pathway.catalogue import (
+    LANE_KIND_CAREGIVER,
+    LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,
     LANE_KIND_SYSTEM,
     SEEDED_LANE_KINDS,
@@ -58,6 +60,7 @@ PHASE_FOLLOW_UP_ID: UUID = UUID("00000000-0000-4000-8000-000000000104")
 LANE_PATIENT_ID: UUID = UUID("00000000-0000-4000-8000-000000000201")
 LANE_CAREGIVER_ID: UUID = UUID("00000000-0000-4000-8000-000000000202")
 LANE_SYSTEM_ID: UUID = UUID("00000000-0000-4000-8000-000000000203")
+LANE_EXTERNAL_ID: UUID = UUID("00000000-0000-4000-8000-000000000204")
 
 BLOCK_INTAKE_ID: UUID = UUID("00000000-0000-4000-8000-000000000301")
 BLOCK_OPERATIE_ID: UUID = UUID("00000000-0000-4000-8000-000000000302")
@@ -102,7 +105,7 @@ def _build_payload() -> PathwayDefinitionReplace:
             ),
             PathwayLaneIn(
                 id=LANE_CAREGIVER_ID,
-                lane_kind_code="caregiver",
+                lane_kind_code=LANE_KIND_CAREGIVER,
                 label="Caregiver",
                 ord=20,
             ),
@@ -111,6 +114,12 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_kind_code=LANE_KIND_SYSTEM,
                 label="System",
                 ord=30,
+            ),
+            PathwayLaneIn(
+                id=LANE_EXTERNAL_ID,
+                lane_kind_code=LANE_KIND_EXTERNAL,
+                label="External",
+                ord=40,
             ),
         ],
         blocks=[

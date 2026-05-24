@@ -15,6 +15,9 @@ function makeBlockType(overrides: Partial<PathwayBlockType> & { type: string }):
     config_schema: overrides.config_schema ?? {},
     ui_schema: overrides.ui_schema ?? {},
     supports_branches: overrides.supports_branches ?? false,
+    source: overrides.source ?? 'native',
+    provider: overrides.provider ?? null,
+    kind: overrides.kind ?? null,
   }
 }
 

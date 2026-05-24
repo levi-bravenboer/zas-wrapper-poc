@@ -141,3 +141,28 @@ describe('useBuilderState — read-only dispatch guard', () => {
     expect(result.current.state.selection).toEqual({ kind: 'edge', edgeId: 'edge-1' })
   })
 })
+
+describe('useBuilderState — reset preserves selection', () => {
+  it('keeps an edge selection when the edge survives the new version', () => {
+    const { result } = renderHook(() => useBuilderState(makeVersion()))
+    act(() => {
+      result.current.dispatch({ type: 'select', selection: { kind: 'edge', edgeId: 'edge-1' } })
+    })
+    act(() => {
+      result.current.dispatch({ type: 'reset', version: makeVersion() })
+    })
+    expect(result.current.state.selection).toEqual({ kind: 'edge', edgeId: 'edge-1' })
+  })
+
+  it('clears the selection when the selected edge is gone after reset', () => {
+    const { result } = renderHook(() => useBuilderState(makeVersion()))
+    act(() => {
+      result.current.dispatch({ type: 'select', selection: { kind: 'edge', edgeId: 'edge-1' } })
+    })
+    const trimmed = { ...makeVersion(), edges: [E2] } as PathwayVersionDefinition
+    act(() => {
+      result.current.dispatch({ type: 'reset', version: trimmed })
+    })
+    expect(result.current.state.selection).toEqual({ kind: 'none' })
+  })
+})

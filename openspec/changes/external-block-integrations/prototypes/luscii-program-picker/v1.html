@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — luscii-program-picker v1</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style type="text/tailwindcss">
+  @theme {
+    --color-background: oklch(1 0 0);
+    --color-surface-1: oklch(0.985 0.003 175);
+    --color-surface-2: oklch(0.97 0.01 175);
+    --color-foreground: oklch(0.21 0.04 265);
+    --color-foreground-muted: oklch(0.5 0.02 265);
+    --color-muted-foreground: var(--color-foreground-muted);
+    --color-card: var(--color-background);
+    --color-card-foreground: var(--color-foreground);
+    --color-popover: var(--color-background);
+    --color-popover-foreground: var(--color-foreground);
+    --color-muted: var(--color-surface-2);
+    --color-primary: oklch(0.46 0.07 175);
+    --color-primary-hover: oklch(0.4 0.07 175);
+    --color-primary-pressed: oklch(0.34 0.06 175);
+    --color-primary-foreground: oklch(1 0 0);
+    --color-primary-soft: oklch(0.93 0.04 175);
+    --color-primary-subtle: oklch(0.97 0.01 175);
+    --color-accent-mint: oklch(0.78 0.08 175);
+    --color-destructive: oklch(0.6 0.22 30);
+    --color-destructive-foreground: oklch(1 0 0);
+    --color-warning: oklch(0.75 0.18 65);
+    --color-warning-foreground: oklch(0.21 0.04 265);
+    --color-success: oklch(0.55 0.1 175);
+    --color-success-foreground: oklch(1 0 0);
+    --color-border: oklch(0.91 0.005 265);
+    --color-border-strong: oklch(0.82 0.01 265);
+    --color-input: var(--color-border);
+    --color-ring: var(--color-primary);
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --shadow-xs: 0 1px 0 oklch(0.21 0.04 265 / 0.04);
+    --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+    --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+    --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.8125rem;
+    --font-size-base: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --leading-tight: 1.25;
+    --leading-snug: 1.4;
+    --leading-normal: 1.55;
+    --tracking-tight: -0.011em;
+  }
+  :root {
+    --glass-panel-strong: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.7);
+    --glass-blur-strong: 24px;
+    --glass-saturate: 180%;
+    --shadow-glass: 0 12px 32px rgba(38, 107, 94, 0.08), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+    --gradient-aurora:
+      radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+      linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-foreground);
+    background: var(--gradient-aurora);
+    min-height: 100vh;
+    letter-spacing: var(--tracking-tight);
+  }
+  .modal-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: var(--shadow-lg);
+  }
+  .provider-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background: oklch(0.72 0.15 250 / 0.12);
+    color: oklch(0.45 0.18 250);
+    border: 1px solid oklch(0.72 0.15 250 / 0.3);
+  }
+  .program-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-card);
+    overflow: hidden;
+    transition: border-color 120ms, box-shadow 120ms;
+  }
+  .program-card:hover { border-color: var(--color-border-strong); }
+  .program-card[data-selected="true"] {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  }
+  .protocol-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-top: 1px solid var(--color-border);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .protocol-row:hover { background: var(--color-primary-subtle); }
+  .protocol-row[data-checked="true"] {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--color-surface-2);
+    color: var(--color-foreground-muted);
+    border: 1px solid var(--color-border);
+  }
+</style>
+</head>
+
+<body class="antialiased">
+<!--
+  MOCK DATA — Luscii program picker modal
+  Catalogue stub (would come from GET /v1/programs + GET /v1/protocols):
+    1. Hartfalen thuismonitoring (selected) — 3 protocols
+    2. COPD self-management — 2 protocols
+    3. Diabetes type 2 coaching — 2 protocols
+    4. Rugrevalidatie monitoring — 1 protocol
+  Surface info per program: name, body part icon, two-way messaging flag, # patients enrolled (mock)
+-->
+
+<div class="min-h-screen flex items-center justify-center p-6">
+  <div class="modal-card rounded-[--radius-lg] w-full max-w-2xl flex flex-col" style="max-height: 86vh">
+    <!-- Header -->
+    <header class="px-6 pt-5 pb-4 border-b border-[--color-border]">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <i data-lucide="activity" class="w-5 h-5" style="color: oklch(0.45 0.18 250)"></i>
+            <h2 class="text-base font-semibold tracking-tight">Pick a Luscii program</h2>
+            <span class="provider-chip">Luscii</span>
+          </div>
+          <p class="text-xs text-[--color-foreground-muted]">
+            Select a certified care path and its protocol. Authoring lives inside Luscii Builder — you cannot edit content here.
+          </p>
+        </div>
+        <button class="text-[--color-foreground-muted] hover:text-[--color-foreground]">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 flex items-center gap-2">
+        <div class="flex-1 relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[--color-foreground-muted]"></i>
+          <input
+            class="w-full h-9 pl-9 pr-3 rounded-[--radius-md] border border-[--color-border] bg-[--color-card] text-sm outline-none focus:border-[--color-primary]"
+            placeholder="Search programs (e.g. hart, copd, revalidatie)…"
+            value=""
+          />
+        </div>
+        <div class="text-xs text-[--color-foreground-muted] whitespace-nowrap">4 of 4</div>
+      </div>
+    </header>
+
+    <!-- List -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3">
+
+      <!-- Selected: Hartfalen -->
+      <div class="program-card" data-selected="true">
+        <div class="flex items-start gap-3 p-4">
+          <div class="w-10 h-10 rounded-[--radius-md] flex items-center justify-center" style="background: oklch(0.72 0.15 250 / 0.12); color: oklch(0.45 0.18 250)">
+            <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <div class="text-sm font-semibold">Hartfalen thuismonitoring</div>
+              <span class="pill"><i data-lucide="message-square" class="w-3 h-3"></i> 2-way messaging</span>
+            </div>
+            <div class="text-xs text-[--color-foreground-muted] leading-snug">
+              Daily blood pressure, weight + saturation. KCCQ weekly. Alerts on rapid weight gain or hypotension.
+            </div>
+            <div class="mt-2 flex items-center gap-3 text-[11px] text-[--color-foreground-muted]">
+              <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> 248 enrolled (org-wide)</span>
+              <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> CE Class IIa</span>
+              <span class="flex items-center gap-1"><i data-lucide="git-commit-horizontal" class="w-3 h-3"></i> v4.2 (5 mei 2026)</span>
+            </div>
+          </div>
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-[--color-primary] shrink-0"></i>
+        </div>
+        <div class="bg-[--color-surface-1]">
+          <div class="px-4 py-2 text-[10px] uppercase tracking-wider text-[--color-foreground-muted] font-semibold">Protocol</div>
+          <div class="protocol-row" data-checked="true">
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              Standaard 12 weken
+            </div>
+            <span class="text-[11px] text-[--color-foreground-muted]">reminders 09:00 · overdue 48u</span>
+          </div>
+          <div class="protocol-row">
+            <span>Intensief 16 weken</span>
+            <span class="text-[11px] text-[--color-foreground-muted]">2× daily check-ins · overdue 24u</span>
+          </div>
+          <div class="protocol-row">
+            <span>Light 8 weken</span>
+            <span class="text-[11px] text-[--color-foreground-muted]">weekly only · overdue 7d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COPD -->
+      <div class="program-card">
+        <div class="flex items-start gap-3 p-4">
+          <div class="w-10 h-10 rounded-[--radius-md] flex items-center justify-center" style="background: oklch(0.72 0.15 250 / 0.12); color: oklch(0.45 0.18 250)">
+            <i data-lucide="lungs" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <div class="text-sm font-semibold">COPD self-management</div>
+              <span class="pill"><i data-lucide="bell" class="w-3 h-3"></i> push reminders</span>
+            </div>
+            <div class="text-xs text-[--color-foreground-muted] leading-snug">
+              CAT-questionnaire weekly, FEV1 trends from connected spirometer, exacerbation symptom triage.
+            </div>
+            <div class="mt-2 flex items-center gap-3 text-[11px] text-[--color-foreground-muted]">
+              <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> 87 enrolled</span>
+              <span class="flex items-center gap-1"><i data-lucide="git-commit-horizontal" class="w-3 h-3"></i> v2.1</span>
+              <span>2 protocols</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-[--color-foreground-muted] shrink-0"></i>
+        </div>
+      </div>
+
+      <!-- Diabetes -->
+      <div class="program-card">
+        <div class="flex items-start gap-3 p-4">
+          <div class="w-10 h-10 rounded-[--radius-md] flex items-center justify-center" style="background: oklch(0.72 0.15 250 / 0.12); color: oklch(0.45 0.18 250)">
+            <i data-lucide="syringe" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <div class="text-sm font-semibold">Diabetes type 2 coaching</div>
+            </div>
+            <div class="text-xs text-[--color-foreground-muted] leading-snug">
+              Bloedglucose tracking, voeding-logs, medicatie-adherence. Coaching content over 24 weken.
+            </div>
+            <div class="mt-2 flex items-center gap-3 text-[11px] text-[--color-foreground-muted]">
+              <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> 412 enrolled</span>
+              <span class="flex items-center gap-1"><i data-lucide="git-commit-horizontal" class="w-3 h-3"></i> v6.0</span>
+              <span>2 protocols</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-[--color-foreground-muted] shrink-0"></i>
+        </div>
+      </div>
+
+      <!-- Rugrevalidatie -->
+      <div class="program-card">
+        <div class="flex items-start gap-3 p-4">
+          <div class="w-10 h-10 rounded-[--radius-md] flex items-center justify-center" style="background: oklch(0.72 0.15 250 / 0.12); color: oklch(0.45 0.18 250)">
+            <i data-lucide="dumbbell" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <div class="text-sm font-semibold">Rugrevalidatie monitoring</div>
+              <span class="pill" style="background: var(--color-warning); color: var(--color-warning-foreground); border-color: transparent">NEW</span>
+            </div>
+            <div class="text-xs text-[--color-foreground-muted] leading-snug">
+              Pijnscore (NRS) dagelijks, mobiliteit-oefeningen, PROM (ODI) wekelijks. ZAS-pilot.
+            </div>
+            <div class="mt-2 flex items-center gap-3 text-[11px] text-[--color-foreground-muted]">
+              <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> 12 enrolled (pilot)</span>
+              <span class="flex items-center gap-1"><i data-lucide="git-commit-horizontal" class="w-3 h-3"></i> v0.9 beta</span>
+              <span>1 protocol</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-[--color-foreground-muted] shrink-0"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="px-6 py-3 border-t border-[--color-border] flex items-center justify-between bg-[--color-surface-1]">
+      <div class="text-[11px] text-[--color-foreground-muted] flex items-center gap-1.5">
+        <i data-lucide="info" class="w-3.5 h-3.5"></i>
+        Catalogue cached from Luscii · last sync 2 min ago
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="h-9 px-3 rounded-[--radius-md] text-sm text-[--color-foreground-muted] hover:bg-[--color-surface-2]">Cancel</button>
+        <button class="h-9 px-4 rounded-[--radius-md] bg-[--color-primary] text-[--color-primary-foreground] text-sm font-medium hover:bg-[--color-primary-hover] inline-flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> Use this program
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script>
+  if (window.lucide) window.lucide.createIcons();
+</script>
+</body>
+</html>

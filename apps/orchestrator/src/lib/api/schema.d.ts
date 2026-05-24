@@ -614,6 +614,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/luscii/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Luscii Programs */
+        get: operations["list_luscii_programs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/luscii/programs/{program_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Luscii Program */
+        get: operations["get_luscii_program"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -740,6 +774,209 @@ export interface components {
              * Format: password
              */
             password: string;
+        };
+        /**
+         * LusciiAlertThreshold
+         * @description A clinician-facing alert threshold defined by Luscii. Read-only here.
+         */
+        LusciiAlertThreshold: {
+            /** Label */
+            label: string;
+            /** Rule */
+            rule: string;
+        };
+        /**
+         * LusciiInstrument
+         * @description A measurement / questionnaire instrument inside the program.
+         */
+        LusciiInstrument: {
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Cadence */
+            cadence: string;
+            /**
+             * Icon
+             * @description Lucide icon name (kebab-case)
+             */
+            icon: string;
+        };
+        /** LusciiLayout */
+        LusciiLayout: {
+            /** Phases */
+            phases: components["schemas"]["LusciiLayoutPhase"][];
+            /** Lanes */
+            lanes: components["schemas"]["LusciiLayoutLane"][];
+            /** Nodes */
+            nodes?: components["schemas"]["LusciiLayoutNode"][];
+            /** Edges */
+            edges?: components["schemas"]["LusciiLayoutEdge"][];
+        };
+        /**
+         * LusciiLayoutEdge
+         * @description A directed connector between two layout nodes.
+         */
+        LusciiLayoutEdge: {
+            /** Id */
+            id: string;
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+        };
+        /**
+         * LusciiLayoutLane
+         * @description A horizontal lane row inside the program's mini-canvas.
+         */
+        LusciiLayoutLane: {
+            /** Id */
+            id: string;
+            /** Ord */
+            ord: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "patient" | "caregiver" | "external" | "system";
+        };
+        /**
+         * LusciiLayoutNode
+         * @description A node inside the program's mini-canvas. Coordinate model mirrors
+         *     `PathwayBlock`: cell = (phase_id, lane_id), intra-cell = (x, y).
+         */
+        LusciiLayoutNode: {
+            /** Id */
+            id: string;
+            /** Phase Id */
+            phase_id: string;
+            /** Lane Id */
+            lane_id: string;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+            /** Label */
+            label: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "appointment" | "task" | "message" | "form" | "questionnaire" | "measurement" | "decision" | "milestone" | "education";
+            /**
+             * Timing Label
+             * @description Short human label like 'D0' / 'W1-12 · 1×/dag'. Shown next to the node in the large block rendering.
+             */
+            timing_label?: string | null;
+            /**
+             * Is Entry
+             * @default false
+             */
+            is_entry: boolean;
+        };
+        /**
+         * LusciiLayoutPhase
+         * @description A horizontal phase column inside the program's mini-canvas.
+         */
+        LusciiLayoutPhase: {
+            /** Id */
+            id: string;
+            /** Ord */
+            ord: number;
+            /** Label */
+            label: string;
+        };
+        /**
+         * LusciiProgramData
+         * @description Full Luscii program payload, stored as JSONB in `luscii_program.data`.
+         *
+         *     Stub-mode rows are seeded from this shape; future live-mode rows are
+         *     upserted with the same shape. The orchestrator consumes it via the
+         *     `resolve_block` adapter method and regenerated TypeScript types.
+         */
+        LusciiProgramData: {
+            /**
+             * Id
+             * @description Luscii's program id. Mirrors the `luscii_program.id` PK and `pathway_block.config.program_id`.
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Version */
+            version: string;
+            /**
+             * Version Published At
+             * Format: date-time
+             */
+            version_published_at: string;
+            /**
+             * Ce Class
+             * @description Luscii Vitals' MDR Class. Stays IIa across all Luscii programs we'd surface.
+             * @default IIa
+             * @constant
+             */
+            ce_class: "IIa";
+            /**
+             * Is Two Way Messaging
+             * @default false
+             */
+            is_two_way_messaging: boolean;
+            /**
+             * Enrolled Count Org Wide
+             * @default 0
+             */
+            enrolled_count_org_wide: number;
+            /** Protocols */
+            protocols: components["schemas"]["LusciiProtocol"][];
+            /** Instruments */
+            instruments?: components["schemas"]["LusciiInstrument"][];
+            /** Alert Thresholds */
+            alert_thresholds?: components["schemas"]["LusciiAlertThreshold"][];
+            /** Care Network */
+            care_network?: string | null;
+            layout: components["schemas"]["LusciiLayout"];
+        };
+        /**
+         * LusciiProgramSummary
+         * @description Lightweight program row for the inspector picker.
+         */
+        LusciiProgramSummary: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Enrolled Count Org Wide
+             * @default 0
+             */
+            enrolled_count_org_wide: number;
+        };
+        /**
+         * LusciiProtocol
+         * @description A Luscii protocol — variant of a program with its own cadence.
+         */
+        LusciiProtocol: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Duration Weeks */
+            duration_weeks: number;
+            /** Reminder Cadence */
+            reminder_cadence: string;
+            /** Overdue Hours */
+            overdue_hours: number;
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
         };
         /** OrganisationCreate */
         OrganisationCreate: {
@@ -1098,7 +1335,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link";
+            semantics: "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -1125,6 +1362,23 @@ export interface components {
              * @default false
              */
             supports_branches: boolean;
+            /**
+             * Source
+             * @description Provenance of this catalogue entry. Native blocks live in our own code-side `BLOCK_TYPES` registry; external blocks are contributed by per-vendor catalogue extensions (Luscii first). The frontend palette groups by `source` then by `provider`.
+             * @default native
+             * @enum {string}
+             */
+            source: "native" | "external";
+            /**
+             * Provider
+             * @description Vendor identifier for external blocks (e.g. `luscii`). Null for native blocks. Combined with `kind`, identifies which per-provider React component renders the block on canvas / in the inspector.
+             */
+            provider?: string | null;
+            /**
+             * Kind
+             * @description Vendor-specific block kind for external blocks (e.g. `program`). Null for native blocks.
+             */
+            kind?: string | null;
         };
         /** PathwayCreate */
         PathwayCreate: {
@@ -3678,6 +3932,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_luscii_programs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiProgramSummary"][];
+                };
+            };
+        };
+    };
+    get_luscii_program: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiProgramData"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

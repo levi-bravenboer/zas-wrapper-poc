@@ -94,7 +94,11 @@
   },
   "dock": {
     "toolbarLabel": "Blok-palet",
-    "addLabel": "Voeg {{label}} toe"
+    "addLabel": "Voeg {{label}} toe",
+    "groupNative": "Standaard blokken",
+    "groupProvider": {
+      "luscii": "Luscii-programma's"
+    }
   },
   "drawer": {
     "title": "Blok bewerken",
@@ -215,6 +219,46 @@
       "contextValuePlaceholder": "Waarde",
       "contextRemove": "Verwijder koppeling",
       "addMapping": "Koppeling toevoegen"
+    },
+    "lusciiProgram": {
+      "program": "Luscii-programma",
+      "programPlaceholder": "Kies een programma",
+      "programLoading": "Programma's laden…",
+      "programError": "Kon programma's niet laden.",
+      "programEmpty": "Geen programma's beschikbaar.",
+      "protocol": "Protocol",
+      "protocolPlaceholder": "Kies een protocol",
+      "protocolLoading": "Programmadetails laden…",
+      "mode": "Modus",
+      "modePlaceholder": "Kies modus",
+      "modeOption": {
+        "blocking": "Blokkerend",
+        "fire_and_forget": "Vuren en vergeten"
+      },
+      "metadata": {
+        "version": "Versie",
+        "enrolledCount": "Ingeschreven patiënten",
+        "twoWay": "Twee-wegs berichten",
+        "twoWayYes": "Aan",
+        "twoWayNo": "Uit",
+        "instruments": "Instrumenten"
+      },
+      "idStrip": {
+        "ariaLabel": "Programma-identificatie",
+        "copy": "Kopieer programma-identificatie",
+        "copied": "Gekopieerd"
+      },
+      "contents": {
+        "heading": "Programma-inhoud",
+        "luscii_authored": "Drempelwaardes en cadans zijn onderdeel van het Luscii-programma — beheer ze in Luscii Builder.",
+        "instrumentsHeader": "Instrumenten",
+        "instrumentsEmpty": "Geen instrumenten in dit programma.",
+        "thresholdsHeader": "Alert-drempels",
+        "thresholdsEmpty": "Geen drempels gedefinieerd.",
+        "careNetworkHeader": "Zorgnetwerk",
+        "careNetworkEmpty": "Geen zorgnetwerk gespecificeerd."
+      },
+      "perPatientHint": "Patiëntspecifieke waarden (BSN, contactgegevens) worden bij inschrijving ingevuld — niet hier."
     },
     "edge": {
       "title": "Verbinding",

@@ -76,8 +76,8 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
       role="button"
       tabIndex={0}
       aria-label={`${name}, type ${typeLabel}`}
-      data-selected={isSelected ? 'true' : 'false'}
-      className="relative grid grid-cols-[4px_36px_1fr] grid-rows-[auto_auto] rounded-[6px] border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected=true]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-accent)_22%,transparent)]"
+      data-selected={isSelected || undefined}
+      className="relative grid grid-cols-[4px_36px_1fr] grid-rows-[auto_auto] rounded-[6px] border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-accent)_22%,transparent)]"
       style={containerStyle}
     >
       <div className="row-span-2 rounded-l-[5px]" style={railStyle} aria-hidden="true" />

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROTOTYPE — luscii-block-canvas v3</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style type="text/tailwindcss">
+  @theme {
+    --color-background: oklch(1 0 0);
+    --color-surface-1: oklch(0.985 0.003 175);
+    --color-surface-2: oklch(0.97 0.01 175);
+    --color-foreground: oklch(0.21 0.04 265);
+    --color-foreground-muted: oklch(0.5 0.02 265);
+    --color-muted-foreground: var(--color-foreground-muted);
+    --color-card: var(--color-background);
+    --color-card-foreground: var(--color-foreground);
+    --color-popover: var(--color-background);
+    --color-popover-foreground: var(--color-foreground);
+    --color-muted: var(--color-surface-2);
+    --color-primary: oklch(0.46 0.07 175);
+    --color-primary-hover: oklch(0.4 0.07 175);
+    --color-primary-pressed: oklch(0.34 0.06 175);
+    --color-primary-foreground: oklch(1 0 0);
+    --color-primary-soft: oklch(0.93 0.04 175);
+    --color-primary-subtle: oklch(0.97 0.01 175);
+    --color-accent-mint: oklch(0.78 0.08 175);
+    --color-destructive: oklch(0.6 0.22 30);
+    --color-destructive-foreground: oklch(1 0 0);
+    --color-warning: oklch(0.75 0.18 65);
+    --color-warning-foreground: oklch(0.21 0.04 265);
+    --color-success: oklch(0.55 0.1 175);
+    --color-success-foreground: oklch(1 0 0);
+    --color-border: oklch(0.91 0.005 265);
+    --color-border-strong: oklch(0.82 0.01 265);
+    --color-input: var(--color-border);
+    --color-ring: var(--color-primary);
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --shadow-xs: 0 1px 0 oklch(0.21 0.04 265 / 0.04);
+    --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+    --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+    --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
+    --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.8125rem;
+    --font-size-base: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --leading-tight: 1.25;
+    --leading-snug: 1.4;
+    --leading-normal: 1.55;
+    --tracking-tight: -0.011em;
+  }
+  :root {
+    --glass-panel: rgba(255, 255, 255, 0.55);
+    --glass-panel-strong: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.7);
+    --glass-blur: 20px;
+    --glass-blur-strong: 24px;
+    --glass-saturate: 180%;
+    --shadow-glass: 0 12px 32px rgba(38, 107, 94, 0.08), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+    --gradient-aurora:
+      radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+      linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+    --ph-1-ink: #08453c; --ph-1-soft: #cfede8;
+    --ph-2-ink: #5b21b6; --ph-2-soft: #ede9fe;
+    --ph-3-ink: #1d4ed8; --ph-3-soft: #dbeafe;
+    --ph-4-ink: #92400e; --ph-4-soft: #fef3c7;
+    --lane-patient: #266b5e;
+    --lane-caregiver: #2563eb;
+    --lane-system: #7c3aed;
+    --lane-external: #b45309;
+    --hairline: rgba(16, 24, 40, 0.06);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-foreground);
+    background: var(--gradient-aurora);
+    min-height: 100vh;
+    letter-spacing: var(--tracking-tight);
+  }
+  .glass {
+    background: var(--glass-panel);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+  }
+  .canvas-dots {
+    background-image: radial-gradient(circle, rgba(11,26,23,0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .phase-col { position: absolute; top: 0; bottom: 0; border-right: 1px dashed rgba(0,0,0,0.05); pointer-events: none; }
+  .phase-col::before { content: ""; position: absolute; inset: 0; background: var(--ph-soft); opacity: 0.28; }
+  .lane-row { position: absolute; left: 0; right: 0; border-top: 1px solid; border-top-color: color-mix(in srgb, var(--lane-accent) 12%, var(--hairline)); background: color-mix(in srgb, var(--lane-accent) 4%, transparent); pointer-events: none; }
+  .phase-pill {
+    position: absolute; top: 14px; height: 26px;
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 999px; background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,0,0,0.06); padding: 0 10px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 1px 2px rgba(0,0,0,0.05);
+    font-size: 11.5px; font-weight: 600; letter-spacing: -0.011em;
+  }
+  .phase-pill .num { display: inline-flex; width: 16px; height: 16px; align-items: center; justify-content: center; border-radius: 999px; font-size: 10px; font-weight: 700; background: var(--ph-soft); color: var(--ph-ink); font-variant-numeric: tabular-nums; }
+  .phase-pill .count { border-radius: 999px; background: rgba(0,0,0,0.05); padding: 1px 6px; font-size: 10.5px; color: var(--color-foreground-muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+  .lane-pill {
+    position: absolute; left: 12px; height: 28px;
+    display: inline-flex; align-items: center; gap: 8px;
+    border-radius: 999px; background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid; border-color: color-mix(in srgb, var(--lane-accent) 24%, var(--hairline));
+    padding: 0 12px; box-shadow: var(--shadow-xs);
+    font-size: 12px; font-weight: 600;
+  }
+  .lane-pill .icon-box { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 3px; background: color-mix(in srgb, var(--lane-accent) 14%, transparent); color: var(--lane-accent); }
+  .lane-pill .count { font-size: 11px; font-variant-numeric: tabular-nums; font-weight: 500; color: var(--color-foreground-muted); }
+
+  /* Native block 240×64 — unchanged from canvas */
+  .block-node {
+    position: absolute; width: 240px; height: 64px;
+    display: grid; grid-template-columns: 4px 36px 1fr; grid-template-rows: auto auto;
+    border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-card); box-shadow: var(--shadow-sm);
+    transition: box-shadow 120ms, border-color 120ms;
+  }
+  .block-node:hover { border-color: var(--color-border-strong); }
+  .block-node[data-selected="true"] { border-color: var(--lane-accent); border-width: 1.5px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--lane-accent) 22%, transparent); }
+  .block-node .rail { grid-row: 1 / -1; background: var(--lane-accent); border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+  .block-node .icon-box { grid-row: 1 / -1; margin: auto 0 auto 4px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 3px; background: color-mix(in srgb, var(--lane-accent) 12%, var(--color-card)); color: var(--lane-accent); }
+  .block-node .content { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 0 0; min-width: 0; }
+  .block-node .name { font-size: 13px; font-weight: 600; letter-spacing: -0.011em; color: var(--color-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .block-node .summary { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 500; color: var(--color-foreground-muted); }
+  .block-node .summary .dot { width: 2.5px; height: 2.5px; border-radius: 999px; background: currentColor; opacity: 0.45; }
+  .day-chip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 4px; background: var(--color-surface-2); border: 1px solid var(--color-border); font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--color-foreground); }
+  .entry-badge { position: absolute; top: -1px; left: -1px; z-index: 5; padding: 3px 7px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: white; background: var(--color-primary); border-top-left-radius: 6px; border-bottom-right-radius: 6px; }
+
+  /* Rich Luscii block — 300×140, atomic interaction, in-canvas program visualization */
+  .block-luscii {
+    position: absolute;
+    width: 300px;
+    height: 140px;
+    display: grid;
+    grid-template-columns: 4px 1fr;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: linear-gradient(180deg, var(--color-card) 0%, color-mix(in srgb, var(--lane-accent) 3%, var(--color-card)) 100%);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 120ms, border-color 120ms;
+    overflow: hidden;
+  }
+  .block-luscii:hover { border-color: var(--color-border-strong); }
+  .block-luscii[data-selected="true"] {
+    border-color: var(--lane-accent);
+    border-width: 1.5px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--lane-accent) 22%, transparent), var(--shadow-md);
+  }
+  .block-luscii .rail {
+    background: linear-gradient(180deg, var(--lane-accent) 0%, color-mix(in srgb, var(--lane-accent) 70%, black) 100%);
+    border-top-left-radius: 7px;
+    border-bottom-left-radius: 7px;
+  }
+  .block-luscii .inner {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .block-luscii .header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+  .block-luscii .header .icon-box {
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--lane-accent) 14%, var(--color-card));
+    color: var(--lane-accent);
+    border: 1px solid color-mix(in srgb, var(--lane-accent) 24%, transparent);
+  }
+  .block-luscii .title-stack { min-width: 0; flex: 1; }
+  .block-luscii .name {
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+    color: var(--color-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .block-luscii .sub {
+    margin-top: 1px;
+    font-size: 11px;
+    color: var(--color-foreground-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Instruments row — mini chips with icon */
+  .block-luscii .instruments {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  .mini-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--lane-accent) 6%, var(--color-surface-1));
+    border: 1px solid color-mix(in srgb, var(--lane-accent) 18%, var(--color-border));
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--color-foreground);
+    white-space: nowrap;
+  }
+  .mini-chip svg, .mini-chip i { color: var(--lane-accent); }
+  /* Weekly cadence strip — visual program duration */
+  .week-strip {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+    padding: 0 1px;
+  }
+  .week-cell {
+    flex: 1;
+    height: 4px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--lane-accent) 22%, var(--color-surface-2));
+  }
+  .week-cell.tall {
+    background: var(--lane-accent);
+    height: 10px;
+  }
+  .week-cell.mid {
+    background: color-mix(in srgb, var(--lane-accent) 55%, transparent);
+    height: 7px;
+  }
+  /* Footer meta row */
+  .block-luscii .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--color-foreground-muted);
+  }
+  .meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    font-size: 9.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-foreground-muted);
+  }
+  /* Luscii provider corner badge — top-right */
+  .provider-badge {
+    position: absolute;
+    top: -1px; right: -1px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: white;
+    background: oklch(0.45 0.18 250);
+    border-top-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+  }
+  .edge-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+  .edge path { fill: none; stroke: rgba(11,26,23,0.35); stroke-width: 1.5; }
+  .edge[data-highlighted="true"] path { stroke: var(--color-primary); stroke-width: 2; }
+  .edge .arrow { fill: rgba(11,26,23,0.45); }
+</style>
+</head>
+
+<body class="antialiased">
+<!--
+  MOCK DATA — Rich Luscii block visualization (v3)
+  Interaction: atomic (single click, single connection point) — same as v2.
+  Visualization: in-canvas box renders the Luscii program — instruments,
+  weekly cadence strip, protocol+mode, version+CE marking.
+  Native blocks unchanged (240×64). Luscii blocks expand to 300×140 to fit
+  the program-internal preview. Block top centered in lane: y_in_lane=(180-140)/2=20.
+  Hartfalen Luscii (Pre-op × External): x=546, y=408+20=428.
+  Rugrevalidatie Luscii (Revalidatie × External): x=926, y=428.
+-->
+
+<div class="min-h-screen flex">
+  <aside class="w-60 shrink-0 border-r border-[--color-border] glass">
+    <div class="p-4 border-b border-[--color-border]">
+      <div class="text-[--color-primary] font-semibold tracking-tight">ZAS Pathway</div>
+      <div class="text-xs text-[--color-foreground-muted] mt-0.5">Builder</div>
+    </div>
+    <nav class="p-2 space-y-1 text-sm">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-[--radius-md] text-[--color-foreground-muted]" href="#"><i data-lucide="home" class="w-4 h-4"></i> Home</a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-[--radius-md] bg-[--color-primary-soft] text-[--color-primary]" href="#"><i data-lucide="git-branch" class="w-4 h-4"></i> Pathways</a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-[--radius-md] text-[--color-foreground-muted]" href="#"><i data-lucide="users" class="w-4 h-4"></i> Patients</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 min-w-0 flex flex-col">
+    <header class="h-16 border-b border-[--color-border] flex items-center justify-between px-6 glass">
+      <div class="flex items-center gap-3 text-sm">
+        <a href="#" class="text-[--color-foreground-muted]">Pathways</a>
+        <span class="text-[--color-foreground-muted]">/</span>
+        <span class="font-semibold tracking-tight">Rugrevalidatie post-OK</span>
+        <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[--radius-xs] text-[10px] font-semibold tracking-wide uppercase bg-[--color-surface-2] text-[--color-foreground-muted]">v3 · draft</span>
+        <span class="ml-2 inline-flex items-center gap-1 text-[12px] text-[--color-success]"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Saved</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="inline-flex items-center gap-2 h-9 px-3 rounded-[--radius-md] border border-[--color-border] text-sm"><i data-lucide="history" class="w-4 h-4"></i> History</button>
+        <button class="inline-flex items-center gap-2 h-9 px-3 rounded-[--radius-md] bg-[--color-primary] text-[--color-primary-foreground] text-sm font-medium"><i data-lucide="upload-cloud" class="w-4 h-4"></i> Publish</button>
+      </div>
+    </header>
+
+    <div class="h-11 border-b border-[--color-border] flex items-center px-6 gap-3 text-sm glass">
+      <span class="text-[--color-foreground-muted]">All phases</span>
+      <span class="ml-auto flex items-center gap-3 text-xs text-[--color-foreground-muted]">
+        <span class="flex items-center gap-1"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i> 100%</span>
+        <span class="flex items-center gap-1"><i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i> Fit</span>
+      </span>
+    </div>
+
+    <div class="flex-1 flex min-h-0">
+      <aside class="w-56 shrink-0 border-r border-[--color-border] glass p-3 overflow-y-auto">
+        <div class="text-[10px] font-semibold tracking-wider uppercase text-[--color-foreground-muted] mb-2 px-1">Native</div>
+        <div class="grid grid-cols-2 gap-1.5 mb-4">
+          <button class="flex flex-col items-center gap-1 p-2 rounded-[--radius-md] border border-[--color-border] text-[10.5px]"><i data-lucide="calendar" class="w-4 h-4 text-[--color-primary]"></i> Appointment</button>
+          <button class="flex flex-col items-center gap-1 p-2 rounded-[--radius-md] border border-[--color-border] text-[10.5px]"><i data-lucide="check-square" class="w-4 h-4 text-[--color-primary]"></i> Task</button>
+          <button class="flex flex-col items-center gap-1 p-2 rounded-[--radius-md] border border-[--color-border] text-[10.5px]"><i data-lucide="mail" class="w-4 h-4 text-[--color-primary]"></i> Message</button>
+          <button class="flex flex-col items-center gap-1 p-2 rounded-[--radius-md] border border-[--color-border] text-[10.5px]"><i data-lucide="clipboard-list" class="w-4 h-4 text-[--color-primary]"></i> Form</button>
+          <button class="flex flex-col items-center gap-1 p-2 rounded-[--radius-md] border border-[--color-border] text-[10.5px]"><i data-lucide="git-merge" class="w-4 h-4 text-[--color-primary]"></i> Decision</button>
+          <button class="flex flex-col items-center gap-1 p-2 rounded-[--radius-md] border border-[--color-border] text-[10.5px]"><i data-lucide="flag" class="w-4 h-4 text-[--color-primary]"></i> Milestone</button>
+        </div>
+        <div class="text-[10px] font-semibold tracking-wider uppercase text-[--color-foreground-muted] mb-2 px-1 flex items-center gap-1.5">
+          External <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold text-white" style="background: oklch(0.45 0.18 250)">Luscii</span>
+        </div>
+        <button class="w-full flex items-center gap-2 p-2.5 rounded-[--radius-md] border border-[--color-border] text-left">
+          <i data-lucide="activity" class="w-4 h-4 shrink-0" style="color: oklch(0.45 0.18 250)"></i>
+          <div class="min-w-0">
+            <div class="text-xs font-medium leading-snug">Luscii Program</div>
+            <div class="text-[10px] text-[--color-foreground-muted]">Certified care path</div>
+          </div>
+        </button>
+        <div class="px-1 pt-2 text-[10px] text-[--color-foreground-muted] leading-snug">
+          Drops only in the <span class="font-semibold" style="color: var(--lane-external)">External</span> lane.
+        </div>
+      </aside>
+
+      <section class="flex-1 min-w-0 overflow-auto canvas-dots relative">
+        <div class="relative" style="width: 1236px; height: 588px;">
+
+          <div class="phase-col" style="left: 96px;  width: 380px; --ph-soft: var(--ph-1-soft); --ph-ink: var(--ph-1-ink);"></div>
+          <div class="phase-col" style="left: 476px; width: 380px; --ph-soft: var(--ph-2-soft); --ph-ink: var(--ph-2-ink);"></div>
+          <div class="phase-col" style="left: 856px; width: 380px; --ph-soft: var(--ph-3-soft); --ph-ink: var(--ph-3-ink);"></div>
+
+          <div class="lane-row" style="top: 48px;  height: 180px; --lane-accent: var(--lane-patient);"></div>
+          <div class="lane-row" style="top: 228px; height: 180px; --lane-accent: var(--lane-caregiver);"></div>
+          <div class="lane-row" style="top: 408px; height: 180px; --lane-accent: var(--lane-external);"></div>
+
+          <div class="phase-pill" style="left: 110px; --ph-soft: var(--ph-1-soft); --ph-ink: var(--ph-1-ink);"><span class="num">1</span> Onboarding <span class="count">1</span></div>
+          <div class="phase-pill" style="left: 490px; --ph-soft: var(--ph-2-soft); --ph-ink: var(--ph-2-ink);"><span class="num">2</span> Pre-op <span class="count">2</span></div>
+          <div class="phase-pill" style="left: 870px; --ph-soft: var(--ph-3-soft); --ph-ink: var(--ph-3-ink);"><span class="num">3</span> Revalidatie <span class="count">3</span></div>
+
+          <div class="lane-pill" style="top: 56px;  --lane-accent: var(--lane-patient);"><span class="icon-box"><i data-lucide="user" class="w-3 h-3"></i></span> Patient <span class="count">3</span></div>
+          <div class="lane-pill" style="top: 236px; --lane-accent: var(--lane-caregiver);"><span class="icon-box"><i data-lucide="stethoscope" class="w-3 h-3"></i></span> Care team <span class="count">1</span></div>
+          <div class="lane-pill" style="top: 416px; --lane-accent: var(--lane-external);"><span class="icon-box"><i data-lucide="boxes" class="w-3 h-3"></i></span> External <span class="count">2</span></div>
+
+          <svg class="edge-layer" width="1236" height="588" viewBox="0 0 1236 588">
+            <defs>
+              <marker id="arrow" viewBox="0 -4 8 8" refX="6" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,-4 L8,0 L0,4 z" class="arrow"/>
+              </marker>
+            </defs>
+            <!-- Welkomstmail (406,106) → Intake-vragenlijst (546,106) -->
+            <g class="edge"><path d="M 406 106 C 466 106, 486 106, 546 106" marker-end="url(#arrow)"/></g>
+            <!-- Intake-vragenlijst (786,106) → Hartfalen Luscii (546,498) — block center 546+0,428+70 = source on right of vragenlijst, target on left of luscii box -->
+            <g class="edge" data-highlighted="true"><path d="M 786 106 C 906 106, 426 498, 546 498" marker-end="url(#arrow)"/></g>
+            <!-- Hartfalen Luscii (846,498) → Rugrevalidatie Luscii (926,498) -->
+            <g class="edge"><path d="M 846 498 C 886 498, 886 498, 926 498" marker-end="url(#arrow)"/></g>
+            <!-- Hartfalen Luscii (846,498) → Review alerts (926,286) -->
+            <g class="edge"><path d="M 846 498 C 906 498, 866 286, 926 286" marker-end="url(#arrow)"/></g>
+            <!-- Rugrevalidatie Luscii (1226,498) → Monitoring afgerond (1166,106) -->
+            <g class="edge"><path d="M 1226 498 C 1276 498, 1276 106, 1166 106" marker-end="url(#arrow)"/></g>
+          </svg>
+
+          <!-- Welkomstmail (entry) -->
+          <div class="block-node relative" style="left: 166px; top: 74px; --lane-accent: var(--lane-patient);">
+            <div class="rail"></div>
+            <div class="icon-box"><i data-lucide="mail" class="w-4 h-4"></i></div>
+            <div class="content">
+              <div class="name">Welkomstmail</div>
+              <div class="summary"><span>e-mail · NL</span><span class="dot"></span><span class="day-chip">D0</span></div>
+            </div>
+            <span class="entry-badge">START</span>
+          </div>
+
+          <!-- Intake-vragenlijst -->
+          <div class="block-node" style="left: 546px; top: 74px; --lane-accent: var(--lane-patient);">
+            <div class="rail"></div>
+            <div class="icon-box"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
+            <div class="content">
+              <div class="name">Intake-vragenlijst</div>
+              <div class="summary"><span>8 vragen</span><span class="dot"></span><span class="day-chip">D1</span></div>
+            </div>
+          </div>
+
+          <!-- RICH LUSCII BLOCK — Hartfalen thuismonitoring (SELECTED) -->
+          <div class="block-luscii relative" data-selected="true" style="left: 546px; top: 428px; --lane-accent: var(--lane-external);">
+            <div class="rail"></div>
+            <div class="inner">
+              <div class="header">
+                <span class="icon-box"><i data-lucide="activity" class="w-4 h-4"></i></span>
+                <div class="title-stack">
+                  <div class="name">Hartfalen thuismonitoring</div>
+                  <div class="sub">Standaard 12 weken · Blocking · pin v4.2</div>
+                </div>
+              </div>
+              <div class="instruments">
+                <span class="mini-chip"><i data-lucide="heart-pulse" class="w-3 h-3"></i> BP</span>
+                <span class="mini-chip"><i data-lucide="scale" class="w-3 h-3"></i> Gewicht</span>
+                <span class="mini-chip"><i data-lucide="droplets" class="w-3 h-3"></i> SpO₂</span>
+                <span class="mini-chip"><i data-lucide="clipboard-list" class="w-3 h-3"></i> KCCQ</span>
+              </div>
+              <div class="week-strip" aria-label="12 week measurement cadence">
+                <span class="week-cell tall"></span>
+                <span class="week-cell tall"></span>
+                <span class="week-cell tall"></span>
+                <span class="week-cell tall"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell"></span>
+                <span class="week-cell"></span>
+                <span class="week-cell"></span>
+                <span class="week-cell"></span>
+              </div>
+              <div class="footer-row">
+                <div class="flex items-center gap-1.5">
+                  <span class="meta-pill"><i data-lucide="shield-check" class="w-2.5 h-2.5"></i> CE IIa</span>
+                  <span class="meta-pill">3 thresholds</span>
+                </div>
+                <span class="text-[10px]" style="color: var(--lane-accent)">12w cadence</span>
+              </div>
+            </div>
+            <span class="provider-badge">Luscii</span>
+          </div>
+
+          <!-- Review Luscii alerts -->
+          <div class="block-node" style="left: 926px; top: 254px; --lane-accent: var(--lane-caregiver);">
+            <div class="rail"></div>
+            <div class="icon-box"><i data-lucide="check-square" class="w-4 h-4"></i></div>
+            <div class="content">
+              <div class="name">Review Luscii alerts</div>
+              <div class="summary"><span>op alert ≥ medium</span><span class="dot"></span><span class="day-chip">async</span></div>
+            </div>
+          </div>
+
+          <!-- RICH LUSCII BLOCK — Rugrevalidatie monitoring -->
+          <div class="block-luscii relative" style="left: 926px; top: 428px; --lane-accent: var(--lane-external);">
+            <div class="rail"></div>
+            <div class="inner">
+              <div class="header">
+                <span class="icon-box"><i data-lucide="dumbbell" class="w-4 h-4"></i></span>
+                <div class="title-stack">
+                  <div class="name">Rugrevalidatie monitoring</div>
+                  <div class="sub">Pilot 8 wk · Fire-and-forget · latest</div>
+                </div>
+              </div>
+              <div class="instruments">
+                <span class="mini-chip"><i data-lucide="zap" class="w-3 h-3"></i> NRS pijn</span>
+                <span class="mini-chip"><i data-lucide="footprints" class="w-3 h-3"></i> Mobiliteit</span>
+                <span class="mini-chip"><i data-lucide="clipboard-list" class="w-3 h-3"></i> ODI</span>
+                <span class="mini-chip"><i data-lucide="play-circle" class="w-3 h-3"></i> Oefening</span>
+              </div>
+              <div class="week-strip" aria-label="8 week cadence">
+                <span class="week-cell tall"></span>
+                <span class="week-cell tall"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell mid"></span>
+                <span class="week-cell"></span>
+                <span class="week-cell"></span>
+                <span class="week-cell"></span>
+              </div>
+              <div class="footer-row">
+                <div class="flex items-center gap-1.5">
+                  <span class="meta-pill" style="background: var(--color-warning); color: var(--color-warning-foreground); border-color: transparent"><i data-lucide="flask-conical" class="w-2.5 h-2.5"></i> Beta</span>
+                  <span class="meta-pill">1 threshold</span>
+                </div>
+                <span class="text-[10px]" style="color: var(--lane-accent)">8w cadence</span>
+              </div>
+            </div>
+            <span class="provider-badge">Luscii</span>
+          </div>
+
+          <!-- Monitoring afgerond -->
+          <div class="block-node" style="left: 926px; top: 74px; --lane-accent: var(--lane-patient);">
+            <div class="rail"></div>
+            <div class="icon-box"><i data-lucide="flag" class="w-4 h-4"></i></div>
+            <div class="content">
+              <div class="name">Monitoring afgerond</div>
+              <div class="summary"><span>milestone</span><span class="dot"></span><span class="day-chip">end</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="absolute bottom-4 right-4 glass rounded-[--radius-md] p-2 shadow-[--shadow-md]">
+          <div class="text-[10px] uppercase tracking-wider text-[--color-foreground-muted] font-semibold mb-1 px-1">Navigator</div>
+          <div class="w-44 h-24 rounded border border-[--color-border] bg-white/40 relative overflow-hidden">
+            <div class="absolute top-0 bottom-0" style="left: 10%; width: 30%; background: var(--ph-1-soft); opacity: 0.4"></div>
+            <div class="absolute top-0 bottom-0" style="left: 40%; width: 30%; background: var(--ph-2-soft); opacity: 0.4"></div>
+            <div class="absolute top-0 bottom-0" style="left: 70%; width: 30%; background: var(--ph-3-soft); opacity: 0.4"></div>
+            <div class="absolute" style="left: 12%; top: 18%; width: 8%; height: 10%; background: var(--lane-patient); border-radius: 1px"></div>
+            <div class="absolute" style="left: 44%; top: 18%; width: 8%; height: 10%; background: var(--lane-patient); border-radius: 1px"></div>
+            <div class="absolute" style="left: 44%; top: 70%; width: 14%; height: 20%; background: var(--lane-external); border-radius: 1px; outline: 1.5px solid var(--color-primary)"></div>
+            <div class="absolute" style="left: 74%; top: 44%; width: 8%; height: 10%; background: var(--lane-caregiver); border-radius: 1px"></div>
+            <div class="absolute" style="left: 74%; top: 70%; width: 14%; height: 20%; background: var(--lane-external); border-radius: 1px"></div>
+            <div class="absolute" style="left: 74%; top: 18%; width: 8%; height: 10%; background: var(--lane-patient); border-radius: 1px"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+  if (window.lucide) window.lucide.createIcons();
+</script>
+</body>
+</html>

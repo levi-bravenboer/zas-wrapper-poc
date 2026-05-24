@@ -73,7 +73,7 @@ src/
     components/   module-internal components
     __tests__/    integration tests for module flows
   components/
-    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Table, Tabs, Textarea, Toast, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
+    ui/         shadcn primitives — closed set: Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Command, Dialog, DropdownMenu, Form, Icon, Input, Label, Select, Separator, Sheet, Sidebar, Skeleton, Switch, Table, Tabs, Textarea, Toaster, Tooltip. Files are lowercase / kebab (`button.tsx`, `dropdown-menu.tsx`) per shadcn CLI convention; exports remain PascalCase. Adding outside this set requires an OpenSpec change.
     layout/     cross-route chrome — AppLayout, Sidebar, navItems, SectionPlaceholder
     app/        app-wide composed blocks
   hooks/        cross-feature hooks only
@@ -554,3 +554,16 @@ Authoring surface for `F3` care pathways. Module: `src/modules/pathway/`.
 ### i18n
 
 - Dutch only at this tier — keys under `pathway.*` in `lib/i18n/locales/nl/pathway.json`. Sidebar entry: `nav.pathways`. New inspectors register copy under `pathway.inspector.<semantics>.*`.
+
+### Block dimensions (variable-size blocks)
+
+- Native blocks render at `BLOCK_WIDTH × BLOCK_HEIGHT` (240×64) from `canvasLayout.ts`. External-provider blocks (e.g. `luscii.program`, 360×200 → 540×300) compute their own size per-instance.
+- Extension point: `src/modules/pathway/utils/blockDimensions.ts` exports `getBlockDimensions(block, blockType)`. New variable-size providers add a branch here keyed on `blockType.source === 'external' && blockType.provider === '<name>'`, returning their per-instance `{ width, height }`. The dispatch must return the native default otherwise — never break the bare-code path.
+- Per-provider clamp computers (e.g. `computeLusciiProgramDimensionsFromCounts`) live next to the provider node component under `components/canvas/nodes/external/<provider>/`. Keep them pure and counts-based so unit tests don't need full payload fixtures.
+- The router (`BlockNodeRouter`) reads the dotted `block.type` and forwards to the provider-specific node component; the size dispatch + the router stay in lockstep.
+
+### External-block providers (Luscii, future)
+
+- Provider adapter modules live at `components/canvas/nodes/external/<provider>/`. Each adapter ships: `types.ts` (re-exports of generated schema), `api.ts` (typed wrappers over the generated client), `keys.ts` (TanStack key namespace prefixed by the provider id), `<Provider>BlockNode.tsx` (xyflow node), plus thumbnail / header sub-components.
+- Provenance metadata on `PathwayBlockType` (`source`, `provider`, `kind`) flows through `BuilderDock.groupCatalogueBySource` for palette grouping and through `BlockNodeRouter` for component dispatch — never hard-code the dotted type code outside the adapter directory.
+- Vendor identifier constants (e.g. `LUSCII_PROVIDER`, `LUSCII_PROGRAM_KIND`, `LUSCII_PROGRAM_BLOCK_TYPE`) live next to the adapter; the backend mirror lives at `apps/backend/app/adapters/<provider>/constants.py`. Wire all routes, catalogue entries, tests, and i18n group labels through those constants — magic strings are a regression.

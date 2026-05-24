@@ -2413,6 +2413,83 @@
           }
         }
       }
+    },
+    "/luscii/programs": {
+      "get": {
+        "tags": [
+          "luscii"
+        ],
+        "summary": "List Luscii Programs",
+        "operationId": "list_luscii_programs",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LusciiProgramSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Luscii Programs"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/luscii/programs/{program_id}": {
+      "get": {
+        "tags": [
+          "luscii"
+        ],
+        "summary": "Get Luscii Program",
+        "operationId": "get_luscii_program",
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LusciiProgramData"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2696,6 +2773,454 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "LusciiAlertThreshold": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Label"
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Rule"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "rule"
+        ],
+        "title": "LusciiAlertThreshold",
+        "description": "A clinician-facing alert threshold defined by Luscii. Read-only here."
+      },
+      "LusciiInstrument": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Label"
+          },
+          "cadence": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Cadence"
+          },
+          "icon": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Icon",
+            "description": "Lucide icon name (kebab-case)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "cadence",
+          "icon"
+        ],
+        "title": "LusciiInstrument",
+        "description": "A measurement / questionnaire instrument inside the program."
+      },
+      "LusciiLayout": {
+        "properties": {
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiLayoutPhase"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Phases"
+          },
+          "lanes": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiLayoutLane"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Lanes"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiLayoutNode"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiLayoutEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phases",
+          "lanes"
+        ],
+        "title": "LusciiLayout"
+      },
+      "LusciiLayoutEdge": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source"
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Target"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "target"
+        ],
+        "title": "LusciiLayoutEdge",
+        "description": "A directed connector between two layout nodes."
+      },
+      "LusciiLayoutLane": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "patient",
+              "caregiver",
+              "external",
+              "system"
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ord",
+          "kind"
+        ],
+        "title": "LusciiLayoutLane",
+        "description": "A horizontal lane row inside the program's mini-canvas."
+      },
+      "LusciiLayoutNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Lane Id"
+          },
+          "x": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Y"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Label"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "appointment",
+              "task",
+              "message",
+              "form",
+              "questionnaire",
+              "measurement",
+              "decision",
+              "milestone",
+              "education"
+            ],
+            "title": "Type"
+          },
+          "timing_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Label",
+            "description": "Short human label like 'D0' / 'W1-12 \u00b7 1\u00d7/dag'. Shown next to the node in the large block rendering."
+          },
+          "is_entry": {
+            "type": "boolean",
+            "title": "Is Entry",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "x",
+          "y",
+          "label",
+          "type"
+        ],
+        "title": "LusciiLayoutNode",
+        "description": "A node inside the program's mini-canvas. Coordinate model mirrors\n`PathwayBlock`: cell = (phase_id, lane_id), intra-cell = (x, y)."
+      },
+      "LusciiLayoutPhase": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "ord": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ord"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ord",
+          "label"
+        ],
+        "title": "LusciiLayoutPhase",
+        "description": "A horizontal phase column inside the program's mini-canvas."
+      },
+      "LusciiProgramData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id",
+            "description": "Luscii's program id. Mirrors the `luscii_program.id` PK and `pathway_block.config.program_id`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Version"
+          },
+          "version_published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Version Published At"
+          },
+          "ce_class": {
+            "type": "string",
+            "const": "IIa",
+            "title": "Ce Class",
+            "description": "Luscii Vitals' MDR Class. Stays IIa across all Luscii programs we'd surface.",
+            "default": "IIa"
+          },
+          "is_two_way_messaging": {
+            "type": "boolean",
+            "title": "Is Two Way Messaging",
+            "default": false
+          },
+          "enrolled_count_org_wide": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Enrolled Count Org Wide",
+            "default": 0
+          },
+          "protocols": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiProtocol"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Protocols"
+          },
+          "instruments": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiInstrument"
+            },
+            "type": "array",
+            "title": "Instruments"
+          },
+          "alert_thresholds": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiAlertThreshold"
+            },
+            "type": "array",
+            "title": "Alert Thresholds"
+          },
+          "care_network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Care Network"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/LusciiLayout"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "version_published_at",
+          "protocols",
+          "layout"
+        ],
+        "title": "LusciiProgramData",
+        "description": "Full Luscii program payload, stored as JSONB in `luscii_program.data`.\n\nStub-mode rows are seeded from this shape; future live-mode rows are\nupserted with the same shape. The orchestrator consumes it via the\n`resolve_block` adapter method and regenerated TypeScript types."
+      },
+      "LusciiProgramSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Version"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "enrolled_count_org_wide": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Enrolled Count Org Wide",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version"
+        ],
+        "title": "LusciiProgramSummary",
+        "description": "Lightweight program row for the inspector picker."
+      },
+      "LusciiProtocol": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "duration_weeks": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Weeks"
+          },
+          "reminder_cadence": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Reminder Cadence"
+          },
+          "overdue_hours": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Overdue Hours"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "duration_weeks",
+          "reminder_cadence",
+          "overdue_hours"
+        ],
+        "title": "LusciiProtocol",
+        "description": "A Luscii protocol \u2014 variant of a program with its own cadence."
       },
       "OrganisationCreate": {
         "properties": {
@@ -3534,7 +4059,8 @@
               "decision",
               "milestone",
               "wait",
-              "pathway_link"
+              "pathway_link",
+              "external_program"
             ],
             "title": "Semantics",
             "description": "Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching."
@@ -3569,6 +4095,40 @@
             "type": "boolean",
             "title": "Supports Branches",
             "default": false
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "native",
+              "external"
+            ],
+            "title": "Source",
+            "description": "Provenance of this catalogue entry. Native blocks live in our own code-side `BLOCK_TYPES` registry; external blocks are contributed by per-vendor catalogue extensions (Luscii first). The frontend palette groups by `source` then by `provider`.",
+            "default": "native"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider",
+            "description": "Vendor identifier for external blocks (e.g. `luscii`). Null for native blocks. Combined with `kind`, identifies which per-provider React component renders the block on canvas / in the inspector."
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind",
+            "description": "Vendor-specific block kind for external blocks (e.g. `program`). Null for native blocks."
           }
         },
         "type": "object",
