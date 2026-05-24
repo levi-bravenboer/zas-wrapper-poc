@@ -2,7 +2,6 @@ import {
   Building2,
   HeartPulse,
   Home,
-  Inbox,
   Settings,
   Users,
   UsersRound,
@@ -44,7 +43,6 @@ export const navGroups: readonly NavGroup[] = [
     items: [
       { to: '/', labelKey: 'nav:dashboard', icon: Home, order: 10 },
       { to: '/patients', labelKey: 'nav:patients', icon: HeartPulse, order: 20 },
-      { to: '/inbox', labelKey: 'caregiver-shell:nav.inbox', icon: Inbox, order: 30 },
       { to: '/pathways', labelKey: 'nav:pathways', icon: Workflow, order: 40 },
     ],
   },
