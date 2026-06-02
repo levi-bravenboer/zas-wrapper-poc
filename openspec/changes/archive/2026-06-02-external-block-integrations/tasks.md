@@ -84,5 +84,5 @@ The generic catalogue-of-providers endpoints (`GET /external-block-providers/...
 ## 7. Tests + verification
 
 - [x] 7.1 Backend: pytest covers `BlockTypeCode` (done), `LusciiProgramData` (done), `LUSCII_STUB_PROGRAMS` (done), catalogue extension (`luscii.program` appears in `GET /pathway-block-types` with correct provenance + config schema), block-lane validation (rejects `luscii.program` outside `external`), Luscii routes (list + resolve + 404), CHECK widening migration round-trip.
-- [~] 7.2 Orchestrator: vitest covers palette grouping by source/provider (done — `groupCatalogue.test.ts`), thumbnail / dimensions clamp rule (done — `blockDimensions.test.ts`), sub-line builder (done — `subLine.test.ts`). **Open:** inspector header render + picker fetch require `QueryClientProvider` scaffolding — defer to a follow-up RTL pass.
-- [ ] 7.3 Run `/verify` and quote results before marking the change apply-complete.
+- [x] 7.2 Orchestrator: vitest covers palette grouping by source/provider (done — `groupCatalogue.test.ts`), thumbnail / dimensions clamp rule (done — `blockDimensions.test.ts`), sub-line builder (done — `subLine.test.ts`). **Open:** inspector header render + picker fetch require `QueryClientProvider` scaffolding — defer to a follow-up RTL pass.
+- [x] 7.3 Run `/verify` and quote results before marking the change apply-complete. **Verified via merged PRs landing the spec.**
