@@ -6,12 +6,21 @@ middleware, and the MDR boundary at one place. This is the seed route the
 mobile scaffold polls on boot.
 """
 
+from typing import Literal
+
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/mobile", tags=["mobile"])
 
 
-@router.get("/health")
-def health() -> dict[str, str]:
+class MobileHealthResponse(BaseModel):
+    """Stable shape for the mobile-app liveness probe."""
+
+    status: Literal["ok"] = "ok"
+
+
+@router.get("/health", response_model=MobileHealthResponse)
+def health() -> MobileHealthResponse:
     """Return a simple liveness probe payload."""
-    return {"status": "ok"}
+    return MobileHealthResponse()
