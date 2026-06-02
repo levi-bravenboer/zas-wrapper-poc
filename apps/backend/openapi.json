@@ -2490,6 +2490,32 @@
           }
         }
       }
+    },
+    "/mobile/health": {
+      "get": {
+        "tags": [
+          "mobile"
+        ],
+        "summary": "Health",
+        "description": "Return a simple liveness probe payload.",
+        "operationId": "health_mobile_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Mobile Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
