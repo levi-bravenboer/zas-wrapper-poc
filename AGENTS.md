@@ -20,21 +20,22 @@ Full context: `openspec/project.md`.
 
 ```
 zas-wrapper/
-├── .moon/              # moonrepo workspace + toolchain config
+├── .moon/                    # moonrepo workspace + toolchain config
 ├── apps/
-│   ├── orchestrator/   # React 19 + Vite 8 + TS 6 — clinician composer + SMART launch
-│   └── backend/        # FastAPI + uv + Py 3.13 — FHIR gateway, MCP host
+│   ├── orchestrator/         # React 19 + Vite 8 + TS 6 — clinician composer + SMART launch
+│   ├── backend/              # FastAPI + uv + Py 3.13 — FHIR gateway, MCP host
+│   └── digital-front-door/   # Expo SDK 55 + RN 0.83 + React 19.2 — patient-facing mobile app (iOS/Android/web-dev)
 ├── docs/
-│   ├── research/       # research notes
-│   ├── wireframes/     # builder HTML + transcription
-│   ├── screenshots/    # design exploration
-│   └── setup.md        # historical layout doc (superseded by this file)
+│   ├── research/             # research notes
+│   ├── wireframes/           # builder HTML + transcription
+│   ├── screenshots/          # design exploration
+│   └── setup.md              # historical layout doc (superseded by this file)
 ├── openspec/
-│   ├── project.md      # canonical project context
-│   ├── specs/          # current capabilities
-│   └── changes/        # active + archived change proposals
-├── AGENTS.md           # ← this file
-└── CLAUDE.md           # Claude Code addenda
+│   ├── project.md            # canonical project context
+│   ├── specs/                # current capabilities
+│   └── changes/              # active + archived change proposals
+├── AGENTS.md                 # ← this file (canonical, harness-agnostic)
+└── CLAUDE.md                 # Claude Code harness-specific addenda only
 ```
 
 ## Task Runner
@@ -50,6 +51,43 @@ moon query projects              # introspect graph
 ```
 
 Per-project `moon.yml` declares the canonical task surface (`build`, `test`, `lint`, `typecheck`, `dev`, …). Always prefer `moon run …` over invoking `pnpm` / `uv` directly so caching and affected-detection stay correct.
+
+### Moon is the canonical task runner — use it for everything
+
+**Rule:** if a moon task exists for what you're about to do, run the moon task. Do not hand-roll the underlying `uv run …`, `pnpm …`, `docker compose …`, or env-var-prefixed shell form. Moon tasks set env vars, working dirs, compose files, and toolchain versions for you — the raw form drifts and breaks the agent permission allowlist (env-prefixed commands like `BACKEND_DATABASE_URL=… uv run pytest` will trigger a permission prompt every time).
+
+If you find yourself typing `cd apps/<x> && <tool>`, `BACKEND_DATABASE_URL=…`, `docker compose run …`, `pnpm exec vitest …`, or `pnpm exec jest …`, stop and look for the moon task first.
+
+### Pre-approved moon tasks
+
+**Root** — `moon run :doctor`, `moon run :install`, `moon run :up`, `moon run :down`, `moon run :reset`, `moon run :stack`, `moon run :ci`
+
+**Backend (`apps/backend`)**
+- Tests: `moon run backend:test-host -- <paths or -k expr>` (fast, host pytest → localhost:5433, **agent-default**) · `moon run backend:test -- <args>` (ephemeral container)
+- Static checks: `moon run backend:lint` · `moon run backend:typecheck` · `moon run backend:format`
+- Schema: `moon run backend:openapi`
+- DB / migrations / seeds: `moon run backend:migrate` · `moon run backend:make-migration "<msg>"` · `moon run backend:seed` · `moon run backend:seed-tenant` · `moon run backend:seed-users`
+- Dev / shells: `moon run backend:dev` · `moon run backend:shell` · `moon run backend:psql` · `moon run backend:install`
+
+**Orchestrator (`apps/orchestrator`)**
+- Tests: `moon run orchestrator:test -- <args>` · `moon run orchestrator:test-coverage`
+- Static checks: `moon run orchestrator:lint` · `moon run orchestrator:typecheck` · `moon run orchestrator:format`
+- Build / types / dev: `moon run orchestrator:build` · `moon run orchestrator:preview` · `moon run orchestrator:typegen` · `moon run orchestrator:dev` · `moon run orchestrator:install`
+
+**Digital Front Door (`apps/digital-front-door`)** — Expo SDK 55 patient-facing mobile app
+- Tests: `moon run digital-front-door:test -- <args>` · `moon run digital-front-door:test-coverage`
+- Static checks: `moon run digital-front-door:lint` · `moon run digital-front-door:typecheck` · `moon run digital-front-door:format` · `moon run digital-front-door:format-check`
+- Build / dev: `moon run digital-front-door:dev` · `moon run digital-front-door:build` · `moon run digital-front-door:install`
+
+### When moon is not the right tool
+
+- One-off file reads / greps / git inspection → use the harness's file tools directly.
+- Library docs lookups → the harness's documentation MCP (`context7` for Claude Code).
+- Brand-new operation no moon task covers → add a moon task in the relevant `moon.yml` rather than committing an ad-hoc shell snippet; ask the user before adding.
+
+## Worktree directory
+
+Always create git worktrees under `.worktrees/<branch-name>` in this repo (slashes in branch names get flattened to `-`, so `feat/foo-bar` → `.worktrees/feat-foo-bar`). The `.worktrees/` directory is gitignored. Multiple parallel worktrees share the same `docker compose` stack — never run `:reset` / `:up` / `:down` without checking what other worktrees are using the stack.
 
 ## Local Runtime
 
@@ -170,10 +208,26 @@ Rules:
 3. **Consult the catalogue.** `openspec/changes/multi-surface-feature-framework/page-surface-catalogue.md` (post-archive: `openspec/changes/archive/<date>-multi-surface-feature-framework/page-surface-catalogue.md`) is the source of truth for current page → surface decisions and the admin opt-out list.
 4. **Admin opt-out.** Pages under `/_auth/admin/*`, `/_auth/settings`, and `/_auth/pathways/*` are app-only by intent. They MUST NOT call `defineFeature` and MUST NOT pass through `pnpm gen:feature`. Hand-write the route and skip the surface prompt.
 
+## Behavioural Reminders
+
+- **Verify before claiming done.** Run the per-app `lint`, `typecheck`, and `test` moon tasks and quote the result before reporting a task complete.
+- **Load the per-app `AGENTS.md`** when working inside `apps/<name>/`. App-scoped rules override these.
+- **No AI attribution** in commits or PRs (no `Co-Authored-By`, no `🤖`).
+- **No push without explicit user permission.**
+- **Surface ambiguity early.** If a task could plausibly mean two things, ask instead of guessing.
+
+## Pointers
+
+- Project context: `openspec/project.md`
+- PoC scope ledger: `openspec/scope.md` · Tier progression: `openspec/roadmap.md` · Backlog: `openspec/backlog.md` · MDR watchlist: `openspec/mdr-watchlist.md`
+- Frontend conventions: `apps/orchestrator/AGENTS.md`
+- Backend conventions: `apps/backend/AGENTS.md`
+- Mobile conventions: `apps/digital-front-door/AGENTS.md`
+
 ## Tool-specific Notes
 
-- **Claude Code**: skills live under `.claude/skills/`; commands under `.claude/commands/`. The OpenSpec scaffold provides `opsx` commands. See `CLAUDE.md`.
+- **Claude Code**: skills live under `.claude/skills/`; commands under `.claude/commands/`. The OpenSpec scaffold provides `opsx` commands. Harness-specific notes (slash commands, enforcement hooks, MCP servers) live in `CLAUDE.md`.
 - **Codex**: reads this file as `AGENTS.md`. Per-app overrides apply automatically when working inside a subdirectory.
 - **OpenCode**: same as Codex. Project-level overrides may live under `.opencode/` later.
 
-Update this file when conventions shift. It is the single source of truth.
+No per-app `CLAUDE.md` files exist; every app uses `AGENTS.md`. Update this file when conventions shift. It is the single source of truth.
