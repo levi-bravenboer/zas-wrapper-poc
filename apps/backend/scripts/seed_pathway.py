@@ -34,7 +34,7 @@ from app.schemas.pathway.pathway import (
     PathwayPhaseIn,
     PathwayPublishRequest,
 )
-from app.services.pathway.catalogue import (
+from app.domain.pathway import (
     LANE_KIND_CAREGIVER,
     LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,

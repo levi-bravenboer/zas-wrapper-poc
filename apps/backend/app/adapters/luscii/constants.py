@@ -7,7 +7,7 @@ trio. Mirrors the frontend constants in
 
 Imported by:
 
-- ``app.services.pathway.catalogue`` — luscii.program catalogue entry
+- ``app.domain.pathway.blocks.luscii_program`` — luscii.program catalogue entry
 - ``app.services.luscii.*`` — service-layer references
 - Tests — never hard-code these literals; import from here
 
