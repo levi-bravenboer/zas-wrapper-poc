@@ -1,0 +1,13 @@
+node_modules
+.expo
+dist
+web-build
+coverage
+ios
+android
+assets
+*.lock
+pnpm-lock.yaml
+moon.yml
+.moon
+*.log

@@ -1,0 +1,62 @@
+$schema: "https://moonrepo.dev/schemas/project.json"
+
+layer: "application"
+language: "typescript"
+stack: "frontend"
+
+project:
+  name: "digital-front-door"
+  description: "Patient-facing Expo SDK 56 mobile app (iOS / Android / web-dev)."
+
+fileGroups:
+  sources:
+    - "src/**/*"
+    - "app.config.ts"
+    - "babel.config.js"
+    - "metro.config.js"
+    - "tailwind.config.js"
+    - "tsconfig*.json"
+    - "eslint.config.js"
+    - "jest.config.js"
+    - "jest.setup.ts"
+  tests:
+    - "__tests__/**/*"
+    - "src/**/*.test.{ts,tsx}"
+
+tasks:
+  install:
+    command: "pnpm install"
+    inputs:
+      - "package.json"
+      - "pnpm-lock.yaml"
+    options:
+      cache: false
+
+  dev:
+    command: "pnpm run dev"
+    preset: "server"
+
+  build:
+    command: "pnpm run build"
+    deps:
+      - "~:typecheck"
+    outputs:
+      - "dist"
+
+  typecheck:
+    command: "pnpm run typecheck"
+
+  lint:
+    command: "pnpm run lint"
+
+  format:
+    command: "pnpm run format"
+
+  format-check:
+    command: "pnpm run format:check"
+
+  test:
+    command: "pnpm run test"
+
+  test-coverage:
+    command: "pnpm run test:coverage"
