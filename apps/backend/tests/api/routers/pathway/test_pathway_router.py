@@ -113,8 +113,8 @@ async def test_list_block_types(
         assert isinstance(lane_codes, list) and len(lane_codes) >= 1
         for code in lane_codes:
             assert code in {"patient", "caregiver", "system", "external"}
-        assert row["source"] in {"native", "external"}
-        if row["source"] == "external":
+        assert row["source"] in {"native", "external", "internal"}
+        if row["source"] in {"external", "internal"}:
             assert row["provider"] and row["kind"]
         else:
             assert row["provider"] is None
@@ -237,6 +237,53 @@ async def test_get_unknown_pathway_returns_404(
     assert response.status_code == 404
 
 
+async def test_pathway_summary_returns_counts(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Drives the nested-pathway inspector preview. Counts come from the
+    pathway's preferred version; for a freshly-created pathway that's the
+    concept (no published version yet)."""
+
+    await _login(async_client)
+    created = await _create(async_client, name="ChildPath")
+
+    payload = _replace_payload("ChildPath", lane_kinds)
+    await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
+
+    response = await async_client.get(f"/pathways/{created['pathway']['id']}/summary")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["id"] == created["pathway"]["id"]
+    assert body["name"] == "ChildPath"
+    assert body["lane_count"] == 1
+    assert body["block_count"] == 1
+    assert body["latest_published_version_id"] is None
+
+
+async def test_pathway_summary_returns_null_published_id_for_draft_only(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """A pathway with only a concept version returns `latest_published_version_id=null`."""
+
+    del lane_kinds
+    await _login(async_client)
+    created = await _create(async_client, name="DraftOnly")
+
+    response = await async_client.get(f"/pathways/{created['pathway']['id']}/summary")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["latest_published_version_id"] is None
+
+
+async def test_pathway_summary_unknown_returns_404(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    del lane_kinds
+    await _login(async_client)
+    response = await async_client.get(f"/pathways/{uuid.uuid4()}/summary")
+    assert response.status_code == 404
+
+
 async def test_replace_pathway_overwrites(
     async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
 ) -> None:
@@ -351,6 +398,118 @@ async def test_replace_invalid_edge_timing_returns_422(
     assert response.status_code == 422, response.text
     body = response.json()
     assert body["details"]["edge_id"] == payload["edges"][0]["id"]
+
+
+async def test_parent_references_empty_for_unreferenced_pathway(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    del lane_kinds
+    await _login(async_client)
+    created = await _create(async_client)
+
+    response = await async_client.get(
+        f"/pathways/{created['pathway']['id']}/parent-references"
+    )
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_parent_references_lists_referring_pathway(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """If pathway A contains a `pathway_link` to pathway B, then B's
+    parent-references endpoint MUST return A."""
+
+    await _login(async_client)
+    target = await _create(async_client, name="Target")
+    parent = await _create(async_client, name="Parent")
+
+    # Wire a pathway_link block in `parent` whose target is `target`.
+    phase_id = str(uuid.uuid4())
+    lane_id = str(uuid.uuid4())
+    block_id = str(uuid.uuid4())
+    payload = {
+        "name": "Parent",
+        "phases": [{"id": phase_id, "template_id": "pre-op", "label": "Pre-op", "ord": 0}],
+        "lanes": [
+            {
+                "id": lane_id,
+                "lane_kind_code": "system",
+                "label": "System",
+                "ord": 0,
+                "is_default": True,
+            }
+        ],
+        "blocks": [
+            {
+                "id": block_id,
+                "phase_id": phase_id,
+                "lane_id": lane_id,
+                "type": "pathway_link",
+                "config": {
+                    "target_pathway_id": target["pathway"]["id"],
+                    "mode": "blocking",
+                },
+            }
+        ],
+    }
+    await async_client.put(f"/pathways/{parent['pathway']['id']}", json=payload)
+
+    response = await async_client.get(
+        f"/pathways/{target['pathway']['id']}/parent-references"
+    )
+    assert response.status_code == 200
+    referrers = response.json()
+    assert len(referrers) == 1
+    assert referrers[0]["id"] == parent["pathway"]["id"]
+    assert referrers[0]["name"] == "Parent"
+
+
+async def test_delete_pathway_with_referrers_returns_409(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Deleting a pathway that's used as a sub-pathway is blocked with 409
+    and the referrers list surfaces in the error details."""
+
+    await _login(async_client)
+    target = await _create(async_client, name="Target")
+    parent = await _create(async_client, name="Parent")
+
+    phase_id = str(uuid.uuid4())
+    lane_id = str(uuid.uuid4())
+    block_id = str(uuid.uuid4())
+    payload = {
+        "name": "Parent",
+        "phases": [{"id": phase_id, "template_id": "pre-op", "label": "Pre-op", "ord": 0}],
+        "lanes": [
+            {
+                "id": lane_id,
+                "lane_kind_code": "system",
+                "label": "System",
+                "ord": 0,
+                "is_default": True,
+            }
+        ],
+        "blocks": [
+            {
+                "id": block_id,
+                "phase_id": phase_id,
+                "lane_id": lane_id,
+                "type": "pathway_link",
+                "config": {
+                    "target_pathway_id": target["pathway"]["id"],
+                    "mode": "blocking",
+                },
+            }
+        ],
+    }
+    await async_client.put(f"/pathways/{parent['pathway']['id']}", json=payload)
+
+    response = await async_client.delete(f"/pathways/{target['pathway']['id']}")
+    assert response.status_code == 409
+    body = response.json()
+    assert body["details"]["referrers"][0]["id"] == parent["pathway"]["id"]
+    assert body["details"]["referrers"][0]["name"] == "Parent"
 
 
 async def test_delete_pathway_returns_204_and_hides_from_list(

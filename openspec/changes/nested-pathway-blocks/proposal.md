@@ -1,3 +1,5 @@
+**Tier**: poc
+
 ## Prerequisite
 
 This change **requires `external-block-integrations` to be archived (apply-complete) before implementation starts.** It builds on the `source`/`provider`/`kind` catalogue fields, the inspector header chip component, and the shared schema-renderer conventions introduced there. Do not run `/opsx:apply nested-pathway-blocks` until `external-block-integrations` is marked archived in `openspec/changes/archive/`. The merge-order risk noted in design.md only applies if both changes land in parallel against the user's wishes — default plan is strictly sequential.

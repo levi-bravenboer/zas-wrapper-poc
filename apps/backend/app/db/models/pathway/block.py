@@ -48,5 +48,14 @@ class PathwayBlock(TenantOwnedEntity):
     config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
     )
+    # Frozen child reference produced at publish time for blocks whose body
+    # is a link to a moving target (today: `pathway_link`). NULL on concept
+    # rows, populated by the nested-pathway snapshot resolver when the parent
+    # version flips to `published`. Shape:
+    #   {"target_pathway_id": uuid, "resolved_version_id": uuid,
+    #    "tracking": "specific" | "latest_published"}
+    snapshot_json: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB, nullable=True
+    )
     x: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default=sa.text("0"))
     y: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default=sa.text("0"))

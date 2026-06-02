@@ -75,7 +75,8 @@
     "undo": "Ongedaan maken",
     "redo": "Opnieuw",
     "history": "Geschiedenis",
-    "publish": "Versie publiceren"
+    "publish": "Versie publiceren",
+    "delete": "Zorgpad verwijderen"
   },
   "status": {
     "clean": "Automatisch opgeslagen",
@@ -203,15 +204,27 @@
       "noOtherBlocks": "Geen andere blokken beschikbaar."
     },
     "pathwayLink": {
+      "headerLabel": "Pad-koppeling",
       "target": "Doel-zorgpad",
       "targetPlaceholder": "Kies een zorgpad",
-      "noPathways": "Geen andere zorgpaden beschikbaar.",
+      "noPublishedPathways": "Geen gepubliceerde zorgpaden beschikbaar.",
       "mode": "Modus",
       "modePlaceholder": "Kies modus",
       "modeOption": {
         "blocking": "Blokkerend",
         "fire_and_forget": "Vuren en vergeten"
       },
+      "emptyAria": "Geneste padkoppeling, nog geen doel",
+      "emptyTitle": "Pad-koppeling · geen doel",
+      "emptyHint": "Kies een doel-zorgpad in het rechterpaneel.",
+      "summaryLoading": "Samenvatting laden…",
+      "summaryError": "Kon samenvatting niet laden.",
+      "summary": {
+        "lanes": "Banen",
+        "blocks": "Blokken",
+        "publishedId": "Laatste publicatie"
+      },
+      "openChild": "Open sub-zorgpad",
       "contextMapping": "Context-koppeling",
       "contextMappingHint": "Sleutel-waarde paren die meegegeven worden aan het sub-zorgpad.",
       "contextMappingEmpty": "Nog geen koppelingen.",
@@ -352,10 +365,22 @@
     "laneLabel": "Baan {{label}}, {{count}} blokken"
   },
   "save": {
-    "error": "Opslaan mislukt."
+    "error": "Opslaan mislukt.",
+    "saving": "opslaan…"
   },
   "delete": {
-    "success": "Blok verwijderd."
+    "success": "Blok verwijderd.",
+    "pathwaySuccess": "Zorgpad \"{{name}}\" verwijderd.",
+    "confirmTitle": "Zorgpad \"{{name}}\" verwijderen?",
+    "confirmDescription": "Deze actie is niet ongedaan te maken.",
+    "blockedTitle": "Zorgpad kan niet verwijderd worden",
+    "blockedDescription": "\"{{name}}\" wordt gebruikt als sub-zorgpad door andere zorgpaden. Verwijder eerst die koppelingen.",
+    "checking": "Referenties controleren…",
+    "confirm": "Verwijder",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "deleting": "Bezig met verwijderen…",
+    "openReferrer": "Open ↗"
   },
   "version": {
     "status": {

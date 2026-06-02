@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  type DeletePathwayResult,
   createPathway,
+  deletePathway,
   forkPathwayFromPublish,
   getPathway,
   getPathwayVersion,
   listBlockTypes,
   listEdgeOffsetDirections,
   listEdgeTimingKinds,
+  listPathwayParentReferences,
   listPathwayVersions,
   listPathways,
   listPhaseTemplates,
@@ -22,6 +25,7 @@ import type {
   PathwayDefinitionReplace,
   PathwayEdgeOffsetDirection,
   PathwayEdgeTimingKind,
+  PathwayParentReference,
   PathwayPhaseTemplate,
   PathwayPublishRequest,
   PathwaySummary,
@@ -52,6 +56,27 @@ export function useCreatePathway() {
     onSuccess: (data) => {
       qc.setQueryData(pathwayKeys.detail(data.pathway.id), data)
       void qc.invalidateQueries({ queryKey: pathwayKeys.list() })
+    },
+  })
+}
+
+export function useParentReferences(id: string | undefined) {
+  return useQuery<PathwayParentReference[]>({
+    queryKey: id ? pathwayKeys.parentReferences(id) : pathwayKeys.parentReferences('__none__'),
+    queryFn: () => listPathwayParentReferences(id as string),
+    enabled: !!id,
+  })
+}
+
+export function useDeletePathway() {
+  const qc = useQueryClient()
+  return useMutation<DeletePathwayResult, Error, string>({
+    mutationFn: (id) => deletePathway(id),
+    onSuccess: (result, id) => {
+      if (result.ok) {
+        qc.removeQueries({ queryKey: pathwayKeys.detail(id) })
+        void qc.invalidateQueries({ queryKey: pathwayKeys.list() })
+      }
     },
   })
 }

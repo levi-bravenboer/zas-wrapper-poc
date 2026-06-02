@@ -30,6 +30,7 @@ from app.services.pathway.errors import (
     PathwayNotFoundError,
     PathwayVersionNotFoundError,
 )
+from app.services.pathway.nesting import resolve_pathway_link_snapshots
 
 
 class PathwayVersionService:
@@ -72,6 +73,15 @@ class PathwayVersionService:
         concept = await self._version_repo.get_concept(pathway_id)
         if concept is None:
             raise NoConceptVersionError()
+        # Resolve nested-pathway snapshots BEFORE flipping to published so a
+        # failure (latest_published target with no published version) cancels
+        # the publish entirely. Mutates `pathway_block.snapshot_json` on the
+        # version's `pathway_link` blocks; flush is owned by `mark_published`.
+        await resolve_pathway_link_snapshots(
+            session=self._repo._session,  # noqa: SLF001 — service owns repo internals
+            pathway_version_id=concept.id,
+            version_repo=self._version_repo,
+        )
         await self._version_repo.mark_published(
             concept,
             published_by=actor_id,

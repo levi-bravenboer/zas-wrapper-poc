@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { Link2, Plus, Trash2 } from 'lucide-react'
 import type { ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -18,6 +18,7 @@ import { PATHWAY_LINK_MODES, type ConfigForSemantics } from '../../../configSche
 import { pathwayKeys } from '../../../keys'
 
 import { InspectorField } from './InspectorField'
+import { InspectorHeaderChip } from './InspectorHeaderChip'
 
 type Props = {
   config: ConfigForSemantics<'pathway_link'>
@@ -32,8 +33,11 @@ export function PathwayLinkInspector({ config, currentPathwayId, onChange }: Pro
     queryFn: listPathways,
   })
 
+  // Only pathways that have at least one published version are link-able —
+  // a `pathway_link` always resolves to the latest published child at publish
+  // time, so an unpublished target would produce an unresolvable snapshot.
   const candidatePathways = pathways
-    .filter((p) => p.id !== currentPathwayId)
+    .filter((p) => p.id !== currentPathwayId && p.latest_published_version_id != null)
     .toSorted((a, b) => (a.updated_at > b.updated_at ? -1 : 1))
 
   const mappingEntries = Object.entries(config.context_mapping ?? {})
@@ -75,10 +79,27 @@ export function PathwayLinkInspector({ config, currentPathwayId, onChange }: Pro
 
   return (
     <div className="flex flex-col gap-3">
+      <InspectorHeaderChip
+        source="internal"
+        provider="pathway"
+        kind="link"
+        label={t('inspector.pathwayLink.headerLabel')}
+        icon={<Link2 className="size-3.5" strokeWidth={1.8} />}
+      />
       <InspectorField label={t('inspector.pathwayLink.target')}>
         <Select
           value={config.target_pathway_id ?? ''}
-          onValueChange={(v) => onChange({ ...config, target_pathway_id: v || undefined })}
+          onValueChange={(v) =>
+            onChange({
+              ...config,
+              target_pathway_id: v || undefined,
+              // The block always tracks the latest published version of the
+              // target. Force the backend defaults so we never persist a
+              // stale `pinned_version_id` from a previous target.
+              version_pin: 'latest_published',
+              pinned_version_id: null,
+            })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder={t('inspector.pathwayLink.targetPlaceholder')} />
@@ -86,7 +107,7 @@ export function PathwayLinkInspector({ config, currentPathwayId, onChange }: Pro
           <SelectContent>
             {candidatePathways.length === 0 ? (
               <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                {t('inspector.pathwayLink.noPathways')}
+                {t('inspector.pathwayLink.noPublishedPathways')}
               </div>
             ) : (
               candidatePathways.map((p) => (

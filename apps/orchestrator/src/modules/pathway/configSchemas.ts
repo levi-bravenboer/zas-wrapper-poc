@@ -35,6 +35,8 @@ export const MESSAGE_CHANNELS = ['email', 'sms', 'push', 'in_app'] as const
 
 export const PATHWAY_LINK_MODES = ['blocking', 'fire_and_forget'] as const
 
+export const PATHWAY_LINK_VERSION_PINS = ['latest_published', 'specific'] as const
+
 const AppointmentConfig = z.object({
   kind: z.string().optional(),
   location: z.string().optional(),
@@ -75,6 +77,11 @@ const WaitConfig = z.object({
 const PathwayLinkConfig = z.object({
   target_pathway_id: z.string().uuid().optional(),
   mode: z.enum(PATHWAY_LINK_MODES).optional(),
+  // Governs which child version this link resolves to at snapshot/publish
+  // time. `latest_published` re-resolves at every parent publish;
+  // `specific` freezes to `pinned_version_id`. Backend enforces ownership.
+  version_pin: z.enum(PATHWAY_LINK_VERSION_PINS).optional(),
+  pinned_version_id: z.string().uuid().nullable().optional(),
   context_mapping: z.record(z.string(), z.string()).default({}),
 })
 

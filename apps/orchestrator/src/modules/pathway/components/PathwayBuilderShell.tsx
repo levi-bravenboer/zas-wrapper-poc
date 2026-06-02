@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +26,7 @@ import { defaultLaneKindCode } from '../utils/laneRules'
 import { findSelectedBlock } from '../utils/selection'
 
 import { BuilderCanvasFrame, type CanvasDropTarget } from './canvas/BuilderCanvasFrame'
+import { BuilderFlushProvider } from './canvas/BuilderFlushContext'
 import { useDragContext } from './canvas/useDragContext'
 import { BuilderDock } from './dock/BuilderDock'
 import { BuilderDrawer } from './drawer/BuilderDrawer'
@@ -33,6 +35,7 @@ import { GeschiedenisDrawer } from './drawer/GeschiedenisDrawer'
 import { ReadOnlyBanner } from './shell/ReadOnlyBanner'
 import { BuilderSubbar } from './subbar/BuilderSubbar'
 import { BuilderTopbar } from './topbar/BuilderTopbar'
+import { DeletePathwayDialog } from './DeletePathwayDialog'
 import { ForkOnEditDialog } from './version/ForkOnEditDialog'
 import { PublishDialog } from './version/PublishDialog'
 
@@ -93,10 +96,12 @@ function Inner({
   offsetDirections,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
+  const navigate = useNavigate()
   const { state, dispatch: rawDispatch, isDirty } = useBuilderState(version)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [forkOnEditOpen, setForkOnEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const dispatch = useCallback(
     (action: BuilderAction) => {
@@ -239,6 +244,7 @@ function Inner({
         onUndo={() => dispatch({ type: 'undo' })}
         onRedo={() => dispatch({ type: 'redo' })}
         onPublish={() => setPublishOpen(true)}
+        onDelete={() => setDeleteOpen(true)}
         onOpenHistory={() => setHistoryOpen(true)}
         onRename={onRename}
       />
@@ -253,6 +259,7 @@ function Inner({
         onReorderPhase={(phaseId, toIndex) => dispatch({ type: 'reorder-phase', phaseId, toIndex })}
       />
       <main role="main" className="relative min-h-0 overflow-hidden">
+        <BuilderFlushProvider flush={flush} saveState={saveState}>
         <BuilderCanvasFrame
           phases={phases}
           lanes={lanes}
@@ -309,9 +316,19 @@ function Inner({
             onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
           />
         )}
+        </BuilderFlushProvider>
       </main>
       <GeschiedenisDrawer open={historyOpen} onOpenChange={setHistoryOpen} pathwayId={pathway.id} />
       <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} pathwayId={pathway.id} />
+      <DeletePathwayDialog
+        pathwayId={pathway.id}
+        pathwayName={pathway.name}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={() => {
+          void navigate({ to: '/pathways' })
+        }}
+      />
       <ForkOnEditDialog
         open={forkOnEditOpen}
         onOpenChange={setForkOnEditOpen}
