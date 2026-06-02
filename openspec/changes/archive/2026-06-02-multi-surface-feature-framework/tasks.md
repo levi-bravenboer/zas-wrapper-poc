@@ -98,4 +98,4 @@ Scope tightened from the original plan: when this change was drafted, `pathways`
 - [x] 8.2 Added `apps/orchestrator/src/platform/README.md` covering surfaces, ports, `defineFeature`, route shims, testing, generator, and a "when NOT to use `defineFeature`" admin opt-out subsection.
 - [x] 8.3 Extended `apps/orchestrator/AGENTS.md` `## Surfaces …` with links to the platform README, `pnpm gen:feature`, the `new-feature` skill, and `page-surface-catalogue.md`.
 - [x] 8.4 `openspec validate multi-surface-feature-framework --strict` → "Change 'multi-surface-feature-framework' is valid".
-- [ ] 8.5 Archive the change via `openspec archive multi-surface-feature-framework` once the user signs off on the PoC scope.
+- [x] 8.5 Archive the change via `openspec archive multi-surface-feature-framework` once the user signs off on the PoC scope.

@@ -33,7 +33,7 @@ The `platform/smart/` module SHALL export `useLaunchContext()` returning the cur
 - **WHEN** the `/launch/callback` route has completed the PKCE exchange
 - **THEN** `useLaunchContext()` returns `{ iss, launch, surface, returnPath, client, ctx, token }`
 
-### Requirement: exchangeAuthCode performs PKCE exchange
+### Requirement: exchangeAuthCode signature reserved
 
 The module SHALL export `exchangeAuthCode(code: string, state: string): Promise<LaunchContext>` that performs the OAuth 2.0 PKCE token exchange against the FHIR server's `token_endpoint`, retrieves the SMART context (`patient`, `encounter`, `user`, `fhirUser`, `scope`, `expires_in`), and returns the populated `LaunchContext`. Tokens MUST be held in the in-memory SMART store; PKCE state MUST be cleared from `sessionStorage` after a successful or failed exchange.
 
@@ -53,7 +53,7 @@ The module SHALL export `exchangeAuthCode(code: string, state: string): Promise<
 - **WHEN** the FHIR token endpoint returns a non-2xx response
 - **THEN** the promise rejects with a typed `SmartExchangeError` and the launch route renders the localized error UI
 
-### Requirement: Redirect to surface-aware destination
+### Requirement: Redirect to placeholder after parsing
 
 After a successful token exchange, the `/launch/callback` route SHALL redirect to `${SURFACES[surface].basePath}${returnPath}` where `surface` and `returnPath` come from the launch context. When no `returnPath` was provided the redirect MUST target `${SURFACES[surface].basePath}/` (the surface's index route).
 
@@ -76,7 +76,7 @@ The orchestrator SHALL add a `/launch/callback` route file under `routes/launch.
 - Validates `code`, `state`, and `error?` via Zod.
 - Invokes `exchangeAuthCode(code, state)`.
 - Stores the resulting `LaunchContext` in the in-memory SMART store.
-- Redirects to the surface-aware destination defined by the `Redirect to surface-aware destination` requirement.
+- Redirects to the surface-aware destination defined by the `Redirect to placeholder after parsing` requirement.
 
 The route MUST NOT render UI in the steady state; it MUST show only a localized "Bezig met inloggen…" indicator while the exchange is pending.
 
