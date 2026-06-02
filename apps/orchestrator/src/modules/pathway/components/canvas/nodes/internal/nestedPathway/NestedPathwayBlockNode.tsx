@@ -21,12 +21,13 @@ export type NestedPathwayFlowNode = Node<NestedPathwayBlockNodeData, 'block'>
 
 type NestedConfig = ConfigForSemantics<'pathway_link'>
 
-// 40% larger than the previous compact card (was 280×200). Same outer chrome
-// pattern as the Luscii block — left rail, glass title chip overlay, corner
-// badge, meta chip — only the body content differs (renders a mini-DAG of
-// the linked child pathway instead of a vendor program).
-const BLOCK_WIDTH = 392
-const BLOCK_HEIGHT = 280
+// Sized for legibility of the embedded mini-canvas: 50% larger than the
+// previous 392×280 card. Same outer chrome pattern as the Luscii block —
+// left rail, glass title chip overlay, corner badge, meta chip — only the
+// body content differs (renders a real React Flow miniature of the linked
+// child pathway).
+const BLOCK_WIDTH = 588
+const BLOCK_HEIGHT = 420
 
 export const NestedPathwayBlockNode = memo(NestedPathwayBlockNodeImpl)
 
@@ -97,7 +98,9 @@ function NestedPathwayBlockNodeImpl({
           }}
         />
 
-        {/* Body thumbnail — mini-DAG of the child pathway */}
+        {/* SVG miniature of the child pathway. Pure SVG (no nested React
+            Flow) — nesting React Flow corrupts the outer canvas's
+            BackgroundLayers on outer pan/zoom. */}
         {detail?.version && !empty ? (
           <NestedPathwayThumbnail
             phases={detail.version.phases ?? []}
