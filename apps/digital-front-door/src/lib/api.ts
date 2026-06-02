@@ -44,12 +44,26 @@ function isApiHealth(value: unknown): value is ApiHealth {
   return value.status === 'ok'
 }
 
+const DEFAULT_TIMEOUT_MS = 8000
+
 export async function apiHealthCheck(): Promise<ApiHealth> {
   const url = `${resolveBaseUrl()}/mobile/health`
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  })
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new ApiError(
+        `Health check timed out after ${DEFAULT_TIMEOUT_MS}ms`,
+        0
+      )
+    }
+    throw err
+  }
   if (!res.ok) {
     throw new ApiError(`Health check failed (${res.status})`, res.status)
   }

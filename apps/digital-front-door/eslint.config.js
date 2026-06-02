@@ -6,19 +6,24 @@ const { defineConfig } = require('eslint/config')
 const expoConfig = require('eslint-config-expo/flat')
 
 module.exports = defineConfig([
-  expoConfig,
-
-  // Project-wide ignores.
+  // Global ignores — MUST be a standalone config object (only `ignores` key)
+  // to be treated as a project-wide ignore in flat config.
   {
     ignores: [
-      'dist/*',
-      '.expo/*',
-      'web-build/*',
-      'coverage/*',
-      'node_modules/*',
-      'ios/*',
-      'android/*',
+      'dist/**',
+      '.expo/**',
+      'web-build/**',
+      'coverage/**',
+      'node_modules/**',
+      'ios/**',
+      'android/**',
+      'assets/**',
     ],
+  },
+
+  expoConfig,
+
+  {
     linterOptions: {
       reportUnusedDisableDirectives: false,
     },

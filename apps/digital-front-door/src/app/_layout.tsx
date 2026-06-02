@@ -17,12 +17,11 @@ import { log } from '@/lib/logger'
 import { queryClient } from '@/lib/query-client'
 import { JotaiProvider } from '@/providers/jotai'
 
-SplashScreen.preventAutoHideAsync().catch(() => {
-  // ignore — preventAutoHideAsync rejects if the splash is already hidden
+SplashScreen.preventAutoHideAsync().catch((err: unknown) => {
+  log.warn('[splash] preventAutoHide failed', err)
 })
 
-function RootErrorFallback({ error }: FallbackProps) {
-  log.error('[root] uncaught', error)
+function RootErrorFallback(_: FallbackProps) {
   const { t } = useTranslation()
   return (
     <View className="flex-1 items-center justify-center bg-white px-6">
@@ -36,6 +35,13 @@ function RootErrorFallback({ error }: FallbackProps) {
   )
 }
 
+function onRootError(
+  error: Error,
+  info: { componentStack?: string | null }
+): void {
+  log.error('[root] uncaught', error, info.componentStack)
+}
+
 export default function RootLayout() {
   const [ready, setReady] = useState(false)
 
@@ -47,7 +53,9 @@ export default function RootLayout() {
         log.error('[i18n] init failed', err)
       } finally {
         setReady(true)
-        await SplashScreen.hideAsync().catch(() => {})
+        await SplashScreen.hideAsync().catch((err: unknown) => {
+          log.warn('[splash] hide failed', err)
+        })
         void apiHealthCheck().catch((err: unknown) => {
           log.warn('[api] health check failed', err)
         })
@@ -58,7 +66,7 @@ export default function RootLayout() {
   if (!ready) return null
 
   return (
-    <ErrorBoundary FallbackComponent={RootErrorFallback}>
+    <ErrorBoundary FallbackComponent={RootErrorFallback} onError={onRootError}>
       <SafeAreaProvider>
         <KeyboardProvider>
           <QueryClientProvider client={queryClient}>
