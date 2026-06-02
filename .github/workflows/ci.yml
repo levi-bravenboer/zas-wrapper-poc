@@ -295,7 +295,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-digital-front-door
-      - run: pnpm run test -- --ci --coverage=false
+      - run: pnpm exec jest --ci --coverage=false
 
   digital-front-door-build:
     name: digital-front-door build (web)
