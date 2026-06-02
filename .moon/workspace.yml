@@ -5,6 +5,7 @@ projects:
   zas-root: "."
   backend: "apps/backend"
   orchestrator: "apps/orchestrator"
+  digital-front-door: "apps/digital-front-door"
 
 vcs:
   defaultBranch: "main"

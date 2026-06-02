@@ -113,7 +113,7 @@ Note: Patient-facing monitoring app — is it branded Luscii, ZAS, or co-branded
 - Tier: [mvp]
 - Source: RFP working doc, user PoC summary explicitly excludes patient
 
-Note: Patient view of Pathway Orchestrator delivery channel TBD: email link, HiX Patient Portal link, Luscii deep-link, dedicated app, PWA. Decision blocks F5 (patient view) MVP delta.
+Note: Patient view of Pathway Orchestrator delivery channel TBD: email link, HiX Patient Portal link, Luscii deep-link, dedicated app, PWA. Decision blocks F5 (patient view) MVP delta. **Shell promoted to PoC via `digital-front-door-setup` on 2026-06-02 — dedicated Expo mobile app at `apps/digital-front-door` is the chosen vessel; feature shape + delivery-channel decisions remain MVP-tier.**
 
 ### BL-015 — Video call delivery
 - Tier: [mvp]
@@ -161,7 +161,7 @@ Note: "Pathway Designer" vs "Carepath Builder" vs other naming. Cosmetic but nee
 - Tier: [mvp]
 - Source: RFP working doc
 
-Note: From the patient view, patient can activate their enrollment (consent + Luscii download). PoC excludes patient touchpoint; revisit at MVP.
+Note: From the patient view, patient can activate their enrollment (consent + Luscii download). PoC excludes patient touchpoint; revisit at MVP. **Shell promoted to PoC via `digital-front-door-setup` on 2026-06-02 (`apps/digital-front-door`); activation flow + consent UX remain MVP-tier.**
 
 ---
 
@@ -213,7 +213,7 @@ Note: Re-tier task obsolete — original `dev-sandbox-skills` change folder lost
 - Tier: [mvp]
 - Source: openspec/project.md previous "patient app shell" mention
 
-Note: Original `apps/` plan mentioned a patient app shell. New scope defers patient entirely to MVP. When MVP picks up F5 patient view, decide: separate `apps/patient` or extension of orchestrator?
+Note: Original `apps/` plan mentioned a patient app shell. New scope defers patient entirely to MVP. When MVP picks up F5 patient view, decide: separate `apps/patient` or extension of orchestrator? **Resolved by `digital-front-door-setup` on 2026-06-02: separate dedicated app at `apps/digital-front-door` (Expo SDK 55, RN + web). Shell promoted to PoC; feature shape + delivery-channel decisions remain MVP-tier.**
 
 ### BL-031 — Pathway publish step
 - Tier: [mvp]

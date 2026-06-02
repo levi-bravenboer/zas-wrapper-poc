@@ -1,0 +1,21 @@
+name: setup-digital-front-door
+description: Install Node (from .nvmrc) + pnpm and run pnpm install for apps/digital-front-door.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 9.15.1
+        run_install: false
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+        cache-dependency-path: apps/digital-front-door/pnpm-lock.yaml
+
+    - name: pnpm install
+      shell: bash
+      run: pnpm install --frozen-lockfile
+      working-directory: apps/digital-front-door

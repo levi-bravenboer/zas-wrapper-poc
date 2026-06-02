@@ -32,7 +32,12 @@ type EdgeVariantStyle = {
 
 export const EDGE_VARIANT_STYLE: Record<EdgeVariant, EdgeVariantStyle> = {
   default: { stroke: '#cbd1d8', hoverStroke: '#94a3b8', width: 1.75, dash: undefined },
-  primary: { stroke: 'var(--color-primary)', hoverStroke: 'var(--color-primary)', width: 2, dash: undefined },
+  primary: {
+    stroke: 'var(--color-primary)',
+    hoverStroke: 'var(--color-primary)',
+    width: 2,
+    dash: undefined,
+  },
   dashed: { stroke: '#cbd1d8', hoverStroke: '#94a3b8', width: 1.75, dash: EDGE_DASH_PATTERN },
 }
 

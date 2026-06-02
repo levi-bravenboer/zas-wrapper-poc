@@ -29,9 +29,10 @@ Tier progression for the ZAS Telegeneeskunde build: PoC → MVP → Product. Cro
 - `F3` Pathway Designer composing blocks → DB; saved = enrollable (no publish step).
 - `F5` patient view with Luscii block rendered from static JSON.
 - `F7` pathway backend on our own DB with stubbed HiX + Luscii adapters.
-- Tooling: OpenAPI typegen, MSW + Vitest + Playwright on orchestrator, pytest + ruff + pyright on backend.
+- `F9` Digital front door shell (`apps/digital-front-door`, Expo SDK 55) — empty mobile app on iOS / Android / web (dev). Boots, lints, typechecks; backend `/mobile/health` returns 200. No clinical UI, no patient auth.
+- Tooling: OpenAPI typegen, MSW + Vitest + Playwright on orchestrator, pytest + ruff + pyright on backend, ESLint + Prettier + jest-expo on digital-front-door.
 
-**Non-goals (in this tier).** Live HiX, live Luscii, real IdP, HiX embed, two-way task sync, patient surface, notifications, multi-tool admin. All deferred to `[mvp]` per `scope.md` PoC Out-of-Scope + Mocks tables.
+**Non-goals (in this tier).** Live HiX, live Luscii, real IdP, HiX embed, two-way task sync, **patient-facing features** (the mobile **shell** is in PoC; concrete patient features are not), notifications, multi-tool admin. All deferred to `[mvp]` per `scope.md` PoC Out-of-Scope + Mocks tables.
 
 ---
 
@@ -57,7 +58,7 @@ Tier progression for the ZAS Telegeneeskunde build: PoC → MVP → Product. Cro
   - Access-control granularity (`BL-020`); HiX admin coordination (`BL-010`).
   - **Auth compliance gates** (filed by `add-auth-provider-seam`): server-side session revocation (`BL-042`), login rate-limit + lockout (`BL-043`), MFA delegated to LoA High IdPs (`BL-044`), RP-initiated logout against IdP `end_session_endpoint` (`BL-045`), DPIA pointer + skeleton (`BL-046`), SMART-on-FHIR bearer-token auth path on `/fhir/*` (`BL-047`), OIDC hardening — PKCE / state / nonce / JWKS / iss+aud+exp (`BL-048`), password reset / credential lifecycle if password provider survives (`BL-049`). All MUST close before any real patient data touches the system.
 - **Product**
-  - Patient surface decided + shipped — view shape, delivery channel, enrollment activation (`BL-014`, `BL-022`); patient app shape decision (`BL-030`).
+  - Patient surface — shell shipped in PoC via `digital-front-door-setup` (`F9` mobile app); MVP delivers concrete features: view shape, delivery channel, enrollment activation (`BL-014`, `BL-022`); `BL-030` patient app shape decision resolved by the shell choice (Expo mobile app at `apps/digital-front-door`).
   - Pathway publish step + versioning (`BL-031`).
   - Pathway block types beyond PoC: video calls, lab appointments, referrals, milestones, signed documents, informed consent (`BL-015`, `BL-017`, `BL-018`, `BL-019`).
   - Non-HiX patient enrollment (`BL-009`); order-form decision (`BL-011`); task-list location decision (`BL-012`); monitoring app branding (`BL-013`).

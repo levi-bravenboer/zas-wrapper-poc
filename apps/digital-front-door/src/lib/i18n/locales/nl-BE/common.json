@@ -1,0 +1,12 @@
+{
+  "app": {
+    "placeholder": {
+      "welcome": "Welkom",
+      "loading": "Laden…"
+    },
+    "error": {
+      "title": "Er ging iets mis",
+      "body": "Sluit de app en probeer opnieuw."
+    }
+  }
+}
