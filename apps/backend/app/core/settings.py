@@ -9,7 +9,10 @@ Environment = Literal["dev", "test", "production"]
 AdapterMode = Literal["stub", "live"]
 
 DEFAULT_SESSION_SECRET = "change-me-in-production"
-DEFAULT_DEV_ORIGINS: list[AnyHttpUrl] = [AnyHttpUrl("http://localhost:5173")]
+DEFAULT_DEV_ORIGINS: list[AnyHttpUrl] = [
+    AnyHttpUrl("http://localhost:5173"),
+    AnyHttpUrl("http://localhost:8081"),
+]
 DEFAULT_DATABASE_URL = "postgresql+asyncpg://zas:zas@localhost:5434/zas"
 
 

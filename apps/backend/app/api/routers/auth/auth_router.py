@@ -6,6 +6,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
+from app.repositories.user.deps import UserRepoDep
 from app.schemas.auth.auth import LoginRequest, SessionUser
 from app.schemas.auth.providers import ProviderDescriptor
 from app.services.auth.audit import AuthEvent, log_auth_event
@@ -15,9 +16,13 @@ from app.services.auth.deps import (
     CurrentUserDep,
     LoginProviderRegistryDep,
     OptionalCurrentUserDep,
-    PasswordLoginProviderDep,
+    PasswordHasherDep,
 )
 from app.services.auth.errors import InvalidCredentialsError, UnauthenticatedError
+from app.services.auth.login_service import authenticate_password
+
+# PoC is single-tenant (`zas`). Multi-tenant resolution lands at MVP.
+from scripts.seed_tenant import ZAS_TENANT_ID
 
 router = APIRouter(tags=["auth"])
 
@@ -60,33 +65,45 @@ async def login_password(
     request: Request,
     settings: SettingsDep,
     auth: AuthServiceDep,
-    provider: PasswordLoginProviderDep,
+    user_repo: UserRepoDep,
+    hasher: PasswordHasherDep,
 ) -> SessionUser:
-    outcome = await provider.try_authenticate(email=payload.email, password=payload.password)
-    if outcome.session_user is None:
+    try:
+        result = await authenticate_password(
+            email=payload.email,
+            password=payload.password.get_secret_value(),
+            tenant_id=ZAS_TENANT_ID,
+            role_filter=lambda r: r != Role.PATIENT,
+            surface="caregiver",
+            user_repo=user_repo,
+            hasher=hasher,
+        )
+    except InvalidCredentialsError as exc:
         log_auth_event(
             AuthEvent(
                 event="auth.login.failure",
-                provider_key=provider.key,
+                provider_key="password",
+                surface="caregiver",
                 client_ip=_client_ip(request),
                 user_agent=_user_agent(request),
-                user_id=UUID(outcome.user_id) if outcome.user_id else None,
-                reason=outcome.reason,
+                user_id=exc.audit_user_id,
+                reason=exc.audit_reason,
             )
         )
-        raise InvalidCredentialsError()
+        raise
 
-    _set_session_cookie(response, settings=settings, auth=auth, user_id=outcome.session_user.id)
+    _set_session_cookie(response, settings=settings, auth=auth, user_id=result.user.id)
     log_auth_event(
         AuthEvent(
             event="auth.login.success",
-            provider_key=provider.key,
+            provider_key="password",
+            surface="caregiver",
             client_ip=_client_ip(request),
             user_agent=_user_agent(request),
-            user_id=outcome.session_user.id,
+            user_id=result.user.id,
         )
     )
-    return outcome.session_user
+    return SessionUser.model_validate(result.user)
 
 
 @router.get(

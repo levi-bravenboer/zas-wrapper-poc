@@ -16,6 +16,7 @@ class UserRow(BaseModel):
     display_name: str
     role: Role
     is_active: bool
+    patient_id: UUID | None = None
     created_at: datetime
 
 
@@ -27,6 +28,7 @@ class UserDetail(BaseModel):
     display_name: str
     role: Role
     is_active: bool
+    patient_id: UUID | None = None
     external_idp: str | None
     external_subject: str | None
     created_at: datetime

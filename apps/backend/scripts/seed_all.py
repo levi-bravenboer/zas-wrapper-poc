@@ -18,6 +18,7 @@ from scripts._db import run_script
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
+from scripts.seed_patient_users import seed_patient_users
 from scripts.seed_patients import seed_patients
 from scripts.seed_practitioners import seed_practitioners
 from scripts.seed_tenant import seed_zas_tenant
@@ -39,6 +40,7 @@ SEED_STEPS: list[SeedStep] = [
     seed_organisations,
     seed_practitioners,
     seed_patients,
+    seed_patient_users,
     seed_care_teams,
     seed_lane_kinds,
     seed_rugrevalidatie,

@@ -17,17 +17,9 @@ from uuid import UUID
 from app.core.enums.user import Role
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
+from app.services.auth.audit import AuthFailureReason
 from app.services.auth.errors import InvalidCredentialsError
 from app.services.auth.password import PasswordHasher
-
-AuthFailureReason = Literal[
-    "unknown_email",
-    "inactive_user",
-    "soft_deleted_user",
-    "null_password_hash",
-    "role_mismatch",
-    "invalid_credentials",
-]
 
 
 @dataclass(frozen=True)
@@ -91,10 +83,16 @@ async def authenticate_password(
         # Constant-time guard: spend the same wall-clock time as a real
         # verify call to avoid leaking the failure cause via timing.
         hasher.verify(_DUMMY_HASH, password)
-        raise InvalidCredentialsError()
+        raise InvalidCredentialsError(
+            audit_reason=reason,
+            audit_user_id=user.id if user is not None else None,
+        )
 
     assert user is not None and user.password_hash is not None
     if not hasher.verify(user.password_hash, password):
-        raise InvalidCredentialsError()
+        raise InvalidCredentialsError(
+            audit_reason="invalid_credentials",
+            audit_user_id=user.id,
+        )
 
     return AuthenticatedUser(user=user, surface=surface)

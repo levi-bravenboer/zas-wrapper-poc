@@ -6,63 +6,63 @@
 
 ## 2. Backend — shared auth services
 
-- [ ] 2.1 Create `apps/backend/app/auth/login_service.py` with `authenticate_password(*, email, password, tenant_id, role_filter, db) -> User`. Single `InvalidCredentials` exception for every failure mode. Constant-time dummy password verification on user-not-found and role-mismatch paths.
-- [ ] 2.2 Create `apps/backend/app/auth/tenant_resolver.py` with `resolve_tenant_slug(slug, db) -> UUID` raising `UnknownTenant` on miss. Slug match is case-sensitive.
+- [x] 2.1 Create `apps/backend/app/auth/login_service.py` with `authenticate_password(*, email, password, tenant_id, role_filter, db) -> User`. Single `InvalidCredentials` exception for every failure mode. Constant-time dummy password verification on user-not-found and role-mismatch paths.
+- [x] 2.2 Create `apps/backend/app/auth/tenant_resolver.py` with `resolve_tenant_slug(slug, db) -> UUID` raising `UnknownTenant` on miss. Slug match is case-sensitive.
 - [x] 2.3 Verified: `tenants.slug` already exists on main (`varchar(63) NOT NULL UNIQUE` with regex CHECK). Seeded value is `zas` via `ZAS_TENANT_SLUG` in `scripts/seed_tenant.py`. No migration needed.
-- [ ] 2.4 Refactor the caregiver `POST /auth/login/password` router to call `authenticate_password()` with `role_filter = lambda r: r != Role.PATIENT`. Existing scenarios stay green; no wire-level change.
-- [ ] 2.5 Add `surface: Literal['mobile','caregiver','admin']` field to the structured login audit-log helper. Caregiver routes pass `surface='caregiver'`; mobile routes pass `surface='mobile'`. Single shared logger.
-- [ ] 2.6 Tighten the existing `GET /auth/me` to filter `role <> 'patient'`; return `401` if the cookie's user is a patient.
+- [x] 2.4 Refactor the caregiver `POST /auth/login/password` router to call `authenticate_password()` with `role_filter = lambda r: r != Role.PATIENT`. Existing scenarios stay green; no wire-level change.
+- [x] 2.5 Add `surface: Literal['mobile','caregiver','admin']` field to the structured login audit-log helper. Caregiver routes pass `surface='caregiver'`; mobile routes pass `surface='mobile'`. Single shared logger.
+- [x] 2.6 Tighten the existing `GET /auth/me` to filter `role <> 'patient'`; return `401` if the cookie's user is a patient.
 
 ## 3. Backend — identity migration
 
-- [ ] 3.1 Generate an alembic revision `add_patient_role_and_patient_id_to_users` via `moon run backend:make-migration "add patient role and patient id to users"`.
-- [ ] 3.2 In the revision:
+- [x] 3.1 Generate an alembic revision `add_patient_role_and_patient_id_to_users` via `moon run backend:make-migration "add patient role and patient id to users"`.
+- [x] 3.2 In the revision:
   - `op.execute("ALTER TYPE role ADD VALUE IF NOT EXISTS 'patient'")` (Postgres enum extension).
   - `op.add_column('users', sa.Column('patient_id', sa.Uuid(), nullable=True))`.
   - `op.create_foreign_key('users_patient_id_fkey', 'users', 'patients', ['patient_id'], ['id'], ondelete='RESTRICT')`.
   - `op.create_index('users_patient_id_unique', 'users', ['patient_id'], unique=True, postgresql_where=sa.text('patient_id IS NOT NULL'))`.
   - `op.create_check_constraint('users_role_patient_link', 'users', "(role = 'patient' AND patient_id IS NOT NULL) OR (role <> 'patient' AND patient_id IS NULL)")`.
   - Drop the existing `(tenant_id, lower(email))` unique index; create a new partial unique index on `(tenant_id, lower(email), role)`.
-- [ ] 3.3 Update the `User` ORM model (`apps/backend/app/db/models/user/user.py`) to add `patient_id` UUID column with `Mapped[Optional[UUID]]` and the `Patient` relationship. Update the `Role` enum (`apps/backend/app/core/enums/user.py`) to include `PATIENT`.
-- [ ] 3.4 Update the Pydantic `User` schema (`apps/backend/app/schemas/user/user.py`) to include `patient_id: UUID | None = None`.
+- [x] 3.3 Update the `User` ORM model (`apps/backend/app/db/models/user/user.py`) to add `patient_id` UUID column with `Mapped[Optional[UUID]]` and the `Patient` relationship. Update the `Role` enum (`apps/backend/app/core/enums/user.py`) to include `PATIENT`.
+- [x] 3.4 Update the Pydantic `User` schema (`apps/backend/app/schemas/user/user.py`) to include `patient_id: UUID | None = None`.
 
 ## 4. Backend — mobile auth routes
 
-- [ ] 4.1 Create `apps/backend/app/api/routers/mobile/auth/__init__.py` exporting an `auth_router` that includes both new routes.
-- [ ] 4.2 Create `apps/backend/app/schemas/auth/mobile_session.py::PatientSession` with exactly `{id: UUID, given_name: str, patient_id: UUID, tenant_id: UUID}`. No other fields. Tagged for OpenAPI under `mobile`.
-- [ ] 4.3 Create `apps/backend/app/api/routers/mobile/auth/password_router.py` with `POST /mobile/auth/login/password`:
+- [x] 4.1 Create `apps/backend/app/api/routers/mobile/auth/__init__.py` exporting an `auth_router` that includes both new routes.
+- [x] 4.2 Create `apps/backend/app/schemas/auth/mobile_session.py::PatientSession` with exactly `{id: UUID, given_name: str, patient_id: UUID, tenant_id: UUID}`. No other fields. Tagged for OpenAPI under `mobile`.
+- [x] 4.3 Create `apps/backend/app/api/routers/mobile/auth/password_router.py` with `POST /mobile/auth/login/password`:
   - Pydantic request `MobileLoginRequest { tenant: str, email: EmailStr, password: str }`.
   - Resolve tenant slug via `resolve_tenant_slug`; map `UnknownTenant` to `HTTPException(400, "Unknown tenant")`.
   - Call `authenticate_password(..., role_filter=lambda r: r == Role.PATIENT)`; map `InvalidCredentials` to `401 {"detail": "Invalid credentials"}`.
   - On success: `issue_session_cookie(response, user)`; project to `PatientSession`; return `200 {session: PatientSession}`.
-- [ ] 4.4 Create `apps/backend/app/api/routers/mobile/auth/me_router.py` with `GET /mobile/auth/me`:
+- [x] 4.4 Create `apps/backend/app/api/routers/mobile/auth/me_router.py` with `GET /mobile/auth/me`:
   - Depend on the existing session-cookie middleware that loads `request.state.session_user`.
   - If the loaded user's role is not `patient`, return `401 {"detail": "Unauthenticated"}`.
   - Otherwise project to `PatientSession` and return `200`.
-- [ ] 4.5 Register `mobile/auth/auth_router` in `apps/backend/app/api/__init__.py` alongside the existing `mobile_router` from `digital-front-door-setup`.
-- [ ] 4.6 Update CORS config to allow the Expo metro web dev origin (`http://localhost:8081`) with `allow_credentials=True`, alongside the existing orchestrator origin.
+- [x] 4.5 Register `mobile/auth/auth_router` in `apps/backend/app/api/__init__.py` alongside the existing `mobile_router` from `digital-front-door-setup`.
+- [x] 4.6 Update CORS config to allow the Expo metro web dev origin (`http://localhost:8081`) with `allow_credentials=True`, alongside the existing orchestrator origin.
 
 ## 5. Backend — seeding
 
-- [ ] 5.1 Add `BACKEND_BOOTSTRAP_PATIENT_PASSWORD` reading to `scripts/seed_users.py`. If unset, log a clear error to stderr naming the variable and exit non-zero.
-- [ ] 5.2 Add `seed_patient_users()` step run after caregiver seeding. Picks the first 1–2 seeded patients (deterministic by `external_ref` or insert order). Creates `users` rows with `role='patient'`, hashed env-var password, deterministic email `patient@zas.local`, display names derived from the patient's `given_name family_name`.
-- [ ] 5.3 Print resulting `{email, given_name}` pairs to stdout so demo-runners can paste credentials.
+- [x] 5.1 Add `BACKEND_BOOTSTRAP_PATIENT_PASSWORD` reading to `scripts/seed_users.py`. If unset, log a clear error to stderr naming the variable and exit non-zero.
+- [x] 5.2 Add `seed_patient_users()` step run after caregiver seeding. Picks the first 1–2 seeded patients (deterministic by `external_ref` or insert order). Creates `users` rows with `role='patient'`, hashed env-var password, deterministic email `patient@zas.local`, display names derived from the patient's `given_name family_name`.
+- [x] 5.3 Print resulting `{email, given_name}` pairs to stdout so demo-runners can paste credentials.
 
 ## 6. Backend — tests
 
 - [ ] 6.1 `tests/db/test_users_table.py` — add migration-level tests: enum carries `patient`; CHECK rejects bad inserts; partial UNIQUE rejects two users for one patient; relaxed email uniqueness accepts caregiver + patient same-email, rejects two patients same-email.
 - [ ] 6.2 `tests/auth/test_login_service.py` — unit tests for `authenticate_password()` covering all five rejection causes returning `InvalidCredentials`; success path; timing-parity assertion (rough: same number of password-hash calls per cause).
-- [ ] 6.3 `tests/api/test_mobile_auth_login.py` — endpoint tests: happy path, 401 wrong password, 401 caregiver-on-mobile-endpoint, 401 inactive, 401 soft-deleted, 400 unknown tenant; assert `Set-Cookie: BACKEND_SESSION`; assert `surface: 'mobile'` in audit log.
-- [ ] 6.4 `tests/api/test_mobile_auth_me.py` — endpoint tests: happy path with cookie, 401 missing cookie, 401 cookie-but-role-not-patient; assert `PatientSession` shape exactness.
-- [ ] 6.5 `tests/api/test_auth_login_password.py` (existing) — add scenario: caregiver route rejects `role = 'patient'` user with the same generic `401`.
-- [ ] 6.6 `tests/api/test_auth_logout.py` (existing) — add scenario: mobile-issued cookie is cleared by `POST /auth/logout`.
+- [x] 6.3 `tests/api/test_mobile_auth_login.py` — endpoint tests: happy path, 401 wrong password, 401 caregiver-on-mobile-endpoint, 401 inactive, 401 soft-deleted, 400 unknown tenant; assert `Set-Cookie: BACKEND_SESSION`; assert `surface: 'mobile'` in audit log.
+- [x] 6.4 `tests/api/test_mobile_auth_me.py` — endpoint tests: happy path with cookie, 401 missing cookie, 401 cookie-but-role-not-patient; assert `PatientSession` shape exactness.
+- [x] 6.5 `tests/api/test_auth_login_password.py` (existing) — add scenario: caregiver route rejects `role = 'patient'` user with the same generic `401`.
+- [x] 6.6 `tests/api/test_auth_logout.py` (existing) — add scenario: mobile-issued cookie is cleared by `POST /auth/logout`.
 - [ ] 6.7 `tests/api/test_seed_users.py` — assert seed fails without `BACKEND_BOOTSTRAP_PATIENT_PASSWORD`; succeeds with it set and links users to patients.
 - [ ] 6.8 Run `moon run backend:test-host` end-to-end; confirm all pass.
 
 ## 7. Backend — OpenAPI regen
 
-- [ ] 7.1 Run `moon run backend:openapi` to regenerate `apps/backend/openapi.json`.
-- [ ] 7.2 Inspect the diff: `/mobile/auth/login/password`, `/mobile/auth/me`, and `PatientSession` schema are present under the `mobile` tag. No unrelated drift.
+- [x] 7.1 Run `moon run backend:openapi` to regenerate `apps/backend/openapi.json`.
+- [x] 7.2 Inspect the diff: `/mobile/auth/login/password`, `/mobile/auth/me`, and `PatientSession` schema are present under the `mobile` tag. No unrelated drift.
 
 ## 8. Mobile — env + transport
 
