@@ -161,7 +161,7 @@ Note: "Pathway Designer" vs "Carepath Builder" vs other naming. Cosmetic but nee
 - Tier: [mvp]
 - Source: RFP working doc
 
-Note: From the patient view, patient can activate their enrollment (consent + Luscii download). PoC excludes patient touchpoint; revisit at MVP. **Shell promoted to PoC via `digital-front-door-setup` on 2026-06-02 (`apps/digital-front-door`); activation flow + consent UX remain MVP-tier.**
+Note: From the patient view, patient can activate their enrollment (consent + Luscii download). PoC excludes patient touchpoint; revisit at MVP. **Shell promoted to PoC via `digital-front-door-setup` on 2026-06-02 (`apps/digital-front-door`); patient login promoted to PoC via `mobile-app-auth-setup` on 2026-06-03 (cookie-session reuse + biometric unlock + 30d session). Activation flow + consent UX remain MVP-tier (`oidc-login-providers` adds eID/itsme).**
 
 ---
 
