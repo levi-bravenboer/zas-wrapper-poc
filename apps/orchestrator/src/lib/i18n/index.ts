@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next'
 
 import auth from './locales/nl/auth.json'
 import caregiverShell from './locales/nl/caregiver-shell.json'
+import careTeamsUi from './locales/nl/care-teams-ui.json'
 import common from './locales/nl/common.json'
 import dashboard from './locales/nl/dashboard.json'
 import dataTable from './locales/nl/data-table.json'
@@ -34,6 +35,7 @@ void i18next.use(initReactI18next).init({
   ns: [
     'common',
     'auth',
+    'care-teams-ui',
     'caregiver-shell',
     'dashboard',
     'data-table',
@@ -53,6 +55,7 @@ void i18next.use(initReactI18next).init({
     nl: {
       common,
       auth,
+      'care-teams-ui': careTeamsUi,
       'caregiver-shell': caregiverShell,
       dashboard,
       'data-table': dataTable,

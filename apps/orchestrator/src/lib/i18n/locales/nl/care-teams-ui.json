@@ -1,0 +1,87 @@
+{
+  "title": "Zorgteams",
+  "empty": "Nog geen zorgteam voor deze patiënt.",
+  "newTeam": "Nieuw zorgteam",
+  "history": "Geschiedenis",
+  "showHistory": "Toon historische deelnemers",
+  "hideHistory": "Verberg historische deelnemers",
+  "loading": "Laden…",
+  "loadFailed": "Zorgteams konden niet worden geladen",
+  "team": {
+    "active": "Actief",
+    "inactive": "Inactief",
+    "edit": "Bewerken",
+    "close": "Sluiten"
+  },
+  "participant": {
+    "name": "Naam",
+    "role": "Rol",
+    "actingAs": "Namens",
+    "period": "Periode",
+    "actions": "Acties",
+    "changeRole": "Rol wijzigen",
+    "remove": "Verwijderen",
+    "addParticipant": "Deelnemer toevoegen",
+    "noActingAs": "—"
+  },
+  "roleInCare": {
+    "primary": "Primair",
+    "consulting": "Consulterend",
+    "observer": "Observerend"
+  },
+  "createDialog": {
+    "title": "Nieuw zorgteam",
+    "name": "Naam",
+    "namePlaceholder": "bijv. Hartfalen team",
+    "category": "Categorie",
+    "categoryPlaceholder": "bijv. Multidisciplinair",
+    "submit": "Aanmaken",
+    "cancel": "Annuleren",
+    "toast": {
+      "success": "Zorgteam aangemaakt",
+      "error": "Aanmaken is niet gelukt"
+    }
+  },
+  "addDialog": {
+    "title": "Deelnemer toevoegen",
+    "user": "Zorgverlener",
+    "role": "Rol in zorgteam",
+    "actingAs": "Namens (praktijkrol)",
+    "submit": "Toevoegen",
+    "cancel": "Annuleren",
+    "toast": {
+      "success": "Deelnemer toegevoegd",
+      "error": "Toevoegen is niet gelukt"
+    }
+  },
+  "changeRoleDialog": {
+    "title": "Rol wijzigen",
+    "role": "Nieuwe rol",
+    "submit": "Wijzigen",
+    "cancel": "Annuleren",
+    "toast": {
+      "success": "Rol gewijzigd",
+      "error": "Wijzigen is niet gelukt"
+    }
+  },
+  "removeConfirm": {
+    "title": "Deelnemer verwijderen?",
+    "message": "{{name}} wordt uit het zorgteam verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "confirm": "Verwijderen",
+    "cancel": "Annuleren",
+    "toast": {
+      "success": "Deelnemer verwijderd",
+      "error": "Verwijderen is niet gelukt"
+    }
+  },
+  "closeConfirm": {
+    "title": "Zorgteam sluiten?",
+    "message": "\"{{name}}\" wordt gesloten en verplaatst naar de geschiedenis.",
+    "confirm": "Sluiten",
+    "cancel": "Annuleren",
+    "toast": {
+      "success": "Zorgteam gesloten",
+      "error": "Sluiten is niet gelukt"
+    }
+  }
+}
