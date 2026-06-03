@@ -63,7 +63,7 @@ export function CareTeamSection({
     participants.map((p) => (
       <TableRow key={p.id}>
         <TableCell className="font-medium">
-          {userNames.get(p.user_id) ?? p.user_id.slice(0, 8)}
+          {userNames.get(p.user_id) ?? p.user_id?.slice(0, 8) ?? '\u2014'}
         </TableCell>
         <TableCell>
           <Badge variant="outline">{t(`roleInCare.${p.role_in_care}`)}</Badge>
