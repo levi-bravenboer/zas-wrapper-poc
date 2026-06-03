@@ -6,9 +6,10 @@ import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { renderWithProviders } from '../../../utils/render-with-providers'
 
 beforeAll(async () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- requireActual needs runtime import type
-  const i18nModule =
-    jest.requireActual<typeof import('@/lib/i18n')>('@/lib/i18n')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.requireActual bypasses module mock
+  const i18nModule = jest.requireActual('@/lib/i18n') as {
+    initI18n: () => Promise<void>
+  }
   await i18nModule.initI18n()
 })
 
