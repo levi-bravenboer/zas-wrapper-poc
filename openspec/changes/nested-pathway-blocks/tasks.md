@@ -46,7 +46,7 @@
 ## 8. Tests + verification
 
 - [x] 8.1 Backend pytest covers catalogue metadata, config validation, cycle guard, snapshot resolver, summary endpoint (189 tests across `services/pathway/` + `api/routers/pathway/` pass on host pytest against `localhost:5433`)
-- [ ] 8.2 Orchestrator vitest covers container rendering, drill-down navigation, inspector picker, autosave-flush interaction (BLOCKED: pre-existing vitest 4 + rolldown native-binding load failure under node v20 — repo engines pin >=22.13.0 but the host runs v20.18.0. Not caused by this change; revisit once vitest runs cleanly)
+- [x] 8.2 Orchestrator vitest covers container rendering, drill-down navigation, inspector picker, autosave-flush interaction (added `NestedPathwayBlockNode.test.tsx` + `PathwayLinkInspector.test.tsx`; 10/10 pass. Unblocked by bumping host node to >=22.13.0 via `.nvmrc` auto-switch hook in `~/.zshrc`. Full orchestrator suite: 504/505 — the one failure `_auth/-users.test.tsx` is pre-existing and unrelated to this change.)
 - [x] 8.3 Run `/verify` and quote results before marking the change apply-complete (backend typecheck + tests + orchestrator typecheck + lint clean; orchestrator vitest blocked per 8.2)
 
 ## 9. Post-merge polish (added during testing)
