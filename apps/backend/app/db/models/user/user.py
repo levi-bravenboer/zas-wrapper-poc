@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 from typing import ClassVar
+from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,10 +22,14 @@ class User(TenantOwnedEntity):
     __tablename__ = "users"
     __realtime_resource__: ClassVar[str | None] = "users"
     __table_args__ = (
+        # Email uniqueness scoped to (tenant, lower(email), role) so a
+        # caregiver and a patient in the same tenant may share an email.
+        # Tightening to two-column was the pre-`mobile-app-auth-setup` rule.
         sa.Index(
-            "uq_users_tenant_id_lower_email",
+            "uq_users_tenant_id_lower_email_role",
             "tenant_id",
             sa.func.lower(sa.column("email")),
+            "role",
             unique=True,
         ),
         sa.Index("ix_users_tenant_id_role", "tenant_id", "role"),
@@ -36,9 +41,26 @@ class User(TenantOwnedEntity):
             unique=True,
             postgresql_where=sa.text("external_subject IS NOT NULL"),
         ),
+        # 1:1 patient↔user link via partial unique index; caregivers (NULL
+        # `patient_id`) are not constrained.
+        sa.Index(
+            "uq_users_patient_id",
+            "patient_id",
+            unique=True,
+            postgresql_where=sa.text("patient_id IS NOT NULL"),
+        ),
         sa.CheckConstraint(
             "password_hash IS NOT NULL OR external_subject IS NOT NULL",
             name="ck_users_credential_present",
+        ),
+        # FHIR-aligned identity model: a `users` row with `role = 'patient'`
+        # references a single `patients` row; non-patient rows MUST NOT
+        # carry a `patient_id`. The `patients` table itself carries no
+        # credential columns (see `patients-base` spec).
+        sa.CheckConstraint(
+            "(role = 'patient' AND patient_id IS NOT NULL)"
+            " OR (role <> 'patient' AND patient_id IS NULL)",
+            name="ck_users_role_patient_link",
         ),
     )
 
@@ -62,3 +84,8 @@ class User(TenantOwnedEntity):
     is_active: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, server_default=sa.true())
     external_idp: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
     external_subject: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    patient_id: Mapped[UUID | None] = mapped_column(
+        sa.Uuid(),
+        sa.ForeignKey("patients.id", ondelete="RESTRICT"),
+        nullable=True,
+    )
