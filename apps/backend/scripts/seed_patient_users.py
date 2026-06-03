@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

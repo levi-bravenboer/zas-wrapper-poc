@@ -6,10 +6,9 @@ import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { renderWithProviders } from '../../../utils/render-with-providers'
 
 beforeAll(async () => {
-  const { initI18n } = jest.requireActual<typeof import('@/lib/i18n')>(
-    '@/lib/i18n'
-  )
-  await initI18n()
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- requireActual needs runtime import type
+  const i18nModule = jest.requireActual<typeof import('@/lib/i18n')>('@/lib/i18n')
+  await i18nModule.initI18n()
 })
 
 const mockRequestAuthed = requestAuthed as jest.MockedFunction<
