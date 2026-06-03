@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -30,13 +30,6 @@ export function CreateCareTeamDialog({
   const mutation = useCreateCareTeam()
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
-
-  useEffect(() => {
-    if (open) {
-      setName('')
-      setCategory('')
-    }
-  }, [open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

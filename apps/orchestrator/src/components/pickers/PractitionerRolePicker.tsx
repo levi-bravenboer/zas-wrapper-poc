@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactElement } from 'react'
 
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
+import type { ListQuery } from '@/lib/query/paginated'
 import { useOrganisations } from '@/modules/organisation/hooks'
 import { PRACTITIONER_ROLES_LIST_PATH } from '@/modules/practitioner-role/keys'
 import type { PractitionerRoleRead } from '@/modules/practitioner-role/schemas'
@@ -38,13 +39,13 @@ export function PractitionerRolePicker({
   const [search, setSearch] = useState('')
 
   const query = useMemo(
-    () => ({
+    (): ListQuery => ({
       page: 1,
       page_size: PAGE_SIZE,
       q: search.trim() || null,
-      filters: practitionerId
-        ? { practitioner_id: { op: 'eq' as const, value: practitionerId } }
-        : undefined,
+      ...(practitionerId
+        ? { filters: { practitioner_id: { op: 'eq' as const, value: practitionerId } } }
+        : {}),
     }),
     [practitionerId, search],
   )

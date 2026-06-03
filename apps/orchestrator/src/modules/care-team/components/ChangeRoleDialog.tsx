@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -40,13 +40,9 @@ export function ChangeRoleDialog({
 }: ChangeRoleDialogProps): ReactElement {
   const { t } = useTranslation('care-teams-ui')
   const mutation = useChangeParticipantRole()
-  const [roleInCare, setRoleInCare] = useState<RoleInCare>('consulting')
-
-  useEffect(() => {
-    if (open && participant) {
-      setRoleInCare(participant.role_in_care)
-    }
-  }, [open, participant])
+  const [roleInCare, setRoleInCare] = useState<RoleInCare>(
+    participant?.role_in_care ?? 'consulting',
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -70,11 +70,13 @@ export function CareTeamEditor({ patientId }: CareTeamEditorProps): ReactElement
           <Plus className="mr-1 size-4" />
           {t('newTeam')}
         </Button>
-        <CreateCareTeamDialog
-          open={createOpen}
-          patientId={patientId}
-          onOpenChange={setCreateOpen}
-        />
+        {createOpen && (
+          <CreateCareTeamDialog
+            open
+            patientId={patientId}
+            onOpenChange={setCreateOpen}
+          />
+        )}
       </div>
     )
   }

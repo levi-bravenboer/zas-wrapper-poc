@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -45,15 +45,6 @@ export function AddParticipantDialog({
   const [practitionerId, setPractitionerId] = useState<string | null>(null)
   const [roleId, setRoleId] = useState<string | null>(null)
   const [roleInCare, setRoleInCare] = useState<RoleInCare>('consulting')
-
-  useEffect(() => {
-    if (open) {
-      setUserId(null)
-      setPractitionerId(null)
-      setRoleId(null)
-      setRoleInCare('consulting')
-    }
-  }, [open])
 
   const handleUserChange = async (id: string | null) => {
     setUserId(id)
