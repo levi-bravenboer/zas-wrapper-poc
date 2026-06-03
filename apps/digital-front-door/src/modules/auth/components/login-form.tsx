@@ -47,6 +47,7 @@ export function LoginForm() {
           {t('form.email')}
         </Text>
         <TextInput
+          testID="login-email"
           className="rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900"
           value={email}
           onChangeText={setEmail}
@@ -63,6 +64,7 @@ export function LoginForm() {
           {t('form.password')}
         </Text>
         <TextInput
+          testID="login-password"
           className="rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900"
           value={password}
           onChangeText={setPassword}

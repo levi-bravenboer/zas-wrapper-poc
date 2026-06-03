@@ -97,16 +97,16 @@
 
 ## 12. Mobile — tests
 
-- [ ] 12.1 `__tests__/modules/auth/api.test.ts` — mock `requestAuthed`; assert `login()` POSTs to `/mobile/auth/login/password` with body shape `{tenant, email, password}`; assert `me()` GETs `/mobile/auth/me`; assert both pass through `credentials: 'include'`.
-- [ ] 12.2 `__tests__/modules/auth/hooks/use-login.test.ts` — render hook with `renderWithProviders`; trigger mutation; assert `authQueries.me()` is invalidated on success; assert `UnauthenticatedError` surfaces in `error`.
-- [ ] 12.3 `__tests__/modules/auth/components/login-form.test.tsx` — render under `nl-BE`; assert Dutch labels render; assert submit calls mutation; mock 401 → assert `Ongeldige inloggegevens` error region renders.
-- [ ] 12.4 `__tests__/app/_layout.test.tsx` — extend the existing smoke test with two integration scenarios: `me()` returns 401 → active route is `/(auth)/login`; `me()` returns 200 → active route is `/(app)`. Mock `authQueries.me()` query function per scenario.
-- [ ] 12.5 `__tests__/fixtures/auth.ts` — `makePatientSession(overrides?: Partial<PatientSession>): PatientSession`.
+- [x] 12.1 `__tests__/modules/auth/api.test.ts` — mock `requestAuthed`; assert `login()` POSTs to `/mobile/auth/login/password` with body shape `{tenant, email, password}`; assert `me()` GETs `/mobile/auth/me`; assert both pass through `credentials: 'include'`.
+- [x] 12.2 `__tests__/modules/auth/hooks/use-login.test.ts` — render hook with `renderWithProviders`; trigger mutation; assert `authQueries.me()` is invalidated on success; assert `UnauthenticatedError` surfaces in `error`.
+- [x] 12.3 `__tests__/modules/auth/components/login-form.test.tsx` — render under `nl-BE`; assert Dutch labels render; assert submit calls mutation; mock 401 → assert `Ongeldige inloggegevens` error region renders.
+- [x] 12.4 `__tests__/app/_layout.test.tsx` — extend the existing smoke test with two integration scenarios: `me()` returns 401 → active route is `/(auth)/login`; `me()` returns 200 → active route is `/(app)`. Mock `authQueries.me()` query function per scenario.
+- [x] 12.5 `__tests__/fixtures/auth.ts` — `makePatientSession(overrides?: Partial<PatientSession>): PatientSession`.
 
 ## 13. Orchestrator — typegen + light spec checks
 
-- [ ] 13.1 Run `/openapi-sync` (or `moon run orchestrator:typegen` after backend openapi regen). Verify `apps/orchestrator/src/lib/api/schema.d.ts` now references `/mobile/auth/login/password`, `/mobile/auth/me`, and `PatientSession`.
-- [ ] 13.2 No orchestrator UI changes in this PR. Sanity-run `moon run orchestrator:typecheck` to confirm the new types don't break the existing tree.
+- [x] 13.1 Run `/openapi-sync` (or `moon run orchestrator:typegen` after backend openapi regen). Verify `apps/orchestrator/src/lib/api/schema.d.ts` now references `/mobile/auth/login/password`, `/mobile/auth/me`, and `PatientSession`.
+- [x] 13.2 No orchestrator UI changes in this PR. Sanity-run `moon run orchestrator:typecheck` to confirm the new types don't break the existing tree.
 
 ## 14. Verification (everything must be green)
 
