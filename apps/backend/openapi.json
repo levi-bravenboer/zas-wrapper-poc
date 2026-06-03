@@ -2610,6 +2610,28 @@
           }
         }
       }
+    },
+    "/mobile/health": {
+      "get": {
+        "tags": [
+          "mobile"
+        ],
+        "summary": "Health",
+        "description": "Return a simple liveness probe payload.",
+        "operationId": "health_mobile_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3341,6 +3363,19 @@
         ],
         "title": "LusciiProtocol",
         "description": "A Luscii protocol \u2014 variant of a program with its own cadence."
+      },
+      "MobileHealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          }
+        },
+        "type": "object",
+        "title": "MobileHealthResponse",
+        "description": "Stable shape for the mobile-app liveness probe."
       },
       "OrganisationCreate": {
         "properties": {
