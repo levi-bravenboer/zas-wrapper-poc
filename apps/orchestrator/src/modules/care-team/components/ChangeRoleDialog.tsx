@@ -70,10 +70,7 @@ export function ChangeRoleDialog({
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <Label>{t('changeRoleDialog.role')}</Label>
-            <Select
-              value={roleInCare}
-              onValueChange={(v) => setRoleInCare(v as RoleInCare)}
-            >
+            <Select value={roleInCare} onValueChange={(v) => setRoleInCare(v as RoleInCare)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

@@ -74,10 +74,7 @@ export function CareTeamSection({
             <DropdownMenuItem onClick={() => setChangingRole(p)}>
               {t('participant.changeRole')}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setRemoving(p)}
-              className="text-destructive"
-            >
+            <DropdownMenuItem onClick={() => setRemoving(p)} className="text-destructive">
               {t('participant.remove')}
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -95,9 +92,7 @@ export function CareTeamSection({
           <h3 className="text-sm font-semibold">
             {team.name ?? team.category ?? team.id.slice(0, 8)}
           </h3>
-          {team.category && (
-            <Badge variant="outline">{team.category}</Badge>
-          )}
+          {team.category && <Badge variant="outline">{team.category}</Badge>}
           <Badge variant={team.status === 'active' ? 'default' : 'soft'}>
             {t(`team.${team.status}`)}
           </Badge>
@@ -118,10 +113,7 @@ export function CareTeamSection({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => setCloseOpen(true)}
-                className="text-destructive"
-              >
+              <DropdownMenuItem onClick={() => setCloseOpen(true)} className="text-destructive">
                 {t('team.close')}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -138,9 +130,7 @@ export function CareTeamSection({
           <span />
         </div>
         {openParticipants.length === 0 ? (
-          <div className="px-4 py-3 text-center text-sm text-muted-foreground">
-            {t('empty')}
-          </div>
+          <div className="px-4 py-3 text-center text-sm text-muted-foreground">{t('empty')}</div>
         ) : (
           openParticipants.map((p) => renderRow(p, true))
         )}
@@ -157,9 +147,7 @@ export function CareTeamSection({
             {showHistory ? t('hideHistory') : t('showHistory')}
           </Button>
           {showHistory && (
-            <div className="mt-1">
-              {closedParticipants.map((p) => renderRow(p, false))}
-            </div>
+            <div className="mt-1">{closedParticipants.map((p) => renderRow(p, false))}</div>
           )}
         </div>
       )}
@@ -178,7 +166,9 @@ export function CareTeamSection({
           careTeamId={team.id}
           patientId={patientId}
           participant={changingRole}
-          onOpenChange={(open) => { if (!open) setChangingRole(null) }}
+          onOpenChange={(open) => {
+            if (!open) setChangingRole(null)
+          }}
         />
       )}
       {removing && (
@@ -188,7 +178,9 @@ export function CareTeamSection({
           patientId={patientId}
           userId={removing.user_id}
           displayName={userNames.get(removing.user_id) ?? removing.user_id?.slice(0, 8) ?? '\u2014'}
-          onOpenChange={(open) => { if (!open) setRemoving(null) }}
+          onOpenChange={(open) => {
+            if (!open) setRemoving(null)
+          }}
         />
       )}
       {closeOpen && (

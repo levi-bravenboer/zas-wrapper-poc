@@ -71,10 +71,7 @@ export async function changeParticipantRole(
   return data
 }
 
-export async function unassignParticipant(
-  careTeamId: string,
-  userId: string,
-): Promise<void> {
+export async function unassignParticipant(careTeamId: string, userId: string): Promise<void> {
   const { response } = await api.DELETE('/care-teams/{care_team_id}/participants/{user_id}', {
     params: { path: { care_team_id: careTeamId, user_id: userId } },
   })

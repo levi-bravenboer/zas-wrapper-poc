@@ -71,11 +71,7 @@ export function CareTeamEditor({ patientId }: CareTeamEditorProps): ReactElement
           {t('newTeam')}
         </Button>
         {createOpen && (
-          <CreateCareTeamDialog
-            open
-            patientId={patientId}
-            onOpenChange={setCreateOpen}
-          />
+          <CreateCareTeamDialog open patientId={patientId} onOpenChange={setCreateOpen} />
         )}
       </div>
     )
@@ -109,11 +105,7 @@ export function CareTeamEditor({ patientId }: CareTeamEditorProps): ReactElement
             onClick={() => setHistoryOpen(!historyOpen)}
             className="gap-1 text-muted-foreground"
           >
-            {historyOpen ? (
-              <ChevronDown className="size-4" />
-            ) : (
-              <ChevronRight className="size-4" />
-            )}
+            {historyOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
             {t('history')} ({closedTeams.length})
           </Button>
           {historyOpen &&
@@ -129,11 +121,7 @@ export function CareTeamEditor({ patientId }: CareTeamEditorProps): ReactElement
         </div>
       )}
 
-      <CreateCareTeamDialog
-        open={createOpen}
-        patientId={patientId}
-        onOpenChange={setCreateOpen}
-      />
+      <CreateCareTeamDialog open={createOpen} patientId={patientId} onOpenChange={setCreateOpen} />
     </div>
   )
 }

@@ -96,10 +96,7 @@ export function AddParticipantDialog({
           </div>
           <div className="flex flex-col gap-1">
             <Label>{t('addDialog.role')}</Label>
-            <Select
-              value={roleInCare}
-              onValueChange={(v) => setRoleInCare(v as RoleInCare)}
-            >
+            <Select value={roleInCare} onValueChange={(v) => setRoleInCare(v as RoleInCare)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
