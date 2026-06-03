@@ -44,7 +44,43 @@ function isApiHealth(value: unknown): value is ApiHealth {
   return value.status === 'ok'
 }
 
+export class UnauthenticatedError extends ApiError {
+  constructor() {
+    super('Unauthenticated', 401)
+    this.name = 'UnauthenticatedError'
+  }
+}
+
+export function resolveTenantSlug(): string {
+  const extra = Constants.expoConfig?.extra
+  if (extra && typeof extra === 'object' && 'tenantSlug' in extra) {
+    const value = extra.tenantSlug
+    if (typeof value === 'string') return value
+  }
+  throw new ApiError(
+    'EXPO_PUBLIC_TENANT_SLUG is not set — copy `.env.example` to `.env` first.',
+    0
+  )
+}
+
 const DEFAULT_TIMEOUT_MS = 8000
+
+export async function requestAuthed<T>(
+  path: string,
+  init: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(`${resolveBaseUrl()}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: { Accept: 'application/json', ...init.headers },
+    signal: init.signal ?? AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+  })
+  if (res.status === 401) throw new UnauthenticatedError()
+  if (!res.ok)
+    throw new ApiError(`Request failed (${res.status})`, res.status)
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- generic fetch wrapper
+  return (await res.json()) as T
+}
 
 export async function apiHealthCheck(): Promise<ApiHealth> {
   const url = `${resolveBaseUrl()}/mobile/health`

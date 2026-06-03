@@ -66,34 +66,34 @@
 
 ## 8. Mobile — env + transport
 
-- [ ] 8.1 Append `EXPO_PUBLIC_TENANT_SLUG=zas` to `apps/digital-front-door/.env.example`.
-- [ ] 8.2 Update `apps/digital-front-door/app.config.ts` `extra` to expose `tenantSlug: process.env.EXPO_PUBLIC_TENANT_SLUG ?? null`.
-- [ ] 8.3 Extend `apps/digital-front-door/src/lib/api.ts` with `requestAuthed<T>(path, init?)` (sets `credentials: 'include'`, timeout via `AbortSignal.timeout`, surfaces `UnauthenticatedError` on 401 / `ApiError` otherwise). Add `class UnauthenticatedError extends ApiError`.
-- [ ] 8.4 Add a `resolveTenantSlug()` helper that reads `Constants.expoConfig?.extra?.tenantSlug` and throws an explicit `ApiError` if absent.
+- [x] 8.1 Append `EXPO_PUBLIC_TENANT_SLUG=zas` to `apps/digital-front-door/.env.example`.
+- [x] 8.2 Update `apps/digital-front-door/app.config.ts` `extra` to expose `tenantSlug: process.env.EXPO_PUBLIC_TENANT_SLUG ?? null`.
+- [x] 8.3 Extend `apps/digital-front-door/src/lib/api.ts` with `requestAuthed<T>(path, init?)` (sets `credentials: 'include'`, timeout via `AbortSignal.timeout`, surfaces `UnauthenticatedError` on 401 / `ApiError` otherwise). Add `class UnauthenticatedError extends ApiError`.
+- [x] 8.4 Add a `resolveTenantSlug()` helper that reads `Constants.expoConfig?.extra?.tenantSlug` and throws an explicit `ApiError` if absent.
 
 ## 9. Mobile — auth module (first concrete `src/modules/<x>/`)
 
-- [ ] 9.1 Create `apps/digital-front-door/src/modules/auth/types.ts` re-exporting the generated `PatientSession` and defining a local `LoginInput { tenant: string; email: string; password: string }`.
-- [ ] 9.2 Create `src/modules/auth/api.ts` with `login(input: LoginInput): Promise<{ session: PatientSession }>` (POSTs JSON via `requestAuthed`) and `me(): Promise<PatientSession>` (GETs via `requestAuthed`).
-- [ ] 9.3 Create `src/modules/auth/queries.ts` exporting `authQueries.all() = ['auth']` and `authQueries.me()` returning a `queryOptions` factory.
-- [ ] 9.4 Create `src/modules/auth/mutations.ts` exporting `authMutations.login()` config; on `onSuccess`, invalidates `authQueries.me()` on the shared `queryClient`.
-- [ ] 9.5 Create `src/modules/auth/atoms.ts` with `currentSessionAtom: PrimitiveAtom<PatientSession | null>` defaulting to `null`. Document in code comments that this is a hot cache; source of truth is the TanStack Query cache.
-- [ ] 9.6 Create `src/modules/auth/hooks/use-session.ts` wrapping `useQuery(authQueries.me())` and returning `{ session, isAuthenticated, isLoading, error }`.
-- [ ] 9.7 Create `src/modules/auth/hooks/use-login.ts` wrapping `useMutation(authMutations.login())` and exposing `{ login, isLoading, error }`.
-- [ ] 9.8 Create `src/modules/auth/components/login-form.tsx` per spec — Dutch labels via `t('auth.…')`, NativeWind-only styling, controlled inputs, error region with `role="alert"`.
-- [ ] 9.9 Create `src/modules/auth/index.ts` barrel re-exporting `atoms`, `types`, `api`, `queries`, `mutations`, plus `export function resetAuth(): Promise<void>` that calls `POST /auth/logout` via `requestAuthed`, clears `currentSessionAtom`, and invalidates `authQueries.me()`.
+- [x] 9.1 Create `apps/digital-front-door/src/modules/auth/types.ts` re-exporting the generated `PatientSession` and defining a local `LoginInput { tenant: string; email: string; password: string }`.
+- [x] 9.2 Create `src/modules/auth/api.ts` with `login(input: LoginInput): Promise<{ session: PatientSession }>` (POSTs JSON via `requestAuthed`) and `me(): Promise<PatientSession>` (GETs via `requestAuthed`).
+- [x] 9.3 Create `src/modules/auth/queries.ts` exporting `authQueries.all() = ['auth']` and `authQueries.me()` returning a `queryOptions` factory.
+- [x] 9.4 Create `src/modules/auth/mutations.ts` exporting `authMutations.login()` config; on `onSuccess`, invalidates `authQueries.me()` on the shared `queryClient`.
+- [x] 9.5 Create `src/modules/auth/atoms.ts` with `currentSessionAtom: PrimitiveAtom<PatientSession | null>` defaulting to `null`. Document in code comments that this is a hot cache; source of truth is the TanStack Query cache.
+- [x] 9.6 Create `src/modules/auth/hooks/use-session.ts` wrapping `useQuery(authQueries.me())` and returning `{ session, isAuthenticated, isLoading, error }`.
+- [x] 9.7 Create `src/modules/auth/hooks/use-login.ts` wrapping `useMutation(authMutations.login())` and exposing `{ login, isLoading, error }`.
+- [x] 9.8 Create `src/modules/auth/components/login-form.tsx` per spec — Dutch labels via `t('auth.…')`, NativeWind-only styling, controlled inputs, error region with `role="alert"`.
+- [x] 9.9 Create `src/modules/auth/index.ts` barrel re-exporting `atoms`, `types`, `api`, `queries`, `mutations`, plus `export function resetAuth(): Promise<void>` that calls `POST /auth/logout` via `requestAuthed`, clears `currentSessionAtom`, and invalidates `authQueries.me()`.
 
 ## 10. Mobile — i18n namespace
 
-- [ ] 10.1 Create `apps/digital-front-door/src/lib/i18n/locales/nl-BE/auth.json` with keys: `form.email`, `form.password`, `form.submit`, `form.submitting`, `errors.invalidCredentials`, `errors.network`, `errors.unknownTenant`. All values Dutch.
-- [ ] 10.2 Update `apps/digital-front-door/src/lib/i18n/locales/nl-BE/common.json` to add `app.home.welcome` with value `Welkom, {{name}}`.
-- [ ] 10.3 Update `apps/digital-front-door/src/lib/i18n/index.ts` to register the `auth` namespace alongside `common` and load the new resource bundle.
+- [x] 10.1 Create `apps/digital-front-door/src/lib/i18n/locales/nl-BE/auth.json` with keys: `form.email`, `form.password`, `form.submit`, `form.submitting`, `errors.invalidCredentials`, `errors.network`, `errors.unknownTenant`. All values Dutch.
+- [x] 10.2 Update `apps/digital-front-door/src/lib/i18n/locales/nl-BE/common.json` to add `app.home.welcome` with value `Welkom, {{name}}`.
+- [x] 10.3 Update `apps/digital-front-door/src/lib/i18n/index.ts` to register the `auth` namespace alongside `common` and load the new resource bundle.
 
 ## 11. Mobile — gated routing + screens
 
-- [ ] 11.1 Refactor `src/app/_layout.tsx`: after `initI18n()` resolves, mount the existing provider stack; introduce an inner `RoutingGate` component that consumes `useSession()` and triggers `router.replace('/(app)')` or `router.replace('/(auth)/login')` based on the result. Keep splash visible until `useSession()` has resolved at least once.
-- [ ] 11.2 Replace `src/app/(auth)/login.tsx` body with `<LoginForm />` from `@/modules/auth`.
-- [ ] 11.3 Replace `src/app/(app)/index.tsx` body with a `<HomePlaceholder />` that reads `useSession()` and renders `t('app.home.welcome', { name: session.given_name })`. No other content. NativeWind-only.
+- [x] 11.1 Refactor `src/app/_layout.tsx`: after `initI18n()` resolves, mount the existing provider stack; introduce an inner `RoutingGate` component that consumes `useSession()` and triggers `router.replace('/(app)')` or `router.replace('/(auth)/login')` based on the result. Keep splash visible until `useSession()` has resolved at least once.
+- [x] 11.2 Replace `src/app/(auth)/login.tsx` body with `<LoginForm />` from `@/modules/auth`.
+- [x] 11.3 Replace `src/app/(app)/index.tsx` body with a `<HomePlaceholder />` that reads `useSession()` and renders `t('app.home.welcome', { name: session.given_name })`. No other content. NativeWind-only.
 
 ## 12. Mobile — tests
 

@@ -1,6 +1,7 @@
 import { createInstance } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
+import nlBeAuth from './locales/nl-BE/auth.json'
 import nlBeCommon from './locales/nl-BE/common.json'
 
 export const LOCALE_NL_BE = 'nl-BE' as const
@@ -16,12 +17,12 @@ export async function initI18n(): Promise<void> {
     .use(initReactI18next)
     .init({
       resources: {
-        'nl-BE': { common: nlBeCommon },
+        'nl-BE': { common: nlBeCommon, auth: nlBeAuth },
       },
       lng: LOCALE_NL_BE,
       fallbackLng: LOCALE_NL_BE,
       defaultNS: 'common',
-      ns: ['common'],
+      ns: ['common', 'auth'],
       interpolation: { escapeValue: false },
       returnNull: false,
     })
