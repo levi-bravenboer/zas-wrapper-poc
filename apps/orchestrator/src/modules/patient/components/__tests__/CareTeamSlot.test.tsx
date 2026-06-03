@@ -12,8 +12,16 @@ const { usePatientCareTeamsMock } = vi.hoisted(() => ({
   usePatientCareTeamsMock: vi.fn(),
 }))
 
-vi.mock('../../hooks', () => ({
+vi.mock('@/modules/patient/hooks', () => ({
   usePatientCareTeams: usePatientCareTeamsMock,
+}))
+
+vi.mock('@/hooks/use-paginated-query', () => ({
+  usePaginatedQuery: () => ({ data: { items: [] }, isLoading: false }),
+}))
+
+vi.mock('@/modules/organisation/hooks', () => ({
+  useOrganisations: () => ({ data: [] }),
 }))
 
 const TEAM = {
@@ -27,11 +35,13 @@ const TEAM = {
   participants: [
     {
       id: 'pp-1',
-      care_team_id: 'ct-1',
-      practitioner_role_id: 'pr-1',
-      role_code: 'doctor',
+      user_id: 'u-1',
+      role_in_care: 'primary' as const,
       period_start: '2026-01-01T00:00:00Z',
       period_end: null,
+      acting_as_practitioner_role_id: null,
+      assigned_by: 'u-admin',
+      unassigned_by: null,
     },
   ],
 }
@@ -55,17 +65,15 @@ describe('CareTeamSlot', () => {
     usePatientCareTeamsMock.mockReset()
   })
 
-  it('renders placeholder copy + current team list', () => {
+  it('renders team name and participant role badge', () => {
     usePatientCareTeamsMock.mockReturnValue({
       data: [TEAM],
       isLoading: false,
       error: null,
-      refetch: vi.fn(),
     })
     renderSlot()
-    expect(screen.getByText(/Komt binnenkort/)).toBeTruthy()
     expect(screen.getByText('Thuiszorg-team')).toBeTruthy()
-    expect(screen.getByText(/1 deelnemer/)).toBeTruthy()
+    expect(screen.getByText('Primair')).toBeTruthy()
   })
 
   it('shows empty state when no teams', () => {
@@ -73,7 +81,6 @@ describe('CareTeamSlot', () => {
       data: [],
       isLoading: false,
       error: null,
-      refetch: vi.fn(),
     })
     renderSlot()
     expect(screen.getByText(/Nog geen zorgteam/)).toBeTruthy()
