@@ -124,9 +124,7 @@ async def test_direct_self_link_rejected(
     service = _service(db_session)
     phase = _phase()
     lane = _lane()
-    block = _pathway_link_block(
-        phase_id=phase.id, lane_id=lane.id, target_pathway_id=pathway.id
-    )
+    block = _pathway_link_block(phase_id=phase.id, lane_id=lane.id, target_pathway_id=pathway.id)
     with pytest.raises(NestedPathwayCycleError) as exc:
         await service.replace_definition(
             pathway.id,
@@ -193,9 +191,7 @@ async def test_distinct_chain_accepted(
     for parent, child in ((pathway_a, pathway_b), (pathway_b, pathway_c)):
         phase = _phase()
         lane = _lane()
-        block = _pathway_link_block(
-            phase_id=phase.id, lane_id=lane.id, target_pathway_id=child.id
-        )
+        block = _pathway_link_block(phase_id=phase.id, lane_id=lane.id, target_pathway_id=child.id)
         await service.replace_definition(
             parent.id,
             parent.tenant_id,
@@ -206,9 +202,7 @@ async def test_distinct_chain_accepted(
     # C → D is a fresh distinct target — accepted.
     phase = _phase()
     lane = _lane()
-    block = _pathway_link_block(
-        phase_id=phase.id, lane_id=lane.id, target_pathway_id=pathway_d.id
-    )
+    block = _pathway_link_block(phase_id=phase.id, lane_id=lane.id, target_pathway_id=pathway_d.id)
     result = await service.replace_definition(
         pathway_c.id,
         pathway_c.tenant_id,
@@ -254,18 +248,14 @@ async def test_bounded_depth_terminates_without_finding_far_ancestor() -> None:
 
     depth_total = MAX_NESTED_PATHWAY_DEPTH + 3
     ids = [uuid.uuid4() for _ in range(depth_total + 1)]
-    parents_of: dict[UUID, set[UUID]] = {
-        ids[i]: {ids[i + 1]} for i in range(depth_total)
-    }
+    parents_of: dict[UUID, set[UUID]] = {ids[i]: {ids[i + 1]} for i in range(depth_total)}
     repo = _FakeRepo(parents_of=parents_of)
     parent_pathway_id = ids[0]
     far_ancestor = ids[depth_total]  # beyond the cap
 
     phase = _phase()
     lane = _lane()
-    block = _pathway_link_block(
-        phase_id=phase.id, lane_id=lane.id, target_pathway_id=far_ancestor
-    )
+    block = _pathway_link_block(phase_id=phase.id, lane_id=lane.id, target_pathway_id=far_ancestor)
 
     # Far ancestor is past the cap → not in the computed ancestor set →
     # the guard does NOT raise. Within-cap ancestors (e.g. ids[1]) would.

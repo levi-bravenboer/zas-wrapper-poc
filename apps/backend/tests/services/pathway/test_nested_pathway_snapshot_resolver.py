@@ -134,9 +134,7 @@ async def _publish(db_session: AsyncSession, pathway: Pathway) -> PathwayVersion
     return published
 
 
-async def _pathway_link_block_row(
-    db_session: AsyncSession, pathway_version_id
-) -> PathwayBlock:
+async def _pathway_link_block_row(db_session: AsyncSession, pathway_version_id) -> PathwayBlock:
     stmt = select(PathwayBlock).where(
         PathwayBlock.pathway_version_id == pathway_version_id,
         PathwayBlock.type == "pathway_link",

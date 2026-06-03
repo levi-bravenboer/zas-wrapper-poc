@@ -35,8 +35,7 @@ class InvalidBlockTypeCodeError(ValueError):
 
     def __init__(self, raw: object) -> None:
         super().__init__(
-            f"invalid block type code {raw!r}; "
-            f"expected pattern {BLOCK_TYPE_CODE_PATTERN.pattern}"
+            f"invalid block type code {raw!r}; expected pattern {BLOCK_TYPE_CODE_PATTERN.pattern}"
         )
         self.raw = raw
 

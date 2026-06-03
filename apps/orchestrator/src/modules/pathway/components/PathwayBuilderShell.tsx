@@ -260,62 +260,62 @@ function Inner({
       />
       <main role="main" className="relative min-h-0 overflow-hidden">
         <BuilderFlushProvider flush={flush} saveState={saveState}>
-        <BuilderCanvasFrame
-          phases={phases}
-          lanes={lanes}
-          blocks={blocks}
-          edges={edges}
-          timingValues={timingValues}
-          blockTypes={catalogue}
-          selection={state.selection}
-          dispatch={dispatch}
-          onDropBlockType={onDropBlockType}
-          dragApi={dragApi}
-        />
-        <BuilderDock
-          catalogue={catalogue}
-          onAddBlock={onAddBlock}
-          onDragStartType={(bt) => dragApi.startNewDrag(bt.type, bt.allowed_lane_kind_codes)}
-          onDragEndType={dragApi.endDrag}
-        />
-        {selectedBlock && (
-          <BuilderDrawer
-            block={selectedBlock}
-            blockType={selectedBlockType}
-            lane={selectedBlockLane}
+          <BuilderCanvasFrame
+            phases={phases}
+            lanes={lanes}
             blocks={blocks}
-            branches={selectedBlockBranches}
-            currentPathwayId={pathway.id}
-            onPatchConfig={(config) =>
-              dispatch({ type: 'patch-block', blockId: selectedBlock.id, patch: { config } })
-            }
-            onRename={(label) =>
-              dispatch({
-                type: 'patch-block',
-                blockId: selectedBlock.id,
-                patch: { label: label || null },
-              })
-            }
-            onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
-            onDelete={() => dispatch({ type: 'delete-block', blockId: selectedBlock.id })}
-          />
-        )}
-        {selectedEdge && (
-          <EdgeInspector
-            edge={selectedEdge}
-            timingKinds={timingKinds}
-            offsetDirections={offsetDirections}
+            edges={edges}
             timingValues={timingValues}
-            timeMarkers={timeMarkers}
-            blocks={blocks}
-            branches={branches}
-            onPatchEdge={(patch) =>
-              dispatch({ type: 'patch-edge', edgeId: selectedEdge.id, patch })
-            }
-            onDelete={() => dispatch({ type: 'delete-edge', edgeId: selectedEdge.id })}
-            onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
+            blockTypes={catalogue}
+            selection={state.selection}
+            dispatch={dispatch}
+            onDropBlockType={onDropBlockType}
+            dragApi={dragApi}
           />
-        )}
+          <BuilderDock
+            catalogue={catalogue}
+            onAddBlock={onAddBlock}
+            onDragStartType={(bt) => dragApi.startNewDrag(bt.type, bt.allowed_lane_kind_codes)}
+            onDragEndType={dragApi.endDrag}
+          />
+          {selectedBlock && (
+            <BuilderDrawer
+              block={selectedBlock}
+              blockType={selectedBlockType}
+              lane={selectedBlockLane}
+              blocks={blocks}
+              branches={selectedBlockBranches}
+              currentPathwayId={pathway.id}
+              onPatchConfig={(config) =>
+                dispatch({ type: 'patch-block', blockId: selectedBlock.id, patch: { config } })
+              }
+              onRename={(label) =>
+                dispatch({
+                  type: 'patch-block',
+                  blockId: selectedBlock.id,
+                  patch: { label: label || null },
+                })
+              }
+              onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
+              onDelete={() => dispatch({ type: 'delete-block', blockId: selectedBlock.id })}
+            />
+          )}
+          {selectedEdge && (
+            <EdgeInspector
+              edge={selectedEdge}
+              timingKinds={timingKinds}
+              offsetDirections={offsetDirections}
+              timingValues={timingValues}
+              timeMarkers={timeMarkers}
+              blocks={blocks}
+              branches={branches}
+              onPatchEdge={(patch) =>
+                dispatch({ type: 'patch-edge', edgeId: selectedEdge.id, patch })
+              }
+              onDelete={() => dispatch({ type: 'delete-edge', edgeId: selectedEdge.id })}
+              onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
+            />
+          )}
         </BuilderFlushProvider>
       </main>
       <GeschiedenisDrawer open={historyOpen} onOpenChange={setHistoryOpen} pathwayId={pathway.id} />

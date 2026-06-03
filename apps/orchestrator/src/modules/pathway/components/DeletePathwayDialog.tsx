@@ -41,7 +41,7 @@ export function DeletePathwayDialog({
   onDeleted,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
-  const referencesQuery = useParentReferences(open ? pathwayId ?? undefined : undefined)
+  const referencesQuery = useParentReferences(open ? (pathwayId ?? undefined) : undefined)
   const deletePathway = useDeletePathway()
   const [overrideReferrers, setOverrideReferrers] = useState<PathwayParentReference[] | null>(null)
 
@@ -77,9 +77,7 @@ export function DeletePathwayDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {blocked && <AlertTriangle className="size-4 text-amber-600" aria-hidden="true" />}
-            {blocked
-              ? t('delete.blockedTitle')
-              : t('delete.confirmTitle', { name: pathwayName })}
+            {blocked ? t('delete.blockedTitle') : t('delete.confirmTitle', { name: pathwayName })}
           </DialogTitle>
           <DialogDescription>
             {blocked
@@ -108,9 +106,7 @@ export function DeletePathwayDialog({
           </ul>
         )}
 
-        {loading && (
-          <p className="text-sm text-muted-foreground">{t('delete.checking')}</p>
-        )}
+        {loading && <p className="text-sm text-muted-foreground">{t('delete.checking')}</p>}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

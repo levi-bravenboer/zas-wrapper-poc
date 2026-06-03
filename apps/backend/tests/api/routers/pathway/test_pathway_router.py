@@ -407,9 +407,7 @@ async def test_parent_references_empty_for_unreferenced_pathway(
     await _login(async_client)
     created = await _create(async_client)
 
-    response = await async_client.get(
-        f"/pathways/{created['pathway']['id']}/parent-references"
-    )
+    response = await async_client.get(f"/pathways/{created['pathway']['id']}/parent-references")
     assert response.status_code == 200
     assert response.json() == []
 
@@ -455,9 +453,7 @@ async def test_parent_references_lists_referring_pathway(
     }
     await async_client.put(f"/pathways/{parent['pathway']['id']}", json=payload)
 
-    response = await async_client.get(
-        f"/pathways/{target['pathway']['id']}/parent-references"
-    )
+    response = await async_client.get(f"/pathways/{target['pathway']['id']}/parent-references")
     assert response.status_code == 200
     referrers = response.json()
     assert len(referrers) == 1

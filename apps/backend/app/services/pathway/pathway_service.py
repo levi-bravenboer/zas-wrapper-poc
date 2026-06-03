@@ -109,9 +109,7 @@ class PathwayService:
             for r in rows
         ]
 
-    async def get_child_summary(
-        self, pathway_id: UUID, tenant_id: UUID
-    ) -> PathwayChildSummary:
+    async def get_child_summary(self, pathway_id: UUID, tenant_id: UUID) -> PathwayChildSummary:
         """Drive the nested-pathway inspector preview. Counts come from the
         pathway's preferred version: the latest published if one exists,
         else the concept version. Returns zero counts if no version exists
@@ -305,9 +303,7 @@ class PathwayService:
             version=definition,
         )
 
-    async def _validate_pathway_link_pinned_versions(
-        self, blocks: list[PathwayBlockIn]
-    ) -> None:
+    async def _validate_pathway_link_pinned_versions(self, blocks: list[PathwayBlockIn]) -> None:
         # Cross-DB check: when a `pathway_link` block sets `version_pin='specific'`,
         # its `pinned_version_id` MUST be a real `pathway_version.id` owned by the
         # block's `target_pathway_id`. JSON Schema validates shape; this check
@@ -330,15 +326,11 @@ class PathwayService:
                 continue
 
         for block_id, target_pathway_id, pinned_version_id in to_check:
-            version = await self._version_repo.get_in_pathway(
-                pinned_version_id, target_pathway_id
-            )
+            version = await self._version_repo.get_in_pathway(pinned_version_id, target_pathway_id)
             if version is None:
                 raise BlockConfigError(
                     field=f"blocks[{block_id}].config.pinned_version_id",
-                    reason=(
-                        "pinned_version_id does not belong to target_pathway_id"
-                    ),
+                    reason=("pinned_version_id does not belong to target_pathway_id"),
                 )
 
     async def list_parent_references(
@@ -358,10 +350,7 @@ class PathwayService:
         if not parent_ids:
             return []
         parents = await self._repo.get_many(parent_ids, tenant_id)
-        return [
-            PathwayParentReference(id=p.id, name=p.name)
-            for p in parents
-        ]
+        return [PathwayParentReference(id=p.id, name=p.name) for p in parents]
 
     async def soft_delete(self, pathway_id: UUID, tenant_id: UUID) -> None:
         pathway = await self._repo.get(pathway_id, tenant_id)

@@ -109,9 +109,7 @@ export async function listEdgeOffsetDirections(): Promise<PathwayEdgeOffsetDirec
   return result.data
 }
 
-export async function listPathwayParentReferences(
-  id: string,
-): Promise<PathwayParentReference[]> {
+export async function listPathwayParentReferences(id: string): Promise<PathwayParentReference[]> {
   const result = await api.GET('/pathways/{pathway_id}/parent-references', {
     params: { path: { pathway_id: id } },
   })

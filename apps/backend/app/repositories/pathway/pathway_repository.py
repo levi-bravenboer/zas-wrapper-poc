@@ -151,9 +151,7 @@ class PathwayRepository(BaseRepository[Pathway]):
             for row in result.all()
         ]
 
-    async def get_many(
-        self, pathway_ids: set[UUID] | list[UUID], tenant_id: UUID
-    ) -> list[Pathway]:
+    async def get_many(self, pathway_ids: set[UUID] | list[UUID], tenant_id: UUID) -> list[Pathway]:
         """Fetch multiple pathways by id within a tenant, dropping soft-deleted
         rows. Used by the parent-references endpoint to attach names to ids
         returned by `find_pathway_link_parents`.
@@ -182,9 +180,7 @@ class PathwayRepository(BaseRepository[Pathway]):
         )
         return result.scalar_one_or_none()
 
-    async def child_summary_counts(
-        self, pathway_version_id: UUID
-    ) -> tuple[int, int]:
+    async def child_summary_counts(self, pathway_version_id: UUID) -> tuple[int, int]:
         """Return `(lane_count, block_count)` for a single pathway version.
         Counts non-deleted rows. Used by the nested-pathway inspector summary
         endpoint to render a read-only child preview without fetching the

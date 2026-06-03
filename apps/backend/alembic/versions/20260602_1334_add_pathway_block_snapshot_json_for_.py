@@ -5,6 +5,7 @@ Revises: 5f1a8b3c9d24
 Create Date: 2026-06-02 13:34:56.985918
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -14,8 +15,8 @@ from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 
-revision: str = 'f66286821872'
-down_revision: str | None = '5f1a8b3c9d24'
+revision: str = "f66286821872"
+down_revision: str | None = "5f1a8b3c9d24"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

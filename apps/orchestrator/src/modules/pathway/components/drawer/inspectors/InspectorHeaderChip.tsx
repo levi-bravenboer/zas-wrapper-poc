@@ -22,15 +22,8 @@ type Props = {
  * Originally specced as a lift from `external-block-integrations` but no
  * generic chip landed there — this component fills the seam.
  */
-export function InspectorHeaderChip({
-  source,
-  provider,
-  kind,
-  label,
-  icon,
-}: Props): ReactElement {
-  const dotted =
-    provider && kind ? `${provider}.${kind}` : provider ?? kind ?? source
+export function InspectorHeaderChip({ source, provider, kind, label, icon }: Props): ReactElement {
+  const dotted = provider && kind ? `${provider}.${kind}` : (provider ?? kind ?? source)
   return (
     <div
       data-slot="inspector-header-chip"

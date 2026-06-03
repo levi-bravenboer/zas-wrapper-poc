@@ -13,10 +13,6 @@ type ProviderProps = BuilderFlushContextValue & { children: ReactNode }
  * (`useBuilderFlush`) and the bare context value live in sibling files so
  * this file only exports a component — keeps `react-refresh` HMR happy.
  */
-export function BuilderFlushProvider({
-  flush,
-  saveState,
-  children,
-}: ProviderProps): ReactElement {
+export function BuilderFlushProvider({ flush, saveState, children }: ProviderProps): ReactElement {
   return <Context.Provider value={{ flush, saveState }}>{children}</Context.Provider>
 }

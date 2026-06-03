@@ -14,11 +14,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/lib/i18n'
 
 import { pathwayKeys } from '../../../../../keys'
-import type {
-  PathwayBlock,
-  PathwayChildSummary,
-  PathwayWithVersion,
-} from '../../../../../types'
+import type { PathwayBlock, PathwayChildSummary, PathwayWithVersion } from '../../../../../types'
 import { BuilderFlushProvider } from '../../../BuilderFlushContext'
 
 import { NestedPathwayBlockNode } from './NestedPathwayBlockNode'
@@ -60,9 +56,7 @@ function makeBlock(targetId: string | null): PathwayBlock {
   return {
     id: 'block-1',
     type: 'pathway_link',
-    config: targetId
-      ? { target_pathway_id: targetId, mode: 'blocking' }
-      : {},
+    config: targetId ? { target_pathway_id: targetId, mode: 'blocking' } : {},
   } as unknown as PathwayBlock
 }
 

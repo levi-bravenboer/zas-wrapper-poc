@@ -44,11 +44,7 @@ function renderInspector(
   render(
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={qc}>
-        <PathwayLinkInspector
-          config={config}
-          currentPathwayId={PARENT_ID}
-          onChange={onChange}
-        />
+        <PathwayLinkInspector config={config} currentPathwayId={PARENT_ID} onChange={onChange} />
       </QueryClientProvider>
     </I18nextProvider>,
   )
@@ -104,9 +100,7 @@ describe('PathwayLinkInspector (8.2)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /verwijder koppeling/i }))
 
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ context_mapping: {} }),
-    )
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ context_mapping: {} }))
   })
 
   it('renames a mapping key when the key input changes', async () => {

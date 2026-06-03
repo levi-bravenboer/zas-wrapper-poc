@@ -1,11 +1,7 @@
 import type { ReactElement } from 'react'
 
 import { BlockTypeIcon } from '../../../../../blockCatalogue'
-import {
-  blockOrigin,
-  buildCanvasGeometry,
-  type BlockFitInput,
-} from '../../../../../canvasLayout'
+import { blockOrigin, buildCanvasGeometry, type BlockFitInput } from '../../../../../canvasLayout'
 import { laneAccent, phaseTint } from '../../../../../constants/theme'
 import { usePathwayBlocks } from '../../../../../hooks'
 import type {
@@ -227,13 +223,7 @@ type CardProps = {
   isEntry: boolean
 }
 
-function MiniBlockCard({
-  block,
-  blockType,
-  accent,
-  geometry,
-  isEntry,
-}: CardProps): ReactElement {
+function MiniBlockCard({ block, blockType, accent, geometry, isEntry }: CardProps): ReactElement {
   const dim = getBlockDimensions(block, blockType)
   const pos = blockOrigin(block, geometry, dim)
   const name = block.label?.trim() || blockType?.label || block.type
@@ -248,7 +238,11 @@ function MiniBlockCard({
         ['--lane-accent' as string]: accent,
       }}
     >
-      <div className="row-span-2 rounded-l-[5px]" style={{ background: accent }} aria-hidden="true" />
+      <div
+        className="row-span-2 rounded-l-[5px]"
+        style={{ background: accent }}
+        aria-hidden="true"
+      />
       <div
         className="row-span-2 my-auto ml-1 inline-flex h-7 w-7 items-center justify-center rounded-sm"
         style={{

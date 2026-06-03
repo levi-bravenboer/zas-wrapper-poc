@@ -54,8 +54,6 @@ class PathwayBlock(TenantOwnedEntity):
     # version flips to `published`. Shape:
     #   {"target_pathway_id": uuid, "resolved_version_id": uuid,
     #    "tracking": "specific" | "latest_published"}
-    snapshot_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
+    snapshot_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     x: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default=sa.text("0"))
     y: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default=sa.text("0"))
