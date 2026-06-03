@@ -1,10 +1,14 @@
-from app.schemas.pathway.catalogue import (
+from app.schemas.pathway.blocks import (
+    BlockSemanticsLiteral,
+    BlockSourceLiteral,
+    NestedRenderLiteral,
     PathwayBlockType,
+)
+from app.schemas.pathway.edges import (
     PathwayEdgeOffsetDirection,
     PathwayEdgeTimingKind,
-    PathwayEventType,
-    PathwayPhaseTemplate,
 )
+from app.schemas.pathway.events import PathwayEventType
 from app.schemas.pathway.pathway import (
     PathwayActorRef,
     PathwayBare,
@@ -14,7 +18,9 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldOut,
     PathwayBlockIn,
     PathwayBlockOut,
+    PathwayChildSummary,
     PathwayCreate,
+    PathwayParentReference,
     PathwayDefinitionReplace,
     PathwayEdgeIn,
     PathwayEdgeOut,
@@ -34,8 +40,12 @@ from app.schemas.pathway.pathway import (
     VersionKind,
     VersionStatus,
 )
+from app.schemas.pathway.phases import PathwayPhaseTemplate
 
 __all__ = [
+    "BlockSemanticsLiteral",
+    "BlockSourceLiteral",
+    "NestedRenderLiteral",
     "PathwayActorRef",
     "PathwayBare",
     "PathwayBlockBranchIn",
@@ -45,6 +55,7 @@ __all__ = [
     "PathwayBlockIn",
     "PathwayBlockOut",
     "PathwayBlockType",
+    "PathwayChildSummary",
     "PathwayCreate",
     "PathwayDefinitionReplace",
     "PathwayEdgeIn",
@@ -54,6 +65,7 @@ __all__ = [
     "PathwayEventType",
     "PathwayLaneIn",
     "PathwayLaneOut",
+    "PathwayParentReference",
     "PathwayPhaseIn",
     "PathwayPhaseOut",
     "PathwayPhaseTemplate",

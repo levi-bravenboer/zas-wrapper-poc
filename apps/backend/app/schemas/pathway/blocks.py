@@ -1,3 +1,12 @@
+"""Pydantic IO contracts for the pathway block-type registry endpoint.
+
+This module is the **schemas** layer source-of-truth for the small cross-layer
+Literal types (`BlockSemanticsLiteral`, `BlockSourceLiteral`, `NestedRenderLiteral`).
+Schemas is the most primitive layer everyone may import from; the domain
+layer (`app.domain.pathway.blocks._base`) re-imports `BlockSourceLiteral`
+and `NestedRenderLiteral` from here for its dataclass field types.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -17,11 +26,14 @@ BlockSemanticsLiteral = Literal[
     "external_program",
 ]
 
-# Single-source-of-truth for the native-vs-external provenance literal.
-# Lives in the schemas layer (safe to import from services per layer
-# rules); the services-layer code-side catalogue + the block-type-code
-# parser re-export this as `BlockSource` for terser local names.
-BlockSourceLiteral = Literal["native", "external"]
+# Single-source-of-truth for the native / external / internal provenance
+# literal. `internal` covers blocks whose target lives inside our own
+# product (today only `pathway_link`); it sits alongside `native` (built-in
+# primitives like task / message) and `external` (vendor-contributed blocks
+# like `luscii.program`).
+BlockSourceLiteral = Literal["native", "external", "internal"]
+
+NestedRenderLiteral = Literal["inline_preview", "collapsed_card"]
 
 
 class PathwayBlockType(BaseModel):
@@ -77,28 +89,21 @@ class PathwayBlockType(BaseModel):
             "Null for native blocks."
         ),
     )
+    nested_render: NestedRenderLiteral | None = Field(
+        default=None,
+        description=(
+            "UI hint for blocks whose body renders nested content (today: "
+            "`pathway_link`). `inline_preview` expands a read-only summary of "
+            "the linked content inside the parent canvas; `collapsed_card` "
+            "renders as a single card requiring drill-down to view content. "
+            "Null for blocks without nested content."
+        ),
+    )
 
 
-class PathwayPhaseTemplate(BaseModel):
-    id: str
-    label: str
-    default_ord: int
-    default_duration_days: int | None = None
-
-
-class PathwayEventType(BaseModel):
-    code: str
-    label: str
-
-
-class PathwayEdgeTimingKind(BaseModel):
-    kind: Literal["completion", "marker", "immediate", "branch"]
-    label: str
-    config_schema: dict[str, Any]
-    ui_schema: dict[str, Any]
-
-
-class PathwayEdgeOffsetDirection(BaseModel):
-    code: str
-    label: str
-    ord: int
+__all__ = [
+    "BlockSemanticsLiteral",
+    "BlockSourceLiteral",
+    "NestedRenderLiteral",
+    "PathwayBlockType",
+]

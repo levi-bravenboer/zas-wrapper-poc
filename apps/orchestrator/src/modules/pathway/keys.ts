@@ -2,6 +2,8 @@ export const pathwayKeys = {
   all: ['pathway'] as const,
   list: () => ['pathway', 'list'] as const,
   detail: (id: string) => ['pathway', 'detail', id] as const,
+  summary: (id: string) => ['pathway', 'summary', id] as const,
+  parentReferences: (id: string) => ['pathway', 'parent-references', id] as const,
   blocks: () => ['pathway', 'blocks'] as const,
   phaseTemplates: () => ['pathway', 'phase-templates'] as const,
   edgeTimingKinds: () => ['pathway', 'edge-timing-kinds'] as const,

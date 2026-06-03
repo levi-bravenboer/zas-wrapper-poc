@@ -2,10 +2,12 @@ import { api } from '@/lib/api/client'
 
 import type {
   PathwayBlockType,
+  PathwayChildSummary,
   PathwayCreate,
   PathwayDefinitionReplace,
   PathwayEdgeOffsetDirection,
   PathwayEdgeTimingKind,
+  PathwayParentReference,
   PathwayPhaseTemplate,
   PathwayPublishRequest,
   PathwaySummary,
@@ -103,6 +105,42 @@ export async function listEdgeOffsetDirections(): Promise<PathwayEdgeOffsetDirec
   const result = await api.GET('/pathways/edge-offset-directions', {})
   if (!result.data) {
     throw pathwayError('Failed to load edge offset directions', result.response.status)
+  }
+  return result.data
+}
+
+export async function listPathwayParentReferences(id: string): Promise<PathwayParentReference[]> {
+  const result = await api.GET('/pathways/{pathway_id}/parent-references', {
+    params: { path: { pathway_id: id } },
+  })
+  if (!result.data) {
+    throw pathwayError('Failed to load parent references', result.response.status)
+  }
+  return result.data
+}
+
+export type DeletePathwayResult = { ok: true } | { ok: false; referrers: PathwayParentReference[] }
+
+export async function deletePathway(id: string): Promise<DeletePathwayResult> {
+  const result = await api.DELETE('/pathways/{pathway_id}', {
+    params: { path: { pathway_id: id } },
+  })
+  if (result.response.status === 204) return { ok: true }
+  const error = (result as { error?: unknown }).error as
+    | { code?: string; details?: { referrers?: PathwayParentReference[] } }
+    | undefined
+  if (result.response.status === 409 && error?.code === 'conflict.pathway.has-referrers') {
+    return { ok: false, referrers: error.details?.referrers ?? [] }
+  }
+  throw errorFromResponse('Failed to delete pathway', result.response.status, error)
+}
+
+export async function getPathwaySummary(id: string): Promise<PathwayChildSummary> {
+  const result = await api.GET('/pathways/{pathway_id}/summary', {
+    params: { path: { pathway_id: id } },
+  })
+  if (!result.data) {
+    throw pathwayError('Failed to load pathway summary', result.response.status)
   }
   return result.data
 }

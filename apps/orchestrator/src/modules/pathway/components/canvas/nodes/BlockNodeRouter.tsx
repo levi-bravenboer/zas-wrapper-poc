@@ -4,6 +4,8 @@ import { memo, type ReactElement } from 'react'
 import { BlockNode, type BlockFlowNode } from './BlockNode'
 import { LUSCII_PROGRAM_BLOCK_TYPE, LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
+import { NestedPathwayBlockNode } from './internal/nestedPathway'
+import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathwayBlockNode'
 
 /**
  * xyflow node-type dispatcher.
@@ -30,6 +32,13 @@ function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
     // integration change writes it in). The Luscii component treats a
     // missing field as `null` (empty state).
     return <LusciiProgramBlockNode {...(props as NodeProps<LusciiProgramFlowNode>)} />
+  }
+  if (blockType === 'pathway_link') {
+    // Internal-source dispatch — `pathway.link` follows the same per-kind
+    // pattern as external providers so future internal kinds (e.g.
+    // `pathway.fork`) land alongside it without touching the generic
+    // node component.
+    return <NestedPathwayBlockNode {...(props as NodeProps<NestedPathwayFlowNode>)} />
   }
   return <BlockNode {...props} />
 }

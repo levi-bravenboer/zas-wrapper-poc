@@ -79,6 +79,7 @@ Don't run the full suite for a localized change. Match the scope to what you tou
 |---|---|---|
 | `app/schemas/<x>/**` only | `tests/schemas/<x>/` | no |
 | `app/core/**` (pure-Python, no SQLA) | `tests/core/` | no |
+| `app/domain/<x>/**` only (pure data + lookups) | `tests/domain/<x>/` | no |
 | `app/repositories/<x>/**` | `tests/repositories/<x>/` | yes |
 | `app/api/routers/<x>/**` or `app/services/<x>/**` | `tests/api/routers/<x>/` + `tests/services/<x>/` | yes |
 | `app/db/models/<x>/**` | `tests/db/` + `tests/repositories/<x>/` + `tests/api/routers/<x>/` | yes |
@@ -121,6 +122,10 @@ apps/backend/
 │   │       ├── __init__.py             # imports every domain submodule so alembic autogenerate sees them
 │   │       └── <domain>/<domain>.py    # ORM models per domain
 │   ├── core/                           # settings, errors, logging, readiness  (cross-cutting infra only)
+│   ├── domain/                         # domain primitives — registries, value objects, type system
+│   │   └── <domain>/                   # per-domain registries (blocks/, lanes.py, events.py, ...)
+│   │                                   #   data + tiny lookups only — NO services, NO repos, NO IO.
+│   │                                   #   Optional layer: domains without a type system skip it.
 │   ├── main.py                         # create_app() factory
 │   └── openapi.py                      # offline OpenAPI exporter
 ├── main.py                             # thin entrypoint (`from app.main import app`)
@@ -139,6 +144,7 @@ Keep `main.py` (repo-root level inside `apps/backend/`) as a thin re-export. All
 - A domain MAY skip layers (e.g. `auth` owns service + schema + router but reuses the `user` model and repository; `dashboard` reads aggregates and may have no model or repository).
 - Add a folder when the domain has at least one file. Do not pre-create empty domain folders.
 - Cross-domain calls between services are allowed; cross-domain calls between repositories are not (compose at the service layer).
+- `app/domain/<domain>/` is for **pure domain primitives** — registries, value objects, frozen type-system data + tiny lookups (`get_block_type`, `get_phase_template`, ...). It has no IO, no DB session, no FastAPI. Most domains do NOT need a domain layer; add one only when the domain has a real type system (e.g. block types, event kinds, edge timing kinds). When the layer doesn't exist for a domain, services for that domain fall back to plain Python constants in the service folder.
 
 ## Layer Rules
 
@@ -147,10 +153,11 @@ The seam is one-directional: `router → service → repository → db.models`. 
 | Layer | May import | Must not import |
 | --- | --- | --- |
 | `app/api/routers/<domain>/*` | `app.api.deps`, `app.schemas.<domain>.*`, `app.services.<domain>.*` (via `Depends`), `app.services.errors` | `app.repositories.*`, `app.db.*`, `sqlalchemy.*`, `app.adapters.*` directly |
-| `app/services/<domain>/*` | `app.repositories.<any>.*`, `app.services.<any>.*`, `app.schemas.*`, `app.adapters.<vendor>.protocol`, `app.services.errors` | `fastapi.*`, `app.api.*`, `sqlalchemy.*`, raw `session.execute` |
+| `app/services/<domain>/*` | `app.repositories.<any>.*`, `app.services.<any>.*`, `app.schemas.*`, `app.domain.*`, `app.adapters.<vendor>.protocol`, `app.services.errors` | `fastapi.*`, `app.api.*`, `sqlalchemy.*`, raw `session.execute` |
 | `app/repositories/<domain>/*` | `app.repositories.base`, `app.db.*`, `sqlalchemy.*` | `app.services.*`, `app.api.*`, `app.schemas.*`, `app.adapters.*` |
 | `app/db/models/<domain>/*` | `app.db.base`, `sqlalchemy.*`, stdlib | `app.services.*`, `app.api.*`, `app.schemas.*`, `app.repositories.*` |
 | `app/schemas/<domain>/*` | `pydantic`, stdlib, sibling schema modules | `app.db.*`, `app.services.*`, `app.api.*`, `app.repositories.*` |
+| `app/domain/<domain>/*` | `app.schemas.<domain>.*` (for source-of-truth literals), `app.adapters.<vendor>.constants/types` (for vendor primitives in vendor block entries), `app.core.*`, stdlib | `app.api.*`, `app.services.*`, `app.repositories.*`, `app.db.*`, `fastapi.*`, `sqlalchemy.*` |
 | `app/adapters/<vendor>/*` | `app.core.errors`, vendor SDK types | `app.api.*`, `app.services.*`, `app.repositories.*` |
 | `app/core/*` | stdlib, third-party libs | `app.api.*`, `app.adapters.*`, `app.services.*`, `app.repositories.*`, `app.db.*` |
 | `scripts/*` | `app.core.*`, `app.db.*`, `app.repositories.*`, `app.services.*`, sibling `scripts.*` | `app.api.*`, `fastapi.*` |
@@ -189,6 +196,7 @@ A model opts in by declaring `__realtime_resource__: ClassVar[str | None]` on th
 ## Naming Conventions
 
 - **Files**: snake_case. Pattern inside a domain folder is `<domain>_<layer>.py` (`pathway_router.py`, `pathway_service.py`, `pathway_repository.py`). When a single domain outgrows one file per layer, add concern-named siblings (`pathway/blocks.py`, `pathway/runtime.py`) and keep them inside the same domain folder.
+- **Domain layer files** (`app/domain/<domain>/`) are named for the THING, not the domain (`blocks/`, `lanes.py`, `events.py`, `phases.py`, `edges.py`). Each registry sits at the level its semantics call for: a flat file for simple registries (e.g. `lanes.py`), a folder per entry when each entry is a meaningful unit (e.g. `blocks/<block_kind>/block.py`). Shared base types live in `_base.py`. Vendor block entries live under `blocks/<vendor>_<kind>/block.py` and import primitives from `app/adapters/<vendor>/`.
 - **`__init__.py`**: re-export the public API of the package. Routers expose `router`; services expose `<Domain>Service` plus its `<Domain>ServiceDep`; repositories expose `<Domain>Repository` plus its `<Domain>RepoDep`; schemas expose the request/response models. Import sites use `from app.services.pathway import PathwayService`, not the inner module path.
 - **Router files**: each domain folder contains `<domain>_router.py` that exports a module-level `router = APIRouter(tags=[...])`.
 - **Operation IDs**: `<verb>_<noun>[_<qualifier>]` snake_case, e.g. `get_patient_summary`, `post_auth_login`. Match these between backend and the generated orchestrator client.
@@ -242,23 +250,33 @@ Before claiming a task complete:
 
 ## Pathway domain
 
-The pathway domain models a hospital's editable patient journey: phases (time bands), lanes (actor swimlanes), blocks (steps), block branches (decision outcomes), edges (transitions), timing values (delays + windows), time markers, and deferred fields (block-config fields filled at enrollment instead of design-time). Catalogues — block types and phase templates — are code-side registries seeded into `app/services/pathway/catalogue.py`; `pathway_lane_kind` is the only catalogue persisted in Postgres (FK target). The full domain ships behind one router: `app/api/routers/pathway/pathway_router.py`, mounted at `/pathways`.
+The pathway domain models a hospital's editable patient journey: phases (time bands), lanes (actor swimlanes), blocks (steps), block branches (decision outcomes), edges (transitions), timing values (delays + windows), time markers, and deferred fields (block-config fields filled at enrollment instead of design-time). The authoring type system — block types, lane kinds, event kinds, phase templates, edge timing kinds — lives in `app/domain/pathway/` as code-side registries; `pathway_lane_kind` is the only registry also persisted in Postgres (FK target). The full domain ships behind one router: `app/api/routers/pathway/pathway_router.py`, mounted at `/pathways`.
 
 ### Layout
 
 - `app/db/models/pathway/` — ORM models for `pathway`, `pathway_phase`, `pathway_lane`, `pathway_lane_kind`, `pathway_block`, `pathway_block_branch`, `pathway_edge`, `pathway_timing_value`, `pathway_time_marker`, `pathway_block_deferred_field`. All children FK back to `pathway` with `ON DELETE CASCADE`; lanes hold an `ON DELETE RESTRICT` FK to `pathway_lane_kind`.
+- `app/domain/pathway/` — pathway authoring type system. Pure data + tiny lookups, no IO.
+  - `blocks/_base.py` — `BlockTypeEntry`, `BlockSemantics`, `BLOCKING_MODES`, `_object_schema` helper.
+  - `blocks/__init__.py` — aggregated `BLOCK_TYPES` tuple + `get_block_type` lookup.
+  - `blocks/<kind>/block.py` — one `BlockTypeEntry` instance per block kind (`appointment`, `task`, `message`, `form`, `decision`, `milestone`, `wait`, `pathway_link`, vendor blocks like `luscii_program`). Adding a block kind = create a new folder + `block.py` + register in `blocks/__init__.py`.
+  - `lanes.py` — `LANE_KIND_*` constants, `SEEDED_LANE_KINDS`, `SEEDED_OFFSET_DIRECTIONS`.
+  - `events.py` — `EventTypeEntry`, `EVENT_TYPES`, `get_event_type_codes` (closed enum referenced by `wait` block).
+  - `phases.py` — `PhaseTemplateEntry`, `PHASE_TEMPLATES`, `get_phase_template`.
+  - `edges.py` — `EdgeTimingKindEntry`, `EDGE_TIMING_KINDS` (timing config schemas for edges).
+  - `__init__.py` — public re-exports forming the stable surface (`BLOCK_TYPES`, `get_block_type`, `EVENT_TYPES`, `PHASE_TEMPLATES`, `EDGE_TIMING_KINDS`, ...).
 - `app/repositories/pathway/pathway_repository.py` — read paths plus `delete_children()` (FK-safe order, `synchronize_session=False`).
 - `app/services/pathway/`
-  - `catalogue.py` — `BLOCK_TYPES`, `PHASE_TEMPLATES`, `SEEDED_LANE_KINDS`. Adding a block type means a new entry here + a JSON Schema for its `config`.
-  - `pathway_service.py` — `replace_definition()` is the single write path: validates payload against catalogues, persists, refreshes `updated_at`, returns a fully-shaped `PathwayDefinition`.
-  - `errors.py` — `PathwayNotFoundError`, `PathwayValidationError`, `UnknownBlockTypeError`, `UnknownPhaseError`, `UnknownLaneKindError`, `BlockConfigError`, `BranchOwnershipError`, `EdgeValidationError`, `DeferredFieldError`.
-- `app/schemas/pathway/pathway.py` — request/response models (`PathwayCreate`, `PathwayDefinition`, `PathwayDefinitionReplace`, plus all child `*In` / `*Out` rows).
+  - `pathway_service.py` — `replace_definition()` is the single write path: validates payload against the domain-layer registries, persists, refreshes `updated_at`, returns a fully-shaped `PathwayDefinition`.
+  - `pathway_version_service.py` — publish / restore / fork lifecycle on `pathway_version` rows.
+  - `nesting/` — cycle guard + snapshot resolver for `pathway_link` blocks.
+  - `errors.py` — `PathwayNotFoundError`, `PathwayValidationError`, `UnknownBlockTypeError`, `UnknownPhaseError`, `UnknownLaneKindError`, `BlockConfigError`, `BranchOwnershipError`, `EdgeValidationError`, `DeferredFieldError`, `NestedPathwayCycleError`.
+- `app/schemas/pathway/` — request/response models (`PathwayCreate`, `PathwayDefinition`, `PathwayDefinitionReplace`, plus all child `*In` / `*Out` rows) and the IO contracts for catalogue surfaces (`PathwayBlockType`, `PathwayPhaseTemplate`, ...). The source-of-truth literals (`BlockSourceLiteral`, `NestedRenderLiteral`) live here because `app.schemas.*` is the most primitive layer everyone may import from.
 - `scripts/seed_pathway.py` — idempotent Rugrevalidatie demo seed wired into `scripts/seed_all.py`.
 
 ### Conventions
 
 - **Replace, not patch.** Edits to a pathway go through `PUT /pathways/{id}` with a full `PathwayDefinitionReplace`. The service hard-deletes children + replays the payload in one transaction. There is no per-child PATCH endpoint; the frontend computes the next definition and submits it whole.
-- **Block config is opaque to SQL.** Each block carries a `config: dict[str, Any]` validated against the block type's JSON Schema at service write time. New keys land in the registry's schema; the DB is type-agnostic.
+- **Block config is opaque to SQL.** Each block carries a `config: dict[str, Any]` validated against the block type's JSON Schema at service write time. New keys land in the block's `config_schema` in `app/domain/pathway/blocks/<kind>/block.py`; the DB is type-agnostic.
 - **Edge uniqueness** is enforced by a partial unique constraint with `postgresql_nulls_not_distinct=True` on `(source_block_id, target_block_id, source_branch_id)` — see D20 in `openspec/changes/pathway-builder-base/design.md`.
 - **Lane materialization.** Blocks may omit `lane_id`; `replace_definition` resolves the default lane for the block type at write time and persists the materialized FK.
 - **Soft-delete.** `DELETE /pathways/{id}` soft-deletes the root *and* hard-deletes children (resurrection would re-introduce stale graph state). `BaseRepository.list()` filters `deleted_at IS NULL` by default.

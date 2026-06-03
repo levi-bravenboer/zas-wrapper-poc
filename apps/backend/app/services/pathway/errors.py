@@ -103,6 +103,52 @@ class BlockConfigError(PathwayValidationError):
     code = "invalid.pathway.block-config"
 
 
+class PathwayHasReferrersError(AppError):
+    """Raised when deleting a pathway that is still referenced as a
+    sub-pathway by one or more other pathways. The error payload carries
+    the list of referring pathway ids + names so the UI can render a clear
+    explanation in the delete-confirmation modal.
+    """
+
+    code = "conflict.pathway.has-referrers"
+    status_code = 409
+    message = "Pathway is used as a sub-pathway by other pathways."
+
+    def __init__(self, *, referrers: list[dict[str, str]]) -> None:
+        super().__init__(message=self.message, details={"referrers": referrers})
+
+
+class NestedPathwayCycleError(PathwayValidationError):
+    code = "invalid.pathway.nested-cycle"
+
+    def __init__(
+        self,
+        *,
+        block_id: UUID,
+        parent_pathway_id: UUID,
+        target_pathway_id: UUID,
+        kind: str,
+    ) -> None:
+        # `kind` is `"self"` for direct self-links and `"ancestor"` for indirect
+        # cycles through the parent chain. Surfaced in the error payload so the
+        # builder can render a precise inline message.
+        super().__init__(
+            field=f"blocks[{block_id}].config.target_pathway_id",
+            reason=(
+                "pathway_link would create a cycle: target appears in "
+                "the parent pathway's ancestor chain"
+                if kind == "ancestor"
+                else "pathway_link cannot target its own pathway"
+            ),
+            extra={
+                "block_id": str(block_id),
+                "parent_pathway_id": str(parent_pathway_id),
+                "target_pathway_id": str(target_pathway_id),
+                "cycle_kind": kind,
+            },
+        )
+
+
 class BlockLaneNotAllowedError(PathwayValidationError):
     code = "invalid.pathway.block-lane"
 
@@ -146,7 +192,9 @@ __all__ = [
     "EdgeTimingValidationError",
     "EdgeValidationError",
     "ForkSourceNotPublishedError",
+    "NestedPathwayCycleError",
     "NoConceptVersionError",
+    "PathwayHasReferrersError",
     "PathwayNotFoundError",
     "PathwayValidationError",
     "PathwayVersionImmutableError",

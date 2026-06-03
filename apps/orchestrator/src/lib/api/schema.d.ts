@@ -510,6 +510,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pathways/{pathway_id}/parent-references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Parent References */
+        get: operations["list_pathway_parent_references"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathways/{pathway_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pathway Summary */
+        get: operations["get_pathway_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pathways/{pathway_id}": {
         parameters: {
             query?: never;
@@ -1450,7 +1484,7 @@ export interface components {
              * @default native
              * @enum {string}
              */
-            source: "native" | "external";
+            source: "native" | "external" | "internal";
             /**
              * Provider
              * @description Vendor identifier for external blocks (e.g. `luscii`). Null for native blocks. Combined with `kind`, identifies which per-provider React component renders the block on canvas / in the inspector.
@@ -1461,6 +1495,34 @@ export interface components {
              * @description Vendor-specific block kind for external blocks (e.g. `program`). Null for native blocks.
              */
             kind?: string | null;
+            /**
+             * Nested Render
+             * @description UI hint for blocks whose body renders nested content (today: `pathway_link`). `inline_preview` expands a read-only summary of the linked content inside the parent canvas; `collapsed_card` renders as a single card requiring drill-down to view content. Null for blocks without nested content.
+             */
+            nested_render?: ("inline_preview" | "collapsed_card") | null;
+        };
+        /**
+         * PathwayChildSummary
+         * @description Minimal summary returned by `GET /pathways/{id}/summary` — drives the
+         *     read-only child preview rendered inside a parent pathway's nested-pathway
+         *     inspector. `lane_count` / `block_count` come from the pathway's preferred
+         *     version (latest published if it exists; otherwise the concept version)
+         *     so the inspector reflects what a parent would actually link to.
+         */
+        PathwayChildSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Lane Count */
+            lane_count: number;
+            /** Block Count */
+            block_count: number;
+            /** Latest Published Version Id */
+            latest_published_version_id?: string | null;
         };
         /** PathwayCreate */
         PathwayCreate: {
@@ -1634,6 +1696,22 @@ export interface components {
             is_default: boolean;
             /** Height Px */
             height_px: number;
+        };
+        /**
+         * PathwayParentReference
+         * @description Minimal identifier returned by `GET /pathways/{id}/parent-references`.
+         *     Drives the delete-confirmation modal: when this list is non-empty the
+         *     target pathway is used as a sub-pathway by another pathway and may not
+         *     be deleted until those references are removed.
+         */
+        PathwayParentReference: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** PathwayPhaseIn */
         PathwayPhaseIn: {
@@ -3677,6 +3755,86 @@ export interface operations {
             };
         };
     };
+    list_pathway_parent_references: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayParentReference"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pathway_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwayChildSummary"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_pathway: {
         parameters: {
             query?: never;
@@ -3790,6 +3948,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

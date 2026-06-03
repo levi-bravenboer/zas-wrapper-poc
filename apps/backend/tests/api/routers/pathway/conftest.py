@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.pathway import Pathway, PathwayLaneKind
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
-from app.services.pathway.catalogue import SEEDED_LANE_KINDS
+from app.domain.pathway import SEEDED_LANE_KINDS
 
 
 @pytest.fixture(autouse=True)

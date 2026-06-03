@@ -50,6 +50,17 @@ Before implementing this change, re-read `openspec/changes/external-block-integr
 
 If `external-block-integrations` slips behind this change, the source-tag and inspector-chip bits MUST land here in a shape compatible with that other change's design — but the *registry table* and adapter Protocol are explicitly out of scope here.
 
+<!--
+DEVIATIONS FROM CHECKLIST after walking the archived `external-block-integrations` implementation (recorded during §1.1 of this change):
+
+- `source` enum: NOT yet widened in code. `BlockSourceLiteral` today is `Literal["native", "external"]` (apps/backend/app/schemas/pathway/catalogue.py). §2.1 of this change widens it to include `"internal"`.
+- Inspector header chip: NO generic `{source, provider, kind, label}` chip component was extracted. `LusciiProgramHeader.tsx` is a bespoke canvas-overlay glass chip; `LusciiProgramInspector.tsx` does not render any header chip at all. §7.5 of this change creates a small shared inspector header chip under `apps/orchestrator/src/modules/pathway/components/drawer/inspectors/` and uses it from both `LusciiProgramInspector` (follow-up) and the new nested-pathway inspector.
+- Schema renderer pass-through: NOT realised. Inspectors are hand-coded per semantics (Appointment / Task / Form / etc.). §7.4 extends `PathwayLinkInspector.tsx` directly rather than wiring a schema-driven form engine.
+- `x-external-options` schema convention: NEVER landed. Inspectors call their own `useQuery` directly (e.g. `LusciiProgramInspector` calls `listLusciiPrograms`). §7.4 / §7.6 do the same — direct fetch of `/pathways/{id}/summary` from inside the inspector / container.
+- Dotted code shape, lane validation, registry seeding: match the plan as-is.
+-->
+
+
 ### Catalogue: enrich `pathway_link`, do not add a new type
 
 `pathway_link` stays the single block-type code for nested pathways. The catalogue entry gains:

@@ -1,8 +1,8 @@
-"""Catalogue invariants for the pathway block-type and edge-timing registries.
+"""Pathway block-type registry invariants.
 
-The catalogue is code-owned. These tests guard the structural promises the
+The registry is code-owned. These tests guard the structural promises the
 frontend relies on (semantics enum, icon string, ui_schema referential
-integrity) and the closed enums (event types, timing kinds, lane kinds).
+integrity) and the closed enums (lane kinds, source provenance).
 """
 
 from __future__ import annotations
@@ -17,20 +17,16 @@ from app.adapters.luscii import (
     LUSCII_PROGRAM_KIND,
     LUSCII_PROVIDER,
 )
-from app.services.pathway.catalogue import (
+from app.domain.pathway import (
     BLOCK_TYPES,
-    EDGE_TIMING_KINDS,
     EVENT_TYPES,
     LANE_KIND_CAREGIVER,
     LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,
     LANE_KIND_SYSTEM,
     BlockSemantics,
+    get_block_type,
 )
-
-# Catalogue structural tests are pure-code, no ORM. Opt out of the pathway
-# conftest's autouse DB cleanup fixture.
-pytestmark = pytest.mark.no_db
 
 
 _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
@@ -47,7 +43,7 @@ _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
     }
 )
 
-_EXPECTED_SOURCES: frozenset[str] = frozenset({"native", "external"})
+_EXPECTED_SOURCES: frozenset[str] = frozenset({"native", "external", "internal"})
 
 _VALID_LANE_KINDS: frozenset[str] = frozenset(
     {LANE_KIND_PATIENT, LANE_KIND_CAREGIVER, LANE_KIND_SYSTEM, LANE_KIND_EXTERNAL}
@@ -169,14 +165,9 @@ def test_luscii_program_config_schema_excludes_per_patient_fields() -> None:
         )
 
 
-# ---- Catalogue lookup + JSON-Schema validation for luscii.program --------
-
-
 def test_get_block_type_resolves_luscii_program() -> None:
     """Dotted code resolves via the same lookup path as bare codes —
     `BlockTypeCode` parsing and `BLOCK_TYPES` registry stay in lockstep."""
-    from app.services.pathway.catalogue import get_block_type
-
     entry = get_block_type(LUSCII_PROGRAM_BLOCK_TYPE)
     assert entry is not None
     assert entry.type == LUSCII_PROGRAM_BLOCK_TYPE
@@ -238,39 +229,7 @@ def test_luscii_program_config_rejects_invalid_mode_enum() -> None:
     assert any("yolo" in str(err.message) for err in errors), errors
 
 
-def test_event_types_are_unique_and_dutch() -> None:
-    codes = [e.code for e in EVENT_TYPES]
-    assert len(codes) == len(set(codes))
-    assert set(codes) == {"pathology_report", "scan_report", "lab_result", "external_data"}
-    for entry in EVENT_TYPES:
-        assert entry.label, f"event type {entry.code} missing label"
-
-
 def test_wait_block_event_type_enum_matches_event_types() -> None:
     wait = next(b for b in BLOCK_TYPES if b.type == "wait")
     declared = wait.config_schema["properties"]["event_type"]["enum"]
     assert set(declared) == {e.code for e in EVENT_TYPES}
-
-
-def test_edge_timing_kinds_present() -> None:
-    kinds = {k.kind for k in EDGE_TIMING_KINDS}
-    assert kinds == {"completion", "marker", "immediate", "branch"}
-
-
-@pytest.mark.parametrize("kind", EDGE_TIMING_KINDS, ids=lambda k: k.kind)
-def test_edge_timing_config_schema_is_object(kind) -> None:
-    assert kind.config_schema["type"] == "object"
-
-
-def test_marker_timing_requires_full_triple() -> None:
-    marker = next(k for k in EDGE_TIMING_KINDS if k.kind == "marker")
-    assert set(marker.config_schema["required"]) == {
-        "time_marker_id",
-        "offset_value_id",
-        "offset_direction_code",
-    }
-
-
-def test_immediate_timing_has_no_required_fields() -> None:
-    immediate = next(k for k in EDGE_TIMING_KINDS if k.kind == "immediate")
-    assert "required" not in immediate.config_schema

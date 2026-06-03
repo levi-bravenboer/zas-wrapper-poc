@@ -35,6 +35,32 @@ class PathwaySummary(BaseModel):
     latest_published_at: datetime | None = None
 
 
+class PathwayParentReference(BaseModel):
+    """Minimal identifier returned by `GET /pathways/{id}/parent-references`.
+    Drives the delete-confirmation modal: when this list is non-empty the
+    target pathway is used as a sub-pathway by another pathway and may not
+    be deleted until those references are removed.
+    """
+
+    id: UUID
+    name: str
+
+
+class PathwayChildSummary(BaseModel):
+    """Minimal summary returned by `GET /pathways/{id}/summary` — drives the
+    read-only child preview rendered inside a parent pathway's nested-pathway
+    inspector. `lane_count` / `block_count` come from the pathway's preferred
+    version (latest published if it exists; otherwise the concept version)
+    so the inspector reflects what a parent would actually link to.
+    """
+
+    id: UUID
+    name: str
+    lane_count: int
+    block_count: int
+    latest_published_version_id: UUID | None = None
+
+
 # Aggregate child shapes — client supplies stable UUIDs so cross-child
 # references (block → phase / lane, edge → block, etc.) wire in one payload.
 # `Out` variants are returned as-is from `GET /pathways/{id}`; `In` variants

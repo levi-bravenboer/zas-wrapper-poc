@@ -1907,6 +1907,116 @@
         }
       }
     },
+    "/pathways/{pathway_id}/parent-references": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "List Pathway Parent References",
+        "operationId": "list_pathway_parent_references",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayParentReference"
+                  },
+                  "title": "Response List Pathway Parent References"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathways/{pathway_id}/summary": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Get Pathway Summary",
+        "operationId": "get_pathway_summary",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayChildSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pathways/{pathway_id}": {
       "get": {
         "tags": [
@@ -2061,6 +2171,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
           },
           "422": {
             "description": "Validation Error",
@@ -4234,7 +4354,8 @@
             "type": "string",
             "enum": [
               "native",
-              "external"
+              "external",
+              "internal"
             ],
             "title": "Source",
             "description": "Provenance of this catalogue entry. Native blocks live in our own code-side `BLOCK_TYPES` registry; external blocks are contributed by per-vendor catalogue extensions (Luscii first). The frontend palette groups by `source` then by `provider`.",
@@ -4263,6 +4384,22 @@
             ],
             "title": "Kind",
             "description": "Vendor-specific block kind for external blocks (e.g. `program`). Null for native blocks."
+          },
+          "nested_render": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "inline_preview",
+                  "collapsed_card"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nested Render",
+            "description": "UI hint for blocks whose body renders nested content (today: `pathway_link`). `inline_preview` expands a read-only summary of the linked content inside the parent canvas; `collapsed_card` renders as a single card requiring drill-down to view content. Null for blocks without nested content."
           }
         },
         "type": "object",
@@ -4275,6 +4412,48 @@
           "config_schema"
         ],
         "title": "PathwayBlockType"
+      },
+      "PathwayChildSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_count": {
+            "type": "integer",
+            "title": "Lane Count"
+          },
+          "block_count": {
+            "type": "integer",
+            "title": "Block Count"
+          },
+          "latest_published_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Published Version Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "lane_count",
+          "block_count"
+        ],
+        "title": "PathwayChildSummary",
+        "description": "Minimal summary returned by `GET /pathways/{id}/summary` \u2014 drives the\nread-only child preview rendered inside a parent pathway's nested-pathway\ninspector. `lane_count` / `block_count` come from the pathway's preferred\nversion (latest published if it exists; otherwise the concept version)\nso the inspector reflects what a parent would actually link to."
       },
       "PathwayCreate": {
         "properties": {
@@ -4718,6 +4897,26 @@
           "height_px"
         ],
         "title": "PathwayLaneOut"
+      },
+      "PathwayParentReference": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PathwayParentReference",
+        "description": "Minimal identifier returned by `GET /pathways/{id}/parent-references`.\nDrives the delete-confirmation modal: when this list is non-empty the\ntarget pathway is used as a sub-pathway by another pathway and may not\nbe deleted until those references are removed."
       },
       "PathwayPhaseIn": {
         "properties": {

@@ -151,6 +151,25 @@ class PathwayRepository(BaseRepository[Pathway]):
             for row in result.all()
         ]
 
+    async def get_many(self, pathway_ids: set[UUID] | list[UUID], tenant_id: UUID) -> list[Pathway]:
+        """Fetch multiple pathways by id within a tenant, dropping soft-deleted
+        rows. Used by the parent-references endpoint to attach names to ids
+        returned by `find_pathway_link_parents`.
+        """
+        ids = list(pathway_ids)
+        if not ids:
+            return []
+        result = await self._session.execute(
+            select(Pathway)
+            .where(
+                Pathway.id.in_(ids),
+                Pathway.tenant_id == tenant_id,
+                Pathway.deleted_at.is_(None),
+            )
+            .order_by(Pathway.updated_at.desc())
+        )
+        return list(result.scalars().all())
+
     async def get(self, pathway_id: UUID, tenant_id: UUID) -> Pathway | None:
         result = await self._session.execute(
             select(Pathway).where(
@@ -160,6 +179,54 @@ class PathwayRepository(BaseRepository[Pathway]):
             )
         )
         return result.scalar_one_or_none()
+
+    async def child_summary_counts(self, pathway_version_id: UUID) -> tuple[int, int]:
+        """Return `(lane_count, block_count)` for a single pathway version.
+        Counts non-deleted rows. Used by the nested-pathway inspector summary
+        endpoint to render a read-only child preview without fetching the
+        full version definition.
+        """
+        lane_stmt = select(func.count(PathwayLane.id)).where(
+            PathwayLane.pathway_version_id == pathway_version_id,
+            PathwayLane.deleted_at.is_(None),
+        )
+        block_stmt = select(func.count(PathwayBlock.id)).where(
+            PathwayBlock.pathway_version_id == pathway_version_id,
+            PathwayBlock.deleted_at.is_(None),
+        )
+        lane_count = (await self._session.execute(lane_stmt)).scalar_one()
+        block_count = (await self._session.execute(block_stmt)).scalar_one()
+        return int(lane_count), int(block_count)
+
+    async def find_pathway_link_parents(
+        self,
+        target_pathway_ids: list[UUID] | set[UUID],
+        tenant_id: UUID,
+    ) -> set[UUID]:
+        """Return distinct pathway_ids that contain a non-deleted `pathway_link`
+        block targeting any of the supplied `target_pathway_ids`. Scoped to a
+        single tenant. Returns an empty set when the input is empty.
+
+        Used by the nested-pathway cycle guard to walk the ancestor chain via
+        repeated lookups; the bounded-depth loop lives in the caller.
+        """
+        targets = list(target_pathway_ids)
+        if not targets:
+            return set()
+        target_strs = [str(t) for t in targets]
+        stmt = (
+            select(PathwayVersion.pathway_id)
+            .join(PathwayBlock, PathwayBlock.pathway_version_id == PathwayVersion.id)
+            .where(
+                PathwayBlock.tenant_id == tenant_id,
+                PathwayBlock.deleted_at.is_(None),
+                PathwayBlock.type == "pathway_link",
+                PathwayBlock.config["target_pathway_id"].astext.in_(target_strs),
+            )
+            .distinct()
+        )
+        result = await self._session.execute(stmt)
+        return {row[0] for row in result.all()}
 
     async def fetch_children(self, pathway_version_id: UUID) -> PathwayChildren:
         phases = await self._scalars(
