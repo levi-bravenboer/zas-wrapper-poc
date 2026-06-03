@@ -24,20 +24,13 @@ For external entries, the serialized `config_schema` SHALL describe author-time 
 
 ### Requirement: Block roster matches clinical pathway primitives
 
-The pathway block-type catalogue SHALL contain at least the following native types: `appointment`, `task`, `message`, `form`, `decision`, `milestone`, `wait`, `pathway_link`. The catalogue SHALL NOT contain `timer` or `email` as native types. The catalogue MAY additionally contain external entries whose `type` code uses the dotted `<provider>.<kind>` form contributed by the `external_block_provider` registry.
+The pathway block-type catalogue SHALL contain exactly the following types: `appointment`, `task`, `message`, `form`, `decision`, `milestone`, `wait`, `pathway_link`. The catalogue SHALL NOT contain `timer` or `email`. The `pathway_link` entry SHALL carry catalogue metadata `source='internal'`, `provider='pathway'`, `kind='link'`, and a `nested_render` UI hint with values `'inline_preview'` or `'collapsed_card'`.
 
-#### Scenario: Catalogue lists the expected eight native block types
+#### Scenario: Catalogue lists the expected eight block types
 
 - **WHEN** a client calls `GET /pathway-block-types`
-- **THEN** the response array contains entries with codes `appointment`, `task`, `message`, `form`, `decision`, `milestone`, `wait`, `pathway_link`, each with `source='native'`
+- **THEN** the response array contains exactly the codes `appointment`, `task`, `message`, `form`, `decision`, `milestone`, `wait`, `pathway_link`
 - **AND** the codes `timer` and `email` are absent
-
-#### Scenario: External Luscii program entry appears when provider is enabled
-
-- **GIVEN** the `external_block_provider` row for `luscii` has `status='enabled'` with a `program` capability
-- **WHEN** a client calls `GET /pathway-block-types`
-- **THEN** the response array contains exactly one entry with `type='luscii.program'`, `source='external'`, `provider='luscii'`, `kind='program'`
-- **AND** that entry's `allowed_lane_kind_codes` equals `['external']`
 
 #### Scenario: Message block accepts multiple channels
 
@@ -60,12 +53,19 @@ The pathway block-type catalogue SHALL contain at least the following native typ
 - **AND** `event_type` is required
 - **AND** `timeout_days`, `on_timeout`, `source_block_id` are optional
 
-#### Scenario: Pathway-link block requires target and mode
+#### Scenario: Pathway-link block requires target, mode, and version_pin
 
 - **GIVEN** the catalogue entry `pathway_link`
 - **THEN** its `config_schema.properties.target_pathway_id` requires a UUID
 - **AND** its `config_schema.properties.mode.enum` contains exactly `blocking`, `fire_and_forget`
-- **AND** both fields are required
+- **AND** its `config_schema.properties.version_pin.enum` contains exactly `latest_published`, `specific` with default `latest_published`
+- **AND** its `config_schema.properties.pinned_version_id` is a UUID, required only when `version_pin='specific'`
+- **AND** `target_pathway_id` and `mode` are required at all times
+
+#### Scenario: Pathway-link catalogue entry carries internal source metadata
+
+- **GIVEN** the catalogue entry `pathway_link`
+- **THEN** the entry exposes `source='internal'`, `provider='pathway'`, `kind='link'`, and a `nested_render` value of either `'inline_preview'` or `'collapsed_card'`
 
 ### Requirement: Edge timing supports completion delays, marker offsets, branches, and immediate
 
