@@ -1,6 +1,8 @@
 import type { components } from '@/lib/api/schema'
 
 export type PathwaySummary = components['schemas']['PathwaySummary']
+export type PathwayChildSummary = components['schemas']['PathwayChildSummary']
+export type PathwayParentReference = components['schemas']['PathwayParentReference']
 export type PathwayBare = components['schemas']['PathwayBare']
 export type PathwayWithVersion = components['schemas']['PathwayWithVersionResponse']
 export type PathwayVersionDefinition = components['schemas']['PathwayVersionDefinition']

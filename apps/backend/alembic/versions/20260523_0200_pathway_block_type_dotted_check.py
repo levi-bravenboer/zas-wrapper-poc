@@ -7,8 +7,8 @@ the two well-formed shapes:
 - **Dotted** external-provider codes — e.g. ``luscii.program``.
 
 Regex: ``^[a-z_]+(\\.[a-z_]+)?$``. Matches the application-level parser in
-``app.services.pathway.block_type_code.BlockTypeCode`` so the two stay in
-lockstep. Application validation still enforces that the parsed code
+``app.domain.pathway.blocks.block_type_code.BlockTypeCode`` so the two stay
+in lockstep. Application validation still enforces that the parsed code
 resolves to an entry in the code-side ``BLOCK_TYPES`` catalogue; this
 CHECK is a defence-in-depth shape guard for writes that bypass the API.
 
@@ -24,7 +24,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-from app.services.pathway.block_type_code import BLOCK_TYPE_CODE_PATTERN
+from app.domain.pathway import BLOCK_TYPE_CODE_PATTERN
 
 revision: str = "5f1a8b3c9d24"
 down_revision: str | None = "35685b9389c1"

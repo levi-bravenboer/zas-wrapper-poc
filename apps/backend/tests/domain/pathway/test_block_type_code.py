@@ -2,15 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.pathway.block_type_code import (
+from app.domain.pathway import (
     BLOCK_TYPE_CODE_PATTERN,
     BlockTypeCode,
     InvalidBlockTypeCodeError,
 )
-
-# Pure value-object tests — no ORM, no DB. Opt out of the pathway-conftest
-# autouse cleanup fixture (which would otherwise pull in `db_session`).
-pytestmark = pytest.mark.no_db
 
 
 class TestParseBare:
@@ -18,41 +14,36 @@ class TestParseBare:
         "raw",
         ["appointment", "task", "message", "form", "decision", "milestone", "wait", "pathway_link"],
     )
-    def test_native_codes_parse_with_null_provider_and_kind(self, raw: str) -> None:
+    def test_bare_codes_parse_with_null_provider_and_kind(self, raw: str) -> None:
         code = BlockTypeCode.parse(raw)
         assert code.raw == raw
-        assert code.source == "native"
         assert code.provider is None
         assert code.kind is None
-        assert code.is_native is True
-        assert code.is_external is False
+        assert code.is_dotted is False
         assert str(code) == raw
 
-    def test_snake_case_native_code(self) -> None:
+    def test_snake_case_bare_code(self) -> None:
         code = BlockTypeCode.parse("pathway_link")
-        assert code.source == "native"
         assert code.provider is None
+        assert code.kind is None
 
 
 class TestParseDotted:
     def test_luscii_program_parses_provider_and_kind(self) -> None:
         code = BlockTypeCode.parse("luscii.program")
         assert code.raw == "luscii.program"
-        assert code.source == "external"
         assert code.provider == "luscii"
         assert code.kind == "program"
-        assert code.is_external is True
-        assert code.is_native is False
+        assert code.is_dotted is True
 
     def test_arbitrary_external_provider_kind_pair(self) -> None:
         code = BlockTypeCode.parse("hix.task")
-        assert code.source == "external"
         assert code.provider == "hix"
         assert code.kind == "task"
+        assert code.is_dotted is True
 
     def test_snake_case_provider_and_kind(self) -> None:
         code = BlockTypeCode.parse("zorg_bij_jou.intake_form")
-        assert code.source == "external"
         assert code.provider == "zorg_bij_jou"
         assert code.kind == "intake_form"
 

@@ -20,7 +20,14 @@ from app.db.models.pathway import (
 )
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
-from app.schemas.pathway.catalogue import (
+from app.domain.pathway import (
+    BLOCK_TYPES,
+    EDGE_TIMING_KINDS,
+    PHASE_TEMPLATES,
+    SEEDED_OFFSET_DIRECTIONS,
+    get_block_type,
+)
+from app.schemas.pathway import (
     PathwayBlockType,
     PathwayEdgeOffsetDirection,
     PathwayEdgeTimingKind,
@@ -34,7 +41,9 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldOut,
     PathwayBlockIn,
     PathwayBlockOut,
+    PathwayChildSummary,
     PathwayDefinitionReplace,
+    PathwayParentReference,
     PathwayEdgeIn,
     PathwayEdgeOut,
     PathwayLaneIn,
@@ -49,15 +58,10 @@ from app.schemas.pathway.pathway import (
     PathwayVersionDefinition,
     PathwayWithVersionResponse,
 )
-from app.services.pathway.catalogue import (
-    BLOCK_TYPES,
-    EDGE_TIMING_KINDS,
-    PHASE_TEMPLATES,
-    SEEDED_OFFSET_DIRECTIONS,
-    get_block_type,
-)
+from app.services.pathway.nesting import assert_no_nested_pathway_cycles
 from app.services.pathway.errors import (
     BlockConfigError,
+    PathwayHasReferrersError,
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
@@ -104,6 +108,31 @@ class PathwayService:
             )
             for r in rows
         ]
+
+    async def get_child_summary(self, pathway_id: UUID, tenant_id: UUID) -> PathwayChildSummary:
+        """Drive the nested-pathway inspector preview. Counts come from the
+        pathway's preferred version: the latest published if one exists,
+        else the concept version. Returns zero counts if no version exists
+        (defensive; every pathway is seeded with an `initial` concept).
+        """
+        pathway = await self._repo.get(pathway_id, tenant_id)
+        if pathway is None:
+            raise PathwayNotFoundError()
+        latest_published = await self._version_repo.get_latest_published(pathway_id)
+        preferred = latest_published or await self._version_repo.get_concept(pathway_id)
+        if preferred is None:
+            lane_count, block_count = 0, 0
+        else:
+            lane_count, block_count = await self._repo.child_summary_counts(preferred.id)
+        return PathwayChildSummary(
+            id=pathway.id,
+            name=pathway.name,
+            lane_count=lane_count,
+            block_count=block_count,
+            latest_published_version_id=(
+                latest_published.id if latest_published is not None else None
+            ),
+        )
 
     async def get_with_resolved_version(
         self, pathway_id: UUID, tenant_id: UUID
@@ -251,6 +280,13 @@ class PathwayService:
 
         lane_kinds = await self._repo.lane_kinds_by_code()
         resolved = _ResolvedDefinition.from_payload(payload, lane_kinds=lane_kinds)
+        await self._validate_pathway_link_pinned_versions(resolved.blocks)
+        await assert_no_nested_pathway_cycles(
+            blocks=resolved.blocks,
+            parent_pathway_id=pathway_id,
+            tenant_id=tenant_id,
+            repo=self._repo,
+        )
 
         pathway.name = payload.name
         pathway.clinical_goal = payload.clinical_goal
@@ -267,10 +303,64 @@ class PathwayService:
             version=definition,
         )
 
+    async def _validate_pathway_link_pinned_versions(self, blocks: list[PathwayBlockIn]) -> None:
+        # Cross-DB check: when a `pathway_link` block sets `version_pin='specific'`,
+        # its `pinned_version_id` MUST be a real `pathway_version.id` owned by the
+        # block's `target_pathway_id`. JSON Schema validates shape; this check
+        # walks the DB. Schema-rejected cases (missing id, non-uuid) are skipped
+        # here because they were already rejected upstream.
+        to_check: list[tuple[UUID, UUID, UUID]] = []
+        for block in blocks:
+            if block.type != "pathway_link":
+                continue
+            config = block.config or {}
+            if config.get("version_pin") != "specific":
+                continue
+            pinned_raw = config.get("pinned_version_id")
+            target_raw = config.get("target_pathway_id")
+            if not pinned_raw or not target_raw:
+                continue
+            try:
+                to_check.append((block.id, UUID(str(target_raw)), UUID(str(pinned_raw))))
+            except (TypeError, ValueError):
+                continue
+
+        for block_id, target_pathway_id, pinned_version_id in to_check:
+            version = await self._version_repo.get_in_pathway(pinned_version_id, target_pathway_id)
+            if version is None:
+                raise BlockConfigError(
+                    field=f"blocks[{block_id}].config.pinned_version_id",
+                    reason=("pinned_version_id does not belong to target_pathway_id"),
+                )
+
+    async def list_parent_references(
+        self, pathway_id: UUID, tenant_id: UUID
+    ) -> list[PathwayParentReference]:
+        """Return pathways that reference `pathway_id` as a `pathway_link`
+        target. Drives the delete-confirmation modal — a non-empty list
+        blocks deletion until the references are removed.
+        """
+        pathway = await self._repo.get(pathway_id, tenant_id)
+        if pathway is None:
+            raise PathwayNotFoundError()
+        parent_ids = await self._repo.find_pathway_link_parents({pathway_id}, tenant_id)
+        # Drop self in case some payload referenced its own id; cycle guard
+        # rejects it at save-time but be defensive on read.
+        parent_ids.discard(pathway_id)
+        if not parent_ids:
+            return []
+        parents = await self._repo.get_many(parent_ids, tenant_id)
+        return [PathwayParentReference(id=p.id, name=p.name) for p in parents]
+
     async def soft_delete(self, pathway_id: UUID, tenant_id: UUID) -> None:
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
+        referrers = await self.list_parent_references(pathway_id, tenant_id)
+        if referrers:
+            raise PathwayHasReferrersError(
+                referrers=[{"id": str(r.id), "name": r.name} for r in referrers]
+            )
         await self._repo.soft_delete(pathway)
 
     # ---- Helpers ---------------------------------------------------------

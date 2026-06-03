@@ -12,7 +12,7 @@ from app.db.models.pathway import Pathway, PathwayLaneKind, PathwayVersion
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
-from app.services.pathway.catalogue import SEEDED_LANE_KINDS
+from app.domain.pathway import SEEDED_LANE_KINDS
 from scripts.seed_tenant import ZAS_TENANT_ID
 from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
 

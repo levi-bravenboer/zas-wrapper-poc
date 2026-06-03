@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Redo2, Undo2, Workflow } from 'lucide-react'
+import { Redo2, Trash2, Undo2, Workflow } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -28,6 +28,7 @@ type Props = {
   onPublish: () => void
   onOpenHistory: () => void
   onRename: (name: string) => void
+  onDelete: () => void
 }
 
 export function BuilderTopbar({
@@ -44,6 +45,7 @@ export function BuilderTopbar({
   onPublish,
   onOpenHistory,
   onRename,
+  onDelete,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const time = formatTime(pathway.updated_at)
@@ -123,6 +125,16 @@ export function BuilderTopbar({
         aria-label={t('topbar.redo')}
       >
         <Redo2 className="size-4" strokeWidth={1.8} />
+      </Button>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onDelete}
+        aria-label={t('topbar.delete')}
+      >
+        <Trash2 className="size-4 text-destructive" strokeWidth={1.8} />
       </Button>
 
       <PublishButton disabled={isReadOnly || saveState !== 'clean'} onClick={onPublish} />

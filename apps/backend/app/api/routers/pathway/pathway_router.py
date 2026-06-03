@@ -8,10 +8,12 @@ from fastapi import APIRouter, status
 from app.core.errors import ErrorResponse
 from app.schemas.pathway import (
     PathwayBlockType,
+    PathwayChildSummary,
     PathwayCreate,
     PathwayDefinitionReplace,
     PathwayEdgeOffsetDirection,
     PathwayEdgeTimingKind,
+    PathwayParentReference,
     PathwayPhaseTemplate,
     PathwayPublishRequest,
     PathwaySummary,
@@ -110,6 +112,41 @@ async def create_pathway(
 
 
 @router.get(
+    "/{pathway_id}/parent-references",
+    operation_id="list_pathway_parent_references",
+    response_model=list[PathwayParentReference],
+    responses=_ERRORS_404,
+)
+async def list_pathway_parent_references(
+    pathway_id: UUID,
+    current_user: CurrentUserDep,
+    service: PathwayServiceDep,
+) -> list[PathwayParentReference]:
+    # Pre-check for the delete-confirmation modal. If the returned list is
+    # non-empty, the pathway is used as a sub-pathway by other pathways and
+    # cannot be deleted until those references are removed.
+    return await service.list_parent_references(pathway_id, current_user.tenant_id)
+
+
+@router.get(
+    "/{pathway_id}/summary",
+    operation_id="get_pathway_summary",
+    response_model=PathwayChildSummary,
+    responses=_ERRORS_404,
+)
+async def get_pathway_summary(
+    pathway_id: UUID,
+    current_user: CurrentUserDep,
+    service: PathwayServiceDep,
+) -> PathwayChildSummary:
+    # Read-only summary driving the nested-pathway inspector preview in the
+    # parent canvas. Counts come from the pathway's preferred version (latest
+    # published if any, else concept) so the parent reflects what its
+    # `pathway_link` block would actually resolve to.
+    return await service.get_child_summary(pathway_id, current_user.tenant_id)
+
+
+@router.get(
     "/{pathway_id}",
     operation_id="get_pathway",
     response_model=PathwayWithVersionResponse,
@@ -142,7 +179,7 @@ async def replace_pathway(
     "/{pathway_id}",
     operation_id="delete_pathway",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=_ERRORS_404,
+    responses={**_ERRORS_404, **_ERRORS_409},
 )
 async def delete_pathway(
     pathway_id: UUID,
