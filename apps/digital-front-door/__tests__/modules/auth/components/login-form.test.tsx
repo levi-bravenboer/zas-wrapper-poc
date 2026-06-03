@@ -7,7 +7,8 @@ import { renderWithProviders } from '../../../utils/render-with-providers'
 
 beforeAll(async () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- requireActual needs runtime import type
-  const i18nModule = jest.requireActual<typeof import('@/lib/i18n')>('@/lib/i18n')
+  const i18nModule =
+    jest.requireActual<typeof import('@/lib/i18n')>('@/lib/i18n')
   await i18nModule.initI18n()
 })
 

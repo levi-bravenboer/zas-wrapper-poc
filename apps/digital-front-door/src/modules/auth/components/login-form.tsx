@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, Text, TextInput, View } from 'react-native'
 
-import { resolveTenantSlug,UnauthenticatedError } from '@/lib/api'
+import { resolveTenantSlug, UnauthenticatedError } from '@/lib/api'
 import { useLogin } from '@/modules/auth/hooks/use-login'
 
 export function LoginForm() {

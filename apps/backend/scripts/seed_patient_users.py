@@ -70,8 +70,7 @@ async def seed_patient_users(session: AsyncSession) -> list[User]:
     # Pick the first seeded patient (deterministic by external_ref).
     patient = (
         await session.execute(
-            select(Patient)
-            .where(
+            select(Patient).where(
                 Patient.tenant_id == tenant.id,
                 Patient.external_system == SEED_EXTERNAL_SYSTEM,
                 Patient.external_ref == "seed:patient:01",
@@ -81,7 +80,9 @@ async def seed_patient_users(session: AsyncSession) -> list[User]:
     ).scalar_one_or_none()
 
     if patient is None:
-        logger.error("cannot seed patient users: no seeded patients found — run seed_patients first")
+        logger.error(
+            "cannot seed patient users: no seeded patients found — run seed_patients first"
+        )
         raise RuntimeError("seeded patient not found — run seed_patients first")
 
     # Idempotent: check by (tenant, email, role=patient).

@@ -34,9 +34,12 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Extend the `role` Postgres enum. ALTER TYPE ... ADD VALUE is
-    # non-transactional and idempotent with IF NOT EXISTS.
-    op.execute("ALTER TYPE role ADD VALUE IF NOT EXISTS 'patient'")
+    # Extend the `role` Postgres enum. ALTER TYPE ... ADD VALUE cannot
+    # run inside a transaction in Postgres — commit the alembic-opened
+    # transaction, execute, then re-open for the remaining DDL.
+    op.execute(sa.text("COMMIT"))
+    op.execute(sa.text("ALTER TYPE role ADD VALUE IF NOT EXISTS 'patient'"))
+    op.execute(sa.text("BEGIN"))
 
     # New FK column from users to patients.
     op.add_column("users", sa.Column("patient_id", sa.Uuid(), nullable=True))

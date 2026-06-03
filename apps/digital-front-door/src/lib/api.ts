@@ -76,8 +76,7 @@ export async function requestAuthed<T>(
     signal: init.signal ?? AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
   })
   if (res.status === 401) throw new UnauthenticatedError()
-  if (!res.ok)
-    throw new ApiError(`Request failed (${res.status})`, res.status)
+  if (!res.ok) throw new ApiError(`Request failed (${res.status})`, res.status)
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- generic fetch wrapper
   return (await res.json()) as T
 }
