@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request, Response
 
+from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.schemas.auth.auth import LoginRequest, SessionUser
 from app.schemas.auth.providers import ProviderDescriptor
@@ -16,7 +17,7 @@ from app.services.auth.deps import (
     OptionalCurrentUserDep,
     PasswordLoginProviderDep,
 )
-from app.services.auth.errors import InvalidCredentialsError
+from app.services.auth.errors import InvalidCredentialsError, UnauthenticatedError
 
 router = APIRouter(tags=["auth"])
 
@@ -101,6 +102,11 @@ async def list_login_providers(
 
 @router.get("/auth/me", operation_id="get_current_user", response_model=SessionUser)
 async def get_current_user(current_user: CurrentUserDep) -> SessionUser:
+    # Caregiver-surface `/auth/me` rejects patient sessions so a leaked
+    # patient cookie cannot surface as a caregiver session in orchestrator
+    # code paths. Mobile callers use `/mobile/auth/me` instead.
+    if current_user.role == Role.PATIENT:
+        raise UnauthenticatedError()
     return current_user
 
 
