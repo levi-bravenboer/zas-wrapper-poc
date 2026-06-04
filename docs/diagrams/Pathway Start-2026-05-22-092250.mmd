@@ -1,0 +1,77 @@
+---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: ""
+    fontSize: "13px"
+    primaryColor: "#FFFFFF"
+    primaryTextColor: "#1B2A3D"
+    lineColor: "#444444"
+    actorBkg: "#D6E4F0"
+    actorBorder: "#2E5B8C"
+    actorTextColor: "#1B2A3D"
+    noteBkgColor: "#FFF2D1"
+    noteBorderColor: "#8C7220"
+    sequenceNumberColor: "#FFFFFF"
+---
+sequenceDiagram
+
+  actor CL as ZAS clinician
+  participant HIX as Chipsoft HiX
+  participant BFF as Professional BFF
+  participant CORE as Core service
+  participant AME as Access Management Engine
+  participant BUS as Event bus
+  participant LUI as Luscii integration layer
+  participant LUS as Luscii Clinical Engine<br/>Class IIa
+  participant EHRI as EHR integration layer
+  participant NOT as Notification subsystem
+  actor PT as Patient
+  autonumber
+
+  Note over CL,PT: Clinician starts a care pathway from HiX (e.g. post-operative monitoring)<br/>Reaktor Care Pathway Composer handles admin steps<br/>Luscii Care Pathway Builder defines the clinical sub-path block.
+  CL->>HIX: Open patient record
+  CL->>BFF: SMART-launch app flow, see Story 2<br/>Click Open care pathway app
+  BFF->>CORE: GET available pathway templates<br/>scoped to specialism + erkenning
+  CORE-->>BFF: Pathway template list
+
+  CL->>BFF: Select Post-operative monitoring<br/>+ fill order form (target measurements,<br/>duration, opt-in IC text version)
+  BFF->>AME: Authorise pathway start<br/>role, specialism, therapeutic relationship
+  AME-->>BFF: Authorised
+
+  BFF->>CORE: POST /pathway-instance<br/>template_id, patient_id, encounter_id,<br/>responsible_clinician, parameters
+
+  CORE->>CORE: Validate template version,<br/>create pathway instance,<br/>bind to published version
+
+  par Create encounter / DocRef in HiX
+    CORE->>EHRI: POST encounter context<br/>+ pathway DocumentReference<br/>FHIR R4
+    EHRI->>HIX: POST DocumentReference<br/>+ link to Encounter
+    HIX-->>EHRI: Resource IDs
+    EHRI-->>CORE: HiX-side IDs (encounter, doc)
+  and Activate clinical sub-path in Luscii
+    CORE->>LUI: POST /enrolment<br/>patient, Luscii program, parameters
+    LUI->>LUS: Create patient enrolment<br/>in Luscii program<br/>Class IIa-published version
+    LUS-->>LUI: Enrolment ID, schedule
+    LUI-->>CORE: Luscii enrolment confirmed
+  end
+
+  CORE->>BUS: Emit PathwayStarted event<br/>patient_id, pathway_id, IDs
+
+  par Notify patient
+    BUS->>NOT: Subscribe → patient enrolment notification
+    NOT->>PT: Push notification + email + SMS<br/>New pathway started — please<br/>complete informed consent
+  and Notify clinician
+    BUS->>NOT: Subscribe → clinician confirmation
+    NOT->>EHRI: Create task in HiX task list<br/>FHIR Task
+    EHRI->>HIX: POST Task
+    HIX-->>CL: Task appears in clinician inbox
+  and Audit
+    BUS->>EHRI: Audit event → write Provenance<br/>FHIR R4 into HiX
+    EHRI->>HIX: POST Provenance<br/>pathway start, actor, timestamp
+  end
+
+  Note over PT,LUS: Patient now sees the pathway timeline in the Reaktor app<br/>RPM tasks surface in the Luscii app via the Luscii SDK.
+
+  PT->>LUS: First measurement<br/>see Story 4 for the alert path
+
+  Note over CL,PT: Order-form behaviour and HiX-side resource set depend on what<br/>Chipsoft enables on the HiX integration side (Newwave Care liaises).

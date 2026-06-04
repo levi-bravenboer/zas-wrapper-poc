@@ -1,0 +1,105 @@
+---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: ''
+    fontSize: 13px
+    primaryColor: '#FFFFFF'
+    primaryTextColor: '#1B2A3D'
+    lineColor: '#444444'
+    actorBkg: '#D6E4F0'
+    actorBorder: '#2E5B8C'
+    actorTextColor: '#1B2A3D'
+    noteBkgColor: '#FFF2D1'
+    noteBorderColor: '#8C7220'
+    sequenceNumberColor: '#FFFFFF'
+---
+sequenceDiagram
+
+  actor PT as Patient
+  participant APP as Reaktor patient app
+  participant BFF as Patient BFF
+  participant CORE as Core service
+  participant EHRI as EHR integration layer
+  participant HIX as Chipsoft HiX
+  participant LUS as Reaktor Professionals App (video session)
+  participant BUS as Event bus
+  participant NOT as Notification subsystem
+  actor CL as ZAS clinician
+  autonumber
+
+  Note over PT,CL: Video consult lifecycle — booking → encounter creation in HiX →<br/>join → clinical content → write-back<br/>(KB Zorg op Afstand compliance: structured "care on demand" + Encounter)
+
+  %% --- Booking ---
+  PT->>APP: Tap "Book video consult"<br/>in pathway view
+  APP->>BFF: GET available slots<br/>for pathway + specialism
+  BFF->>EHRI: GET Slot?schedule=⟨specialism⟩
+  EHRI->>HIX: GET Slot (BE FHIR profile)
+  HIX-->>EHRI: Slot bundle
+  EHRI-->>BFF: Available slots
+  BFF-->>APP: Render slot picker
+  PT->>APP: Select slot
+
+  APP->>BFF: POST booking<br/>(slot, pathway, encounter type=video)
+  BFF->>CORE: Register "care on demand" event<br/>(generated video session id, join URL)
+  CORE->>EHRI: POST Appointment<br/>(video, BE profile)
+  EHRI->>HIX: POST Appointment
+  HIX-->>EHRI: Appointment ID
+  EHRI-->>CORE: HiX Appointment ID
+
+  CORE->>BFF: Schedule Reaktor Patient App video session<br/>(appointment_id, patient, clinician)
+  BFF->>APP: Show video consult appointment<br/>+ generate join URL
+
+  CORE->>BUS: Emit AppointmentBooked event
+  par
+    BUS->>NOT: Notification → patient
+    NOT->>PT: Push + email + SMS<br/>"Video consult booked for ⟨date⟩.<br/>Join 5 min before via your app."
+  and
+  end
+
+  %% --- Join time ---
+  Note over PT,CL: At consult time (reminders fire automatically 24h and 30min before)
+
+  PT->>APP: Tap "Join video consult"
+  APP->>BFF: Initiate Video Call
+  BFF-->>APP: opens Patient App video
+  APP-->>PT: Render video session
+
+  CL->>HIX: Click join link in HiX appointment<br/>(SMART-launched view)
+  HIX->>LUS: SMART launch with patient + encounter context
+  LUS-->>CL: Render video session<br/>(in HiX-embedded iframe)
+
+  Note over PT,CL: Uses Reaktor Patient App for Patient Video Call<br/>And Reaktor Professionals App for the Clinician's Video call.
+
+  PT-->>LUS: Patient joins
+  CL-->>LUS: Clinician joins
+  Note over LUS: Video session active<br/>(RTC, end-to-end encrypted)
+
+  %% --- End ---
+  CL->>LUS: End consult
+  LUS->>CORE: Session-ended webhook<br/>(start, end, duration, participants)
+
+  par
+    CORE->>EHRI: PUT Encounter<br/>(status=finished, period,<br/>video tech recorded)
+    EHRI->>HIX: PUT Encounter
+  and
+  CL->>LUS:Write consult report<br>(in embedded view, structured form)
+  LUS->>CORE: POST consult report
+  CORE->>EHRI: POST consult report
+  EHRI->>HIX: Sync consult report
+CORE->>EHRI: POST DocumentReference<br/>+ link to Encounter
+    EHRI->>HIX: POST DocumentReference
+    HIX-->>EHRI: Doc ID
+  and
+    CORE->>BUS: Emit EncounterClosed event
+    BUS->>EHRI: Write Provenance<br/>(KB-required: who, when, tech)
+    EHRI->>HIX: POST Provenance
+  end
+
+  CORE->>BUS: Emit pathway-advance event<br/>(next step activated)
+  BUS->>NOT: Notify patient: next pathway step
+  NOT->>PT: Push: "Your consult is complete.<br/>Next: take a measurement tomorrow."
+
+
+
+  Note over PT,CL: All KB Zorg op Afstand and RIZIV-required artefacts are now in HiX:<br/>Encounter (with tech), DocumentReference (the consult report),<br/>Provenance (audit), and the structured care-on-demand event.

@@ -1,0 +1,74 @@
+---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: ''
+    fontSize: 13px
+    primaryColor: '#FFFFFF'
+    primaryTextColor: '#1B2A3D'
+    lineColor: '#444444'
+    actorBkg: '#D6E4F0'
+    actorBorder: '#2E5B8C'
+    actorTextColor: '#1B2A3D'
+    noteBkgColor: '#FFF2D1'
+    noteBorderColor: '#8C7220'
+    sequenceNumberColor: '#FFFFFF'
+---
+sequenceDiagram
+
+  actor PT as Patient
+  participant APP as Reaktor patient app
+  participant BFF as Patient BFF
+  participant ITM as itsme / eID
+  participant IDB as Identity broker
+  participant CORE as Core service
+  participant AME as Access Management Engine
+  participant EHRI as EHR integration layer<br/>(Newwave Care)
+  participant HIX as Chipsoft HiX
+  participant LUI as Luscii integration layer
+  participant LUS as Luscii Clinical Engine
+  autonumber
+
+  Note over PT,LUS: Patient login and pathway view (first-time and returning)
+
+  PT->>APP: Open app (mobile or web)
+  APP->>BFF: GET /session
+  BFF-->>APP: 401 no session → redirect to login
+
+  APP->>ITM: OIDC authorization request<br/>scope=openid profile rrn
+  Note right of ITM: Patient completes itsme<br/>strong-auth on their device
+  ITM-->>APP: Authorization code
+
+  APP->>BFF: POST /auth/callback<br/>(code)
+  BFF->>IDB: Exchange code → ID token + access token<br/>(OIDC token endpoint)
+  IDB->>ITM: Validate code, verify signature
+  ITM-->>IDB: ID token (RRN, name, DOB)
+  IDB-->>BFF: Validated identity claims
+
+  BFF->>AME: Resolve roles for RRN
+  AME->>CORE: Lookup patient by RRN<br/>(internal API)
+  CORE-->>AME: Patient ID, active pathways list
+
+  AME-->>BFF: Active role = patient<br/>+ entitlements (pathways, shielding policy)
+  BFF-->>APP: Session token<br/>+ role claims
+
+  APP->>BFF: GET /home (pathway view)
+  BFF->>CORE: GET pathway state for patient<br/>(scoped to entitlements)
+  CORE-->>BFF: Active pathways + pending tasks
+
+  par
+    BFF->>LUI: GET Actions for patient
+    LUI->>LUS: Query patient observations
+    LUS-->>LUI: Observation bundle
+    LUI-->>BFF: Get Open Tasks
+  and
+    BFF->>EHRI: GET Appointments for patients
+    EHRI->>HIX: GET Appointment?patient=ID
+    HIX-->>EHRI: Appointment bundle
+    EHRI-->>BFF: Upcoming appointments
+  end
+
+  BFF-->>APP: Aggregated pathway view
+  APP-->>PT: Render home screen<br/>(pathway timeline, tasks,<br/>appointments, content cards)
+
+  Note over PT,LUS: All actions in the session carry the session token<br/>every request is re-checked by the AME server-side.

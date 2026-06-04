@@ -1,0 +1,77 @@
+---
+config:
+  theme: base
+  themeVariables:
+    fontFamily: ''
+    fontSize: 13px
+    primaryColor: '#FFFFFF'
+    primaryTextColor: '#1B2A3D'
+    lineColor: '#444444'
+    actorBkg: '#D6E4F0'
+    actorBorder: '#2E5B8C'
+    actorTextColor: '#1B2A3D'
+    noteBkgColor: '#FFF2D1'
+    noteBorderColor: '#8C7220'
+    sequenceNumberColor: '#FFFFFF'
+---
+sequenceDiagram
+
+  actor CL as ZAS clinician
+  participant HIX as Chipsoft HIX
+  participant ENT as Microsoft Entra ID
+  participant IDB as Identity broker
+  participant BFF as Professional BFF
+  participant AME as Access Management Engine
+  participant CORE as Core service
+  participant LUI as Luscii integration layer
+  participant LUS as Luscii (professional tools)
+  participant EVE as Event Bus
+
+  autonumber
+
+  Note over CL,EVE: ZAS clinician launches the platform from HiX via SMART on FHIR<br/>(Pathway Orchestrator embedded view and Luscii professional tools embedded view)
+
+  CL->>HIX: Login (Entra ID SSO + MFA already established)
+  CL->>HIX: Open patient record
+  CL->>HIX: Click "Open Carepath Platform" tab<br/>(SMART launch button)
+
+  HIX->>BFF: SMART launch URL<br/>?iss=⟨HiX FHIR base⟩&launch=⟨opaque token⟩
+  BFF->>HIX: GET /.well-known/smart-configuration<br/>(SMART discovery)
+  HIX-->>BFF: SMART config (authorize_endpoint, token_endpoint)
+
+  BFF->>HIX: GET /authorize<br/>?launch=⟨token⟩&scope=launch patient/*.read user/*.read<br/>&aud=⟨HiX FHIR base⟩
+  BFF->>EVE: Log Authorization Request
+
+  HIX->>ENT: Validate clinician session<br/>(OIDC, SSO + MFA)
+  ENT-->>HIX: User identity (clinician UPN)
+  HIX-->>BFF: Authorization code
+
+  BFF->>HIX: POST /token<br/>(code, client_id, code_verifier)
+  HIX-->>BFF: Access token<br/>+ id_token + launch context<br/>(patient ID, encounter ID, user)
+
+  BFF->>IDB: Validate id_token<br/>map clinician UPN → platform user
+  IDB->>ENT: SCIM lookup (group memberships)<br/>(if not yet cached)
+  ENT-->>IDB: Groups (specialism, role)
+  IDB-->>BFF: Validated identity + role claims
+
+  BFF->>AME: Resolve entitlements<br/>(user, patient context, encounter)
+  AME->>CORE: Therapeutic-relationship check<br/>+ specialism + campus + erkenning
+  CORE->>EVE: Log therapeutic-relationship check
+  CORE-->>AME: Pathway access scope
+  AME-->>BFF: Active role = ZAS clinician<br/>+ scoped pathway IDs
+
+  BFF->>CORE: GET pathway state for patient
+  CORE->>EVE: Log access pathway request
+
+    CORE->>LUI: GET actions<br>for patient
+    LUI->>LUS: Query professional view data
+    LUS-->>LUI: Alerts, trends, measurements
+    LUI-->>CORE: Clinical signal payload
+
+  CORE-->>BFF: Pathway timeline, pending tasks,<br>signals, IC status
+  BFF-->>CL: Render embedded view in HiX<br/>(iframe with launch context preserved)
+  Note over CL, EVE: Clinician sees: Patient Carepath<br>Both in HiX patient context, no second login.
+
+
+
+  Note over CL,EVE: SMART launch capability on the HiX side is owned by ZAS/Chipsoft.<br/>Newwave Care configures the platform side and validates the integration.

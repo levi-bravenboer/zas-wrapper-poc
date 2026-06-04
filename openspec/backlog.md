@@ -449,3 +449,29 @@ Resolved: `apps/orchestrator/src/modules/pathway/configSchemas.ts` now defines o
 - Source: access-management-ory design (Hydra explicitly excluded from the PoC slice)
 
 Note: `access-management-ory` ships Kratos (sessions) + Keto (relation authz) but no token issuance. MVP adds Ory Hydra as the platform's OAuth2/OIDC authorization server: (a) the mobile app moves from cookie-session reuse to authorization-code + PKCE bearer tokens (interplays with BL-047's SMART bearer path on `/fhir/*`); (b) Hydra plays the platform-side SMART-on-FHIR authorization server for embedded/launched surfaces, with Kratos as its login+consent backend. Forge has a first-class Hydra primitive (`create_hydra_project`), so provisioning is cheap; the work is the consent app, token-accepting deps alongside `CurrentUserDep`, and client registration story.
+
+## Filed by access-entitlements (2026-06-04)
+
+### BL-068 — Post-closure read-only access with retention windows
+- Tier: [mvp]
+- Source: Lastenboek REQ-FUN-145 (deferred from `access-entitlements`)
+
+Note: After a carepath closes, users keep configurable read-only access per user type (e.g. patient 1y, ZAS provider 3y, external via CoZo if the therapeutic relation existed during the active phase), with automatic archival/removal after the window. Temporal permits don't fit Keto set algebra directly — likely a derivation predicate (closed-carepath grants with end dates swept like break-glass) + read-only route mode. Needs the enrollment/closure lifecycle to exist first.
+
+### BL-069 — Access audit log + admin dashboard
+- Tier: [mvp]
+- Source: Lastenboek REQ-FUN-122/128/129/130/131/156/161 (deferred from `access-entitlements`)
+
+Note: Structured access-event log (login, view/modify patient data, shielded-access attempts incl. denials, break-glass usage) with metadata (timestamp, user, active role, action, IP, entity), admin dashboard with filter/export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence (ordinary users cannot modify). PoC has row-level audit fields + stdout login log only. Break-glass grants (access-entitlements) already capture reason + grantor — the dashboard surfaces them.
+
+### BL-070 — SCIM/IAM provisioning + AD/LDAP intake
+- Tier: [mvp]
+- Source: Lastenboek REQ-NON-5/6 (deferred from `access-entitlements`)
+
+Note: ZAS wants user lifecycle (create/update/role-assign/deactivate, individual + bulk) driven by their central IAM over standards (SCIM, SAML, OIDC), with ZAS-identity intake (LDAP/AD codes). Kratos admin API is the natural SCIM target; role assignment maps to our `users` rows (one per role after `access-entitlements`' multi-role model). Bulk ops must ride the outbox so Keto stays in sync (bulk SQL caveat applies).
+
+### BL-071 — CSAM Mandatenbeheer intake for representatives
+- Tier: [mvp]
+- Source: Lastenboek REQ-FUN-3 (deferred from `access-entitlements`; interplays with `oidc-login-providers` + BL-067)
+
+Note: Representative/trusted-person relationships should come from CSAM mandate registration where possible, with self-service onboarding (invitation links, itsme/eID identification) and ZAS-assisted setup as fallback. In our model a mandate becomes a consent-backed grant (same shape as `external_grants`) whose source is the federal mandate registry instead of local administration. Requires the eHealth/itsme federation seam (`oidc-login-providers`).

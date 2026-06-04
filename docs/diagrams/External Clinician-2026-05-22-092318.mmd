@@ -1,0 +1,106 @@
+---
+config:
+  theme: base
+---
+%%{init: {'theme': 'base', 'themeVariables': {
+  'fontFamily': 'Arial, Helvetica, sans-serif',
+  'fontSize': '13px',
+  'primaryColor': '#FFFFFF',
+  'primaryTextColor': '#1B2A3D',
+  'lineColor': '#444444',
+  'actorBkg': '#D6E4F0',
+  'actorBorder': '#2E5B8C',
+  'actorTextColor': '#1B2A3D',
+  'noteBkgColor': '#FFF2D1',
+  'noteBorderColor': '#8C7220',
+  'sequenceNumberColor': '#FFFFFF'
+}}}%%
+sequenceDiagram
+  autonumber
+
+  actor EX as External clinician<br/>(GP / home nurse)
+  participant POR as External clinician portal<br/>(Pathway Orchestrator UI)
+  participant BFF as Professional BFF
+  participant ITM as itsme
+  participant EHE as eHealth federation
+  participant IDB as Identity broker
+  participant AME as Access Management Engine
+  participant TRI as Transmural integration layer
+  participant CORE as Core service
+  participant BUS as Event bus
+  participant EHRI as EHR integration layer
+  participant HIX as Chipsoft HiX
+
+  Note over EX,HIX: External clinician (no HiX account) authenticates via eHealth federation +<br/>itsme. Access is scoped to patients with whom they have a documented<br/>therapeutic relationship, episode-bounded, audit-logged.
+
+  EX->>POR: Open external portal URL<br/>(or click invite link from email)
+  POR->>BFF: GET /session
+  BFF-->>POR: 401 → redirect to login
+
+  POR->>EHE: SAML/OIDC federation request<br/>scope=openid profile RIZIV<br/>+ care-relationship attribute
+  EHE->>ITM: Strong-auth via itsme<br/>(eID/passkey fallback)
+  ITM-->>EHE: User authenticated<br/>(RIZIV number, INSS)
+
+  EHE->>EHE: Resolve therapeutic relationships<br/>(eHealth attribute service)
+  EHE-->>POR: SAML assertion / OIDC token<br/>{RIZIV, INSS, role=physician,<br/>care_relationships=[patient_INSS_1,2,3]}
+
+  POR->>BFF: POST /auth/callback<br/>(federation token)
+  BFF->>IDB: Validate token<br/>(eHealth issuer signature)
+  IDB-->>BFF: Validated claims
+
+  BFF->>AME: Resolve external entitlements<br/>{RIZIV, claimed_patients}
+  AME->>TRI: Verify therapeutic relationship<br/>per patient<br/>(eHealth attribute confirmation)
+  TRI->>EHE: GET TherapeuticRelationship<br/>(eHealth API)
+  EHE-->>TRI: Active relationships<br/>+ episode windows
+  TRI-->>AME: Confirmed scope:<br/>patient IDs + episode windows
+
+  AME->>CORE: Lookup patients by INSS<br/>(internal API)
+  CORE-->>AME: Platform patient IDs<br/>+ active pathways
+
+  AME-->>BFF: Active role = External clinician<br/>+ episode-bound entitlements<br/>(per-patient, per-window)
+  BFF-->>POR: Session token<br/>+ scoped patient list
+
+  POR-->>EX: Render scoped patient list<br/>(only patients in confirmed relationship)
+
+  %% --- In-session actions ---
+  EX->>POR: Open patient pathway
+  POR->>BFF: GET pathway state<br/>(scoped by entitlement)
+  BFF->>AME: Authorise — episode check<br/>(is the episode still open?)
+  AME-->>BFF: Authorised<br/>(episode window valid)
+  BFF->>CORE: GET pathway state
+  CORE-->>BFF: Pathway timeline<br/>(shielding policy applied —<br/>some items hidden from external roles)
+  BFF-->>POR: Render pathway view
+
+  EX->>POR: Upload referral document<br/>(e.g. home-nursing assessment)
+  POR->>BFF: POST document
+  BFF->>AME: Authorise upload<br/>(scope check)
+  AME-->>BFF: Authorised
+  BFF->>CORE: POST document<br/>+ link to pathway + patient
+  CORE->>BUS: Emit DocumentUploaded event
+
+  par Surface to ZAS clinician
+    BUS->>EHRI: Write DocumentReference to HiX
+    EHRI->>HIX: POST DocumentReference<br/>(FHIR R4, with external author)
+    HIX-->>EHRI: Doc ID
+    BUS->>EHRI: Create Task in HiX worklist<br/>"External clinician contributed"
+    EHRI->>HIX: POST Task
+  and Audit
+    BUS->>EHRI: Provenance — external action<br/>{RIZIV, INSS-relationship, timestamp}
+    EHRI->>HIX: POST Provenance
+  end
+
+  %% --- Episode end ---
+  Note over EX,HIX: When the patient's episode ends (pathway complete or relationship<br/>withdrawn in eHealth), entitlement expires.
+
+  CORE->>BUS: Emit EpisodeEnded event
+  BUS->>AME: Revoke external entitlement<br/>for this patient
+  AME->>AME: Remove from external user's scope<br/>(server-side, immediate effect)
+
+  EX->>POR: Attempt to open patient (later)
+  POR->>BFF: GET pathway state
+  BFF->>AME: Authorise
+  AME-->>BFF: Denied (episode ended)
+  BFF-->>POR: 403 forbidden
+  POR-->>EX: "This patient is no longer in your<br/>active care scope. Contact ZAS<br/>if access is still needed."
+
+  Note over EX,HIX: External clinicians never receive HiX credentials.<br/>The eHealth federation + AME together enforce that they see only<br/>the patients they are entitled to, only during the active episode.
