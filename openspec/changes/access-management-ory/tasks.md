@@ -29,20 +29,20 @@
 
 ## 4. Keto authz (AME)
 
-- [ ] 4.1 `app/services/access/permissions/keto_client.py`: check + relation-query (list objects) helpers
-- [ ] 4.2 `require_patient_permission(relation)` dependency (`app/services/access/permissions/deps.py`): path patient-id resolution, admin short-circuit, flag-gated; wire into `require_patient_access` (single wiring point per BL-053)
-- [ ] 4.3 Patient list scoping via relation query → `IN (...)` filter when flag on
+- [x] 4.1 `app/services/access/permissions/keto_client.py`: check + relation-query (list objects) helpers
+- [x] 4.2 `require_patient_permission(relation)` dependency (`app/services/access/permissions/deps.py`): path patient-id resolution, admin short-circuit, flag-gated; wire into `require_patient_access` (single wiring point per BL-053)
+- [x] 4.3 Patient list scoping stays SQL-derived (design D5 amendment — Keto read API walks direct tuples only); detail checks via Keto
 - [ ] 4.4 Sweep `# AUTH-HARDEN` markers on patient/pathway routers: graduate to relation checks or document why role-only stays (partial BL-051)
-- [ ] 4.5 Integration tests: care-team member allowed, org-ancestor allowed, unrelated caregiver 403, external carer view-but-not-shielded, flag-off regression suite
+- [x] 4.5 Integration tests: care-team member allowed, org-ancestor allowed, unrelated caregiver 403, external carer view-but-not-shielded, flag-off regression suite
 
 ## 5. Tuple sync (`app/services/access/sync/`)
 
-- [ ] 5.1 Migration: `authz_outbox` table (id, op, namespace, object, relation, subject, created_at, processed_at) via `/new-migration`
-- [ ] 5.2 Outbox writes in the same transaction for: practitioner_role open/close, care-team participant add/remove, organisation reparent, external episode start/end
-- [ ] 5.3 Relay worker: apply pending rows to Keto in commit order, retry with backoff, idempotent on replay
-- [ ] 5.4 Reconciler: derive full tuple set from Postgres, diff against Keto, converge; runs on demand + as initial population; drift warning logs with per-namespace counts
-- [ ] 5.5 Episode sweeper: close date-lapsed external episodes through the same outbox path
-- [ ] 5.6 Tests: crash-before-relay recovery, orphaned-tuple removal, revocation end-to-end (tuple delete → 403)
+- [x] 5.1 Migration: `authz_outbox` table (id, op, namespace, object, relation, subject, created_at, processed_at) via `/new-migration`
+- [x] 5.2 Outbox writes in the same transaction via centralized before_flush hook (covers practitioner_role, care-team participant, organisation, patient, care-team mutations from any code path; external episodes have no domain table yet)
+- [x] 5.3 Relay worker: apply pending rows to Keto in commit order, retry with backoff, idempotent on replay
+- [x] 5.4 Reconciler: derive full tuple set from Postgres, diff against Keto, converge; runs on demand + as initial population; drift warning logs with per-namespace counts
+- [x] 5.5 Episode sweeper: collapsed into scheduled `reconcile_all` (no external-episode domain table yet; participant/role closes are event-driven via the hook)
+- [x] 5.6 Tests: crash-before-relay recovery, orphaned-tuple removal, revocation end-to-end (tuple delete → 403)
 
 ## 6. Verification + demo readiness
 

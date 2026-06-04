@@ -6,12 +6,14 @@ from uuid import UUID
 from fastapi import Depends
 
 from app.core.enums.user import Role
+from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.db.models.patient import Patient
 from app.repositories.organisation.deps import OrganisationRepoDep
 from app.repositories.patient.deps import PatientRepoDep
 from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.deps import require_role
+from app.services.access.permissions.deps import KetoClientDep, check_patient_permission
 from app.services.care_team.deps import CareTeamServiceDep
 from app.services.patient.errors import PatientNotFoundError
 from app.services.patient.patient_service import PatientService
@@ -38,31 +40,47 @@ async def require_patient_access(
     service: PatientServiceDep,
     care_team_service: CareTeamServiceDep,
     session: SessionDep,
+    settings: SettingsDep,
+    keto: KetoClientDep,
     current_user: SessionUser = Depends(require_role(Role.ADMIN, Role.CAREGIVER)),
 ) -> Patient:
     """Resolve a patient inside the caller's tenant or raise 404.
 
-    Admins see every patient in their tenant. Caregivers must satisfy at
-    least one of: (a) open `CareTeamParticipant` row on a team for this
-    patient, or (b) the patient's primary org descends from a root they
-    can act under via an open `PractitionerRole`. Cross-team and
-    cross-tenant misses both surface as 404 by design — leaking
-    existence is a worse failure mode than a vague 404.
+    Admins see every patient in their tenant. Caregivers must hold a
+    relation to the patient: with `AUTHZ_KETO_ENABLED` one Keto check
+    answers care-team membership, org-tree reachability, and external
+    episodes in a single relation walk; with the flag off the same facts
+    are evaluated via the pre-Ory SQL predicates — (a) open
+    `CareTeamParticipant` row on a team for this patient, or (b) the
+    patient's primary org descends from a root reachable via an open
+    `PractitionerRole`. Cross-team and cross-tenant misses both surface
+    as 404 by design — leaking existence is a worse failure mode than a
+    vague 404.
     """
 
-    # AUTH-HARDEN
+    # AUTH-HARDEN: relation-checked via Keto when AUTHZ_KETO_ENABLED (BL-020/BL-053)
     patient = await service.get_by_id(current_user.tenant_id, patient_id)
     if patient is None:
         raise PatientNotFoundError()
-    if current_user.role != Role.ADMIN:
-        has_membership = await care_team_service.has_open_membership(current_user.id, patient_id)
-        if not has_membership:
-            root_orgs = await practitioner_root_orgs_for(session, current_user)
-            patient_root = await patient_root_org(
-                session, current_user.tenant_id, patient.primary_organisation_id
-            )
-            if patient_root is None or patient_root not in root_orgs:
-                raise PatientNotFoundError()
+    if current_user.role == Role.ADMIN:
+        return patient
+
+    if settings.authz_keto_enabled:
+        allowed = await check_patient_permission(
+            keto, patient_id=patient_id, user_id=current_user.id, relation="view"
+        )
+        if not allowed:
+            raise PatientNotFoundError()
+        return patient
+
+    has_membership = await care_team_service.has_open_membership(current_user.id, patient_id)
+    if not has_membership:
+        root_orgs = await practitioner_root_orgs_for(session, current_user)
+        patient_root = await patient_root_org(
+            session, current_user.tenant_id, patient.primary_organisation_id
+        )
+        if patient_root is None or patient_root not in root_orgs:
+            raise PatientNotFoundError()
     return patient
 
 

@@ -24,6 +24,7 @@ from app.main import create_app
 from scripts.seed_tenant import seed_zas_tenant
 from scripts.seed_users import seed_users
 from tests._settings import build_settings
+from tests.fakes.keto import FakeKetoClient
 from tests.fakes.kratos import FakeKratosClient
 
 # Inside the `zas_backend_test` container, compose injects this via env.
@@ -67,9 +68,11 @@ def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
     app.state.session_factory = async_sessionmaker(
         db_engine, expire_on_commit=False, autoflush=False
     )
-    # Kratos is faked in-process: password logins verify against the users
-    # table and sessions are opaque in-memory tokens (see tests/fakes/kratos).
+    # Kratos + Keto are faked in-process: password logins verify against the
+    # users table, sessions are opaque in-memory tokens, and relation checks
+    # evaluate the OPL permits over in-memory tuples (see tests/fakes/).
     app.state.kratos_client = FakeKratosClient(app.state.session_factory)
+    app.state.keto_client = FakeKetoClient()
     # Routes resolve `SettingsDep` via the lru-cached `get_settings()`, which
     # would otherwise leak the host's real env into tests. Override per-app
     # so per-test settings fixtures (e.g. SSE idle timeout) take effect.
@@ -80,6 +83,11 @@ def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
 @pytest.fixture
 def fake_kratos(app: FastAPI) -> FakeKratosClient:
     return app.state.kratos_client
+
+
+@pytest.fixture
+def fake_keto(app: FastAPI) -> FakeKetoClient:
+    return app.state.keto_client
 
 
 @pytest.fixture

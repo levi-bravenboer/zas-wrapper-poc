@@ -30,8 +30,10 @@ The OPL config SHALL define namespaces `Organisation` (relations: `parent`, `mem
 - **WHEN** external user G holds an `external_carer` tuple for patient P
 - **THEN** `check(Patient:P, view, G)` is allowed AND `check(Patient:P, view_shielded, G)` is denied
 
-### Requirement: require_permission dependency guards patient-scoped routes
-The backend SHALL export a `require_patient_permission(relation)` dependency from `app/services/authz/` that resolves the patient id from the path, short-circuits allow for `Role.ADMIN` (tenant-wide read preserved), calls Keto `check` for other roles, and raises the existing 403 error envelope on deny. `require_patient_access` in `app/services/patient/deps.py` SHALL be the single wiring point so every guarded patient route inherits the rule. Patient list endpoints SHALL scope results using Keto relation queries (one query per request, not one check per row).
+### Requirement: Keto check guards patient-scoped routes
+The backend SHALL export `check_patient_permission(relation)` from `app/services/access/permissions/` answering one Keto `check` per patient-scoped request. `require_patient_access` in `app/services/patient/deps.py` SHALL be the single wiring point so every guarded patient route inherits the rule, with `Role.ADMIN` short-circuiting to allow (tenant-wide read preserved). Denials MUST surface as 404 (the codebase's existence-hiding contract), not 403.
+
+Patient **list** endpoints SHALL keep deriving their visible set in SQL from the same domain facts the tuples are derived from (care-team participation, practitioner-role org roots) — Keto's read API walks direct tuples only, so set-derivation stays in Postgres; per-object checks go to Keto. The reconciler guarantees the two views agree.
 
 #### Scenario: Admin bypass
 - **WHEN** an admin requests any patient detail in their tenant with the flag on
@@ -41,6 +43,10 @@ The backend SHALL export a `require_patient_permission(relation)` dependency fro
 - **WHEN** a new patient-scoped route is added using `require_patient_access`
 - **THEN** it enforces the relation check with no additional authz code in the router
 
-#### Scenario: List scoping
-- **WHEN** a caregiver with relations to exactly 3 patients requests the patient list
-- **THEN** only those 3 patients are returned, derived from a relation query rather than per-row checks
+#### Scenario: Denial hides existence
+- **WHEN** a caregiver without any relation to patient P requests P's detail with the flag on
+- **THEN** the response is 404 with the patient-not-found envelope
+
+#### Scenario: List scoping agrees with checks
+- **WHEN** a caregiver with relations to exactly 3 patients requests the patient list and then each detail
+- **THEN** exactly those 3 patients are listed (SQL-derived) and each detail check (Keto) allows

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
 from typing import Any
 
@@ -22,9 +23,13 @@ from app.db.audit import install_audit_hooks
 from app.db.engine import create_engine, create_session_factory
 from app.realtime import install_realtime_flush_hook
 from app.services.access.identity.kratos_client import KratosClient
+from app.services.access.permissions.keto_client import KetoClient
+from app.services.access.sync.outbox import install_authz_outbox_hook
+from app.services.access.sync.relay import run_relay_loop
 
 install_audit_hooks()
 install_realtime_flush_hook()
+install_authz_outbox_hook()
 
 
 class InsecureProductionConfigError(RuntimeError):
@@ -99,8 +104,20 @@ def _register_exception_handlers(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-    yield
-    await app.state.ory_http.aclose()
+    settings: Settings = app.state.settings
+    relay_task: asyncio.Task[None] | None = None
+    if settings.authz_keto_enabled:
+        relay_task = asyncio.create_task(
+            run_relay_loop(app.state.session_factory, app.state.keto_client)
+        )
+    try:
+        yield
+    finally:
+        if relay_task is not None:
+            relay_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await relay_task
+        await app.state.ory_http.aclose()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -132,6 +149,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ory_http = httpx.AsyncClient(timeout=5.0)
     app.state.ory_http = ory_http
     app.state.kratos_client = KratosClient(settings, ory_http)
+    app.state.keto_client = KetoClient(settings, ory_http)
 
     db_engine = create_engine(settings)
     app.state.db_engine = db_engine
