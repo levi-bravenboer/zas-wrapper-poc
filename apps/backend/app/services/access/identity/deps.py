@@ -85,6 +85,9 @@ async def resolve_actor_from_request(
         user = next((u for u in roster if u.id == bound_user_id), None)
         if user is None:
             request.state.role_selection_required = True
+            request.state.available_roles = sorted(
+                {u.role.value for u in roster if u.is_active and u.role != Role.PATIENT}
+            )
             return None
     if not user.is_active:
         return None
@@ -150,8 +153,11 @@ async def get_current_user(
 ) -> SessionUser:
     if current_user is None:
         if getattr(request.state, "role_selection_required", False):
-            # live multi-role session without a binding (REQ-NON-3)
-            raise RoleSelectionRequiredError()
+            # live multi-role session without a binding (REQ-NON-3); the
+            # details let the client render the picker without re-login
+            raise RoleSelectionRequiredError(
+                details={"available_roles": getattr(request.state, "available_roles", [])}
+            )
         raise UnauthenticatedError()
     return current_user
 

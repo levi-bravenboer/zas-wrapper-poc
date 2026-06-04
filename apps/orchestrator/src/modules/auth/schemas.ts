@@ -27,3 +27,12 @@ export const providerDescriptorSchema = z.object({
   kind: providerKindSchema,
 })
 export type ProviderDescriptor = z.infer<typeof providerDescriptorSchema>
+
+export const roleSelectionRequiredSchema = z.object({
+  requires_role_selection: z.literal(true),
+  available_roles: z.array(roleSchema),
+})
+export type RoleSelectionRequired = z.infer<typeof roleSelectionRequiredSchema>
+
+export const loginResultSchema = z.union([roleSelectionRequiredSchema, sessionUserSchema])
+export type LoginResult = z.infer<typeof loginResultSchema>

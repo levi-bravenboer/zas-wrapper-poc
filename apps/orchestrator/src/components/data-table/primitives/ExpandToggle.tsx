@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/style/cn'
 
 import { stickyFirst } from '../styles'
+
 import { Cell } from './Table'
 
 export interface ExpandToggleProps {

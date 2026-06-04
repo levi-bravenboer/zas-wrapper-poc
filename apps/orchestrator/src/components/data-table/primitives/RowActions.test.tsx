@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/renderWithProviders'
 
 import type { DataTableRowAction } from '../types'
+
 import { RowActions } from './RowActions'
 
 describe('RowActions', () => {

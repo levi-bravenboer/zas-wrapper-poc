@@ -2,6 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/style/cn'
 
 import { stickyFirst } from '../styles'
+
 import { Cell, HeaderCell } from './Table'
 
 export interface SelectionHeaderProps {

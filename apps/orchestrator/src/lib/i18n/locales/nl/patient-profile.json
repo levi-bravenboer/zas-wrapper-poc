@@ -92,5 +92,16 @@
       "required": "Verplicht veld.",
       "too_long": "Te lang."
     }
+  },
+  "breakGlass": {
+    "title": "Geen toegang tot deze patiënt",
+    "description": "Je hebt geen behandelrelatie met deze patiënt. Vraag tijdelijke noodtoegang aan (vervanging of spoedgeval).",
+    "reasonLabel": "Reden (verplicht)",
+    "reasonPlaceholder": "bv. vervanging dr. Janssens, spoedconsult",
+    "submit": "Noodtoegang aanvragen",
+    "submitting": "Bezig…",
+    "waiting": "Toegang wordt geactiveerd…",
+    "error": "Aanvraag mislukt, probeer opnieuw",
+    "auditNote": "Elke noodtoegang wordt gelogd en is zichtbaar voor de beheerder. Toegang vervalt automatisch."
   }
 }

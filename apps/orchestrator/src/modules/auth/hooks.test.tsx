@@ -75,7 +75,8 @@ describe('useLogin', () => {
     const { result } = renderHook(() => useLogin(), { wrapper })
     await result.current.mutateAsync({ email: 'l@b.co', password: 'p' })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data?.id).toBe('u2')
+    const data = result.current.data
+    expect(data && 'id' in data ? data.id : undefined).toBe('u2')
   })
 
   it('surfaces an error on 401', async () => {

@@ -31,14 +31,14 @@
 - [x] 3.1 `POST /patients/{id}/access-grants` (reason required, duration capped by `authz_break_glass_max_hours` setting) + outbox in one transaction
 - [x] 3.2 `GET /admin/access-grants?active=true` admin listing; revoke endpoint
 - [x] 3.3 Guard integration: break-glass grant id surfaces in audit context for requests it enables
-- [ ] 3.4 Orchestrator: break-glass affordance with reason capture on the patient-blocked path; admin grants list view
+- [x] 3.4 Orchestrator: break-glass affordance with reason capture on the patient-blocked path; admin grants list view
 
 ## 4. Carepath scoping
 
 - [x] 4.1 `require_carepath_access` dependency in `app/services/access/permissions/`; wire pathway detail/mutation routes (admin short-circuit, 404 deny, flag-off no-op)
 - [x] 4.2 Carepath list scoping in SQL from specialism links + explicit assignments (mirror of patient-list pattern)
 - [x] 4.3 Admin CRUD: specialisms, role↔specialism links, carepath↔specialism links, per-carepath practitioner assignment
-- [ ] 4.4 Orchestrator: specialism management UI on practitioner-role admin; carepath link config in builder settings
+- [ ] 4.4 Orchestrator: specialism management UI on practitioner-role admin; carepath link config in builder settings — *deferred: admin scoping endpoints exist and are demoable via API; the config UI is a fast-follow (tracked on ZAS-96)*
 
 ## 5. External collaboration
 
@@ -60,7 +60,7 @@
 - [x] 7.2 `authenticate_password`: resolve roster; auto-bind single-row; `requires_role_selection` response for multi-row
 - [x] 7.3 `POST /auth/session/role`: write/rewrite `session_role_bindings`, audit old/new role; 409 contract on unbound protected routes
 - [x] 7.4 `resolve_actor_from_request`: cookie → whoami → roster → binding → user row; deactivated bound row → 401 + revocation queue
-- [ ] 7.5 Orchestrator: role picker on `requires_role_selection`, 409 interception preserving destination, active-role display + switch in user menu
+- [x] 7.5 Orchestrator: role picker on `requires_role_selection`, 409 interception preserving destination, active-role display + switch in user menu
 - [x] 7.6 `FakeKratosClient`: multi-row roster support
 
 ## 8. Seeds & demo data
@@ -74,9 +74,9 @@
 
 - [x] 9.1 Sync tests: new derivations, assigned-XOR-specialism invariant, sweep expiry, consent revocation cascade, backfill survival
 - [x] 9.2 API tests: carepath 404 for wrong specialism, break-glass grant/expiry, verb separation, shielding shape filtering, multi-role 409/binding/switch
-- [ ] 9.3 Orchestrator tests: role picker paths (single-role unchanged, multi-role picks), break-glass affordance
+- [x] 9.3 Orchestrator tests: role picker paths (single-role unchanged, multi-role picks), break-glass affordance
 - [x] 9.4 Extend `infra/ory/smoke.sh`: Carepath check, verb tuples, break-glass tuple lifecycle
-- [ ] 9.5 `/verify` green on backend + orchestrator; e2e covers multi-role login
+- [x] 9.5 `/verify` green on backend + orchestrator; e2e covers multi-role login
 
 ## 10. Docs & ledger
 

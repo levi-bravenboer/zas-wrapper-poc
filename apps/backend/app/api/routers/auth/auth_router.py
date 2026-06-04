@@ -137,6 +137,33 @@ async def login_password(
     return SessionUser.model_validate(result.user)
 
 
+@router.get(
+    "/auth/session/roles",
+    operation_id="list_session_roles",
+    response_model=list[Role],
+)
+async def list_session_roles(
+    request: Request,
+    settings: SettingsDep,
+    user_repo: UserRepoDep,
+    kratos: KratosClientDep,
+) -> list[Role]:
+    """The caller's selectable roles on this surface (REQ-NON-3) — drives
+    the role picker and the user-menu switcher. Single-role users get a
+    one-element list."""
+
+    token = request.cookies.get(settings.session_cookie_name)
+    if not token:
+        raise UnauthenticatedError()
+    kratos_session = await kratos.whoami(session_token=token)
+    if kratos_session is None:
+        raise UnauthenticatedError()
+    roster = await user_repo.list_by_external_identity(
+        ZAS_TENANT_ID, KRATOS_IDP, kratos_session.identity_id
+    )
+    return sorted({u.role for u in roster if u.is_active and u.role != Role.PATIENT})
+
+
 @router.post(
     "/auth/session/role",
     operation_id="select_session_role",

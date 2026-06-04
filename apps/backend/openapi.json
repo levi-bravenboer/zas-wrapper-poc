@@ -102,6 +102,82 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SessionUser"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RoleSelectionRequiredResponse"
+                    }
+                  ],
+                  "title": "Response Login Password"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/session/roles": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List Session Roles",
+        "description": "The caller's selectable roles on this surface (REQ-NON-3) \u2014 drives\nthe role picker and the user-menu switcher. Single-role users get a\none-element list.",
+        "operationId": "list_session_roles",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Role"
+                  },
+                  "type": "array",
+                  "title": "Response List Session Roles"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/session/role": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Select Session Role",
+        "description": "Bind (or re-bind) the session to one of the caller's role rows.\n\nWorks on an unbound fresh login AND as a mid-session role switch \u2014\nno re-authentication (REQ-NON-3 \"log in once, choose role\"). Every\nswitch is audit-logged with the previous and new role.",
+        "operationId": "select_session_role",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleSelectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/SessionUser"
                 }
               }
@@ -1020,6 +1096,879 @@
               "type": "string",
               "format": "uuid",
               "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/access-grants": {
+      "post": {
+        "tags": [
+          "access-grants"
+        ],
+        "summary": "Create Access Grant",
+        "operationId": "create_access_grant",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessGrantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessGrantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/access-grants": {
+      "get": {
+        "tags": [
+          "access-grants"
+        ],
+        "summary": "List Access Grants",
+        "operationId": "list_access_grants",
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only unexpired, unrevoked grants",
+              "default": true,
+              "title": "Active"
+            },
+            "description": "Only unexpired, unrevoked grants"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessGrantRead"
+                  },
+                  "title": "Response List Access Grants"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/access-grants/{grant_id}/revoke": {
+      "post": {
+        "tags": [
+          "access-grants"
+        ],
+        "summary": "Revoke Access Grant",
+        "operationId": "revoke_access_grant",
+        "parameters": [
+          {
+            "name": "grant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Grant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessGrantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/specialisms": {
+      "get": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "List Specialisms",
+        "operationId": "list_specialisms",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SpecialismRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Specialisms"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "Create Specialism",
+        "operationId": "create_specialism",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpecialismCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpecialismRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/specialisms/{specialism_id}": {
+      "delete": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "Delete Specialism",
+        "operationId": "delete_specialism",
+        "parameters": [
+          {
+            "name": "specialism_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Specialism Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/practitioner-roles/{role_id}/specialisms": {
+      "get": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "List Role Specialisms",
+        "operationId": "list_role_specialisms",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecialismRead"
+                  },
+                  "title": "Response List Role Specialisms"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "Set Role Specialisms",
+        "operationId": "set_role_specialisms",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpecialismIdsUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecialismRead"
+                  },
+                  "title": "Response Set Role Specialisms"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pathways/{pathway_id}/specialisms": {
+      "put": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "Set Pathway Specialisms",
+        "operationId": "set_pathway_specialisms",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpecialismIdsUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecialismRead"
+                  },
+                  "title": "Response Set Pathway Specialisms"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pathways/{pathway_id}/practitioners": {
+      "put": {
+        "tags": [
+          "access-scoping"
+        ],
+        "summary": "Set Pathway Practitioners",
+        "operationId": "set_pathway_practitioners",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignedUserIdsUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": "Response Set Pathway Practitioners"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/external-access-profiles": {
+      "get": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "List External Access Profiles",
+        "operationId": "list_external_access_profiles",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalAccessProfileRead"
+                  },
+                  "type": "array",
+                  "title": "Response List External Access Profiles"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "Upsert External Access Profile",
+        "operationId": "upsert_external_access_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalAccessProfileUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalAccessProfileRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/consents": {
+      "post": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "Create Consent",
+        "operationId": "create_consent",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/consents/{consent_id}/revoke": {
+      "post": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "Revoke Consent",
+        "operationId": "revoke_consent",
+        "parameters": [
+          {
+            "name": "consent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Consent Id"
+            }
+          },
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/external-grants": {
+      "get": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "List External Grants",
+        "operationId": "list_external_grants",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalGrantRead"
+                  },
+                  "title": "Response List External Grants"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "Create External Grant",
+        "operationId": "create_external_grant",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalGrantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalGrantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/external-grants/{grant_id}/end": {
+      "post": {
+        "tags": [
+          "external-collaboration"
+        ],
+        "summary": "End External Grant",
+        "operationId": "end_external_grant",
+        "parameters": [
+          {
+            "name": "grant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Grant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalGrantRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shielding-rules": {
+      "get": {
+        "tags": [
+          "shielding"
+        ],
+        "summary": "List Shielding Rules",
+        "operationId": "list_shielding_rules",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShieldingRuleRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Shielding Rules"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "shielding"
+        ],
+        "summary": "Upsert Shielding Rule",
+        "operationId": "upsert_shielding_rule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShieldingRuleUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShieldingRuleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shielding-rules/{rule_id}": {
+      "delete": {
+        "tags": [
+          "shielding"
+        ],
+        "summary": "Delete Shielding Rule",
+        "operationId": "delete_shielding_rule",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rule Id"
             }
           }
         ],
@@ -2761,6 +3710,88 @@
   },
   "components": {
     "schemas": {
+      "AccessGrantCreate": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "hours": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "hours"
+        ],
+        "title": "AccessGrantCreate"
+      },
+      "AccessGrantRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "granted_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Granted By"
+          },
+          "granted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Granted At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "user_id",
+          "reason",
+          "granted_by",
+          "granted_at",
+          "expires_at",
+          "revoked_at"
+        ],
+        "title": "AccessGrantRead"
+      },
       "AssignRoleRequest": {
         "properties": {
           "role": {
@@ -2772,6 +3803,24 @@
           "role"
         ],
         "title": "AssignRoleRequest"
+      },
+      "AssignedUserIdsUpdate": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "User Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_ids"
+        ],
+        "title": "AssignedUserIdsUpdate",
+        "description": "Replace-set semantics. An empty list clears explicit assignment \u2014\nthe carepath falls back to specialism-wide access (REQ-NON-12)."
       },
       "CareTeamCreate": {
         "properties": {
@@ -2943,6 +3992,75 @@
         "title": "CareTeamUpdate",
         "description": "`PATCH /care-teams/{id}` payload \u2014 team-level metadata only.\n\nParticipant changes are out of scope here; use the participant\nendpoints. Setting `status = inactive` or `period_end` closes the\nteam but does not auto-unassign participants \u2014 the service handles\nthat side-effect inside the same transaction."
       },
+      "ConsentCreate": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Scope",
+            "default": "external_collaboration"
+          }
+        },
+        "type": "object",
+        "title": "ConsentCreate"
+      },
+      "ConsentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          },
+          "granted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Granted At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "scope",
+          "status",
+          "granted_at",
+          "revoked_at"
+        ],
+        "title": "ConsentRead"
+      },
+      "ConsentStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "revoked"
+        ],
+        "title": "ConsentStatus"
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -2972,6 +4090,155 @@
           "message"
         ],
         "title": "ErrorResponse"
+      },
+      "ExternalAccessProfileRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "professional_type": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "allow_read": {
+            "type": "boolean",
+            "title": "Allow Read"
+          },
+          "allow_write": {
+            "type": "boolean",
+            "title": "Allow Write"
+          },
+          "allow_record": {
+            "type": "boolean",
+            "title": "Allow Record"
+          },
+          "allow_message": {
+            "type": "boolean",
+            "title": "Allow Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "professional_type",
+          "allow_read",
+          "allow_write",
+          "allow_record",
+          "allow_message"
+        ],
+        "title": "ExternalAccessProfileRead"
+      },
+      "ExternalAccessProfileUpsert": {
+        "properties": {
+          "professional_type": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "allow_read": {
+            "type": "boolean",
+            "title": "Allow Read",
+            "default": true
+          },
+          "allow_write": {
+            "type": "boolean",
+            "title": "Allow Write",
+            "default": false
+          },
+          "allow_record": {
+            "type": "boolean",
+            "title": "Allow Record",
+            "default": false
+          },
+          "allow_message": {
+            "type": "boolean",
+            "title": "Allow Message",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "professional_type"
+        ],
+        "title": "ExternalAccessProfileUpsert"
+      },
+      "ExternalGrantCreate": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "professional_type": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "consent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "professional_type",
+          "consent_id"
+        ],
+        "title": "ExternalGrantCreate"
+      },
+      "ExternalGrantRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "professional_type": {
+            "$ref": "#/components/schemas/PractitionerRoleCode"
+          },
+          "consent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Id"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "user_id",
+          "professional_type",
+          "consent_id",
+          "period_start",
+          "period_end"
+        ],
+        "title": "ExternalGrantRead"
       },
       "Gender": {
         "type": "string",
@@ -3020,6 +4287,18 @@
           "started_at"
         ],
         "title": "HealthResponse"
+      },
+      "ItemCategory": {
+        "type": "string",
+        "enum": [
+          "questionnaire_answers",
+          "diary",
+          "attachments",
+          "parameters",
+          "documents"
+        ],
+        "title": "ItemCategory",
+        "description": "Shieldable item categories inside patient-scoped payloads."
       },
       "LoginRequest": {
         "properties": {
@@ -6587,6 +7866,41 @@
         ],
         "title": "RoleInCare"
       },
+      "RoleSelectRequest": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "RoleSelectRequest"
+      },
+      "RoleSelectionRequiredResponse": {
+        "properties": {
+          "requires_role_selection": {
+            "type": "boolean",
+            "const": true,
+            "title": "Requires Role Selection",
+            "default": true
+          },
+          "available_roles": {
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            },
+            "type": "array",
+            "title": "Available Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available_roles"
+        ],
+        "title": "RoleSelectionRequiredResponse",
+        "description": "Login succeeded but the human holds several roles on this surface\n(REQ-NON-3). The session cookie is set and live; protected routes answer\n409 until `POST /auth/session/role` binds one of `available_roles`."
+      },
       "RootResponse": {
         "properties": {
           "name": {
@@ -6651,6 +7965,159 @@
           "is_active"
         ],
         "title": "SetActiveRequest"
+      },
+      "ShieldingAudience": {
+        "type": "string",
+        "enum": [
+          "representative",
+          "external_professional",
+          "patient_other_role"
+        ],
+        "title": "ShieldingAudience",
+        "description": "Limited-sight audiences a category can be released to.\n\nSubjects holding `view_shielded` (care team, org chain, break-glass)\nnever pass through the policy service \u2014 full sight by construction."
+      },
+      "ShieldingRuleRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "pathway_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pathway Id"
+          },
+          "item_category": {
+            "$ref": "#/components/schemas/ItemCategory"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/ShieldingAudience"
+          },
+          "released": {
+            "type": "boolean",
+            "title": "Released"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pathway_id",
+          "item_category",
+          "audience",
+          "released"
+        ],
+        "title": "ShieldingRuleRead"
+      },
+      "ShieldingRuleUpsert": {
+        "properties": {
+          "pathway_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pathway Id"
+          },
+          "item_category": {
+            "$ref": "#/components/schemas/ItemCategory"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/ShieldingAudience"
+          },
+          "released": {
+            "type": "boolean",
+            "title": "Released"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_category",
+          "audience",
+          "released"
+        ],
+        "title": "ShieldingRuleUpsert",
+        "description": "Upsert keyed by (pathway_id, item_category, audience);\n`pathway_id = null` targets the global rule."
+      },
+      "SpecialismCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "display": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "display"
+        ],
+        "title": "SpecialismCreate"
+      },
+      "SpecialismIdsUpdate": {
+        "properties": {
+          "specialism_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Specialism Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "specialism_ids"
+        ],
+        "title": "SpecialismIdsUpdate",
+        "description": "Replace-set semantics: the full desired link set, not a diff."
+      },
+      "SpecialismRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "display": {
+            "type": "string",
+            "title": "Display"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "display",
+          "source"
+        ],
+        "title": "SpecialismRead"
       },
       "UserCreate": {
         "properties": {

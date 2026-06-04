@@ -20,12 +20,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useEntityDelete } from '@/hooks/entity'
 import { api } from '@/lib/api/client'
+import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 
 import { softDeletePatient } from '../api'
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
 
+import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
 import { EditPatientDialog } from './EditPatientDialog'
 import { PatientDemographicsPanel } from './PatientDemographicsPanel'
@@ -89,6 +91,12 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
   }
 
   if (patientQuery.error) {
+    // 404 = existence-hiding deny (no relation) — offer break-glass (REQ-NON-8)
+    if (isApiError(patientQuery.error) && patientQuery.error.status === 404 && patientId) {
+      return (
+        <BreakGlassPrompt patientId={patientId} onGranted={() => void patientQuery.refetch()} />
+      )
+    }
     return <EntityErrorCard onRetry={() => void patientQuery.refetch()} />
   }
 
