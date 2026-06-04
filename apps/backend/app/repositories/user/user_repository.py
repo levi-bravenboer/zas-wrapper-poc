@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.orm import InstrumentedAttribute
 
+from app.core.enums.user import Role
 from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.user import User
 from app.repositories.base import BaseListRepository
@@ -56,14 +57,17 @@ class UserRepository(BaseListRepository[User]):
         )
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, tenant_id: UUID, email: str) -> User | None:
-        result = await self._session.execute(
-            select(User).where(
-                User.tenant_id == tenant_id,
-                func.lower(User.email) == email.lower(),
-                User.deleted_at.is_(None),
-            )
-        )
+    async def get_by_email(
+        self, tenant_id: UUID, email: str, *, role: Role | None = None
+    ) -> User | None:
+        filters = [
+            User.tenant_id == tenant_id,
+            func.lower(User.email) == email.lower(),
+            User.deleted_at.is_(None),
+        ]
+        if role is not None:
+            filters.append(User.role == role)
+        result = await self._session.execute(select(User).where(*filters))
         return result.scalar_one_or_none()
 
     async def get_by_external_identity(
