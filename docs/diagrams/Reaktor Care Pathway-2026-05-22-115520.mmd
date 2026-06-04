@@ -1,0 +1,138 @@
+block-beta
+  columns 9
+
+  %% ===== ACTORS band =====
+  BA["ACTORS<br/>users +<br/>external<br/>systems"]:1
+  block:actors:8
+    columns 8
+    A1["<b>Patient</b><br/>itsme · eID<br/>CSAM-mandated<br/>proxies"]
+    A2["<b>Caregiver on<br/>behalf</b><br/>itsme + CSAM<br/>mandate scope"]
+    A3["<b>ZAS clinician</b><br/>works in HiX<br/>Entra ID SSO + MFA<br/>SMART on FHIR"]
+    A4["<b>External clinician</b><br/>GPs · home nurses<br/>partner hospitals<br/>eHealth + itsme"]
+    A5["<b>Administrator /<br/>key user</b><br/>Entra ID SSO<br/>manages pathways,<br/>users, entitlements"]
+    A6["<b>Connected<br/>devices</b><br/>BLE · vendor cloud<br/>validated device list"]
+    A7["<b>Belgian<br/>transmural</b><br/>CoZo · SumEHR<br/>Vaccinet · UHMEP"]
+    A8["<b>Chipsoft HiX</b><br/>system of record<br/>EHR / EPD<br/>ZAS source of truth"]
+  end
+
+  %% Interface label
+  space:1
+  IF1["<i>patient + proxy auth: itsme · eID · CSAM &nbsp;&nbsp;|&nbsp;&nbsp; staff SSO: Entra ID + MFA &nbsp;&nbsp;|&nbsp;&nbsp; external auth: eHealth federation + itsme &nbsp;&nbsp;|&nbsp;&nbsp; device pairing: Bluetooth / vendor cloud</i>"]:8
+
+  %% ===== PRESENTATION band =====
+  BP["PRESENTATION<br/>apps +<br/>embedded UIs"]:1
+  block:pres:8
+    columns 5
+    P1["<b>Reaktor patient app</b><br/>The single ZAS-branded digital front door<br/>care pathway view · appointments + booking<br/>video + chat · nonclinical questionnaires<br/>content · IC · document upload · billing"]
+    P2["<b>Luscii app</b><br/>RPM data entry<br/>daily measurements (BLE)<br/>clinical questionnaires<br/>diary entries<br/>CE Class IIa scope"]
+    P3["<b>Luscii professional tools</b><br/>embedded in HiX<br/>via SMART on FHIR<br/>clinical task list · signals & alerts<br/>patient overview · messaging<br/>iframe in HiX workflow"]
+    P4["<b>Orchestrator views</b><br/>embedded in HiX<br/>administrative task list<br/>pathway state + decisions<br/>document review queue<br/>SMART launch from HiX"]
+    P5["<b>External clinician portal</b><br/>Direct Orchestrator UI<br/>(no HiX access)<br/>scoped patient list · pathway view<br/>task resolution · document contribution<br/>MDO participation"]
+  end
+
+  space:1
+  IF2["<i>BFFs (Backend-for-Frontend) — UI-specific APIs &nbsp;&nbsp;|&nbsp;&nbsp; session handling · view shaping · read aggregation &nbsp;&nbsp;|&nbsp;&nbsp; Luscii SDK / iframe</i>"]:8
+
+  %% ===== APPLICATION band — row 1 of 2 =====
+  BAP1["APPLICATION<br/>platform<br/>services"]:1
+  block:app1:8
+    columns 5
+    S1["<b>Care Pathway<br/>Composer</b><br/>admin + info-provision<br/>authoring<br/>versioned publish flow<br/>letters · content · docs"]
+    S2["<b>Core service<br/>(Pathway Orchestrator)</b><br/>Care Path Definition Mgmt<br/>Patient State Tracking<br/>Trigger Evaluation<br/>Command Handling · Event Emission"]
+    S3["<b>Luscii Builder + Engine</b><br/>━ CE Class IIa boundary ━<br/>Programs · Instruments · Alerts<br/>threshold + trend rules<br/>Luscii Certified Medical Developer"]
+    S4["<b>MCP integration layer</b><br/>MCP server hosted by Core<br/>exposes FHIR resources + tools<br/>capability negotiation"]
+    S5["<b>Notification subsystem</b><br/>email · SMS · push · in-app<br/>per-patient channel preference<br/>Email service integration"]
+  end
+
+  space:1
+  block:app2:8
+    columns 5
+    S6["<b>Access Management Engine</b><br/>role · specialism · campus<br/>erkenning 009/099/998/039<br/>therapeutic relationship<br/>break-the-glass · shielding"]
+    S7["<b>Event bus + operational store</b><br/>pathway · audit · integration events<br/>state cache (not clinical truth)<br/>sanitised stream to external modules"]
+    S8["<b>Signing service</b><br/>eIDAS AdES / QES<br/>itsme + eID at signing time<br/>PDF/A with audit-trail seal"]
+    S9["<b>AI engagements (separate)</b><br/>chat assist · summarisation<br/>image triage · predictive forms<br/>EU AI Act controls"]
+    S10["<b>Billing + reporting layer</b><br/>RIZIV nomenclatuur<br/>per-patient licence accounting<br/>reporting service integration"]
+  end
+
+  space:1
+  IF3["<i>FHIR R4 read/write (Newwave Care) &nbsp;&nbsp;|&nbsp;&nbsp; FHIR Webhooks (Luscii) &nbsp;&nbsp;|&nbsp;&nbsp; eHealth tokens + transmural connectors &nbsp;&nbsp;|&nbsp;&nbsp; MCP over the FHIR API path</i>"]:8
+
+  %% ===== INTEGRATION band =====
+  BI["INTEGRATION<br/>FHIR ·<br/>transmural ·<br/>MCP"]:1
+  block:int:8
+    columns 5
+    I1["<b>ZAS FHIR R4 API surface</b><br/>Central interoperability layer<br/>Belgian FHIR profiles + Caresets<br/>SNOMED-CT · LOINC bindings<br/>Patient · Appointment · Encounter ·<br/>Observation · DiagnosticReport ·<br/>DocumentReference · ServiceRequest"]
+    I2["<b>HiX integration tier</b><br/>Newwave Care delivers<br/>FHIR R4 ↔ HL7 v2 translation<br/>Event ingress + subscriptions<br/>SMART on FHIR launch<br/>Belgian FHIR profile mapping"]
+    I3["<b>Transmural integration tier</b><br/>Belgian-ecosystem connectivity<br/>CoZo client<br/>SumEHR via eHealth-Box<br/>Vaccinet (eHealth-fronted)<br/>UHMEP referrals (FHIR)"]
+    I4["<b>MCP host</b><br/>ZAS Clinical<br/>Intelligence Layer<br/>MCP host for the ZAS estate<br/>Reaktor MCP server registered<br/>as one of N MCP servers"]
+    I5["<b>Plug-in registry +<br/>external event bus</b><br/>Open extensibility<br/>FHIR · OIDC · SCIM · MCP<br/>External integration modules<br/>consume sanitised events"]
+  end
+
+  space:1
+  IF4["<i>openEHR primary use — archetypes + templates &nbsp;&nbsp;|&nbsp;&nbsp; ETL push to ZAS data lake (bronze landing) &nbsp;&nbsp;|&nbsp;&nbsp; audit + reporting event streams</i>"]:8
+
+  %% ===== DATA band =====
+  BD["DATA<br/>SHDR ·<br/>OMOP ·<br/>audit · BI"]:1
+  block:data:8
+    columns 6
+    D1["<b>SHDR Primary —<br/>openEHR</b><br/>central clinical data source<br/>archetypes + templates<br/>vendor-neutral, longitudinal<br/>━ Position TBD with ZAS ━"]
+    D2[("<b>OMOP — bronze</b><br/>raw event landing<br/>ZAS data lake<br/>consent-gated")]
+    D3[("<b>OMOP — silver</b><br/>cleaned, conformed<br/>OMOP-mapped<br/>terminology resolved")]
+    D4[("<b>OMOP — gold</b><br/>curated marts<br/>analytics, research,<br/>ICHOM benchmarking")]
+    D5["<b>BI service</b><br/>ZAS data warehouse<br/>reporting marts<br/>dashboards, KPIs"]
+    D6["<b>Internal audit<br/>service</b><br/>append-only<br/>cross-system correlation ID<br/>GDPR + MDR retention"]
+  end
+
+  %% Data band, second row — HiX storage + transmural ecosystem
+  space:1
+  block:data2:8
+    columns 2
+    D7["<b>Chipsoft HiX persistent storage — EHR / EPD</b><br/>Source of truth for clinical and administrative records.<br/>Platform writes back via FHIR R4 (Observation, QuestionnaireResponse, DocumentReference,<br/>Encounter, Provenance, ServiceRequest). Never overwritten as a parallel clinical truth."]
+    D8["<b>Belgian transmural ecosystem (external)</b><br/>CoZo · SumEHR · Vaccinet · UHMEP · eHealth attributes.<br/>Authoritative external registries reached via the Transmural integration tier;<br/>episode-scoped access."]
+  end
+
+  %% ===== SECURITY band (cross-cutting) =====
+  BS["SECURITY<br/>identity ·<br/>access ·<br/>audit"]:1
+  block:sec:8
+    columns 6
+    X1["<b>Microsoft Entra ID</b><br/>ZAS staff SSO + MFA<br/>SCIM 2.0 provisioning<br/>OIDC tokens to platform"]
+    X2["<b>itsme / eID / CSAM</b><br/>patient + proxy identity<br/>CSAM mandatenbeheer<br/>every request scoped"]
+    X3["<b>eHealth federation</b><br/>external clinician auth<br/>therapeutic relationship<br/>exemption flags"]
+    X4["<b>Identity broker</b><br/>OIDC · SAML · OAuth2 · SCIM<br/>role + claim mapping<br/>token validation"]
+    X5["<b>GDPR + MDR controls</b><br/>Belgian DPA · sub-processors<br/>Class IIa scope boundary<br/>EU AI Act risk classification"]
+    X6["<b>Consolidated audit pipeline</b><br/>append-only across all components<br/>cross-system correlation IDs<br/>near-real-time admin dashboard"]
+  end
+
+  %% Styling
+  classDef bandlabel fill:#E5E5E5,stroke:#666666,stroke-width:1.5px,color:#1B2A3D,font-weight:bold
+  classDef iface     fill:#FFFFFF,stroke:#666666,stroke-width:1px,stroke-dasharray:4 3,color:#444444
+  classDef reaktor   fill:#D6E4F0,stroke:#2E5B8C,stroke-width:1.5px,color:#1B2A3D
+  classDef luscii    fill:#E1F0E1,stroke:#3D7F3D,stroke-width:1.5px,color:#1B2A3D
+  classDef mdr       fill:#E1F0E1,stroke:#3D7F3D,stroke-width:2.5px,stroke-dasharray:6 4,color:#1B2A3D
+  classDef zas       fill:#EDE4F2,stroke:#6B3F86,stroke-width:1.5px,color:#1B2A3D
+  classDef hix       fill:#F5DADA,stroke:#A53939,stroke-width:1.5px,color:#1B2A3D
+  classDef ai        fill:#FFF2D1,stroke:#8C7220,stroke-width:1.5px,color:#1B2A3D
+  classDef external  fill:#F4EDE5,stroke:#B86A30,stroke-width:1.5px,color:#1B2A3D
+  classDef tbd       fill:#FFFFFF,stroke:#888888,stroke-width:2.5px,stroke-dasharray:6 4,color:#1B2A3D
+  classDef security  fill:#F2EFE9,stroke:#666666,stroke-width:1.5px,color:#1B2A3D
+
+  class BA,BP,BAP1,BI,BD,BS bandlabel
+  class IF1,IF2,IF3,IF4 iface
+  class A1,A2 luscii
+  class A3,A5 reaktor
+  class A4,A6,A7 external
+  class A8 hix
+  class P1,P4 reaktor
+  class P2 luscii
+  class P3 mdr
+  class P5 external
+  class S1,S2,S5,S6,S7,S8,S10 reaktor
+  class S3 mdr
+  class S4,S9 ai
+  class I1,I2,I3,I5 zas
+  class I4 ai
+  class D1 tbd
+  class D2,D3,D4,D5,D6 zas
+  class D7 hix
+  class D8 external
+  class X1,X2,X3,X4,X5,X6 security

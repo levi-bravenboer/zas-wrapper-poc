@@ -1,0 +1,150 @@
+%%{init: {'theme': 'base', 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 70, 'curve': 'basis'}, 'themeVariables': {
+  'fontFamily': 'Arial, Helvetica, sans-serif',
+  'fontSize': '14px',
+  'primaryColor': '#FFFFFF',
+  'primaryTextColor': '#1B2A3D',
+  'lineColor': '#444444'
+}}}%%
+flowchart TB
+
+  %% ============================================================
+  %% ROW 1 — SOURCES (top)
+  %% ============================================================
+  subgraph SRC["SOURCES"]
+    direction LR
+    PA["<b>Reaktor patient app</b><br/>• appointment requests<br/>• nonclinical Q's<br/>• document uploads<br/>• informed consent<br/>• Carepath Information<br/>• video consultations"]
+    LA["<b>Luscii app</b><br/>• vital measurements (BLE)<br/>• clinical questionnaires<br/>• diary entries<br/>• Medication Reminders"]
+    DEV["<b>Connected devices</b><br/>• BP, scale, oximeter,<br/>  spirometer, Holter<br/>• Bluetooth / vendor cloud"]
+    EXT["<b>External clinician</b><br/>• GPs, home nurses,<br/>  partner hospitals<br/>• Episode-bound"]
+    HIX["<b>Chipsoft HiX</b><br/>system of record"]
+    TRA["<b>Belgian transmural</b><br/>CoZo, SumEHR,<br/>Vaccinet, UHMEP"]
+    IDP["<b>Identity providers</b><br/>itsme / eID / CSAM<br/>Entra ID · eHealth fed."]
+  end
+
+  %% ============================================================
+  %% ROW 2 — INTEGRATION LAYERS
+  %% ============================================================
+  subgraph INT["INTEGRATION LAYERS"]
+    direction LR
+    EHRI["<b>EHR integration layer</b><br/>Newwave Care<br/>FHIR R4 query adapters<br/>HL7 v2 → R4 · Event ingress<br/>SMART on FHIR · BE profiles"]
+    TRI["<b>Transmural integration</b><br/>CoZo client<br/>SumEHR via eHealth-Box<br/>Vaccinet · UHMEP referrals<br/>therapeutic-relationship checks"]
+    LUI["<b>Luscii integration layer</b><br/>Query adapters<br/>FHIR Webhooks<br/>(Observation · Flag ·<br/>QuestionnaireResponse)<br/>SAML SSO embedded views"]
+    IDB["<b>Identity broker</b><br/>OIDC / SAML / OAuth2<br/>SCIM 2.0 provisioning<br/>token validation"]
+  end
+
+  %% ============================================================
+  %% ROW 3 — CORE (Reaktor Care Pathway Orchestrator)
+  %% ============================================================
+  subgraph CORE["REAKTOR CARE PATHWAY ORCHESTRATOR"]
+    direction LR
+    PDC["<b>Care Pathway Composer</b><br/>admin + info steps<br/>publishes versioned defs"]
+    CS["<b>Core service</b><br/>Care Path Definition Mgmt<br/>Patient State Tracking<br/>Trigger Evaluation<br/>Command Handling<br/>Event Emission"]
+    AME["<b>Access Management Engine</b><br/>role · specialism · campus ·<br/>erkenning 009/099/998/039<br/>therapeutic relationship<br/>break-the-glass · shielding"]
+    LPB["<b>Luscii Care Pathway Builder</b><br/>━━ CE Class IIa ━━<br/>Programs · Instruments · Alerts<br/>Luscii Certified Medical Developer"]
+    STORE[("<b>Platform operational store</b><br/>care-pathway state<br/>pending tasks<br/>operational cache only<br/>— not clinical truth")]
+    BUS{{"<b>Event bus</b><br/>pathway · audit ·<br/>integration events<br/>sanitised stream out"}}
+  end
+
+  %% ============================================================
+  %% ROW 4 — ZAS REFERENCE ARCHITECTURE
+  %% ============================================================
+  subgraph ZAS["ZAS REFERENCE ARCHITECTURE — DATA LAYERS"]
+    direction LR
+    FAPI["<b>ZAS FHIR R4 API surface</b><br/>central interoperability layer<br/>Belgian FHIR profiles<br/>SNOMED-CT · LOINC · Caresets"]
+    SHDR["<b>SHDR Primary use — openEHR</b><br/>archetypes + templates<br/>vendor-neutral, longitudinal<br/><b>━ Position TBD with ZAS ━</b>"]
+    OMOPB[("<b>OMOP — bronze</b><br/>raw event landing")]
+    OMOPS[("<b>OMOP — silver</b><br/>cleaned, conformed,<br/>OMOP-mapped")]
+    OMOPG[("<b>OMOP — gold</b><br/>curated marts:<br/>analytics, research, ICHOM")]
+    AUDS["<b>Internal audit service</b><br/>append-only<br/>cross-system correlation ID"]
+    BIS["<b>BI service</b><br/>ZAS data warehouse<br/>reporting marts"]
+  end
+
+  %% ============================================================
+  %% ROW 5 — SINKS + AI
+  %% ============================================================
+  subgraph SINK["SINKS · WRITE-BACKS · AI"]
+    direction LR
+    WB["<b>Write-back to HiX</b> (via Newwave Care)<br/>• Observation — vitals, PROMs, diary<br/>• QuestionnaireResponse<br/>• DocumentReference — reports, signed consents<br/>• Encounter — KB Zorg op Afstand<br/>• Provenance — pathway state<br/>• ServiceRequest — external orders"]
+    NOT["<b>Notification subsystem</b><br/>email, SMS, push,<br/>in-app inbox<br/>per patient preference"]
+    MCP["<b>Reaktor MCP server</b><br/>resources: patient context,<br/>observations, pathway state, docs<br/>tools: start pathway, notify,<br/>request measurement, escalate"]
+    CIL["<b>ZAS Clinical Intelligence Layer</b><br/>MCP host<br/>LLM features = separate<br/>engagements (EU AI Act)<br/>human-in-the-loop"]
+    EXM["<b>External integration modules</b><br/>plug-ins on FHIR / OIDC /<br/>SCIM / MCP<br/>sanitised events"]
+  end
+
+  %% ============================================================
+  %% FLOWS — top to bottom
+  %% ============================================================
+
+  %% Sources → Integration
+  PA   -->|"FHIR R4:<br/>appointment requests,<br/>QResponse, DocRef, IC"| EHRI
+  LA   -->|"Observations,<br/>QResponses"| LUI
+  DEV  -->|"device readings<br/>(FHIR Observation)"| LUI
+  EXT  -->|"orders, uploads,<br/>episode actions"| EHRI
+  HIX  -->|"FHIR R4 inbound:<br/>Patient · Appointment ·<br/>Encounter · Observation ·<br/>DiagnosticReport ·<br/>DocumentReference ·<br/>ServiceRequest"| EHRI
+  TRA  -->|"CoZo / SumEHR /<br/>Vaccinet / UHMEP"| TRI
+  IDP  -.->|"auth tokens"| IDB
+
+  %% Integration → Core
+  EHRI -->|"FHIR translated,<br/>events"| CS
+  TRI  -->|"transmural data,<br/>therapeutic-relationship<br/>attestations"| CS
+  LUI  -->|"clinical signals,<br/>Flags, Observations"| CS
+  IDB  -.->|"validated identity<br/>+ role claims"| AME
+
+  %% Within Core
+  AME  -.->|"authorises every<br/>request"| CS
+  PDC  -->|"publishes admin<br/>pathway (versioned)"| CS
+  LPB  -->|"publishes clinical<br/>pathway (versioned,<br/>CE Class IIa)"| CS
+  CS   <-->|"read / write<br/>state"| STORE
+  CS   -->|"emits events"| BUS
+
+  %% Core → ZAS reference architecture
+  CS   -->|"FHIR R4 — read &amp; write"| FAPI
+  FAPI <-->|"primary use —<br/>openEHR archetypes"| SHDR
+  SHDR -->|"ETL push →<br/>ZAS data lake"| OMOPB
+  BUS  -->|"sanitised events<br/>→ bronze"| OMOPB
+  OMOPB --> OMOPS
+  OMOPS --> OMOPG
+  BUS  -->|"audit events"| AUDS
+  BUS  -->|"reporting events"| BIS
+
+  %% Core → Sinks / AI
+  CS   -->|"FHIR R4 write-back<br/>(via Newwave Care)"| WB
+  BUS  -->|"notification events"| NOT
+  BUS  -->|"sanitised events<br/>(external bus)"| EXM
+  CS   -->|"exposes<br/>resources + tools"| MCP
+  MCP  <-->|"MCP capability<br/>negotiation"| CIL
+
+  %% ============================================================
+  %% STYLES
+  %% ============================================================
+  classDef src        fill:#E8F5E8,stroke:#3D7F3D,stroke-width:1.5px,color:#1B2A3D
+  classDef ehr        fill:#F5DADA,stroke:#A53939,stroke-width:1.5px,color:#1B2A3D
+  classDef trans      fill:#FBE9D9,stroke:#B86A30,stroke-width:1.5px,color:#1B2A3D
+  classDef platform   fill:#D6E4F0,stroke:#2E5B8C,stroke-width:1.5px,color:#1B2A3D
+  classDef mdr        fill:#E8F5E8,stroke:#3D7F3D,stroke-width:2px,stroke-dasharray:6 4,color:#1B2A3D
+  classDef data       fill:#EDE4F2,stroke:#6B3F86,stroke-width:1.5px,color:#1B2A3D
+  classDef tbd        fill:#FFFFFF,stroke:#888888,stroke-width:2px,stroke-dasharray:6 4,color:#1B2A3D
+  classDef ai         fill:#FFF2D1,stroke:#8C7220,stroke-width:1.5px,color:#1B2A3D
+  classDef audit      fill:#E5E5E5,stroke:#666666,stroke-width:1.5px,color:#1B2A3D
+
+  class PA,LA,DEV,EXT src
+  class HIX ehr
+  class TRA trans
+  class IDP audit
+  class EHRI,TRI,LUI,IDB platform
+  class CS,AME,STORE,BUS,PDC platform
+  class LPB mdr
+  class FAPI data
+  class SHDR tbd
+  class OMOPB,OMOPS,OMOPG data
+  class AUDS,BIS audit
+  class WB ehr
+  class NOT audit
+  class MCP,CIL ai
+  class EXM src
+
+  style SRC  fill:#F4FBF4,stroke:#3D7F3D,stroke-width:1.5px
+  style INT  fill:#EEF4FB,stroke:#2E5B8C,stroke-width:1.5px
+  style CORE fill:#EEF4FB,stroke:#2E5B8C,stroke-width:1.5px
+  style ZAS  fill:#F6F0FA,stroke:#6B3F86,stroke-width:1.5px
+  style SINK fill:#FBF1ED,stroke:#A53939,stroke-width:1.5px

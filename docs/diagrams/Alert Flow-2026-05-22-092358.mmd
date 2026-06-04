@@ -1,0 +1,106 @@
+---
+config:
+  theme: base
+---
+%%{init: {'theme': 'base', 'themeVariables': {
+  'fontFamily': 'Arial, Helvetica, sans-serif',
+  'fontSize': '13px',
+  'primaryColor': '#FFFFFF',
+  'primaryTextColor': '#1B2A3D',
+  'lineColor': '#444444',
+  'actorBkg': '#D6E4F0',
+  'actorBorder': '#2E5B8C',
+  'actorTextColor': '#1B2A3D',
+  'noteBkgColor': '#FFF2D1',
+  'noteBorderColor': '#8C7220',
+  'sequenceNumberColor': '#FFFFFF'
+}}}%%
+sequenceDiagram
+  autonumber
+
+  actor PT as Patient
+  participant DEV as BP cuff<br/>(Bluetooth)
+  participant LAPP as Luscii app
+  participant LUS as Luscii Clinical Engine<br/>(Class IIa)
+  participant LUI as Luscii integration layer
+  participant CORE as Core service
+  participant BUS as Event bus
+  participant EHRI as EHR integration layer
+  participant HIX as Chipsoft HiX
+  participant NOT as Notification subsystem
+  actor CL as ZAS clinician
+
+  Note over PT,CL: Daily RPM measurement → threshold breach → clinical alert → task in HiX<br/>This flow stays inside the CE Class IIa boundary up to the point of clinician task creation.
+
+  rect rgb(225, 240, 225)
+  Note right of LUS: ━━ CE Class IIa boundary ━━<br/>(Luscii regulated zone)
+
+  PT->>DEV: Take blood-pressure reading
+  DEV->>LAPP: BLE: pair + transmit reading<br/>(SBP, DBP, HR, timestamp)
+  LAPP->>LUS: POST measurement<br/>(internal Luscii API)
+
+  LUS->>LUS: Validate against Instrument<br/>(SNOMED-CT coded type)<br/>Apply threshold + trend rules<br/>(from active Program)
+
+  alt Reading within thresholds
+    LUS-->>LAPP: Acknowledge<br/>(no alert generated)
+    LAPP-->>PT: Confirmation + next-step guidance
+  else Threshold breach detected
+    LUS->>LUS: Generate Alert<br/>(priority: high/medium/low)<br/>Project to FHIR Flag
+  end
+  end
+
+  Note over LUS,CORE: Boundary crossing — Class IIa output (Flag) leaves Luscii<br/>via FHIR Webhook to the Luscii integration layer.
+
+  LUS->>LUI: FHIR Webhook<br/>POST /alerts<br/>(FHIR Flag + linked Observation)
+  Note over LUS,LUI: HMAC signature on payload<br/>+ optional Authorization header
+
+  LUI->>CORE: Forward signal event<br/>{patient_id, alert_id,<br/>priority, observation_ref}
+  CORE->>CORE: Pathway triggers<br/>(Notify clinician?)
+  CORE->>BUS: Emit AlertReceived event
+
+  par Write Observation + Flag to HiX
+    BUS->>EHRI: Subscribe → outbound FHIR write
+    EHRI->>HIX: POST Observation<br/>(BP reading, LOINC-coded,<br/>linked to Encounter)
+    EHRI->>HIX: POST Flag<br/>(active, priority, period)
+    HIX-->>EHRI: Resource IDs
+  and Create clinician task
+    BUS->>EHRI: Subscribe → task creation
+    EHRI->>HIX: POST Task<br/>{patient, priority, due,<br/>focus=Flag, requester=platform}
+    HIX-->>EHRI: Task ID
+  and Patient-side guidance
+    BUS->>LUI: Subscribe → patient guidance
+    LUI->>LAPP: Push notification<br/>"Your reading is high —<br/>please rest 5 min and remeasure"
+    LAPP-->>PT: Notification + content card
+  and Audit
+    BUS->>EHRI: Audit → Provenance<br/>(alert detection, severity,<br/>rule version)
+    EHRI->>HIX: POST Provenance
+  end
+    Note over LUS,LUI: Todo - Missing the part where the <br/>main carepathway gets notified that <br/>there was an alert raised
+
+  Note over HIX,CL: Task surfaces in the clinician's HiX task list.<br/>Clicking through SMART-launches the Luscii professional tools view<br/>with the alert in context (see Story 2).
+
+  CL->>HIX: Open task in HiX worklist
+  CL->>LUI: (via SMART launch, see Story 2)<br/>View alert + history
+  LUI->>LUS: GET alert detail + trend
+  LUS-->>LUI: Alert payload + 30-day trend
+  LUI-->>CL: Render alert detail
+
+  alt Clinician acknowledges + resolves
+    CL->>LUI: Resolve alert<br/>(action: monitor / contact patient /<br/>escalate / refer)
+    LUI->>LUS: Update Flag status → resolved<br/>(Class IIa-side state change)
+    LUI->>CORE: Emit AlertResolved event
+    CORE->>BUS: Forward → notification + audit
+    par
+      BUS->>EHRI: Update Flag in HiX (status=inactive)
+      EHRI->>HIX: PUT Flag
+    and
+      BUS->>EHRI: Provenance: resolution
+      EHRI->>HIX: POST Provenance
+    end
+  else Escalation needed
+    CL->>LUI: Escalate
+    LUI->>CORE: Trigger escalation pathway step<br/>(e.g. MDO, video consult, referral)
+    Note over CORE,CL: See Story 5 (video consult) for downstream flows.
+  end
+
+  Note over PT,CL: The Luscii Clinical Engine is the only Class IIa component<br/>in the chain. Reaktor / Newwave components handle administrative<br/>orchestration only — never clinical decisions.
