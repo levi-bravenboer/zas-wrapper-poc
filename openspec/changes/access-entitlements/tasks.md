@@ -65,10 +65,10 @@
 
 ## 8. Seeds & demo data
 
-- [ ] 8.1 Seed specialisms + role links (incl. one multi-specialism practitioner); ZAS campuses as child organisations with campus-level roles
-- [ ] 8.2 Seed carepath↔specialism links (Rugrevalidatie → its specialism) + one explicitly-assigned carepath
-- [ ] 8.3 Seed external professional with partial verbs + active consent; one shielding release rule + one default-deny demo case
-- [ ] 8.4 Seed a multi-role human (caregiver + admin) wired through the grouped Kratos import
+- [x] 8.1 Seed specialisms + role links (incl. one multi-specialism practitioner); ZAS campuses as child organisations with campus-level roles
+- [x] 8.2 Seed carepath↔specialism links (Rugrevalidatie → its specialism) + one explicitly-assigned carepath
+- [x] 8.3 Seed external professional with partial verbs + active consent; one shielding release rule + one default-deny demo case
+- [x] 8.4 Seed a multi-role human (caregiver + admin) wired through the grouped Kratos import
 
 ## 9. Tests & smoke
 

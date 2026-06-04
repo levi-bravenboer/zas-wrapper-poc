@@ -22,6 +22,7 @@ from scripts._db import run_script
 from scripts.import_identities_kratos import import_identities
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
+from scripts.seed_access_entitlements import seed_access_entitlements
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
 from scripts.seed_patient_users import seed_patient_users
 from scripts.seed_patients import seed_patients
@@ -49,6 +50,9 @@ SEED_STEPS: list[SeedStep] = [
     seed_care_teams,
     seed_lane_kinds,
     seed_rugrevalidatie,
+    # access-entitlements demo data (campuses, specialisms, carepath links,
+    # external GP, multi-role human) — after pathways, before Kratos import
+    seed_access_entitlements,
 ]
 
 logger = logging.getLogger(__name__)
