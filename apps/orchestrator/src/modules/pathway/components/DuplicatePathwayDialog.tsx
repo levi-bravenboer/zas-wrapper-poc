@@ -95,8 +95,7 @@ export function DuplicatePathwayDialog({
               <SelectContent>
                 {versions.data?.map((v) => (
                   <SelectItem key={v.id} value={v.id}>
-                    {t('version.label', { n: v.version_no })} —{' '}
-                    {t(`version.status.${v.status}`)}
+                    {t('version.label', { n: v.version_no })} — {t(`version.status.${v.status}`)}
                     {v.label ? ` · ${v.label}` : ''}
                   </SelectItem>
                 ))}

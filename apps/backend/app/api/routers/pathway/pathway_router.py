@@ -125,9 +125,7 @@ async def duplicate_pathway(
     current_user: CurrentUserDep,
     service: PathwayServiceDep,
 ) -> PathwaySummary:
-    return await service.duplicate(
-        pathway_id, current_user.tenant_id, payload.source_version_id
-    )
+    return await service.duplicate(pathway_id, current_user.tenant_id, payload.source_version_id)
 
 
 @router.get(
