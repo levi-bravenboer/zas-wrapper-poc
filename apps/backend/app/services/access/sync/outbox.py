@@ -8,6 +8,10 @@ either records both the domain fact and the pending sync, or neither.
 
 Centralising here (instead of editing every service) means new mutation
 paths — services, scripts, future code — are covered automatically.
+
+Caveat: bulk statements (`session.execute(update(...))`) bypass ORM flush
+events and therefore this hook — after bulk SQL touching access-relevant
+tables, run `python -m scripts.reconcile_authz_tuples`.
 """
 
 from __future__ import annotations
