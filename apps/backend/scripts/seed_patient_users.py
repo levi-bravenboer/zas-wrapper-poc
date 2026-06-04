@@ -110,7 +110,6 @@ async def seed_patient_users(session: AsyncSession) -> list[User]:
         patient_id=patient.id,
     )
     await user_repo.add(patient_user)
-    await session.flush()
 
     logger.info("seeded patient user email=%s role=%s", PATIENT_EMAIL, Role.PATIENT.value)
     print(f"Patient login: email={PATIENT_EMAIL} password=<{PATIENT_PASSWORD_ENV}>")  # noqa: T201

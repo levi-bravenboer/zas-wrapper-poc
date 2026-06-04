@@ -64,6 +64,21 @@ async def mobile_login_password(
         )
         raise
 
+    # Validate patient link BEFORE issuing the session cookie so a
+    # broken user row never receives a live token.
+    if result.user.patient_id is None:
+        raise InvalidCredentialsError(
+            audit_reason="null_password_hash",
+            audit_user_id=result.user.id,
+        )
+
+    patient = await patient_repo.get_by_id(result.user.tenant_id, result.user.patient_id)
+    if patient is None:
+        raise InvalidCredentialsError(
+            audit_reason="unknown_email",
+            audit_user_id=result.user.id,
+        )
+
     token = auth.mint_session_token(result.user.id)
     response.set_cookie(
         key=settings.session_cookie_name,
@@ -85,13 +100,6 @@ async def mobile_login_password(
             user_id=result.user.id,
         )
     )
-
-    if result.user.patient_id is None:
-        raise InvalidCredentialsError()
-
-    patient = await patient_repo.get_by_id(result.user.tenant_id, result.user.patient_id)
-    if patient is None:
-        raise InvalidCredentialsError()
 
     return MobileLoginResponse(
         session=PatientSession(
