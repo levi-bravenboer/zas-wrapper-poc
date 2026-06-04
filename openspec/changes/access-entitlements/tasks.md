@@ -5,13 +5,15 @@
 
 ## 1. Schema & master data
 
-- [ ] 1.1 Alembic revision: `specialisms`, `practitioner_role_specialisms` (+ backfill of free-text `practitioner_roles.specialty` into the link table in the same revision)
-- [ ] 1.2 Alembic revision: `pathway_specialisms`, `pathway_practitioners`
-- [ ] 1.3 Alembic revision: `consents`, `external_access_profiles`, `external_grants`
-- [ ] 1.4 Alembic revision: `access_grants` (break-glass) with reason NOT NULL + expires_at NOT NULL
-- [ ] 1.5 Alembic revision: `shielding_rules`, `shielded_items`
-- [ ] 1.6 Alembic revision: `session_role_bindings`; widen `external_identities` uniqueness to `(tenant_id, idp, external_subject, user_id)`
-- [ ] 1.7 SQLAlchemy models + `models/__init__.py` registration for all of the above
+> 1.1–1.6 consolidated into a single autogen revision `e5f48e021dbe` (`20260604_1435_access_entitlements_tables.py`) — one dependency-ordered create set + the specialty backfill; six separate revisions added ceremony without value.
+
+- [x] 1.1 Alembic revision: `specialisms`, `practitioner_role_specialisms` (+ backfill of free-text `practitioner_roles.specialty` into the link table in the same revision)
+- [x] 1.2 Alembic revision: `pathway_specialisms`, `pathway_practitioners`
+- [x] 1.3 Alembic revision: `consents`, `external_access_profiles`, `external_grants`
+- [x] 1.4 Alembic revision: `access_grants` (break-glass) with reason NOT NULL + expires_at NOT NULL
+- [x] 1.5 Alembic revision: `shielding_rules`, `shielded_items`
+- [x] 1.6 Alembic revision: `session_role_bindings`; widen `external_identities` uniqueness to `(tenant_id, idp, external_subject, user_id)`
+- [x] 1.7 SQLAlchemy models + `models/__init__.py` registration for all of the above
 
 ## 2. OPL & derivation
 

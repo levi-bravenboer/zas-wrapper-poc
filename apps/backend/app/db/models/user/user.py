@@ -33,11 +33,15 @@ class User(TenantOwnedEntity):
             unique=True,
         ),
         sa.Index("ix_users_tenant_id_role", "tenant_id", "role"),
+        # Multi-role humans (access-entitlements): one Kratos identity maps
+        # to several rows — one per role — so external-subject uniqueness is
+        # scoped per role, mirroring the email rule above.
         sa.Index(
-            "uq_users_tenant_external_subject",
+            "uq_users_tenant_external_subject_role",
             "tenant_id",
             "external_idp",
             "external_subject",
+            "role",
             unique=True,
             postgresql_where=sa.text("external_subject IS NOT NULL"),
         ),
