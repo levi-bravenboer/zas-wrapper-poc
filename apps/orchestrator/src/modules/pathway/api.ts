@@ -5,6 +5,7 @@ import type {
   PathwayChildSummary,
   PathwayCreate,
   PathwayDefinitionReplace,
+  PathwayDuplicateRequest,
   PathwayEdgeOffsetDirection,
   PathwayEdgeTimingKind,
   PathwayParentReference,
@@ -191,6 +192,20 @@ export async function restorePathwayVersion(
   })
   if (!result.data) {
     throw errorFromResponse('Failed to restore version', result.response.status, result.error)
+  }
+  return result.data
+}
+
+export async function duplicatePathway(
+  pathwayId: string,
+  body: PathwayDuplicateRequest,
+): Promise<PathwaySummary> {
+  const result = await api.POST('/pathways/{pathway_id}/duplicate', {
+    params: { path: { pathway_id: pathwayId } },
+    body,
+  })
+  if (!result.data) {
+    throw errorFromResponse('Failed to duplicate pathway', result.response.status, result.error)
   }
   return result.data
 }

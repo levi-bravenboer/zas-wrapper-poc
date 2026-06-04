@@ -10,6 +10,7 @@ export type PathwayVersionSummary = components['schemas']['PathwayVersionSummary
 export type PathwayPublishRequest = components['schemas']['PathwayPublishRequest']
 export type PathwayCreate = components['schemas']['PathwayCreate']
 export type PathwayDefinitionReplace = components['schemas']['PathwayDefinitionReplace']
+export type PathwayDuplicateRequest = components['schemas']['PathwayDuplicateRequest']
 export type PathwayBlockType = components['schemas']['PathwayBlockType']
 export type PathwayPhaseTemplate = components['schemas']['PathwayPhaseTemplate']
 export type PathwayEdgeTimingKind = components['schemas']['PathwayEdgeTimingKind']

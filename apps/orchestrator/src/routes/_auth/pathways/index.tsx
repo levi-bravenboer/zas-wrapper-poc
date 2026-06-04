@@ -1,6 +1,6 @@
 // surface-opt-out: app-only
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Plus, Workflow } from 'lucide-react'
+import { Copy, Plus, Workflow } from 'lucide-react'
 import { type ReactElement, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -17,6 +17,7 @@ import {
 } from '@/hooks/use-data-table-state'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { CreatePathwayDialog } from '@/modules/pathway/components/CreatePathwayDialog'
+import { DuplicatePathwayDialog } from '@/modules/pathway/components/DuplicatePathwayDialog'
 import { usePathwayList } from '@/modules/pathway/hooks'
 import type { PathwaySummary } from '@/modules/pathway/types'
 
@@ -61,6 +62,7 @@ function PathwayOverviewPage(): ReactElement {
   const navigate = useNavigate()
   const list = usePathwayList()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [duplicateTarget, setDuplicateTarget] = useState<PathwaySummary | null>(null)
   const { locale } = useLocale()
   const [state, dispatch] = useDataTableState()
 
@@ -219,6 +221,13 @@ function PathwayOverviewPage(): ReactElement {
               onRowClick={(row) =>
                 void navigate({ to: '/pathways/$pathwayId', params: { pathwayId: row.id } })
               }
+              rowActions={(row) => [
+                {
+                  label: t('duplicate.action'),
+                  icon: <Copy className="size-4" />,
+                  onClick: () => setDuplicateTarget(row),
+                },
+              ]}
               caption={t('overview.title')}
             />
             {!filteredItems.length && hasActiveFilter && items.length > 0 ? (
@@ -229,6 +238,16 @@ function PathwayOverviewPage(): ReactElement {
       </div>
 
       <CreatePathwayDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      {duplicateTarget && (
+        <DuplicatePathwayDialog
+          pathwayId={duplicateTarget.id}
+          pathwayName={duplicateTarget.name}
+          open={!!duplicateTarget}
+          onOpenChange={(open) => {
+            if (!open) setDuplicateTarget(null)
+          }}
+        />
+      )}
     </>
   )
 }
