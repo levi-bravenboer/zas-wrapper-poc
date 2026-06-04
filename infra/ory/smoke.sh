@@ -55,10 +55,13 @@ revoked_status=$(curl -s -o /dev/null -w '%{http_code}' "$KRATOS_PUBLIC/sessions
 subject="User:smoke-$(date +%s)"
 object="smoke-patient"
 
+# Keto answers 200 {"allowed": true} / 403 {"allowed": false} — no -f flag,
+# both statuses carry a JSON body.
 keto_check() {
-  curl -fsS -X POST "$KETO_READ/relation-tuples/check" \
+  local relation=$1
+  curl -sS -X POST "$KETO_READ/relation-tuples/check" \
     -H 'Content-Type: application/json' \
-    -d "{\"namespace\": \"Patient\", \"object\": \"$object\", \"relation\": \"view\", \"subject_id\": \"$subject\"}" |
+    -d "{\"namespace\": \"Patient\", \"object\": \"$object\", \"relation\": \"$relation\", \"subject_id\": \"$subject\"}" |
     python3 -c 'import json,sys; print(json.load(sys.stdin)["allowed"])'
 }
 
@@ -66,17 +69,13 @@ echo "→ keto: write external_carer tuple → view allowed"
 curl -fsS -X PUT "$KETO_WRITE/admin/relation-tuples" \
   -H 'Content-Type: application/json' \
   -d "{\"namespace\": \"Patient\", \"object\": \"$object\", \"relation\": \"external_carer\", \"subject_id\": \"$subject\"}" >/dev/null
-[ "$(keto_check)" = "True" ] || fail "expected allowed=true after tuple write"
+[ "$(keto_check view)" = "True" ] || fail "expected allowed=true after tuple write"
 
 echo "→ keto: shielded view stays denied for external carer"
-shielded=$(curl -fsS -X POST "$KETO_READ/relation-tuples/check" \
-  -H 'Content-Type: application/json' \
-  -d "{\"namespace\": \"Patient\", \"object\": \"$object\", \"relation\": \"view_shielded\", \"subject_id\": \"$subject\"}" |
-  python3 -c 'import json,sys; print(json.load(sys.stdin)["allowed"])')
-[ "$shielded" = "False" ] || fail "expected view_shielded=false for external carer"
+[ "$(keto_check view_shielded)" = "False" ] || fail "expected view_shielded=false for external carer"
 
 echo "→ keto: delete tuple → view denied (episode revocation)"
 curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Patient&object=$object&relation=external_carer&subject_id=$subject" >/dev/null
-[ "$(keto_check)" = "False" ] || fail "expected allowed=false after tuple delete"
+[ "$(keto_check view)" = "False" ] || fail "expected allowed=false after tuple delete"
 
 echo "SMOKE OK"

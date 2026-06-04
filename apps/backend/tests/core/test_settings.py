@@ -1,5 +1,5 @@
 import pytest
-from pydantic import SecretStr
+from pydantic import AnyHttpUrl, SecretStr
 
 from app.core.settings import DEFAULT_SESSION_SECRET
 from app.main import InsecureProductionConfigError, _check_production_safety
@@ -59,5 +59,19 @@ def test_production_guard_passes_when_safe() -> None:
         env="production",
         cors_origins=["https://app.example.com"],
         session_secret_key=SecretStr("ok-secret"),
+        kratos_public_url=AnyHttpUrl("http://kratos:4433"),
+        kratos_admin_url=AnyHttpUrl("http://kratos:4434"),
+        keto_read_url=AnyHttpUrl("http://keto:4466"),
+        keto_write_url=AnyHttpUrl("http://keto:4467"),
     )
     _check_production_safety(settings)
+
+
+def test_production_guard_rejects_localhost_ory_urls() -> None:
+    settings = build_settings(
+        env="production",
+        cors_origins=["https://app.example.com"],
+        session_secret_key=SecretStr("ok-secret"),
+    )
+    with pytest.raises(InsecureProductionConfigError, match="KRATOS_PUBLIC_URL"):
+        _check_production_safety(settings)

@@ -17,14 +17,14 @@
 
 ## 3. Kratos identity (authn swap)
 
-- [ ] 3.0 Relocate `app/services/auth/` → `app/services/access/identity/` (mechanical move + import sweep; design D9)
-- [ ] 3.1 `app/services/access/identity/kratos_client.py`: thin httpx client (whoami, admin identity CRUD, native login flow submit, session revocation endpoints)
-- [ ] 3.2 Identity import script `scripts/import_identities_kratos.py`: idempotent argon2id hash import, writes back `external_idp`/`external_subject`; unit-tested against a live local Kratos in CI smoke
-- [ ] 3.3 `KratosAuthenticator` implementing the `Authenticator` Protocol (native login flow submit → identity → local User mapping)
-- [ ] 3.4 Swap `resolve_actor_from_request` to whoami + projection lookup; dual-accept window (Kratos cookie OR legacy itsdangerous cookie) behind a transition flag
-- [ ] 3.5 Login route mints Kratos session (relay Set-Cookie via `Settings.session_cookie_name`); logout revokes server-side; keep route shapes + operation ids + audit events
-- [ ] 3.6 User lifecycle propagation: deactivate → revoke all sessions + disable identity; admin "log out all sessions" service method
-- [ ] 3.7 Remove legacy cookie acceptance + itsdangerous session path once 3.2–3.5 verified; update auth tests (FakeAuthenticator stays; add revoked-session cases)
+- [x] 3.0 Relocate `app/services/auth/` → `app/services/access/identity/` (mechanical move + import sweep; design D9)
+- [x] 3.1 `app/services/access/identity/kratos_client.py`: thin httpx client (whoami, admin identity CRUD, native login flow submit, session revocation endpoints)
+- [x] 3.2 Identity import script `scripts/import_identities_kratos.py`: idempotent argon2id hash import, writes back `external_idp`/`external_subject`; unit-tested against a live local Kratos in CI smoke
+- [x] 3.3 `KratosAuthenticator` implementing the `Authenticator` Protocol (native login flow submit → identity → local User mapping)
+- [x] 3.4 Swap `resolve_actor_from_request` to whoami + projection lookup (dual-accept window dropped — no deployed env holds live legacy sessions; PR #21 deploy unmerged)
+- [x] 3.5 Login route mints Kratos session (relay Set-Cookie via `Settings.session_cookie_name`); logout revokes server-side; keep route shapes + operation ids + audit events
+- [x] 3.6 User lifecycle propagation: deactivate → revoke all sessions + disable identity; admin "log out all sessions" service method
+- [x] 3.7 Remove legacy cookie acceptance + itsdangerous session path once 3.2–3.5 verified; update auth tests (FakeAuthenticator stays; add revoked-session cases)
 - [ ] 3.8 Orchestrator MSW: add revoked-session handler + guard test; verify zero frontend contract drift (`/openapi-sync` no-op expected)
 
 ## 4. Keto authz (AME)
