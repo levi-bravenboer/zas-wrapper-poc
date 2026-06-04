@@ -35,3 +35,17 @@ class ForbiddenRoleError(AppError):
     code = "forbidden.auth.role"
     status_code = 403
     message = "Caller role is not permitted for this resource."
+
+
+class RoleSelectionRequiredError(AppError):
+    """Multi-role session without an active-role binding (REQ-NON-3)."""
+
+    code = "conflict.auth.role_selection_required"
+    status_code = 409
+    message = "Select an active role for this session."
+
+
+class RoleNotAvailableError(AppError):
+    code = "invalid.auth.role_not_available"
+    status_code = 422
+    message = "The requested role is not available for this account."

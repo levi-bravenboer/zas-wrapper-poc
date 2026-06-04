@@ -72,6 +72,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/session/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Session Roles
+         * @description The caller's selectable roles on this surface (REQ-NON-3) — drives
+         *     the role picker and the user-menu switcher. Single-role users get a
+         *     one-element list.
+         */
+        get: operations["list_session_roles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/session/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Select Session Role
+         * @description Bind (or re-bind) the session to one of the caller's role rows.
+         *
+         *     Works on an unbound fresh login AND as a mid-session role switch —
+         *     no re-authentication (REQ-NON-3 "log in once, choose role"). Every
+         *     switch is audit-logged with the previous and new role.
+         */
+        post: operations["select_session_role"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/providers": {
         parameters: {
             query?: never;
@@ -281,6 +327,266 @@ export interface paths {
         head?: never;
         /** Update Patient */
         patch: operations["update_patient"];
+        trace?: never;
+    };
+    "/patients/{patient_id}/access-grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Access Grant */
+        post: operations["create_access_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/access-grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Access Grants */
+        get: operations["list_access_grants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/access-grants/{grant_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke Access Grant */
+        post: operations["revoke_access_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/specialisms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Specialisms */
+        get: operations["list_specialisms"];
+        put?: never;
+        /** Create Specialism */
+        post: operations["create_specialism"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/specialisms/{specialism_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Specialism */
+        delete: operations["delete_specialism"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/practitioner-roles/{role_id}/specialisms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Role Specialisms */
+        get: operations["list_role_specialisms"];
+        /** Set Role Specialisms */
+        put: operations["set_role_specialisms"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pathways/{pathway_id}/specialisms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Pathway Specialisms */
+        put: operations["set_pathway_specialisms"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/pathways/{pathway_id}/practitioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Pathway Practitioners */
+        put: operations["set_pathway_practitioners"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/external-access-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List External Access Profiles */
+        get: operations["list_external_access_profiles"];
+        /** Upsert External Access Profile */
+        put: operations["upsert_external_access_profile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Consent */
+        post: operations["create_consent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/consents/{consent_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke Consent */
+        post: operations["revoke_consent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/external-grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List External Grants */
+        get: operations["list_external_grants"];
+        put?: never;
+        /** Create External Grant */
+        post: operations["create_external_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/external-grants/{grant_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End External Grant */
+        post: operations["end_external_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shielding-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Shielding Rules */
+        get: operations["list_shielding_rules"];
+        /** Upsert Shielding Rule */
+        put: operations["upsert_shielding_rule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shielding-rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Shielding Rule */
+        delete: operations["delete_shielding_rule"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/patients/{patient_id}/care-teams": {
@@ -757,9 +1063,62 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccessGrantCreate */
+        AccessGrantCreate: {
+            /** Reason */
+            reason: string;
+            /** Hours */
+            hours: number;
+        };
+        /** AccessGrantRead */
+        AccessGrantRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Granted By
+             * Format: uuid
+             */
+            granted_by: string;
+            /**
+             * Granted At
+             * Format: date-time
+             */
+            granted_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Revoked At */
+            revoked_at: string | null;
+        };
         /** AssignRoleRequest */
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
+        };
+        /**
+         * AssignedUserIdsUpdate
+         * @description Replace-set semantics. An empty list clears explicit assignment —
+         *     the carepath falls back to specialism-wide access (REQ-NON-12).
+         */
+        AssignedUserIdsUpdate: {
+            /** User Ids */
+            user_ids: string[];
         };
         /**
          * CareTeamCreate
@@ -833,6 +1192,42 @@ export interface components {
             /** Period End */
             period_end?: string | null;
         };
+        /** ConsentCreate */
+        ConsentCreate: {
+            /**
+             * Scope
+             * @default external_collaboration
+             */
+            scope: string;
+        };
+        /** ConsentRead */
+        ConsentRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /** Scope */
+            scope: string;
+            status: components["schemas"]["ConsentStatus"];
+            /**
+             * Granted At
+             * Format: date-time
+             */
+            granted_at: string;
+            /** Revoked At */
+            revoked_at: string | null;
+        };
+        /**
+         * ConsentStatus
+         * @enum {string}
+         */
+        ConsentStatus: "active" | "revoked";
         /** ErrorResponse */
         ErrorResponse: {
             /** Code */
@@ -843,6 +1238,92 @@ export interface components {
             details?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** ExternalAccessProfileRead */
+        ExternalAccessProfileRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            professional_type: components["schemas"]["PractitionerRoleCode"];
+            /** Allow Read */
+            allow_read: boolean;
+            /** Allow Write */
+            allow_write: boolean;
+            /** Allow Record */
+            allow_record: boolean;
+            /** Allow Message */
+            allow_message: boolean;
+        };
+        /** ExternalAccessProfileUpsert */
+        ExternalAccessProfileUpsert: {
+            professional_type: components["schemas"]["PractitionerRoleCode"];
+            /**
+             * Allow Read
+             * @default true
+             */
+            allow_read: boolean;
+            /**
+             * Allow Write
+             * @default false
+             */
+            allow_write: boolean;
+            /**
+             * Allow Record
+             * @default false
+             */
+            allow_record: boolean;
+            /**
+             * Allow Message
+             * @default false
+             */
+            allow_message: boolean;
+        };
+        /** ExternalGrantCreate */
+        ExternalGrantCreate: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            professional_type: components["schemas"]["PractitionerRoleCode"];
+            /**
+             * Consent Id
+             * Format: uuid
+             */
+            consent_id: string;
+        };
+        /** ExternalGrantRead */
+        ExternalGrantRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            professional_type: components["schemas"]["PractitionerRoleCode"];
+            /**
+             * Consent Id
+             * Format: uuid
+             */
+            consent_id: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Period End */
+            period_end: string | null;
         };
         /**
          * Gender
@@ -870,6 +1351,12 @@ export interface components {
              */
             started_at: string;
         };
+        /**
+         * ItemCategory
+         * @description Shieldable item categories inside patient-scoped payloads.
+         * @enum {string}
+         */
+        ItemCategory: "questionnaire_answers" | "diary" | "attachments" | "parameters" | "documents";
         /** LoginRequest */
         LoginRequest: {
             /** Email */
@@ -2383,6 +2870,26 @@ export interface components {
          * @enum {string}
          */
         RoleInCare: "primary" | "consulting" | "observer";
+        /** RoleSelectRequest */
+        RoleSelectRequest: {
+            role: components["schemas"]["Role"];
+        };
+        /**
+         * RoleSelectionRequiredResponse
+         * @description Login succeeded but the human holds several roles on this surface
+         *     (REQ-NON-3). The session cookie is set and live; protected routes answer
+         *     409 until `POST /auth/session/role` binds one of `available_roles`.
+         */
+        RoleSelectionRequiredResponse: {
+            /**
+             * Requires Role Selection
+             * @default true
+             * @constant
+             */
+            requires_role_selection: true;
+            /** Available Roles */
+            available_roles: components["schemas"]["Role"][];
+        };
         /** RootResponse */
         RootResponse: {
             /** Name */
@@ -2412,6 +2919,71 @@ export interface components {
         SetActiveRequest: {
             /** Is Active */
             is_active: boolean;
+        };
+        /**
+         * ShieldingAudience
+         * @description Limited-sight audiences a category can be released to.
+         *
+         *     Subjects holding `view_shielded` (care team, org chain, break-glass)
+         *     never pass through the policy service — full sight by construction.
+         * @enum {string}
+         */
+        ShieldingAudience: "representative" | "external_professional" | "patient_other_role";
+        /** ShieldingRuleRead */
+        ShieldingRuleRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Pathway Id */
+            pathway_id: string | null;
+            item_category: components["schemas"]["ItemCategory"];
+            audience: components["schemas"]["ShieldingAudience"];
+            /** Released */
+            released: boolean;
+        };
+        /**
+         * ShieldingRuleUpsert
+         * @description Upsert keyed by (pathway_id, item_category, audience);
+         *     `pathway_id = null` targets the global rule.
+         */
+        ShieldingRuleUpsert: {
+            /** Pathway Id */
+            pathway_id?: string | null;
+            item_category: components["schemas"]["ItemCategory"];
+            audience: components["schemas"]["ShieldingAudience"];
+            /** Released */
+            released: boolean;
+        };
+        /** SpecialismCreate */
+        SpecialismCreate: {
+            /** Code */
+            code: string;
+            /** Display */
+            display: string;
+        };
+        /**
+         * SpecialismIdsUpdate
+         * @description Replace-set semantics: the full desired link set, not a diff.
+         */
+        SpecialismIdsUpdate: {
+            /** Specialism Ids */
+            specialism_ids: string[];
+        };
+        /** SpecialismRead */
+        SpecialismRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Display */
+            display: string;
+            /** Source */
+            source: string;
         };
         /**
          * UserCreate
@@ -2597,6 +3169,59 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionUser"] | components["schemas"]["RoleSelectionRequiredResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_session_roles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"][];
+                };
+            };
+        };
+    };
+    select_session_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleSelectRequest"];
             };
         };
         responses: {
@@ -3195,6 +3820,621 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PatientRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_access_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessGrantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGrantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_access_grants: {
+        parameters: {
+            query?: {
+                /** @description Only unexpired, unrevoked grants */
+                active?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGrantRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_access_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGrantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_specialisms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialismRead"][];
+                };
+            };
+        };
+    };
+    create_specialism: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpecialismCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialismRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_specialism: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                specialism_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_role_specialisms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialismRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_role_specialisms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpecialismIdsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialismRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_pathway_specialisms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpecialismIdsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialismRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_pathway_practitioners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignedUserIdsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_external_access_profiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalAccessProfileRead"][];
+                };
+            };
+        };
+    };
+    upsert_external_access_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExternalAccessProfileUpsert"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalAccessProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_consent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_consent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consent_id: string;
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_external_grants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalGrantRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_external_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExternalGrantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalGrantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_external_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalGrantRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_shielding_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShieldingRuleRead"][];
+                };
+            };
+        };
+    };
+    upsert_shielding_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShieldingRuleUpsert"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShieldingRuleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_shielding_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

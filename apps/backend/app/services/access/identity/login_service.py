@@ -24,7 +24,7 @@ from app.services.access.identity.kratos_client import KratosClient
 
 @dataclass(frozen=True)
 class AuthenticatedUser:
-    """Result of a successful login.
+    """Result of a successful login bound to exactly one role row.
 
     Carries the loaded `User`, the surface that authenticated, and the
     Kratos session token that becomes the session cookie value.
@@ -33,6 +33,20 @@ class AuthenticatedUser:
     user: User
     surface: Literal["caregiver", "mobile", "admin"]
     session_token: str
+    session_id: str
+
+
+@dataclass(frozen=True)
+class RoleSelectionPending:
+    """Credentials verified, but the human holds several role rows on this
+    surface (REQ-NON-3): the session is live yet unbound — protected routes
+    answer 409 until `POST /auth/session/role` writes the binding.
+    """
+
+    roster: list[User]
+    surface: Literal["caregiver", "mobile", "admin"]
+    session_token: str
+    session_id: str
 
 
 async def authenticate_password(
@@ -45,8 +59,8 @@ async def authenticate_password(
     user_repo: UserRepository,
     kratos: KratosClient,
     role: Role | None = None,
-) -> AuthenticatedUser:
-    """Verify `email + password` via Kratos, gated by the local `users` row.
+) -> AuthenticatedUser | RoleSelectionPending:
+    """Verify `email + password` via Kratos, gated by the local `users` rows.
 
     Raises `InvalidCredentialsError` for every failure mode (unknown email,
     inactive user, soft-deleted user, role rejected by `role_filter`, wrong
@@ -57,33 +71,56 @@ async def authenticate_password(
     on local-row grounds — so response time does not vary by failure cause.
     A session minted for a locally-rejected login is revoked before raising.
 
-    Pass ``role`` to narrow the DB lookup when email uniqueness is scoped to
-    ``(tenant, email, role)`` — prevents ``MultipleResultsFound`` when a
-    caregiver and patient share an email.
+    Pass ``role`` to narrow the roster when the surface accepts exactly one
+    role (mobile passes ``Role.PATIENT``) — those surfaces never see a
+    `RoleSelectionPending` result.
+
+    Multi-role (REQ-NON-3): one email can map to several role rows; the
+    eligible rows (active, not deleted, accepted by ``role_filter``) form
+    the roster. One row → bound login (unchanged contract); several →
+    `RoleSelectionPending` with the live-but-unbound session.
     """
 
     login = await kratos.login_with_password(email=email, password=password)
-    user = await user_repo.get_by_email(tenant_id, email, role=role)
+    rows = await user_repo.list_by_email(tenant_id, email)
+    if role is not None:
+        rows = [u for u in rows if u.role == role]
+
+    roster = [u for u in rows if u.deleted_at is None and u.is_active and role_filter(u.role)]
 
     reason: AuthFailureReason | None = None
-    if user is None:
-        reason = "unknown_email"
-    elif user.deleted_at is not None:
-        reason = "soft_deleted_user"
-    elif not user.is_active:
-        reason = "inactive_user"
-    elif not role_filter(user.role):
-        reason = "role_mismatch"
+    if not roster:
+        # Derive the most specific reason from the rejected rows (audit only;
+        # the raised error never leaks which mode triggered).
+        if not rows:
+            reason = "unknown_email"
+        elif any(u.deleted_at is not None for u in rows):
+            reason = "soft_deleted_user"
+        elif any(not u.is_active for u in rows):
+            reason = "inactive_user"
+        else:
+            reason = "role_mismatch"
 
     if reason is not None or login is None:
         if login is not None:
-            # Kratos accepted but the local row gates this surface — kill
+            # Kratos accepted but the local rows gate this surface — kill
             # the session so nothing live leaks out of a rejected login.
             await kratos.logout(session_token=login.session_token)
         raise InvalidCredentialsError(
             audit_reason=reason or "invalid_credentials",
-            audit_user_id=user.id if user is not None else None,
+            audit_user_id=rows[0].id if rows else None,
         )
 
-    assert user is not None
-    return AuthenticatedUser(user=user, surface=surface, session_token=login.session_token)
+    if len(roster) > 1:
+        return RoleSelectionPending(
+            roster=roster,
+            surface=surface,
+            session_token=login.session_token,
+            session_id=login.session_id,
+        )
+    return AuthenticatedUser(
+        user=roster[0],
+        surface=surface,
+        session_token=login.session_token,
+        session_id=login.session_id,
+    )

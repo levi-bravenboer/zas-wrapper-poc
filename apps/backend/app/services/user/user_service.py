@@ -107,11 +107,16 @@ class UserService:
         # first (placeholder hash — unusable for login since the random
         # secret is discarded), then persist the projection columns.
         schema_id: KratosSchemaId = "default" if payload.role == Role.ADMIN else "practitioner"
-        identity = await self._kratos.import_identity(
-            schema_id=schema_id,
-            email=payload.email,
-            hashed_password=placeholder_hash,
-        )
+        # One human = one Kratos identity (REQ-NON-3): a second role row for
+        # an existing email links to the existing identity instead of
+        # importing a duplicate (Kratos enforces email uniqueness anyway).
+        identity = await self._kratos.find_identity_by_email(email=payload.email)
+        if identity is None:
+            identity = await self._kratos.import_identity(
+                schema_id=schema_id,
+                email=payload.email,
+                hashed_password=placeholder_hash,
+            )
 
         user = User(
             tenant_id=actor.tenant_id,

@@ -76,6 +76,9 @@ class UserRepository(BaseListRepository[User]):
         external_idp: str,
         external_subject: str,
     ) -> User | None:
+        """Single-row resolution; raises if the identity maps to several
+        role rows — multi-role callers use `list_by_external_identity`."""
+
         result = await self._session.execute(
             select(User).where(
                 User.tenant_id == tenant_id,
@@ -85,6 +88,40 @@ class UserRepository(BaseListRepository[User]):
             )
         )
         return result.scalar_one_or_none()
+
+    async def list_by_external_identity(
+        self,
+        tenant_id: UUID,
+        external_idp: str,
+        external_subject: str,
+    ) -> list[User]:
+        """The identity's role-row roster (multi-role humans, REQ-NON-3)."""
+
+        result = await self._session.execute(
+            select(User)
+            .where(
+                User.tenant_id == tenant_id,
+                User.external_idp == external_idp,
+                User.external_subject == external_subject,
+                User.deleted_at.is_(None),
+            )
+            .order_by(User.role)
+        )
+        return list(result.scalars().all())
+
+    async def list_by_email(self, tenant_id: UUID, email: str) -> list[User]:
+        """All role rows sharing one email (multi-role humans, REQ-NON-3)."""
+
+        result = await self._session.execute(
+            select(User)
+            .where(
+                User.tenant_id == tenant_id,
+                func.lower(User.email) == email.lower(),
+                User.deleted_at.is_(None),
+            )
+            .order_by(User.role)
+        )
+        return list(result.scalars().all())
 
     async def update(self, user: User) -> User:
         await self._session.flush()

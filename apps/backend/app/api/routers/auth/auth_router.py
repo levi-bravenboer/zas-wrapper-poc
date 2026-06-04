@@ -1,24 +1,43 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Request, Response
 
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.repositories.user.deps import UserRepoDep
-from app.schemas.auth.auth import LoginRequest, SessionUser
+from app.db.engine import SessionDep
+from app.schemas.auth.auth import (
+    LoginRequest,
+    RoleSelectionRequiredResponse,
+    RoleSelectRequest,
+    SessionUser,
+)
 from app.schemas.auth.providers import ProviderDescriptor
 from app.services.access.identity.audit import AuthEvent, log_auth_event
 from app.services.access.identity.deps import (
+    KRATOS_IDP,
     CurrentUserDep,
     KratosClientDep,
     LoginProviderRegistryDep,
     OptionalCurrentUserDep,
 )
-from app.services.access.identity.errors import InvalidCredentialsError, UnauthenticatedError
-from app.services.access.identity.login_service import authenticate_password
+from app.services.access.identity.errors import (
+    InvalidCredentialsError,
+    RoleNotAvailableError,
+    UnauthenticatedError,
+)
+from app.services.access.identity.login_service import (
+    RoleSelectionPending,
+    authenticate_password,
+)
+from app.services.access.identity.role_binding import bind_session_role, get_bound_user_id
 
 # PoC is single-tenant (`zas`). Multi-tenant resolution lands at MVP.
 from scripts.seed_tenant import ZAS_TENANT_ID
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["auth"])
 
@@ -53,16 +72,17 @@ def _set_session_cookie(
 @router.post(
     "/auth/login/password",
     operation_id="login_password",
-    response_model=SessionUser,
+    response_model=SessionUser | RoleSelectionRequiredResponse,
 )
 async def login_password(
     payload: LoginRequest,
     response: Response,
     request: Request,
     settings: SettingsDep,
+    session: SessionDep,
     user_repo: UserRepoDep,
     kratos: KratosClientDep,
-) -> SessionUser:
+) -> SessionUser | RoleSelectionRequiredResponse:
     try:
         result = await authenticate_password(
             email=payload.email,
@@ -88,6 +108,22 @@ async def login_password(
         raise
 
     _set_session_cookie(response, settings=settings, session_token=result.session_token)
+    if isinstance(result, RoleSelectionPending):
+        # Multi-role human (REQ-NON-3): session live but unbound — the
+        # client picks via POST /auth/session/role before protected routes.
+        log_auth_event(
+            AuthEvent(
+                event="auth.login.success",
+                provider_key="password",
+                surface="caregiver",
+                client_ip=_client_ip(request),
+                user_agent=_user_agent(request),
+                user_id=result.roster[0].id,
+            )
+        )
+        return RoleSelectionRequiredResponse(
+            available_roles=sorted({u.role for u in result.roster})
+        )
     log_auth_event(
         AuthEvent(
             event="auth.login.success",
@@ -99,6 +135,81 @@ async def login_password(
         )
     )
     return SessionUser.model_validate(result.user)
+
+
+@router.get(
+    "/auth/session/roles",
+    operation_id="list_session_roles",
+    response_model=list[Role],
+)
+async def list_session_roles(
+    request: Request,
+    settings: SettingsDep,
+    user_repo: UserRepoDep,
+    kratos: KratosClientDep,
+) -> list[Role]:
+    """The caller's selectable roles on this surface (REQ-NON-3) — drives
+    the role picker and the user-menu switcher. Single-role users get a
+    one-element list."""
+
+    token = request.cookies.get(settings.session_cookie_name)
+    if not token:
+        raise UnauthenticatedError()
+    kratos_session = await kratos.whoami(session_token=token)
+    if kratos_session is None:
+        raise UnauthenticatedError()
+    roster = await user_repo.list_by_external_identity(
+        ZAS_TENANT_ID, KRATOS_IDP, kratos_session.identity_id
+    )
+    return sorted({u.role for u in roster if u.is_active and u.role != Role.PATIENT})
+
+
+@router.post(
+    "/auth/session/role",
+    operation_id="select_session_role",
+    response_model=SessionUser,
+)
+async def select_session_role(
+    payload: RoleSelectRequest,
+    request: Request,
+    settings: SettingsDep,
+    session: SessionDep,
+    user_repo: UserRepoDep,
+    kratos: KratosClientDep,
+) -> SessionUser:
+    """Bind (or re-bind) the session to one of the caller's role rows.
+
+    Works on an unbound fresh login AND as a mid-session role switch —
+    no re-authentication (REQ-NON-3 "log in once, choose role"). Every
+    switch is audit-logged with the previous and new role.
+    """
+
+    token = request.cookies.get(settings.session_cookie_name)
+    if not token:
+        raise UnauthenticatedError()
+    kratos_session = await kratos.whoami(session_token=token)
+    if kratos_session is None:
+        raise UnauthenticatedError()
+    roster = await user_repo.list_by_external_identity(
+        ZAS_TENANT_ID, KRATOS_IDP, kratos_session.identity_id
+    )
+    target = next(
+        (u for u in roster if u.role == payload.role and u.is_active and u.role != Role.PATIENT),
+        None,
+    )
+    if target is None:
+        raise RoleNotAvailableError()
+
+    previous_user_id = await get_bound_user_id(session, kratos_session.session_id)
+    await bind_session_role(session, kratos_session_id=kratos_session.session_id, user_id=target.id)
+    logger.info(
+        "auth.role.bound: session=%s user=%s role=%s previous_user=%s",
+        kratos_session.session_id,
+        target.id,
+        target.role,
+        previous_user_id,
+    )
+    return SessionUser.model_validate(target)
 
 
 @router.get(

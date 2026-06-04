@@ -6,6 +6,7 @@ from app.db.models.pathway.edge_offset_direction import PathwayEdgeOffsetDirecti
 from app.db.models.pathway.lane import PathwayLane
 from app.db.models.pathway.lane_kind import PathwayLaneKind
 from app.db.models.pathway.pathway import Pathway
+from app.db.models.pathway.pathway_access import PathwayPractitioner, PathwaySpecialism
 from app.db.models.pathway.phase import PathwayPhase
 from app.db.models.pathway.time_marker import PathwayTimeMarker
 from app.db.models.pathway.timing_value import PathwayTimingValue
@@ -21,6 +22,8 @@ __all__ = [
     "PathwayLane",
     "PathwayLaneKind",
     "PathwayPhase",
+    "PathwayPractitioner",
+    "PathwaySpecialism",
     "PathwayTimeMarker",
     "PathwayTimingValue",
     "PathwayVersion",

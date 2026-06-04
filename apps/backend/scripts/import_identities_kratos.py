@@ -6,8 +6,11 @@ password resets) and write back `external_idp='kratos'` +
 `external_subject=<identity.id>`.
 
 Idempotent: rows already linked are skipped; identities that exist in
-Kratos under the same email (from a previous partial run) are re-linked
-instead of duplicated.
+Kratos under the same email (from a previous partial run OR another role
+row of the same human — multi-role, REQ-NON-3) are re-linked instead of
+duplicated, so one human always maps to exactly one identity. The schema
+of a multi-role human's identity is decided by whichever role imports
+first (cosmetic only — traits never carry authorization data).
 
 Run: `python -m scripts.import_identities_kratos`.
 """

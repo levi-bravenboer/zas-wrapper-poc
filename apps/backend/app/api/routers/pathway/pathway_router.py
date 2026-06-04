@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from app.core.errors import ErrorResponse
 from app.schemas.pathway import (
@@ -22,12 +22,22 @@ from app.schemas.pathway import (
     PathwayVersionSummary,
     PathwayWithVersionResponse,
 )
+from app.core.enums.user import Role
+from app.core.settings import SettingsDep
+from app.db.engine import SessionDep
 from app.services.access.identity.deps import CurrentUserDep
+from app.services.access.permissions.deps import (
+    hidden_carepath_ids,
+    require_carepath_access,
+)
 from app.services.pathway.deps import PathwayServiceDep, PathwayVersionServiceDep
 
 router = APIRouter(prefix="/pathways", tags=["pathways"])
 
 _ERRORS_404: dict[int | str, dict[str, Any]] = {404: {"model": ErrorResponse}}
+# REQ-NON-10/12: specialism/assignment scoping on every {pathway_id} route —
+# one wiring point, admin short-circuit, deny = 404, flag-off no-op.
+_CAREPATH_GUARD = Depends(require_carepath_access)
 _ERRORS_409: dict[int | str, dict[str, Any]] = {409: {"model": ErrorResponse}}
 _ERRORS_422: dict[int | str, dict[str, Any]] = {422: {"model": ErrorResponse}}
 
@@ -88,8 +98,16 @@ async def list_pathway_edge_offset_directions(
 async def list_pathways(
     current_user: CurrentUserDep,
     service: PathwayServiceDep,
+    session: SessionDep,
+    settings: SettingsDep,
 ) -> list[PathwaySummary]:
-    return await service.list_summaries(current_user.tenant_id)
+    summaries = await service.list_summaries(current_user.tenant_id)
+    # SQL mirror of the Carepath.view permit (REQ-NON-10): scoped carepaths
+    # the caller cannot see are dropped from the list so list and detail agree.
+    if settings.authz_keto_enabled and current_user.role != Role.ADMIN:
+        hidden = await hidden_carepath_ids(session, current_user.id)
+        summaries = [s for s in summaries if s.id not in hidden]
+    return summaries
 
 
 @router.post(
@@ -115,6 +133,7 @@ async def create_pathway(
 @router.post(
     "/{pathway_id}/duplicate",
     operation_id="duplicate_pathway",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwaySummary,
     status_code=status.HTTP_201_CREATED,
     responses=_ERRORS_404,
@@ -131,6 +150,7 @@ async def duplicate_pathway(
 @router.get(
     "/{pathway_id}/parent-references",
     operation_id="list_pathway_parent_references",
+    dependencies=[_CAREPATH_GUARD],
     response_model=list[PathwayParentReference],
     responses=_ERRORS_404,
 )
@@ -148,6 +168,7 @@ async def list_pathway_parent_references(
 @router.get(
     "/{pathway_id}/summary",
     operation_id="get_pathway_summary",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayChildSummary,
     responses=_ERRORS_404,
 )
@@ -166,6 +187,7 @@ async def get_pathway_summary(
 @router.get(
     "/{pathway_id}",
     operation_id="get_pathway",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayWithVersionResponse,
     responses=_ERRORS_404,
 )
@@ -180,6 +202,7 @@ async def get_pathway(
 @router.put(
     "/{pathway_id}",
     operation_id="replace_pathway",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayWithVersionResponse,
     responses={**_ERRORS_404, **_ERRORS_409, **_ERRORS_422},
 )
@@ -195,6 +218,7 @@ async def replace_pathway(
 @router.delete(
     "/{pathway_id}",
     operation_id="delete_pathway",
+    dependencies=[_CAREPATH_GUARD],
     status_code=status.HTTP_204_NO_CONTENT,
     responses={**_ERRORS_404, **_ERRORS_409},
 )
@@ -212,6 +236,7 @@ async def delete_pathway(
 @router.get(
     "/{pathway_id}/versions",
     operation_id="list_pathway_versions",
+    dependencies=[_CAREPATH_GUARD],
     response_model=list[PathwayVersionSummary],
     responses=_ERRORS_404,
 )
@@ -226,6 +251,7 @@ async def list_pathway_versions(
 @router.get(
     "/{pathway_id}/versions/{version_id}",
     operation_id="get_pathway_version",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayVersionDefinition,
     responses=_ERRORS_404,
 )
@@ -241,6 +267,7 @@ async def get_pathway_version(
 @router.post(
     "/{pathway_id}/publish",
     operation_id="publish_pathway",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayVersionSummary,
     responses={**_ERRORS_404, **_ERRORS_409, **_ERRORS_422},
 )
@@ -258,6 +285,7 @@ async def publish_pathway(
 @router.post(
     "/{pathway_id}/versions/{version_id}/restore",
     operation_id="restore_pathway_version",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayVersionSummary,
     status_code=status.HTTP_201_CREATED,
     responses={**_ERRORS_404, **_ERRORS_409},
@@ -274,6 +302,7 @@ async def restore_pathway_version(
 @router.post(
     "/{pathway_id}/versions/{version_id}/fork-from-publish",
     operation_id="fork_pathway_from_publish",
+    dependencies=[_CAREPATH_GUARD],
     response_model=PathwayVersionSummary,
     status_code=status.HTTP_201_CREATED,
     responses={**_ERRORS_404, **_ERRORS_409, **_ERRORS_422},

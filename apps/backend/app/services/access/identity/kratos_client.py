@@ -26,6 +26,16 @@ class KratosError(RuntimeError):
 class KratosLoginSuccess:
     identity_id: str
     session_token: str
+    session_id: str
+
+
+@dataclass(frozen=True)
+class KratosSession:
+    """whoami projection: the identity AND the concrete session — the
+    session id keys `session_role_bindings` (multi-role, REQ-NON-3)."""
+
+    identity_id: str
+    session_id: str
 
 
 @dataclass(frozen=True)
@@ -72,21 +82,23 @@ class KratosClient:
             return KratosLoginSuccess(
                 identity_id=body["session"]["identity"]["id"],
                 session_token=body["session_token"],
+                session_id=body["session"]["id"],
             )
         if submit.status_code in (400, 401, 403):
             return None
         raise KratosError(f"login submit returned {submit.status_code}")
 
-    async def whoami(self, *, session_token: str) -> str | None:
-        """Resolve a session token to its identity id. `None` for missing,
-        expired, or revoked sessions."""
+    async def whoami(self, *, session_token: str) -> KratosSession | None:
+        """Resolve a session token to its identity + session ids. `None` for
+        missing, expired, or revoked sessions."""
 
         response = await self._http.get(
             f"{self._public}/sessions/whoami",
             headers={"X-Session-Token": session_token},
         )
         if response.status_code == 200:
-            return response.json()["identity"]["id"]
+            body = response.json()
+            return KratosSession(identity_id=body["identity"]["id"], session_id=body["id"])
         if response.status_code in (401, 403):
             return None
         raise KratosError(f"whoami returned {response.status_code}")

@@ -141,6 +141,9 @@ async def _wipe_tenant_scoped_tables(session: AsyncSession) -> None:
     await session.execute(
         text("TRUNCATE TABLE users, organisations, tenants RESTART IDENTITY CASCADE")
     )
+    # authz_outbox carries no tenant FK, so the cascade misses it; stale
+    # pending rows would bleed into later tests' relay batches.
+    await session.execute(text("TRUNCATE TABLE authz_outbox RESTART IDENTITY"))
     await session.commit()
 
 

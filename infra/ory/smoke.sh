@@ -65,17 +65,49 @@ keto_check() {
     python3 -c 'import json,sys; print(json.load(sys.stdin)["allowed"])'
 }
 
-echo "→ keto: write external_carer tuple → view allowed"
-curl -fsS -X PUT "$KETO_WRITE/admin/relation-tuples" \
-  -H 'Content-Type: application/json' \
-  -d "{\"namespace\": \"Patient\", \"object\": \"$object\", \"relation\": \"external_carer\", \"subject_id\": \"$subject\"}" >/dev/null
-[ "$(keto_check view)" = "True" ] || fail "expected allowed=true after tuple write"
+keto_write() {
+  local namespace=$1 obj=$2 relation=$3 subj=$4
+  curl -fsS -X PUT "$KETO_WRITE/admin/relation-tuples" \
+    -H 'Content-Type: application/json' \
+    -d "{\"namespace\": \"$namespace\", \"object\": \"$obj\", \"relation\": \"$relation\", $subj}" >/dev/null
+}
 
-echo "→ keto: shielded view stays denied for external carer"
-[ "$(keto_check view_shielded)" = "False" ] || fail "expected view_shielded=false for external carer"
+echo "→ keto: external_reader verb → view allowed, shielded/edit denied"
+keto_write Patient "$object" external_reader "\"subject_id\": \"$subject\""
+[ "$(keto_check view)" = "True" ] || fail "expected view=true for external_reader"
+[ "$(keto_check view_shielded)" = "False" ] || fail "expected view_shielded=false for external_reader"
+[ "$(keto_check edit)" = "False" ] || fail "expected edit=false for external_reader (verb separation)"
 
-echo "→ keto: delete tuple → view denied (episode revocation)"
-curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Patient&object=$object&relation=external_carer&subject_id=$subject" >/dev/null
-[ "$(keto_check view)" = "False" ] || fail "expected allowed=false after tuple delete"
+echo "→ keto: delete verb tuple → view denied (grant revocation)"
+curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Patient&object=$object&relation=external_reader&subject_id=$subject" >/dev/null
+[ "$(keto_check view)" = "False" ] || fail "expected view=false after verb delete"
+
+echo "→ keto: break_glass grants BOTH view tiers and edit"
+keto_write Patient "$object" break_glass "\"subject_id\": \"$subject\""
+[ "$(keto_check view_shielded)" = "True" ] || fail "expected view_shielded=true for break_glass"
+[ "$(keto_check edit)" = "True" ] || fail "expected edit=true for break_glass"
+curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Patient&object=$object&relation=break_glass&subject_id=$subject" >/dev/null
+[ "$(keto_check view_shielded)" = "False" ] || fail "expected view_shielded=false after break_glass delete"
+
+echo "→ keto: carepath via specialism membership, then explicit-assignment shape"
+carepath="smoke-carepath"
+specialism="smoke-specialism"
+carepath_check() {
+  curl -sS -X POST "$KETO_READ/relation-tuples/check" \
+    -H 'Content-Type: application/json' \
+    -d "{\"namespace\": \"Carepath\", \"object\": \"$carepath\", \"relation\": \"view\", \"subject_id\": \"$subject\"}" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["allowed"])'
+}
+keto_write Specialism "$specialism" practitioner "\"subject_id\": \"$subject\""
+keto_write Carepath "$carepath" specialism "\"subject_set\": {\"namespace\": \"Specialism\", \"object\": \"$specialism\", \"relation\": \"practitioner\"}"
+[ "$(carepath_check)" = "True" ] || fail "expected carepath view=true via specialism membership"
+curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Specialism&object=$specialism&relation=practitioner&subject_id=$subject" >/dev/null
+[ "$(carepath_check)" = "False" ] || fail "expected carepath view=false after specialism membership removed"
+keto_write Carepath "$carepath" assigned "\"subject_id\": \"$subject\""
+[ "$(carepath_check)" = "True" ] || fail "expected carepath view=true via explicit assignment"
+
+# cleanup carepath fixtures
+curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Carepath&object=$carepath&relation=assigned&subject_id=$subject" >/dev/null
+curl -fsS -X DELETE "$KETO_WRITE/admin/relation-tuples?namespace=Carepath&object=$carepath&relation=specialism" >/dev/null
 
 echo "SMOKE OK"

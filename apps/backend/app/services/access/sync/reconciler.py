@@ -26,13 +26,21 @@ from app.services.access.sync.derive import (
     EXTERNAL_RELATIONS,
     derive_all_tuples,
     derive_care_team_tuples,
+    derive_carepath_tuples,
     derive_organisation_tuples,
     derive_patient_tuples,
+    derive_specialism_tuples,
 )
 
 logger = logging.getLogger(__name__)
 
-NAMESPACES: tuple[KetoNamespace, ...] = ("Organisation", "CareTeam", "Patient")
+NAMESPACES: tuple[KetoNamespace, ...] = (
+    "Organisation",
+    "CareTeam",
+    "Patient",
+    "Specialism",
+    "Carepath",
+)
 
 
 @dataclass(frozen=True)
@@ -74,6 +82,10 @@ async def reconcile_object(
         expected = await derive_organisation_tuples(session, organisation_id=object_id)
     elif namespace == "CareTeam":
         expected = await derive_care_team_tuples(session, care_team_id=object_id)
+    elif namespace == "Specialism":
+        expected = await derive_specialism_tuples(session, specialism_id=object_id)
+    elif namespace == "Carepath":
+        expected = await derive_carepath_tuples(session, pathway_id=object_id)
     else:
         expected = await derive_patient_tuples(session, patient_id=object_id)
     actual = _managed(await keto.query_tuples(namespace=namespace, object_id=str(object_id)))

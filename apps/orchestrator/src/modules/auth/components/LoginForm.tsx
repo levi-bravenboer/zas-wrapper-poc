@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label'
 import { useLogin } from '@/modules/auth/hooks'
 
 import { safeRedirect } from '../redirect'
-import { loginSchema } from '../schemas'
+import { loginSchema, type Role } from '../schemas'
+
+import { RolePicker } from './RolePicker'
 
 type ErrorKey = 'invalid' | 'unknown'
 
@@ -28,13 +30,19 @@ export function LoginForm(): ReactElement {
   })
   const login = useLogin()
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null)
+  const [pendingRoles, setPendingRoles] = useState<Role[] | null>(null)
 
   const form = useForm({
     defaultValues: { email: '', password: '' },
     onSubmit: async ({ value, formApi }) => {
       setErrorKey(null)
       try {
-        await login.mutateAsync(value)
+        const result = await login.mutateAsync(value)
+        if ('requires_role_selection' in result) {
+          // session is live but unbound (REQ-NON-3) — pick a role first
+          setPendingRoles(result.available_roles)
+          return
+        }
         await navigate({ to: safeRedirect(redirect) })
       } catch (err) {
         const status = (err as { status?: number } | null)?.status
@@ -46,6 +54,10 @@ export function LoginForm(): ReactElement {
       }
     },
   })
+
+  if (pendingRoles !== null) {
+    return <RolePicker roles={pendingRoles} redirect={redirect} />
+  }
 
   return (
     <form

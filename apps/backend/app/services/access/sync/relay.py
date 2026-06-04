@@ -55,7 +55,7 @@ async def process_pending(session: AsyncSession, keto: KetoClient) -> int:
 
 
 def _as_namespace(raw: str) -> KetoNamespace:
-    if raw not in ("Organisation", "CareTeam", "Patient"):
+    if raw not in ("Organisation", "CareTeam", "Patient", "Specialism", "Carepath"):
         raise ValueError(f"unknown authz namespace in outbox: {raw!r}")
     return raw  # type: ignore[return-value]  # narrowed by the guard above
 

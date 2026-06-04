@@ -2,9 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { router } from '@/app/router'
 
-import { fetchProviders, fetchSession, login, logout } from './api'
+import {
+  fetchProviders,
+  fetchSession,
+  fetchSessionRoles,
+  login,
+  logout,
+  selectSessionRole,
+} from './api'
 import { authKeys } from './keys'
-import type { LoginRequest, ProviderDescriptor, SessionUser } from './schemas'
+import type { LoginRequest, LoginResult, ProviderDescriptor, Role, SessionUser } from './schemas'
 
 export function useSession() {
   return useQuery<SessionUser | null>({
@@ -16,11 +23,35 @@ export function useSession() {
 
 export function useLogin() {
   const qc = useQueryClient()
-  return useMutation<SessionUser, Error, LoginRequest>({
+  return useMutation<LoginResult, Error, LoginRequest>({
     mutationFn: login,
+    onSuccess: (result) => {
+      // multi-role logins are live but unbound — the session cache only
+      // gets a user once a role is picked (useSelectRole)
+      if (!('requires_role_selection' in result)) {
+        qc.setQueryData(authKeys.me(), result)
+      }
+    },
+  })
+}
+
+export function useSelectRole() {
+  const qc = useQueryClient()
+  return useMutation<SessionUser, Error, Role>({
+    mutationFn: selectSessionRole,
     onSuccess: (user) => {
       qc.setQueryData(authKeys.me(), user)
+      // role switch changes every authz answer — refetch the world
+      void qc.invalidateQueries()
     },
+  })
+}
+
+export function useSessionRoles() {
+  return useQuery<Role[]>({
+    queryKey: authKeys.sessionRoles(),
+    queryFn: fetchSessionRoles,
+    staleTime: 60_000,
   })
 }
 

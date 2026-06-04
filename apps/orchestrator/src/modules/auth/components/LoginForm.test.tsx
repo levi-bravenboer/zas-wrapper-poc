@@ -133,3 +133,36 @@ describe('safeRedirect', () => {
     expect(safeRedirect(input as string | undefined)).toBe(expected)
   })
 })
+
+describe('LoginForm multi-role', () => {
+  beforeEach(() => {
+    navigateMock.mockReset()
+    currentRedirect = undefined
+  })
+
+  it('shows the role picker on requires_role_selection and binds on pick', async () => {
+    server.use(
+      http.post(`${baseUrl}/auth/login/password`, () =>
+        HttpResponse.json(
+          { requires_role_selection: true, available_roles: ['admin', 'caregiver'] },
+          { status: 200 },
+        ),
+      ),
+      http.post(`${baseUrl}/auth/session/role`, () =>
+        HttpResponse.json({ ...STUB_USER, id: 'u9', role: 'admin' }, { status: 200 }),
+      ),
+    )
+    currentRedirect = '/patients'
+    renderForm()
+    await fillAndSubmit('hoofdarts@zas.local')
+
+    expect(await screen.findByText(/Kies je rol/i)).toBeInTheDocument()
+    expect(navigateMock).not.toHaveBeenCalled()
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: /Beheerder/i }))
+    await waitFor(() =>
+      expect(navigateMock).toHaveBeenCalledWith({ to: safeRedirect('/patients') }),
+    )
+  })
+})

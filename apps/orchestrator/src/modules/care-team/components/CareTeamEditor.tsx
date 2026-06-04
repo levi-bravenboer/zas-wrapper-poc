@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
+import { useOrganisations } from '@/modules/organisation/hooks'
+import { usePatientCareTeams } from '@/modules/patient/hooks'
 import { PRACTITIONER_ROLES_LIST_PATH } from '@/modules/practitioner-role/keys'
 import type { PractitionerRoleRead } from '@/modules/practitioner-role/schemas'
-import { usePatientCareTeams } from '@/modules/patient/hooks'
-import { useOrganisations } from '@/modules/organisation/hooks'
 import { USERS_LIST_PATH } from '@/modules/user/keys'
 import type { UserRow } from '@/modules/user/schemas'
 

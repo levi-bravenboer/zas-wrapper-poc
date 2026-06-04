@@ -13,6 +13,7 @@ from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdat
 from app.services.access.identity.deps import require_role
 from app.services.patient.deps import (
     PatientAccessDep,
+    PatientEditDep,
     PatientServiceDep,
 )
 
@@ -87,7 +88,7 @@ async def update_patient(
     patient_id: UUID,
     payload: PatientUpdate,
     service: PatientServiceDep,
-    _patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
+    _patient: PatientEditDep,  # AUTH-HARDEN: Keto `edit` verb when AUTHZ_KETO_ENABLED (REQ-FUN-42)
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> PatientRead:
     patient = await service.update(current_user, patient_id, payload)
@@ -102,7 +103,7 @@ async def update_patient(
 async def soft_delete_patient(
     patient_id: UUID,
     service: PatientServiceDep,
-    _patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
+    _patient: PatientEditDep,  # AUTH-HARDEN: Keto `edit` verb when AUTHZ_KETO_ENABLED (REQ-FUN-42)
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> None:
     await service.soft_delete(current_user, patient_id)

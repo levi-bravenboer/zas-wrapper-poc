@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/style/cn'
 import { initials } from '@/lib/utils/initials'
-import { useLogout, useSession } from '@/modules/auth/hooks'
+import { useLogout, useSelectRole, useSession, useSessionRoles } from '@/modules/auth/hooks'
 import type { Role } from '@/modules/auth/schemas'
 import { getFeaturesForSurface } from '@/platform/embed/defineFeature'
 
@@ -252,8 +252,12 @@ function UserBlock(): ReactElement {
   const { t } = useTranslation(['shell', 'auth'])
   const { data: session } = useSession()
   const logout = useLogout()
+  const selectRole = useSelectRole()
+  const { data: sessionRoles } = useSessionRoles()
   const displayName = session?.display_name ?? session?.email ?? '—'
   const role = session?.role ?? t('shell:user.roleFallback')
+  // multi-role humans can re-bind the session without re-login (REQ-NON-3)
+  const switchableRoles = (sessionRoles ?? []).filter((r) => r !== session?.role)
 
   return (
     <SidebarMenu>
@@ -307,6 +311,20 @@ function UserBlock(): ReactElement {
               <Settings aria-hidden="true" className="size-4" />
               {t('shell:user.settings')}
             </DropdownMenuItem>
+            {switchableRoles.length > 0 && <DropdownMenuSeparator />}
+            {switchableRoles.map((target) => (
+              <DropdownMenuItem
+                key={target}
+                onSelect={() => {
+                  selectRole.mutate(target)
+                }}
+              >
+                <User aria-hidden="true" className="size-4" />
+                {t('auth:roleSwitch.label', {
+                  role: t(`auth:rolePicker.roles.${target}`, { defaultValue: target }),
+                })}
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={() => {

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.routers.access import router as access_router
 from app.api.routers.auth import router as auth_router
 from app.api.routers.care_team import router as care_team_router
 from app.api.routers.events_router import router as events_router
@@ -21,6 +22,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(user_router)
     app.include_router(organisation_router)
     app.include_router(patient_router)
+    app.include_router(access_router)
     app.include_router(care_team_router)
     app.include_router(practitioner_router)
     app.include_router(practitioner_role_router)
