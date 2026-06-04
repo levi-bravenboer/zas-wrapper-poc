@@ -15,7 +15,12 @@ from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.auth_service import AuthService
 from app.services.access.identity.authenticator import KratosAuthenticator
-from app.services.access.identity.errors import ForbiddenRoleError, UnauthenticatedError
+from app.services.access.identity.errors import (
+    ForbiddenRoleError,
+    RoleSelectionRequiredError,
+    UnauthenticatedError,
+)
+from app.services.access.identity.role_binding import get_bound_user_id
 from app.services.access.identity.kratos_client import KratosClient
 from app.services.access.identity.password import PasswordHasher
 from app.services.access.identity.providers import (
@@ -39,12 +44,21 @@ KratosClientDep = Annotated[KratosClient, Depends(get_kratos_client)]
 async def resolve_actor_from_request(
     session: AsyncSession, request: Request, settings: Settings
 ) -> SessionUser | None:
-    """Cookie → Kratos whoami → projection lookup → SessionUser.
+    """Cookie → Kratos whoami → roster → binding → SessionUser.
 
     The cookie value is the Kratos session token; Kratos owns validity,
-    expiry, and revocation. The local `User` row is re-loaded on every
-    request so `is_active` flips and role changes take effect immediately.
-    Returns `None` for unauthenticated, expired, or revoked sessions.
+    expiry, and revocation. The bound local `User` row is re-loaded on
+    every request so `is_active` flips and role changes take effect
+    immediately. Returns `None` for unauthenticated, expired, or revoked
+    sessions.
+
+    Multi-role (REQ-NON-3): the identity's roster decides —
+    - one row → that row (no binding consulted or written);
+    - several rows → the `session_role_bindings` row for THIS Kratos
+      session picks the active role. Without a binding the request is not
+      yet an actor: `request.state.role_selection_required` is flagged so
+      `get_current_user` answers 409 (not 401) on protected routes.
+
     Called from `app.db.engine.get_session` to populate
     `session.info[SESSION_ACTOR_KEY]` for the audit hook.
     """
@@ -55,12 +69,24 @@ async def resolve_actor_from_request(
     kratos: KratosClient | None = getattr(request.app.state, "kratos_client", None)
     if kratos is None:
         return None
-    identity_id = await kratos.whoami(session_token=token)
-    if identity_id is None:
+    kratos_session = await kratos.whoami(session_token=token)
+    if kratos_session is None:
         return None
     repo = UserRepository(session)
-    user = await repo.get_by_external_identity(ZAS_TENANT_ID, KRATOS_IDP, identity_id)
-    if user is None or not user.is_active:
+    roster = await repo.list_by_external_identity(
+        ZAS_TENANT_ID, KRATOS_IDP, kratos_session.identity_id
+    )
+    if not roster:
+        return None
+    if len(roster) == 1:
+        user = roster[0]
+    else:
+        bound_user_id = await get_bound_user_id(session, kratos_session.session_id)
+        user = next((u for u in roster if u.id == bound_user_id), None)
+        if user is None:
+            request.state.role_selection_required = True
+            return None
+    if not user.is_active:
         return None
     return SessionUser.model_validate(user)
 
@@ -120,8 +146,12 @@ OptionalCurrentUserDep = Annotated[SessionUser | None, Depends(get_optional_curr
 
 async def get_current_user(
     current_user: OptionalCurrentUserDep,
+    request: Request,
 ) -> SessionUser:
     if current_user is None:
+        if getattr(request.state, "role_selection_required", False):
+            # live multi-role session without a binding (REQ-NON-3)
+            raise RoleSelectionRequiredError()
         raise UnauthenticatedError()
     return current_user
 

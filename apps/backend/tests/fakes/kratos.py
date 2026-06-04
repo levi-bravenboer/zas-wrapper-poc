@@ -26,6 +26,7 @@ from app.services.access.identity.kratos_client import (
     KratosIdentity,
     KratosLoginSuccess,
     KratosSchemaId,
+    KratosSession,
 )
 from app.services.access.identity.password import PasswordHasher
 
@@ -41,8 +42,8 @@ class FakeKratosClient(KratosClient):
     # identity_id → hashed password (for identities imported pre-DB-row)
     hashes: dict[str, str] = field(default_factory=dict)
     inactive: set[str] = field(default_factory=set)
-    # session token → identity_id
-    sessions: dict[str, str] = field(default_factory=dict)
+    # session token → (identity_id, session_id)
+    sessions: dict[str, tuple[str, str]] = field(default_factory=dict)
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         # Deliberately does NOT call KratosClient.__init__ — no HTTP here.
@@ -60,27 +61,44 @@ class FakeKratosClient(KratosClient):
             result = await session.execute(
                 select(User).where(User.email == email, User.deleted_at.is_(None))
             )
-            user = result.scalars().first()
-            if user is None or user.password_hash is None:
+            rows = list(result.scalars().all())
+            if not rows:
+                return None
+            # One human = one identity: verify against any row carrying a
+            # hash, then link EVERY row of the email to the same identity —
+            # exactly what the grouped import script produces (REQ-NON-3).
+            user = next((u for u in rows if u.password_hash is not None), None)
+            if user is None:
                 return None
             if not self.hasher.verify(user.password_hash, password):
                 return None
-            identity_id = user.external_subject
+            identity_id = next(
+                (u.external_subject for u in rows if u.external_subject is not None), None
+            )
             if identity_id is None:
-                # First login of a manually-seeded row: auto-link, exactly
-                # what the import script does for pre-existing users.
                 identity_id = str(uuid.uuid4())
-                user.external_idp = KRATOS_IDP
-                user.external_subject = identity_id
+            changed = False
+            for row in rows:
+                if row.external_subject != identity_id:
+                    row.external_idp = KRATOS_IDP
+                    row.external_subject = identity_id
+                    changed = True
+            if changed:
                 await session.commit()
             if identity_id in self.inactive:
                 return None
             token = f"fake-kratos-{uuid.uuid4()}"
-            self.sessions[token] = identity_id
-            return KratosLoginSuccess(identity_id=identity_id, session_token=token)
+            session_id = f"fake-session-{uuid.uuid4()}"
+            self.sessions[token] = (identity_id, session_id)
+            return KratosLoginSuccess(
+                identity_id=identity_id, session_token=token, session_id=session_id
+            )
 
-    async def whoami(self, *, session_token: str) -> str | None:
-        return self.sessions.get(session_token)
+    async def whoami(self, *, session_token: str) -> KratosSession | None:
+        entry = self.sessions.get(session_token)
+        if entry is None:
+            return None
+        return KratosSession(identity_id=entry[0], session_id=entry[1])
 
     async def logout(self, *, session_token: str) -> None:
         self.sessions.pop(session_token, None)
@@ -109,7 +127,7 @@ class FakeKratosClient(KratosClient):
 
     async def revoke_identity_sessions(self, *, identity_id: str) -> None:
         self.sessions = {
-            token: ident for token, ident in self.sessions.items() if ident != identity_id
+            token: entry for token, entry in self.sessions.items() if entry[0] != identity_id
         }
 
     async def set_identity_state(self, *, identity_id: str, active: bool) -> None:

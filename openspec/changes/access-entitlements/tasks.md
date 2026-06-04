@@ -56,12 +56,12 @@
 
 ## 7. Multi-role login
 
-- [ ] 7.1 Import script: group user rows by email → one Kratos identity, multiple `external_identities` links
-- [ ] 7.2 `authenticate_password`: resolve roster; auto-bind single-row; `requires_role_selection` response for multi-row
-- [ ] 7.3 `POST /auth/session/role`: write/rewrite `session_role_bindings`, audit old/new role; 409 contract on unbound protected routes
-- [ ] 7.4 `resolve_actor_from_request`: cookie → whoami → roster → binding → user row; deactivated bound row → 401 + revocation queue
+- [x] 7.1 Import script: group user rows by email → one Kratos identity, multiple `external_identities` links
+- [x] 7.2 `authenticate_password`: resolve roster; auto-bind single-row; `requires_role_selection` response for multi-row
+- [x] 7.3 `POST /auth/session/role`: write/rewrite `session_role_bindings`, audit old/new role; 409 contract on unbound protected routes
+- [x] 7.4 `resolve_actor_from_request`: cookie → whoami → roster → binding → user row; deactivated bound row → 401 + revocation queue
 - [ ] 7.5 Orchestrator: role picker on `requires_role_selection`, 409 interception preserving destination, active-role display + switch in user menu
-- [ ] 7.6 `FakeKratosClient`: multi-row roster support
+- [x] 7.6 `FakeKratosClient`: multi-row roster support
 
 ## 8. Seeds & demo data
 

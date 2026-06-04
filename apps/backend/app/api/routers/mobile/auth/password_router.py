@@ -15,7 +15,10 @@ from app.schemas.auth.mobile_session import (
 from app.services.access.identity.audit import AuthEvent, log_auth_event
 from app.services.access.identity.deps import KratosClientDep
 from app.services.access.identity.errors import InvalidCredentialsError
-from app.services.access.identity.login_service import authenticate_password
+from app.services.access.identity.login_service import (
+    AuthenticatedUser,
+    authenticate_password,
+)
 from app.services.access.identity.tenant_resolver import resolve_tenant_slug
 
 router = APIRouter(tags=["mobile"])
@@ -49,6 +52,9 @@ async def mobile_login_password(
             user_repo=user_repo,
             kratos=kratos,
         )
+        # `role=PATIENT` narrows the roster to at most one row, so the
+        # multi-role pending state is unreachable on this surface.
+        assert isinstance(result, AuthenticatedUser)
     except InvalidCredentialsError as exc:
         log_auth_event(
             AuthEvent(
