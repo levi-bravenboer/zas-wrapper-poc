@@ -79,31 +79,34 @@ Session cookies SHALL be set with `HttpOnly=True`, `SameSite=Lax`, `Path="/"`. T
 - **THEN** the `Set-Cookie` header includes the `Secure` attribute
 
 ### Requirement: Session signing
-
-Cookie values SHALL be produced by `itsdangerous.URLSafeTimedSerializer` keyed on `Settings.session_secret_key`. Tokens MUST be rejected when older than 8 hours.
+Session cookies SHALL carry the Ory Kratos session token; the backend MUST NOT sign or interpret the token itself. Verification SHALL happen by forwarding the cookie to Kratos `GET /sessions/whoami` on each request. Session lifetime SHALL be configured in Kratos (`session.lifespan`, set to 8 hours to preserve the prior contract); tokens for expired or revoked sessions MUST be rejected. The `itsdangerous`-based serializer SHALL be removed from the auth path. Cookie naming MUST continue to resolve via `Settings.session_cookie_name` (`BACKEND_SESSION`, `__Host-` prefixed in production).
 
 #### Scenario: Expired session rejected
+- **WHEN** a client presents a session cookie whose Kratos session has passed its 8-hour lifespan to `/auth/me`
+- **THEN** the response is 401 with `ErrorResponse{ code: "security.auth.unauthenticated" }`
 
-- **WHEN** a client presents a session cookie minted 9 hours ago to `/auth/me`
-- **THEN** the response is 401 with `ErrorResponse{ code: "auth.unauthenticated" }`
+#### Scenario: Revoked session rejected
+- **WHEN** a session is revoked server-side (logout, admin action, or user deactivation) and the client replays the cookie
+- **THEN** the response is 401 with `ErrorResponse{ code: "security.auth.unauthenticated" }`
+
+#### Scenario: No local signing
+- **WHEN** a developer inspects the auth session path after this change
+- **THEN** no `itsdangerous` serializer is constructed for session cookies
 
 ### Requirement: `CurrentUserDep` available to other routers
-
-A dependency `CurrentUserDep = Annotated[SessionUser, Depends(get_current_user)]` SHALL be exported from `app/services/auth/deps.py` (re-exported from `app/services/auth/__init__.py`) and used by any route that requires an authenticated user. `get_current_user` MUST verify the cookie's signature, decode its `user_id`, re-load the corresponding `User` row from the database on every request, reject the request with 401 when the user is missing or `is_active = False`, and convert the loaded `User` to a `SessionUser` for the handler.
+A dependency `CurrentUserDep = Annotated[SessionUser, Depends(get_current_user)]` SHALL be exported from `app/services/access/identity/deps.py` (re-exported from `app/services/access/identity/__init__.py`) and used by any route that requires an authenticated user. `get_current_user` MUST resolve the session by calling Kratos `whoami` with the request's session cookie, map `identity.id` to the local `users` row via the `(external_idp='kratos', external_subject)` lookup, re-load that `User` row from the database on every request, reject the request with 401 when the session is invalid/revoked or the user is missing or `is_active = False`, and convert the loaded `User` to a `SessionUser` for the handler.
 
 #### Scenario: Routes opt into auth
-
 - **WHEN** a future router declares a handler `def list_pathways(user: CurrentUserDep) -> ...`
-- **THEN** the handler receives the validated `SessionUser` (including `tenant_id` and `role`) and responds 401 (via the dependency) when the cookie is missing or invalid
+- **THEN** the handler receives the validated `SessionUser` (including `tenant_id` and `role`) and responds 401 (via the dependency) when the session cookie is missing, invalid, or revoked
 
 #### Scenario: Role change visible on next request
-
 - **WHEN** an admin updates a user's role via `PATCH /users/{id}/role`, and that user makes their next authenticated request
 - **THEN** the `SessionUser` injected into the handler MUST reflect the new role without requiring re-login
 
 ### Requirement: DB-backed user store replaces in-memory dict
 
-The backend SHALL authenticate users by looking them up via `UserRepository` against the `users` table. There SHALL NOT be an in-memory user dictionary anywhere in `app/services/auth/`. The `AuthService` MUST receive a `UserRepository` instance through its constructor.
+The backend SHALL authenticate users by looking them up via `UserRepository` against the `users` table. There SHALL NOT be an in-memory user dictionary anywhere in `app/services/access/identity/`. The `AuthService` MUST receive a `UserRepository` instance through its constructor.
 
 #### Scenario: Login succeeds against seeded admin
 
@@ -112,36 +115,27 @@ The backend SHALL authenticate users by looking them up via `UserRepository` aga
 
 #### Scenario: No module-level mutable user store
 
-- **WHEN** a developer inspects every file under `app/services/auth/`
+- **WHEN** a developer inspects every file under `app/services/access/identity/`
 - **THEN** no module-level dict, list, or set containing user records MUST exist; user data lives only in the database
 
 ### Requirement: Authenticator Protocol seam
-
-The backend SHALL define an `Authenticator` Protocol in `app/services/auth/authenticator.py` exposing at minimum `async def authenticate(self, *, email: str, password: str) -> User | None`. A `PasswordAuthenticator` implementation MUST satisfy this Protocol by verifying the input password against the user's `password_hash` via a `PasswordHasher` wrapper around `argon2-cffi`. The `PasswordAuthenticator` MUST return `None` when the looked-up user's `password_hash IS NULL` (OIDC-only identity) instead of attempting verification against a null value. `AuthService` MUST accept an `Authenticator` (the Protocol type, not the concrete class) in its constructor; the `Authenticator` Protocol remains a credential-verification seam — not a route-shape seam — and is consumed exclusively by `PasswordLoginProvider`.
+The backend SHALL define an `Authenticator` Protocol in `app/services/access/identity/authenticator.py` exposing at minimum `async def authenticate(self, *, email: str, password: str) -> User | None`. A `KratosAuthenticator` implementation MUST satisfy this Protocol by submitting a Kratos native login flow with the supplied credentials and, on success, mapping the returned identity to the local `User` row; it MUST return `None` on any Kratos login failure (wrong password, unknown identity, disabled identity) without distinguishing causes to the caller. The previous `PasswordAuthenticator` and `PasswordHasher` verification path SHALL no longer be wired into the login route (retained only by the import/rollback tooling). `AuthService` MUST continue to accept an `Authenticator` (the Protocol type, not the concrete class) in its constructor; the Protocol remains the credential-verification seam consumed exclusively by `PasswordLoginProvider`.
 
 #### Scenario: Authenticator injectable
-
 - **WHEN** a test constructs `AuthService` with a `FakeAuthenticator` implementing the Protocol
-- **THEN** `AuthService.login` MUST drive the fake without touching the real password hasher or repository
+- **THEN** `AuthService.login` MUST drive the fake without any Kratos network call
 
 #### Scenario: Wrong password rejected
-
-- **WHEN** `PasswordAuthenticator.authenticate(email="admin@zas.local", password="wrong")` is awaited
+- **WHEN** `KratosAuthenticator.authenticate(email="admin@zas.local", password="wrong")` is awaited
 - **THEN** it MUST return `None`
 
 #### Scenario: Correct password accepted
-
-- **WHEN** `PasswordAuthenticator.authenticate(email="admin@zas.local", password=<seeded admin password>)` is awaited
-- **THEN** it MUST return the matching `User` row
-
-#### Scenario: Null password_hash rejected
-
-- **WHEN** `PasswordAuthenticator.authenticate` is awaited against a user whose `password_hash IS NULL`
-- **THEN** it MUST return `None` without calling `PasswordHasher.verify`
+- **WHEN** `KratosAuthenticator.authenticate(email="admin@zas.local", password=<seeded admin password>)` is awaited
+- **THEN** it MUST return the matching `User` row mapped from the Kratos identity
 
 ### Requirement: `OptionalCurrentUserDep` populates the audit session slot
 
-The backend SHALL export `OptionalCurrentUserDep = Annotated[SessionUser | None, Depends(get_optional_current_user)]` from `app/services/auth/deps.py` (re-exported from `app/services/auth/__init__.py`). `get_optional_current_user` MUST share the same cookie-decode + user-reload logic as `get_current_user`, returning the resolved `SessionUser` on success and `None` (no raise) when the cookie is missing, tampered, expired, or refers to a missing / deactivated user.
+The backend SHALL export `OptionalCurrentUserDep = Annotated[SessionUser | None, Depends(get_optional_current_user)]` from `app/services/access/identity/deps.py` (re-exported from `app/services/access/identity/__init__.py`). `get_optional_current_user` MUST share the same cookie-decode + user-reload logic as `get_current_user`, returning the resolved `SessionUser` on success and `None` (no raise) when the cookie is missing, tampered, expired, or refers to a missing / deactivated user.
 
 `app/db/engine.get_session` SHALL consume `OptionalCurrentUserDep` and write `session.info[SESSION_ACTOR_KEY] = current_user` when not `None`, so the audit hook introduced in `backend-tenant-base` auto-stamps `tenant_id` / `created_by` / `updated_by` / `deleted_by` on every authenticated request. Unauthenticated requests MUST yield a session with the slot unset; the hook MUST stay a no-op in that path.
 
@@ -157,7 +151,7 @@ The backend SHALL export `OptionalCurrentUserDep = Annotated[SessionUser | None,
 
 ### Requirement: `require_role` factory dep guards admin-only routes
 
-The backend SHALL export a callable `require_role(*roles: Role)` from `app/services/auth/deps.py` (re-exported from `app/services/auth/__init__.py`) that returns a FastAPI dependency. The factory SHALL accept one or more `Role` values via variadic positional arguments. The returned dependency MUST resolve `CurrentUserDep` and raise `ForbiddenRoleError` (`forbidden.auth.role`, 403) when `current_user.role` is not in the set of accepted roles. When called with a single role, behaviour MUST match the prior single-role contract (no breakage at existing call sites).
+The backend SHALL export a callable `require_role(*roles: Role)` from `app/services/access/identity/deps.py` (re-exported from `app/services/access/identity/__init__.py`) that returns a FastAPI dependency. The factory SHALL accept one or more `Role` values via variadic positional arguments. The returned dependency MUST resolve `CurrentUserDep` and raise `ForbiddenRoleError` (`forbidden.auth.role`, 403) when `current_user.role` is not in the set of accepted roles. When called with a single role, behaviour MUST match the prior single-role contract (no breakage at existing call sites).
 
 #### Scenario: Allowed role passes (single-role guard)
 
@@ -207,7 +201,7 @@ In non-production environments (`env in {"local", "test", "ci", ...}`) the defau
 
 ### Requirement: LoginProvider Protocol owns route handlers
 
-The backend SHALL define a `LoginProvider` Protocol in `app/services/auth/providers/base.py` with at minimum the following surface:
+The backend SHALL define a `LoginProvider` Protocol in `app/services/access/identity/providers/base.py` with at minimum the following surface:
 
 ```python
 class LoginProvider(Protocol):
@@ -216,7 +210,7 @@ class LoginProvider(Protocol):
     kind: Literal['password', 'oidc'] # render strategy hint for the frontend
 ```
 
-Provider implementations live under `app/services/auth/providers/`. The PoC ships exactly one implementation, `PasswordLoginProvider` (`app/services/auth/providers/password.py`), which exposes an `async authenticate(email: str, password: SecretStr) -> SessionUser` method and consumes the existing `Authenticator` Protocol internally. OIDC-shaped providers MUST be defined in their own modules at MVP time; this change does NOT ship any.
+Provider implementations live under `app/services/access/identity/providers/`. The PoC ships exactly one implementation, `PasswordLoginProvider` (`app/services/access/identity/providers/password.py`), which exposes an `async authenticate(email: str, password: SecretStr) -> SessionUser` method and consumes the existing `Authenticator` Protocol internally. OIDC-shaped providers MUST be defined in their own modules at MVP time; this change does NOT ship any.
 
 The `LoginProvider` Protocol is the *route-shape* seam. The `Authenticator` Protocol (kept for backwards compatibility with the password flow) is the *credential-check* seam consumed by `PasswordLoginProvider`. The auth router MUST wire concrete provider methods into concrete routes (one HTTP handler per (provider × method) pair) — kind-based dispatch inside a single handler is FORBIDDEN.
 
@@ -232,7 +226,7 @@ The `LoginProvider` Protocol is the *route-shape* seam. The `Authenticator` Prot
 
 ### Requirement: Provider registry exposes enabled providers
 
-The backend SHALL expose a `LoginProviderRegistry` (in `app/services/auth/providers/registry.py`) that constructs and lists the providers enabled for a given deployment. The registry MUST be a constructor dep on `AuthService` (or a sibling service consumed by the router), MUST contain at minimum the `password` provider in PoC, and MUST return providers in a stable order. The registry is the single source of truth for `GET /auth/providers` responses.
+The backend SHALL expose a `LoginProviderRegistry` (in `app/services/access/identity/providers/registry.py`) that constructs and lists the providers enabled for a given deployment. The registry MUST be a constructor dep on `AuthService` (or a sibling service consumed by the router), MUST contain at minimum the `password` provider in PoC, and MUST return providers in a stable order. The registry is the single source of truth for `GET /auth/providers` responses.
 
 #### Scenario: PoC registry exposes password only
 
@@ -340,4 +334,15 @@ The `scripts/seed_users.py` module SHALL refuse to run when `Settings.env == "pr
 
 - **WHEN** `python -m scripts.seed_users` runs with `BACKEND_ENV=local` and the env vars unset
 - **THEN** the command MUST succeed using the `"changeme"` fallback and emit a `WARNING` log line (existing behaviour preserved)
+
+### Requirement: Server-side session revocation
+The backend SHALL support revoking sessions server-side via Kratos: logout MUST revoke the current session at Kratos; deactivating a user (`is_active = False`) MUST revoke all of that identity's Kratos sessions; an admin "log out all sessions" path SHALL exist at the service layer. A revoked session MUST be unusable on the very next request (no grace window). This closes `BL-042` for the session-revocation half; the queryable `auth_audit` table half stays parked.
+
+#### Scenario: Logout kills the session everywhere
+- **WHEN** a user logs out in one browser while holding the same session cookie in another client
+- **THEN** the other client's next request is 401
+
+#### Scenario: Deactivation revokes all sessions
+- **WHEN** an admin deactivates a user who has two active sessions
+- **THEN** both sessions are revoked at Kratos and both clients' next requests are 401
 

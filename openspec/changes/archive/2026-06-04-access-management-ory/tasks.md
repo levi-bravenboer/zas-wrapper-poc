@@ -13,7 +13,7 @@
 - [x] 2.3 Extend docker compose: `kratos`, `kratos-migrate`, `keto`, `keto-migrate` services + named volumes; document ports in AGENTS.md local-runtime notes
 - [x] 2.4 Backend settings: `kratos_public_url`, `kratos_admin_url`, `keto_read_url`, `keto_write_url`, `authz_keto_enabled` flag (default false); production fail-fast when URLs unset
 - [x] 2.5 CI smoke job: boot kratos+keto, run a login flow + a Keto check round-trip
-- [ ] 2.6 Forge: provision Kratos via the Kratos primitive; deploy Keto as app + dedicated PG project; wire env/secrets (verify against `docs/setup.md` deploy story / PR #21 pipeline)
+- [ ] 2.6 Forge: provision Kratos via the Kratos primitive; deploy Keto as app + dedicated PG project; wire env/secrets (verify against `docs/setup.md` deploy story / PR #21 pipeline) — **deferred to Linear ZAS-84**: deployment work, lands with the aws-poc-deploy pipeline (PR #21); no spec delta depends on it
 
 ## 3. Kratos identity (authn swap)
 
@@ -49,4 +49,4 @@
 - [x] 6.1 Verified live against real Kratos+Keto: seeded identities + 33 reconciled tuples; login → Keto-checked detail 200 → logout replay 401; membership+role close → outbox → relay → 404; shielded-vs-view + external_carer proven in smoke + tests (no external-clinician UI surface exists yet — that's the Transmural project)
 - [x] 6.2 PR #33 merged before this change landed; its `/mobile/auth/*` routes were rebased onto Kratos sessions in-place (design D7) — no separate plan needed
 - [x] 6.3 Backend lint+typecheck+627 tests green; orchestrator lint+typecheck green, suite green except pre-existing `-users.test.tsx` load-flake (fails on main too); `apps/backend/AGENTS.md` access-plane section rewritten (`docs/repo-security.md` is GitHub-repo access docs — not applicable)
-- [ ] 6.4 Archive readiness: specs delta applied to `openspec/specs/`, scope/roadmap/backlog merged, CHAIN.md untouched
+- [x] 6.4 Archive readiness: specs delta applied to `openspec/specs/`, scope/roadmap/backlog merged, CHAIN.md untouched
