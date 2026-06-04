@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.services.auth.providers.base import LoginProvider
+from app.services.access.identity.providers.base import LoginProvider
 
 
 class LoginProviderRegistry:

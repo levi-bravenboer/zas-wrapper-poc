@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import uuid
 
 import pytest
@@ -11,10 +10,10 @@ from app.core.settings import Settings
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
-from app.services.auth.auth_service import AuthService
-from app.services.auth.authenticator import PasswordAuthenticator
-from app.services.auth.errors import InvalidCredentialsError, UnauthenticatedError
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.auth_service import AuthService
+from app.services.access.identity.authenticator import PasswordAuthenticator
+from app.services.access.identity.errors import InvalidCredentialsError, UnauthenticatedError
+from app.services.access.identity.password import PasswordHasher
 
 
 async def _seed(
@@ -80,40 +79,6 @@ async def test_login_raises_invalid_credentials_for_inactive_user(
 
     with pytest.raises(InvalidCredentialsError):
         await service.login(email="user@zas.local", password="s3cret")
-
-
-async def test_session_token_round_trip(db_session: AsyncSession, settings: Settings) -> None:
-    tenant, user, hasher = await _seed(db_session, password="s3cret")
-    service = _service(db_session, tenant.id, hasher, settings)
-
-    token = service.mint_session_token(user.id)
-    decoded = service.verify_session_token(token)
-
-    assert decoded == user.id
-
-
-async def test_verify_session_token_rejects_expired(
-    db_session: AsyncSession, settings: Settings
-) -> None:
-    tenant, user, hasher = await _seed(db_session, password="s3cret")
-    settings.session_max_age_seconds = 1
-    service = _service(db_session, tenant.id, hasher, settings)
-
-    token = service.mint_session_token(user.id)
-    time.sleep(2)
-
-    with pytest.raises(UnauthenticatedError):
-        service.verify_session_token(token)
-
-
-async def test_verify_session_token_rejects_bad_signature(
-    db_session: AsyncSession, settings: Settings
-) -> None:
-    tenant, _, hasher = await _seed(db_session, password="s3cret")
-    service = _service(db_session, tenant.id, hasher, settings)
-
-    with pytest.raises(UnauthenticatedError):
-        service.verify_session_token("not-a-real-token")
 
 
 async def test_load_session_user_returns_active_user(

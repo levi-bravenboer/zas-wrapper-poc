@@ -41,9 +41,9 @@ async def get_session(request: Request, settings: SettingsDep) -> AsyncIterator[
     is set.
     """
 
-    # Local import: `services.auth.deps` imports back from this module via
+    # Local import: `services.access.identity.deps` imports back from this module via
     # `SessionDep`, so the dep is resolved lazily here to avoid an import cycle.
-    from app.services.auth.deps import resolve_actor_from_request
+    from app.services.access.identity.deps import resolve_actor_from_request
 
     session_factory: async_sessionmaker[AsyncSession] = request.app.state.session_factory
     async with session_factory() as session:

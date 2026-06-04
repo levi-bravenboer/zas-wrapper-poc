@@ -10,7 +10,7 @@ from app.core.enums.user import Role
 from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdate
-from app.services.auth.deps import require_role
+from app.services.access.identity.deps import require_role
 from app.services.patient.deps import (
     PatientAccessDep,
     PatientServiceDep,

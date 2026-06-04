@@ -14,7 +14,7 @@ from app.db.models.patient import Patient
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.password import PasswordHasher
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_patients import seed_patients
 from scripts.seed_tenant import seed_zas_tenant

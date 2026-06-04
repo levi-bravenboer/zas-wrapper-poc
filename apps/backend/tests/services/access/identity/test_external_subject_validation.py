@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.auth.providers import (
+from app.services.access.identity.providers import (
     InvalidExternalSubjectError,
     validate_external_subject,
 )

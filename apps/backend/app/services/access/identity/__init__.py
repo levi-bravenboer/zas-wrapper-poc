@@ -1,5 +1,5 @@
-from app.services.auth.auth_service import AuthService
-from app.services.auth.deps import (
+from app.services.access.identity.auth_service import AuthService
+from app.services.access.identity.deps import (
     AuthServiceDep,
     CurrentUserDep,
     OptionalCurrentUserDep,

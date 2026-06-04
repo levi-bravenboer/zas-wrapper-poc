@@ -6,7 +6,8 @@ from uuid import UUID
 
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.kratos_client import KratosClient
+from app.services.access.identity.password import PasswordHasher
 
 AuthFailureReason = Literal[
     "unknown_email",
@@ -20,6 +21,8 @@ AuthFailureReason = Literal[
 class AuthenticationResult:
     user: User | None
     reason: AuthFailureReason | None
+    # Kratos session token on success — becomes the session cookie value.
+    session_token: str | None = None
 
     @property
     def ok(self) -> bool:
@@ -28,6 +31,39 @@ class AuthenticationResult:
 
 class Authenticator(Protocol):
     async def authenticate(self, *, email: str, password: str) -> AuthenticationResult: ...
+
+
+class KratosAuthenticator:
+    """Credential verification delegated to Ory Kratos.
+
+    The local `users` row is still loaded (and gates the outcome — missing,
+    inactive rows fail) but the password itself is only ever checked by
+    Kratos. Failure causes map onto the same `AuthFailureReason` vocabulary
+    so the audit log keeps its distinctions; callers never learn which.
+    """
+
+    def __init__(
+        self,
+        repo: UserRepository,
+        kratos: KratosClient,
+        *,
+        tenant_id: UUID,
+    ) -> None:
+        self._repo = repo
+        self._kratos = kratos
+        self._tenant_id = tenant_id
+
+    async def authenticate(self, *, email: str, password: str) -> AuthenticationResult:
+        user = await self._repo.get_by_email(self._tenant_id, email)
+        if user is None:
+            return AuthenticationResult(user=None, reason="unknown_email")
+        if not user.is_active:
+            return AuthenticationResult(user=None, reason="inactive_user")
+
+        login = await self._kratos.login_with_password(email=email, password=password)
+        if login is None:
+            return AuthenticationResult(user=user, reason="invalid_credentials")
+        return AuthenticationResult(user=user, reason=None, session_token=login.session_token)
 
 
 class PasswordAuthenticator:
@@ -41,7 +77,7 @@ class PasswordAuthenticator:
     or wrong password without leaking the distinction back to the caller.
 
     `mobile-app-auth-setup` adds a parallel `authenticate_password()` service
-    at `app.services.auth.login_service` for the mobile surface, which uses
+    at `app.services.access.identity.login_service` for the mobile surface, which uses
     per-request `tenant_id` resolution and a role filter. Both paths read
     from the same `UserRepository`; the verifier is `PasswordHasher` in
     both. A caregiver migration to the shared service is deferred to a

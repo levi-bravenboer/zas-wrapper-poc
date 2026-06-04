@@ -22,7 +22,7 @@ from app.schemas.pathway import (
     PathwayVersionSummary,
     PathwayWithVersionResponse,
 )
-from app.services.auth.deps import CurrentUserDep
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.pathway.deps import PathwayServiceDep, PathwayVersionServiceDep
 
 router = APIRouter(prefix="/pathways", tags=["pathways"])

@@ -11,7 +11,7 @@ from app.db.models.patient import Patient
 from app.repositories.organisation.deps import OrganisationRepoDep
 from app.repositories.patient.deps import PatientRepoDep
 from app.schemas.auth.auth import SessionUser
-from app.services.auth.deps import require_role
+from app.services.access.identity.deps import require_role
 from app.services.care_team.deps import CareTeamServiceDep
 from app.services.patient.errors import PatientNotFoundError
 from app.services.patient.patient_service import PatientService

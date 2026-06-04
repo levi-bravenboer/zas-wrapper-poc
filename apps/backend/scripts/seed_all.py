@@ -10,11 +10,16 @@ Run: `python -m scripts.seed_all` (or `python scripts/seed_all.py`).
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.settings import get_settings
+from app.services.access.identity.kratos_client import KratosClient
 from scripts._db import run_script
+from scripts.import_identities_kratos import import_identities
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
@@ -46,10 +51,31 @@ SEED_STEPS: list[SeedStep] = [
     seed_rugrevalidatie,
 ]
 
+logger = logging.getLogger(__name__)
+
+
+async def _import_kratos_identities(session: AsyncSession) -> None:
+    """Final step: link every seeded user to a Kratos identity.
+
+    Skips with a warning when Kratos is unreachable (e.g. seeding while the
+    ory compose slice is down) — logins won't work until
+    `scripts.import_identities_kratos` runs against a live Kratos.
+    """
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http:
+            await import_identities(session, KratosClient(get_settings(), http))
+    except httpx.TransportError:
+        logger.warning(
+            "kratos unreachable — identity import skipped; "
+            "run `python -m scripts.import_identities_kratos` once kratos is up"
+        )
+
 
 async def _seed(session: AsyncSession) -> None:
     for step in SEED_STEPS:
         await step(session)
+    await _import_kratos_identities(session)
 
 
 def main() -> None:

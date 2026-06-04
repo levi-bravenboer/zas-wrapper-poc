@@ -13,7 +13,7 @@ from app.schemas.care_team.participant import (
     ParticipantRead,
     ParticipantRoleChange,
 )
-from app.services.auth.deps import require_role
+from app.services.access.identity.deps import require_role
 from app.services.care_team.deps import CareTeamServiceDep
 from app.services.patient.deps import PatientAccessDep
 

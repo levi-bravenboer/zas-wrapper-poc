@@ -13,7 +13,7 @@ from app.schemas.organisation import (
     OrganisationTreeUpdate,
     OrganisationUpdate,
 )
-from app.services.auth.deps import AdminUserDep, require_role
+from app.services.access.identity.deps import AdminUserDep, require_role
 from app.services.organisation.deps import (
     OrganisationServiceDep,
     OrganisationTreeServiceDep,

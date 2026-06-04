@@ -6,7 +6,7 @@ from uuid import UUID
 from app.core.errors import AppError
 
 if TYPE_CHECKING:
-    from app.services.auth.audit import AuthFailureReason
+    from app.services.access.identity.audit import AuthFailureReason
 
 
 class InvalidCredentialsError(AppError):

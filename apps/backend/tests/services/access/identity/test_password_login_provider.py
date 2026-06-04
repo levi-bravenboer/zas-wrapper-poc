@@ -10,10 +10,10 @@ from app.core.enums.user import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
-from app.services.auth.authenticator import PasswordAuthenticator
-from app.services.auth.errors import InvalidCredentialsError
-from app.services.auth.password import PasswordHasher
-from app.services.auth.providers import PasswordLoginProvider
+from app.services.access.identity.authenticator import PasswordAuthenticator
+from app.services.access.identity.errors import InvalidCredentialsError
+from app.services.access.identity.password import PasswordHasher
+from app.services.access.identity.providers import PasswordLoginProvider
 
 
 async def _seed(

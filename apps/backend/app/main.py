@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +21,7 @@ from app.core.settings import DEFAULT_SESSION_SECRET, Settings, get_settings
 from app.db.audit import install_audit_hooks
 from app.db.engine import create_engine, create_session_factory
 from app.realtime import install_realtime_flush_hook
+from app.services.access.identity.kratos_client import KratosClient
 
 install_audit_hooks()
 install_realtime_flush_hook()
@@ -93,6 +97,12 @@ def _register_exception_handlers(app: FastAPI) -> None:
         return _error_response(422, payload)
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    yield
+    await app.state.ory_http.aclose()
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     _check_production_safety(settings)
@@ -106,6 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version=__version__,
         description="FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
         servers=servers,
+        lifespan=_lifespan,
     )
     app.state.settings = settings
     app.state.started_at = datetime.now(UTC)
@@ -117,6 +128,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.luscii_client = luscii_client
     app.state.readiness.register("hix", hix_client.ping)
     app.state.readiness.register("luscii", luscii_client.ping)
+
+    ory_http = httpx.AsyncClient(timeout=5.0)
+    app.state.ory_http = ory_http
+    app.state.kratos_client = KratosClient(settings, ory_http)
 
     db_engine = create_engine(settings)
     app.state.db_engine = db_engine

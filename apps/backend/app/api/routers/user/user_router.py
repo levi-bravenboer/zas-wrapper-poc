@@ -15,7 +15,7 @@ from app.schemas.user.user import (
     UserRow,
     UserUpdate,
 )
-from app.services.auth.deps import AdminUserDep
+from app.services.access.identity.deps import AdminUserDep
 from app.services.user.deps import UserServiceDep
 
 router = APIRouter(tags=["users"])

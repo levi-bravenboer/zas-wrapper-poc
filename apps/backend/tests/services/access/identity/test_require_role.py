@@ -6,8 +6,8 @@ import pytest
 
 from app.core.enums.user import Role
 from app.schemas.auth.auth import SessionUser
-from app.services.auth.deps import require_role
-from app.services.auth.errors import ForbiddenRoleError
+from app.services.access.identity.deps import require_role
+from app.services.access.identity.errors import ForbiddenRoleError
 
 
 def _actor(role: Role) -> SessionUser:

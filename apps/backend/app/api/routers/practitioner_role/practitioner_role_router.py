@@ -15,7 +15,7 @@ from app.schemas.practitioner_role.practitioner_role import (
     PractitionerRoleRead,
     PractitionerRoleUpdate,
 )
-from app.services.auth.deps import require_role
+from app.services.access.identity.deps import require_role
 from app.services.practitioner_role.deps import PractitionerRoleServiceDep
 
 router = APIRouter(tags=["practitioner-roles"])

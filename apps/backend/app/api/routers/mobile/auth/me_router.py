@@ -6,8 +6,8 @@ from app.core.enums.user import Role
 from app.repositories.patient.deps import PatientRepoDep
 from app.repositories.user.deps import UserRepoDep
 from app.schemas.auth.mobile_session import PatientSession
-from app.services.auth.deps import CurrentUserDep
-from app.services.auth.errors import UnauthenticatedError
+from app.services.access.identity.deps import CurrentUserDep
+from app.services.access.identity.errors import UnauthenticatedError
 
 router = APIRouter(tags=["mobile"])
 

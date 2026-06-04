@@ -11,7 +11,9 @@ from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
 from app.schemas.practitioner.practitioner import PractitionerCreate
 from app.schemas.user.user import UserCreate, UserUpdate
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.deps import KRATOS_IDP
+from app.services.access.identity.kratos_client import KratosClient, KratosSchemaId
+from app.services.access.identity.password import PasswordHasher
 from app.services.practitioner.practitioner_service import PractitionerService
 from app.services.user.errors import (
     CrossTenantAccessError,
@@ -35,11 +37,13 @@ class UserService:
         repo: UserRepository,
         practitioner_service: PractitionerService,
         password_hasher: PasswordHasher,
+        kratos: KratosClient,
     ) -> None:
         self._session = session
         self._repo = repo
         self._practitioner_service = practitioner_service
         self._password_hasher = password_hasher
+        self._kratos = kratos
 
     async def get(self, actor: SessionUser, target_user_id: UUID) -> User:
         user = await self._repo.get_by_id(target_user_id)
@@ -59,7 +63,25 @@ class UserService:
     ) -> User:
         user = await self.get(actor, target_user_id)
         user.is_active = is_active
-        return await self._repo.update(user)
+        updated = await self._repo.update(user)
+        # Lifecycle propagates to Kratos: deactivation revokes every live
+        # session (immediate server-side effect) and disables the identity
+        # so it cannot start new login flows. Reactivation re-enables the
+        # identity but never restores old sessions.
+        if user.external_idp == KRATOS_IDP and user.external_subject is not None:
+            await self._kratos.set_identity_state(
+                identity_id=user.external_subject, active=is_active
+            )
+            if not is_active:
+                await self._kratos.revoke_identity_sessions(identity_id=user.external_subject)
+        return updated
+
+    async def logout_all_sessions(self, actor: SessionUser, target_user_id: UUID) -> None:
+        """Admin action: revoke every Kratos session for the target user."""
+
+        user = await self.get(actor, target_user_id)
+        if user.external_idp == KRATOS_IDP and user.external_subject is not None:
+            await self._kratos.revoke_identity_sessions(identity_id=user.external_subject)
 
     async def create(self, actor: SessionUser, payload: UserCreate) -> User:
         existing = await self._repo.get_by_email(actor.tenant_id, payload.email)
@@ -80,13 +102,26 @@ class UserService:
         # being usable for login.
         placeholder_password = secrets.token_urlsafe(32)
 
+        placeholder_hash = self._password_hasher.hash(placeholder_password)
+        # Kratos is the credential system of record: create the identity
+        # first (placeholder hash — unusable for login since the random
+        # secret is discarded), then persist the projection columns.
+        schema_id: KratosSchemaId = "default" if payload.role == Role.ADMIN else "practitioner"
+        identity = await self._kratos.import_identity(
+            schema_id=schema_id,
+            email=payload.email,
+            hashed_password=placeholder_hash,
+        )
+
         user = User(
             tenant_id=actor.tenant_id,
             email=payload.email,
             display_name=display_name,
             role=payload.role,
             is_active=True,
-            password_hash=self._password_hasher.hash(placeholder_password),
+            password_hash=placeholder_hash,
+            external_idp=KRATOS_IDP,
+            external_subject=identity.id,
         )
         self._session.add(user)
         await self._session.flush()

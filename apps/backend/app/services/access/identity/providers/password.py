@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from pydantic import SecretStr
 
 from app.schemas.auth.auth import SessionUser
-from app.services.auth.authenticator import AuthFailureReason, Authenticator
-from app.services.auth.errors import InvalidCredentialsError
-from app.services.auth.providers.base import ProviderKind
+from app.services.access.identity.authenticator import AuthFailureReason, Authenticator
+from app.services.access.identity.errors import InvalidCredentialsError
+from app.services.access.identity.providers.base import ProviderKind
 
 
 @dataclass(frozen=True)

@@ -8,8 +8,8 @@ from app.core.enums.user import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
-from app.services.auth.authenticator import PasswordAuthenticator
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.authenticator import PasswordAuthenticator
+from app.services.access.identity.password import PasswordHasher
 
 
 async def _seed(

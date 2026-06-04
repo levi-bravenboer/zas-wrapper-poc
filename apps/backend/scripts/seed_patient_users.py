@@ -22,7 +22,7 @@ from app.db.models.user import User
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.password import PasswordHasher
 from scripts._db import run_script
 from scripts.seed_patients import SEED_EXTERNAL_SYSTEM
 from scripts.seed_tenant import ZAS_TENANT_SLUG

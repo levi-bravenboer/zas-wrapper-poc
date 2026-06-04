@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.services.auth.providers import (
+from app.services.access.identity.providers import (
     LoginProvider,
     LoginProviderRegistry,
     PasswordLoginProvider,
@@ -36,6 +36,6 @@ class _NullAuthenticator:
         self, *, email: str, password: str
     ):  # pragma: no cover - never called in registry tests
         del email, password
-        from app.services.auth.authenticator import AuthenticationResult
+        from app.services.access.identity.authenticator import AuthenticationResult
 
         return AuthenticationResult(user=None, reason="unknown_email")

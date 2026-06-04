@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.password import PasswordHasher
 
 
 def test_password_hash_round_trip() -> None:
