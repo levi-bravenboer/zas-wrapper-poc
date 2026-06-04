@@ -10,7 +10,7 @@ The platform SHALL run Ory Kratos (pinned version, config under `infra/ory/krato
 - **THEN** Kratos public + admin APIs are reachable and `kratos-migrate` has applied its schema before the backend accepts logins
 
 #### Scenario: Backend contains no credential verification
-- **WHEN** a developer inspects `app/services/auth/` after the swap
+- **WHEN** a developer inspects `app/services/access/identity/` after the swap
 - **THEN** no argon2 verification call is reachable from the login route; password checking happens only inside Kratos
 
 ### Requirement: Identity schemas per user type

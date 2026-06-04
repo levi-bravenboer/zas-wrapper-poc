@@ -39,6 +39,7 @@ jobs:
       openspec: ${{ steps.filter.outputs.openspec }}
       workflows: ${{ steps.filter.outputs.workflows }}
       docker: ${{ steps.filter.outputs.docker }}
+      ory: ${{ steps.filter.outputs.ory }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -67,6 +68,10 @@ jobs:
             docker:
               - 'apps/backend/Dockerfile*'
               - 'docker-compose*.yml'
+              - '.github/workflows/ci.yml'
+            ory:
+              - 'infra/ory/**'
+              - 'docker-compose.yml'
               - '.github/workflows/ci.yml'
 
   # ╔══════════════════════════════════════════════════════════════════════╗
@@ -346,6 +351,25 @@ jobs:
         with:
           dockerfile: ${{ matrix.dockerfile }}
           failure-threshold: warning
+
+  ory-smoke:
+    name: ory access-plane smoke
+    needs: changes
+    if: needs.changes.outputs.ory == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: boot ory slice (db → migrations → kratos + keto)
+        run: docker compose up -d --quiet-pull kratos keto
+      - name: wait for kratos + keto readiness
+        run: |
+          timeout 120 bash -c 'until curl -fs http://localhost:4433/health/ready >/dev/null; do sleep 2; done'
+          timeout 120 bash -c 'until curl -fs http://localhost:4466/health/ready >/dev/null; do sleep 2; done'
+      - name: run smoke (hash import → login → whoami → revoke; tuple write → check → delete)
+        run: ./infra/ory/smoke.sh
+      - name: dump ory logs on failure
+        if: failure()
+        run: docker compose logs ory-db-init kratos-migrate kratos keto-migrate keto
 
   trivy-fs:
     name: trivy filesystem scan

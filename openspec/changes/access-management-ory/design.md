@@ -56,6 +56,9 @@ The open PR's `/mobile/auth/*` cookie flow is kept shape-wise but minted by Krat
 ### D8 — Deployment: Forge Kratos primitive + Keto as app
 Forge `create_kratos_project` provisions Kratos; Keto runs as a Forge app with its own small PG project (no Forge primitive exists). Local dev: `docker compose` services `kratos`, `kratos-migrate`, `keto`, `keto-migrate` with config mounted from `infra/ory/`. Demo env seeds tuples via the reconciler against seeded domain data.
 
+### D9 — Backend layout: one `app/services/access/` package, not a separate app
+The access plane lives in a single package mirroring the spec capabilities and the diagrams: `access/identity/` (Kratos — client, authenticator, session deps; relocated from `app/services/auth/`), `access/permissions/` (Keto — check client, `require_patient_permission`), `access/sync/` (outbox, relay, reconciler, sweeper). **Why**: WHO / WHAT / SYNC is the mental model; two near-identical sibling names (`auth` / `authz`) blur it. A separate FastAPI app was rejected — Kratos and Keto already *are* the separate services; our code is thin glue that must live next to the routes and transactions it guards. Decided with the user 2026-06-04. Path references to `app/services/auth/` in pre-existing spec text resolve to `app/services/access/identity/` (swept at archive, task 6.4).
+
 ## Risks / Trade-offs
 
 - [Keto/Postgres drift] → outbox in same tx, reconciler diff on deploy + nightly, alert on non-empty diff.

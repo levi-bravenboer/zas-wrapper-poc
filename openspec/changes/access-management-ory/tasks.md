@@ -17,7 +17,8 @@
 
 ## 3. Kratos identity (authn swap)
 
-- [ ] 3.1 `app/services/auth/kratos_client.py`: thin httpx client (whoami, admin identity CRUD, native login flow submit, session revocation endpoints)
+- [ ] 3.0 Relocate `app/services/auth/` → `app/services/access/identity/` (mechanical move + import sweep; design D9)
+- [ ] 3.1 `app/services/access/identity/kratos_client.py`: thin httpx client (whoami, admin identity CRUD, native login flow submit, session revocation endpoints)
 - [ ] 3.2 Identity import script `scripts/import_identities_kratos.py`: idempotent argon2id hash import, writes back `external_idp`/`external_subject`; unit-tested against a live local Kratos in CI smoke
 - [ ] 3.3 `KratosAuthenticator` implementing the `Authenticator` Protocol (native login flow submit → identity → local User mapping)
 - [ ] 3.4 Swap `resolve_actor_from_request` to whoami + projection lookup; dual-accept window (Kratos cookie OR legacy itsdangerous cookie) behind a transition flag
@@ -28,13 +29,13 @@
 
 ## 4. Keto authz (AME)
 
-- [ ] 4.1 `app/services/authz/keto_client.py`: check + relation-query (list objects) helpers
-- [ ] 4.2 `require_patient_permission(relation)` dependency: path patient-id resolution, admin short-circuit, flag-gated; wire into `require_patient_access` (single wiring point per BL-053)
+- [ ] 4.1 `app/services/access/permissions/keto_client.py`: check + relation-query (list objects) helpers
+- [ ] 4.2 `require_patient_permission(relation)` dependency (`app/services/access/permissions/deps.py`): path patient-id resolution, admin short-circuit, flag-gated; wire into `require_patient_access` (single wiring point per BL-053)
 - [ ] 4.3 Patient list scoping via relation query → `IN (...)` filter when flag on
 - [ ] 4.4 Sweep `# AUTH-HARDEN` markers on patient/pathway routers: graduate to relation checks or document why role-only stays (partial BL-051)
 - [ ] 4.5 Integration tests: care-team member allowed, org-ancestor allowed, unrelated caregiver 403, external carer view-but-not-shielded, flag-off regression suite
 
-## 5. Tuple sync
+## 5. Tuple sync (`app/services/access/sync/`)
 
 - [ ] 5.1 Migration: `authz_outbox` table (id, op, namespace, object, relation, subject, created_at, processed_at) via `/new-migration`
 - [ ] 5.2 Outbox writes in the same transaction for: practitioner_role open/close, care-team participant add/remove, organisation reparent, external episode start/end

@@ -32,7 +32,7 @@ We adopt the self-hosted Ory stack as the access plane: **Kratos** for identity 
 
 ## Impact
 
-- **Backend**: `app/services/auth/*` (authenticator, deps, providers), new `app/services/authz/*` (Keto client, permission deps, tuple writer, reconciler), outbox table migration, settings.
+- **Backend**: `app/services/auth/*` relocates to `app/services/access/identity/*` (authenticator, deps, providers — Kratos-backed); new `app/services/access/permissions/*` (Keto client, permission deps) and `app/services/access/sync/*` (outbox relay, reconciler, sweeper); outbox table migration; settings. Layout decision: design.md D9.
 - **Frontend (orchestrator)**: no route/shape changes expected; MSW handlers gain revoked-session case.
 - **Mobile (PR #33)**: open PR's cookie-based `/mobile/auth/*` should rebase onto Kratos sessions (decision recorded in design.md).
 - **Infra**: docker-compose (kratos, keto, migrators), Forge manifests; new env/secrets.

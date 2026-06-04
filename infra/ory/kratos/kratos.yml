@@ -1,0 +1,51 @@
+# Ory Kratos config — local dev + CI. Pinned image: oryd/kratos:v26.2.0 (docker-compose.yml).
+# DSN comes from the DSN env var. Production overrides secrets + base URLs via env
+# (SECRETS_COOKIE / SECRETS_CIPHER / SERVE_PUBLIC_BASE_URL).
+
+serve:
+  public:
+    base_url: http://localhost:4433/
+    cors:
+      enabled: false
+  admin:
+    base_url: http://kratos:4434/
+
+session:
+  # Mirrors the pre-Ory contract: Settings.session_max_age_seconds = 8h.
+  lifespan: 8h
+  cookie:
+    same_site: Lax
+
+selfservice:
+  default_browser_return_url: http://localhost:5173/
+  methods:
+    password:
+      enabled: true
+      config:
+        # Local + CI run offline; seeded demo passwords ("changeme") must keep working.
+        haveibeenpwned_enabled: false
+        min_password_length: 8
+        identifier_similarity_check_enabled: false
+  flows:
+    login:
+      lifespan: 10m
+
+identity:
+  default_schema_id: practitioner
+  schemas:
+    - id: default
+      url: file:///etc/config/kratos/schemas/default.schema.json
+    - id: practitioner
+      url: file:///etc/config/kratos/schemas/practitioner.schema.json
+    - id: patient
+      url: file:///etc/config/kratos/schemas/patient.schema.json
+
+secrets:
+  cookie:
+    - dev-only-kratos-cookie-secret
+  cipher:
+    - dev-only-cipher-secret-32-chars0 # cipher secrets must be exactly 32 chars
+
+log:
+  level: info
+  format: json

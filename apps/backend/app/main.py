@@ -35,6 +35,18 @@ def _check_production_safety(settings: Settings) -> None:
         problems.append("BACKEND_CORS_ORIGINS is empty")
     if settings.session_secret_key.get_secret_value() == DEFAULT_SESSION_SECRET:
         problems.append("BACKEND_SESSION_SECRET_KEY is the default placeholder")
+    localhost_ory_urls = [
+        name
+        for name, url in (
+            ("BACKEND_KRATOS_PUBLIC_URL", settings.kratos_public_url),
+            ("BACKEND_KRATOS_ADMIN_URL", settings.kratos_admin_url),
+            ("BACKEND_KETO_READ_URL", settings.keto_read_url),
+            ("BACKEND_KETO_WRITE_URL", settings.keto_write_url),
+        )
+        if url.host in ("localhost", "127.0.0.1")
+    ]
+    if localhost_ory_urls:
+        problems.append(f"{', '.join(localhost_ory_urls)} still point at localhost")
     if problems:
         raise InsecureProductionConfigError(
             "Refusing to boot in production with insecure defaults: " + ", ".join(problems)
