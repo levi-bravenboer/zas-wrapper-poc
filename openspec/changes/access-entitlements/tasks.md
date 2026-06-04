@@ -35,9 +35,9 @@
 
 ## 4. Carepath scoping
 
-- [ ] 4.1 `require_carepath_access` dependency in `app/services/access/permissions/`; wire pathway detail/mutation routes (admin short-circuit, 404 deny, flag-off no-op)
-- [ ] 4.2 Carepath list scoping in SQL from specialism links + explicit assignments (mirror of patient-list pattern)
-- [ ] 4.3 Admin CRUD: specialisms, role↔specialism links, carepath↔specialism links, per-carepath practitioner assignment
+- [x] 4.1 `require_carepath_access` dependency in `app/services/access/permissions/`; wire pathway detail/mutation routes (admin short-circuit, 404 deny, flag-off no-op)
+- [x] 4.2 Carepath list scoping in SQL from specialism links + explicit assignments (mirror of patient-list pattern)
+- [x] 4.3 Admin CRUD: specialisms, role↔specialism links, carepath↔specialism links, per-carepath practitioner assignment
 - [ ] 4.4 Orchestrator: specialism management UI on practitioner-role admin; carepath link config in builder settings
 
 ## 5. External collaboration
