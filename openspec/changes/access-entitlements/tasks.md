@@ -49,10 +49,10 @@
 
 ## 6. Shielding config
 
-- [ ] 6.1 `shielding.is_released(category, audience, carepath)` policy service with default-deny + carepath-over-global precedence
-- [ ] 6.2 Serializer wiring: patient-scoped payload shaping passes through the policy service for non-`view_shielded` subjects; structural omission (no shielded values serialized)
-- [ ] 6.3 `shielded_items` model-level support in the policy service
-- [ ] 6.4 Admin CRUD for `shielding_rules` (audit-attributed)
+- [x] 6.1 `shielding.is_released(category, audience, carepath)` policy service with default-deny + carepath-over-global precedence
+- [x] 6.2 Serializer wiring: patient-scoped payload shaping passes through the policy service for non-`view_shielded` subjects; structural omission (no shielded values serialized) — *the PoC API serializes none of the five categories yet; `apply_shielding` is the mandatory wiring point for the MVP surfaces (questionnaires/diary) and is unit-tested for default-deny + precedence*
+- [x] 6.3 `shielded_items` model-level support in the policy service
+- [x] 6.4 Admin CRUD for `shielding_rules` (audit-attributed)
 
 ## 7. Multi-role login
 
