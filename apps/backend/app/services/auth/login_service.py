@@ -51,6 +51,7 @@ async def authenticate_password(
     surface: Literal["caregiver", "mobile", "admin"],
     user_repo: UserRepository,
     hasher: PasswordHasher,
+    role: Role | None = None,
 ) -> AuthenticatedUser:
     """Verify `email + password` against the `users` table.
 
@@ -63,9 +64,13 @@ async def authenticate_password(
     Runs the password verifier even when the caller would short-circuit
     (user not found, inactive, role-mismatch) so the response time does
     not differ between failure causes.
+
+    Pass ``role`` to narrow the DB lookup when email uniqueness is
+    scoped to ``(tenant, email, role)`` — prevents
+    ``MultipleResultsFound`` when a caregiver and patient share an email.
     """
 
-    user = await user_repo.get_by_email(tenant_id, email)
+    user = await user_repo.get_by_email(tenant_id, email, role=role)
 
     reason: AuthFailureReason | None = None
     if user is None:

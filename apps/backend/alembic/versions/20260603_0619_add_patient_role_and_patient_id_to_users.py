@@ -81,7 +81,17 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Reverse email-uniqueness index swap first.
+    # Remove patient-role users BEFORE restoring the strict email-uniqueness
+    # index — otherwise a caregiver+patient sharing an email would violate
+    # the old (tenant, email) unique constraint.
+    op.execute(sa.text("DELETE FROM users WHERE role = 'patient'"))
+
+    op.drop_constraint("ck_users_role_patient_link", "users", type_="check")
+    op.drop_index("uq_users_patient_id", table_name="users")
+    op.drop_constraint("fk_users_patient_id_patients", "users", type_="foreignkey")
+    op.drop_column("users", "patient_id")
+
+    # Now safe to restore strict email uniqueness.
     op.drop_index("uq_users_tenant_id_lower_email_role", table_name="users")
     op.create_index(
         "uq_users_tenant_id_lower_email",
@@ -89,11 +99,6 @@ def downgrade() -> None:
         [sa.text("tenant_id"), sa.text("lower(email)")],
         unique=True,
     )
-
-    op.drop_constraint("ck_users_role_patient_link", "users", type_="check")
-    op.drop_index("uq_users_patient_id", table_name="users")
-    op.drop_constraint("fk_users_patient_id_patients", "users", type_="foreignkey")
-    op.drop_column("users", "patient_id")
 
     # NOTE: Postgres cannot remove enum values cleanly without recreating
     # the type. The 'patient' enum value stays; no row carries it after

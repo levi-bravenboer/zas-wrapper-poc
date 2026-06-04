@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { useTranslation } from 'react-i18next'
 import { Text, View } from 'react-native'
@@ -45,24 +45,21 @@ function onRootError(
 
 function RoutingGate() {
   const { isAuthenticated, isLoading } = useSession()
-  const [splashHidden, setSplashHidden] = useState(false)
+  const hasRouted = useRef(false)
 
   useEffect(() => {
     if (isLoading) return
 
-    if (isAuthenticated) {
-      router.replace('/(app)')
-    } else {
-      router.replace('/(auth)/login')
-    }
+    const target = isAuthenticated ? '/(app)' : '/(auth)/login'
+    router.replace(target)
 
-    if (!splashHidden) {
-      setSplashHidden(true)
+    if (!hasRouted.current) {
+      hasRouted.current = true
       void SplashScreen.hideAsync().catch((err: unknown) => {
         log.warn('[splash] hide failed', err)
       })
     }
-  }, [isAuthenticated, isLoading, splashHidden])
+  }, [isAuthenticated, isLoading])
 
   return <Stack screenOptions={{ headerShown: false }} />
 }

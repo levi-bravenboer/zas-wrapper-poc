@@ -45,6 +45,7 @@ async def mobile_login_password(
             password=payload.password.get_secret_value(),
             tenant_id=tenant_id,
             role_filter=lambda r: r == Role.PATIENT,
+            role=Role.PATIENT,
             surface="mobile",
             user_repo=user_repo,
             hasher=hasher,
@@ -85,14 +86,17 @@ async def mobile_login_password(
         )
     )
 
-    assert result.user.patient_id is not None
+    if result.user.patient_id is None:
+        raise InvalidCredentialsError()
+
     patient = await patient_repo.get_by_id(result.user.tenant_id, result.user.patient_id)
-    given_name = patient.given_name if patient else ""
+    if patient is None:
+        raise InvalidCredentialsError()
 
     return MobileLoginResponse(
         session=PatientSession(
             id=result.user.id,
-            given_name=given_name,
+            given_name=patient.given_name,
             patient_id=result.user.patient_id,
             tenant_id=result.user.tenant_id,
         )

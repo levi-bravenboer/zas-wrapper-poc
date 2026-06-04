@@ -86,6 +86,11 @@ class UserCreate(BaseModel):
             cross = [k for k, v in admin_fields.items() if v is not None]
             if cross:
                 raise ValueError(f"caregiver role forbids: {', '.join(cross)}")
+        elif self.role == Role.PATIENT:
+            raise ValueError(
+                "patient users cannot be created via the admin API; "
+                "use the seeding script or a future patient-enrollment flow"
+            )
         return self
 
 

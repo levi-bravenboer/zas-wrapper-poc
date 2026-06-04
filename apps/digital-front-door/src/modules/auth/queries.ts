@@ -1,5 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 
+import { UnauthenticatedError } from '@/lib/api'
+
 import { me } from './api'
 
 export const authQueries = {
@@ -8,6 +10,6 @@ export const authQueries = {
     queryOptions({
       queryKey: [...authQueries.all(), 'me'],
       queryFn: me,
-      retry: false,
+      retry: (_count, err) => !(err instanceof UnauthenticatedError),
     }),
 }

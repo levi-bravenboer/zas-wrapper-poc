@@ -1,4 +1,7 @@
+import { getDefaultStore } from 'jotai'
+
 import { requestAuthed } from '@/lib/api'
+import { log } from '@/lib/logger'
 import { queryClient } from '@/lib/query-client'
 
 import { currentSessionAtom } from './atoms'
@@ -19,8 +22,11 @@ export type { LoginInput, PatientSession } from './types'
  * The in-app button lands in a future change once a nav surface exists.
  */
 export async function resetAuth(): Promise<void> {
-  await requestAuthed('/auth/logout', { method: 'POST' }).catch(() => {})
-  const { getDefaultStore } = await import('jotai')
+  await requestAuthed('/auth/logout', { method: 'POST' }).catch(
+    (err: unknown) => {
+      log.warn('[auth] logout request failed', err)
+    }
+  )
   getDefaultStore().set(currentSessionAtom, null)
   await queryClient.invalidateQueries({ queryKey: authQueries.all() })
 }
