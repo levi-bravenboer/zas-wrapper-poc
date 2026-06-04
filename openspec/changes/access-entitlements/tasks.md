@@ -72,10 +72,10 @@
 
 ## 9. Tests & smoke
 
-- [ ] 9.1 Sync tests: new derivations, assigned-XOR-specialism invariant, sweep expiry, consent revocation cascade, backfill survival
-- [ ] 9.2 API tests: carepath 404 for wrong specialism, break-glass grant/expiry, verb separation, shielding shape filtering, multi-role 409/binding/switch
+- [x] 9.1 Sync tests: new derivations, assigned-XOR-specialism invariant, sweep expiry, consent revocation cascade, backfill survival
+- [x] 9.2 API tests: carepath 404 for wrong specialism, break-glass grant/expiry, verb separation, shielding shape filtering, multi-role 409/binding/switch
 - [ ] 9.3 Orchestrator tests: role picker paths (single-role unchanged, multi-role picks), break-glass affordance
-- [ ] 9.4 Extend `infra/ory/smoke.sh`: Carepath check, verb tuples, break-glass tuple lifecycle
+- [x] 9.4 Extend `infra/ory/smoke.sh`: Carepath check, verb tuples, break-glass tuple lifecycle
 - [ ] 9.5 `/verify` green on backend + orchestrator; e2e covers multi-role login
 
 ## 10. Docs & ledger

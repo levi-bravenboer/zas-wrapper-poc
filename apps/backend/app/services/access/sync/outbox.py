@@ -17,7 +17,7 @@ tables, run `python -m scripts.reconcile_authz_tuples`.
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import event, select
 from sqlalchemy.orm import Session
@@ -107,6 +107,11 @@ def install_authz_outbox_hook() -> None:
         for obj in session.new | session.dirty | session.deleted:
             if isinstance(obj, AuthzOutbox):
                 continue
+            # New rows may reach before_flush with the client-side uuid4
+            # default not yet applied; pre-assign so the outbox row can name
+            # the object (equivalent to the column default firing).
+            if obj in session.new and getattr(obj, "id", ...) is None:
+                obj.id = uuid4()  # type: ignore[attr-defined]
             if obj in session.dirty and not session.is_modified(obj, include_collections=False):
                 continue
             pending.update(_affected_objects(session, obj))
