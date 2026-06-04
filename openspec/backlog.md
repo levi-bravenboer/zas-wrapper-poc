@@ -149,7 +149,7 @@ Note: Pathway block types beyond the PoC builder's vocabulary. Each likely needs
 - Tier: [mvp]
 - Source: RFP working doc TBD
 
-Note: Who can see which patient, which pathway, which task. PoC has none. Define ACL model before any external caregiver flow ships.
+Note: Who can see which patient, which pathway, which task. PoC has none. Define ACL model before any external caregiver flow ships. **Promoted to `changes/access-management-ory/` on 2026-06-04 — ACL model is Keto relation tuples (care-team / org-tree / external-episode) behind `AUTHZ_KETO_ENABLED`.**
 
 ### BL-021 — Carepath Builder naming
 - Tier: [product]
@@ -294,7 +294,7 @@ The `add-auth-provider-seam` PoC change ships F1 login + the route-shape seam fo
 - Tier: [mvp]
 - Source: add-auth-provider-seam compliance review (2026-05-15)
 
-Note: PoC session is a stateless `itsdangerous`-signed cookie carrying the user id. A stolen cookie is valid until the 8h expiry; logout only clears the client cookie. MVP needs a `sessions` table (id, user_id, issued_at, last_seen_at, expires_at, revoked_at, ip, user_agent) and the cookie payload becomes the opaque session id. `auth.logout`, password change, role demotion, and "log out all sessions" admin action all flip `revoked_at`. Promotes the PoC `auth.login.*` stdout log lines to a queryable `auth_audit` table at the same time.
+Note: PoC session is a stateless `itsdangerous`-signed cookie carrying the user id. A stolen cookie is valid until the 8h expiry; logout only clears the client cookie. MVP needs a `sessions` table (id, user_id, issued_at, last_seen_at, expires_at, revoked_at, ip, user_agent) and the cookie payload becomes the opaque session id. `auth.logout`, password change, role demotion, and "log out all sessions" admin action all flip `revoked_at`. Promotes the PoC `auth.login.*` stdout log lines to a queryable `auth_audit` table at the same time. **Revocation half promoted to `changes/access-management-ory/` on 2026-06-04 — sessions live in Kratos (no bespoke `sessions` table needed); logout / deactivation / log-out-all revoke server-side. The `auth_audit` table half stays parked here.**
 
 ### BL-043 — Login rate limiting + account lockout
 - Tier: [mvp]
@@ -306,13 +306,13 @@ Note: `POST /auth/login/password` has no rate limit or lockout in PoC. GDPR Art 
 - Tier: [mvp]
 - Source: add-auth-provider-seam compliance review (2026-05-15)
 
-Note: Caregivers accessing patient data require strong authentication per eHealth Platform requirements (LoA High under eIDAS). MVP delegates to itsme® / eID — both provide LoA High natively, so MFA is the IdP's responsibility, not ours. The password provider MUST be locked to non-clinical roles (admin bootstrap only) or removed entirely at MVP. Decision lands in the future `oidc-login-providers` change.
+Note: Caregivers accessing patient data require strong authentication per eHealth Platform requirements (LoA High under eIDAS). MVP delegates to itsme® / eID — both provide LoA High natively, so MFA is the IdP's responsibility, not ours. The password provider MUST be locked to non-clinical roles (admin bootstrap only) or removed entirely at MVP. Decision lands in the future `oidc-login-providers` change. *(2026-06-04: `access-management-ory` moves credentials into Kratos — itsme®/eID arrive as Kratos OIDC methods, and Kratos TOTP/WebAuthn is available as an interim MFA fallback if needed.)*
 
 ### BL-045 — RP-initiated logout (OIDC `end_session_endpoint`)
 - Tier: [mvp]
 - Source: add-auth-provider-seam compliance review (2026-05-15)
 
-Note: When a caregiver logs out from Orchestrator and the session was minted by an OIDC provider, MVP must call the IdP's `end_session_endpoint` so the session is revoked at the IdP too. Otherwise the next "Sign in with itsme®" click silently re-mints a session without the user noticing. Implementation: extend `LoginProvider` (or add a sibling Protocol) with `async def end_session(session: SessionUser) -> RedirectResponse | None`. Frontend respects the returned redirect.
+Note: When a caregiver logs out from Orchestrator and the session was minted by an OIDC provider, MVP must call the IdP's `end_session_endpoint` so the session is revoked at the IdP too. Otherwise the next "Sign in with itsme®" click silently re-mints a session without the user noticing. Implementation: extend `LoginProvider` (or add a sibling Protocol) with `async def end_session(session: SessionUser) -> RedirectResponse | None`. Frontend respects the returned redirect. *(2026-06-04: after `access-management-ory`, local logout revokes the Kratos session server-side; this entry narrows to propagating logout upstream to federated IdPs once `oidc-login-providers` lands.)*
 
 ### BL-046 — DPIA pointer + skeleton
 - Tier: [mvp]
@@ -330,13 +330,13 @@ Note: When the HiX live FHIR adapter (`BL-001`) lands, `/fhir/*` routes need to 
 - Tier: [mvp]
 - Source: add-auth-provider-seam compliance review (2026-05-15)
 
-Note: Filed against the future `oidc-login-providers` change. Concrete provider implementations MUST: use PKCE on the authorization code flow; validate `state` round-trip; validate `nonce` in the ID token; verify ID token signature against the IdP's JWKS endpoint; validate `iss`, `aud`, `exp`, `iat`, `nbf` claims; reject unsupported `alg` values; bind the post-login redirect to the `state` so the OIDC callback cannot be replayed against a different destination. Codify these as `auth-stub` requirements when that change lands.
+Note: Filed against the future `oidc-login-providers` change. Concrete provider implementations MUST: use PKCE on the authorization code flow; validate `state` round-trip; validate `nonce` in the ID token; verify ID token signature against the IdP's JWKS endpoint; validate `iss`, `aud`, `exp`, `iat`, `nbf` claims; reject unsupported `alg` values; bind the post-login redirect to the `state` so the OIDC callback cannot be replayed against a different destination. Codify these as `auth-stub` requirements when that change lands. *(2026-06-04: after `access-management-ory`, upstream IdPs land as Kratos OIDC methods — Kratos implements PKCE/state/nonce/JWKS validation; this entry becomes "verify Kratos OIDC method config meets these requirements" rather than hand-rolling them.)*
 
 ### BL-049 — Password reset / credential lifecycle
 - Tier: [mvp]
 - Source: add-auth-provider-seam compliance review (2026-05-15)
 
-Note: No password reset flow exists. If the password provider survives MVP for bootstrap admins, it needs: time-boxed reset tokens, email delivery (notifications stack is `[mvp]` work too), forced rotation on first login, password complexity policy. If the password provider is retired at MVP (BL-044 outcome), this becomes a no-op — admin bootstrap moves to a CLI command that writes a one-time eID-link token. Decision deferred to BL-044 + `oidc-login-providers` planning.
+Note: No password reset flow exists. If the password provider survives MVP for bootstrap admins, it needs: time-boxed reset tokens, email delivery (notifications stack is `[mvp]` work too), forced rotation on first login, password complexity policy. If the password provider is retired at MVP (BL-044 outcome), this becomes a no-op — admin bootstrap moves to a CLI command that writes a one-time eID-link token. Decision deferred to BL-044 + `oidc-login-providers` planning. *(2026-06-04: after `access-management-ory`, credential lifecycle is Kratos's — its self-service recovery flow (link/code via courier) covers reset once SMTP exists; complexity/rotation are Kratos config, not custom code.)*
 
 ### BL-050 — Multi-pod realtime broadcaster
 - Tier: [mvp]
@@ -362,7 +362,7 @@ Note: `patient_identifiers.value` (INSZ today, MRN tomorrow) stores plaintext at
 - Tier: [mvp]
 - Source: patients-base change
 
-Note: `app/services/patient/deps.py::require_patient_access` is tenant-scope-only at PoC. MVP wires the BL-020 ACL model (caregiver sees only patients in their care-team / delegated-care subtree; admin keeps tenant-wide read). Body lives in `require_patient_access` so all four guarded routes pick up the new rule from one place.
+Note: `app/services/patient/deps.py::require_patient_access` is tenant-scope-only at PoC. MVP wires the BL-020 ACL model (caregiver sees only patients in their care-team / delegated-care subtree; admin keeps tenant-wide read). Body lives in `require_patient_access` so all four guarded routes pick up the new rule from one place. **Promoted to `changes/access-management-ory/` on 2026-06-04 — `require_patient_permission` (Keto check) wires into `require_patient_access` exactly as designed here.**
 
 ### BL-054 — Patient names / addresses / telecoms child tables
 - Tier: [mvp]
@@ -441,3 +441,11 @@ Note: `/inbox` route is reserved in the sidebar but unimplemented. PoC ships a p
 - Source: style-check review (2026-05-17), follows pathway-block-redesign
 
 Resolved: `apps/orchestrator/src/modules/pathway/configSchemas.ts` now defines one Zod schema per `BlockSemantics`. `blockCatalogue.utils.ts` parses on read and the `asString` / `asArray` shims are gone. Inspector forms and the drawer error banner consume the typed `ConfigForSemantics<S>` discriminated union; parse failures surface a reset-to-default UX in `BuilderDrawer.tsx`.
+
+## Filed by access-management-ory (2026-06-04)
+
+### BL-067 — Hydra: OAuth2/OIDC token issuance (mobile PKCE + SMART platform side)
+- Tier: [mvp]
+- Source: access-management-ory design (Hydra explicitly excluded from the PoC slice)
+
+Note: `access-management-ory` ships Kratos (sessions) + Keto (relation authz) but no token issuance. MVP adds Ory Hydra as the platform's OAuth2/OIDC authorization server: (a) the mobile app moves from cookie-session reuse to authorization-code + PKCE bearer tokens (interplays with BL-047's SMART bearer path on `/fhir/*`); (b) Hydra plays the platform-side SMART-on-FHIR authorization server for embedded/launched surfaces, with Kratos as its login+consent backend. Forge has a first-class Hydra primitive (`create_hydra_project`), so provisioning is cheap; the work is the consent app, token-accepting deps alongside `CurrentUserDep`, and client registration story.

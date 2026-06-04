@@ -2,9 +2,9 @@
 
 ## 1. Governance re-tier
 
-- [ ] 1.1 Update `openspec/scope.md`: move "Real authentication" rows into the current window (Kratos sessions + Keto relation authz in scope; itsme/Entra/eHealth/Hydra stay `[mvp]`); update the Auth row in PoC Mocks and the F1 delta row
-- [ ] 1.2 Update `openspec/roadmap.md`: annotate Identity + access highlights (BL-042 session-revocation half landing now; BL-020/BL-053 landing now); keep current-tier flag in sync with scope.md
-- [ ] 1.3 Update `openspec/backlog.md`: mark BL-020, BL-042 (revocation half), BL-053 as "Promoted to `changes/access-management-ory/` on 2026-06-04"; annotate BL-044/045/048/049; file new BL entry for the Hydra follow-on (mobile PKCE tokens + SMART platform-side authz server)
+- [x] 1.1 Update `openspec/scope.md`: move "Real authentication" rows into the current window (Kratos sessions + Keto relation authz in scope; itsme/Entra/eHealth/Hydra stay `[mvp]`); update the Auth row in PoC Mocks and the F1 delta row
+- [x] 1.2 Update `openspec/roadmap.md`: annotate Identity + access highlights (BL-042 session-revocation half landing now; BL-020/BL-053 landing now); keep current-tier flag in sync with scope.md
+- [x] 1.3 Update `openspec/backlog.md`: mark BL-020, BL-042 (revocation half), BL-053 as "Promoted to `changes/access-management-ory/` on 2026-06-04"; annotate BL-044/045/048/049; file new BL entry for the Hydra follow-on (mobile PKCE tokens + SMART platform-side authz server)
 
 ## 2. Infrastructure
 
