@@ -28,9 +28,11 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
     response_model=list[CareTeamRead],
 )
 async def list_patient_care_teams(
-    patient: PatientAccessDep,  # AUTH-HARDEN
+    patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
     service: CareTeamServiceDep,
-    _current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    _current_user: Annotated[
+        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
+    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
 ) -> list[CareTeamRead]:
     teams = await service.list_for_patient(patient.tenant_id, patient.id)
     return [CareTeamRead.model_validate(t) for t in teams]
@@ -44,9 +46,11 @@ async def list_patient_care_teams(
 )
 async def create_care_team(
     payload: CareTeamCreate,
-    patient: PatientAccessDep,  # AUTH-HARDEN
+    patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
     service: CareTeamServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[
+        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
+    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
 ) -> CareTeamRead:
     team = await service.create_for_patient(current_user, patient.id, payload)
     return CareTeamRead.model_validate(team)
@@ -61,7 +65,9 @@ async def update_care_team(
     care_team_id: UUID,
     payload: CareTeamUpdate,
     service: CareTeamServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[
+        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
+    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
 ) -> CareTeamRead:
     team = await service.update(current_user, care_team_id, payload)
     return CareTeamRead.model_validate(team)
@@ -77,7 +83,9 @@ async def add_care_team_participant(
     care_team_id: UUID,
     payload: ParticipantCreate,
     service: CareTeamServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[
+        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
+    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
 ) -> ParticipantRead:
     row = await service.add_participant(current_user, care_team_id, payload)
     return ParticipantRead.model_validate(row)
@@ -93,7 +101,9 @@ async def change_participant_role(
     user_id: UUID,
     payload: ParticipantRoleChange,
     service: CareTeamServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[
+        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
+    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
 ) -> ParticipantRead:
     row = await service.change_participant_role(
         current_user, care_team_id, user_id, payload.role_in_care
@@ -110,7 +120,9 @@ async def unassign_care_team_participant(
     care_team_id: UUID,
     user_id: UUID,
     service: CareTeamServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[
+        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
+    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
 ) -> None:
     await service.unassign_participant(current_user, care_team_id, user_id)
 

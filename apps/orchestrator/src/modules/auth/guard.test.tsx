@@ -59,6 +59,30 @@ describe('requireSession', () => {
     expect(calls).toBe(1)
   })
 
+  it('treats a server-side revoked session as logged out once stale', async () => {
+    // access-management-ory: sessions can die server-side (Kratos revocation
+    // on logout-elsewhere / deactivation) — a previously-valid session that
+    // starts answering 401 must resolve to null, not an error.
+    let revoked = false
+    server.use(
+      http.get(`${baseUrl}/auth/me`, () =>
+        revoked
+          ? HttpResponse.json({ code: 'security.auth.unauthenticated' }, { status: 401 })
+          : HttpResponse.json(STUB_USER),
+      ),
+    )
+    const qc = makeClient()
+
+    const before = await requireSession(qc)
+    expect(before?.id).toBe('u1')
+
+    revoked = true
+    qc.removeQueries({ queryKey: authKeys.me() })
+    const after = await requireSession(qc)
+
+    expect(after).toBeNull()
+  })
+
   it('refetches when the cache entry is removed', async () => {
     let calls = 0
     server.use(

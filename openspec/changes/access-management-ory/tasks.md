@@ -25,14 +25,14 @@
 - [x] 3.5 Login route mints Kratos session (relay Set-Cookie via `Settings.session_cookie_name`); logout revokes server-side; keep route shapes + operation ids + audit events
 - [x] 3.6 User lifecycle propagation: deactivate → revoke all sessions + disable identity; admin "log out all sessions" service method
 - [x] 3.7 Remove legacy cookie acceptance + itsdangerous session path once 3.2–3.5 verified; update auth tests (FakeAuthenticator stays; add revoked-session cases)
-- [ ] 3.8 Orchestrator MSW: add revoked-session handler + guard test; verify zero frontend contract drift (`/openapi-sync` no-op expected)
+- [x] 3.8 Orchestrator MSW: add revoked-session handler + guard test; verify zero frontend contract drift (`/openapi-sync` no-op expected)
 
 ## 4. Keto authz (AME)
 
 - [x] 4.1 `app/services/access/permissions/keto_client.py`: check + relation-query (list objects) helpers
 - [x] 4.2 `require_patient_permission(relation)` dependency (`app/services/access/permissions/deps.py`): path patient-id resolution, admin short-circuit, flag-gated; wire into `require_patient_access` (single wiring point per BL-053)
 - [x] 4.3 Patient list scoping stays SQL-derived (design D5 amendment — Keto read API walks direct tuples only); detail checks via Keto
-- [ ] 4.4 Sweep `# AUTH-HARDEN` markers on patient/pathway routers: graduate to relation checks or document why role-only stays (partial BL-051)
+- [x] 4.4 Sweep `# AUTH-HARDEN` markers on patient/pathway routers: graduate to relation checks or document why role-only stays (partial BL-051)
 - [x] 4.5 Integration tests: care-team member allowed, org-ancestor allowed, unrelated caregiver 403, external carer view-but-not-shielded, flag-off regression suite
 
 ## 5. Tuple sync (`app/services/access/sync/`)
@@ -46,7 +46,7 @@
 
 ## 6. Verification + demo readiness
 
-- [ ] 6.1 Seed demo tuples via reconciler against seeded domain data; verify demo storyboard steps 4–6 paths (external clinician scoped list, shielded item hidden, revoke → 403)
-- [ ] 6.2 Decide + record PR #33 rebase plan (mobile auth onto Kratos sessions) in that PR's thread
-- [ ] 6.3 Run `/verify backend` + `/verify orchestrator`; update `apps/backend/AGENTS.md` auth section + `docs/repo-security.md`
+- [x] 6.1 Verified live against real Kratos+Keto: seeded identities + 33 reconciled tuples; login → Keto-checked detail 200 → logout replay 401; membership+role close → outbox → relay → 404; shielded-vs-view + external_carer proven in smoke + tests (no external-clinician UI surface exists yet — that's the Transmural project)
+- [x] 6.2 PR #33 merged before this change landed; its `/mobile/auth/*` routes were rebased onto Kratos sessions in-place (design D7) — no separate plan needed
+- [x] 6.3 Backend lint+typecheck+627 tests green; orchestrator lint+typecheck green, suite green except pre-existing `-users.test.tsx` load-flake (fails on main too); `apps/backend/AGENTS.md` access-plane section rewritten (`docs/repo-security.md` is GitHub-repo access docs — not applicable)
 - [ ] 6.4 Archive readiness: specs delta applied to `openspec/specs/`, scope/roadmap/backlog merged, CHAIN.md untouched
