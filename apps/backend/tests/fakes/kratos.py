@@ -67,10 +67,10 @@ class FakeKratosClient(KratosClient):
             # One human = one identity: verify against any row carrying a
             # hash, then link EVERY row of the email to the same identity —
             # exactly what the grouped import script produces (REQ-NON-3).
-            user = next((u for u in rows if u.password_hash is not None), None)
-            if user is None:
+            credential = next((u.password_hash for u in rows if u.password_hash is not None), None)
+            if credential is None:
                 return None
-            if not self.hasher.verify(user.password_hash, password):
+            if not self.hasher.verify(credential, password):
                 return None
             identity_id = next(
                 (u.external_subject for u in rows if u.external_subject is not None), None
