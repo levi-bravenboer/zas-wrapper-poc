@@ -28,9 +28,9 @@
 
 ## 3. Therapeutic access & break-glass
 
-- [ ] 3.1 `POST /patients/{id}/access-grants` (reason required, duration capped by `authz_break_glass_max_hours` setting) + outbox in one transaction
-- [ ] 3.2 `GET /admin/access-grants?active=true` admin listing; revoke endpoint
-- [ ] 3.3 Guard integration: break-glass grant id surfaces in audit context for requests it enables
+- [x] 3.1 `POST /patients/{id}/access-grants` (reason required, duration capped by `authz_break_glass_max_hours` setting) + outbox in one transaction
+- [x] 3.2 `GET /admin/access-grants?active=true` admin listing; revoke endpoint
+- [x] 3.3 Guard integration: break-glass grant id surfaces in audit context for requests it enables
 - [ ] 3.4 Orchestrator: break-glass affordance with reason capture on the patient-blocked path; admin grants list view
 
 ## 4. Carepath scoping

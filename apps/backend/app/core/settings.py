@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     # Relation checks stay dark until the tuple pipeline is populated;
     # off ⇒ pre-Ory role+tenant guards only.
     authz_keto_enabled: bool = False
+    # Break-glass (REQ-NON-8): hard cap on requested grant duration.
+    authz_break_glass_max_hours: int = 4
     realtime_keepalive_seconds: int = 15
     realtime_idle_timeout_seconds: int = 30 * 60
 

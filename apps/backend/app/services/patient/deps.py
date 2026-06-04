@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import logging
+from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
+from sqlalchemy import select
 
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
+from app.db.models.access.access_grant import AccessGrant
 from app.db.models.patient import Patient
 from app.repositories.organisation.deps import OrganisationRepoDep
 from app.repositories.patient.deps import PatientRepoDep
@@ -21,6 +25,8 @@ from app.services.practitioner_role.predicates import (
     patient_root_org,
     practitioner_root_orgs_for,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_patient_service(
@@ -71,6 +77,26 @@ async def require_patient_access(
         )
         if not allowed:
             raise PatientNotFoundError()
+        # Break-glass uses are distinguishable in the audit stream (REQ-NON-8):
+        # if the caller holds an active grant for this patient, log its id.
+        grant_id = await session.scalar(
+            select(AccessGrant.id)
+            .where(
+                AccessGrant.patient_id == patient_id,
+                AccessGrant.user_id == current_user.id,
+                AccessGrant.revoked_at.is_(None),
+                AccessGrant.deleted_at.is_(None),
+                AccessGrant.expires_at > datetime.now(UTC),
+            )
+            .limit(1)
+        )
+        if grant_id is not None:
+            logger.info(
+                "break-glass access: user=%s patient=%s grant=%s",
+                current_user.id,
+                patient_id,
+                grant_id,
+            )
         return patient
 
     has_membership = await care_team_service.has_open_membership(current_user.id, patient_id)
