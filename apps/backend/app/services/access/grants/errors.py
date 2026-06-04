@@ -19,3 +19,21 @@ class AccessGrantNotFoundError(AppError):
     code = "not-found.access_grant.not_found"
     status_code = 404
     message = "Access grant not found."
+
+
+class ConsentNotFoundError(AppError):
+    code = "not-found.consent.not_found"
+    status_code = 404
+    message = "Consent not found."
+
+
+class ConsentNotActiveError(AppError):
+    code = "invalid.consent.not_active"
+    status_code = 422
+    message = "The referenced consent is not active."
+
+
+class ExternalGrantNotFoundError(AppError):
+    code = "not-found.external_grant.not_found"
+    status_code = 404
+    message = "External grant not found."

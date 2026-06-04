@@ -108,9 +108,7 @@ async def require_carepath_access(
     if scoped is None:
         return
 
-    allowed = await check_carepath_permission(
-        keto, pathway_id=pathway_id, user_id=current_user.id
-    )
+    allowed = await check_carepath_permission(keto, pathway_id=pathway_id, user_id=current_user.id)
     if not allowed:
         # import here: access → pathway would otherwise be a static cycle risk
         from app.services.pathway.errors import PathwayNotFoundError

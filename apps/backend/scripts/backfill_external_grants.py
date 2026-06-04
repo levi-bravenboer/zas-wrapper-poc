@@ -93,8 +93,14 @@ async def _run(session: AsyncSession) -> None:
             logger.warning("skipping non-user subject tuple: %s", relation_tuple)
             skipped += 1
             continue
-        user_id = UUID(relation_tuple.subject_id.removeprefix("User:"))
-        patient_id = UUID(relation_tuple.object_id)
+        try:
+            user_id = UUID(relation_tuple.subject_id.removeprefix("User:"))
+            patient_id = UUID(relation_tuple.object_id)
+        except ValueError:
+            # smoke-test residue (e.g. Patient:p-1) — not domain data
+            logger.warning("skipping non-UUID tuple: %s", relation_tuple)
+            skipped += 1
+            continue
 
         patient = await session.get(Patient, patient_id)
         if patient is None:

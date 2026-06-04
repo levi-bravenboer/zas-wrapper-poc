@@ -43,9 +43,7 @@ class PathwayPractitioner(TenantOwnedEntity):
     __tablename__ = "pathway_practitioners"
     __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
-        sa.UniqueConstraint(
-            "pathway_id", "user_id", name="uq_pathway_practitioners_pathway_user"
-        ),
+        sa.UniqueConstraint("pathway_id", "user_id", name="uq_pathway_practitioners_pathway_user"),
     )
 
     pathway_id: Mapped[UUID] = mapped_column(

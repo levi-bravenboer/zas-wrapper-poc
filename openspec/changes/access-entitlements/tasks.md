@@ -42,10 +42,10 @@
 
 ## 5. External collaboration
 
-- [ ] 5.1 `external_access_profiles` admin CRUD (verbs per professional type)
-- [ ] 5.2 External grant endpoints (create with consent reference, end); consent record create/revoke (minimal — full IC flow stays BL-017)
-- [ ] 5.3 Verb guards: map route verbs to `Patient.{view,edit,record,message}` permits in `check_patient_permission`
-- [ ] 5.4 Run/verify backfill (2.8) in dev + demo env
+- [x] 5.1 `external_access_profiles` admin CRUD (verbs per professional type)
+- [x] 5.2 External grant endpoints (create with consent reference, end); consent record create/revoke (minimal — full IC flow stays BL-017)
+- [x] 5.3 Verb guards: map route verbs to `Patient.{view,edit,record,message}` permits in `check_patient_permission`
+- [x] 5.4 Run/verify backfill (2.8) in dev + demo env
 
 ## 6. Shielding config
 
