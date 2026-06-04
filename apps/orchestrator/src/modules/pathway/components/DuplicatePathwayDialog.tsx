@@ -38,23 +38,23 @@ export function DuplicatePathwayDialog({
   const { t } = useTranslation('pathway')
   const versions = usePathwayVersions(open ? pathwayId : undefined)
   const duplicate = useDuplicatePathway()
-  const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>(undefined)
+  const [selectedVersionId, setSelectedVersionId] = useState('')
 
   const defaultVersionId = useMemo(() => {
-    if (!versions.data?.length) return undefined
+    if (!versions.data?.length) return ''
     const published = versions.data
       .filter((v) => v.status === 'published')
       .sort((a, b) => b.version_no - a.version_no)
-    if (published.length) return published[0].id
-    return versions.data[0].id
+    const first = published[0] ?? versions.data[0]
+    return first?.id ?? ''
   }, [versions.data])
 
-  const activeVersionId = selectedVersionId ?? defaultVersionId
+  const activeVersionId = selectedVersionId || defaultVersionId
 
   function handleOpenChange(next: boolean) {
     onOpenChange(next)
     if (!next) {
-      setSelectedVersionId(undefined)
+      setSelectedVersionId('')
       duplicate.reset()
     }
   }
