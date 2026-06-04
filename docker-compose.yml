@@ -115,8 +115,10 @@ services:
       BACKEND_KRATOS_ADMIN_URL: http://kratos:4434
       BACKEND_KETO_READ_URL: http://keto:4466
       BACKEND_KETO_WRITE_URL: http://keto:4467
-      # flip per-shell for relation-checked runs: BACKEND_AUTHZ_KETO_ENABLED=true docker compose up -d backend
-      BACKEND_AUTHZ_KETO_ENABLED: ${BACKEND_AUTHZ_KETO_ENABLED:-false}
+      # relation checks on by default in the compose stack (Kratos + Keto are
+      # always part of it); flip off per-shell for flag-off debugging:
+      # BACKEND_AUTHZ_KETO_ENABLED=false docker compose up -d backend
+      BACKEND_AUTHZ_KETO_ENABLED: ${BACKEND_AUTHZ_KETO_ENABLED:-true}
     ports:
       - "18000:8000"
     develop:
@@ -140,6 +142,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      # relation checks default on, so the backend must not come up without Ory
+      kratos:
+        condition: service_started
+      keto:
+        condition: service_started
     healthcheck:
       test:
         - "CMD-SHELL"
