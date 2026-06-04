@@ -35,6 +35,17 @@ tasks:
       cache: false
       runInCI: false
 
+  # Host-side uvicorn against the dev DB on localhost:5434.
+  # Useful in worktrees where docker compose targets the main checkout.
+  dev-host:
+    command: "uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    env:
+      BACKEND_DATABASE_URL: "postgresql+asyncpg://zas:zas@localhost:5434/zas"
+    preset: "server"
+    options:
+      cache: false
+      runInCI: false
+
   test:
     command: "docker compose run --rm --build test_runner"
     env:
