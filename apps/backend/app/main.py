@@ -26,6 +26,7 @@ from app.services.access.identity.kratos_client import KratosClient
 from app.services.access.permissions.keto_client import KetoClient
 from app.services.access.sync.outbox import install_authz_outbox_hook
 from app.services.access.sync.relay import run_relay_loop
+from app.services.access.sync.sweep import run_sweep_loop
 
 install_audit_hooks()
 install_realtime_flush_hook()
@@ -105,18 +106,21 @@ def _register_exception_handlers(app: FastAPI) -> None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = app.state.settings
-    relay_task: asyncio.Task[None] | None = None
+    background_tasks: list[asyncio.Task[None]] = []
     if settings.authz_keto_enabled:
-        relay_task = asyncio.create_task(
-            run_relay_loop(app.state.session_factory, app.state.keto_client)
+        background_tasks.append(
+            asyncio.create_task(run_relay_loop(app.state.session_factory, app.state.keto_client))
         )
+        # companion sweep: re-derives patients whose time-bounded grants
+        # (break-glass expiry, lapsed external periods) lapsed silently
+        background_tasks.append(asyncio.create_task(run_sweep_loop(app.state.session_factory)))
     try:
         yield
     finally:
-        if relay_task is not None:
-            relay_task.cancel()
+        for task in background_tasks:
+            task.cancel()
             with suppress(asyncio.CancelledError):
-                await relay_task
+                await task
         await app.state.ory_http.aclose()
 
 

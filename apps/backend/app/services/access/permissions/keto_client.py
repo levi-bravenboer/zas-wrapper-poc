@@ -15,7 +15,7 @@ import httpx
 
 from app.core.settings import Settings
 
-KetoNamespace = Literal["Organisation", "CareTeam", "Patient"]
+KetoNamespace = Literal["Organisation", "CareTeam", "Patient", "Specialism", "Carepath"]
 
 
 class KetoError(RuntimeError):

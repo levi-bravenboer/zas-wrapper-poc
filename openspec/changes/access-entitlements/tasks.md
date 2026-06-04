@@ -17,14 +17,14 @@
 
 ## 2. OPL & derivation
 
-- [ ] 2.1 Extend `infra/ory/keto/namespaces.keto.ts`: `Specialism`, `Carepath`, `Patient` verb relations + `break_glass`; permits per `keto-authz` delta; cross-pointer comments to `derive.py`
-- [ ] 2.2 `derive.py`: specialism membership (`Specialism#practitioner` from open roles × link table)
-- [ ] 2.3 `derive.py`: carepath tuples with the assigned-XOR-specialism emission rule (REQ-NON-12)
-- [ ] 2.4 `derive.py`: `Patient#break_glass` from open unexpired grants; verb tuples from `external_grants` ∩ active consent ∩ type profile
-- [ ] 2.5 `outbox.py`: extend `_affected_objects` for all new source tables; remove `Patient#external_carer` from `EXTERNAL_RELATIONS`
-- [ ] 2.6 Expiry sweep: in-process loop enqueuing outbox rows for expired break-glass grants and lapsed external grant periods
-- [ ] 2.7 `FakeKetoClient`: evaluate the extended permits in the in-memory graph
-- [ ] 2.8 One-shot backfill script: `external_carer` tuples → `external_grants` + `consents`; document required ordering before first reconcile
+- [x] 2.1 Extend `infra/ory/keto/namespaces.keto.ts`: `Specialism`, `Carepath`, `Patient` verb relations + `break_glass`; permits per `keto-authz` delta; cross-pointer comments to `derive.py`
+- [x] 2.2 `derive.py`: specialism membership (`Specialism#practitioner` from open roles × link table)
+- [x] 2.3 `derive.py`: carepath tuples with the assigned-XOR-specialism emission rule (REQ-NON-12)
+- [x] 2.4 `derive.py`: `Patient#break_glass` from open unexpired grants; verb tuples from `external_grants` ∩ active consent ∩ type profile
+- [x] 2.5 `outbox.py`: extend `_affected_objects` for all new source tables; remove `Patient#external_carer` from `EXTERNAL_RELATIONS`
+- [x] 2.6 Expiry sweep: in-process loop enqueuing outbox rows for expired break-glass grants and lapsed external grant periods
+- [x] 2.7 `FakeKetoClient`: evaluate the extended permits in the in-memory graph
+- [x] 2.8 One-shot backfill script: `external_carer` tuples → `external_grants` + `consents`; document required ordering before first reconcile
 
 ## 3. Therapeutic access & break-glass
 

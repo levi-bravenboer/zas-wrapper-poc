@@ -6,7 +6,13 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums.access import ConsentStatus
+from app.core.enums.practitioner_role import PractitionerRoleCode
+from app.core.enums.user import Role
 from app.core.settings import get_settings
+from app.db.models.access.consent import Consent
+from app.db.models.access.external_access import ExternalAccessProfile, ExternalGrant
+from app.db.models.user import User
 from app.db.models.authz import AuthzOutbox
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.patient import Patient
@@ -56,9 +62,14 @@ async def test_reconcile_all_populates_from_domain(
     assert not stats.drifted
 
 
-async def test_reconcile_removes_orphans_and_preserves_external(
+async def test_reconcile_removes_orphans_including_legacy_external(
     db_session: AsyncSession, seeded_domain: SeededDomain
 ) -> None:
+    """`external_carer` lost its externally-managed status in
+    `access-entitlements`: external access now derives from
+    external_grants + consents (scripts/backfill_external_grants converts
+    legacy tuples), so an unbackfilled tuple is an orphan like any other."""
+
     patients, _ = seeded_domain
     keto = FakeKetoClient()
     await reconcile_all(db_session, keto)
@@ -69,47 +80,96 @@ async def test_reconcile_removes_orphans_and_preserves_external(
         relation="member",
         subject_id="User:nobody",
     )
-    external = RelationTuple(
+    legacy_external = RelationTuple(
         namespace="Patient",
         object_id=str(patients[0].id),
         relation="external_carer",
         subject_id="User:external-gp",
     )
     await keto.insert_tuple(orphan)
-    await keto.insert_tuple(external)
+    await keto.insert_tuple(legacy_external)
 
     stats = await reconcile_all(db_session, keto)
 
     assert orphan not in keto.tuples, "orphaned derived tuple must be removed"
-    assert external in keto.tuples, "external_carer has no domain source and must survive"
-    assert stats.deleted == 1
+    assert legacy_external not in keto.tuples, "unbackfilled legacy tuple is an orphan"
+    assert stats.deleted == 2
 
 
-async def test_external_carer_views_but_not_shielded(
+async def test_external_grant_derives_verbs_not_shielded(
     db_session: AsyncSession, seeded_domain: SeededDomain
 ) -> None:
-    patients, _ = seeded_domain
-    keto = FakeKetoClient()
-    await reconcile_all(db_session, keto)
-    pid = str(patients[0].id)
+    """Consent-backed grant + read/record profile → reader+recorder tuples;
+    never writer, never view_shielded (REQ-FUN-1/42)."""
 
-    await keto.insert_tuple(
-        RelationTuple(
-            namespace="Patient",
-            object_id=pid,
-            relation="external_carer",
-            subject_id="User:external-gp",
+    patients, _ = seeded_domain
+    target = patients[0]
+    external_user = User(
+        email="external.gp@example.org",
+        display_name="External GP",
+        role=Role.CAREGIVER,
+        password_hash="x",
+        is_active=True,
+        tenant_id=target.tenant_id,
+        created_by=ADMIN_USER_ID,
+        updated_by=ADMIN_USER_ID,
+    )
+    db_session.add(external_user)
+    await db_session.flush()
+    db_session.add(
+        ExternalAccessProfile(
+            professional_type=PractitionerRoleCode.GP,
+            allow_read=True,
+            allow_record=True,
+            tenant_id=target.tenant_id,
+            created_by=ADMIN_USER_ID,
+            updated_by=ADMIN_USER_ID,
         )
     )
+    consent = Consent(
+        patient_id=target.id,
+        scope="external_collaboration",
+        tenant_id=target.tenant_id,
+        created_by=ADMIN_USER_ID,
+        updated_by=ADMIN_USER_ID,
+    )
+    db_session.add(consent)
+    await db_session.flush()
+    db_session.add(
+        ExternalGrant(
+            patient_id=target.id,
+            user_id=external_user.id,
+            professional_type=PractitionerRoleCode.GP,
+            consent_id=consent.id,
+            tenant_id=target.tenant_id,
+            created_by=ADMIN_USER_ID,
+            updated_by=ADMIN_USER_ID,
+        )
+    )
+    await db_session.commit()
 
+    keto = FakeKetoClient()
+    await reconcile_all(db_session, keto)
+    pid = str(target.id)
+    subject = user_subject(external_user.id)
+
+    assert await keto.check(namespace="Patient", object_id=pid, relation="view", subject_id=subject)
     assert await keto.check(
-        namespace="Patient", object_id=pid, relation="view", subject_id="User:external-gp"
+        namespace="Patient", object_id=pid, relation="record", subject_id=subject
     )
     assert not await keto.check(
-        namespace="Patient",
-        object_id=pid,
-        relation="view_shielded",
-        subject_id="User:external-gp",
+        namespace="Patient", object_id=pid, relation="edit", subject_id=subject
+    )
+    assert not await keto.check(
+        namespace="Patient", object_id=pid, relation="view_shielded", subject_id=subject
+    )
+
+    # consent revocation drops every dependent verb tuple (derive-level)
+    consent.status = ConsentStatus.REVOKED
+    await db_session.commit()
+    await reconcile_all(db_session, keto)
+    assert not await keto.check(
+        namespace="Patient", object_id=pid, relation="view", subject_id=subject
     )
 
 
