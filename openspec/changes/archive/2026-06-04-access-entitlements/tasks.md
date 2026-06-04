@@ -38,7 +38,7 @@
 - [x] 4.1 `require_carepath_access` dependency in `app/services/access/permissions/`; wire pathway detail/mutation routes (admin short-circuit, 404 deny, flag-off no-op)
 - [x] 4.2 Carepath list scoping in SQL from specialism links + explicit assignments (mirror of patient-list pattern)
 - [x] 4.3 Admin CRUD: specialisms, role↔specialism links, carepath↔specialism links, per-carepath practitioner assignment
-- [ ] 4.4 Orchestrator: specialism management UI on practitioner-role admin; carepath link config in builder settings — *deferred: admin scoping endpoints exist and are demoable via API; the config UI is a fast-follow (tracked on ZAS-96)*
+- [ ] 4.4 Orchestrator: specialism management UI on practitioner-role admin; carepath link config in builder settings — **deferred to Linear ZAS-96**: admin scoping endpoints shipped and demoable via API; the config UI is a fast-follow, no spec delta depends on it
 
 ## 5. External collaboration
 
@@ -83,4 +83,4 @@
 - [x] 10.1 Update `apps/backend/AGENTS.md` access-plane section (new namespaces, sweep, policy service, binding)
 - [x] 10.2 `openspec/scope.md`: F12 entry + mocks/delta rows; `backlog.md`: BL entries for deferred slices (retention windows, audit dashboard, SCIM/IAM) — done at proposal time, re-verify
 - [x] 10.3 REQ traceability: map REQ-NON-8/10/12/15, REQ-FUN-1/4/28/42/161, REQ-NON-3 → modules + tests under `docs/requirements/`
-- [ ] 10.4 Archive after merge: apply deltas to `openspec/specs/` (after `access-management-ory` archives first)
+- [x] 10.4 Archive after merge: apply deltas to `openspec/specs/` (after `access-management-ory` archives first)

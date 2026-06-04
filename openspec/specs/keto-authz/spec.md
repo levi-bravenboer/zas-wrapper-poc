@@ -15,9 +15,15 @@ The platform SHALL run Ory Keto (pinned version, OPL config under `infra/ory/ket
 - **THEN** the response is 403
 
 ### Requirement: Namespace model mirrors the domain
-The OPL config SHALL define namespaces `Organisation` (relations: `parent`, `member` with subject-set inheritance down the tree), `CareTeam` (relation: `member`), and `Patient` (relations: `treating_org`, `care_team`, `external_carer`) with permits:
-- `Patient.view` — granted to care-team members, users reachable through the treating organisation tree, and external carers.
-- `Patient.view_shielded` — identical to `view` but excluding `external_carer` subjects.
+The OPL config SHALL define namespaces `Organisation` (relations: `parent`, `member` with subject-set inheritance down the tree), `CareTeam` (relation: `member`), `Specialism` (relation: `practitioner`), `Carepath` (relations: `specialism`, `assigned`, `owner_org`), and `Patient` (relations: `treating_org`, `care_team`, `break_glass`, `external_reader`, `external_writer`, `external_recorder`, `external_messager`) with permits:
+- `Patient.view_shielded` — care-team members, users reachable through the treating organisation tree, and break-glass grantees.
+- `Patient.view` — `view_shielded` plus `external_reader` subjects.
+- `Patient.edit` — care-team members, break-glass grantees, and `external_writer` subjects.
+- `Patient.record` — `edit` plus `external_recorder` subjects.
+- `Patient.message` — `view` plus `external_messager` subjects.
+- `Carepath.view` — explicitly assigned practitioners, practitioners of linked specialisms, and users covered by `owner_org`'s view.
+
+Campus scoping (REQ-NON-15) SHALL be realised through the existing `Organisation.parent` chain — campuses are organisation rows under the tenant root — with no separate mechanism. Conditional emission rules (e.g. assigned-XOR-specialism for carepaths) live in derivation, never in permits; OPL stays pure set algebra.
 
 #### Scenario: Care-team member can view
 - **WHEN** practitioner L is a participant in a care team linked to patient P and the relation tuples are synced
@@ -27,9 +33,21 @@ The OPL config SHALL define namespaces `Organisation` (relations: `parent`, `mem
 - **WHEN** practitioner L holds an open role in organisation O, and O is an ancestor of patient P's treating organisation
 - **THEN** `check(Patient:P, view, L)` is allowed
 
-#### Scenario: External carer sees normal but not shielded
-- **WHEN** external user G holds an `external_carer` tuple for patient P
+#### Scenario: Campus-level role covers the campus subtree
+- **WHEN** practitioner L holds an open role at a campus organisation and patient P's treating organisation is a descendant of that campus
+- **THEN** `check(Patient:P, view_shielded, L)` is allowed
+
+#### Scenario: External reader sees normal but not shielded
+- **WHEN** external user G holds an `external_reader` tuple for patient P
 - **THEN** `check(Patient:P, view, G)` is allowed AND `check(Patient:P, view_shielded, G)` is denied
+
+#### Scenario: Break-glass grants shielded sight
+- **WHEN** user B holds a `break_glass` tuple for patient P
+- **THEN** `check(Patient:P, view_shielded, B)` and `check(Patient:P, edit, B)` are allowed
+
+#### Scenario: Verb separation enforced
+- **WHEN** external user G holds only `external_reader` for patient P
+- **THEN** `check(Patient:P, edit, G)` and `check(Patient:P, record, G)` are denied
 
 ### Requirement: Keto check guards patient-scoped routes
 The backend SHALL export `check_patient_permission(relation)` from `app/services/access/permissions/` answering one Keto `check` per patient-scoped request. `require_patient_access` in `app/services/patient/deps.py` SHALL be the single wiring point so every guarded patient route inherits the rule, with `Role.ADMIN` short-circuiting to allow (tenant-wide read preserved). Denials MUST surface as 404 (the codebase's existence-hiding contract), not 403.

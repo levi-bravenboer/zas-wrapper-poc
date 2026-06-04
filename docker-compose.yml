@@ -115,6 +115,8 @@ services:
       BACKEND_KRATOS_ADMIN_URL: http://kratos:4434
       BACKEND_KETO_READ_URL: http://keto:4466
       BACKEND_KETO_WRITE_URL: http://keto:4467
+      # flip per-shell for relation-checked runs: BACKEND_AUTHZ_KETO_ENABLED=true docker compose up -d backend
+      BACKEND_AUTHZ_KETO_ENABLED: ${BACKEND_AUTHZ_KETO_ENABLED:-false}
     ports:
       - "18000:8000"
     develop:
