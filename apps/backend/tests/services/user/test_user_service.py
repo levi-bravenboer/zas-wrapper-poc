@@ -3,25 +3,28 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.enums.user import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
-from app.services.auth.password import PasswordHasher
+from app.services.access.identity.password import PasswordHasher
 from app.services.practitioner.practitioner_service import PractitionerService
 from app.services.user.errors import CrossTenantAccessError, UserNotFoundError
 from app.services.user.user_service import UserService
+from tests.fakes.kratos import FakeKratosClient
 
 
 def _make_service(db_session: AsyncSession) -> UserService:
+    factory = async_sessionmaker(db_session.bind, expire_on_commit=False, autoflush=False)
     return UserService(
         db_session,
         UserRepository(db_session),
         PractitionerService(db_session),
         PasswordHasher(),
+        FakeKratosClient(factory),
     )
 
 

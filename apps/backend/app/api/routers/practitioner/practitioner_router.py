@@ -12,7 +12,7 @@ from app.schemas.practitioner.practitioner import (
     PractitionerRead,
     PractitionerUpdate,
 )
-from app.services.auth.deps import require_role
+from app.services.access.identity.deps import require_role
 from app.services.practitioner.deps import PractitionerServiceDep
 
 router = APIRouter(tags=["practitioners"])

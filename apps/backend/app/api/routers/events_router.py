@@ -16,7 +16,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.core.settings import SettingsDep
 from app.realtime.pubsub import get_pubsub
-from app.services.auth.deps import CurrentUserDep
+from app.services.access.identity.deps import CurrentUserDep
 
 router = APIRouter(tags=["realtime"])
 

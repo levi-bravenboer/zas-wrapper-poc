@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,9 +22,14 @@ from app.core.settings import DEFAULT_SESSION_SECRET, Settings, get_settings
 from app.db.audit import install_audit_hooks
 from app.db.engine import create_engine, create_session_factory
 from app.realtime import install_realtime_flush_hook
+from app.services.access.identity.kratos_client import KratosClient
+from app.services.access.permissions.keto_client import KetoClient
+from app.services.access.sync.outbox import install_authz_outbox_hook
+from app.services.access.sync.relay import run_relay_loop
 
 install_audit_hooks()
 install_realtime_flush_hook()
+install_authz_outbox_hook()
 
 
 class InsecureProductionConfigError(RuntimeError):
@@ -35,6 +44,18 @@ def _check_production_safety(settings: Settings) -> None:
         problems.append("BACKEND_CORS_ORIGINS is empty")
     if settings.session_secret_key.get_secret_value() == DEFAULT_SESSION_SECRET:
         problems.append("BACKEND_SESSION_SECRET_KEY is the default placeholder")
+    localhost_ory_urls = [
+        name
+        for name, url in (
+            ("BACKEND_KRATOS_PUBLIC_URL", settings.kratos_public_url),
+            ("BACKEND_KRATOS_ADMIN_URL", settings.kratos_admin_url),
+            ("BACKEND_KETO_READ_URL", settings.keto_read_url),
+            ("BACKEND_KETO_WRITE_URL", settings.keto_write_url),
+        )
+        if url.host in ("localhost", "127.0.0.1")
+    ]
+    if localhost_ory_urls:
+        problems.append(f"{', '.join(localhost_ory_urls)} still point at localhost")
     if problems:
         raise InsecureProductionConfigError(
             "Refusing to boot in production with insecure defaults: " + ", ".join(problems)
@@ -81,6 +102,24 @@ def _register_exception_handlers(app: FastAPI) -> None:
         return _error_response(422, payload)
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    settings: Settings = app.state.settings
+    relay_task: asyncio.Task[None] | None = None
+    if settings.authz_keto_enabled:
+        relay_task = asyncio.create_task(
+            run_relay_loop(app.state.session_factory, app.state.keto_client)
+        )
+    try:
+        yield
+    finally:
+        if relay_task is not None:
+            relay_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await relay_task
+        await app.state.ory_http.aclose()
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     _check_production_safety(settings)
@@ -94,6 +133,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version=__version__,
         description="FHIR gateway and orchestrator backend for the ZAS Telegeneeskunde POC.",
         servers=servers,
+        lifespan=_lifespan,
     )
     app.state.settings = settings
     app.state.started_at = datetime.now(UTC)
@@ -105,6 +145,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.luscii_client = luscii_client
     app.state.readiness.register("hix", hix_client.ping)
     app.state.readiness.register("luscii", luscii_client.ping)
+
+    ory_http = httpx.AsyncClient(timeout=5.0)
+    app.state.ory_http = ory_http
+    app.state.kratos_client = KratosClient(settings, ory_http)
+    app.state.keto_client = KetoClient(settings, ory_http)
 
     db_engine = create_engine(settings)
     app.state.db_engine = db_engine

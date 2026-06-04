@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from fastapi import APIRouter, Request, Response
 
 from app.core.enums.user import Role
@@ -9,17 +7,15 @@ from app.core.settings import SettingsDep
 from app.repositories.user.deps import UserRepoDep
 from app.schemas.auth.auth import LoginRequest, SessionUser
 from app.schemas.auth.providers import ProviderDescriptor
-from app.services.auth.audit import AuthEvent, log_auth_event
-from app.services.auth.auth_service import AuthService
-from app.services.auth.deps import (
-    AuthServiceDep,
+from app.services.access.identity.audit import AuthEvent, log_auth_event
+from app.services.access.identity.deps import (
     CurrentUserDep,
+    KratosClientDep,
     LoginProviderRegistryDep,
     OptionalCurrentUserDep,
-    PasswordHasherDep,
 )
-from app.services.auth.errors import InvalidCredentialsError, UnauthenticatedError
-from app.services.auth.login_service import authenticate_password
+from app.services.access.identity.errors import InvalidCredentialsError, UnauthenticatedError
+from app.services.access.identity.login_service import authenticate_password
 
 # PoC is single-tenant (`zas`). Multi-tenant resolution lands at MVP.
 from scripts.seed_tenant import ZAS_TENANT_ID
@@ -39,13 +35,13 @@ def _set_session_cookie(
     response: Response,
     *,
     settings: SettingsDep,
-    auth: AuthService,
-    user_id: UUID,
+    session_token: str,
 ) -> None:
-    token = auth.mint_session_token(user_id)
+    # The cookie value IS the Kratos session token; validity, expiry, and
+    # revocation live server-side in Kratos (verified via whoami).
     response.set_cookie(
         key=settings.session_cookie_name,
-        value=token,
+        value=session_token,
         max_age=settings.session_max_age_seconds,
         httponly=True,
         samesite="lax",
@@ -64,9 +60,8 @@ async def login_password(
     response: Response,
     request: Request,
     settings: SettingsDep,
-    auth: AuthServiceDep,
     user_repo: UserRepoDep,
-    hasher: PasswordHasherDep,
+    kratos: KratosClientDep,
 ) -> SessionUser:
     try:
         result = await authenticate_password(
@@ -76,7 +71,7 @@ async def login_password(
             role_filter=lambda r: r != Role.PATIENT,
             surface="caregiver",
             user_repo=user_repo,
-            hasher=hasher,
+            kratos=kratos,
         )
     except InvalidCredentialsError as exc:
         log_auth_event(
@@ -92,7 +87,7 @@ async def login_password(
         )
         raise
 
-    _set_session_cookie(response, settings=settings, auth=auth, user_id=result.user.id)
+    _set_session_cookie(response, settings=settings, session_token=result.session_token)
     log_auth_event(
         AuthEvent(
             event="auth.login.success",
@@ -133,7 +128,13 @@ async def logout_user(
     request: Request,
     settings: SettingsDep,
     current_user: OptionalCurrentUserDep,
+    kratos: KratosClientDep,
 ) -> None:
+    # Revoke server-side first: the session must die at Kratos, not merely
+    # leave the browser. A replayed cookie answers 401 immediately after.
+    token = request.cookies.get(settings.session_cookie_name)
+    if token:
+        await kratos.logout(session_token=token)
     response.delete_cookie(
         key=settings.session_cookie_name,
         path="/",

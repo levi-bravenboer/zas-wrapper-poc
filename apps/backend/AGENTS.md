@@ -212,7 +212,7 @@ A model opts in by declaring `__realtime_resource__: ClassVar[str | None]` on th
 - **Settings**: read via `SettingsDep`. Never read `os.environ` directly in route or service code.
 - **Logging**: structured via `app.core.logging`. No `print()`. Never log full clinical payloads — use `log_fhir_ref(resource_type, resource_id)` for resource references.
 - **Errors**: subclass `AppError` for domain-specific failures; set class-level `code`, `status_code`, `message`. Raising `HTTPException` is fine for ad-hoc cases but `AppError` is preferred when the failure has a stable code.
-- **POC ONLY banner**: any module that contains throwaway scaffolding (in-memory user stores, hard-coded fixtures, demo credentials, mock issuer claims) MUST start with a `# POC ONLY` comment line explaining what would replace it. The banner makes it obvious which files need to be replaced before any non-PoC deployment — see `app/services/auth_service.py` for the canonical example.
+- **POC ONLY banner**: any module that contains throwaway scaffolding (in-memory user stores, hard-coded fixtures, demo credentials, mock issuer claims) MUST start with a `# POC ONLY` comment line explaining what would replace it. The banner makes it obvious which files need to be replaced before any non-PoC deployment — see `scripts/seed_users.py` for the canonical example.
 - **Postgres-native enums**: ORM columns backed by an `enum.StrEnum` MUST map via `sa.Enum(MyEnum, name="<snake_name>", native_enum=True, create_constraint=True)` so the value set is enforced in the database. `apps/backend/alembic/env.py` MUST `import alembic_postgresql_enum  # noqa: F401` at the top — the package side-effect-registers autogen hooks that emit correct `CREATE TYPE` / `DROP TYPE` / `ALTER TYPE ADD VALUE` ops. Adding a new value to an existing enum requires a hand-edited revision (the autogen handles the boilerplate, but `ALTER TYPE ... ADD VALUE` must run outside a transaction).
 - **Seed data via scripts, not Alembic**: Alembic revisions MUST contain DDL only. No `op.bulk_insert`, no `op.execute("INSERT ...")`. Every seed (bootstrap tenant, bootstrap users, fixture data) MUST be implemented as a standalone Python module under `scripts/` and invoked via `python -m scripts.<name>` / `moon run backend:<name>`. Each script exposes a `main()` entry plus an importable async helper (e.g. `seed_zas_tenant(session)`) so tests can drive the same logic without spawning subprocesses. The umbrella `scripts/seed_all.py` chains every seed in dependency order. Seeds MUST be idempotent — re-running is a no-op when rows are already present.
 - **ORM base hierarchy**: every concrete model picks exactly one base from `app/db/base.py`:
@@ -291,17 +291,28 @@ The pathway domain models a hospital's editable patient journey: phases (time ba
 
 Pathway changes that move us toward interpreting clinical measurements, computing diagnostic output, or automating dosing/titration are MDR-adjacent. **Block-catalogue additions must clear `openspec/mdr-watchlist.md`** before landing — add an entry, propose a non-MDR alternative, and get a decision. Any external-system block we add (e.g. a future re-introduction of a Luscii care-path reference) must stay reference-only — config carries IDs/URLs, never mirrored clinical payloads.
 
+## Access plane (`app/services/access/`)
+
+Authn + authz live in one package mirroring the Ory stack (`access-management-ory`):
+
+- **`access/identity/`** — WHO are you. Ory **Kratos** owns credentials + sessions: the `BACKEND_SESSION` cookie value IS a Kratos session token, verified per-request via `whoami` in `resolve_actor_from_request`; logout / user deactivation revoke server-side. Local rows are projections (`users.external_idp='kratos'`, `external_subject=<identity id>`); `password_hash` is never consulted on the login path. New environments: run `python -m scripts.import_identities_kratos` after seeding (chained into `seed_all`).
+- **`access/permissions/`** — WHAT may you touch. Ory **Keto** answers relation checks (`check_patient_permission`) behind `BACKEND_AUTHZ_KETO_ENABLED`; flag off falls back to the SQL predicates. Patient *detail* routes check Keto via the single wiring point `require_patient_access`; patient *list* scoping stays SQL-derived by design (see change design.md D5). Namespaces/permits: `infra/ory/keto/namespaces.keto.ts`.
+- **`access/sync/`** — keeping Keto true to Postgres. A `before_flush` hook enqueues `authz_outbox` rows (same transaction) for any access-relevant mutation; the in-app relay reconciles the named objects; `python -m scripts.reconcile_authz_tuples` is initial population, demo seeding, and drift repair in one command. Never write tuples by hand — derivation lives in `access/sync/derive.py` only.
+
+Tests fake both services in-process (`tests/fakes/kratos.py`, `tests/fakes/keto.py`); the real round-trip is proven by `infra/ory/smoke.sh` (CI `ory-smoke` job).
+
 ## Adding a login provider (MVP path)
 
-The auth seam is built around two Protocols. `Authenticator` (`app/services/auth/authenticator.py`) returns `AuthenticationResult` for a credential check; `LoginProvider` (`app/services/auth/providers/base.py`) owns route-shape concerns — `key`, `label`, `kind` class attributes plus an `async authenticate(*, email, password) -> SessionUser` method. `LoginProviderRegistry` returns the list of providers `GET /auth/providers` exposes to the frontend.
+The auth seam is built around two Protocols. `Authenticator` (`app/services/access/identity/authenticator.py`) returns `AuthenticationResult` for a credential check — `KratosAuthenticator` in production; `LoginProvider` (`app/services/access/identity/providers/base.py`) owns route-shape concerns — `key`, `label`, `kind` class attributes plus an `async authenticate(*, email, password) -> SessionUser` method. `LoginProviderRegistry` returns the list of providers `GET /auth/providers` exposes to the frontend.
 
-To add a new provider (e.g. itsme® OIDC):
+To add a new provider (e.g. itsme® OIDC) — at MVP these land as **Kratos OIDC methods**, so most of the protocol work is Kratos config:
 
-1. Implement `LoginProvider` (e.g. `OidcLoginProvider`) with `kind = "oidc"` and the routes it needs.
-2. Register it in `LoginProviderRegistry` next to `PasswordLoginProvider`.
-3. Add the corresponding `apps/backend/app/api/routers/auth/` route(s).
-4. On the frontend, add a strategy under `apps/orchestrator/src/modules/auth/providers.ts` that maps the `kind` to a component.
-5. Emit `auth.login.success` / `auth.login.failure` via `app/services/auth/audit.py` so the new provider participates in the audit log.
+1. Configure the upstream IdP as an OIDC method in `infra/ory/kratos/kratos.yml` (Kratos implements PKCE/state/nonce/JWKS validation — see BL-048).
+2. Implement `LoginProvider` (e.g. `OidcLoginProvider`) with `kind = "oidc"` and the routes it needs.
+3. Register it in `LoginProviderRegistry` next to `PasswordLoginProvider`.
+4. Add the corresponding `apps/backend/app/api/routers/auth/` route(s).
+5. On the frontend, add a strategy under `apps/orchestrator/src/modules/auth/providers.ts` that maps the `kind` to a component.
+6. Emit `auth.login.success` / `auth.login.failure` via `app/services/access/identity/audit.py` so the new provider participates in the audit log.
 
 The `external_idp` + `external_subject` columns on `users` carry IdP identifiers. Validate inbound subjects with `validate_external_subject()` before lookup — Belgian RRN values must be rejected to avoid storing identifiers covered by Wet 8 augustus 1983.
 

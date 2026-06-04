@@ -10,7 +10,7 @@ from app.core.enums.user import Role
 from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdate
-from app.services.auth.deps import require_role
+from app.services.access.identity.deps import require_role
 from app.services.patient.deps import (
     PatientAccessDep,
     PatientServiceDep,
@@ -35,7 +35,8 @@ async def list_patients(
         Query(description="FHIR Patient.identifier short-circuit; exact value match"),
     ] = None,
 ) -> Page[PatientRead]:
-    # AUTH-HARDEN: tenant scope is applied inside `BaseListRepository.list_page`
+    # AUTH-HARDEN: tenant scope is applied inside `BaseListRepository.list_page`;
+    # list set-derivation stays SQL by design (access-management-ory design.md D5)
     # via `_tenant_predicate`; caregiver visibility (open `CareTeamParticipant`
     # row) is applied inside `PatientService.list_in_tenant`. FHIR semantics:
     # `identifier` short-circuits the other discrete params, so we drop
@@ -57,7 +58,7 @@ async def list_patients(
     response_model=PatientRead,
 )
 async def get_patient(
-    patient: PatientAccessDep,  # AUTH-HARDEN
+    patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
 ) -> PatientRead:
     return PatientRead.model_validate(patient)
 
@@ -86,7 +87,7 @@ async def update_patient(
     patient_id: UUID,
     payload: PatientUpdate,
     service: PatientServiceDep,
-    _patient: PatientAccessDep,  # AUTH-HARDEN
+    _patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> PatientRead:
     patient = await service.update(current_user, patient_id, payload)
@@ -101,7 +102,7 @@ async def update_patient(
 async def soft_delete_patient(
     patient_id: UUID,
     service: PatientServiceDep,
-    _patient: PatientAccessDep,  # AUTH-HARDEN
+    _patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> None:
     await service.soft_delete(current_user, patient_id)

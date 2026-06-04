@@ -25,15 +25,16 @@ Tier progression for the ZAS Telegeneeskunde build: PoC → MVP → Product. Cro
 - Architecture review: no choice locks out MVP compliance (GDPR, FHIR R4, Belgian hosting, eID / itsme® / eHealth / CSAM auth).
 
 **Highlights.**
-- `F1` hard-coded auth + cookie session.
+- `F1` seeded credentials behind Kratos-backed sessions (see `F11`).
 - `F3` Pathway Designer composing blocks → DB; saved = enrollable (no publish step).
 - `F5` patient view with Luscii block rendered from static JSON.
 - `F7` pathway backend on our own DB with stubbed HiX + Luscii adapters.
 - `F9` Digital front door shell (`apps/digital-front-door`, Expo SDK 56) — empty mobile app on iOS / Android / web (dev). Boots, lints, typechecks; backend `/mobile/health` returns 200. No clinical UI.
 - `F10` Patient login — cookie-session reuse, FHIR-aligned identity model (`users.patient_id` FK, `role='patient'`), `POST /mobile/auth/login/password` + lean `PatientSession`, biometric unlock + 30d session on supported devices, seeded demo (`patient@zas.local`).
+- `F11` Access management (Ory) — Kratos sessions (argon2id import, server-side revocation, `BL-042` closed) + Keto relation authz behind `AUTHZ_KETO_ENABLED` (care-team / org-tree / external-episode scoping, shielded views; `BL-020` / `BL-053` landed). Postgres stays source of truth; tuples derived via outbox + reconciler. Via `access-management-ory`.
 - Tooling: OpenAPI typegen, MSW + Vitest + Playwright on orchestrator, pytest + ruff + pyright on backend, ESLint + Prettier + jest-expo + `expo-local-authentication` on digital-front-door.
 
-**Non-goals (in this tier).** Live HiX, live Luscii, federated patient IdP (eID / itsme / eHealth), HiX embed, two-way task sync, **patient pathway/task features** (login is in PoC; clinical-display features are not), orchestrator patient-user admin UI, notifications, multi-tool admin. All deferred to `[mvp]` per `scope.md` PoC Out-of-Scope + Mocks tables.
+**Non-goals (in this tier).** Live HiX, live Luscii, federated IdPs (eID / itsme / eHealth / Entra), Hydra token issuance, HiX embed, two-way task sync, **patient pathway/task features** (login is in PoC; clinical-display features are not), orchestrator patient-user admin UI, notifications, multi-tool admin. All deferred to `[mvp]` per `scope.md` PoC Out-of-Scope + Mocks tables.
 
 ---
 
@@ -55,9 +56,10 @@ Tier progression for the ZAS Telegeneeskunde build: PoC → MVP → Product. Cro
   - HiX embed for orchestrator screens + two-way task sync.
   - `OperationOutcome` error translation (`BL-005`); `If-Match` / `ETag` versioning (`BL-006`).
 - **Identity + access**
-  - IdP integration: eHealth / itsme® / eID / CSAM (ZAS + external caregivers) via NewWave Care — lands as `oidc-login-providers` change on top of the PoC `LoginProvider` seam.
-  - Access-control granularity (`BL-020`); HiX admin coordination (`BL-010`).
-  - **Auth compliance gates** (filed by `add-auth-provider-seam`): server-side session revocation (`BL-042`), login rate-limit + lockout (`BL-043`), MFA delegated to LoA High IdPs (`BL-044`), RP-initiated logout against IdP `end_session_endpoint` (`BL-045`), DPIA pointer + skeleton (`BL-046`), SMART-on-FHIR bearer-token auth path on `/fhir/*` (`BL-047`), OIDC hardening — PKCE / state / nonce / JWKS / iss+aud+exp (`BL-048`), password reset / credential lifecycle if password provider survives (`BL-049`). All MUST close before any real patient data touches the system.
+  - IdP integration: eHealth / itsme® / eID / CSAM (ZAS + external caregivers) via NewWave Care — lands as Kratos OIDC methods (`oidc-login-providers`) on top of the PoC Ory stack (`F11`, `access-management-ory`).
+  - Hydra token issuance: mobile PKCE tokens + SMART-on-FHIR platform-side authorization server.
+  - ~~Access-control granularity (`BL-020`)~~ landed in PoC via `access-management-ory` (Keto); HiX admin coordination (`BL-010`).
+  - **Auth compliance gates** (filed by `add-auth-provider-seam`): ~~server-side session revocation (`BL-042`)~~ closed in PoC via `access-management-ory` (Kratos; `auth_audit` table half remains), login rate-limit + lockout (`BL-043`), MFA delegated to LoA High IdPs (`BL-044`), RP-initiated logout against IdP `end_session_endpoint` (`BL-045`), DPIA pointer + skeleton (`BL-046`), SMART-on-FHIR bearer-token auth path on `/fhir/*` (`BL-047`), OIDC hardening — PKCE / state / nonce / JWKS / iss+aud+exp (`BL-048`), password reset / credential lifecycle if password provider survives (`BL-049`). All MUST close before any real patient data touches the system.
 - **Product**
   - Patient surface — shell shipped in PoC via `digital-front-door-setup` (`F9`); patient login shipped in PoC via `mobile-app-auth-setup` (`F10`) using cookie-session reuse + biometric unlock + `users.patient_id` FK; MVP delivers concrete patient features (view, tasks, Luscii deep-link), federated identity (eID / itsme / eHealth / CSAM), FHIR `Person` layer for RelatedPerson family-member login, server-side session revocation, and orchestrator patient-user admin UI; `BL-014` / `BL-022` (consent + activation) remain MVP-tier; `BL-030` resolved (separate Expo app at `apps/digital-front-door`).
   - Pathway publish step + versioning (`BL-031`).

@@ -24,6 +24,81 @@ services:
       retries: 30
     networks: [zas_net]
 
+  # Creates the kratos + keto databases inside the shared postgres once per volume.
+  # Idempotent: re-runs are no-ops on an initialised volume.
+  ory-db-init:
+    image: postgres:17-alpine
+    container_name: zas_ory_db_init
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "psql -h db -U zas -d zas -tc \"SELECT 1 FROM pg_database WHERE datname = 'kratos'\" | grep -q 1 || psql -h db -U zas -d zas -c 'CREATE DATABASE kratos';
+       psql -h db -U zas -d zas -tc \"SELECT 1 FROM pg_database WHERE datname = 'keto'\"   | grep -q 1 || psql -h db -U zas -d zas -c 'CREATE DATABASE keto'"
+    environment:
+      PGPASSWORD: zas
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks: [zas_net]
+
+  kratos-migrate:
+    image: oryd/kratos:v26.2.0
+    container_name: zas_kratos_migrate
+    command: migrate sql -e --yes
+    environment:
+      DSN: postgres://zas:zas@db:5432/kratos?sslmode=disable
+    depends_on:
+      ory-db-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks: [zas_net]
+
+  kratos:
+    image: oryd/kratos:v26.2.0
+    container_name: zas_kratos
+    command: serve -c /etc/config/kratos/kratos.yml --dev
+    environment:
+      DSN: postgres://zas:zas@db:5432/kratos?sslmode=disable
+    ports:
+      - "4433:4433" # public API (whoami, self-service flows)
+      - "4434:4434" # admin API (identity import, session revocation)
+    volumes:
+      - ./infra/ory/kratos:/etc/config/kratos:ro
+    depends_on:
+      kratos-migrate:
+        condition: service_completed_successfully
+    networks: [zas_net]
+
+  keto-migrate:
+    image: oryd/keto:v26.2.0
+    container_name: zas_keto_migrate
+    command: migrate up -y -c /etc/config/keto/keto.yml
+    environment:
+      DSN: postgres://zas:zas@db:5432/keto?sslmode=disable
+    volumes:
+      - ./infra/ory/keto:/etc/config/keto:ro
+    depends_on:
+      ory-db-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks: [zas_net]
+
+  keto:
+    image: oryd/keto:v26.2.0
+    container_name: zas_keto
+    command: serve -c /etc/config/keto/keto.yml
+    environment:
+      DSN: postgres://zas:zas@db:5432/keto?sslmode=disable
+    ports:
+      - "4466:4466" # read API (check, expand, relation queries)
+      - "4467:4467" # write API (tuple insert/delete)
+    volumes:
+      - ./infra/ory/keto:/etc/config/keto:ro
+    depends_on:
+      keto-migrate:
+        condition: service_completed_successfully
+    networks: [zas_net]
+
   backend:
     image: zas_backend:dev
     container_name: zas_backend
@@ -36,6 +111,10 @@ services:
       BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: INFO
       BACKEND_CORS_ORIGINS: '["http://localhost:5173","http://localhost:5174","http://localhost:5175"]'
+      BACKEND_KRATOS_PUBLIC_URL: http://kratos:4433
+      BACKEND_KRATOS_ADMIN_URL: http://kratos:4434
+      BACKEND_KETO_READ_URL: http://keto:4466
+      BACKEND_KETO_WRITE_URL: http://keto:4467
     ports:
       - "18000:8000"
     develop:

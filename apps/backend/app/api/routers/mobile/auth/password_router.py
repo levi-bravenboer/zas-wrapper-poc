@@ -12,11 +12,11 @@ from app.schemas.auth.mobile_session import (
     MobileLoginResponse,
     PatientSession,
 )
-from app.services.auth.audit import AuthEvent, log_auth_event
-from app.services.auth.deps import AuthServiceDep, PasswordHasherDep
-from app.services.auth.errors import InvalidCredentialsError
-from app.services.auth.login_service import authenticate_password
-from app.services.auth.tenant_resolver import resolve_tenant_slug
+from app.services.access.identity.audit import AuthEvent, log_auth_event
+from app.services.access.identity.deps import KratosClientDep
+from app.services.access.identity.errors import InvalidCredentialsError
+from app.services.access.identity.login_service import authenticate_password
+from app.services.access.identity.tenant_resolver import resolve_tenant_slug
 
 router = APIRouter(tags=["mobile"])
 
@@ -31,9 +31,8 @@ async def mobile_login_password(
     response: Response,
     request: Request,
     settings: SettingsDep,
-    auth: AuthServiceDep,
     user_repo: UserRepoDep,
-    hasher: PasswordHasherDep,
+    kratos: KratosClientDep,
     tenant_repo: TenantRepoDep,
     patient_repo: PatientRepoDep,
 ) -> MobileLoginResponse:
@@ -48,7 +47,7 @@ async def mobile_login_password(
             role=Role.PATIENT,
             surface="mobile",
             user_repo=user_repo,
-            hasher=hasher,
+            kratos=kratos,
         )
     except InvalidCredentialsError as exc:
         log_auth_event(
@@ -64,9 +63,11 @@ async def mobile_login_password(
         )
         raise
 
-    # Validate patient link BEFORE issuing the session cookie so a
-    # broken user row never receives a live token.
+    # Validate patient link BEFORE relaying the session cookie so a broken
+    # user row never receives a live token; revoke the just-minted Kratos
+    # session on the rejection paths.
     if result.user.patient_id is None:
+        await kratos.logout(session_token=result.session_token)
         raise InvalidCredentialsError(
             audit_reason="null_password_hash",
             audit_user_id=result.user.id,
@@ -74,15 +75,15 @@ async def mobile_login_password(
 
     patient = await patient_repo.get_by_id(result.user.tenant_id, result.user.patient_id)
     if patient is None:
+        await kratos.logout(session_token=result.session_token)
         raise InvalidCredentialsError(
             audit_reason="unknown_email",
             audit_user_id=result.user.id,
         )
 
-    token = auth.mint_session_token(result.user.id)
     response.set_cookie(
         key=settings.session_cookie_name,
-        value=token,
+        value=result.session_token,
         max_age=settings.session_max_age_seconds,
         httponly=True,
         samesite="lax",

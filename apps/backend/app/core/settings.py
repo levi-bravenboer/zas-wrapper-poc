@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     hix_mode: AdapterMode = "stub"
     luscii_mode: AdapterMode = "stub"
     database_url: str = DEFAULT_DATABASE_URL
+
+    # Ory access plane. Localhost defaults serve host-run dev + tests;
+    # compose overrides with in-network hosts (kratos / keto).
+    kratos_public_url: AnyHttpUrl = AnyHttpUrl("http://localhost:4433")
+    kratos_admin_url: AnyHttpUrl = AnyHttpUrl("http://localhost:4434")
+    keto_read_url: AnyHttpUrl = AnyHttpUrl("http://localhost:4466")
+    keto_write_url: AnyHttpUrl = AnyHttpUrl("http://localhost:4467")
+    # Relation checks stay dark until the tuple pipeline is populated;
+    # off ⇒ pre-Ory role+tenant guards only.
+    authz_keto_enabled: bool = False
     realtime_keepalive_seconds: int = 15
     realtime_idle_timeout_seconds: int = 30 * 60
 

@@ -93,7 +93,7 @@ Always create git worktrees under `.worktrees/<branch-name>` in this repo (slash
 
 One-command boot: `moon run :up`. Onboarding flow on a fresh checkout is `moon run :doctor` → `moon run :install` → `moon run :up`. See `README.md` for prereqs (incl. `docker compose` v2.22+ and OrbStack on macOS) and `apps/backend/AGENTS.md` for backend-container specifics.
 
-The dev DB (`zas_db`) and the backend (`zas_backend`) run in docker via `docker-compose.yml`. The orchestrator runs natively (Vite HMR). Test runs use `docker-compose.test.yml` overlay with an ephemeral `zas_test_db` on tmpfs.
+The dev DB (`zas_db`), the backend (`zas_backend`), and the Ory access plane (`zas_kratos` public 4433 / admin 4434, `zas_keto` read 4466 / write 4467, with one-shot `zas_ory_db_init` + migrators) run in docker via `docker-compose.yml`. The orchestrator runs natively (Vite HMR). Test runs use `docker-compose.test.yml` overlay with an ephemeral `zas_test_db` on tmpfs. Ory configs live under `infra/ory/`; smoke-test the slice with `./infra/ory/smoke.sh`.
 
 ### Naming rule for docker resources
 
