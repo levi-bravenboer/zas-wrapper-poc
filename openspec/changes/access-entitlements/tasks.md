@@ -80,7 +80,7 @@
 
 ## 10. Docs & ledger
 
-- [ ] 10.1 Update `apps/backend/AGENTS.md` access-plane section (new namespaces, sweep, policy service, binding)
-- [ ] 10.2 `openspec/scope.md`: F12 entry + mocks/delta rows; `backlog.md`: BL entries for deferred slices (retention windows, audit dashboard, SCIM/IAM) — done at proposal time, re-verify
-- [ ] 10.3 REQ traceability: map REQ-NON-8/10/12/15, REQ-FUN-1/4/28/42/161, REQ-NON-3 → modules + tests under `docs/requirements/`
+- [x] 10.1 Update `apps/backend/AGENTS.md` access-plane section (new namespaces, sweep, policy service, binding)
+- [x] 10.2 `openspec/scope.md`: F12 entry + mocks/delta rows; `backlog.md`: BL entries for deferred slices (retention windows, audit dashboard, SCIM/IAM) — done at proposal time, re-verify
+- [x] 10.3 REQ traceability: map REQ-NON-8/10/12/15, REQ-FUN-1/4/28/42/161, REQ-NON-3 → modules + tests under `docs/requirements/`
 - [ ] 10.4 Archive after merge: apply deltas to `openspec/specs/` (after `access-management-ory` archives first)
