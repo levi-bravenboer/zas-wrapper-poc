@@ -224,7 +224,7 @@ function PathwayOverviewPage(): ReactElement {
               rowActions={(row) => [
                 {
                   label: t('duplicate.action'),
-                  icon: <Copy className="size-4" />,
+                  icon: <Copy aria-hidden="true" className="size-4" />,
                   onClick: () => setDuplicateTarget(row),
                 },
               ]}

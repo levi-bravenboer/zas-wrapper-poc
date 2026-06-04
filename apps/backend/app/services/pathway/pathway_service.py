@@ -382,7 +382,7 @@ class PathwayService:
         await self._version_repo.add(new_version)
 
         version_service = PathwayVersionService(self._repo, self._version_repo)
-        await version_service._copy_children(source_version.id, new_version.id)
+        await version_service._copy_children(source_version.id, new_version.id)  # noqa: SLF001
 
         session = self._repo._session  # noqa: SLF001
         await session.flush()
