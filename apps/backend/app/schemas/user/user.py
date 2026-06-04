@@ -16,6 +16,7 @@ class UserRow(BaseModel):
     display_name: str
     role: Role
     is_active: bool
+    patient_id: UUID | None = None
     created_at: datetime
 
 
@@ -27,6 +28,7 @@ class UserDetail(BaseModel):
     display_name: str
     role: Role
     is_active: bool
+    patient_id: UUID | None = None
     external_idp: str | None
     external_subject: str | None
     created_at: datetime
@@ -84,6 +86,11 @@ class UserCreate(BaseModel):
             cross = [k for k, v in admin_fields.items() if v is not None]
             if cross:
                 raise ValueError(f"caregiver role forbids: {', '.join(cross)}")
+        elif self.role == Role.PATIENT:
+            raise ValueError(
+                "patient users cannot be created via the admin API; "
+                "use the seeding script or a future patient-enrollment flow"
+            )
         return self
 
 

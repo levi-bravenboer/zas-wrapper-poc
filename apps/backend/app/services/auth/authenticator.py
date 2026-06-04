@@ -39,6 +39,13 @@ class PasswordAuthenticator:
     Returns an `AuthenticationResult` whose `reason` lets the auth audit log
     distinguish unknown email, inactive user, externally-authenticated row,
     or wrong password without leaking the distinction back to the caller.
+
+    `mobile-app-auth-setup` adds a parallel `authenticate_password()` service
+    at `app.services.auth.login_service` for the mobile surface, which uses
+    per-request `tenant_id` resolution and a role filter. Both paths read
+    from the same `UserRepository`; the verifier is `PasswordHasher` in
+    both. A caregiver migration to the shared service is deferred to a
+    follow-up change to keep blast radius small.
     """
 
     def __init__(

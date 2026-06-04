@@ -15,7 +15,10 @@ def test_settings_load_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.session_cookie_name == "BACKEND_SESSION"
     assert settings.hix_mode == "stub"
     assert settings.luscii_mode == "stub"
-    assert [str(o) for o in settings.cors_origins] == ["http://localhost:5173/"]
+    assert [str(o) for o in settings.cors_origins] == [
+        "http://localhost:5173/",
+        "http://localhost:8081/",
+    ]
 
 
 def test_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:

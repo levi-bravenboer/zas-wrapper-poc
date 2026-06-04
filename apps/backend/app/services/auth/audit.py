@@ -25,9 +25,13 @@ AuthEventName = Literal["auth.login.success", "auth.login.failure", "auth.logout
 AuthFailureReason = Literal[
     "invalid_credentials",
     "inactive_user",
+    "soft_deleted_user",
     "null_password_hash",
     "unknown_email",
+    "role_mismatch",
+    "unknown_tenant",
 ]
+AuthSurface = Literal["caregiver", "mobile", "admin"]
 
 
 class AuthEvent(BaseModel):
@@ -35,6 +39,7 @@ class AuthEvent(BaseModel):
 
     event: AuthEventName
     provider_key: str
+    surface: AuthSurface = "caregiver"
     client_ip: str | None = None
     user_agent: str | None = None
     user_id: UUID | None = None

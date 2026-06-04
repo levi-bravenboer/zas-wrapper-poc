@@ -5,7 +5,7 @@ import { envSchema } from './env'
 describe('envSchema', () => {
   it('defaults VITE_API_BASE_URL when missing', () => {
     const parsed = envSchema.parse({ PROD: false, DEV: true })
-    expect(parsed.VITE_API_BASE_URL).toBe('http://localhost:18000')
+    expect(parsed.VITE_API_BASE_URL).toBe('http://localhost:8000')
     expect(parsed.VITE_API_MODE).toBeUndefined()
     expect(parsed.VITE_SMART_CLIENT_ID).toBeUndefined()
   })

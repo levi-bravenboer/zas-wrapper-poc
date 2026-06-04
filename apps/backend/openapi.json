@@ -2695,6 +2695,68 @@
           }
         }
       }
+    },
+    "/mobile/auth/login/password": {
+      "post": {
+        "tags": [
+          "mobile"
+        ],
+        "summary": "Mobile Login Password",
+        "operationId": "mobile_login_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileLoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mobile/auth/me": {
+      "get": {
+        "tags": [
+          "mobile"
+        ],
+        "summary": "Mobile Get Current Patient",
+        "operationId": "mobile_get_current_patient",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientSession"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3439,6 +3501,43 @@
         "type": "object",
         "title": "MobileHealthResponse",
         "description": "Stable shape for the mobile-app liveness probe."
+      },
+      "MobileLoginRequest": {
+        "properties": {
+          "tenant": {
+            "type": "string",
+            "title": "Tenant"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password",
+            "writeOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant",
+          "email",
+          "password"
+        ],
+        "title": "MobileLoginRequest"
+      },
+      "MobileLoginResponse": {
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/PatientSession"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session"
+        ],
+        "title": "MobileLoginResponse"
       },
       "OrganisationCreate": {
         "properties": {
@@ -5970,6 +6069,37 @@
         ],
         "title": "PatientRead"
       },
+      "PatientSession": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "given_name": {
+            "type": "string",
+            "title": "Given Name"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "given_name",
+          "patient_id",
+          "tenant_id"
+        ],
+        "title": "PatientSession"
+      },
       "PatientSource": {
         "type": "string",
         "enum": [
@@ -6443,7 +6573,8 @@
         "type": "string",
         "enum": [
           "admin",
-          "caregiver"
+          "caregiver",
+          "patient"
         ],
         "title": "Role"
       },
@@ -6606,6 +6737,18 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Id"
+          },
           "external_idp": {
             "anyOf": [
               {
@@ -6674,6 +6817,18 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Id"
           },
           "created_at": {
             "type": "string",

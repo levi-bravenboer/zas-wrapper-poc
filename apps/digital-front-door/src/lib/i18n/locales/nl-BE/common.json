@@ -4,6 +4,9 @@
       "welcome": "Welkom",
       "loading": "Laden…"
     },
+    "home": {
+      "welcome": "Welkom, {{name}}"
+    },
     "error": {
       "title": "Er ging iets mis",
       "body": "Sluit de app en probeer opnieuw."

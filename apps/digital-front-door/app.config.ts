@@ -28,5 +28,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? null,
+    tenantSlug: process.env.EXPO_PUBLIC_TENANT_SLUG ?? null,
   },
 })
