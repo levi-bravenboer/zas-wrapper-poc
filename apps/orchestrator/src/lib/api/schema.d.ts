@@ -510,6 +510,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pathways/{pathway_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Pathway */
+        post: operations["duplicate_pathway"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pathways/{pathway_id}/parent-references": {
         parameters: {
             query?: never;
@@ -1563,6 +1580,14 @@ export interface components {
             time_markers?: components["schemas"]["PathwayTimeMarkerIn"][];
             /** Deferred Fields */
             deferred_fields?: components["schemas"]["PathwayBlockDeferredFieldIn"][];
+        };
+        /** PathwayDuplicateRequest */
+        PathwayDuplicateRequest: {
+            /**
+             * Source Version Id
+             * Format: uuid
+             */
+            source_version_id: string;
         };
         /** PathwayEdgeIn */
         PathwayEdgeIn: {
@@ -3751,6 +3776,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    duplicate_pathway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PathwayDuplicateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PathwaySummary"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

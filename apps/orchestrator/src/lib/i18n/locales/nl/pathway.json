@@ -453,6 +453,17 @@
       "error": "Publiceren mislukt."
     }
   },
+  "duplicate": {
+    "action": "Dupliceren",
+    "title": "Zorgpad dupliceren",
+    "sub": "Kies een versie om te dupliceren als nieuw concept.",
+    "versionLabel": "Versie",
+    "versionPlaceholder": "Kies een versie",
+    "submit": "Dupliceren",
+    "cancel": "Annuleren",
+    "success": "Zorgpad gedupliceerd.",
+    "error": "Dupliceren mislukt."
+  },
   "forkOnEdit": {
     "title": "Nieuwe versie nodig",
     "body": "Deze versie is gepubliceerd en kan niet meer bewerkt worden. Maak een nieuwe werkversie om wijzigingen door te voeren.",

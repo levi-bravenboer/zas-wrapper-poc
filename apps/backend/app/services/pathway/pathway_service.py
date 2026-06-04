@@ -43,11 +43,11 @@ from app.schemas.pathway.pathway import (
     PathwayBlockOut,
     PathwayChildSummary,
     PathwayDefinitionReplace,
-    PathwayParentReference,
     PathwayEdgeIn,
     PathwayEdgeOut,
     PathwayLaneIn,
     PathwayLaneOut,
+    PathwayParentReference,
     PathwayPhaseIn,
     PathwayPhaseOut,
     PathwaySummary,
@@ -59,6 +59,7 @@ from app.schemas.pathway.pathway import (
     PathwayWithVersionResponse,
 )
 from app.services.pathway.nesting import assert_no_nested_pathway_cycles
+from app.services.pathway.pathway_version_service import PathwayVersionService
 from app.services.pathway.errors import (
     BlockConfigError,
     PathwayHasReferrersError,
@@ -351,6 +352,43 @@ class PathwayService:
             return []
         parents = await self._repo.get_many(parent_ids, tenant_id)
         return [PathwayParentReference(id=p.id, name=p.name) for p in parents]
+
+    async def duplicate(
+        self,
+        pathway_id: UUID,
+        tenant_id: UUID,
+        source_version_id: UUID,
+    ) -> PathwaySummary:
+        pathway = await self._repo.get(pathway_id, tenant_id)
+        if pathway is None:
+            raise PathwayNotFoundError()
+        source_version = await self._version_repo.get_in_pathway(source_version_id, pathway_id)
+        if source_version is None:
+            raise PathwayVersionNotFoundError()
+
+        new_pathway = Pathway(
+            name=f"{pathway.name} (kopie)",
+            clinical_goal=pathway.clinical_goal,
+            patient_goal=pathway.patient_goal,
+        )
+        await self._repo.add(new_pathway)
+
+        new_version = PathwayVersion(
+            pathway_id=new_pathway.id,
+            version_no=1,
+            status="concept",
+            kind="initial",
+        )
+        await self._version_repo.add(new_version)
+
+        version_service = PathwayVersionService(self._repo, self._version_repo)
+        await version_service._copy_children(source_version.id, new_version.id)  # noqa: SLF001
+
+        session = self._repo._session  # noqa: SLF001
+        await session.flush()
+
+        summaries = await self.list_summaries(tenant_id)
+        return next(s for s in summaries if s.id == new_pathway.id)
 
     async def soft_delete(self, pathway_id: UUID, tenant_id: UUID) -> None:
         pathway = await self._repo.get(pathway_id, tenant_id)

@@ -11,6 +11,7 @@ from app.schemas.pathway import (
     PathwayChildSummary,
     PathwayCreate,
     PathwayDefinitionReplace,
+    PathwayDuplicateRequest,
     PathwayEdgeOffsetDirection,
     PathwayEdgeTimingKind,
     PathwayParentReference,
@@ -109,6 +110,22 @@ async def create_pathway(
         clinical_goal=payload.clinical_goal,
         patient_goal=payload.patient_goal,
     )
+
+
+@router.post(
+    "/{pathway_id}/duplicate",
+    operation_id="duplicate_pathway",
+    response_model=PathwaySummary,
+    status_code=status.HTTP_201_CREATED,
+    responses=_ERRORS_404,
+)
+async def duplicate_pathway(
+    pathway_id: UUID,
+    payload: PathwayDuplicateRequest,
+    current_user: CurrentUserDep,
+    service: PathwayServiceDep,
+) -> PathwaySummary:
+    return await service.duplicate(pathway_id, current_user.tenant_id, payload.source_version_id)
 
 
 @router.get(

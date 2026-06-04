@@ -4,6 +4,7 @@ import {
   type DeletePathwayResult,
   createPathway,
   deletePathway,
+  duplicatePathway,
   forkPathwayFromPublish,
   getPathway,
   getPathwayVersion,
@@ -65,6 +66,17 @@ export function useParentReferences(id: string | undefined) {
     queryKey: id ? pathwayKeys.parentReferences(id) : pathwayKeys.parentReferences('__none__'),
     queryFn: () => listPathwayParentReferences(id as string),
     enabled: !!id,
+  })
+}
+
+export function useDuplicatePathway() {
+  const qc = useQueryClient()
+  return useMutation<PathwaySummary, Error, { pathwayId: string; sourceVersionId: string }>({
+    mutationFn: ({ pathwayId, sourceVersionId }) =>
+      duplicatePathway(pathwayId, { source_version_id: sourceVersionId }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: pathwayKeys.list() })
+    },
   })
 }
 

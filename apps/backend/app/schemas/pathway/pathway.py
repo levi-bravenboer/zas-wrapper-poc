@@ -332,6 +332,10 @@ class PathwayDefinitionReplace(BaseModel):
     deferred_fields: list[PathwayBlockDeferredFieldIn] = Field(default_factory=list)
 
 
+class PathwayDuplicateRequest(BaseModel):
+    source_version_id: UUID
+
+
 class PathwayPublishRequest(BaseModel):
     """Body for `POST /pathways/{id}/publish` — promotes the current concept.
     `clinically_approved` is `Literal[True]`: anything else is a 422 from the

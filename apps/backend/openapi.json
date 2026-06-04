@@ -1907,6 +1907,69 @@
         }
       }
     },
+    "/pathways/{pathway_id}/duplicate": {
+      "post": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Duplicate Pathway",
+        "operationId": "duplicate_pathway",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayDuplicateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwaySummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pathways/{pathway_id}/parent-references": {
       "get": {
         "tags": [
@@ -4575,6 +4638,20 @@
         ],
         "title": "PathwayDefinitionReplace",
         "description": "Autosave body for `PUT /pathways/{id}` \u2014 applied to the current concept\nversion's children. Pathway identity fields (`name`/`clinical_goal`/\n`patient_goal`) live on the pathway row and are mutable regardless of\nversion status."
+      },
+      "PathwayDuplicateRequest": {
+        "properties": {
+          "source_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Version Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_version_id"
+        ],
+        "title": "PathwayDuplicateRequest"
       },
       "PathwayEdgeIn": {
         "properties": {

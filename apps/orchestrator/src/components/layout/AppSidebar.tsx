@@ -169,9 +169,7 @@ function NavGroupSection({ group, variant = 'main' }: NavGroupSectionProps): Rea
   }
   return (
     <SidebarGroup
-      className={
-        variant === 'footer' ? 'py-1 group-data-[collapsible=icon]:px-0' : undefined
-      }
+      className={variant === 'footer' ? 'py-1 group-data-[collapsible=icon]:px-0' : undefined}
     >
       <SidebarGroupContent>
         <NavMenuList items={group.items} />

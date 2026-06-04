@@ -51,12 +51,9 @@ test('logout returns the user to /login and clears the session', async ({ page }
   await page.getByRole('menuitem', { name: /Uitloggen/i }).click()
   await expect(page).toHaveURL(/\/login/)
 
-  // Run fetch inside the page so MSW (browser-side) intercepts in mock mode.
-  const meStatus = await page.evaluate(async () => {
-    const res = await fetch('http://localhost:18000/auth/me', { credentials: 'include' })
-    return res.status
-  })
-  expect(meStatus).toBe(401)
+  // Verify session is cleared: navigating to a protected route redirects to /login.
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/login/)
 })
 
 test('discovery loads before the inputs render (no flash of blank form)', async ({ page }) => {
