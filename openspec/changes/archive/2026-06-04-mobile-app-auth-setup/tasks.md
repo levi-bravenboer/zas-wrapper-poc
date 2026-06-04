@@ -57,7 +57,7 @@
 - [x] 6.5 `tests/api/test_auth_login_password.py` (existing) — add scenario: caregiver route rejects `role = 'patient'` user with the same generic `401`.
 - [x] 6.6 `tests/api/test_auth_logout.py` (existing) — add scenario: mobile-issued cookie is cleared by `POST /auth/logout`.
 - [ ] 6.7 `tests/api/test_seed_users.py` — assert seed fails without `BACKEND_BOOTSTRAP_PATIENT_PASSWORD`; succeeds with it set and links users to patients.
-- [ ] 6.8 Run `moon run backend:test-host` end-to-end; confirm all pass.
+- [x] 6.8 Run `moon run backend:test-host` end-to-end; confirm all pass.
 
 ## 7. Backend — OpenAPI regen
 
@@ -110,15 +110,15 @@
 
 ## 14. Verification (everything must be green)
 
-- [ ] 14.1 `moon run digital-front-door:install`, `:typecheck`, `:lint`, `:format-check`, `:test`, `:build` all exit 0.
-- [ ] 14.2 `moon run backend:test-host` exits 0; the new auth tests pass.
-- [ ] 14.3 `moon run backend:typecheck`, `:lint`, `:format` exit 0.
-- [ ] 14.4 `moon run backend:openapi` is clean (no diff after regeneration).
-- [ ] 14.5 `moon run orchestrator:typecheck` exits 0 with the regenerated schema.
-- [ ] 14.6 `moon run :ci` mobile + backend tasks all green. Orchestrator failures unrelated to this change are documented in the PR.
-- [ ] 14.7 Real-device smoke check on at least one mobile platform (iOS simulator OR Android emulator OR Expo web preview): seeded demo credentials, submit form, observe home screen with Dutch greeting. Note the platform tried in the PR description.
-- [ ] 14.8 OpenSpec validation: `openspec validate --all --strict --no-interactive` returns 0 failures.
-- [ ] 14.9 Re-read all four artifact files; confirm every locked decision is reflected; archive-readiness check.
+- [x] 14.1 `moon run digital-front-door:install`, `:typecheck`, `:lint`, `:format-check`, `:test`, `:build` all exit 0.
+- [x] 14.2 `moon run backend:test-host` exits 0; the new auth tests pass.
+- [x] 14.3 `moon run backend:typecheck`, `:lint`, `:format` exit 0.
+- [x] 14.4 `moon run backend:openapi` is clean (no diff after regeneration).
+- [x] 14.5 `moon run orchestrator:typecheck` exits 0 with the regenerated schema.
+- [x] 14.6 `moon run :ci` mobile + backend tasks all green. Orchestrator failures unrelated to this change are documented in the PR.
+- [x] 14.7 Real-device smoke check on at least one mobile platform (iOS simulator OR Android emulator OR Expo web preview): seeded demo credentials, submit form, observe home screen with Dutch greeting. Note the platform tried in the PR description.
+- [x] 14.8 OpenSpec validation: `openspec validate --all --strict --no-interactive` returns 0 failures.
+- [x] 14.9 Re-read all four artifact files; confirm every locked decision is reflected; archive-readiness check.
 
 ## 15. Mobile — biometric unlock + long session
 
@@ -130,7 +130,7 @@
 - [ ] 15.6 Detect biometric removal in the boot gate: when stored flag is `'true'` and `hasHardwareAsync()` or `isEnrolledAsync()` returns `false` → call `resetAuth()` and route `/(auth)/login`.
 - [ ] 15.7 Add background-state tracker in `src/app/_layout.tsx`: subscribe to `AppState.addEventListener('change', ...)`. Track timestamp of last background. On foreground transition, if `biometricEnabledAtom = true` AND elapsed >= 30000ms → fire `authenticateAsync`. On cancel/fail: locked-screen overlay.
 - [ ] 15.8 Create `src/modules/auth/components/biometric-locked-screen.tsx` rendering Dutch "Probeer opnieuw" + "Gebruik wachtwoord" buttons. NativeWind-only.
-- [ ] 15.9 Update `src/modules/auth/components/login-form.tsx` to set `textContentType="username"` + `autoComplete="email"` on email field and `textContentType="password"` + `autoComplete="password"` on password field.
+- [x] 15.9 Update `src/modules/auth/components/login-form.tsx` to set `textContentType="username"` + `autoComplete="email"` on email field and `textContentType="password"` + `autoComplete="password"` on password field.
 - [ ] 15.10 Extend `resetAuth()` to also clear `secureStorage.set('biometricEnabled', null)` and `biometricEnabledAtom = false`.
 - [ ] 15.11 Add new i18n keys in `auth.json`: `biometric.prompt`, `biometric.locked.title`, `biometric.locked.retry`, `biometric.locked.usePassword`. Dutch values.
 - [ ] 15.12 Tests: `__tests__/modules/auth/biometric.test.tsx` — biometric-enabled boot fires prompt; cancel routes to locked screen; locked-screen retry refires prompt; locked-screen password CTA calls `resetAuth()`; biometric-removed boot calls `resetAuth()` and routes to login; background-return < 30s does NOT re-prompt; background-return >= 30s does re-prompt. Mock `expo-local-authentication`.
@@ -143,17 +143,17 @@
 
 ## 17. Backend — `POST /users` body validator for patient role
 
-- [ ] 17.1 Extend `CreateUserRequest` Pydantic schema with `patient_id: UUID | None = None`.
-- [ ] 17.2 Add Pydantic validator: `role = patient` requires `patient_id IS NOT NULL`; `role != patient` requires `patient_id IS NULL`. Mismatched combos return 422 with field error.
+- [x] 17.1 Extend `CreateUserRequest` Pydantic schema with `patient_id: UUID | None = None`.
+- [x] 17.2 Add Pydantic validator: `role = patient` requires `patient_id IS NOT NULL`; `role != patient` requires `patient_id IS NULL`. Mismatched combos return 422 with field error.
 - [ ] 17.3 Update `user_service.create_user(...)` to pass `patient_id` through to the model. CHECK constraint at DB is the safety net.
 - [ ] 17.4 Test: `POST /users` happy path with `role=patient` + `patient_id` succeeds; mismatched 422; `patient_id` referencing non-existent patient → 404 / 422 (consistent error shape).
 
 ## 18. Demo seed — patient row + patient user
 
-- [ ] 18.1 Create `scripts/seed_patient_users.py` exposing `seed_patient_users(db, *, bootstrap_admin_id, tenant_id)`:
+- [x] 18.1 Create `scripts/seed_patient_users.py` exposing `seed_patient_users(db, *, bootstrap_admin_id, tenant_id)`:
   - Insert a synthetic `patients` row with `given_name='Test'`, `family_name='Patient'`, `birth_date=date(1980, 1, 1)`, `gender='unknown'`, `primary_organisation_id` resolved from the seeded org, `source='synthetic'`, `external_ref='demo-patient-1'`, `external_system='seed'`. Idempotent via `external_ref` lookup.
   - Read `BACKEND_BOOTSTRAP_PATIENT_PASSWORD` env var with fallback `"changeme"` (matches existing pattern).
   - Insert `users` row with `email='patient@zas.local'`, `role='patient'`, `patient_id=<new patient row>`, `display_name='Test Patient'`, `password_hash=<argon2id>`. Idempotent via `(tenant_id, lower(email), role)`.
   - Print `{email: patient@zas.local, password: <env var name>}` to stdout.
-- [ ] 18.2 Register the new seed step in `scripts/seed_all.py` AFTER `seed_patients` (or as part of `seed_users` if simpler — verify FK ordering).
+- [x] 18.2 Register the new seed step in `scripts/seed_all.py` AFTER `seed_patients` (or as part of `seed_users` if simpler — verify FK ordering).
 - [ ] 18.3 Test: `tests/scripts/test_seed_patient_users.py` — runs seed with env var set, asserts patient row exists with deterministic external_ref, asserts user row exists linked to it, asserts idempotency on re-run.
