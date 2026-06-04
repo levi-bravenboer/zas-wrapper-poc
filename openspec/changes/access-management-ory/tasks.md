@@ -8,11 +8,11 @@
 
 ## 2. Infrastructure
 
-- [ ] 2.1 Add `infra/ory/kratos/` config (kratos.yaml, identity schemas: default/practitioner/patient) with 8h session lifespan, pinned image version
-- [ ] 2.2 Add `infra/ory/keto/` config (keto.yaml + OPL namespaces.ts: Organisation, CareTeam, Patient with view/view_shielded permits), pinned image version
-- [ ] 2.3 Extend docker compose: `kratos`, `kratos-migrate`, `keto`, `keto-migrate` services + named volumes; document ports in AGENTS.md local-runtime notes
-- [ ] 2.4 Backend settings: `kratos_public_url`, `kratos_admin_url`, `keto_read_url`, `keto_write_url`, `authz_keto_enabled` flag (default false); production fail-fast when URLs unset
-- [ ] 2.5 CI smoke job: boot kratos+keto, run a login flow + a Keto check round-trip
+- [x] 2.1 Add `infra/ory/kratos/` config (kratos.yaml, identity schemas: default/practitioner/patient) with 8h session lifespan, pinned image version
+- [x] 2.2 Add `infra/ory/keto/` config (keto.yaml + OPL namespaces.ts: Organisation, CareTeam, Patient with view/view_shielded permits), pinned image version
+- [x] 2.3 Extend docker compose: `kratos`, `kratos-migrate`, `keto`, `keto-migrate` services + named volumes; document ports in AGENTS.md local-runtime notes
+- [x] 2.4 Backend settings: `kratos_public_url`, `kratos_admin_url`, `keto_read_url`, `keto_write_url`, `authz_keto_enabled` flag (default false); production fail-fast when URLs unset
+- [x] 2.5 CI smoke job: boot kratos+keto, run a login flow + a Keto check round-trip
 - [ ] 2.6 Forge: provision Kratos via the Kratos primitive; deploy Keto as app + dedicated PG project; wire env/secrets (verify against `docs/setup.md` deploy story / PR #21 pipeline)
 
 ## 3. Kratos identity (authn swap)
