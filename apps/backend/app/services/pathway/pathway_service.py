@@ -18,6 +18,7 @@ from app.db.models.pathway import (
     PathwayTimingValue,
     PathwayVersion,
 )
+from app.db.models.pathway.block_write_shim import block_in_to_orm_kwargs
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.domain.pathway import (
@@ -265,7 +266,17 @@ class PathwayService:
         pathway_id: UUID,
         tenant_id: UUID,
         payload: PathwayDefinitionReplace,
+        *,
+        typed_shape: bool = False,
     ) -> PathwayWithVersionResponse:
+        """Replace the concept version's children.
+
+        `typed_shape=True` opts the request body into the typed-subclass
+        discriminated union (chain slot #1 §5.2 — header
+        `X-Pathway-Block-Shape: typed`). When False, blocks arrive in the
+        legacy `(type: str, config: dict)` shape and the shim resolves
+        them via `block_in_to_typed`.
+        """
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
@@ -293,7 +304,7 @@ class PathwayService:
         pathway.clinical_goal = payload.clinical_goal
         pathway.patient_goal = payload.patient_goal
         await self._repo.delete_children(concept.id)
-        await self._persist_children(concept.id, resolved)
+        await self._persist_children(concept.id, resolved, typed_shape=typed_shape)
         session = self._repo._session  # noqa: SLF001
         await session.refresh(pathway, ["updated_at"])
         await session.refresh(concept, ["updated_at"])
@@ -446,7 +457,13 @@ class PathwayService:
             ],
         )
 
-    async def _persist_children(self, pathway_version_id: UUID, r: _ResolvedDefinition) -> None:
+    async def _persist_children(
+        self,
+        pathway_version_id: UUID,
+        r: _ResolvedDefinition,
+        *,
+        typed_shape: bool = False,
+    ) -> None:
         session = self._repo._session  # noqa: SLF001 — service owns repo internals here
         session.add_all(
             [
@@ -490,19 +507,19 @@ class PathwayService:
             ]
         )
         await session.flush()
+        # Chain slot #1 §5.1: dual-write — legacy `(type, config)` payload
+        # is shimmed into typed per-kind columns alongside the verbatim
+        # legacy columns. Both shapes live on the same row until chain
+        # slot #2 drops the legacy pair.
         session.add_all(
             [
                 PathwayBlock(
-                    id=b.id,
-                    pathway_version_id=pathway_version_id,
-                    phase_id=b.phase_id,
-                    lane_id=b.lane_id,  # type: ignore[arg-type] — resolver guarantees non-null
-                    type=b.type,
-                    label=b.label,
-                    duration_value_id=b.duration_value_id,
-                    config=b.config,
-                    x=b.x,
-                    y=b.y,
+                    **block_in_to_orm_kwargs(
+                        b,
+                        pathway_version_id=pathway_version_id,
+                        lane_id=b.lane_id,  # type: ignore[arg-type] — resolver guarantees non-null
+                        typed_shape=typed_shape,
+                    )
                 )
                 for b in r.blocks
             ]

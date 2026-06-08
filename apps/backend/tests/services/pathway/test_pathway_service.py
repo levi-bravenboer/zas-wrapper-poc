@@ -129,6 +129,75 @@ async def test_list_summaries_includes_block_count(
     assert summaries[0].latest_published_version_id is None
 
 
+async def test_replace_definition_dual_writes_typed_columns(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """Chain slot #1 §5.1 contract: legacy `(type, config)` payload lands on
+    both the legacy columns and the typed per-kind columns on the same row."""
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        type="appointment",
+        label="Intake",
+        config={"title": "Intake", "mode": "in_person", "duration_minutes": 30},
+    )
+    await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+    )
+    await db_session.commit()
+
+    row = (await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))).scalar_one()
+    # Legacy shape preserved verbatim
+    assert row.type == "appointment"
+    assert row.config == {"title": "Intake", "mode": "in_person", "duration_minutes": 30}
+    assert row.label == "Intake"
+    # Typed shape populated alongside
+    assert row.kind == "appointment"
+    assert row.appointment_title == "Intake"
+    assert row.appointment_mode == "in_person"
+    assert row.appointment_duration_minutes == 30
+
+
+async def test_replace_definition_typed_shape_writes_typed_columns(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """Chain slot #1 §5.2: with `typed_shape=True`, `config` is the typed
+    subclass payload — typed columns must populate from it."""
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        type="appointment",
+        label="Intake",
+        # Typed payload still travels in `config` for chain slot #1 because
+        # `PathwayBlockIn` is unchanged; the header signals "treat config as
+        # AppointmentBlock payload" rather than the loose legacy bag.
+        config={"title": "Intake", "mode": "video", "duration_minutes": 15},
+    )
+    await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+        typed_shape=True,
+    )
+    await db_session.commit()
+
+    row = (await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))).scalar_one()
+    assert row.kind == "appointment"
+    assert row.appointment_title == "Intake"
+    assert row.appointment_mode == "video"
+    assert row.appointment_duration_minutes == 15
+
+
 async def test_get_with_resolved_version_missing_raises(db_session: AsyncSession) -> None:
     service = _service(db_session)
     with pytest.raises(PathwayNotFoundError):

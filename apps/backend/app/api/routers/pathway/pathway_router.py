@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Header, status
 
 from app.core.errors import ErrorResponse
 from app.schemas.pathway import (
@@ -211,8 +211,15 @@ async def replace_pathway(
     payload: PathwayDefinitionReplace,
     current_user: CurrentUserDep,
     service: PathwayServiceDep,
+    x_pathway_block_shape: str | None = Header(default=None, alias="X-Pathway-Block-Shape"),
 ) -> PathwayWithVersionResponse:
-    return await service.replace_definition(pathway_id, current_user.tenant_id, payload)
+    # Chain slot #1 §5.2: opt into the typed-subclass discriminated-union
+    # payload. Unset (or any value != "typed") keeps the legacy
+    # `(type, config)` shim behaviour.
+    typed_shape = x_pathway_block_shape == "typed"
+    return await service.replace_definition(
+        pathway_id, current_user.tenant_id, payload, typed_shape=typed_shape
+    )
 
 
 @router.delete(

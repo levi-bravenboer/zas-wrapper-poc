@@ -15,6 +15,7 @@ from app.db.models.pathway import (
     PathwayTimingValue,
     PathwayVersion,
 )
+from app.db.models.pathway.block_write_shim import block_row_clone_kwargs
 from app.db.models.user import User
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
@@ -220,23 +221,24 @@ class PathwayVersionService:
         )
         await session.flush()
 
+        # Chain slot #1 §5.1: dual-write — clone path round-trips through
+        # the typed mapper so the new row inherits the per-kind columns
+        # populated on the source row's chain-slot-#1 write.
         session.add_all(
             [
                 PathwayBlock(
-                    id=block_id_map[b.id],
-                    pathway_version_id=target_version_id,
-                    phase_id=phase_id_map[b.phase_id],
-                    lane_id=lane_id_map[b.lane_id],
-                    type=b.type,
-                    label=b.label,
-                    duration_value_id=(
-                        timing_id_map[b.duration_value_id]
-                        if b.duration_value_id is not None
-                        else None
-                    ),
-                    config=b.config,
-                    x=b.x,
-                    y=b.y,
+                    **block_row_clone_kwargs(
+                        b,
+                        new_id=block_id_map[b.id],
+                        pathway_version_id=target_version_id,
+                        phase_id=phase_id_map[b.phase_id],
+                        lane_id=lane_id_map[b.lane_id],
+                        duration_value_id=(
+                            timing_id_map[b.duration_value_id]
+                            if b.duration_value_id is not None
+                            else None
+                        ),
+                    )
                 )
                 for b in src.blocks
             ]
