@@ -36,13 +36,9 @@ class AppointmentBlock(BaseBlock):
             kind="text",
             required=False,
         ),
-        DeferredFieldSpec(
-            attr="scheduled_at",
-            label="Geplande datum",
-            kind="datetime",
-            required=True,
-            help="Bepaald bij enrollment door zorgteam.",
-        ),
+        # `scheduled_at` lands on `BlockExecution` in chain slot #3
+        # (`pathway-runtime-aggregate`) per D5 — not a template field, so
+        # the deferred spec is reintroduced there with the runtime column.
     )
 
     title: str
