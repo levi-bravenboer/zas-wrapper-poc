@@ -1,6 +1,6 @@
 ## Context
 
-See `proposal.md` for the why. This file is the sparring document — it lists the open design questions and my current take per question. Each section ends with a "Decision: TBD — sparring required" line. We fill those in as we discuss; once decided, this file becomes the canonical "how" for `tasks.md`.
+See `proposal.md` for the why. This file held open design questions during sparring; decisions are now resolved inline. It becomes the canonical "how" for the three child changes (`pathway-model-foundations`, `pathway-input-logic-and-timing`, `pathway-runtime-aggregate`).
 
 Existing prior art in the codebase:
 
@@ -13,231 +13,157 @@ Existing prior art in the codebase:
 
 The runtime engine doesn't exist yet beyond stubs; this redesign defines what it will consume.
 
-## Open Design Questions
+## Resolved Design Decisions
 
-### D1 — ORM inheritance strategy: single-table vs joined
+### D1 — ORM inheritance strategy
 
-**Question.** Do we map the new class hierarchy with SQLAlchemy *single-table inheritance* (one wide table, discriminator column, nullable per-kind columns) or *joined inheritance* (a base table + per-subclass table joined on PK)?
+**Decision: single-table inheritance.**
 
-**My current take.** Joined inheritance for the long term, single-table for the PoC migration.
+One wide `pathway_block` table with a discriminator column and nullable per-kind columns. PoC stage; pathways aren't write-heavy; "load whole pathway" stays a single SELECT. DB-level shape enforcement (NOT NULL per kind) is deferred — domain layer + Pydantic v2 carry the contract.
 
-- Joined keeps the per-kind columns typed + NOT NULL where the domain requires; you can't accidentally read an `AppointmentBlock.location` from a `DecisionBlock` row because the FK join enforces shape.
-- Single-table is easier to migrate to and ship fast: one table, one alembic migration; queries that load "all blocks of pathway X" stay a single SELECT.
-- Pathways aren't write-heavy. The join cost on read is negligible at our row counts.
+If joined inheritance becomes valuable later, the migration path is per-kind table extraction; not planned for the PoC.
 
-**Trade-offs.**
+### D2 — Edges: drop authored rows, derive on read
 
-| Choice | Pro | Con |
-|---|---|---|
-| Single-table | Fewer tables, simpler migration, simpler "load whole pathway" query | Nullable columns for every per-kind field; nothing in the DB enforces "DecisionBlock has no `location`" |
-| Joined | Per-kind tables enforce shape at the DB level; cleaner audit trail; future kinds add a table not a column | More tables, joined SELECT to load a pathway; per-kind migrations |
-| Concrete (one table per class, no base) | — | Drops the base-class contract; no thanks |
+**Decision: drop `pathway_edge` table. `block.input_logic` is the single source of truth; canvas computes the edge list on read.**
 
-**Decision: TBD — sparring required.**
+Materialised view deferred until profiling shows it's needed. Migration drops the `pathway_edge` table and rewrites any consumer (canvas API, topology queries) to compute edges from `input_logic`.
 
----
+### D3 — `input_logic` predicate vocabulary
 
-### D2 — Edges: retire as authored rows, derive from `input_logic`
-
-**Question.** Do we drop the `pathway_edge` table entirely, or keep a materialised view of it for canvas / topology queries?
-
-**My current take.** Drop the authored table. Add a derived view (materialised or plain SQL) that the canvas reads — but the source of truth is `block.input_logic`.
-
-- Authored edges + `input_logic` would duplicate the same fact (Block B depends on Block A) in two places. They will drift.
-- Canvas rendering needs an edge list; computing it on read is fast (it's just unpacking `input_logic` per block). If profiling later shows we need it materialised, we add a view; for now, compute-on-read.
-
-**Trade-offs.**
-
-| Choice | Pro | Con |
-|---|---|---|
-| Drop edges, derive | Single source of truth; no drift; matches the domain shape | Canvas read is slightly more work |
-| Keep edge table, sync from input_logic via app code | Canvas read is one SELECT | Two stores must stay in sync; failure mode = stale edges |
-| Keep edge table, sync via DB trigger | Canvas read is one SELECT; sync is atomic | DB triggers are hard to reason about; future changes harder |
-
-**Decision: TBD — sparring required.**
-
----
-
-### D3 — `input_logic` predicate vocabulary: closed enum or open expression language
-
-**Question.** Is `rule` in `input_logic` a closed enum of predicates we hard-code (`if_done`, `if_complete`, `has_data`, `value_equals`, `wait_n_days`, …), or an expression language the builder writes (`block:lab.status == "done" AND block:measurement.value > 5`)?
-
-**My current take.** Closed enum to start, with a typed-args object per rule. Expression language is a trap for an MDR-conscious project.
+**Decision: closed enum + typed args.**
 
 ```python
-class InputLogicRule(TypedDict):
-    node: str                          # other block's slug
-    predicate: PredicateKind           # closed Literal
-    args: dict[str, Any]               # typed per predicate
-
 class PredicateKind(str, Enum):
-    IF_DONE = "if_done"                # other block is in state `complete`
-    HAS_DATA = "has_data"              # other block has a non-null `result` field
-    VALUE_EQUALS = "value_equals"      # args: { field: str, value: literal }
-    VALUE_GT = "value_gt"              # args: { field: str, value: number }
-    WAIT_AFTER = "wait_after"          # args: { offset: ISO8601 duration }
-    DECISION_OUTPUT = "decision_output"  # args: { output_key: str }
+    IF_DONE = "if_done"
+    HAS_DATA = "has_data"
+    VALUE_EQUALS = "value_equals"
+    VALUE_GT = "value_gt"
+    WAIT_AFTER = "wait_after"
+    DECISION_OUTPUT = "decision_output"
+
+class InputLogicRule(TypedDict):
+    node: str
+    predicate: PredicateKind
+    args: dict[str, Any]  # typed per predicate via discriminated union
 ```
 
-- Closed enum keeps the runtime engine analysable: every predicate has known semantics, known side effects, known evaluator.
-- Each predicate kind is auditable + testable in isolation.
-- Adding a new predicate is a typed code change, reviewed; not an arbitrary string a builder can type.
-- The MDR boundary is much easier to defend: we ship a finite set of predicates, none of which encode clinical reasoning, all of which are operational ("did the lab task complete?") not interpretive ("is the lab value pathological?").
+No expression language. No `arbitrary_python` escape hatch. New predicates land via typed code change + review. MDR posture: all predicates are operational, none encode clinical reasoning.
 
-**Trade-offs.**
+### D4 — Deferred-field representation
 
-| Choice | Pro | Con |
-|---|---|---|
-| Closed enum + typed args | Auditable, MDR-defensible, simple runtime | Adding a predicate is a code change |
-| Open expression language (JSONLogic, CEL) | Flexible, no code change per rule | Hard to audit; large MDR exposure if anyone encodes clinical reasoning; runtime more complex |
-| Closed enum now + escape hatch for `arbitrary_python: lambda` | Flexible escape valve | The escape valve becomes the default; same MDR exposure as open language |
-
-**Decision: TBD — sparring required.**
-
----
-
-### D4 — Deferred-field representation: typing marker vs sibling spec
-
-**Question.** Do we mark deferred fields with a Python-level marker (`Deferred[T]` typing trick) or with a separate `DeferredFieldSpec` model attached to the block?
-
-**My current take.** Sibling spec, owned by the block class via a class-level declaration.
+**Decision: sibling `DeferredFieldSpec` list per block class.**
 
 ```python
 class AppointmentBlock(BaseBlock):
-    title: str
-    mode: Literal["in_person", "video", "phone"]
     location: str
     scheduled_at: datetime
 
     DEFERRED_FIELDS = (
-        DeferredFieldSpec(
-            attr="location",
-            label="Locatie afspraak",
-            kind="text",
-            required=True,
-        ),
-        DeferredFieldSpec(
-            attr="scheduled_at",
-            label="Geplande datum",
-            kind="datetime",
-            required=True,
-            help="Bepaald bij enrollment door zorgteam.",
-        ),
+        DeferredFieldSpec(attr="location", label="Locatie afspraak", kind="text", required=True),
+        DeferredFieldSpec(attr="scheduled_at", label="Geplande datum", kind="datetime", required=True),
     )
 ```
 
-- `Deferred[T]` typing tricks make pretty class signatures but break Pydantic v2 validation, OpenAPI generation, and IDE inspection.
-- Sibling spec lets the same field be deferred OR static depending on the template instance (e.g. `Appointment` for a fixed yearly check-up has `scheduled_at` hard-coded; for a video consult it's deferred at enrollment).
-- The spec carries everything the builder needs to render the enrollment form: label, type, validation rule, default, help text, dependency on another deferred field.
+Plays nice with Pydantic v2 + OpenAPI codegen (`openapi-sync`). Same field can flip deferred/static per template instance. Spec carries form-render metadata (label, kind, help, dep).
 
-**Trade-offs.**
+`Deferred[T]` typing markers rejected — break Pydantic v2 validation + OpenAPI generation.
 
-| Choice | Pro | Con |
-|---|---|---|
-| Sibling `DeferredFieldSpec` list per class | Doesn't fight Pydantic / OpenAPI; same field can flip deferred/static per template; rich metadata | Two places to update if you add a field |
-| `Deferred[T]` typing marker | Pretty signatures | Fights Pydantic v2, OpenAPI, IDE; doesn't model "same field, deferred for some templates, static for others" |
-| Separate `pathway_block_deferred_field` table only (current shape) | No domain class change | Spec is invisible from the block class; nothing prevents drift |
+### D5 — Timing model split
 
-**Decision: TBD — sparring required.**
+**Decision: hard split.**
 
----
+- `TimingPolicy` — value object on the block template. Tagged union: `fixed_duration`, `wait_after`, `due_within`, `at_enrollment_picked_date`. No `started_at` / `completed_at`. Stored inline on block row (typed columns, not JSONB).
+- `BlockExecution` — row in `pathway_block_execution`, keyed by `(enrollment_id, block_template_id)`. Holds `scheduled_at`, `started_at`, `completed_at`, `due_at`, `state`.
 
-### D5 — Timing model: split `TimingPolicy` (template) and `BlockExecution` (runtime)
+`PathwayEnrollment.anchor_date` is the single anchor for the enrollment. Relative policies derive `BlockExecution.scheduled_at` from `anchor_date + policy.offset`. `at_enrollment_picked_date` blocks: deferred field value stored on `DeferredFieldValue` AND mirrored to `BlockExecution.scheduled_at` at enrollment time. Controlled duplication; never recomputed.
 
-**Question.** Confirm the split is two distinct ORM tables and two distinct domain objects, with no overlapping fields except FKs?
+### D6 — Decision block outputs
 
-**My current take.** Yes, hard split.
-
-- `TimingPolicy` is a value object on the block template. Shape: a tagged union of policies (`fixed_duration`, `wait_after`, `due_within`, `at_enrollment_picked_date`). No `started_at`. No `completed_at`. Stored either inline on the block row (single small JSONB if SQLAlchemy join cost is too high; otherwise as a few typed columns).
-- `BlockExecution` is a row in `pathway_block_execution`, keyed by `(enrollment_id, block_template_id)`. Holds `scheduled_at`, `started_at`, `completed_at`, `due_at`, `state`. Owns nothing the template owns.
-
-**Open question inside this question.** Where does the patient's chosen enrollment date live — on `BlockExecution` (per block) or on `PathwayEnrollment` (one date for the whole enrollment that policies derive their offsets from)?
-
-- I lean towards: `PathwayEnrollment.anchor_date` is the single chosen anchor; each `BlockExecution.scheduled_at` is computed from `anchor_date + policy.offset` for blocks whose policy is relative. For blocks whose policy is `at_enrollment_picked_date`, the date is supplied as a deferred field and stored both as the `DeferredFieldValue` AND as `BlockExecution.scheduled_at`.
-
-**Decision: TBD — sparring required.**
-
----
-
-### D6 — Decision block outputs: how do downstream blocks reference branches?
-
-**Question.** A `DecisionBlock` evaluates a predicate and routes execution to one of its outputs (XOR) or all of them (AND fan-out). How does downstream `input_logic` reference "the YES output" vs "the NO output"?
-
-**My current take.** Decision block declares typed `outputs: tuple[str, ...]` (e.g. `("matches_criteria", "fails_criteria")`). Downstream blocks reference via:
+**Decision: producer block declares typed `outputs: tuple[str, ...]`; downstream references via `decision_output` predicate.**
 
 ```python
-input_logic: [
-    { node: "decision-criteria", predicate: "decision_output", args: { output_key: "matches_criteria" } },
+class DecisionBlock(BaseBlock):
+    mode: Literal["xor", "and"] = "and"
+    outputs: tuple[str, ...]  # e.g. ("matches_criteria", "fails_criteria")
+```
+
+Downstream:
+
+```python
+input_logic = [
+    {"node": "decision-criteria", "predicate": "decision_output", "args": {"output_key": "matches_criteria"}},
 ]
 ```
 
-- The producer block owns its output vocabulary.
-- AND fan-out is the default: every output fires unless the predicate forbids it.
-- XOR is a property of the `DecisionBlock` itself (`mode: "xor" | "and"`).
-- A future block kind that wants exotic routing (e.g. `Subpath` returning N parallel branches) declares its own `outputs`.
+Publish-time validator enforces every `output_key` exists on the named producer. AND fan-out is default; XOR is `mode="xor"` on the producer. Other branching kinds (`Subpath`, future) declare their own `outputs` — uniform mechanism.
 
-**Decision: TBD — sparring required.**
+### D7 — Lane kind ownership
 
----
+**Decision: class-level `allowed_lane_kinds` + instance `lane_id` FK.**
 
-### D7 — Lane kind ownership stays on the block, not on the lane row
+```python
+class MDOBlock(BaseBlock):
+    allowed_lane_kinds = (LANE_KIND_CAREGIVER, LANE_KIND_EXTERNAL)
+```
 
-**Question.** Today lanes are separate rows that the block references via FK. Is the lane still the source of truth for "this block runs on the patient lane", or is the kind a property of the block class (`AppointmentBlock.lane_kind = LANE_KIND_CAREGIVER`)?
+Instance retains `lane_id` for canvas placement. Publish-time validator enforces `lane.kind ∈ allowed_lane_kinds`. Mirrors current `BlockTypeEntry.allowed_lane_kind_codes` contract; moves source from registry data to class attribute.
 
-**My current take.** Both, with the lane row constraint enforced by `allowed_lane_kinds` on the block class.
+### D8 — Pathway versioning
 
-- The block class declares `allowed_lane_kinds: tuple[str, ...]`. The instance still has a `lane_id` FK so the canvas can place it in the right visual lane.
-- The pathway-publish validator checks every block's `lane.kind` is in `allowed_lane_kinds`. Today's `BlockTypeEntry.allowed_lane_kind_codes` already does this; we keep the contract.
-- A block like `MDOBlock` might allow `LANE_KIND_CAREGIVER` AND `LANE_KIND_EXTERNAL` (the meeting can be hosted by either side). The class declares both; the builder picks one when placing.
+**Decision: untouched.**
 
-**Decision: TBD — sparring required.**
+`PathwayVersion` (`draft | published`, one published per pathway, enrollment FK to version) stays. Redesign happens inside a version; envelope unchanged.
 
----
+### D9 — Sequencing
 
-### D8 — Pathway versioning stays as-is
+**Decision: split into 3 sequential changes.**
 
-**Question.** Does this change touch how pathway versions / publish work?
+1. `pathway-model-foundations` — `BaseBlock` hierarchy, single-table ORM mapping, read API. Write API kept on compat shim. No behaviour change visible to builder.
+2. `pathway-input-logic-and-timing` — drop `pathway_edge`, introduce `input_logic` + `TimingPolicy`. Builder API surfaces new shape; canvas reads from `input_logic`. Old write endpoints retired.
+3. `pathway-runtime-aggregate` — `PathwayEnrollment`, `BlockExecution`, `DeferredFieldValue` tables. Runtime engine consumes aggregate.
 
-**My current take.** No. The current `PathwayVersion` model (`draft | published`, one published at a time per pathway) is correct and doesn't need rework. New blocks attach to a version; new versions snapshot blocks; enrollment binds to a specific published version. The redesign happens *inside* a version; the version envelope is unchanged.
+Merge order strict. Drafting may run in parallel in separate worktrees. CHAIN.md updated when these changes are proposed.
 
-**Decision: TBD — sparring required.**
+### D10 — Migration of existing rows
 
----
+**Decision: drop + manual recreation.**
 
-### D9 — Sequencing: one big change vs split into N
-
-**Question.** Land this in one merge, or split?
-
-**My current take.** Split into three:
-
-1. **`pathway-model-foundations`** — class hierarchy + ORM mapping + read API. Old write API still accepted via compat shim. Migration moves old data into the new shape. No behaviour change visible to the builder yet.
-2. **`pathway-input-logic-and-timing`** — drop the `edge` table, introduce `input_logic` + `TimingPolicy`. The builder API surfaces the new shape; the canvas reads from it. Old endpoints retired.
-3. **`pathway-runtime-aggregate`** — `PathwayEnrollment` + `BlockExecution` + `DeferredFieldValue` tables. Builder unchanged; runtime engine consumes the aggregate.
-
-Each is independently mergeable + reversible. Splitting also matches CHAIN-style dependency: you can land #1, freeze, build out #2, then #3.
-
-**Decision: TBD — sparring required.**
-
----
-
-### D10 — Migration of existing `PathwayBlock` rows
-
-**Question.** Do we migrate existing rows (the demo Rugrevalidatie + future seeded pathways), or do we drop them and re-seed?
-
-**My current take.** Drop + re-seed for the PoC. The currently-seeded pathways are demo content; they aren't real patient data. A one-off Alembic data migration that maps every old `(type, config)` pair into the new hierarchy is doable but throws code at a problem the seed scripts solve.
-
-**Decision: TBD — sparring required.**
-
----
+Alembic drops the old `pathway_block` / `pathway_edge` / `pathway_block_deferred_field` tables. Demo pathways (Rugrevalidatie etc.) recreated manually via the builder UI after #2 ships. No seed script in scope for this redesign; if reproducibility is needed later, capture as a follow-up change once the new model is stable.
 
 ## Risks / Trade-offs
 
-To be filled in once D1–D10 are decided. Key risks anticipated:
-
-- ORM inheritance choice (D1) drives migration complexity.
-- Predicate vocabulary (D3) drives MDR posture.
-- Sequencing (D9) drives delivery risk.
+- **D1 single-table → no DB-level per-kind enforcement.** Mitigation: Pydantic v2 + domain validation. Risk: a bad write that bypasses the domain layer corrupts a block row. Backstop: contract tests on the API layer that every mutation goes through the typed block class.
+- **D2 derive-on-read → canvas read cost grows with pathway size.** Mitigation: pathways stay small (< ~200 blocks). If profiling shows hotspot, add materialised view in a follow-up.
+- **D3 closed enum → adding a predicate is a code change.** Accepted. MDR posture is the win.
+- **D5 duplicated `scheduled_at`.** Mitigation: only written at enrollment; never recomputed. Audit: integration test that asserts `DeferredFieldValue.value == BlockExecution.scheduled_at` for `at_enrollment_picked_date` blocks.
+- **D9 sequencing → builder team blocked on writes between #1 and #2.** Mitigation: compat shim in #1 keeps the old write API alive against the new model. Builder team can keep shipping.
+- **D10 manual recreation → no CI reproducibility for demo content.** Accepted for PoC. Re-seed script is a follow-up.
 
 ## Migration Plan
 
-To be filled in once D1, D9, and D10 are decided.
+Per-change migration outline (full Alembic revisions land inside each child change):
+
+### #1 `pathway-model-foundations`
+
+- New `pathway_block` table with discriminator + per-kind nullable columns. Old `pathway_block` renamed to `pathway_block_legacy` (read-only during transition).
+- Data migration: legacy `(type, config)` rows mapped into the new typed columns via per-kind transformer functions. PoC scope: cover only the block kinds present in demo seeds.
+- Read API switched to the new table; write API stays on `pathway_block_legacy` via compat shim until #2.
+
+### #2 `pathway-input-logic-and-timing`
+
+- Drop `pathway_edge` table. Backfill `input_logic` on every block row from the dropped edges (`(from_id → to_id)` becomes `{node: from_slug, predicate: "if_done"}` per default). Manual review for decision-edge cases.
+- Add `timing_policy` columns to `pathway_block` (tagged union via discriminator). Backfill from existing timing fields where present; default `fixed_duration` of legacy duration where set, else `wait_after` zero.
+- Retire `pathway_block_legacy` and the compat shim.
+
+### #3 `pathway-runtime-aggregate`
+
+- New tables: `pathway_enrollment`, `pathway_block_execution`, `pathway_deferred_field_value`.
+- No data migration — runtime aggregate didn't exist before. Future enrollments only.
+
+## Vocabulary
+
+- **block ≡ node** — domain says block, builder UI/API surfaces as node. Canonical: block.
+- **template** — author-time shape on a `PathwayVersion`.
+- **execution** — runtime state per enrollment.
+- **anchor_date** — enrollment-level reference date that relative `TimingPolicy` offsets compute from.
