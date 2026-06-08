@@ -12,11 +12,11 @@
 
 ## 2. Storage — single-table inheritance
 
-- [ ] 2.1 Alembic migration: rename `pathway_block` → `pathway_block_legacy` (read-only). Create new `pathway_block` table with `id`, `pathway_version_id` FK, `phase_id` FK, `lane_id` FK, `name`, `kind` discriminator, plus nullable per-kind columns covering the union of subclass typed fields.
-- [ ] 2.2 `app/db/models/pathway/block.py`: SQLAlchemy `BaseBlockRow` with `polymorphic_on=kind`. One `Mapped` subclass per `BaseBlock` subclass with `polymorphic_identity` and per-kind column mappings.
-- [ ] 2.3 Mapper layer `app/db/models/pathway/block_mapper.py`: domain `BaseBlock` ⇄ ORM row.
-- [ ] 2.4 Data migration: per-kind transformer that reads `pathway_block_legacy.(type, config)` and writes a row into the new `pathway_block` table. Cover every kind present in current demo seeds.
-- [ ] 2.5 Round-trip test: every legacy row migrates to a typed subclass without data loss; re-export matches legacy `config` shape.
+- [ ] 2.1 Alembic migration: add columns to existing `pathway_block` in-place — `kind` discriminator (nullable initially; backfilled then set NOT NULL in chain slot #2), ~30 nullable per-kind columns prefixed by kind (`appointment_title`, `milestone_label`, etc.), plus stub JSONB columns `input_logic` (default `'[]'::jsonb`) and `timing_policy` (nullable) for chain slot #2. No table rename; the four FKs that reference `pathway_block.id` stay intact.
+- [ ] 2.2 `app/db/models/pathway/block.py`: extend `PathwayBlock` with `kind` discriminator + all per-kind nullable columns + `input_logic` + `timing_policy` stubs as plain `Mapped` fields on the flat ORM class. SQLAlchemy polymorphic loading deferred to chain slot #2 once `kind` is NOT NULL.
+- [ ] 2.3 Mapper layer `app/db/models/pathway/block_mapper.py`: `to_domain(row: PathwayBlock) -> BaseBlock` dispatches via `resolve_block_kind(row.kind)`; `from_domain(block: BaseBlock) -> dict[str, Any]` returns the kwargs to apply on a row. Legacy projector `legacy_to_domain(row)` reads `(type, config)` and yields a domain subclass when `kind` is NULL.
+- [ ] 2.4 Data backfill: same Alembic revision (`op.execute(...)`) populates `kind` + per-kind columns from every existing row's `(type, config)`. Cover every kind present in demo seeds. Legacy `type` / `config` rows stay untouched as a fallback.
+- [ ] 2.5 Round-trip test: every backfilled row materialises into the right typed subclass; re-serialising matches the original `config` shape on the fields the subclass owns.
 
 ## 3. Deferred fields — class-level
 

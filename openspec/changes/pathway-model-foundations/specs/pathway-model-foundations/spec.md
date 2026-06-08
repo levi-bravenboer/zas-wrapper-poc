@@ -15,9 +15,9 @@ The system SHALL model pathway blocks as a Python class hierarchy with `BaseBloc
 - **WHEN** the system attempts to construct a block whose `kind` discriminator has no matching subclass
 - **THEN** construction fails with a `UnknownBlockKindError`
 
-### Requirement: Single-table inheritance for pathway_block storage
+### Requirement: Single-table storage for pathway_block kinds
 
-The system SHALL persist all pathway block kinds in a single `pathway_block` table with a `kind` discriminator column and nullable per-kind columns. SQLAlchemy SHALL map each `BaseBlock` subclass via polymorphic identity on `kind`.
+The system SHALL persist all pathway block kinds in the existing `pathway_block` table with a `kind` discriminator column and nullable per-kind columns prefixed by kind (e.g. `appointment_title`, `milestone_label`). A mapper layer (`app/db/models/pathway/block_mapper.py`) SHALL convert ORM rows to typed `BaseBlock` subclasses by dispatching on `kind`. SQLAlchemy polymorphic loading is deferred to chain slot #2 (`pathway-input-logic-and-timing`) once the discriminator is NOT NULL; during chain slot #1 the mapper is the only consumer-facing dispatch point. The table SHALL NOT be renamed; existing foreign keys (`pathway_edge.from_block_id`, `pathway_edge.to_block_id`, `pathway_block_branch.block_id`, `pathway_block_deferred_field.block_id`) reference `pathway_block.id` and must stay valid through the transition.
 
 #### Scenario: Loading a pathway returns typed subclass instances
 
@@ -26,9 +26,9 @@ The system SHALL persist all pathway block kinds in a single `pathway_block` tab
 
 #### Scenario: Per-kind columns are nullable across kinds
 
-- **GIVEN** the `pathway_block` table contains a `location` column (used by `AppointmentBlock`)
+- **GIVEN** the `pathway_block` table contains an `appointment_location` column (used by `AppointmentBlock`)
 - **WHEN** a `DecisionBlock` row is written
-- **THEN** the `location` column on that row is NULL and writing succeeds
+- **THEN** the `appointment_location` column on that row is NULL and writing succeeds
 
 ### Requirement: Class-level DeferredFieldSpec declarations
 

@@ -57,3 +57,75 @@ class PathwayBlock(TenantOwnedEntity):
     snapshot_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     x: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default=sa.text("0"))
     y: Mapped[int] = mapped_column(sa.Integer, nullable=False, server_default=sa.text("0"))
+
+    # --- Typed-model columns introduced by `pathway-model-foundations` ---
+    # `kind` is nullable during the chain-slot-#1 transition; promoted to
+    # NOT NULL in chain slot #2 once every legacy `(type, config)` consumer
+    # is retired. The mapper layer (`block_mapper.py`) dispatches on this
+    # value when materialising rows into typed `BaseBlock` subclasses.
+    kind: Mapped[str | None] = mapped_column(sa.String(32), nullable=True, index=True)
+
+    # Stub fields for chain slot #2 (`pathway-input-logic-and-timing`).
+    # Mapper layer reads/writes them but they carry no behaviour in slot #1.
+    input_logic: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")
+    )
+    timing_policy: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+    # --- Per-kind nullable columns (single-table inheritance, mapper-dispatched) ---
+    # Prefixed by kind to avoid collisions with each other and with the
+    # legacy `label` display column above. Every column is nullable
+    # because exactly one kind populates any given row.
+    appointment_title: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    appointment_mode: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
+    appointment_location: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    appointment_duration_minutes: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    appointment_attendees_patient: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
+    appointment_notes: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    task_title: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    task_assignee: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
+    task_due_offset_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    task_requires_completion: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
+    task_notes: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    decision_question: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
+    decision_auto_resolve: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+    message_channel: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
+    message_subject: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    message_body: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    message_cta_label: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    message_cta_target: Mapped[str | None] = mapped_column(sa.String(1024), nullable=True)
+
+    form_title: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    form_intro: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    form_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
+    form_submit_label: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    form_confirmation_message: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    milestone_label: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    milestone_description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    milestone_icon: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+
+    wait_event_type: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    wait_source_block_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+    wait_timeout_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    wait_on_timeout: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
+
+    pathway_link_target_pathway_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True
+    )
+    pathway_link_mode: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    pathway_link_version_pin: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    pathway_link_pinned_version_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True
+    )
+    pathway_link_context_mapping: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB, nullable=True
+    )
+
+    external_program_provider: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    external_program_program_id: Mapped[str | None] = mapped_column(sa.String(128), nullable=True)
+    external_program_protocol_id: Mapped[str | None] = mapped_column(sa.String(128), nullable=True)
+    external_program_mode: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)

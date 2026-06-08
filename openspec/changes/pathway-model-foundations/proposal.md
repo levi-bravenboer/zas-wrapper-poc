@@ -32,7 +32,9 @@ Each subclass adds typed fields, `DEFERRED_FIELDS`, and class-level metadata: `L
 
 ### Storage — single-table inheritance
 
-New `pathway_block` table with discriminator `kind: str` and nullable per-kind columns covering the union of all subclasses' typed fields. SQLAlchemy `polymorphic_on` / `polymorphic_identity` per subclass. Old `pathway_block` renamed to `pathway_block_legacy` (read-only via compat shim).
+Add a `kind` discriminator column and ~30 nullable per-kind columns (kind-prefixed, e.g. `appointment_title`, `milestone_label`) to the existing `pathway_block` table. SQLAlchemy `polymorphic_on=kind` / `polymorphic_identity` per subclass. The existing `type` / `config` / `label` / `snapshot_json` columns stay during the chain-slot-#1 transition; legacy reads/writes continue to use them via the compat shim. They are dropped in chain slot #2.
+
+Add-in-place rather than rename — four foreign keys (`pathway_edge.from_block_id`, `pathway_edge.to_block_id`, `pathway_block_branch.block_id`, `pathway_block_deferred_field.block_id`) reference `pathway_block.id`; renaming the table would break each.
 
 ### Read API on new shape
 
