@@ -12,9 +12,23 @@ This change lands the foundations only: class hierarchy, single-table ORM mappin
 
 ### Domain — `BaseBlock` hierarchy
 
-`app/domain/pathway/blocks/` reshaped from data-registry to class hierarchy. `BaseBlock` carries `name`, `input_logic` (stub field — populated in chain slot #2), `timing_policy` (stub — slot #2), `lane_kind`. Per-kind subclasses (`AppointmentBlock`, `TaskBlock`, `DecisionBlock`, `SubpathBlock`, `BridgeBlock`, `MDOBlock`, `TreatmentBlock`, `ExternalProgramBlock`, `MessageBlock`, `EndPathwayBlock`) add typed fields, `DEFERRED_FIELDS`, `LABEL` / `DESCRIPTION` / `ICON` / `LANE_KINDS` / `EVENTS` / `RESULT_TYPE` / `FIELD_MODES`.
+`app/domain/pathway/blocks/` reshaped from data-registry (`BlockTypeEntry` instances) to class hierarchy. `BaseBlock` carries `name`, `input_logic` (stub field — populated in chain slot #2), `timing_policy` (stub — slot #2), `lane_kind`. Per-kind subclasses cover today's 9 kinds:
 
-`BlockTypeEntry` registry retired. Per-kind class is the source of truth; class-level metadata replaces registry data.
+| Existing kind | New subclass |
+|---|---|
+| `appointment` | `AppointmentBlock` |
+| `task` | `TaskBlock` |
+| `decision` | `DecisionBlock` |
+| `message` | `MessageBlock` |
+| `form` | `FormBlock` |
+| `milestone` | `MilestoneBlock` |
+| `wait` | `WaitBlock` |
+| `pathway_link` | `PathwayLinkBlock` |
+| `luscii_program` | `ExternalProgramBlock` (with `provider: Literal["luscii", ...]` discriminator) |
+
+Each subclass adds typed fields, `DEFERRED_FIELDS`, and class-level metadata: `LABEL`, `DESCRIPTION`, `ICON`, `LANE_KINDS`, `EVENTS`, `RESULT_TYPE`, `FIELD_MODES`. `BlockTypeEntry` data registry retired; per-kind class is the source of truth.
+
+**Out of scope for this change**: new kinds named in the parent spec catalogue (`start`, `subpath`, `treatment`, `mdo`, `bridge`, `end-pathway`, `notification`) and any merge/retire of `form`/`milestone`/`wait`. Those land as separate proposals after foundations.
 
 ### Storage — single-table inheritance
 

@@ -2,7 +2,7 @@
 
 ### Requirement: BaseBlock class hierarchy as domain source of truth
 
-The system SHALL model pathway blocks as a Python class hierarchy with `BaseBlock` as the abstract root and one concrete subclass per block kind (`AppointmentBlock`, `TaskBlock`, `DecisionBlock`, `SubpathBlock`, `BridgeBlock`, `MDOBlock`, `TreatmentBlock`, `ExternalProgramBlock`, `MessageBlock`, `EndPathwayBlock`). The `BlockTypeEntry` data registry SHALL be retired.
+The system SHALL model pathway blocks as a Python class hierarchy with `BaseBlock` as the abstract root and one concrete subclass per block kind currently supported: `AppointmentBlock` (appointment), `TaskBlock` (task), `DecisionBlock` (decision), `MessageBlock` (message), `FormBlock` (form), `MilestoneBlock` (milestone), `WaitBlock` (wait), `PathwayLinkBlock` (pathway_link), `ExternalProgramBlock` (luscii_program, parameterised by a `provider` field). The `BlockTypeEntry` data registry SHALL be retired.
 
 #### Scenario: Per-kind metadata lives on the class
 

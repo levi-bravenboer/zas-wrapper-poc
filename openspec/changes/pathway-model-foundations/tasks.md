@@ -6,7 +6,7 @@
 
 - [ ] 1.1 `app/domain/pathway/blocks/_base.py`: define `BaseBlock` (Pydantic v2) with `name`, `lane_kind`, stub `input_logic: list = []`, stub `timing_policy: dict | None = None`. Class attrs: `LABEL`, `DESCRIPTION`, `ICON`, `LANE_KINDS`, `EVENTS`, `RESULT_TYPE`, `FIELD_MODES`, `DEFERRED_FIELDS`.
 - [ ] 1.2 `app/domain/pathway/blocks/deferred.py`: `DeferredFieldSpec` (attr, label, kind, required, help, default, depends_on).
-- [ ] 1.3 Per-kind subclasses under `app/domain/pathway/blocks/<kind>/block.py`: `AppointmentBlock`, `TaskBlock`, `DecisionBlock`, `SubpathBlock`, `BridgeBlock`, `MDOBlock`, `TreatmentBlock`, `ExternalProgramBlock`, `MessageBlock`, `EndPathwayBlock`. Each subclass declares its typed fields, `DEFERRED_FIELDS`, class metadata.
+- [ ] 1.3 Per-kind subclasses under `app/domain/pathway/blocks/<kind>/block.py` covering today's 9 kinds: `AppointmentBlock` (appointment), `TaskBlock` (task), `DecisionBlock` (decision), `MessageBlock` (message), `FormBlock` (form), `MilestoneBlock` (milestone), `WaitBlock` (wait), `PathwayLinkBlock` (pathway_link), `ExternalProgramBlock` (luscii_program, with `provider: Literal["luscii", ...]` discriminator). Each subclass declares its typed fields, `DEFERRED_FIELDS`, class metadata. New kinds from the parent spec catalogue (`start`, `subpath`, `treatment`, `mdo`, `bridge`, `end-pathway`, `notification`) ship as separate proposals after foundations.
 - [ ] 1.4 Retire `BlockTypeEntry` registry and its data files. Add deprecation shim that resolves old `(type: str)` strings to the new subclass class.
 - [ ] 1.5 Unit tests per subclass: instantiation, default field values, `DEFERRED_FIELDS` shape, `LANE_KINDS` membership.
 
