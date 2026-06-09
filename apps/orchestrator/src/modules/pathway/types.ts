@@ -42,7 +42,13 @@ export function legacyBlockType(block: PathwayBlock): string {
 export function legacyBlockConfig(block: PathwayBlock): Record<string, unknown> {
   return (block.config ?? {}) as Record<string, unknown>
 }
-export type PathwayEdge = components['schemas']['PathwayEdgeOut']
+// Chain slot #2 §3 replaces the authored `pathway_edge` table with
+// `input_logic` rules per block; the canvas reads the connector layer
+// off the `DerivedEdge` projection the server computes on read. The
+// `PathwayEdge` alias keeps its name so existing import sites land on
+// the new shape without churning every file in this commit.
+export type PathwayEdge = components['schemas']['DerivedEdge']
+export type DerivedEdge = components['schemas']['DerivedEdge']
 export type PathwayPhase = components['schemas']['PathwayPhaseOut']
 export type PathwayLane = components['schemas']['PathwayLaneOut']
 export type PathwayBlockBranch = components['schemas']['PathwayBlockBranchOut']
@@ -64,27 +70,10 @@ export function isLaneKindCode(value: string): value is LaneKindCode {
 export type BlockConfig = Record<string, unknown>
 export type BlockConfigSchema = NonNullable<PathwayBlockType['config_schema']>
 
-export type EdgeTiming =
-  | { kind: 'completion'; delay_value_id: string }
-  | {
-      kind: 'marker'
-      time_marker_id: string
-      offset_value_id: string
-      offset_direction_code: string
-    }
-  | { kind: 'immediate' }
-  | { kind: 'branch'; source_branch_id: string }
-
-export function readEdgeTiming(edge: PathwayEdge): EdgeTiming {
-  if (edge.time_marker_id && edge.offset_value_id && edge.offset_direction_code) {
-    return {
-      kind: 'marker',
-      time_marker_id: edge.time_marker_id,
-      offset_value_id: edge.offset_value_id,
-      offset_direction_code: edge.offset_direction_code,
-    }
-  }
-  if (edge.source_branch_id) return { kind: 'branch', source_branch_id: edge.source_branch_id }
-  if (edge.delay_value_id) return { kind: 'completion', delay_value_id: edge.delay_value_id }
-  return { kind: 'immediate' }
-}
+// `EdgeTiming` and `readEdgeTiming` were retired alongside the
+// `pathway_edge` table in chain slot #2 §3. Edge timing
+// (delay / marker / branch) is now expressed as `input_logic`
+// rule args on the target block; the canvas reads the predicate
+// directly off `DerivedEdge.predicate` + `args` and lets the rule
+// inspector author the typed shape. Slot #4 lifts ISO-duration
+// authoring (`TimingPolicy`) onto the block itself.

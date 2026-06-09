@@ -126,27 +126,16 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         selection: { kind: 'none' },
       }
     }
-    case 'add-edge': {
-      const history = pushHistory(state)
-      const edges = [...(state.version.edges ?? []), action.edge]
-      return { ...state, version: { ...state.version, edges }, history }
-    }
-    case 'patch-edge': {
-      const history = pushHistory(state)
-      const edges = (state.version.edges ?? []).map((e) =>
-        e.id === action.edgeId ? { ...e, ...action.patch } : e,
-      )
-      return { ...state, version: { ...state.version, edges }, history }
-    }
+    case 'add-edge':
+    case 'patch-edge':
     case 'delete-edge': {
-      const history = pushHistory(state)
-      const edges = (state.version.edges ?? []).filter((e) => e.id !== action.edgeId)
-      return {
-        ...state,
-        version: { ...state.version, edges },
-        history,
-        selection: { kind: 'none' },
-      }
+      // Edge reducers retired in chain slot #2 §3 — edges are
+      // computed from `block.input_logic` on read. The slot #7 rule
+      // inspector will dispatch `patch-block` against the target
+      // block's `input_logic` instead. Until that lands, these
+      // actions are accepted as no-ops so callsites compile while
+      // we migrate inspectors kind-by-kind.
+      return state
     }
     case 'add-phase': {
       const history = pushHistory(state)
@@ -258,7 +247,15 @@ function preserveSelection(
     return (next.blocks ?? []).some((b) => b.id === current.blockId) ? current : { kind: 'none' }
   }
   if (current.kind === 'edge') {
-    return (next.edges ?? []).some((e) => e.id === current.edgeId) ? current : { kind: 'none' }
+    // `DerivedEdge` has no row id (slot #2 §3). Match the synthetic
+    // id `useFlowEdges` composes from the producer / consumer /
+    // predicate triple.
+    return (next.edges ?? []).some(
+      (e) =>
+        `${e.source_block_id ?? 'marker'}->${e.target_block_id}:${e.predicate}` === current.edgeId,
+    )
+      ? current
+      : { kind: 'none' }
   }
   return current
 }

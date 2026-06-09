@@ -4003,13 +4003,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -4482,13 +4480,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -4533,6 +4529,71 @@
           "question"
         ],
         "title": "DecisionBlockOut"
+      },
+      "DecisionOutputArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "decision_output",
+            "title": "Predicate",
+            "default": "decision_output"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "output_key": {
+            "type": "string",
+            "title": "Output Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block",
+          "output_key"
+        ],
+        "title": "DecisionOutputArgs",
+        "description": "Producer `decision`-class block fired the named `output_key`."
+      },
+      "DerivedEdge": {
+        "properties": {
+          "target_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Block Id"
+          },
+          "source_block_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Block Id"
+          },
+          "predicate": {
+            "$ref": "#/components/schemas/PredicateKind"
+          },
+          "args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Args"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target_block_id",
+          "source_block_id",
+          "predicate"
+        ],
+        "title": "DerivedEdge",
+        "description": "One canvas connector derived from a target block's `input_logic` rule.\n\n`source_block_id` identifies the producer; for predicates that do\nnot name a block (`wait_after` \u2014 anchored on a marker, not a\nblock), `source_block_id` is `None` and the canvas renders the\nedge as marker-anchored instead."
       },
       "ErrorResponse": {
         "properties": {
@@ -4802,13 +4863,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -4971,13 +5030,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -5163,6 +5220,33 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HasDataArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "has_data",
+            "title": "Predicate",
+            "default": "has_data"
+          },
+          "block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block",
+          "field_path"
+        ],
+        "title": "HasDataArgs",
+        "description": "A produced field on `block` is non-null at evaluation time."
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -5187,6 +5271,136 @@
           "started_at"
         ],
         "title": "HealthResponse"
+      },
+      "IfDoneArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "if_done",
+            "title": "Predicate",
+            "default": "if_done"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "delay_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block"
+        ],
+        "title": "IfDoneArgs",
+        "description": "Predecessor block has completed (with optional `delay_iso` wait)."
+      },
+      "InputLogic": {
+        "properties": {
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/InputLogicRule"
+            },
+            "type": "array",
+            "title": "Rules",
+            "default": []
+          },
+          "aggregator": {
+            "type": "string",
+            "enum": [
+              "all_of",
+              "any_of"
+            ],
+            "title": "Aggregator",
+            "default": "all_of"
+          },
+          "n_of_m": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Of M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "InputLogic",
+        "description": "Aggregate of rules attached to a `BaseBlock`.\n\n`aggregator` defines the combinator: `all_of` (default \u2014 every rule\nmust hold) or `any_of` (at least one). `n_of_m` is an optional\nvoting threshold for `any_of`-style gates; when set, the rule list\nmust satisfy at least `n` of `m` clauses."
+      },
+      "InputLogicRule": {
+        "properties": {
+          "node": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Node"
+          },
+          "args": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/IfDoneArgs"
+              },
+              {
+                "$ref": "#/components/schemas/HasDataArgs"
+              },
+              {
+                "$ref": "#/components/schemas/ValueEqualsArgs"
+              },
+              {
+                "$ref": "#/components/schemas/ValueGtArgs"
+              },
+              {
+                "$ref": "#/components/schemas/WaitAfterArgs"
+              },
+              {
+                "$ref": "#/components/schemas/DecisionOutputArgs"
+              }
+            ],
+            "title": "Args",
+            "discriminator": {
+              "propertyName": "predicate",
+              "mapping": {
+                "decision_output": "#/components/schemas/DecisionOutputArgs",
+                "has_data": "#/components/schemas/HasDataArgs",
+                "if_done": "#/components/schemas/IfDoneArgs",
+                "value_equals": "#/components/schemas/ValueEqualsArgs",
+                "value_gt": "#/components/schemas/ValueGtArgs",
+                "wait_after": "#/components/schemas/WaitAfterArgs"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node",
+          "args"
+        ],
+        "title": "InputLogicRule",
+        "description": "One typed eligibility rule referenced from a downstream block.\n\n`node` is the producer block reference (uuid string) for\nvisualization / canvas wiring; the predicate's typed `args` model\ncarries the same id and any predicate-specific fields. Carrying\n`node` at the rule level keeps canvas dispatch O(1) without\nwalking into the args union."
       },
       "ItemCategory": {
         "type": "string",
@@ -5757,13 +5971,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -5921,13 +6133,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -7033,13 +7243,6 @@
             "type": "array",
             "title": "Branches"
           },
-          "edges": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayEdgeIn"
-            },
-            "type": "array",
-            "title": "Edges"
-          },
           "time_markers": {
             "items": {
               "$ref": "#/components/schemas/PathwayTimeMarkerIn"
@@ -7076,92 +7279,6 @@
         ],
         "title": "PathwayDuplicateRequest"
       },
-      "PathwayEdgeIn": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "source_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Source Block Id"
-          },
-          "target_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Target Block Id"
-          },
-          "source_branch_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Branch Id"
-          },
-          "delay_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Delay Value Id"
-          },
-          "time_marker_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Marker Id"
-          },
-          "offset_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Value Id"
-          },
-          "offset_direction_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 63
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Direction Code"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "source_block_id",
-          "target_block_id"
-        ],
-        "title": "PathwayEdgeIn"
-      },
       "PathwayEdgeOffsetDirection": {
         "properties": {
           "code": {
@@ -7184,92 +7301,6 @@
           "ord"
         ],
         "title": "PathwayEdgeOffsetDirection"
-      },
-      "PathwayEdgeOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "source_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Source Block Id"
-          },
-          "target_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Target Block Id"
-          },
-          "source_branch_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Branch Id"
-          },
-          "delay_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Delay Value Id"
-          },
-          "time_marker_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Marker Id"
-          },
-          "offset_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Value Id"
-          },
-          "offset_direction_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 63
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Direction Code"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "source_block_id",
-          "target_block_id"
-        ],
-        "title": "PathwayEdgeOut"
       },
       "PathwayEdgeTimingKind": {
         "properties": {
@@ -7487,13 +7518,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -8235,7 +8264,7 @@
           },
           "edges": {
             "items": {
-              "$ref": "#/components/schemas/PathwayEdgeOut"
+              "$ref": "#/components/schemas/DerivedEdge"
             },
             "type": "array",
             "title": "Edges"
@@ -9148,6 +9177,19 @@
         "type": "object",
         "title": "PractitionerUpdate"
       },
+      "PredicateKind": {
+        "type": "string",
+        "enum": [
+          "if_done",
+          "has_data",
+          "value_equals",
+          "value_gt",
+          "wait_after",
+          "decision_output"
+        ],
+        "title": "PredicateKind",
+        "description": "Closed enum of supported input-logic predicates (D3).\n\nNo expression language. Adding a new predicate is a typed code\nchange here + a new `Args` model + an evaluator branch."
+      },
       "ProviderDescriptor": {
         "properties": {
           "key": {
@@ -9564,13 +9606,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [
@@ -9901,6 +9941,105 @@
         ],
         "title": "ValidationError"
       },
+      "ValueEqualsArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "value_equals",
+            "title": "Predicate",
+            "default": "value_equals"
+          },
+          "block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          },
+          "expected": {
+            "title": "Expected"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block",
+          "field_path",
+          "expected"
+        ],
+        "title": "ValueEqualsArgs",
+        "description": "A produced field equals `expected`. Pure value compare, no coercion."
+      },
+      "ValueGtArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "value_gt",
+            "title": "Predicate",
+            "default": "value_gt"
+          },
+          "block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block",
+          "field_path",
+          "threshold"
+        ],
+        "title": "ValueGtArgs",
+        "description": "A produced numeric field is strictly greater than `threshold`."
+      },
+      "WaitAfterArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "wait_after",
+            "title": "Predicate",
+            "default": "wait_after"
+          },
+          "marker_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Marker Id"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "before",
+              "after"
+            ],
+            "title": "Direction"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "marker_id",
+          "offset_iso",
+          "direction"
+        ],
+        "title": "WaitAfterArgs",
+        "description": "Anchored wait: marker reached + ISO 8601 offset, direction-signed."
+      },
       "WaitBlockOut": {
         "properties": {
           "id": {
@@ -9990,13 +10129,11 @@
             "title": "Lane Kind"
           },
           "input_logic": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Input Logic",
-            "default": []
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
           },
           "timing_policy": {
             "anyOf": [

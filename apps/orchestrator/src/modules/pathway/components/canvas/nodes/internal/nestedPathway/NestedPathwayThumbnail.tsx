@@ -175,6 +175,7 @@ export function NestedPathwayThumbnail({
           style={{ overflow: 'visible' }}
         >
           {edges.map((edge) => {
+            if (!edge.source_block_id) return null
             const source = blocks.find((b) => b.id === edge.source_block_id)
             const target = blocks.find((b) => b.id === edge.target_block_id)
             if (!source || !target) return null
@@ -189,7 +190,7 @@ export function NestedPathwayThumbnail({
             const cx = sx + (tx - sx) / 2
             return (
               <path
-                key={edge.id}
+                key={`${edge.source_block_id}->${edge.target_block_id}:${edge.predicate}`}
                 d={`M ${sx} ${sy} C ${cx} ${sy}, ${cx} ${ty}, ${tx} ${ty}`}
                 stroke="rgba(11,26,23,0.45)"
                 strokeWidth={1.5}

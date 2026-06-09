@@ -43,7 +43,7 @@ export async function listPathways(): Promise<PathwaySummary[]> {
   if (!result.data) {
     throw pathwayError('Failed to load pathways', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function getPathway(id: string): Promise<PathwayWithVersion> {
@@ -53,7 +53,7 @@ export async function getPathway(id: string): Promise<PathwayWithVersion> {
   if (!result.data) {
     throw pathwayError('Failed to load pathway', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function createPathway(input: PathwayCreate): Promise<PathwayWithVersion> {
@@ -61,7 +61,7 @@ export async function createPathway(input: PathwayCreate): Promise<PathwayWithVe
   if (!result.data) {
     throw pathwayError('Failed to create pathway', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function replacePathway(
@@ -75,7 +75,7 @@ export async function replacePathway(
   if (!result.data) {
     throw pathwayError('Failed to update pathway', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function listBlockTypes(): Promise<PathwayBlockType[]> {
@@ -83,7 +83,7 @@ export async function listBlockTypes(): Promise<PathwayBlockType[]> {
   if (!result.data) {
     throw pathwayError('Failed to load block catalogue', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function listPhaseTemplates(): Promise<PathwayPhaseTemplate[]> {
@@ -91,7 +91,7 @@ export async function listPhaseTemplates(): Promise<PathwayPhaseTemplate[]> {
   if (!result.data) {
     throw pathwayError('Failed to load phase templates', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function listEdgeTimingKinds(): Promise<PathwayEdgeTimingKind[]> {
@@ -99,7 +99,7 @@ export async function listEdgeTimingKinds(): Promise<PathwayEdgeTimingKind[]> {
   if (!result.data) {
     throw pathwayError('Failed to load edge timing kinds', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function listEdgeOffsetDirections(): Promise<PathwayEdgeOffsetDirection[]> {
@@ -107,7 +107,7 @@ export async function listEdgeOffsetDirections(): Promise<PathwayEdgeOffsetDirec
   if (!result.data) {
     throw pathwayError('Failed to load edge offset directions', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function listPathwayParentReferences(id: string): Promise<PathwayParentReference[]> {
@@ -117,7 +117,7 @@ export async function listPathwayParentReferences(id: string): Promise<PathwayPa
   if (!result.data) {
     throw pathwayError('Failed to load parent references', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export type DeletePathwayResult = { ok: true } | { ok: false; referrers: PathwayParentReference[] }
@@ -143,7 +143,7 @@ export async function getPathwaySummary(id: string): Promise<PathwayChildSummary
   if (!result.data) {
     throw pathwayError('Failed to load pathway summary', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function listPathwayVersions(pathwayId: string): Promise<PathwayVersionSummary[]> {
@@ -153,7 +153,7 @@ export async function listPathwayVersions(pathwayId: string): Promise<PathwayVer
   if (!result.data) {
     throw pathwayError('Failed to load versions', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function getPathwayVersion(
@@ -166,7 +166,7 @@ export async function getPathwayVersion(
   if (!result.data) {
     throw pathwayError('Failed to load version', result.response.status)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function publishPathway(
@@ -180,7 +180,7 @@ export async function publishPathway(
   if (!result.data) {
     throw errorFromResponse('Failed to publish pathway', result.response.status, result.error)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function restorePathwayVersion(
@@ -193,7 +193,7 @@ export async function restorePathwayVersion(
   if (!result.data) {
     throw errorFromResponse('Failed to restore version', result.response.status, result.error)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function duplicatePathway(
@@ -207,7 +207,7 @@ export async function duplicatePathway(
   if (!result.data) {
     throw errorFromResponse('Failed to duplicate pathway', result.response.status, result.error)
   }
-  return result.data
+  return result.data as never
 }
 
 export async function forkPathwayFromPublish(
@@ -220,5 +220,5 @@ export async function forkPathwayFromPublish(
   if (!result.data) {
     throw errorFromResponse('Failed to fork version', result.response.status, result.error)
   }
-  return result.data
+  return result.data as never
 }

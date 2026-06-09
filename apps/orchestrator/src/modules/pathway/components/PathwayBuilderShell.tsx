@@ -92,8 +92,11 @@ function Inner({
   readOnlyVariant,
   catalogue,
   phaseTemplates,
-  timingKinds,
-  offsetDirections,
+  // `timingKinds` / `offsetDirections` previously fed the
+  // `EdgeInspector` timing union; retired in slot #2 §3. Slot #4
+  // re-introduces them on the `TimingPolicy` inspector.
+  timingKinds: _timingKinds,
+  offsetDirections: _offsetDirections,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const navigate = useNavigate()
@@ -125,14 +128,13 @@ function Inner({
 
   const dragApi = useDragContext()
 
-  const { phases, lanes, blocks, edges, timingValues, timeMarkers, branches } = useMemo(
+  const { phases, lanes, blocks, edges, timingValues, branches } = useMemo(
     () => ({
       phases: state.version.phases ?? [],
       lanes: state.version.lanes ?? [],
       blocks: state.version.blocks ?? [],
       edges: state.version.edges ?? [],
       timingValues: state.version.timing_values ?? [],
-      timeMarkers: state.version.time_markers ?? [],
       branches: state.version.branches ?? [],
     }),
     [state.version],
@@ -215,7 +217,15 @@ function Inner({
   const selectedEdge = (() => {
     const sel = state.selection
     if (sel.kind !== 'edge') return null
-    return edges.find((e) => e.id === sel.edgeId) ?? null
+    // `DerivedEdge` has no row id (slot #2 §3 — edges are computed
+    // from `input_logic`); reuse the synthetic id `useFlowEdges`
+    // composes from the producer / consumer / predicate triple.
+    return (
+      edges.find(
+        (e) =>
+          `${e.source_block_id ?? 'marker'}->${e.target_block_id}:${e.predicate}` === sel.edgeId,
+      ) ?? null
+    )
   })()
 
   return (
@@ -303,16 +313,6 @@ function Inner({
           {selectedEdge && (
             <EdgeInspector
               edge={selectedEdge}
-              timingKinds={timingKinds}
-              offsetDirections={offsetDirections}
-              timingValues={timingValues}
-              timeMarkers={timeMarkers}
-              blocks={blocks}
-              branches={branches}
-              onPatchEdge={(patch) =>
-                dispatch({ type: 'patch-edge', edgeId: selectedEdge.id, patch })
-              }
-              onDelete={() => dispatch({ type: 'delete-edge', edgeId: selectedEdge.id })}
               onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
             />
           )}

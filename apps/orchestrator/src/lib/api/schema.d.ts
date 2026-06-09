@@ -1166,12 +1166,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -1367,12 +1367,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -1385,6 +1385,47 @@ export interface components {
              * @enum {string}
              */
             kind: "decision";
+        };
+        /**
+         * DecisionOutputArgs
+         * @description Producer `decision`-class block fired the named `output_key`.
+         */
+        DecisionOutputArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "decision_output";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Output Key */
+            output_key: string;
+        };
+        /**
+         * DerivedEdge
+         * @description One canvas connector derived from a target block's `input_logic` rule.
+         *
+         *     `source_block_id` identifies the producer; for predicates that do
+         *     not name a block (`wait_after` — anchored on a marker, not a
+         *     block), `source_block_id` is `None` and the canvas renders the
+         *     edge as marker-anchored instead.
+         */
+        DerivedEdge: {
+            /**
+             * Target Block Id
+             * Format: uuid
+             */
+            target_block_id: string;
+            /** Source Block Id */
+            source_block_id: string | null;
+            predicate: components["schemas"]["PredicateKind"];
+            /** Args */
+            args?: {
+                [key: string]: unknown;
+            };
         };
         /** ErrorResponse */
         ErrorResponse: {
@@ -1525,12 +1566,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -1594,12 +1635,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -1660,6 +1701,24 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HasDataArgs
+         * @description A produced field on `block` is non-null at evaluation time.
+         */
+        HasDataArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "has_data";
+            /**
+             * Block
+             * Format: uuid
+             */
+            block: string;
+            /** Field Path */
+            field_path: string;
+        };
         /** HealthResponse */
         HealthResponse: {
             /**
@@ -1675,6 +1734,70 @@ export interface components {
              * Format: date-time
              */
             started_at: string;
+        };
+        /**
+         * IfDoneArgs
+         * @description Predecessor block has completed (with optional `delay_iso` wait).
+         */
+        IfDoneArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "if_done";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Delay Iso */
+            delay_iso?: string | null;
+        };
+        /**
+         * InputLogic
+         * @description Aggregate of rules attached to a `BaseBlock`.
+         *
+         *     `aggregator` defines the combinator: `all_of` (default — every rule
+         *     must hold) or `any_of` (at least one). `n_of_m` is an optional
+         *     voting threshold for `any_of`-style gates; when set, the rule list
+         *     must satisfy at least `n` of `m` clauses.
+         */
+        InputLogic: {
+            /**
+             * Rules
+             * @default []
+             */
+            rules: components["schemas"]["InputLogicRule"][];
+            /**
+             * Aggregator
+             * @default all_of
+             * @enum {string}
+             */
+            aggregator: "all_of" | "any_of";
+            /** N Of M */
+            n_of_m?: [
+                number,
+                number
+            ] | null;
+        };
+        /**
+         * InputLogicRule
+         * @description One typed eligibility rule referenced from a downstream block.
+         *
+         *     `node` is the producer block reference (uuid string) for
+         *     visualization / canvas wiring; the predicate's typed `args` model
+         *     carries the same id and any predicate-specific fields. Carrying
+         *     `node` at the rule level keeps canvas dispatch O(1) without
+         *     walking into the args union.
+         */
+        InputLogicRule: {
+            /**
+             * Node
+             * Format: uuid
+             */
+            node: string;
+            /** Args */
+            args: components["schemas"]["IfDoneArgs"] | components["schemas"]["HasDataArgs"] | components["schemas"]["ValueEqualsArgs"] | components["schemas"]["ValueGtArgs"] | components["schemas"]["WaitAfterArgs"] | components["schemas"]["DecisionOutputArgs"];
         };
         /**
          * ItemCategory
@@ -1937,12 +2060,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -2008,12 +2131,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -2481,8 +2604,6 @@ export interface components {
             blocks?: components["schemas"]["PathwayBlockIn"][];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchIn"][];
-            /** Edges */
-            edges?: components["schemas"]["PathwayEdgeIn"][];
             /** Time Markers */
             time_markers?: components["schemas"]["PathwayTimeMarkerIn"][];
             /** Deferred Fields */
@@ -2496,34 +2617,6 @@ export interface components {
              */
             source_version_id: string;
         };
-        /** PathwayEdgeIn */
-        PathwayEdgeIn: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Source Block Id
-             * Format: uuid
-             */
-            source_block_id: string;
-            /**
-             * Target Block Id
-             * Format: uuid
-             */
-            target_block_id: string;
-            /** Source Branch Id */
-            source_branch_id?: string | null;
-            /** Delay Value Id */
-            delay_value_id?: string | null;
-            /** Time Marker Id */
-            time_marker_id?: string | null;
-            /** Offset Value Id */
-            offset_value_id?: string | null;
-            /** Offset Direction Code */
-            offset_direction_code?: string | null;
-        };
         /** PathwayEdgeOffsetDirection */
         PathwayEdgeOffsetDirection: {
             /** Code */
@@ -2532,34 +2625,6 @@ export interface components {
             label: string;
             /** Ord */
             ord: number;
-        };
-        /** PathwayEdgeOut */
-        PathwayEdgeOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Source Block Id
-             * Format: uuid
-             */
-            source_block_id: string;
-            /**
-             * Target Block Id
-             * Format: uuid
-             */
-            target_block_id: string;
-            /** Source Branch Id */
-            source_branch_id?: string | null;
-            /** Delay Value Id */
-            delay_value_id?: string | null;
-            /** Time Marker Id */
-            time_marker_id?: string | null;
-            /** Offset Value Id */
-            offset_value_id?: string | null;
-            /** Offset Direction Code */
-            offset_direction_code?: string | null;
         };
         /** PathwayEdgeTimingKind */
         PathwayEdgeTimingKind: {
@@ -2671,12 +2736,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -2963,7 +3028,7 @@ export interface components {
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
-            edges?: components["schemas"]["PathwayEdgeOut"][];
+            edges?: components["schemas"]["DerivedEdge"][];
             /** Time Markers */
             time_markers?: components["schemas"]["PathwayTimeMarkerOut"][];
             /** Deferred Fields */
@@ -3339,6 +3404,15 @@ export interface components {
             /** Qualification */
             qualification?: string | null;
         };
+        /**
+         * PredicateKind
+         * @description Closed enum of supported input-logic predicates (D3).
+         *
+         *     No expression language. Adding a new predicate is a typed code
+         *     change here + a new `Args` model + an evaluator branch.
+         * @enum {string}
+         */
+        PredicateKind: "if_done" | "has_data" | "value_equals" | "value_gt" | "wait_after" | "decision_output";
         /** ProviderDescriptor */
         ProviderDescriptor: {
             /** Key */
@@ -3530,12 +3604,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;
@@ -3655,6 +3729,69 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * ValueEqualsArgs
+         * @description A produced field equals `expected`. Pure value compare, no coercion.
+         */
+        ValueEqualsArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "value_equals";
+            /**
+             * Block
+             * Format: uuid
+             */
+            block: string;
+            /** Field Path */
+            field_path: string;
+            /** Expected */
+            expected: unknown;
+        };
+        /**
+         * ValueGtArgs
+         * @description A produced numeric field is strictly greater than `threshold`.
+         */
+        ValueGtArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "value_gt";
+            /**
+             * Block
+             * Format: uuid
+             */
+            block: string;
+            /** Field Path */
+            field_path: string;
+            /** Threshold */
+            threshold: number;
+        };
+        /**
+         * WaitAfterArgs
+         * @description Anchored wait: marker reached + ISO 8601 offset, direction-signed.
+         */
+        WaitAfterArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "wait_after";
+            /**
+             * Marker Id
+             * Format: uuid
+             */
+            marker_id: string;
+            /** Offset Iso */
+            offset_iso: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "before" | "after";
+        };
         /** WaitBlockOut */
         WaitBlockOut: {
             /**
@@ -3697,12 +3834,12 @@ export interface components {
             /** Lane Kind */
             lane_kind?: string | null;
             /**
-             * Input Logic
-             * @default []
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
              */
-            input_logic: {
-                [key: string]: unknown;
-            }[];
+            input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: {
                 [key: string]: unknown;

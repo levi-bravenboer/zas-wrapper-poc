@@ -7,7 +7,7 @@ import { BLOCK_HEIGHT, BLOCK_WIDTH, type CanvasGeometry } from '../canvasLayout'
 import type { CanvasDropTarget } from '../components/canvas/BuilderCanvasFrame'
 import type { DragContextApi } from '../components/canvas/useDragContext'
 import { DRAG_TYPES } from '../constants/dragTypes'
-import type { PathwayBlock, PathwayBlockType, PathwayEdge, PathwayLane } from '../types'
+import type { DerivedEdge, PathwayBlock, PathwayBlockType, PathwayLane } from '../types'
 import type { BuilderAction } from '../useBuilderState'
 import { isLaneAllowed } from '../utils/laneRules'
 
@@ -88,12 +88,17 @@ export function useCanvasHandlers({
   const onConnect = useCallback(
     (c: Connection) => {
       if (!c.source || !c.target) return
-      const edge: PathwayEdge = {
-        id: crypto.randomUUID(),
+      // Chain slot #2 §3: drag-to-connect dispatches the new
+      // `add-input-logic-rule` action — appends an `if_done` rule on
+      // the target block's `input_logic`. The reducer + rule
+      // inspector land alongside the input-logic-aware tests in §7.
+      // Until then the connection is a no-op; the rule must be
+      // authored in the (forthcoming) input-logic inspector.
+      const edge: DerivedEdge = {
         source_block_id: c.source,
         target_block_id: c.target,
-        source_branch_id: null,
-        delay_value_id: null,
+        predicate: 'if_done',
+        args: { after_block: c.source },
       }
       dispatch({ type: 'add-edge', edge })
     },
