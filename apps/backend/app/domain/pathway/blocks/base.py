@@ -30,6 +30,7 @@ from typing import Any, ClassVar, Literal
 from pydantic import BaseModel, ConfigDict
 
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
+from app.domain.pathway.input_logic import InputLogic
 from app.schemas.pathway.blocks import BlockSourceLiteral, NestedRenderLiteral
 
 
@@ -64,11 +65,18 @@ class BaseBlock(BaseModel):
     # `lane_id`. Subclasses with a single allowed kind ignore this.
     lane_kind: str | None = None
 
-    # `input_logic` and `timing_policy` are stub-only in chain slot #1 —
-    # promoted to real typed values in chain slot #2
-    # (`pathway-input-logic-and-timing`). The placeholders are here so
-    # storage migrations + read APIs know the columns exist.
-    input_logic: list[dict[str, Any]] = []
+    # `input_logic` is the typed eligibility aggregate per chain slot #2
+    # (D2 + D3): replaces the authored `pathway_edge` table as the
+    # single source of truth for inter-block connectivity. Every
+    # downstream block enumerates its upstream gates via typed
+    # `InputLogicRule` entries; canvas derives edges from this on read.
+    # Default empty aggregate = unconditionally eligible (no upstream
+    # dependency).
+    input_logic: InputLogic = InputLogic()
+
+    # `timing_policy` is the tagged-union timing model promoted to a
+    # real typed value in §4. Stays as a loose dict here until §4
+    # lands the variants; mapper layer preserves shape verbatim.
     timing_policy: dict[str, Any] | None = None
 
     # --- CLASS: per-kind metadata, no instance state, no DB columns ---

@@ -65,10 +65,16 @@ class PathwayBlock(TenantOwnedEntity):
     # value when materialising rows into typed `BaseBlock` subclasses.
     kind: Mapped[str | None] = mapped_column(sa.String(32), nullable=True, index=True)
 
-    # Stub fields for chain slot #2 (`pathway-input-logic-and-timing`).
-    # Mapper layer reads/writes them but they carry no behaviour in slot #1.
-    input_logic: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")
+    # `input_logic` carries the typed `InputLogic` aggregate per chain
+    # slot #2 (§1 / §2). The mapper layer round-trips Pydantic model →
+    # JSONB dict. The slot #1 stub default (`'[]'::jsonb`) is migrated
+    # in-place to the new aggregate shape via the slot #2 alembic
+    # revision so existing rows materialise into `InputLogic()` with
+    # the default `all_of` aggregator.
+    input_logic: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{\"rules\": [], \"aggregator\": \"all_of\"}'::jsonb"),
     )
     timing_policy: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 

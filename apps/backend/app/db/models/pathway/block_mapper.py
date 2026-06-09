@@ -66,9 +66,12 @@ def from_domain(block: BaseBlock) -> dict[str, Any]:
     """
     kwargs: dict[str, Any] = {"kind": block.KIND}
 
-    # Base fields
+    # Base fields. Pass each through `_serialise_value` so Pydantic
+    # submodels (e.g. `BaseBlock.input_logic: InputLogic`) land as JSON
+    # primitives on the JSONB column rather than as live Python
+    # objects the driver can't encode.
     for field, column in _BASE_FIELD_TO_COLUMN.items():
-        kwargs[column] = getattr(block, field)
+        kwargs[column] = _serialise_value(getattr(block, field))
 
     # Subclass-specific fields
     subclass_fields = set(type(block).model_fields.keys()) - _BASE_FIELDS
@@ -108,6 +111,12 @@ def _build_domain(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
     # `label` requirement. Slot #2 enforces non-null at the column level.
     if init_kwargs.get("name") is None:
         init_kwargs["name"] = ""
+    # Slot #2: `input_logic` is the typed `InputLogic` aggregate
+    # stored as JSONB. Slot #1 wrote a bare `list[dict]` stub default
+    # — coerce that into the empty aggregate shape so Pydantic
+    # validation succeeds against the new typed field. New rows
+    # always carry the dict shape via the migrated server default.
+    init_kwargs["input_logic"] = _normalise_input_logic(init_kwargs.get("input_logic"))
 
     subclass_fields = set(cls.model_fields.keys()) - _BASE_FIELDS
     for field in subclass_fields:
@@ -115,6 +124,27 @@ def _build_domain(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
         init_kwargs[field] = getattr(row, column, None)
 
     return cls.model_validate(init_kwargs)
+
+
+def _normalise_input_logic(value: Any) -> dict[str, Any]:
+    """Bridge slot #1 list-stub rows onto the slot #2 aggregate shape.
+
+    The legacy server default was `'[]'::jsonb` (matching the old
+    `BaseBlock.input_logic: list[dict[str, Any]]` stub). The
+    slot #2 alembic migration rewrites every row to the aggregate
+    shape, but this guard keeps the mapper tolerant of any straggler
+    rows the migration missed (e.g. seeded test fixtures rebuilt
+    from a slot #1 dump).
+    """
+    if value is None or value == []:
+        return {"rules": [], "aggregator": "all_of"}
+    if isinstance(value, list):
+        # Defensive: callers that still write a raw list (e.g. legacy
+        # backfill code paths) get wrapped without losing the rules.
+        return {"rules": value, "aggregator": "all_of"}
+    if isinstance(value, dict):
+        return value
+    raise ValueError(f"unsupported input_logic shape: {type(value).__name__}")
 
 
 def _build_domain_from_legacy_config(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
@@ -130,7 +160,7 @@ def _build_domain_from_legacy_config(cls: type[BaseBlock], row: PathwayBlock) ->
         # the typed `BaseBlock.name` non-null constraint doesn't reject
         # otherwise valid pre-backfill rows (see `_build_domain`).
         "name": row.label or "",
-        "input_logic": row.input_logic or [],
+        "input_logic": _normalise_input_logic(row.input_logic),
         "timing_policy": row.timing_policy,
     }
 
