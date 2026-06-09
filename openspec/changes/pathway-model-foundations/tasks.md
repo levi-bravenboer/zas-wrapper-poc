@@ -40,7 +40,7 @@
 ## 6. Validation
 
 - [ ] 6.1 Publish-time validator: every block instance validates against its subclass (Pydantic v2 strict). Invalid → publish rejected with per-block error.
-- [ ] 6.2 Lane-kind validator (D7): `block.lane.kind ∈ block.__class__.allowed_lane_kinds`.
+- [x] 6.2 Lane-kind validator (D7): `block.lane.kind ∈ block.__class__.allowed_lane_kinds`. (`validate_lane_kind` + `LaneKindNotAllowedError` in `app/domain/pathway/blocks/validators.py`; tests `test_validate_lane_kind_*` in `tests/domain/pathway/test_block_validators.py`.)
 
 ## 7. Cleanup + sync
 

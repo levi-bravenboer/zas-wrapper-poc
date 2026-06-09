@@ -28,6 +28,32 @@ class DeferredFieldAttrUnknownError(LookupError):
         self.attr = attr
 
 
+class LaneKindNotAllowedError(ValueError):
+    """Block placed on a lane whose `kind` is not in `allowed_lane_kinds`.
+
+    Class-level invariant per D7. See `pathway-model-foundations/spec.md`
+    scenario "Block on disallowed lane rejected". Coexists with the legacy
+    `BlockLaneNotAllowedError` raised from the `BlockTypeEntry` catalogue
+    check until chain slot #1 §1.4 retires the registry.
+    """
+
+    def __init__(
+        self,
+        block_cls: type[BaseBlock],
+        lane_kind_code: str,
+        *,
+        block_name: str | None = None,
+    ) -> None:
+        prefix = f"block '{block_name}' ({block_cls.__name__})" if block_name else block_cls.__name__
+        super().__init__(
+            f"{prefix} placed on lane kind '{lane_kind_code}' which is not in "
+            f"allowed_lane_kinds={tuple(block_cls.allowed_lane_kinds)!r}"
+        )
+        self.block_cls = block_cls
+        self.lane_kind_code = lane_kind_code
+        self.block_name = block_name
+
+
 def validate_deferred_field_attrs(block_cls: type[BaseBlock]) -> None:
     """Raise `DeferredFieldAttrUnknownError` for any unknown `attr`.
 
@@ -39,6 +65,22 @@ def validate_deferred_field_attrs(block_cls: type[BaseBlock]) -> None:
     for spec in block_cls.DEFERRED_FIELDS:
         if spec.attr not in fields:
             raise DeferredFieldAttrUnknownError(block_cls, spec.attr)
+
+
+def validate_lane_kind(
+    block_cls: type[BaseBlock],
+    lane_kind_code: str,
+    *,
+    block_name: str | None = None,
+) -> None:
+    """Raise `LaneKindNotAllowedError` when `lane_kind_code` is not in
+    `block_cls.allowed_lane_kinds` (D7).
+
+    `block_name` is woven into the error message so the builder can
+    surface the offending block on the canvas.
+    """
+    if lane_kind_code not in block_cls.allowed_lane_kinds:
+        raise LaneKindNotAllowedError(block_cls, lane_kind_code, block_name=block_name)
 
 
 def validate_all_block_classes() -> None:
@@ -54,6 +96,8 @@ def validate_all_block_classes() -> None:
 
 __all__ = [
     "DeferredFieldAttrUnknownError",
+    "LaneKindNotAllowedError",
     "validate_all_block_classes",
     "validate_deferred_field_attrs",
+    "validate_lane_kind",
 ]

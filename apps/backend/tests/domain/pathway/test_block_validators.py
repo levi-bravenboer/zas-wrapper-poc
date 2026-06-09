@@ -13,12 +13,20 @@ import pytest
 
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
+from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
+from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.blocks.validators import (
     DeferredFieldAttrUnknownError,
+    LaneKindNotAllowedError,
     validate_all_block_classes,
     validate_deferred_field_attrs,
+    validate_lane_kind,
 )
-from app.domain.pathway.lanes import LANE_KIND_CAREGIVER
+from app.domain.pathway.lanes import (
+    LANE_KIND_CAREGIVER,
+    LANE_KIND_EXTERNAL,
+    LANE_KIND_PATIENT,
+)
 
 
 class _GoodBlock(BaseBlock):
@@ -59,3 +67,32 @@ def test_validate_all_block_classes_passes() -> None:
     # exist as model fields. Surfaces regressions when subclasses move
     # fields to chain slot #2/#3 without updating DEFERRED_FIELDS.
     validate_all_block_classes()
+
+
+# ---- Lane-kind invariant (D7) -----------------------------------------
+
+
+def test_validate_lane_kind_passes_for_allowed_kind() -> None:
+    # AppointmentBlock.allowed_lane_kinds = (LANE_KIND_CAREGIVER,)
+    validate_lane_kind(AppointmentBlock, LANE_KIND_CAREGIVER)
+
+
+def test_validate_lane_kind_rejects_disallowed_kind() -> None:
+    # AppointmentBlock disallowed on patient + external lanes.
+    with pytest.raises(LaneKindNotAllowedError) as exc_info:
+        validate_lane_kind(
+            AppointmentBlock,
+            LANE_KIND_EXTERNAL,
+            block_name="Intake",
+        )
+    assert exc_info.value.block_cls is AppointmentBlock
+    assert exc_info.value.lane_kind_code == LANE_KIND_EXTERNAL
+    assert exc_info.value.block_name == "Intake"
+
+
+def test_validate_lane_kind_multi_kind_subclass() -> None:
+    # TaskBlock allows patient or caregiver lanes; both pass.
+    validate_lane_kind(TaskBlock, LANE_KIND_PATIENT)
+    validate_lane_kind(TaskBlock, LANE_KIND_CAREGIVER)
+    with pytest.raises(LaneKindNotAllowedError):
+        validate_lane_kind(TaskBlock, LANE_KIND_EXTERNAL)
