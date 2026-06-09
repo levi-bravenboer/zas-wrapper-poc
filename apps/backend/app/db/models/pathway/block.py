@@ -76,7 +76,16 @@ class PathwayBlock(TenantOwnedEntity):
         nullable=False,
         server_default=sa.text("'{\"rules\": [], \"aggregator\": \"all_of\"}'::jsonb"),
     )
+    # `timing_policy` JSONB is retained for back-compat; chain slot #2
+    # §4 introduces the typed `timing_policy_*` columns below. New
+    # writes populate the typed columns; reads dispatch on
+    # `timing_policy_kind`. The JSONB column is dropped in a follow-up
+    # cleanup once every consumer reads off the typed columns.
     timing_policy: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    timing_policy_kind: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    timing_offset_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
+    timing_window_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
+    timing_duration_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
 
     # --- Per-kind nullable columns (single-table inheritance, mapper-dispatched) ---
     # Prefixed by kind to avoid collisions with each other and with the

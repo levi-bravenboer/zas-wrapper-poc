@@ -80,6 +80,12 @@ def from_domain(block: BaseBlock) -> dict[str, Any]:
         value = getattr(block, field)
         kwargs[column] = _serialise_value(value)
 
+    # Slot #2 §4: split `timing_policy` onto the typed columns so the
+    # read path can dispatch on the discriminator without
+    # re-validating JSONB. The JSONB column is still written by the
+    # base-field loop above for back-compat.
+    kwargs.update(_timing_policy_to_columns(block.timing_policy))
+
     return kwargs
 
 
@@ -117,6 +123,12 @@ def _build_domain(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
     # validation succeeds against the new typed field. New rows
     # always carry the dict shape via the migrated server default.
     init_kwargs["input_logic"] = _normalise_input_logic(init_kwargs.get("input_logic"))
+    # Slot #2 §4: `timing_policy` is the tagged `TimingPolicy` union,
+    # persisted across discrete typed columns. The mapper reads the
+    # discriminator + per-variant column to reconstruct the union
+    # member, or falls back to `None` for rows the §4 backfill hasn't
+    # touched yet.
+    init_kwargs["timing_policy"] = _timing_policy_from_row(row)
 
     subclass_fields = set(cls.model_fields.keys()) - _BASE_FIELDS
     for field in subclass_fields:
@@ -147,6 +159,78 @@ def _normalise_input_logic(value: Any) -> dict[str, Any]:
     raise ValueError(f"unsupported input_logic shape: {type(value).__name__}")
 
 
+def _timing_policy_from_row(row: PathwayBlock) -> dict[str, Any] | None:
+    """Reconstruct the `TimingPolicy` dict from the typed slot-#2 columns.
+
+    Returns `None` when the row carries no policy (`timing_policy_kind
+    IS NULL`) — matches the `BaseBlock.timing_policy` default. The
+    return value is a Pydantic-validatable dict so callers feed it
+    through `cls.model_validate` to land on the typed union member.
+    """
+    # `getattr` with a default keeps the mapper tolerant of test
+    # fixtures + legacy snapshots that pre-date the slot-#2 typed
+    # timing columns. Production rows always carry the columns once
+    # the §4 alembic revision lands.
+    kind = getattr(row, "timing_policy_kind", None)
+    if kind is None:
+        return None
+    if kind == "fixed_duration":
+        return {
+            "kind": kind,
+            "duration_iso": getattr(row, "timing_duration_iso", None) or "PT0S",
+        }
+    if kind == "wait_after":
+        return {
+            "kind": kind,
+            "offset_iso": getattr(row, "timing_offset_iso", None) or "PT0S",
+        }
+    if kind == "due_within":
+        return {
+            "kind": kind,
+            "window_iso": getattr(row, "timing_window_iso", None) or "PT0S",
+        }
+    if kind == "at_enrollment_picked_date":
+        return {"kind": kind}
+    raise ValueError(f"unknown timing_policy_kind: {kind!r}")
+
+
+def _timing_policy_to_columns(policy: Any) -> dict[str, Any]:
+    """Project a `TimingPolicy` instance back into typed column kwargs.
+
+    Accepts either a Pydantic model instance or a pre-dumped dict
+    (the typed-blocks rebuild path goes through `model_dump`). Unset
+    policy maps to all-NULL columns.
+    """
+    if policy is None:
+        return {
+            "timing_policy_kind": None,
+            "timing_offset_iso": None,
+            "timing_window_iso": None,
+            "timing_duration_iso": None,
+        }
+    if hasattr(policy, "model_dump"):
+        policy = policy.model_dump(mode="json")
+    assert isinstance(policy, dict)
+    kind = policy.get("kind")
+    columns: dict[str, Any] = {
+        "timing_policy_kind": kind,
+        "timing_offset_iso": None,
+        "timing_window_iso": None,
+        "timing_duration_iso": None,
+    }
+    if kind == "fixed_duration":
+        columns["timing_duration_iso"] = policy.get("duration_iso")
+    elif kind == "wait_after":
+        columns["timing_offset_iso"] = policy.get("offset_iso", "PT0S")
+    elif kind == "due_within":
+        columns["timing_window_iso"] = policy.get("window_iso")
+    elif kind == "at_enrollment_picked_date":
+        pass
+    else:
+        raise ValueError(f"unknown timing_policy_kind: {kind!r}")
+    return columns
+
+
 def _build_domain_from_legacy_config(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
     """Read fields out of the legacy `config` JSONB instead of typed columns.
 
@@ -161,7 +245,7 @@ def _build_domain_from_legacy_config(cls: type[BaseBlock], row: PathwayBlock) ->
         # otherwise valid pre-backfill rows (see `_build_domain`).
         "name": row.label or "",
         "input_logic": _normalise_input_logic(row.input_logic),
-        "timing_policy": row.timing_policy,
+        "timing_policy": _timing_policy_from_row(row),
     }
 
     if cls is ExternalProgramBlock and is_external_program_legacy_type(row.type):

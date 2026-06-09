@@ -31,6 +31,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
 from app.domain.pathway.input_logic import InputLogic
+from app.domain.pathway.timing import TimingPolicy
 from app.schemas.pathway.blocks import BlockSourceLiteral, NestedRenderLiteral
 
 
@@ -74,10 +75,11 @@ class BaseBlock(BaseModel):
     # dependency).
     input_logic: InputLogic = InputLogic()
 
-    # `timing_policy` is the tagged-union timing model promoted to a
-    # real typed value in §4. Stays as a loose dict here until §4
-    # lands the variants; mapper layer preserves shape verbatim.
-    timing_policy: dict[str, Any] | None = None
+    # `timing_policy` is the tagged-union timing model per chain
+    # slot #2 §4 (D5). `None` means "no authored timing on this
+    # block"; the mapper writes the discriminated union to JSONB and
+    # round-trips through `model_validate` on read.
+    timing_policy: TimingPolicy | None = None
 
     # --- CLASS: per-kind metadata, no instance state, no DB columns ---
     KIND: ClassVar[str] = ""
