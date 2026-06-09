@@ -7,8 +7,7 @@ edits outside this layer; consumers import from here.
 
 from __future__ import annotations
 
-from app.domain.pathway.blocks import BLOCK_TYPES, get_block_type
-from app.domain.pathway.blocks._base import BlockSemantics, BlockTypeEntry
+from app.domain.pathway.blocks import BLOCK_CATALOGUE, get_catalogue_entry
 from app.domain.pathway.blocks.block_type_code import (
     BLOCK_TYPE_CODE_PATTERN,
     BlockTypeCode,
@@ -35,11 +34,9 @@ from app.domain.pathway.phases import (
 
 
 __all__ = [
+    "BLOCK_CATALOGUE",
     "BLOCK_TYPE_CODE_PATTERN",
-    "BLOCK_TYPES",
-    "BlockSemantics",
     "BlockTypeCode",
-    "BlockTypeEntry",
     "EDGE_TIMING_KINDS",
     "EVENT_TYPES",
     "EdgeTimingKindEntry",
@@ -53,6 +50,6 @@ __all__ = [
     "PhaseTemplateEntry",
     "SEEDED_LANE_KINDS",
     "SEEDED_OFFSET_DIRECTIONS",
-    "get_block_type",
+    "get_catalogue_entry",
     "get_phase_template",
 ]

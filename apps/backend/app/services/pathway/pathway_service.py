@@ -23,11 +23,13 @@ from app.db.models.pathway.block_write_shim import block_in_to_orm_kwargs
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.domain.pathway import (
-    BLOCK_TYPES,
     EDGE_TIMING_KINDS,
     PHASE_TEMPLATES,
     SEEDED_OFFSET_DIRECTIONS,
-    get_block_type,
+)
+from app.domain.pathway.blocks.catalogue import (
+    BLOCK_CATALOGUE,
+    get_catalogue_entry,
 )
 from app.schemas.pathway import (
     PathwayBlockType,
@@ -190,22 +192,12 @@ class PathwayService:
     # ---- Catalogue surfaces ----------------------------------------------
 
     def list_block_types(self) -> list[PathwayBlockType]:
-        return [
-            PathwayBlockType(
-                type=entry.type,
-                label=entry.label,
-                semantics=entry.semantics.value,
-                icon=entry.icon,
-                allowed_lane_kind_codes=list(entry.allowed_lane_kind_codes),
-                config_schema=entry.config_schema,
-                ui_schema=entry.ui_schema,
-                supports_branches=entry.supports_branches,
-                source=entry.source,
-                provider=entry.provider,
-                kind=entry.kind,
-            )
-            for entry in BLOCK_TYPES
-        ]
+        # Catalogue derived from the typed `BaseBlock` subclasses
+        # (`pathway-model-foundations` §1.4 / §7.1). The legacy
+        # `BlockTypeEntry` registry is retired; each entry is a
+        # projection of per-kind `ClassVar` metadata via
+        # `block_catalogue.BLOCK_CATALOGUE`.
+        return list(BLOCK_CATALOGUE)
 
     def list_phase_templates(self) -> list[PathwayPhaseTemplate]:
         return [
@@ -678,7 +670,7 @@ class _ResolvedDefinition:
                     field=f"blocks[{block.id}]", reason="duplicate block id"
                 )
             block_ids.add(block.id)
-            entry = get_block_type(block.type)
+            entry = get_catalogue_entry(block.type)
             if entry is None:
                 raise UnknownBlockTypeError(
                     field=f"blocks[{block.id}].type",
@@ -729,7 +721,7 @@ class _ResolvedDefinition:
                     field=f"branches[{branch.id}].block_id",
                     reason="block_id not present in payload blocks",
                 )
-            entry = get_block_type(block_type)
+            entry = get_catalogue_entry(block_type)
             assert entry is not None  # validated above
             if not entry.supports_branches:
                 raise BranchOwnershipError(
@@ -858,7 +850,7 @@ class _ResolvedDefinition:
         # We resolve schemas once per block id.
         block_schemas: dict[UUID, dict[str, Any]] = {}
         for block in materialized_blocks:
-            entry = get_block_type(block.type)
+            entry = get_catalogue_entry(block.type)
             assert entry is not None
             block_schemas[block.id] = entry.config_schema
         # Block.duration_value_id existence check
@@ -904,7 +896,7 @@ class _ResolvedDefinition:
 def _resolve_or_materialize_lane(
     *,
     block: PathwayBlockIn,
-    entry: Any,  # BlockTypeEntry — typed loose to avoid circular import friction
+    entry: PathwayBlockType,
     lanes: list[PathwayLaneIn],
     lane_kind_ids: dict[UUID, UUID],
     lane_kind_codes: dict[UUID, str],

@@ -42,7 +42,7 @@ All design decisions live in `pathway-model-redesign/design.md` (D1–D10). Each
 | # | Change | Worktree | Status |
 | --- | --- | --- | --- |
 | — | `pathway-model-redesign` (parent) | `.worktrees/feat-pathway-model-redesign/` | proposal in review (PR #42) |
-| 1 | `pathway-model-foundations` | `.worktrees/feat-pathway-model-redesign/` | ready-to-apply (24 / 26 tasks complete; §1.4 + §7.1 registry retire gated on follow-up; PR #42) |
+| 1 | `pathway-model-foundations` | `.worktrees/feat-pathway-model-redesign/` | ready-to-apply (26 / 26 tasks complete; registry retire landed in PR #42) |
 | 2 | `pathway-input-logic-and-timing` | TBD | draft |
 | 3 | `pathway-runtime-aggregate` | TBD | draft |
 

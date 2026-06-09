@@ -30,7 +30,7 @@ from typing import Any, ClassVar, Literal
 from pydantic import BaseModel, ConfigDict
 
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
-from app.schemas.pathway.blocks import BlockSourceLiteral
+from app.schemas.pathway.blocks import BlockSourceLiteral, NestedRenderLiteral
 
 
 FieldMode = Literal["always_static", "builder_choice", "always_deferred"]
@@ -91,6 +91,30 @@ class BaseBlock(BaseModel):
 
     # Whether the block supports authored output branches (e.g. DecisionBlock).
     SUPPORTS_BRANCHES: ClassVar[bool] = False
+
+    # Wire-facing `pathway_block.type` identifier exposed via the block
+    # catalogue and surfaced on the legacy slot-#1 compat envelope.
+    # Defaults to `KIND` for native blocks; external-provider blocks
+    # override it to keep their dotted legacy code (e.g. `luscii.program`)
+    # while their `KIND` is the typed-union discriminator (`external_program`).
+    TYPE_CODE: ClassVar[str] = ""
+
+    # JSON Schema for the legacy `config` bag, surfaced via
+    # `GET /pathways/blocks` so the builder inspector can drive
+    # schema-form rendering + autosave validation. Slot #1 dual-write
+    # keeps this in lockstep with the typed instance fields; slot #2
+    # retires `config` entirely and the builder reads off
+    # `model_json_schema()` on the subclass directly.
+    CONFIG_SCHEMA: ClassVar[dict[str, Any]] = {}
+
+    # Widget hints + field order consumed by the orchestrator's
+    # SchemaForm engine. Free-form mirror of the legacy
+    # `BlockTypeEntry.ui_schema` field.
+    UI_SCHEMA: ClassVar[dict[str, Any]] = {}
+
+    # UI hint for blocks whose body renders nested content (today only
+    # `PathwayLinkBlock`). `None` for blocks without nested content.
+    NESTED_RENDER: ClassVar[NestedRenderLiteral | None] = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)

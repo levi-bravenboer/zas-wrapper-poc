@@ -11,9 +11,14 @@ Today the only provider is `luscii`. New vendors plug in by extending the
 
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from app.adapters.luscii import LUSCII_PROGRAM_KIND, LUSCII_PROVIDER
+from app.adapters.luscii import (
+    LUSCII_PROGRAM_BLOCK_TYPE,
+    LUSCII_PROGRAM_KIND,
+    LUSCII_PROVIDER,
+)
+from app.domain.pathway._helpers import object_schema
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.lanes import LANE_KIND_EXTERNAL
 from app.schemas.pathway.blocks import BlockSourceLiteral
@@ -22,20 +27,45 @@ from app.schemas.pathway.blocks import BlockSourceLiteral
 ExternalProvider = Literal["luscii"]
 ExternalProgramMode = Literal["blocking", "fire_and_forget"]
 
+_BLOCKING_MODES: tuple[str, ...] = ("blocking", "fire_and_forget")
+
 
 class ExternalProgramBlock(BaseBlock):
     KIND: ClassVar[str] = "external_program"
+    # Wire-facing legacy `pathway_block.type` identifier. Diverges from
+    # `KIND` because the legacy code stayed dotted (`luscii.program`)
+    # while the typed-union discriminator is the kind-neutral
+    # `external_program`. The compat envelope on `*BlockOut` keeps the
+    # legacy code on `type`; slot #2 retires this divergence.
+    TYPE_CODE: ClassVar[str] = LUSCII_PROGRAM_BLOCK_TYPE
     LABEL: ClassVar[str] = "Extern programma"
     DESCRIPTION: ClassVar[str] = "Reference to a vendor-managed care program (e.g. Luscii)."
     ICON: ClassVar[str] = "activity"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_EXTERNAL,)
     SOURCE: ClassVar[BlockSourceLiteral] = "external"
-    # PROVIDER / SUBKIND stay None on the class; the instance fields
-    # below carry the per-instance vendor identity. Catalog consumers that
-    # need to surface "this row is a luscii.program" look at the instance,
-    # not the class metadata.
-    PROVIDER: ClassVar[str | None] = None
-    SUBKIND: ClassVar[str | None] = None
+    # Catalogue-level provider / kind tags mirror the legacy
+    # `BlockTypeEntry` so the builder palette keeps its per-vendor
+    # grouping (`source='external'`, `provider='luscii'`,
+    # `kind='program'`). The per-instance `provider` field below stays
+    # the source of truth for which vendor the row belongs to; today
+    # there is exactly one provider in scope so class and instance
+    # agree.
+    PROVIDER: ClassVar[str | None] = LUSCII_PROVIDER
+    SUBKIND: ClassVar[str | None] = LUSCII_PROGRAM_KIND
+    CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(
+        properties={
+            "program_id": {"type": "string", "minLength": 1, "maxLength": 128},
+            "protocol_id": {"type": "string", "minLength": 1, "maxLength": 128},
+            "mode": {"type": "string", "enum": list(_BLOCKING_MODES)},
+        },
+    )
+    UI_SCHEMA: ClassVar[dict[str, Any]] = {
+        "order": ["program_id", "protocol_id", "mode"],
+        "widgets": {
+            "program_id": "luscii-program-picker",
+            "protocol_id": "luscii-protocol-picker",
+        },
+    }
 
     provider: ExternalProvider
     program_id: str | None = None
