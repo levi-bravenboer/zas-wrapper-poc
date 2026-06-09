@@ -1173,9 +1173,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /** Title */
             title: string;
             /** Mode */
@@ -1206,6 +1204,17 @@ export interface components {
         AssignedUserIdsUpdate: {
             /** User Ids */
             user_ids: string[];
+        };
+        /**
+         * AtEnrollmentPickedDatePolicy
+         * @description Schedule is the date supplied at enrollment as a deferred field.
+         */
+        AtEnrollmentPickedDatePolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "at_enrollment_picked_date";
         };
         /**
          * CareTeamCreate
@@ -1374,12 +1383,18 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /** Question */
             question: string;
             auto_resolve?: components["schemas"]["DecisionAutoResolve"] | null;
+            /** Outputs */
+            outputs?: string[];
+            /**
+             * Mode
+             * @default and
+             * @enum {string}
+             */
+            mode: "xor" | "and";
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -1426,6 +1441,19 @@ export interface components {
             args?: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * DueWithinPolicy
+         * @description Block must complete within an ISO 8601 window of its eligibility.
+         */
+        DueWithinPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "due_within";
+            /** Window Iso */
+            window_iso: string;
         };
         /** ErrorResponse */
         ErrorResponse: {
@@ -1573,9 +1601,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /**
              * Provider
              * @constant
@@ -1592,6 +1618,19 @@ export interface components {
              * @enum {string}
              */
             kind: "external_program";
+        };
+        /**
+         * FixedDurationPolicy
+         * @description Block has a fixed ISO 8601 duration.
+         */
+        FixedDurationPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "fixed_duration";
+            /** Duration Iso */
+            duration_iso: string;
         };
         /** FormBlockOut */
         FormBlockOut: {
@@ -1642,9 +1681,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /** Title */
             title: string;
             /** Intro */
@@ -2067,9 +2104,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /**
              * Channel
              * @enum {string}
@@ -2138,9 +2173,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /** Description */
             description?: string | null;
             /** Icon */
@@ -2743,9 +2776,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /**
              * Target Pathway Id
              * Format: uuid
@@ -3611,9 +3642,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /** Title */
             title: string;
             /**
@@ -3792,6 +3821,25 @@ export interface components {
              */
             direction: "before" | "after";
         };
+        /**
+         * WaitAfterPolicy
+         * @description Block fires after an ISO 8601 offset from its eligibility moment.
+         *
+         *     `PT0S` means "fire as soon as eligible" — used as the default
+         *     backfill for rows that carry no authored timing.
+         */
+        WaitAfterPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "wait_after";
+            /**
+             * Offset Iso
+             * @default PT0S
+             */
+            offset_iso: string;
+        };
         /** WaitBlockOut */
         WaitBlockOut: {
             /**
@@ -3841,9 +3889,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: {
-                [key: string]: unknown;
-            } | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
             /** Event Type */
             event_type: string;
             /** Source Block Id */

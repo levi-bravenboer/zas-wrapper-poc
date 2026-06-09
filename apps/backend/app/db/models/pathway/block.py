@@ -106,6 +106,12 @@ class PathwayBlock(TenantOwnedEntity):
 
     decision_question: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
     decision_auto_resolve: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # Slot #2 §5: typed outputs the runtime engine fires (`xor` =
+    # exactly one, `and` = independent). Stored as JSONB list to
+    # preserve ordering; the typed mapper coerces back to tuple on
+    # read for the Pydantic field.
+    decision_outputs: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    decision_mode: Mapped[str | None] = mapped_column(sa.String(8), nullable=True)
 
     message_channel: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
     message_subject: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)

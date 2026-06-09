@@ -9,7 +9,12 @@ exception named in `pathway-model-foundations/spec.md`.
 from __future__ import annotations
 
 from app.domain.pathway.blocks.base import BaseBlock
+from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.resolver import BLOCK_CLASSES
+from app.domain.pathway.input_logic.predicates import (
+    DecisionOutputArgs,
+    PredicateKind,
+)
 
 
 class DeferredFieldAttrUnknownError(LookupError):
@@ -111,6 +116,92 @@ class BlockPublishValidationError(ValueError):
         self.cause = cause
 
 
+class DecisionOutputsEmptyError(ValueError):
+    """A `DecisionBlock` carries no `outputs` at publish time.
+
+    Slot #2 §5.1 requires every decision block declare at least one
+    typed output before publish so downstream `decision_output`
+    references resolve.
+    """
+
+    def __init__(self, block: BaseBlock) -> None:
+        super().__init__(
+            f"DecisionBlock '{block.name}' must declare at least one output before publish"
+        )
+        self.block = block
+
+
+class DecisionOutputReferenceError(ValueError):
+    """A `decision_output` predicate names an unknown `output_key`.
+
+    Slot #2 §5.2 requires every downstream `decision_output` rule
+    point at a real (block_id, output_key) pair. Surfaces from
+    `validate_decision_output_references`.
+    """
+
+    def __init__(
+        self,
+        *,
+        target_block: BaseBlock,
+        after_block_id: str,
+        output_key: str,
+        reason: str,
+    ) -> None:
+        super().__init__(
+            f"decision_output on '{target_block.name}' → "
+            f"{after_block_id}.outputs[{output_key!r}]: {reason}"
+        )
+        self.target_block = target_block
+        self.after_block_id = after_block_id
+        self.output_key = output_key
+        self.reason = reason
+
+
+def validate_decision_block_outputs(block: BaseBlock) -> None:
+    """Reject decision blocks with empty `outputs` (§5.1)."""
+    if isinstance(block, DecisionBlock) and not block.outputs:
+        raise DecisionOutputsEmptyError(block)
+
+
+def validate_decision_output_references(
+    blocks_by_id: dict[str, BaseBlock],
+) -> None:
+    """Reject `decision_output` rules pointing at unknown keys (§5.2).
+
+    Walks every block's `input_logic`; for each rule whose predicate
+    is `decision_output`, asserts the named producer is a
+    `DecisionBlock` and that the `output_key` is in its `outputs`.
+    """
+    for block in blocks_by_id.values():
+        for rule in block.input_logic.rules:
+            args = rule.args
+            if args.predicate is not PredicateKind.DECISION_OUTPUT:
+                continue
+            assert isinstance(args, DecisionOutputArgs)
+            after_block = blocks_by_id.get(str(args.after_block))
+            if after_block is None:
+                raise DecisionOutputReferenceError(
+                    target_block=block,
+                    after_block_id=str(args.after_block),
+                    output_key=args.output_key,
+                    reason="producer block not in pathway version",
+                )
+            if not isinstance(after_block, DecisionBlock):
+                raise DecisionOutputReferenceError(
+                    target_block=block,
+                    after_block_id=str(args.after_block),
+                    output_key=args.output_key,
+                    reason=f"producer is a {type(after_block).__name__}, not a DecisionBlock",
+                )
+            if args.output_key not in after_block.outputs:
+                raise DecisionOutputReferenceError(
+                    target_block=block,
+                    after_block_id=str(args.after_block),
+                    output_key=args.output_key,
+                    reason=f"output_key not declared on producer; have {list(after_block.outputs)!r}",
+                )
+
+
 def validate_publish_block(block: BaseBlock) -> None:
     """Re-validate `block` against its subclass in Pydantic v2 strict mode.
 
@@ -129,9 +220,13 @@ def validate_publish_block(block: BaseBlock) -> None:
 
 __all__ = [
     "BlockPublishValidationError",
+    "DecisionOutputReferenceError",
+    "DecisionOutputsEmptyError",
     "DeferredFieldAttrUnknownError",
     "LaneKindNotAllowedError",
     "validate_all_block_classes",
+    "validate_decision_block_outputs",
+    "validate_decision_output_references",
     "validate_deferred_field_attrs",
     "validate_lane_kind",
     "validate_publish_block",

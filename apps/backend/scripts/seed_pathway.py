@@ -163,7 +163,15 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_id=LANE_SYSTEM_ID,
                 type="decision",
                 label="Voortgangsmeting",
-                config={"question": "Verloopt het herstel volgens plan?"},
+                # Slot #2 §5: typed `outputs` declared so the decision
+                # publishes; legacy demo pathway used edge branches
+                # (`Goed`/`Onvoldoende`) which the §3 backfill rewrites
+                # into `decision_output` rules referencing these keys.
+                config={
+                    "question": "Verloopt het herstel volgens plan?",
+                    "outputs": ["goed", "onvoldoende"],
+                    "mode": "xor",
+                },
                 x=720,
                 y=0,
             ),

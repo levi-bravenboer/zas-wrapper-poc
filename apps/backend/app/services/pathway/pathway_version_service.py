@@ -15,10 +15,15 @@ from app.db.models.pathway import (
     PathwayVersion,
 )
 from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
+from app.domain.pathway.blocks.base import BaseBlock
 from app.db.models.pathway.block_write_shim import block_row_clone_kwargs
 from app.db.models.user import User
 from app.domain.pathway.blocks.validators import (
     BlockPublishValidationError,
+    DecisionOutputReferenceError,
+    DecisionOutputsEmptyError,
+    validate_decision_block_outputs,
+    validate_decision_output_references,
     validate_lane_kind,
     validate_publish_block,
 )
@@ -157,14 +162,27 @@ class PathwayVersionService:
             for lane in children.lanes
             if lane.pathway_lane_kind_id == kind.id
         }
+        # Materialise the domain blocks once — slot #2 §5.2 walks the
+        # cross-block `decision_output` reference graph below, which
+        # needs every block already on the typed domain side.
+        domain_blocks: dict[str, BaseBlock] = {}
         for row in children.blocks:
             domain = block_row_to_domain(row)
+            domain_blocks[str(row.id)] = domain
             try:
                 validate_publish_block(domain)
             except BlockPublishValidationError as err:
                 raise BlockConfigError(
                     field=f"blocks[{row.id}]",
                     reason=str(err.cause),
+                ) from err
+            # Slot #2 §5.1: every decision block must declare outputs.
+            try:
+                validate_decision_block_outputs(domain)
+            except DecisionOutputsEmptyError as err:
+                raise BlockConfigError(
+                    field=f"blocks[{row.id}].outputs",
+                    reason=str(err),
                 ) from err
             lane_kind = lane_kind_codes.get(row.lane_id)
             if lane_kind is None:
@@ -185,6 +203,20 @@ class PathwayVersionService:
                     lane_kind_code=lane_kind,
                     allowed=type(domain).allowed_lane_kinds,
                 ) from err
+
+        # Slot #2 §5.2: cross-block `decision_output` reference check.
+        # Runs after the per-block validation pass so producers + their
+        # `outputs` tuples are already typed-correct.
+        try:
+            validate_decision_output_references(domain_blocks)
+        except DecisionOutputReferenceError as err:
+            raise BlockConfigError(
+                field=(
+                    f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
+                    f".input_logic.decision_output"
+                ),
+                reason=str(err),
+            ) from err
 
     # ---- Helpers ---------------------------------------------------------
 

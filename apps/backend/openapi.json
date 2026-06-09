@@ -4012,8 +4012,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -4132,6 +4153,20 @@
         ],
         "title": "AssignedUserIdsUpdate",
         "description": "Replace-set semantics. An empty list clears explicit assignment \u2014\nthe carepath falls back to specialism-wide access (REQ-NON-12)."
+      },
+      "AtEnrollmentPickedDatePolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "at_enrollment_picked_date",
+            "title": "Kind",
+            "default": "at_enrollment_picked_date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AtEnrollmentPickedDatePolicy",
+        "description": "Schedule is the date supplied at enrollment as a deferred field."
       },
       "CareTeamCreate": {
         "properties": {
@@ -4489,8 +4524,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -4511,6 +4567,22 @@
                 "type": "null"
               }
             ]
+          },
+          "outputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Outputs"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "xor",
+              "and"
+            ],
+            "title": "Mode",
+            "default": "and"
           },
           "kind": {
             "type": "string",
@@ -4594,6 +4666,27 @@
         ],
         "title": "DerivedEdge",
         "description": "One canvas connector derived from a target block's `input_logic` rule.\n\n`source_block_id` identifies the producer; for predicates that do\nnot name a block (`wait_after` \u2014 anchored on a marker, not a\nblock), `source_block_id` is `None` and the canvas renders the\nedge as marker-anchored instead."
+      },
+      "DueWithinPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "due_within",
+            "title": "Kind",
+            "default": "due_within"
+          },
+          "window_iso": {
+            "type": "string",
+            "title": "Window Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "window_iso"
+        ],
+        "title": "DueWithinPolicy",
+        "description": "Block must complete within an ISO 8601 window of its eligibility."
       },
       "ErrorResponse": {
         "properties": {
@@ -4872,8 +4965,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -4940,6 +5054,27 @@
           "provider"
         ],
         "title": "ExternalProgramBlockOut"
+      },
+      "FixedDurationPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "fixed_duration",
+            "title": "Kind",
+            "default": "fixed_duration"
+          },
+          "duration_iso": {
+            "type": "string",
+            "title": "Duration Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "duration_iso"
+        ],
+        "title": "FixedDurationPolicy",
+        "description": "Block has a fixed ISO 8601 duration."
       },
       "FormBlockOut": {
         "properties": {
@@ -5039,8 +5174,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -5980,8 +6136,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -6142,8 +6319,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -7527,8 +7725,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -9615,8 +9834,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
@@ -10040,6 +10280,25 @@
         "title": "WaitAfterArgs",
         "description": "Anchored wait: marker reached + ISO 8601 offset, direction-signed."
       },
+      "WaitAfterPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "wait_after",
+            "title": "Kind",
+            "default": "wait_after"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso",
+            "default": "PT0S"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "WaitAfterPolicy",
+        "description": "Block fires after an ISO 8601 offset from its eligibility moment.\n\n`PT0S` means \"fire as soon as eligible\" \u2014 used as the default\nbackfill for rows that carry no authored timing."
+      },
       "WaitBlockOut": {
         "properties": {
           "id": {
@@ -10138,8 +10397,29 @@
           "timing_policy": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
               },
               {
                 "type": "null"
