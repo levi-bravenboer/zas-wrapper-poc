@@ -23,8 +23,13 @@ import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathw
 export const BlockNodeRouter = memo(BlockNodeRouterImpl)
 
 function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
-  const blockType = props.data.block.type
-  if (blockType === LUSCII_PROGRAM_BLOCK_TYPE) {
+  // Dispatch on the typed `kind` discriminator from
+  // `pathway-model-foundations` §4.1. The legacy `type` column is
+  // still on the wire envelope but `kind` is authoritative here; the
+  // `LUSCII_PROGRAM_BLOCK_TYPE` constant is kept for fixture sites
+  // that still serialise blocks with the dotted legacy key.
+  const kind = props.data.block.kind
+  if (kind === 'external_program' || props.data.block.type === LUSCII_PROGRAM_BLOCK_TYPE) {
     // reason: variance erasure between two heterogeneous xyflow node-data
     // shapes that share the same xyflow type key. `LusciiProgramBlockNodeData`
     // extends `BlockNodeData` with an optional `resolvedProgram` field that
@@ -33,7 +38,7 @@ function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
     // missing field as `null` (empty state).
     return <LusciiProgramBlockNode {...(props as NodeProps<LusciiProgramFlowNode>)} />
   }
-  if (blockType === 'pathway_link') {
+  if (kind === 'pathway_link') {
     // Internal-source dispatch — `pathway.link` follows the same per-kind
     // pattern as external providers so future internal kinds (e.g.
     // `pathway.fork`) land alongside it without touching the generic

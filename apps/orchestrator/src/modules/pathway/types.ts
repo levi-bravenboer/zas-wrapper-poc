@@ -18,7 +18,30 @@ export type PathwayEdgeOffsetDirection = components['schemas']['PathwayEdgeOffse
 export type BlockSemantics = PathwayBlockType['semantics']
 export type EdgeTimingKindCode = PathwayEdgeTimingKind['kind']
 export type PathwayTimingValue = components['schemas']['PathwayTimingValueOut']
-export type PathwayBlock = components['schemas']['PathwayBlockOut']
+// `PathwayVersionDefinition.blocks` carries the typed discriminated
+// union from `pathway-model-foundations` §4.1. Each member exposes the
+// chain-slot-#1 envelope compat fields (`type`, `label`, `config`) so
+// existing builder UI keeps reading them while migrating onto the typed
+// per-kind fields.
+export type PathwayBlock = NonNullable<PathwayVersionDefinition['blocks']>[number]
+export type PathwayBlockKind = PathwayBlock['kind']
+
+// Legacy `pathway_block.type` discriminator code, derived from the typed
+// `kind` discriminator when the wire envelope's compat `type` column is
+// null. Matches the backend resolver's `_LEGACY_TYPE_ALIASES` mapping
+// in reverse — the only kind whose legacy string differs is
+// `external_program` (was `luscii.program` on the wire).
+export function legacyBlockType(block: PathwayBlock): string {
+  if (block.type) return block.type
+  return block.kind === 'external_program' ? 'luscii.program' : block.kind
+}
+
+// Per-kind config bag synthesised from the typed slot #1 envelope so
+// inspectors keep working unmodified. Returns the envelope's `config`
+// field when present (slot #1 dual-write), else an empty bag.
+export function legacyBlockConfig(block: PathwayBlock): Record<string, unknown> {
+  return (block.config ?? {}) as Record<string, unknown>
+}
 export type PathwayEdge = components['schemas']['PathwayEdgeOut']
 export type PathwayPhase = components['schemas']['PathwayPhaseOut']
 export type PathwayLane = components['schemas']['PathwayLaneOut']
@@ -34,7 +57,11 @@ export function isLaneKindCode(value: string): value is LaneKindCode {
   return (LANE_KIND_CODES as readonly string[]).includes(value)
 }
 
-export type BlockConfig = NonNullable<PathwayBlock['config']>
+// `BlockConfig` is the slot #1 wire compat bag — `Record<string, unknown>`
+// is wider than the typed per-kind shape, but inspectors continue to
+// edit it through Zod schemas until slot #2 swaps them onto the typed
+// envelope fields directly.
+export type BlockConfig = Record<string, unknown>
 export type BlockConfigSchema = NonNullable<PathwayBlockType['config_schema']>
 
 export type EdgeTiming =

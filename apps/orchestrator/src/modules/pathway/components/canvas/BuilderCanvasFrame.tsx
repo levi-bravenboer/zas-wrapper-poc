@@ -13,13 +13,14 @@ import { buildCanvasGeometry, type CanvasGeometry, type BlockFitInput } from '..
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { inkAlpha } from '../../constants/theme'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
-import type {
-  PathwayBlock,
-  PathwayBlockType,
-  PathwayEdge,
-  PathwayLane,
-  PathwayPhase,
-  PathwayTimingValue,
+import {
+  legacyBlockType,
+  type PathwayBlock,
+  type PathwayBlockType,
+  type PathwayEdge,
+  type PathwayLane,
+  type PathwayPhase,
+  type PathwayTimingValue,
 } from '../../types'
 import type { BuilderAction, BuilderSelection } from '../../useBuilderState'
 import { getBlockDimensions } from '../../utils/blockDimensions'
@@ -82,7 +83,7 @@ export function BuilderCanvasFrame({
   const fitInputs = useMemo<BlockFitInput[]>(() => {
     const byCode = new Map(blockTypes.map((bt) => [bt.type, bt]))
     return blocks.map((b) => {
-      const dims = getBlockDimensions(b, byCode.get(b.type) ?? null)
+      const dims = getBlockDimensions(b, byCode.get(legacyBlockType(b)) ?? null)
       return {
         phase_id: b.phase_id,
         lane_id: b.lane_id,
@@ -138,7 +139,7 @@ export function BuilderCanvasFrame({
     (_event: React.MouseEvent, node: BlockFlowNode) => {
       const block = blocks.find((b) => b.id === node.id)
       if (!block) return
-      const bt = blockTypes.find((c) => c.type === block.type)
+      const bt = blockTypes.find((c) => c.type === legacyBlockType(block))
       if (!bt) return
       dragApi.startMoveDrag(block.id, bt.type, bt.allowed_lane_kind_codes)
     },

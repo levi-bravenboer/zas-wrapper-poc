@@ -46,9 +46,16 @@ The pathway read API (`GET /pathways/{id}` and `GET /pathways/{id}/blocks/{block
 
 #### Scenario: Block payload carries its kind discriminator and typed fields
 
+- **GIVEN** chain slot #1 keeps the legacy `type` / `label` / `config`
+  ORM columns alive alongside the new typed columns until slot #2
+  retires them (per `proposal.md` storage section)
 - **WHEN** a client requests `GET /pathways/{id}` for a pathway containing one `AppointmentBlock`
 - **THEN** the response payload for that block has `kind="appointment"`, `location`, `scheduled_at`, and the other typed fields of `AppointmentBlock`
-- **AND** the payload does NOT carry a `config` JSONB blob
+- **AND** the payload MAY also carry the legacy `type` / `label` /
+  `config` envelope fields during the slot #1 transition so the
+  builder UI keeps rendering kind-by-kind while migrating off
+  `config` — those fields are dropped in chain slot #2 once every
+  reader has migrated
 
 ### Requirement: Write API compat shim accepts legacy payload
 

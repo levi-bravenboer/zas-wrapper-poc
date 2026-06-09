@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from jsonschema import Draft202012Validator
@@ -18,6 +18,7 @@ from app.db.models.pathway import (
     PathwayTimingValue,
     PathwayVersion,
 )
+from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
 from app.db.models.pathway.block_write_shim import block_in_to_orm_kwargs
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
@@ -41,7 +42,6 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldIn,
     PathwayBlockDeferredFieldOut,
     PathwayBlockIn,
-    PathwayBlockOut,
     PathwayChildSummary,
     PathwayDefinitionReplace,
     PathwayEdgeIn,
@@ -59,17 +59,19 @@ from app.schemas.pathway.pathway import (
     PathwayVersionDefinition,
     PathwayWithVersionResponse,
 )
+from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut, out_class_for_kind
 from app.services.pathway.nesting import assert_no_nested_pathway_cycles
 from app.services.pathway.pathway_version_service import PathwayVersionService
 from app.services.pathway.errors import (
     BlockConfigError,
-    PathwayHasReferrersError,
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
     EdgeTimingValidationError,
     EdgeValidationError,
     NoConceptVersionError,
+    PathwayBlockNotFoundError,
+    PathwayHasReferrersError,
     PathwayNotFoundError,
     PathwayValidationError,
     PathwayVersionImmutableError,
@@ -110,6 +112,27 @@ class PathwayService:
             )
             for r in rows
         ]
+
+    async def get_block(
+        self,
+        pathway_id: UUID,
+        block_id: UUID,
+        tenant_id: UUID,
+    ) -> PathwayTypedBlockOut:
+        """Return one block as a typed discriminated-union member.
+
+        Backs `GET /pathways/{pathway_id}/blocks/{block_id}` per chain
+        slot #1 §4.2. Carepath authorization runs as a route dependency;
+        this method only asserts ownership + tenancy then materialises
+        the row via the same mapper used by the version-definition path.
+        """
+        pathway = await self._repo.get(pathway_id, tenant_id)
+        if pathway is None:
+            raise PathwayNotFoundError()
+        row = await self._repo.get_block_in_pathway(block_id, pathway_id)
+        if row is None:
+            raise PathwayBlockNotFoundError()
+        return _block_row_to_typed_out(row)
 
     async def get_child_summary(self, pathway_id: UUID, tenant_id: UUID) -> PathwayChildSummary:
         """Drive the nested-pathway inspector preview. Counts come from the
@@ -448,7 +471,7 @@ class PathwayService:
             timing_values=[
                 PathwayTimingValueOut.model_validate(tv) for tv in children.timing_values
             ],
-            blocks=[PathwayBlockOut.model_validate(b) for b in children.blocks],
+            blocks=[_block_row_to_typed_out(b) for b in children.blocks],
             branches=[PathwayBlockBranchOut.model_validate(br) for br in children.branches],
             edges=[PathwayEdgeOut.model_validate(e) for e in children.edges],
             time_markers=[PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers],
@@ -945,3 +968,39 @@ def _field_path_in_schema(schema: dict[str, Any], field_path: str) -> bool:
             return False
         cursor = properties[part]
     return True
+
+
+def _block_row_to_typed_out(row: PathwayBlock) -> PathwayTypedBlockOut:
+    """Materialise a `PathwayBlock` ORM row into its typed discriminated-union
+    response member (chain slot #1 §4.1).
+
+    Dispatches via the mapper (`to_domain`) onto the typed `BaseBlock`
+    subclass — picking up legacy `(type, config)` rows transparently via
+    the `legacy_to_domain` fallback — then merges the row-level envelope
+    fields and instantiates the matching `*BlockOut` for the kind.
+
+    The legacy `type` / `label` / `config` ORM columns are surfaced on
+    the envelope unchanged during chain slot #1 so the builder UI keeps
+    rendering and autosaving while it migrates kind-by-kind onto the
+    typed fields (`block_write_shim` §5.1). Slot #2 drops them.
+    """
+    domain = block_row_to_domain(row)
+    out_cls = out_class_for_kind(domain.KIND)
+    envelope: dict[str, Any] = {
+        "id": row.id,
+        "phase_id": row.phase_id,
+        "lane_id": row.lane_id,
+        "duration_value_id": row.duration_value_id,
+        "x": row.x,
+        "y": row.y,
+        "type": row.type,
+        "label": row.label,
+        "config": row.config,
+    }
+    out = out_cls.model_validate({**domain.model_dump(), **envelope, "kind": domain.KIND})
+    # Cast: `out_class_for_kind` is typed as `type[BaseModel]` to keep the
+    # registry table flat (Pydantic discriminated unions are runtime
+    # constructs, not a single base class). The lookup table is keyed on
+    # the same `kind` values as the union and only ever returns a member
+    # of `PathwayTypedBlockOut`.
+    return cast(PathwayTypedBlockOut, out)

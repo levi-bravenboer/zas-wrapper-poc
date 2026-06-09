@@ -6,12 +6,14 @@ import { useTranslation } from 'react-i18next'
 import { BlockTypeIcon } from '../../../blockCatalogue'
 import { blockSemanticsSummary } from '../../../blockCatalogue.utils'
 import { laneAccent } from '../../../canvasLayout'
-import type {
-  BlockSemantics,
-  PathwayBlock,
-  PathwayBlockType,
-  PathwayLane,
-  PathwayTimingValue,
+import {
+  legacyBlockConfig,
+  legacyBlockType,
+  type BlockSemantics,
+  type PathwayBlock,
+  type PathwayBlockType,
+  type PathwayLane,
+  type PathwayTimingValue,
 } from '../../../types'
 
 function translateSemanticsSummary(
@@ -55,11 +57,18 @@ export const BlockNode = memo(BlockNodeImpl)
 function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactElement {
   const { t } = useTranslation('pathway')
   const accent = data.lane ? laneAccent(data.lane) : 'var(--color-primary)'
-  const typeLabel = t(`blockType.${data.block.type}`, {
-    defaultValue: data.blockType?.label ?? data.block.type,
+  const legacyType = legacyBlockType(data.block)
+  const typeLabel = t(`blockType.${legacyType}`, {
+    defaultValue: data.blockType?.label ?? legacyType,
   })
   const name = data.block.label?.trim() || typeLabel
-  const semanticsSummary = blockSemanticsSummary(data.blockType?.semantics, data.block.config)
+  // Chain slot #1: `data.block.config` still mirrors the legacy bag
+  // verbatim (see `pathway-model-foundations` §4.1 envelope notes).
+  // Slot #2 reads this off the typed per-kind fields directly.
+  const semanticsSummary = blockSemanticsSummary(
+    data.blockType?.semantics,
+    legacyBlockConfig(data.block),
+  )
   const summaryLabel = semanticsSummary
     ? translateSemanticsSummary(t, data.blockType?.semantics, semanticsSummary)
     : null

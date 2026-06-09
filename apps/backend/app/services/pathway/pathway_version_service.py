@@ -15,8 +15,14 @@ from app.db.models.pathway import (
     PathwayTimingValue,
     PathwayVersion,
 )
+from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
 from app.db.models.pathway.block_write_shim import block_row_clone_kwargs
 from app.db.models.user import User
+from app.domain.pathway.blocks.validators import (
+    BlockPublishValidationError,
+    validate_lane_kind,
+    validate_publish_block,
+)
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.schemas.pathway.pathway import (
@@ -25,6 +31,8 @@ from app.schemas.pathway.pathway import (
     PathwayVersionSummary,
 )
 from app.services.pathway.errors import (
+    BlockConfigError,
+    BlockLaneNotAllowedError,
     ConceptAlreadyExistsError,
     ForkSourceNotPublishedError,
     NoConceptVersionError,
@@ -74,6 +82,14 @@ class PathwayVersionService:
         concept = await self._version_repo.get_concept(pathway_id)
         if concept is None:
             raise NoConceptVersionError()
+        # §6: publish-time validation gate.
+        # 6.1 — every block instance must satisfy its typed subclass in
+        #        Pydantic v2 strict mode (no value coercion). Surfaces as
+        #        422 keyed on the block id so the builder canvas can
+        #        highlight the offending block.
+        # 6.2 — the block's lane.kind must be in the subclass's
+        #        `allowed_lane_kinds` (D7 class-level invariant).
+        await self._validate_publish_blocks(concept.id)
         # Resolve nested-pathway snapshots BEFORE flipping to published so a
         # failure (latest_published target with no published version) cancels
         # the publish entirely. Mutates `pathway_block.snapshot_json` on the
@@ -119,6 +135,57 @@ class PathwayVersionService:
             kind="fork-from-publish",
             require_published_source=True,
         )
+
+    async def _validate_publish_blocks(self, pathway_version_id: UUID) -> None:
+        """Run the publish-time per-block invariant checks (§6.1, §6.2).
+
+        Loads each block as its typed `BaseBlock` subclass via the
+        mapper, then:
+
+        1. Re-validates the instance in Pydantic v2 strict mode and
+           raises `BlockConfigError` (422) on failure — surfaces the
+           Pydantic validation error path under
+           `blocks[<id>].<field>` so the builder canvas can highlight
+           the offending field.
+        2. Asserts that the block's lane kind is in
+           `block_cls.allowed_lane_kinds` (D7) — raises
+           `BlockLaneNotAllowedError` otherwise.
+        """
+        children = await self._repo.fetch_children(pathway_version_id)
+        lane_kind_codes = {
+            lane.id: code
+            for code, kind in (await self._repo.lane_kinds_by_code()).items()
+            for lane in children.lanes
+            if lane.pathway_lane_kind_id == kind.id
+        }
+        for row in children.blocks:
+            domain = block_row_to_domain(row)
+            try:
+                validate_publish_block(domain)
+            except BlockPublishValidationError as err:
+                raise BlockConfigError(
+                    field=f"blocks[{row.id}]",
+                    reason=str(err.cause),
+                ) from err
+            lane_kind = lane_kind_codes.get(row.lane_id)
+            if lane_kind is None:
+                # Defensive — fetch_children always returns the block's
+                # lane row; missing lane_kind would mean a divergence.
+                raise BlockConfigError(
+                    field=f"blocks[{row.id}].lane_id",
+                    reason="lane_kind_code unresolved at publish time",
+                )
+            try:
+                validate_lane_kind(
+                    type(domain), lane_kind, block_name=domain.name
+                )
+            except Exception as err:
+                raise BlockLaneNotAllowedError(
+                    block_id=row.id,
+                    block_type=type(domain).KIND,
+                    lane_kind_code=lane_kind,
+                    allowed=type(domain).allowed_lane_kinds,
+                ) from err
 
     # ---- Helpers ---------------------------------------------------------
 

@@ -4,7 +4,12 @@ import { toast } from 'sonner'
 
 import type { SaveState } from '../components/topbar/SaveStatusPill'
 import { useReplacePathway } from '../hooks'
-import type { PathwayBare, PathwayVersionDefinition } from '../types'
+import {
+  legacyBlockConfig,
+  legacyBlockType,
+  type PathwayBare,
+  type PathwayVersionDefinition,
+} from '../types'
 import type { BuilderAction } from '../useBuilderState'
 
 const AUTOSAVE_DEBOUNCE_MS = 800
@@ -41,10 +46,14 @@ function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
       id: b.id,
       phase_id: b.phase_id,
       lane_id: b.lane_id,
-      type: b.type,
+      // Send the legacy `type` code on the write surface — chain slot #1
+      // §5.1 dual-writes legacy + typed columns on the same row. Slot #2
+      // flips the autosave shape onto the typed discriminated union
+      // payload (`X-Pathway-Block-Shape: typed` per §5.2).
+      type: legacyBlockType(b),
       label: b.label ?? null,
       duration_value_id: b.duration_value_id ?? null,
-      config: b.config ?? {},
+      config: legacyBlockConfig(b),
       x: b.x,
       y: b.y,
     })),

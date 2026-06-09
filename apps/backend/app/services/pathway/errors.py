@@ -18,6 +18,12 @@ class PathwayVersionNotFoundError(AppError):
     message = "Pathway version not found."
 
 
+class PathwayBlockNotFoundError(AppError):
+    code = "not-found.pathway-block.unknown"
+    status_code = 404
+    message = "Pathway block not found."
+
+
 class NoConceptVersionError(AppError):
     code = "no_concept_version"
     status_code = 409

@@ -303,6 +303,29 @@ class PathwayRepository(BaseRepository[Pathway]):
             deferred_fields=list(deferred_fields),
         )
 
+    async def get_block_in_pathway(
+        self, block_id: UUID, pathway_id: UUID
+    ) -> PathwayBlock | None:
+        """Fetch a single non-deleted `PathwayBlock` belonging to `pathway_id`.
+
+        Joins through `PathwayVersion` to assert ownership. Caller is
+        responsible for tenant-scoping the pathway before this call (the
+        carepath guard on the route does it). Returns `None` when the
+        block is missing, soft-deleted, or owned by a different pathway.
+        """
+        stmt = (
+            select(PathwayBlock)
+            .join(PathwayVersion, PathwayBlock.pathway_version_id == PathwayVersion.id)
+            .where(
+                PathwayBlock.id == block_id,
+                PathwayBlock.deleted_at.is_(None),
+                PathwayVersion.pathway_id == pathway_id,
+                PathwayVersion.deleted_at.is_(None),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def lane_kinds_by_code(self) -> dict[str, PathwayLaneKind]:
         result = await self._session.execute(
             select(PathwayLaneKind).where(PathwayLaneKind.deleted_at.is_(None))

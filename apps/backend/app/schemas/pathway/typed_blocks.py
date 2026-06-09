@@ -1,0 +1,164 @@
+"""Discriminated-union response shape for pathway blocks (chain slot #1).
+
+`GET /pathways/{id}` and `GET /pathways/{id}/blocks/{block_id}` serialise
+blocks via a Pydantic v2 discriminated union keyed on `kind`, per
+`pathway-model-foundations` §4.1 / §4.2.
+
+Each per-kind member is built by multi-inheriting the domain
+`BaseBlock` subclass (source of truth for typed instance fields +
+shared `name` / `input_logic` / `timing_policy` stubs) with
+`_BlockEnvelopeFields` (row-level identity / placement). Each member
+adds an instance-level `kind: Literal[...]` field used as the
+Pydantic discriminator. Legacy `type` / `config` columns are NOT
+surfaced — the frontend dispatches on `kind` and reads typed fields
+directly. Writes still accept the legacy shape via the
+`block_write_shim` (§5.1); the symmetric typed write payload is
+accepted via `X-Pathway-Block-Shape: typed` (§5.2).
+"""
+
+from __future__ import annotations
+
+from typing import Annotated, Literal, Union
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
+from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.form.typed import FormBlock
+from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
+from app.domain.pathway.blocks.message.typed import MessageBlock
+from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
+from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
+from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.wait.typed import WaitBlock
+
+
+class _BlockEnvelopeFields(BaseModel):
+    """Row-level identity / placement fields shared by every typed block out.
+
+    `type`, `config`, and `label` are slot #1 compat fields — the legacy
+    wire shape stays on the response while the existing builder UI
+    migrates kind-by-kind onto the typed fields. They are dropped in
+    chain slot #2 alongside the legacy ORM columns. Per the proposal:
+    "Old `type` / `config` / `label` / `snapshot_json` columns stay
+    during the chain-slot-#1 transition; legacy reads/writes continue
+    to use them via the compat shim. They are dropped in chain slot #2."
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    phase_id: UUID
+    lane_id: UUID
+    duration_value_id: UUID | None = None
+    x: int = 0
+    y: int = 0
+
+    # ---- Slot #1 compat fields (dropped in slot #2) ---------------------
+    type: str | None = None
+    label: str | None = None
+    config: dict[str, object] | None = None
+
+
+class AppointmentBlockOut(AppointmentBlock, _BlockEnvelopeFields):
+    kind: Literal["appointment"] = "appointment"
+
+
+class TaskBlockOut(TaskBlock, _BlockEnvelopeFields):
+    kind: Literal["task"] = "task"
+
+
+class DecisionBlockOut(DecisionBlock, _BlockEnvelopeFields):
+    kind: Literal["decision"] = "decision"
+
+
+class MessageBlockOut(MessageBlock, _BlockEnvelopeFields):
+    kind: Literal["message"] = "message"
+
+
+class FormBlockOut(FormBlock, _BlockEnvelopeFields):
+    kind: Literal["form"] = "form"
+
+
+class MilestoneBlockOut(MilestoneBlock, _BlockEnvelopeFields):
+    kind: Literal["milestone"] = "milestone"
+
+
+class WaitBlockOut(WaitBlock, _BlockEnvelopeFields):
+    kind: Literal["wait"] = "wait"
+
+
+class PathwayLinkBlockOut(PathwayLinkBlock, _BlockEnvelopeFields):
+    kind: Literal["pathway_link"] = "pathway_link"
+
+
+class ExternalProgramBlockOut(ExternalProgramBlock, _BlockEnvelopeFields):
+    kind: Literal["external_program"] = "external_program"
+
+
+PathwayTypedBlockOut = Annotated[
+    Union[
+        AppointmentBlockOut,
+        TaskBlockOut,
+        DecisionBlockOut,
+        MessageBlockOut,
+        FormBlockOut,
+        MilestoneBlockOut,
+        WaitBlockOut,
+        PathwayLinkBlockOut,
+        ExternalProgramBlockOut,
+    ],
+    Field(discriminator="kind"),
+]
+
+
+_OUT_BY_KIND: dict[str, type[BaseModel]] = {
+    "appointment": AppointmentBlockOut,
+    "task": TaskBlockOut,
+    "decision": DecisionBlockOut,
+    "message": MessageBlockOut,
+    "form": FormBlockOut,
+    "milestone": MilestoneBlockOut,
+    "wait": WaitBlockOut,
+    "pathway_link": PathwayLinkBlockOut,
+    "external_program": ExternalProgramBlockOut,
+}
+
+
+def out_class_for_kind(kind: str) -> type[BaseModel]:
+    """Return the `*BlockOut` class for a discriminator value."""
+    return _OUT_BY_KIND[kind]
+
+
+__all__ = [
+    "AppointmentBlockOut",
+    "DecisionBlockOut",
+    "ExternalProgramBlockOut",
+    "FormBlockOut",
+    "MessageBlockOut",
+    "MilestoneBlockOut",
+    "PathwayLinkBlockOut",
+    "PathwayTypedBlockOut",
+    "TaskBlockOut",
+    "WaitBlockOut",
+    "out_class_for_kind",
+]
+
+
+# Resolve the `PathwayTypedBlockOut` forward reference declared on
+# `PathwayVersionDefinition.blocks` and the wrapping
+# `PathwayWithVersionResponse`. The forward reference exists to break the
+# package-init cycle between this module and `_base.py` (see the comment
+# at the top of this file and the note in `__init__.py`).
+from app.schemas.pathway.pathway import (  # noqa: E402
+    PathwayVersionDefinition,
+    PathwayWithVersionResponse,
+)
+
+PathwayVersionDefinition.model_rebuild(
+    _types_namespace={"PathwayTypedBlockOut": PathwayTypedBlockOut}
+)
+PathwayWithVersionResponse.model_rebuild(
+    _types_namespace={"PathwayTypedBlockOut": PathwayTypedBlockOut}
+)

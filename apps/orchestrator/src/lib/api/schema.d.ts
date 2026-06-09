@@ -886,6 +886,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pathways/{pathway_id}/blocks/{block_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pathway Block */
+        get: operations["get_pathway_block"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pathways/{pathway_id}/versions": {
         parameters: {
             query?: never;
@@ -1107,6 +1124,76 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /** AppointmentBlockOut */
+        AppointmentBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** Title */
+            title: string;
+            /** Mode */
+            mode?: ("in_person" | "video" | "phone") | null;
+            /** Location */
+            location?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Attendees Patient */
+            attendees_patient?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "appointment";
+        };
         /** AssignRoleRequest */
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
@@ -1228,6 +1315,77 @@ export interface components {
          * @enum {string}
          */
         ConsentStatus: "active" | "revoked";
+        /** DecisionAutoResolve */
+        DecisionAutoResolve: {
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /** Field Path */
+            field_path: string;
+        };
+        /** DecisionBlockOut */
+        DecisionBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** Question */
+            question: string;
+            auto_resolve?: components["schemas"]["DecisionAutoResolve"] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "decision";
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Code */
@@ -1324,6 +1482,173 @@ export interface components {
             period_start: string;
             /** Period End */
             period_end: string | null;
+        };
+        /** ExternalProgramBlockOut */
+        ExternalProgramBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "luscii";
+            /** Program Id */
+            program_id?: string | null;
+            /** Protocol Id */
+            protocol_id?: string | null;
+            /** Mode */
+            mode?: ("blocking" | "fire_and_forget") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "external_program";
+        };
+        /** FormBlockOut */
+        FormBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** Title */
+            title: string;
+            /** Intro */
+            intro?: string | null;
+            /** Questions */
+            questions: components["schemas"]["FormQuestion"][];
+            /** Submit Label */
+            submit_label?: string | null;
+            /** Confirmation Message */
+            confirmation_message?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "form";
+        };
+        /** FormQuestion */
+        FormQuestion: {
+            /** Id */
+            id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "text" | "long_text" | "single_choice" | "multi_choice" | "scale" | "date" | "file";
+            /** Label */
+            label: string;
+            /** Required */
+            required: boolean;
+            /**
+             * Options
+             * @default []
+             */
+            options: components["schemas"]["FormQuestionOption"][];
+            /** Validation */
+            validation?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** FormQuestionOption */
+        FormQuestionOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
         };
         /**
          * Gender
@@ -1569,6 +1894,139 @@ export interface components {
              * @default false
              */
             is_default: boolean;
+        };
+        /** MessageBlockOut */
+        MessageBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "email" | "sms" | "push" | "in_app";
+            /** Subject */
+            subject: string;
+            /** Body */
+            body: string;
+            /** Cta Label */
+            cta_label?: string | null;
+            /** Cta Target */
+            cta_target?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "message";
+        };
+        /** MilestoneBlockOut */
+        MilestoneBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label: string;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** Description */
+            description?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "milestone";
         };
         /**
          * MobileHealthResponse
@@ -1903,44 +2361,6 @@ export interface components {
              */
             y: number;
         };
-        /** PathwayBlockOut */
-        PathwayBlockOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Phase Id
-             * Format: uuid
-             */
-            phase_id: string;
-            /**
-             * Lane Id
-             * Format: uuid
-             */
-            lane_id: string;
-            /** Type */
-            type: string;
-            /** Label */
-            label?: string | null;
-            /** Duration Value Id */
-            duration_value_id?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            };
-            /**
-             * X
-             * @default 0
-             */
-            x: number;
-            /**
-             * Y
-             * @default 0
-             */
-            y: number;
-        };
         /** PathwayBlockType */
         PathwayBlockType: {
             /**
@@ -2209,6 +2629,89 @@ export interface components {
             /** Height Px */
             height_px: number;
         };
+        /** PathwayLinkBlockOut */
+        PathwayLinkBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Target Pathway Id
+             * Format: uuid
+             */
+            target_pathway_id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "blocking" | "fire_and_forget";
+            /**
+             * Version Pin
+             * @default latest_published
+             * @enum {string}
+             */
+            version_pin: "latest_published" | "specific";
+            /** Pinned Version Id */
+            pinned_version_id?: string | null;
+            /**
+             * Context Mapping
+             * @default {}
+             */
+            context_mapping: {
+                [key: string]: string;
+            };
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "pathway_link";
+        };
         /**
          * PathwayParentReference
          * @description Minimal identifier returned by `GET /pathways/{id}/parent-references`.
@@ -2456,7 +2959,7 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: components["schemas"]["PathwayBlockOut"][];
+            blocks?: (components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
@@ -2985,6 +3488,77 @@ export interface components {
             /** Source */
             source: string;
         };
+        /** TaskBlockOut */
+        TaskBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** Title */
+            title: string;
+            /**
+             * Assignee
+             * @enum {string}
+             */
+            assignee: "patient" | "caregiver";
+            /** Due Offset Days */
+            due_offset_days?: number | null;
+            /** Requires Completion */
+            requires_completion?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "task";
+        };
         /**
          * UserCreate
          * @description Role-discriminated admin-create payload.
@@ -3080,6 +3654,72 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WaitBlockOut */
+        WaitBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Type */
+            type?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * Input Logic
+             * @default []
+             */
+            input_logic: {
+                [key: string]: unknown;
+            }[];
+            /** Timing Policy */
+            timing_policy?: {
+                [key: string]: unknown;
+            } | null;
+            /** Event Type */
+            event_type: string;
+            /** Source Block Id */
+            source_block_id?: string | null;
+            /** Timeout Days */
+            timeout_days?: number | null;
+            /** On Timeout */
+            on_timeout?: ("continue" | "escalate") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "wait";
         };
     };
     responses: never;
@@ -5187,7 +5827,9 @@ export interface operations {
     replace_pathway: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Pathway-Block-Shape"?: string | null;
+            };
             path: {
                 pathway_id: string;
             };
@@ -5266,6 +5908,47 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pathway_block: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+                block_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

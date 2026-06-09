@@ -92,8 +92,14 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'patch-block': {
       const history = pushHistory(state)
-      const blocks = (state.version.blocks ?? []).map((b) =>
-        b.id === action.blockId ? { ...b, ...action.patch } : b,
+      // Cast: `Partial<PathwayBlock>` is a partial of the typed
+      // discriminated union, so spreading it over a narrowed member
+      // produces an unknown intersection. Inspectors only patch shared
+      // envelope fields (`label`, `config`, position) plus per-kind
+      // typed fields that are valid for the active block's kind; the
+      // result remains within the union by construction.
+      const blocks = ((state.version.blocks ?? []) as PathwayBlock[]).map((b) =>
+        b.id === action.blockId ? ({ ...b, ...action.patch } as PathwayBlock) : b,
       )
       return { ...state, version: { ...state.version, blocks }, history }
     }

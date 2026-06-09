@@ -26,10 +26,10 @@
 
 ## 4. Read API on new shape
 
-- [ ] 4.1 `GET /pathways/{id}`: serialise blocks from the new `pathway_block` table via Pydantic v2 discriminated union.
-- [ ] 4.2 `GET /pathways/{id}/blocks/{block_id}`: same discriminated union.
-- [ ] 4.3 OpenAPI: re-run `moon run backend:openapi`; verify discriminator surfaces correctly.
-- [ ] 4.4 Frontend: `/openapi-sync` regenerates types; spot-check `BlockNodeRouter` still resolves per-kind components.
+- [x] 4.1 `GET /pathways/{id}`: serialise blocks from the new `pathway_block` table via Pydantic v2 discriminated union. (`PathwayVersionDefinition.blocks` typed as `list[PathwayTypedBlockOut]` in `schemas/pathway/typed_blocks.py`; `pathway_service._block_row_to_typed_out` materialises rows via the mapper. Slot #1 envelope retains legacy `type` / `label` / `config` for builder UI compat — slot #2 drops.)
+- [x] 4.2 `GET /pathways/{id}/blocks/{block_id}`: same discriminated union. (`pathway_router.get_pathway_block` + `PathwayService.get_block`; tenancy via carepath guard + `pathway_repository.get_block_in_pathway`.)
+- [x] 4.3 OpenAPI: re-run `moon run backend:openapi`; verify discriminator surfaces correctly. (Discriminator `propertyName=kind` with 9-kind mapping confirmed in `apps/backend/openapi.json` on `PathwayVersionDefinition.blocks` and the per-block GET response.)
+- [x] 4.4 Frontend: `/openapi-sync` regenerates types; spot-check `BlockNodeRouter` still resolves per-kind components. (Orchestrator types regenerated via `openapi-typescript`; `PathwayBlock` retyped as the union; `BlockNodeRouter` dispatches on `kind`; `legacyBlockType` / `legacyBlockConfig` helpers in `types.ts` keep inspector + autosave on the legacy bag during slot #1.)
 
 ## 5. Write API compat shim
 
@@ -39,7 +39,7 @@
 
 ## 6. Validation
 
-- [ ] 6.1 Publish-time validator: every block instance validates against its subclass (Pydantic v2 strict). Invalid → publish rejected with per-block error.
+- [x] 6.1 Publish-time validator: every block instance validates against its subclass (Pydantic v2 strict). Invalid → publish rejected with per-block error. (`validate_publish_block` in `validators.py` + `BlockPublishValidationError`; wired through `PathwayVersionService._validate_publish_blocks` which also re-checks the §6.2 lane-kind invariant per block. Failures surface as `BlockConfigError` / `BlockLaneNotAllowedError` 422 keyed on the block id.)
 - [x] 6.2 Lane-kind validator (D7): `block.lane.kind ∈ block.__class__.allowed_lane_kinds`. (`validate_lane_kind` + `LaneKindNotAllowedError` in `app/domain/pathway/blocks/validators.py`; tests `test_validate_lane_kind_*` in `tests/domain/pathway/test_block_validators.py`.)
 
 ## 7. Cleanup + sync

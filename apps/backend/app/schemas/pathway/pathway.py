@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+# `PathwayTypedBlockOut` is the discriminated-union response shape for
+# pathway blocks (chain slot #1 §4.1). Imported as a forward reference
+# to avoid a circular import: `typed_blocks` depends on the per-kind
+# domain `BaseBlock` subclasses which transitively re-enter the
+# `app.schemas.pathway` package via `_base.py`'s import of the small
+# `Literal` types. `app/schemas/pathway/__init__.py` calls
+# `PathwayVersionDefinition.model_rebuild()` after the typed_blocks
+# module has loaded to resolve the forward ref.
+if TYPE_CHECKING:
+    from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut
 
 
 class PathwayCreate(BaseModel):
@@ -294,7 +305,7 @@ class PathwayVersionDefinition(BaseModel):
     phases: list[PathwayPhaseOut] = Field(default_factory=list)
     lanes: list[PathwayLaneOut] = Field(default_factory=list)
     timing_values: list[PathwayTimingValueOut] = Field(default_factory=list)
-    blocks: list[PathwayBlockOut] = Field(default_factory=list)
+    blocks: list["PathwayTypedBlockOut"] = Field(default_factory=list)
     branches: list[PathwayBlockBranchOut] = Field(default_factory=list)
     edges: list[PathwayEdgeOut] = Field(default_factory=list)
     time_markers: list[PathwayTimeMarkerOut] = Field(default_factory=list)

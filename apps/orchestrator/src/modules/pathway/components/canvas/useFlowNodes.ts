@@ -3,12 +3,13 @@ import { useMemo } from 'react'
 import { indexById } from '@/lib/utils/indexBy'
 
 import { blockOrigin, type CanvasGeometry } from '../../canvasLayout'
-import type {
-  PathwayBlock,
-  PathwayBlockType,
-  PathwayEdge,
-  PathwayLane,
-  PathwayTimingValue,
+import {
+  legacyBlockType,
+  type PathwayBlock,
+  type PathwayBlockType,
+  type PathwayEdge,
+  type PathwayLane,
+  type PathwayTimingValue,
 } from '../../types'
 import type { BuilderSelection } from '../../useBuilderState'
 import { getBlockDimensions } from '../../utils/blockDimensions'
@@ -46,7 +47,7 @@ export function useFlowNodes({
   return useMemo(
     () =>
       blocks.map((block) => {
-        const blockType = typesByCode.get(block.type) ?? null
+        const blockType = typesByCode.get(legacyBlockType(block)) ?? null
         const dimensions = getBlockDimensions(block, blockType)
         return {
           id: block.id,

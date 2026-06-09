@@ -22,6 +22,7 @@ from app.schemas.pathway import (
     PathwayVersionSummary,
     PathwayWithVersionResponse,
 )
+from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
@@ -197,6 +198,25 @@ async def get_pathway(
     service: PathwayServiceDep,
 ) -> PathwayWithVersionResponse:
     return await service.get_with_resolved_version(pathway_id, current_user.tenant_id)
+
+
+@router.get(
+    "/{pathway_id}/blocks/{block_id}",
+    operation_id="get_pathway_block",
+    dependencies=[_CAREPATH_GUARD],
+    response_model=PathwayTypedBlockOut,
+    responses=_ERRORS_404,
+)
+async def get_pathway_block(
+    pathway_id: UUID,
+    block_id: UUID,
+    current_user: CurrentUserDep,
+    service: PathwayServiceDep,
+) -> PathwayTypedBlockOut:
+    # Chain slot #1 §4.2 — single-block read on the typed discriminated
+    # union shape. Same materialisation pipeline as the version-level
+    # definition: `block_mapper.to_domain` + per-kind `*BlockOut` wrapper.
+    return await service.get_block(pathway_id, block_id, current_user.tenant_id)
 
 
 @router.put(

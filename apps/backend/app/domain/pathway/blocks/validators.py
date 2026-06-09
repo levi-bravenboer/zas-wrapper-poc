@@ -94,10 +94,45 @@ def validate_all_block_classes() -> None:
         validate_deferred_field_attrs(cls)
 
 
+class BlockPublishValidationError(ValueError):
+    """A block instance failed publish-time strict validation.
+
+    Wraps a Pydantic v2 `ValidationError` raised when re-validating the
+    block against its typed subclass in strict mode. The publish API
+    surfaces this as a 422 keyed on the block id so the builder can
+    highlight the offending block on the canvas.
+    """
+
+    def __init__(self, block_cls: type[BaseBlock], cause: Exception) -> None:
+        super().__init__(
+            f"{block_cls.__name__} instance failed strict publish validation: {cause}"
+        )
+        self.block_cls = block_cls
+        self.cause = cause
+
+
+def validate_publish_block(block: BaseBlock) -> None:
+    """Re-validate `block` against its subclass in Pydantic v2 strict mode.
+
+    Defends the publish gate per `pathway-model-foundations` §6.1:
+    every block instance must satisfy its typed subclass schema before
+    a pathway version is allowed to flip to `published`. The strict
+    flag disables value coercion (no `"42"` → `42`, no truthy strings
+    → bool) so the published row matches the typed columns exactly.
+    """
+    cls = type(block)
+    try:
+        cls.model_validate(block.model_dump(), strict=True)
+    except Exception as exc:  # pydantic.ValidationError + subclasses
+        raise BlockPublishValidationError(cls, exc) from exc
+
+
 __all__ = [
+    "BlockPublishValidationError",
     "DeferredFieldAttrUnknownError",
     "LaneKindNotAllowedError",
     "validate_all_block_classes",
     "validate_deferred_field_attrs",
     "validate_lane_kind",
+    "validate_publish_block",
 ]
