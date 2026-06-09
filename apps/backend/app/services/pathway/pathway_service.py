@@ -10,7 +10,6 @@ from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
     PathwayBlockDeferredField,
-    PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
     PathwayPhase,
@@ -31,6 +30,10 @@ from app.domain.pathway.blocks.catalogue import (
     BLOCK_CATALOGUE,
     get_catalogue_entry,
 )
+from app.domain.pathway.input_logic.derived_edges import (
+    DerivedEdge,
+    derive_edges_from_input_logic,
+)
 from app.schemas.pathway import (
     PathwayBlockType,
     PathwayEdgeOffsetDirection,
@@ -46,8 +49,6 @@ from app.schemas.pathway.pathway import (
     PathwayBlockIn,
     PathwayChildSummary,
     PathwayDefinitionReplace,
-    PathwayEdgeIn,
-    PathwayEdgeOut,
     PathwayLaneIn,
     PathwayLaneOut,
     PathwayParentReference,
@@ -69,8 +70,6 @@ from app.services.pathway.errors import (
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
-    EdgeTimingValidationError,
-    EdgeValidationError,
     NoConceptVersionError,
     PathwayBlockNotFoundError,
     PathwayHasReferrersError,
@@ -465,7 +464,11 @@ class PathwayService:
             ],
             blocks=[_block_row_to_typed_out(b) for b in children.blocks],
             branches=[PathwayBlockBranchOut.model_validate(br) for br in children.branches],
-            edges=[PathwayEdgeOut.model_validate(e) for e in children.edges],
+            # Derived edges per chain slot #2 §3.3: one entry per
+            # `InputLogicRule` on each block. The runtime evaluator
+            # consumes `input_logic` directly; this projection only
+            # drives the canvas connector layer.
+            edges=_derive_edges_for_response(children.blocks),
             time_markers=[PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers],
             deferred_fields=[
                 PathwayBlockDeferredFieldOut.model_validate(fr) for fr in children.deferred_fields
@@ -547,22 +550,8 @@ class PathwayService:
             ]
         )
         await session.flush()
-        session.add_all(
-            [
-                PathwayEdge(
-                    id=e.id,
-                    pathway_version_id=pathway_version_id,
-                    source_block_id=e.source_block_id,
-                    target_block_id=e.target_block_id,
-                    source_branch_id=e.source_branch_id,
-                    delay_value_id=e.delay_value_id,
-                    time_marker_id=e.time_marker_id,
-                    offset_value_id=e.offset_value_id,
-                    offset_direction_code=e.offset_direction_code,
-                )
-                for e in r.edges
-            ]
-        )
+        # Edges retired in slot #2 §3 — the canvas connector layer
+        # is derived from `block.input_logic` at read time.
         session.add_all(
             [
                 PathwayTimeMarker(
@@ -602,7 +591,6 @@ class _ResolvedDefinition:
         timing_values: list[PathwayTimingValueIn],
         blocks: list[PathwayBlockIn],
         branches: list[PathwayBlockBranchIn],
-        edges: list[PathwayEdgeIn],
         time_markers: list[PathwayTimeMarkerIn],
         deferred_fields: list[PathwayBlockDeferredFieldIn],
     ) -> None:
@@ -613,7 +601,6 @@ class _ResolvedDefinition:
         self.timing_values = timing_values
         self.blocks = blocks
         self.branches = branches
-        self.edges = edges
         self.time_markers = time_markers
         self.deferred_fields = deferred_fields
 
@@ -730,107 +717,11 @@ class _ResolvedDefinition:
                 )
             block_id_by_branch[branch.id] = branch.block_id
 
-        # ---- Edges: endpoints ∈ blocks, branch ∈ source block, uniqueness
-        # Pre-collect marker ids and valid offset direction codes so edges can
-        # validate cross-references in a single pass.
-        marker_id_set: set[UUID] = {m.id for m in payload.time_markers}
-        valid_offset_codes: set[str] = {code for code, _, _ in SEEDED_OFFSET_DIRECTIONS}
-        edge_ids: set[UUID] = set()
-        edge_keys: set[tuple[UUID, UUID, UUID | None]] = set()
-        for edge in payload.edges:
-            if edge.id in edge_ids:
-                raise EdgeValidationError(field=f"edges[{edge.id}]", reason="duplicate edge id")
-            edge_ids.add(edge.id)
-            if edge.source_block_id not in block_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}].source_block_id",
-                    reason="source_block_id not present in payload blocks",
-                )
-            if edge.target_block_id not in block_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}].target_block_id",
-                    reason="target_block_id not present in payload blocks",
-                )
-            if edge.source_branch_id is not None:
-                owner = block_id_by_branch.get(edge.source_branch_id)
-                if owner is None:
-                    raise EdgeValidationError(
-                        field=f"edges[{edge.id}].source_branch_id",
-                        reason="source_branch_id not present in payload branches",
-                    )
-                if owner != edge.source_block_id:
-                    raise EdgeValidationError(
-                        field=f"edges[{edge.id}].source_branch_id",
-                        reason="source_branch_id does not belong to source_block_id",
-                    )
-            if edge.delay_value_id is not None and edge.delay_value_id not in timing_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}].delay_value_id",
-                    reason="delay_value_id not present in payload timing_values",
-                )
-
-            # Edge timing union: at most one of (delay_value_id, time_marker_id,
-            # source_branch_id) may be set. Mirrors the DB CHECK so violations
-            # surface as 422 not 23514.
-            timing_discriminators = [
-                edge.delay_value_id is not None,
-                edge.time_marker_id is not None,
-                edge.source_branch_id is not None,
-            ]
-            if sum(timing_discriminators) > 1:
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason=(
-                        "edge may set at most one of delay_value_id, "
-                        "time_marker_id, source_branch_id"
-                    ),
-                )
-
-            # Marker triple: time_marker_id, offset_value_id, offset_direction_code
-            # must all be set together or all null. Avoids partially-configured
-            # marker edges sneaking past schema validation.
-            marker_parts = (
-                edge.time_marker_id is not None,
-                edge.offset_value_id is not None,
-                edge.offset_direction_code is not None,
-            )
-            if any(marker_parts) and not all(marker_parts):
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason=(
-                        "marker timing requires time_marker_id, offset_value_id, "
-                        "and offset_direction_code to be set together"
-                    ),
-                )
-            if edge.time_marker_id is not None and edge.time_marker_id not in marker_id_set:
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason="time_marker_id not present in payload time_markers",
-                )
-            if edge.offset_value_id is not None and edge.offset_value_id not in timing_ids:
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason="offset_value_id not present in payload timing_values",
-                )
-            if (
-                edge.offset_direction_code is not None
-                and edge.offset_direction_code not in valid_offset_codes
-            ):
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason=(
-                        f"offset_direction_code '{edge.offset_direction_code}' "
-                        f"is not a seeded value"
-                    ),
-                )
-
-            key = (edge.source_block_id, edge.target_block_id, edge.source_branch_id)
-            if key in edge_keys:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}]",
-                    reason="duplicate edge (source_block_id, target_block_id, source_branch_id)",
-                )
-            edge_keys.add(key)
+        # Edges retired in chain slot #2 §3 — connectivity is now
+        # authored via `block.input_logic` rules. §3.4 validator
+        # (`_validate_input_logic_node_refs`) asserts every rule's
+        # `node` resolves to a block in the payload below.
+        _validate_input_logic_node_refs(payload.blocks, block_ids)
 
         # ---- Time markers
         marker_ids: set[UUID] = set()
@@ -887,7 +778,6 @@ class _ResolvedDefinition:
             timing_values=list(payload.timing_values),
             blocks=materialized_blocks,
             branches=list(payload.branches),
-            edges=list(payload.edges),
             time_markers=list(payload.time_markers),
             deferred_fields=list(payload.deferred_fields),
         )
@@ -996,3 +886,58 @@ def _block_row_to_typed_out(row: PathwayBlock) -> PathwayTypedBlockOut:
     # the same `kind` values as the union and only ever returns a member
     # of `PathwayTypedBlockOut`.
     return cast(PathwayTypedBlockOut, out)
+
+
+def _derive_edges_for_response(blocks: list[PathwayBlock]) -> list[DerivedEdge]:
+    """Walk every block row's `input_logic` to produce the derived edge list.
+
+    Chain slot #2 §3.3: the canvas connector layer is computed from
+    the typed `InputLogic` aggregate on each block. The mapper's
+    `_normalise_input_logic` handles legacy list-shaped stubs, so a
+    pre-migration row produces an empty rule list without raising.
+    """
+    edges: list[DerivedEdge] = []
+    for row in blocks:
+        domain = block_row_to_domain(row)
+        edges.extend(derive_edges_from_input_logic(row.id, domain.input_logic))
+    return edges
+
+
+def _validate_input_logic_node_refs(
+    blocks: list[PathwayBlockIn],
+    block_ids: set[UUID],
+) -> None:
+    """Reject payloads whose `input_logic.node` refs miss a block (§3.4).
+
+    Each rule references a producer block by id; the rule's typed
+    `args` carry the same id. Any reference that does not resolve to
+    a block in the same pathway version is a publish blocker.
+    """
+    for block in blocks:
+        # The payload still arrives in the slot #1 wire shape (`config`
+        # bag with an `input_logic` key); the new typed aggregate is
+        # read off the typed write surface in slot #2 §6 once the
+        # builder migrates. For now skim the bag defensively.
+        config = block.config or {}
+        raw_logic = config.get("input_logic")
+        if not raw_logic:
+            continue
+        rules = raw_logic.get("rules") if isinstance(raw_logic, dict) else raw_logic
+        if not isinstance(rules, list):
+            continue
+        for idx, rule in enumerate(rules):
+            if not isinstance(rule, dict):
+                continue
+            node_str = rule.get("node")
+            try:
+                node = UUID(str(node_str))
+            except (TypeError, ValueError):
+                raise PathwayValidationError(
+                    field=f"blocks[{block.id}].input_logic.rules[{idx}].node",
+                    reason=f"not a valid uuid: {node_str!r}",
+                )
+            if node not in block_ids:
+                raise PathwayValidationError(
+                    field=f"blocks[{block.id}].input_logic.rules[{idx}].node",
+                    reason=f"node {node} not present in payload blocks",
+                )

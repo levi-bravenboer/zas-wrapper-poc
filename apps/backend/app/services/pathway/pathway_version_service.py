@@ -8,7 +8,6 @@ from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
     PathwayBlockDeferredField,
-    PathwayEdge,
     PathwayLane,
     PathwayPhase,
     PathwayTimeMarker,
@@ -325,25 +324,10 @@ class PathwayVersionService:
         )
         await session.flush()
 
-        session.add_all(
-            [
-                PathwayEdge(
-                    id=uuid4(),
-                    pathway_version_id=target_version_id,
-                    source_block_id=block_id_map[e.source_block_id],
-                    target_block_id=block_id_map[e.target_block_id],
-                    source_branch_id=(
-                        branch_id_map[e.source_branch_id]
-                        if e.source_branch_id is not None
-                        else None
-                    ),
-                    delay_value_id=(
-                        timing_id_map[e.delay_value_id] if e.delay_value_id is not None else None
-                    ),
-                )
-                for e in src.edges
-            ]
-        )
+        # Edges retired in slot #2 §3 — fork-from-publish carries
+        # `block.input_logic` over with the block rows themselves
+        # (cloned via `block_row_clone_kwargs`), so connectivity
+        # follows automatically without a per-edge copy step.
         session.add_all(
             [
                 PathwayTimeMarker(

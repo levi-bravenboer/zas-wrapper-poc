@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # `PathwayVersionDefinition.model_rebuild()` after the typed_blocks
 # module has loaded to resolve the forward ref.
 if TYPE_CHECKING:
+    from app.domain.pathway.input_logic.derived_edges import DerivedEdge
     from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut
 
 
@@ -199,22 +200,10 @@ class PathwayBlockBranchOut(PathwayBlockBranchIn):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PathwayEdgeIn(BaseModel):
-    id: UUID
-    source_block_id: UUID
-    target_block_id: UUID
-    source_branch_id: UUID | None = None
-    delay_value_id: UUID | None = None
-    # Marker-anchored timing: all three must be set together or all null.
-    # Cross-kind invariant (`completion XOR marker XOR branch XOR immediate`)
-    # is enforced in the service layer + a Postgres CHECK constraint.
-    time_marker_id: UUID | None = None
-    offset_value_id: UUID | None = None
-    offset_direction_code: str | None = Field(default=None, max_length=63)
-
-
-class PathwayEdgeOut(PathwayEdgeIn):
-    model_config = ConfigDict(from_attributes=True)
+# `PathwayEdgeIn` / `PathwayEdgeOut` were retired in
+# `pathway-input-logic-and-timing` §3.2. The authored `pathway_edge`
+# table no longer exists; the canvas reads edges via the derived
+# `DerivedEdge` shape computed from each block's `input_logic`.
 
 
 class PathwayTimeMarkerIn(BaseModel):
@@ -307,7 +296,13 @@ class PathwayVersionDefinition(BaseModel):
     timing_values: list[PathwayTimingValueOut] = Field(default_factory=list)
     blocks: list["PathwayTypedBlockOut"] = Field(default_factory=list)
     branches: list[PathwayBlockBranchOut] = Field(default_factory=list)
-    edges: list[PathwayEdgeOut] = Field(default_factory=list)
+    # `edges` is derived from `blocks[*].input_logic` per
+    # `pathway-input-logic-and-timing` §3.3. The authored
+    # `pathway_edge` table no longer exists; the canvas keeps
+    # rendering one connector per producer→consumer relationship by
+    # walking this list. Forward-reference to `DerivedEdge` is
+    # resolved alongside `PathwayTypedBlockOut` from `typed_blocks`.
+    edges: list["DerivedEdge"] = Field(default_factory=list)
     time_markers: list[PathwayTimeMarkerOut] = Field(default_factory=list)
     deferred_fields: list[PathwayBlockDeferredFieldOut] = Field(default_factory=list)
 
@@ -338,7 +333,9 @@ class PathwayDefinitionReplace(BaseModel):
     timing_values: list[PathwayTimingValueIn] = Field(default_factory=list)
     blocks: list[PathwayBlockIn] = Field(default_factory=list)
     branches: list[PathwayBlockBranchIn] = Field(default_factory=list)
-    edges: list[PathwayEdgeIn] = Field(default_factory=list)
+    # `edges` retired from the write surface in slot #2 §3 — the
+    # builder authors `input_logic` rules on each block instead and
+    # the canvas derives edges on read.
     time_markers: list[PathwayTimeMarkerIn] = Field(default_factory=list)
     deferred_fields: list[PathwayBlockDeferredFieldIn] = Field(default_factory=list)
 

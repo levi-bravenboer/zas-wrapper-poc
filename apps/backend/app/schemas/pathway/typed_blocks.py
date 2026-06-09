@@ -151,14 +151,16 @@ __all__ = [
 # `PathwayWithVersionResponse`. The forward reference exists to break the
 # package-init cycle between this module and `_base.py` (see the comment
 # at the top of this file and the note in `__init__.py`).
+from app.domain.pathway.input_logic.derived_edges import DerivedEdge  # noqa: E402
 from app.schemas.pathway.pathway import (  # noqa: E402
     PathwayVersionDefinition,
     PathwayWithVersionResponse,
 )
 
-PathwayVersionDefinition.model_rebuild(
-    _types_namespace={"PathwayTypedBlockOut": PathwayTypedBlockOut}
-)
-PathwayWithVersionResponse.model_rebuild(
-    _types_namespace={"PathwayTypedBlockOut": PathwayTypedBlockOut}
-)
+_REBUILD_NS = {
+    "PathwayTypedBlockOut": PathwayTypedBlockOut,
+    "DerivedEdge": DerivedEdge,
+}
+
+PathwayVersionDefinition.model_rebuild(_types_namespace=_REBUILD_NS)
+PathwayWithVersionResponse.model_rebuild(_types_namespace=_REBUILD_NS)

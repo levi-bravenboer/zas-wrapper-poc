@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
+
 from httpx import AsyncClient
 
 from app.adapters.luscii import LUSCII_PROGRAM_BLOCK_TYPE
@@ -353,6 +355,9 @@ async def test_replace_disallowed_lane_returns_422(
     assert details["allowed_lane_kind_codes"] == ["patient"]
 
 
+@pytest.mark.skip(
+    reason="edge validation retired in slot #2 §3; input_logic refs replace edge timing"
+)
 async def test_replace_invalid_edge_timing_returns_422(
     async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
 ) -> None:

@@ -14,7 +14,6 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldIn,
     PathwayBlockIn,
     PathwayDefinitionReplace,
-    PathwayEdgeIn,
     PathwayLaneIn,
     PathwayPhaseIn,
     PathwayTimeMarkerIn,
@@ -78,7 +77,6 @@ def _payload(
         lanes=lanes,
         blocks=blocks,
         branches=[],
-        edges=[],
         timing_values=[],
         time_markers=[],
         deferred_fields=[],
@@ -307,7 +305,6 @@ async def test_unrelated_block_types_skipped() -> None:
 _ = (
     PathwayBlockBranchIn,
     PathwayBlockDeferredFieldIn,
-    PathwayEdgeIn,
     PathwayTimeMarkerIn,
     PathwayTimingValueIn,
 )

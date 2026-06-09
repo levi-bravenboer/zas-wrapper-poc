@@ -18,7 +18,6 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldIn,
     PathwayBlockIn,
     PathwayDefinitionReplace,
-    PathwayEdgeIn,
     PathwayLaneIn,
     PathwayPhaseIn,
     PathwayTimingValueIn,
@@ -29,8 +28,6 @@ from app.services.pathway.errors import (
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
-    EdgeTimingValidationError,
-    EdgeValidationError,
     NoConceptVersionError,
     PathwayNotFoundError,
     PathwayValidationError,
@@ -40,6 +37,33 @@ from app.services.pathway.errors import (
     UnknownPhaseError,
 )
 from app.services.pathway.pathway_service import PathwayService
+
+
+# Edge validation retired in chain slot #2 §3 — the legacy edge tests
+# below depend on the now-defunct `PathwayEdgeIn` payload shape and
+# `EdgeValidationError` / `EdgeTimingValidationError` exception
+# codepaths. The placeholder shims below preserve the test bodies as
+# `pytest.mark.skip` entries so the deletion shows up explicitly in
+# CI; the §7 backfill round-trip + the `_validate_input_logic_node_refs`
+# unit test replace them.
+class PathwayEdgeIn:  # type: ignore[no-redef]
+    """Placeholder for slot-#1 edge wire shape; retired in slot #2 §3."""
+
+    def __init__(self, **_: object) -> None:
+        return None
+
+
+class EdgeValidationError(Exception):  # type: ignore[no-redef]
+    pass
+
+
+class EdgeTimingValidationError(Exception):  # type: ignore[no-redef]
+    pass
+
+
+_SKIP_EDGE_TESTS = pytest.mark.skip(
+    reason="edge validation retired in slot #2 §3; replaced by input_logic.node refs"
+)
 
 
 def _phase(label: str = "Pre-op", ord_: int = 0) -> PathwayPhaseIn:
@@ -85,18 +109,22 @@ def _minimal_payload(
     lanes: list[PathwayLaneIn] | None = None,
     blocks: list[PathwayBlockIn] | None = None,
     branches: list[PathwayBlockBranchIn] | None = None,
-    edges: list[PathwayEdgeIn] | None = None,
     timing_values: list[PathwayTimingValueIn] | None = None,
     time_markers: list[PathwayTimeMarkerIn] | None = None,
     deferred_fields: list[PathwayBlockDeferredFieldIn] | None = None,
+    # Slot #2 §3: `edges` retired from the write surface. The kwarg
+    # is silently accepted and ignored so the existing edge-shaped
+    # tests can be retypeset to `input_logic` rules in §7 without
+    # rewriting every test fixture in one pass.
+    edges: list[object] | None = None,
 ) -> PathwayDefinitionReplace:
+    del edges  # ignored — see comment above
     return PathwayDefinitionReplace(
         name=name,
         phases=phases or [],
         lanes=lanes or [],
         blocks=blocks or [],
         branches=branches or [],
-        edges=edges or [],
         timing_values=timing_values or [],
         time_markers=time_markers or [],
         deferred_fields=deferred_fields or [],
@@ -462,6 +490,8 @@ async def test_branch_on_non_branching_block_raises(
         )
 
 
+
+@_SKIP_EDGE_TESTS
 async def test_duplicate_edge_raises(db_session: AsyncSession, empty_pathway: Pathway) -> None:
     """D20: (source, target, source_branch_id) must be unique."""
 
@@ -480,6 +510,8 @@ async def test_duplicate_edge_raises(db_session: AsyncSession, empty_pathway: Pa
         )
 
 
+
+@_SKIP_EDGE_TESTS
 async def test_edge_source_branch_must_belong_to_source_block(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -524,9 +556,11 @@ async def test_edge_source_branch_must_belong_to_source_block(
         )
 
 
+
 # ---------- Edge timing union ------------------------------------------------
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_with_both_delay_and_marker_raises(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -557,12 +591,14 @@ async def test_edge_with_both_delay_and_marker_raises(
                 phases=[phase],
                 lanes=[lane],
                 blocks=[a, b],
+
                 edges=[edge],
                 timing_values=[delay, marker_value],
             ),
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_marker_triple_partial_raises(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -587,6 +623,7 @@ async def test_edge_marker_triple_partial_raises(
             empty_pathway.tenant_id,
             _minimal_payload(
                 phases=[phase],
+
                 lanes=[lane],
                 blocks=[a, b],
                 edges=[edge],
@@ -595,6 +632,7 @@ async def test_edge_marker_triple_partial_raises(
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_marker_id_must_belong_to_version(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -619,6 +657,7 @@ async def test_edge_marker_id_must_belong_to_version(
         await service.replace_definition(
             empty_pathway.id,
             empty_pathway.tenant_id,
+
             _minimal_payload(
                 phases=[phase],
                 lanes=[lane],
@@ -629,6 +668,7 @@ async def test_edge_marker_id_must_belong_to_version(
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_offset_direction_code_must_be_seeded(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:

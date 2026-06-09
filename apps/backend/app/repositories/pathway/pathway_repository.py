@@ -13,7 +13,6 @@ from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
     PathwayBlockDeferredField,
-    PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
     PathwayPhase,
@@ -46,7 +45,6 @@ class PathwayChildren:
     timing_values: list[PathwayTimingValue]
     blocks: list[PathwayBlock]
     branches: list[PathwayBlockBranch]
-    edges: list[PathwayEdge]
     time_markers: list[PathwayTimeMarker]
     deferred_fields: list[PathwayBlockDeferredField]
 
@@ -270,12 +268,9 @@ class PathwayRepository(BaseRepository[Pathway]):
             if block_ids
             else []
         )
-        edges = await self._scalars(
-            select(PathwayEdge).where(
-                PathwayEdge.pathway_version_id == pathway_version_id,
-                PathwayEdge.deleted_at.is_(None),
-            )
-        )
+        # `pathway_edge` was retired in chain slot #2 §3.2; edges are
+        # derived on read from `block.input_logic` instead. The repo
+        # no longer fetches them.
         time_markers = await self._scalars(
             select(PathwayTimeMarker).where(
                 PathwayTimeMarker.pathway_version_id == pathway_version_id,
@@ -298,7 +293,6 @@ class PathwayRepository(BaseRepository[Pathway]):
             timing_values=list(timing_values),
             blocks=list(blocks),
             branches=list(branches),
-            edges=list(edges),
             time_markers=list(time_markers),
             deferred_fields=list(deferred_fields),
         )
@@ -341,10 +335,8 @@ class PathwayRepository(BaseRepository[Pathway]):
         """
 
         opts = {"synchronize_session": False}
-        await self._session.execute(
-            delete(PathwayEdge).where(PathwayEdge.pathway_version_id == pathway_version_id),
-            execution_options=opts,
-        )
+        # `pathway_edge` was retired in chain slot #2 §3.2; no edge
+        # rows to delete.
         await self._session.execute(
             delete(PathwayBlockBranch).where(
                 PathwayBlockBranch.block_id.in_(

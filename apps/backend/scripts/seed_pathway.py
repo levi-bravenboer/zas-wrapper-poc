@@ -29,7 +29,6 @@ from app.schemas.pathway.pathway import (
     PathwayBlockBranchIn,
     PathwayBlockIn,
     PathwayDefinitionReplace,
-    PathwayEdgeIn,
     PathwayLaneIn,
     PathwayPhaseIn,
     PathwayPublishRequest,
@@ -72,11 +71,8 @@ BLOCK_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000306")
 BRANCH_GOED_ID: UUID = UUID("00000000-0000-4000-8000-000000000401")
 BRANCH_SLECHT_ID: UUID = UUID("00000000-0000-4000-8000-000000000402")
 
-EDGE_INTAKE_OP_ID: UUID = UUID("00000000-0000-4000-8000-000000000501")
-EDGE_OP_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000502")
-EDGE_HERSTEL_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000503")
-EDGE_GOED_ONTSLAG_ID: UUID = UUID("00000000-0000-4000-8000-000000000504")
-EDGE_SLECHT_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000505")
+# Edge constants removed in slot #2 §3 — the demo seed no longer
+# materialises edge rows.
 
 
 def _build_payload() -> PathwayDefinitionReplace:
@@ -200,35 +196,14 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BRANCH_SLECHT_ID, block_id=BLOCK_VOORTGANG_ID, label="Onvoldoende", ord=1
             ),
         ],
-        edges=[
-            PathwayEdgeIn(
-                id=EDGE_INTAKE_OP_ID,
-                source_block_id=BLOCK_INTAKE_ID,
-                target_block_id=BLOCK_OPERATIE_ID,
-            ),
-            PathwayEdgeIn(
-                id=EDGE_OP_HERSTEL_ID,
-                source_block_id=BLOCK_OPERATIE_ID,
-                target_block_id=BLOCK_HERSTEL_ID,
-            ),
-            PathwayEdgeIn(
-                id=EDGE_HERSTEL_VOORTGANG_ID,
-                source_block_id=BLOCK_HERSTEL_ID,
-                target_block_id=BLOCK_VOORTGANG_ID,
-            ),
-            PathwayEdgeIn(
-                id=EDGE_GOED_ONTSLAG_ID,
-                source_block_id=BLOCK_VOORTGANG_ID,
-                target_block_id=BLOCK_ONTSLAG_ID,
-                source_branch_id=BRANCH_GOED_ID,
-            ),
-            PathwayEdgeIn(
-                id=EDGE_SLECHT_CONTROLE_ID,
-                source_block_id=BLOCK_VOORTGANG_ID,
-                target_block_id=BLOCK_CONTROLE_ID,
-                source_branch_id=BRANCH_SLECHT_ID,
-            ),
-        ],
+        # Edges retired in slot #2 §3 — connectivity should now be
+        # authored as `input_logic` rules on each target block's
+        # config bag. The demo seed will be retypeset in slot #2 §7;
+        # for the migration interim this pathway materialises with
+        # disconnected blocks. The alembic backfill is the canonical
+        # path for existing production rows (one-shot edge → rule
+        # rewrite) and is exercised in the §7 backfill round-trip
+        # test rather than here.
     )
 
 

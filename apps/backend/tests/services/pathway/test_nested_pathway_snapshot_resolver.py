@@ -92,7 +92,6 @@ def _payload(phases, lanes, blocks) -> PathwayDefinitionReplace:
         lanes=lanes,
         blocks=blocks,
         branches=[],
-        edges=[],
         timing_values=[],
         time_markers=[],
         deferred_fields=[],
