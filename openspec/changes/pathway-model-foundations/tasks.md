@@ -44,6 +44,6 @@
 
 ## 7. Cleanup + sync
 
-- [ ] 7.1 Retire dead registry files (`app/domain/pathway/blocks/_registry.py` etc.) once subclasses cover all kinds.
-- [ ] 7.2 Run `/verify backend` and `/verify orchestrator` (latter for typegen drift).
-- [ ] 7.3 Update CHAIN.md or new `CHAIN-pathway-model.md`: mark slot #1 ready-to-apply.
+- [ ] 7.1 Retire dead registry files (`app/domain/pathway/blocks/_registry.py` etc.) once subclasses cover all kinds. (Deferred follow-up: `pathway_service` still calls `get_block_type` / `BLOCK_TYPES` for `list_block_types`, deferred-field config_schema lookup, lane auto-materialisation, and replace-payload schema validation. Retiring requires deriving `PathwayBlockType` payloads + `ui_schema` per kind from each `BaseBlock` subclass — same gate as §1.4.)
+- [x] 7.2 Run `/verify backend` and `/verify orchestrator` (latter for typegen drift). (Backend: lint + typecheck + 689 tests green. Orchestrator: lint warnings only, typecheck errors pre-existing (TanStack Router / `routeTree.gen` / practitioner-role list page — unrelated to this change, confirmed via `git stash` baseline), 514 tests green.)
+- [x] 7.3 Update CHAIN.md or new `CHAIN-pathway-model.md`: mark slot #1 ready-to-apply. (CHAIN-pathway-model.md row 1 now reads "ready-to-apply (24 / 26 tasks complete; §1.4 + §7.1 registry retire gated on follow-up; PR #42)".)

@@ -102,6 +102,12 @@ def _build_domain(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
 
     for field, column in _BASE_FIELD_TO_COLUMN.items():
         init_kwargs[field] = getattr(row, column)
+    # `BaseBlock.name` is non-null; legacy rows whose `label` column was
+    # nullable (slot #1 dual-write) coerce to empty string here so the
+    # typed read path doesn't fail on demo seeds that pre-date the
+    # `label` requirement. Slot #2 enforces non-null at the column level.
+    if init_kwargs.get("name") is None:
+        init_kwargs["name"] = ""
 
     subclass_fields = set(cls.model_fields.keys()) - _BASE_FIELDS
     for field in subclass_fields:
@@ -120,7 +126,10 @@ def _build_domain_from_legacy_config(cls: type[BaseBlock], row: PathwayBlock) ->
     """
     config = row.config or {}
     init_kwargs: dict[str, Any] = {
-        "name": row.label,
+        # Legacy rows tolerate a NULL `label`; coerce to empty string so
+        # the typed `BaseBlock.name` non-null constraint doesn't reject
+        # otherwise valid pre-backfill rows (see `_build_domain`).
+        "name": row.label or "",
         "input_logic": row.input_logic or [],
         "timing_policy": row.timing_policy,
     }
