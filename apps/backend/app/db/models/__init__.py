@@ -13,6 +13,11 @@ from app.db.models.access import (
 )
 from app.db.models.authz import AuthzOutbox
 from app.db.models.care_team import CareTeam, CareTeamParticipant
+from app.db.models.luscii import (
+    LusciiInstrumentItemLocalisationRow,
+    LusciiInstrumentLocalisationRow,
+    LusciiItemResponseLocalisationRow,
+)
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient, PatientIdentifier
 from app.db.models.pathway import (
@@ -44,6 +49,9 @@ __all__ = [
     "AuthzOutbox",
     "CareTeam",
     "CareTeamParticipant",
+    "LusciiInstrumentItemLocalisationRow",
+    "LusciiInstrumentLocalisationRow",
+    "LusciiItemResponseLocalisationRow",
     "Organisation",
     "Pathway",
     "PathwayBlock",

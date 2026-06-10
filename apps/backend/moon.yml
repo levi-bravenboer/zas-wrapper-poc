@@ -65,6 +65,15 @@ tasks:
       cache: false
       runInCI: false
 
+  # Host-side Luscii catalogue sync (luscii-patient-enrichment). Reads the
+  # token + dev DB URL from apps/backend/.env; ~1000 upstream requests, run
+  # rarely (catalogue is near-static). No-op error when token unset.
+  luscii-sync:
+    command: "uv run python -m scripts.sync_luscii_catalogue"
+    options:
+      cache: false
+      runInCI: false
+
   shell:
     command: "docker compose exec backend bash"
     env:
