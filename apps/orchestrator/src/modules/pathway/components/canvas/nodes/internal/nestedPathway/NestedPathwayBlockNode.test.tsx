@@ -53,10 +53,16 @@ function detail(): PathwayWithVersion {
 }
 
 function makeBlock(targetId: string | null): PathwayBlock {
+  // Slot #2 §6: typed envelope hoists per-kind fields directly. The
+  // `legacyBlockConfig` helper synthesises the legacy config bag by
+  // excluding envelope keys, so target / mode live on the envelope.
   return {
     id: 'block-1',
-    type: 'pathway_link',
-    config: targetId ? { target_pathway_id: targetId, mode: 'blocking' } : {},
+    kind: 'pathway_link',
+    name: '',
+    input_logic: { rules: [], aggregator: 'all_of' },
+    timing_policy: null,
+    ...(targetId ? { target_pathway_id: targetId, mode: 'blocking' } : {}),
   } as unknown as PathwayBlock
 }
 

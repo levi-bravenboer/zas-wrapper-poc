@@ -3097,22 +3097,6 @@
               "format": "uuid",
               "title": "Pathway Id"
             }
-          },
-          {
-            "name": "X-Pathway-Block-Shape",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Pathway-Block-Shape"
-            }
           }
         ],
         "requestBody": {
@@ -3953,40 +3937,6 @@
             "title": "Y",
             "default": 0
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -4465,40 +4415,6 @@
             "title": "Y",
             "default": 0
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -4906,40 +4822,6 @@
             "title": "Y",
             "default": 0
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -5114,40 +4996,6 @@
             "type": "integer",
             "title": "Y",
             "default": 0
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
           },
           "name": {
             "type": "string",
@@ -6077,40 +5925,6 @@
             "title": "Y",
             "default": 0
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -6265,35 +6079,6 @@
             "title": "Y",
             "default": 0
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -6349,6 +6134,12 @@
             ],
             "title": "Timing Policy"
           },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
           "description": {
             "anyOf": [
               {
@@ -6384,8 +6175,8 @@
           "id",
           "phase_id",
           "lane_id",
-          "label",
-          "name"
+          "name",
+          "label"
         ],
         "title": "MilestoneBlockOut"
       },
@@ -7132,11 +6923,11 @@
             "title": "Lane Id",
             "description": "Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0])."
           },
-          "type": {
+          "kind": {
             "type": "string",
             "maxLength": 63,
             "minLength": 1,
-            "title": "Type"
+            "title": "Kind"
           },
           "label": {
             "anyOf": [
@@ -7182,9 +6973,10 @@
         "required": [
           "id",
           "phase_id",
-          "type"
+          "kind"
         ],
-        "title": "PathwayBlockIn"
+        "title": "PathwayBlockIn",
+        "description": "Typed-only block payload (chain slot #2 \u00a76).\n\nThe slot-#1 legacy `(type, config)` dual shape is retired; the\nwire now carries the typed `BaseBlock` subclass payload under\n`config` directly. `kind` is the discriminator (replaces the\nslot-#1 `type` column) \u2014 `_LEGACY_TYPE_ALIASES` in the resolver\nstill maps the dotted external-program code (`luscii.program`)\nfor storage parity."
       },
       "PathwayBlockType": {
         "properties": {
@@ -7665,40 +7457,6 @@
             "type": "integer",
             "title": "Y",
             "default": 0
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
           },
           "name": {
             "type": "string",
@@ -9775,40 +9533,6 @@
             "title": "Y",
             "default": 0
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -10337,40 +10061,6 @@
             "type": "integer",
             "title": "Y",
             "default": 0
-          },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Config"
           },
           "name": {
             "type": "string",

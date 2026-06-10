@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { BlockSemantics, PathwayBlock } from './types'
+import { legacyBlockConfig, type BlockSemantics, type PathwayBlock } from './types'
 
 const FormQuestion = z.object({
   id: z.string(),
@@ -118,7 +118,7 @@ export function parseBlockConfig<S extends BlockSemantics>(
   semantics: S,
 ): ConfigForSemantics<S> {
   const schema = CONFIG_SCHEMAS[semantics]
-  return schema.parse(block.config ?? {}) as ConfigForSemantics<S>
+  return schema.parse(legacyBlockConfig(block)) as ConfigForSemantics<S>
 }
 
 export function defaultConfig<S extends BlockSemantics>(semantics: S): ConfigForSemantics<S> {

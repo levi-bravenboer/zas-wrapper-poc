@@ -2,7 +2,7 @@ import { type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
 import { BlockNode, type BlockFlowNode } from './BlockNode'
-import { LUSCII_PROGRAM_BLOCK_TYPE, LusciiProgramBlockNode } from './external/luscii'
+import { LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
 import { NestedPathwayBlockNode } from './internal/nestedPathway'
 import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathwayBlockNode'
@@ -25,11 +25,10 @@ export const BlockNodeRouter = memo(BlockNodeRouterImpl)
 function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
   // Dispatch on the typed `kind` discriminator from
   // `pathway-model-foundations` §4.1. The legacy `type` column is
-  // still on the wire envelope but `kind` is authoritative here; the
-  // `LUSCII_PROGRAM_BLOCK_TYPE` constant is kept for fixture sites
-  // that still serialise blocks with the dotted legacy key.
+  // Slot #2 §6 retired the legacy `type` envelope field; dispatch
+  // solely on the typed `kind` discriminator.
   const kind = props.data.block.kind
-  if (kind === 'external_program' || props.data.block.type === LUSCII_PROGRAM_BLOCK_TYPE) {
+  if (kind === 'external_program') {
     // reason: variance erasure between two heterogeneous xyflow node-data
     // shapes that share the same xyflow type key. `LusciiProgramBlockNodeData`
     // extends `BlockNodeData` with an optional `resolvedProgram` field that

@@ -10,14 +10,15 @@ import { LANE_ROW_HEIGHT } from '../canvasLayout'
 import { useAutosavePathway } from '../hooks/useAutosavePathway'
 import { useBuilderKeyboard } from '../hooks/useBuilderKeyboard'
 import type { ReadOnlyVariant } from '../hooks/useResolvedVersion'
-import type {
-  PathwayBare,
-  PathwayBlockType,
-  PathwayEdgeOffsetDirection,
-  PathwayEdgeTimingKind,
-  PathwayPhase,
-  PathwayPhaseTemplate,
-  PathwayVersionDefinition,
+import {
+  legacyBlockType,
+  type PathwayBare,
+  type PathwayBlockType,
+  type PathwayEdgeOffsetDirection,
+  type PathwayEdgeTimingKind,
+  type PathwayPhase,
+  type PathwayPhaseTemplate,
+  type PathwayVersionDefinition,
 } from '../types'
 import { useBuilderState, type BuilderAction } from '../useBuilderState'
 import { useCollapsedSidebar } from '../useCollapsedSidebar'
@@ -209,7 +210,8 @@ function Inner({
   )
 
   const selectedBlock = findSelectedBlock(state.selection, blocks)
-  const selectedBlockType = catalogue.find((c) => c.type === selectedBlock?.type) ?? null
+  const selectedBlockType =
+    catalogue.find((c) => selectedBlock && c.type === legacyBlockType(selectedBlock)) ?? null
   const selectedBlockLane = lanes.find((l) => l.id === selectedBlock?.lane_id) ?? null
   const selectedBlockBranches = selectedBlock
     ? branches.filter((b) => b.block_id === selectedBlock.id)
@@ -297,13 +299,21 @@ function Inner({
               branches={selectedBlockBranches}
               currentPathwayId={pathway.id}
               onPatchConfig={(config) =>
-                dispatch({ type: 'patch-block', blockId: selectedBlock.id, patch: { config } })
+                dispatch({
+                  type: 'patch-block',
+                  blockId: selectedBlock.id,
+                  // Slot #2 §6: typed fields live on the block
+                  // envelope directly; spread the per-kind config
+                  // bag back over the block so inspectors keep
+                  // editing their familiar shape.
+                  patch: config as Record<string, unknown>,
+                })
               }
               onRename={(label) =>
                 dispatch({
                   type: 'patch-block',
                   blockId: selectedBlock.id,
-                  patch: { label: label || null },
+                  patch: { name: label || '' },
                 })
               }
               onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}

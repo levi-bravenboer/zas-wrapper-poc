@@ -26,21 +26,48 @@ export type PathwayTimingValue = components['schemas']['PathwayTimingValueOut']
 export type PathwayBlock = NonNullable<PathwayVersionDefinition['blocks']>[number]
 export type PathwayBlockKind = PathwayBlock['kind']
 
-// Legacy `pathway_block.type` discriminator code, derived from the typed
-// `kind` discriminator when the wire envelope's compat `type` column is
-// null. Matches the backend resolver's `_LEGACY_TYPE_ALIASES` mapping
-// in reverse — the only kind whose legacy string differs is
-// `external_program` (was `luscii.program` on the wire).
+// Legacy `pathway_block.type` discriminator code, derived from the
+// typed `kind` discriminator. Matches the backend resolver's
+// `_LEGACY_TYPE_ALIASES` mapping in reverse — the only kind whose
+// legacy string differs is `external_program` (was `luscii.program`
+// on the wire).
 export function legacyBlockType(block: PathwayBlock): string {
-  if (block.type) return block.type
   return block.kind === 'external_program' ? 'luscii.program' : block.kind
 }
 
-// Per-kind config bag synthesised from the typed slot #1 envelope so
-// inspectors keep working unmodified. Returns the envelope's `config`
-// field when present (slot #1 dual-write), else an empty bag.
+// Read the display label off the typed envelope. Slot #2 §6 stored
+// `BaseBlock.name` directly on the wire — the slot-#1 `label`
+// compat field is retired.
+export function blockLabel(block: PathwayBlock): string {
+  return block.name
+}
+
+// Per-kind config bag synthesised from the typed envelope so existing
+// inspectors keep working without rewiring against the typed fields.
+// The returned object excludes the row-level identity / placement
+// fields + the `kind` discriminator; inspectors edit it just as they
+// did the slot-#1 `config` JSONB.
+const _ENVELOPE_KEYS = new Set([
+  'id',
+  'phase_id',
+  'lane_id',
+  'duration_value_id',
+  'x',
+  'y',
+  'kind',
+  'name',
+  'lane_kind',
+  'input_logic',
+  'timing_policy',
+])
+
 export function legacyBlockConfig(block: PathwayBlock): Record<string, unknown> {
-  return (block.config ?? {}) as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(block)) {
+    if (_ENVELOPE_KEYS.has(key)) continue
+    out[key] = value
+  }
+  return out
 }
 // Chain slot #2 §3 replaces the authored `pathway_edge` table with
 // `input_logic` rules per block; the canvas reads the connector layer

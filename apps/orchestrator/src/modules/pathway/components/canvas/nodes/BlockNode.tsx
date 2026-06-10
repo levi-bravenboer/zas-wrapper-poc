@@ -61,7 +61,7 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
   const typeLabel = t(`blockType.${legacyType}`, {
     defaultValue: data.blockType?.label ?? legacyType,
   })
-  const name = data.block.label?.trim() || typeLabel
+  const name = data.block.name?.trim() || typeLabel
   // Chain slot #1: `data.block.config` still mirrors the legacy bag
   // verbatim (see `pathway-model-foundations` §4.1 envelope notes).
   // Slot #2 reads this off the typed per-kind fields directly.

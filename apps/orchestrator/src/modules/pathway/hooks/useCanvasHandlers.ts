@@ -7,7 +7,13 @@ import { BLOCK_HEIGHT, BLOCK_WIDTH, type CanvasGeometry } from '../canvasLayout'
 import type { CanvasDropTarget } from '../components/canvas/BuilderCanvasFrame'
 import type { DragContextApi } from '../components/canvas/useDragContext'
 import { DRAG_TYPES } from '../constants/dragTypes'
-import type { DerivedEdge, PathwayBlock, PathwayBlockType, PathwayLane } from '../types'
+import {
+  legacyBlockType,
+  type DerivedEdge,
+  type PathwayBlock,
+  type PathwayBlockType,
+  type PathwayLane,
+} from '../types'
 import type { BuilderAction } from '../useBuilderState'
 import { isLaneAllowed } from '../utils/laneRules'
 
@@ -50,7 +56,7 @@ export function useCanvasHandlers({
           if (!block) continue
           const targetLaneId = geometry.laneAt(c.position.y) ?? block.lane_id
           const targetLane = lanes.find((l) => l.id === targetLaneId)
-          const bt = blockTypes.find((bt) => bt.type === block.type)
+          const bt = blockTypes.find((bt) => bt.type === legacyBlockType(block))
           if (bt && targetLane && !isLaneAllowed(bt, targetLane.lane_kind_code)) {
             toast.error(t('canvas.invalidLaneDrop'))
             continue

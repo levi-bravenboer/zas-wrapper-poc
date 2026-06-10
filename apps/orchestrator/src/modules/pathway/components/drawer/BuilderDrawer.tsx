@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button'
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { laneAccent } from '../../canvasLayout'
 import { CONFIG_SCHEMAS, defaultConfig, type ConfigForSemantics } from '../../configSchemas'
-import type {
-  BlockConfig,
-  PathwayBlock,
-  PathwayBlockBranch,
-  PathwayBlockType,
-  PathwayLane,
+import {
+  legacyBlockConfig,
+  legacyBlockType,
+  type BlockConfig,
+  type PathwayBlock,
+  type PathwayBlockBranch,
+  type PathwayBlockType,
+  type PathwayLane,
 } from '../../types'
 
 import { AppointmentInspector } from './inspectors/AppointmentInspector'
@@ -52,12 +54,13 @@ export function BuilderDrawer({
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const accent = lane ? laneAccent(lane) : 'var(--color-primary)'
-  const typeLabel = t(`blockType.${block.type}`, { defaultValue: blockType?.label ?? block.type })
+  const legacyType = legacyBlockType(block)
+  const typeLabel = t(`blockType.${legacyType}`, { defaultValue: blockType?.label ?? legacyType })
 
   const parsed = useMemo(() => {
     if (!blockType) return null
-    return CONFIG_SCHEMAS[blockType.semantics].safeParse(block.config ?? {})
-  }, [blockType, block.config])
+    return CONFIG_SCHEMAS[blockType.semantics].safeParse(legacyBlockConfig(block))
+  }, [blockType, block])
 
   return (
     <aside
@@ -81,7 +84,7 @@ export function BuilderDrawer({
         <div className="flex min-w-0 flex-1 flex-col">
           <input
             aria-label={t('drawer.labelInput')}
-            value={block.label ?? ''}
+            value={block.name}
             placeholder={typeLabel}
             onChange={(e) => onRename(e.target.value)}
             className="bg-transparent text-[14px] font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground"

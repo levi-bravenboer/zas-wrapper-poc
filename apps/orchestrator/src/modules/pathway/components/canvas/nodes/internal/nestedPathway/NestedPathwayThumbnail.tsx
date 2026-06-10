@@ -228,7 +228,7 @@ type CardProps = {
 function MiniBlockCard({ block, blockType, accent, geometry, isEntry }: CardProps): ReactElement {
   const dim = getBlockDimensions(block, blockType)
   const pos = blockOrigin(block, geometry, dim)
-  const name = block.label?.trim() || blockType?.label || legacyBlockType(block)
+  const name = block.name?.trim() || blockType?.label || legacyBlockType(block)
   return (
     <div
       className="absolute grid grid-cols-[4px_36px_1fr] grid-rows-[auto_auto] rounded-[6px] border bg-card shadow-sm"

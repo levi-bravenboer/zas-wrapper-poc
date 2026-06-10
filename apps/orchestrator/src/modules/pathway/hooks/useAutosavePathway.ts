@@ -46,19 +46,25 @@ function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
       id: b.id,
       phase_id: b.phase_id,
       lane_id: b.lane_id,
-      // Send the legacy `type` code on the write surface — chain slot #1
-      // §5.1 dual-writes legacy + typed columns on the same row. Slot #2
-      // flips the autosave shape onto the typed discriminated union
-      // payload (`X-Pathway-Block-Shape: typed` per §5.2).
-      type: legacyBlockType(b),
-      label: b.label ?? null,
+      // Slot #2 §6 wire shape: `kind` is the discriminator, `config`
+      // carries the typed `BaseBlock` subclass payload (per-kind
+      // fields + the shared `name` / `input_logic` / `timing_policy`).
+      // `label` is sent as a convenience for the write shim to fold
+      // into `config.name` when the typed shape doesn't carry it.
+      kind: legacyBlockType(b),
+      label: b.name,
       duration_value_id: b.duration_value_id ?? null,
-      config: legacyBlockConfig(b),
+      config: {
+        ...legacyBlockConfig(b),
+        name: b.name,
+        input_logic: b.input_logic,
+        timing_policy: b.timing_policy,
+      },
       x: b.x,
       y: b.y,
     })),
     branches: (version.branches ?? []).map((br) => ({ ...br })),
-    edges: (version.edges ?? []).map((e) => ({ ...e })),
+    // Slot #2 §3: edges are derived on read; not sent on write.
     time_markers: (version.time_markers ?? []).map((tm) => ({ ...tm })),
     deferred_fields: (version.deferred_fields ?? []).map((df) => ({ ...df })),
   }

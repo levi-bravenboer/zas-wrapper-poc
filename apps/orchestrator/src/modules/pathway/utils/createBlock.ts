@@ -22,12 +22,14 @@ export function createBlock({ blockType, phaseId, laneId, x, y }: CreateBlockInp
     id: crypto.randomUUID(),
     phase_id: phaseId,
     lane_id: laneId,
-    type: blockType.type,
-    label: null,
+    kind: blockType.semantics,
+    name: blockType.label,
     duration_value_id: null,
-    config: buildDefaultBlockConfig(blockType.config_schema, blockType.label),
+    input_logic: { rules: [], aggregator: 'all_of' },
+    timing_policy: null,
     x: Math.round(x),
     y: Math.round(y),
+    ...buildDefaultBlockConfig(blockType.config_schema, blockType.label),
   } as unknown as PathwayBlock
 }
 

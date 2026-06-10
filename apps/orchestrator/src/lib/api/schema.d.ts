@@ -1153,14 +1153,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -1363,14 +1355,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -1581,14 +1565,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -1661,14 +1637,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -2084,14 +2052,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -2153,14 +2113,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label: string;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -2174,6 +2126,8 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Label */
+            label: string;
             /** Description */
             description?: string | null;
             /** Icon */
@@ -2479,7 +2433,17 @@ export interface components {
             /** Field Path */
             field_path: string;
         };
-        /** PathwayBlockIn */
+        /**
+         * PathwayBlockIn
+         * @description Typed-only block payload (chain slot #2 §6).
+         *
+         *     The slot-#1 legacy `(type, config)` dual shape is retired; the
+         *     wire now carries the typed `BaseBlock` subclass payload under
+         *     `config` directly. `kind` is the discriminator (replaces the
+         *     slot-#1 `type` column) — `_LEGACY_TYPE_ALIASES` in the resolver
+         *     still maps the dotted external-program code (`luscii.program`)
+         *     for storage parity.
+         */
         PathwayBlockIn: {
             /**
              * Id
@@ -2496,8 +2460,8 @@ export interface components {
              * @description Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0]).
              */
             lane_id?: string | null;
-            /** Type */
-            type: string;
+            /** Kind */
+            kind: string;
             /** Label */
             label?: string | null;
             /** Duration Value Id */
@@ -2756,14 +2720,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -3622,14 +3578,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -3869,14 +3817,6 @@ export interface components {
              * @default 0
              */
             y: number;
-            /** Type */
-            type?: string | null;
-            /** Label */
-            label?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            } | null;
             /** Name */
             name: string;
             /** Lane Kind */
@@ -6010,9 +5950,7 @@ export interface operations {
     replace_pathway: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Pathway-Block-Shape"?: string | null;
-            };
+            header?: never;
             path: {
                 pathway_id: string;
             };
