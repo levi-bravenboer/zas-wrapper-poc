@@ -37,13 +37,11 @@ from app.domain.pathway.blocks.wait.typed import WaitBlock
 class _BlockEnvelopeFields(BaseModel):
     """Row-level identity / placement fields shared by every typed block out.
 
-    `type`, `config`, and `label` are slot #1 compat fields — the legacy
-    wire shape stays on the response while the existing builder UI
-    migrates kind-by-kind onto the typed fields. They are dropped in
-    chain slot #2 alongside the legacy ORM columns. Per the proposal:
-    "Old `type` / `config` / `label` / `snapshot_json` columns stay
-    during the chain-slot-#1 transition; legacy reads/writes continue
-    to use them via the compat shim. They are dropped in chain slot #2."
+    Slot #2 §6 retired the legacy `type` / `config` / `label` compat
+    fields — the typed write surface is now authoritative on both
+    sides of the wire. The `kind` discriminator carries the
+    information `type` used to (with the legacy alias map living in
+    `resolver._LEGACY_TYPE_ALIASES` for storage-layer migration only).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -54,11 +52,6 @@ class _BlockEnvelopeFields(BaseModel):
     duration_value_id: UUID | None = None
     x: int = 0
     y: int = 0
-
-    # ---- Slot #1 compat fields (dropped in slot #2) ---------------------
-    type: str | None = None
-    label: str | None = None
-    config: dict[str, object] | None = None
 
 
 class AppointmentBlockOut(AppointmentBlock, _BlockEnvelopeFields):
@@ -131,16 +124,86 @@ def out_class_for_kind(kind: str) -> type[BaseModel]:
     return _OUT_BY_KIND[kind]
 
 
+# ---- Typed write surface (slot #2 §6) ------------------------------------
+#
+# Mirrors the read union for symmetry. Distinct classes (`*BlockIn`)
+# rather than aliases so future field divergence between read and write
+# (e.g. server-computed fields on the Out side) stays expressible
+# without re-typing every call site.
+
+
+class AppointmentBlockIn(AppointmentBlock, _BlockEnvelopeFields):
+    kind: Literal["appointment"] = "appointment"
+
+
+class TaskBlockIn(TaskBlock, _BlockEnvelopeFields):
+    kind: Literal["task"] = "task"
+
+
+class DecisionBlockIn(DecisionBlock, _BlockEnvelopeFields):
+    kind: Literal["decision"] = "decision"
+
+
+class MessageBlockIn(MessageBlock, _BlockEnvelopeFields):
+    kind: Literal["message"] = "message"
+
+
+class FormBlockIn(FormBlock, _BlockEnvelopeFields):
+    kind: Literal["form"] = "form"
+
+
+class MilestoneBlockIn(MilestoneBlock, _BlockEnvelopeFields):
+    kind: Literal["milestone"] = "milestone"
+
+
+class WaitBlockIn(WaitBlock, _BlockEnvelopeFields):
+    kind: Literal["wait"] = "wait"
+
+
+class PathwayLinkBlockIn(PathwayLinkBlock, _BlockEnvelopeFields):
+    kind: Literal["pathway_link"] = "pathway_link"
+
+
+class ExternalProgramBlockIn(ExternalProgramBlock, _BlockEnvelopeFields):
+    kind: Literal["external_program"] = "external_program"
+
+
+PathwayTypedBlockIn = Annotated[
+    Union[
+        AppointmentBlockIn,
+        TaskBlockIn,
+        DecisionBlockIn,
+        MessageBlockIn,
+        FormBlockIn,
+        MilestoneBlockIn,
+        WaitBlockIn,
+        PathwayLinkBlockIn,
+        ExternalProgramBlockIn,
+    ],
+    Field(discriminator="kind"),
+]
+
+
 __all__ = [
+    "AppointmentBlockIn",
     "AppointmentBlockOut",
+    "DecisionBlockIn",
     "DecisionBlockOut",
+    "ExternalProgramBlockIn",
     "ExternalProgramBlockOut",
+    "FormBlockIn",
     "FormBlockOut",
+    "MessageBlockIn",
     "MessageBlockOut",
+    "MilestoneBlockIn",
     "MilestoneBlockOut",
+    "PathwayLinkBlockIn",
     "PathwayLinkBlockOut",
+    "PathwayTypedBlockIn",
     "PathwayTypedBlockOut",
+    "TaskBlockIn",
     "TaskBlockOut",
+    "WaitBlockIn",
     "WaitBlockOut",
     "out_class_for_kind",
 ]

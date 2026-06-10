@@ -123,7 +123,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BLOCK_INTAKE_ID,
                 phase_id=PHASE_PRE_OP_ID,
                 lane_id=LANE_CAREGIVER_ID,
-                type="appointment",
+                kind="appointment",
                 label="Intake gesprek",
                 config={
                     "title": "Intake gesprek",
@@ -137,7 +137,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BLOCK_OPERATIE_ID,
                 phase_id=PHASE_SURGERY_ID,
                 lane_id=LANE_SYSTEM_ID,
-                type="milestone",
+                kind="milestone",
                 label="Operatie",
                 config={"label": "Operatie"},
                 x=240,
@@ -147,7 +147,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BLOCK_HERSTEL_ID,
                 phase_id=PHASE_RECOVERY_ID,
                 lane_id=LANE_SYSTEM_ID,
-                type="wait",
+                kind="wait",
                 label="Thuisrevalidatie periode",
                 config={
                     "event_type": "external_data",
@@ -161,7 +161,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BLOCK_VOORTGANG_ID,
                 phase_id=PHASE_FOLLOW_UP_ID,
                 lane_id=LANE_SYSTEM_ID,
-                type="decision",
+                kind="decision",
                 label="Voortgangsmeting",
                 # Slot #2 §5: typed `outputs` declared so the decision
                 # publishes; legacy demo pathway used edge branches
@@ -179,7 +179,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BLOCK_ONTSLAG_ID,
                 phase_id=PHASE_FOLLOW_UP_ID,
                 lane_id=LANE_SYSTEM_ID,
-                type="milestone",
+                kind="milestone",
                 label="Ontslag",
                 config={"label": "Ontslag"},
                 x=960,
@@ -189,7 +189,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 id=BLOCK_CONTROLE_ID,
                 phase_id=PHASE_FOLLOW_UP_ID,
                 lane_id=LANE_CAREGIVER_ID,
-                type="appointment",
+                kind="appointment",
                 label="Extra controle",
                 config={"title": "Extra controle", "duration_minutes": 20},
                 x=960,

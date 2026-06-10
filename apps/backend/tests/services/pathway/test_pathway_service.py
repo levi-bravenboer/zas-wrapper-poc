@@ -89,7 +89,7 @@ def _appointment_block(
         id=uuid.uuid4(),
         phase_id=phase_id,
         lane_id=lane_id,
-        type="appointment",
+        kind="appointment",
         label=title,
         config={"title": title},
     )
@@ -169,7 +169,7 @@ async def test_replace_definition_dual_writes_typed_columns(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         label="Intake",
         config={"title": "Intake", "mode": "in_person", "duration_minutes": 30},
     )
@@ -181,11 +181,10 @@ async def test_replace_definition_dual_writes_typed_columns(
     await db_session.commit()
 
     row = (await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))).scalar_one()
-    # Legacy shape preserved verbatim
-    assert row.type == "appointment"
-    assert row.config == {"title": "Intake", "mode": "in_person", "duration_minutes": 30}
+    # Slot #2 §6 retired the legacy `type` / `config` columns; the
+    # typed `kind` discriminator + per-kind columns + `label`
+    # (storing `BaseBlock.name`) carry the row alone.
     assert row.label == "Intake"
-    # Typed shape populated alongside
     assert row.kind == "appointment"
     assert row.appointment_title == "Intake"
     assert row.appointment_mode == "in_person"
@@ -204,18 +203,19 @@ async def test_replace_definition_typed_shape_writes_typed_columns(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         label="Intake",
         # Typed payload still travels in `config` for chain slot #1 because
         # `PathwayBlockIn` is unchanged; the header signals "treat config as
         # AppointmentBlock payload" rather than the loose legacy bag.
         config={"title": "Intake", "mode": "video", "duration_minutes": 15},
     )
+    # Slot #2 §6: `typed_shape` kwarg retired — every block is the
+    # typed subclass payload now.
     await service.replace_definition(
         empty_pathway.id,
         empty_pathway.tenant_id,
         _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
-        typed_shape=True,
     )
     await db_session.commit()
 
@@ -243,7 +243,7 @@ async def test_unknown_block_type_raises(db_session: AsyncSession, empty_pathway
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="nonexistent",
+        kind="nonexistent",
         config={},
     )
     with pytest.raises(UnknownBlockTypeError):
@@ -290,7 +290,7 @@ async def test_block_on_disallowed_lane_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=caregiver_lane.id,
-        type="message",
+        kind="message",
         config={"channel": "email", "subject": "Hi", "body": "Welcome"},
     )
     with pytest.raises(BlockLaneNotAllowedError):
@@ -313,7 +313,7 @@ async def test_task_block_accepted_on_patient_lane(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=patient_lane.id,
-        type="task",
+        kind="task",
         config={"title": "Hydrate", "assignee": "patient"},
     )
     result = await service.replace_definition(
@@ -337,7 +337,7 @@ async def test_block_config_validates_against_schema(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={},
     )
     with pytest.raises(BlockConfigError):
@@ -361,7 +361,7 @@ async def test_message_channel_outside_enum_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="message",
+        kind="message",
         config={"channel": "fax", "subject": "Hi", "body": "Welcome"},
     )
     with pytest.raises(BlockConfigError):
@@ -382,7 +382,7 @@ async def test_wait_event_type_outside_enum_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="wait",
+        kind="wait",
         config={"event_type": "not_a_real_event"},
     )
     with pytest.raises(BlockConfigError):
@@ -403,7 +403,7 @@ async def test_pathway_link_mode_outside_enum_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="pathway_link",
+        kind="pathway_link",
         config={
             "target_pathway_id": str(uuid.uuid4()),
             "mode": "broadcast",
@@ -427,7 +427,7 @@ async def test_form_block_accepted_with_valid_questions(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="form",
+        kind="form",
         config={
             "title": "Pijn vragenlijst",
             "questions": [
@@ -441,7 +441,7 @@ async def test_form_block_accepted_with_valid_questions(
         _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
     )
     assert len(result.version.blocks) == 1
-    assert result.version.blocks[0].type == "form"
+    assert result.version.blocks[0].kind == "form"
 
 
 # ---------- Timing validation -------------------------------------------------
@@ -523,14 +523,14 @@ async def test_edge_source_branch_must_belong_to_source_block(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=system_lane.id,
-        type="decision",
+        kind="decision",
         config={"question": "?"},
     )
     decision_b = PathwayBlockIn(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=system_lane.id,
-        type="decision",
+        kind="decision",
         config={"question": "?"},
     )
     target = _appointment_block(phase.id, caregiver_lane.id, "T")
@@ -817,7 +817,7 @@ async def test_replace_definition_overwrites_children(
         id=uuid.uuid4(),
         phase_id=new_phase.id,
         lane_id=new_lane.id,
-        type="milestone",
+        kind="milestone",
         label="Operatie",
         config={"label": "Operatie"},
     )
@@ -857,14 +857,14 @@ async def test_duplicate_block_id_in_payload_raises(
         id=shared_id,
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={"title": "A"},
     )
     b = PathwayBlockIn(
         id=shared_id,
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={"title": "B"},
     )
     with pytest.raises(PathwayValidationError):

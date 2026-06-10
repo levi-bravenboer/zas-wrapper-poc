@@ -6,9 +6,9 @@ map to per-kind ORM columns by `<KIND>_<field>` convention (see
 `pathway-model-foundations` §2.2). Base fields (`name`, `input_logic`,
 `timing_policy`) map to non-prefixed columns on the row.
 
-The legacy fallback `legacy_to_domain` handles rows where `kind` is NULL
-during the chain-slot-#1 transition by reading the deprecated `(type,
-config)` pair. Removed in chain slot #2 once every consumer migrates.
+The slot-#1 legacy `(type, config)` fallback is retired in slot #2 §6;
+rows without `kind` raise on read. The alembic upgrade backfills the
+discriminator before promoting the column to NOT NULL.
 """
 
 from __future__ import annotations
@@ -17,11 +17,7 @@ from typing import Any
 
 from app.db.models.pathway.block import PathwayBlock
 from app.domain.pathway.blocks.base import BaseBlock
-from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
-from app.domain.pathway.blocks.resolver import (
-    is_external_program_legacy_type,
-    resolve_block_kind,
-)
+from app.domain.pathway.blocks.resolver import resolve_block_kind
 
 
 # Fields declared on `BaseBlock` itself (not on subclasses). Mapped to
@@ -45,12 +41,15 @@ def _subclass_field_to_column(cls: type[BaseBlock], field: str) -> str:
 def to_domain(row: PathwayBlock) -> BaseBlock:
     """Materialise a `PathwayBlock` ORM row into its typed `BaseBlock` subclass.
 
-    Falls back to `legacy_to_domain` if the row predates the chain-slot-#1
-    backfill (i.e. `row.kind is None`).
+    Slot #2 §6 retires the `(type, config)` legacy fallback; rows
+    without `kind` are rejected. The alembic upgrade backfills the
+    column for every pre-slot-#2 row before promoting it to NOT NULL.
     """
     if row.kind is None:
-        return legacy_to_domain(row)
-
+        raise ValueError(
+            f"PathwayBlock {row.id} has no `kind` discriminator — slot #2 §6 retired the "
+            "legacy `(type, config)` fallback. Run the slot #2 alembic upgrade to backfill."
+        )
     cls = resolve_block_kind(row.kind)
     return _build_domain(cls, row)
 
@@ -87,20 +86,6 @@ def from_domain(block: BaseBlock) -> dict[str, Any]:
     kwargs.update(_timing_policy_to_columns(block.timing_policy))
 
     return kwargs
-
-
-def legacy_to_domain(row: PathwayBlock) -> BaseBlock:
-    """Materialise a pre-backfill row from its legacy `(type, config)` pair.
-
-    Used during the chain-slot-#1 transition for any row whose `kind`
-    column is still NULL (e.g. rows written via the legacy code path
-    before this slot's data backfill ran). Removed in chain slot #2.
-    """
-    if not row.type:
-        raise ValueError(f"PathwayBlock {row.id} has no `kind` and no legacy `type`")
-
-    cls = resolve_block_kind(row.type)
-    return _build_domain_from_legacy_config(cls, row)
 
 
 # --- internals ---
@@ -231,34 +216,6 @@ def _timing_policy_to_columns(policy: Any) -> dict[str, Any]:
     return columns
 
 
-def _build_domain_from_legacy_config(cls: type[BaseBlock], row: PathwayBlock) -> BaseBlock:
-    """Read fields out of the legacy `config` JSONB instead of typed columns.
-
-    Mirrors the per-kind extraction the alembic backfill performs in SQL.
-    External-program rows additionally need `provider` injected (hard-coded
-    to `luscii` while it's the only vendor in scope).
-    """
-    config = row.config or {}
-    init_kwargs: dict[str, Any] = {
-        # Legacy rows tolerate a NULL `label`; coerce to empty string so
-        # the typed `BaseBlock.name` non-null constraint doesn't reject
-        # otherwise valid pre-backfill rows (see `_build_domain`).
-        "name": row.label or "",
-        "input_logic": _normalise_input_logic(row.input_logic),
-        "timing_policy": _timing_policy_from_row(row),
-    }
-
-    if cls is ExternalProgramBlock and is_external_program_legacy_type(row.type):
-        init_kwargs["provider"] = "luscii"
-
-    subclass_fields = set(cls.model_fields.keys()) - _BASE_FIELDS - {"provider"}
-    for field in subclass_fields:
-        if field in config:
-            init_kwargs[field] = config[field]
-
-    return cls.model_validate(init_kwargs)
-
-
 def _serialise_value(value: Any) -> Any:
     """Convert Pydantic submodels / lists-of-models to JSON-ready primitives."""
     if hasattr(value, "model_dump"):
@@ -270,6 +227,5 @@ def _serialise_value(value: Any) -> Any:
 
 __all__ = [
     "from_domain",
-    "legacy_to_domain",
     "to_domain",
 ]

@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.db.models.pathway.block_mapper import from_domain, legacy_to_domain, to_domain
+from app.db.models.pathway.block_mapper import from_domain, to_domain
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionAutoResolve, DecisionBlock
@@ -24,6 +24,14 @@ from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.blocks.wait.typed import WaitBlock
+
+
+# Chain slot #2 §6 retired `legacy_to_domain` — the `(type, config)`
+# fallback path is gone. The placeholder keeps the legacy
+# `test_legacy_to_domain_*` test bodies parsable; they're skipped
+# via decorators added below the test definitions.
+def legacy_to_domain(*_args: object, **_kwargs: object) -> None:
+    return None
 
 
 @dataclass
@@ -172,6 +180,7 @@ def test_round_trip_preserves_block(block: BaseBlock) -> None:
     assert restored == block
 
 
+@pytest.mark.skip(reason="legacy_to_domain retired in chain slot #2 §6")
 def test_legacy_to_domain_appointment() -> None:
     row = _Row(
         type="appointment",
@@ -186,6 +195,7 @@ def test_legacy_to_domain_appointment() -> None:
     assert block.name == "Intake"
 
 
+@pytest.mark.skip(reason="legacy_to_domain retired in chain slot #2 §6")
 def test_legacy_to_domain_external_program_injects_provider() -> None:
     row = _Row(
         type="luscii.program",
@@ -198,6 +208,7 @@ def test_legacy_to_domain_external_program_injects_provider() -> None:
     assert block.program_id == "p1"
 
 
+@pytest.mark.skip(reason="legacy_to_domain retired in chain slot #2 §6")
 def test_to_domain_falls_back_to_legacy_when_kind_null() -> None:
     row = _Row(type="milestone", label="M1", config={"label": "Operatie", "icon": "flag"})
     block = to_domain(row)  # type: ignore[arg-type]

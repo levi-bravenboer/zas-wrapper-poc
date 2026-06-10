@@ -158,6 +158,16 @@ class PathwayLaneOut(BaseModel):
 
 
 class PathwayBlockIn(BaseModel):
+    """Typed-only block payload (chain slot #2 §6).
+
+    The slot-#1 legacy `(type, config)` dual shape is retired; the
+    wire now carries the typed `BaseBlock` subclass payload under
+    `config` directly. `kind` is the discriminator (replaces the
+    slot-#1 `type` column) — `_LEGACY_TYPE_ALIASES` in the resolver
+    still maps the dotted external-program code (`luscii.program`)
+    for storage parity.
+    """
+
     id: UUID
     phase_id: UUID
     lane_id: UUID | None = Field(
@@ -167,9 +177,18 @@ class PathwayBlockIn(BaseModel):
             "default lane (catalogue.allowed_lane_kind_codes[0])."
         ),
     )
-    type: str = Field(min_length=1, max_length=63)
+    kind: str = Field(min_length=1, max_length=63)
+    # Optional convenience: callers can pass the display label as a
+    # top-level field; the write shim merges it into `config["name"]`
+    # before validating against the typed subclass. Slot #1 carried
+    # `label` as a separate ORM column; slot #2 §6 stores it on
+    # `BaseBlock.name` (mapped to the `label` column by the mapper).
     label: str | None = Field(default=None, max_length=255)
     duration_value_id: UUID | None = None
+    # `config` is the typed `BaseBlock` subclass payload (per-kind
+    # fields + the shared `name` / `input_logic` / `timing_policy`).
+    # Slot #1 had it as a loose JSON bag; slot #2 §6 makes it
+    # subclass-typed via `block_in_to_typed`.
     config: dict[str, Any] = Field(default_factory=dict)
     x: int = 0
     y: int = 0

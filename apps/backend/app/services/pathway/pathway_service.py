@@ -280,16 +280,11 @@ class PathwayService:
         pathway_id: UUID,
         tenant_id: UUID,
         payload: PathwayDefinitionReplace,
-        *,
-        typed_shape: bool = False,
     ) -> PathwayWithVersionResponse:
         """Replace the concept version's children.
 
-        `typed_shape=True` opts the request body into the typed-subclass
-        discriminated union (chain slot #1 §5.2 — header
-        `X-Pathway-Block-Shape: typed`). When False, blocks arrive in the
-        legacy `(type: str, config: dict)` shape and the shim resolves
-        them via `block_in_to_typed`.
+        Slot #2 §6: every block payload is the typed `BaseBlock`
+        subclass shape — the slot-#1 `typed_shape` flag is retired.
         """
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
@@ -318,7 +313,7 @@ class PathwayService:
         pathway.clinical_goal = payload.clinical_goal
         pathway.patient_goal = payload.patient_goal
         await self._repo.delete_children(concept.id)
-        await self._persist_children(concept.id, resolved, typed_shape=typed_shape)
+        await self._persist_children(concept.id, resolved)
         session = self._repo._session  # noqa: SLF001
         await session.refresh(pathway, ["updated_at"])
         await session.refresh(concept, ["updated_at"])
@@ -337,7 +332,7 @@ class PathwayService:
         # here because they were already rejected upstream.
         to_check: list[tuple[UUID, UUID, UUID]] = []
         for block in blocks:
-            if block.type != "pathway_link":
+            if block.kind != "pathway_link":
                 continue
             config = block.config or {}
             if config.get("version_pin") != "specific":
@@ -479,8 +474,6 @@ class PathwayService:
         self,
         pathway_version_id: UUID,
         r: _ResolvedDefinition,
-        *,
-        typed_shape: bool = False,
     ) -> None:
         session = self._repo._session  # noqa: SLF001 — service owns repo internals here
         session.add_all(
@@ -536,7 +529,6 @@ class PathwayService:
                         b,
                         pathway_version_id=pathway_version_id,
                         lane_id=b.lane_id,  # type: ignore[arg-type] — resolver guarantees non-null
-                        typed_shape=typed_shape,
                     )
                 )
                 for b in r.blocks
@@ -576,7 +568,7 @@ class _ResolvedDefinition:
     """Validated + materialized payload, ready for persistence.
 
     Walks the wire shape once, enforcing every cross-entity invariant the
-    spec requires (block.type ∈ catalogue, lane resolves, phase belongs to
+    spec requires (block.kind ∈ catalogue, lane resolves, phase belongs to
     payload, branch on branching block only per D19, edge endpoints exist,
     branch matches source, timing CHECK columns, field_path ∈ config_schema).
     On success exposes the resolved children for the service to persist verbatim.
@@ -657,11 +649,11 @@ class _ResolvedDefinition:
                     field=f"blocks[{block.id}]", reason="duplicate block id"
                 )
             block_ids.add(block.id)
-            entry = get_catalogue_entry(block.type)
+            entry = get_catalogue_entry(block.kind)
             if entry is None:
                 raise UnknownBlockTypeError(
                     field=f"blocks[{block.id}].type",
-                    reason=f"unknown block type '{block.type}'",
+                    reason=f"unknown block type '{block.kind}'",
                 )
             if block.phase_id not in phase_ids:
                 raise UnknownPhaseError(
@@ -685,12 +677,12 @@ class _ResolvedDefinition:
             if resolved_kind_code not in entry.allowed_lane_kind_codes:
                 raise BlockLaneNotAllowedError(
                     block_id=block.id,
-                    block_type=block.type,
+                    block_type=block.kind,
                     lane_kind_code=resolved_kind_code,
                     allowed=entry.allowed_lane_kind_codes,
                 )
             _validate_block_config(block.id, entry.config_schema, block.config)
-            block_types_by_id[block.id] = block.type
+            block_types_by_id[block.id] = block.kind
             materialized_blocks.append(block.model_copy(update={"lane_id": resolved_lane_id}))
 
         # ---- Branches: catalogue.supports_branches per D19
@@ -741,7 +733,7 @@ class _ResolvedDefinition:
         # We resolve schemas once per block id.
         block_schemas: dict[UUID, dict[str, Any]] = {}
         for block in materialized_blocks:
-            entry = get_catalogue_entry(block.type)
+            entry = get_catalogue_entry(block.kind)
             assert entry is not None
             block_schemas[block.id] = entry.config_schema
         # Block.duration_value_id existence check
@@ -875,9 +867,6 @@ def _block_row_to_typed_out(row: PathwayBlock) -> PathwayTypedBlockOut:
         "duration_value_id": row.duration_value_id,
         "x": row.x,
         "y": row.y,
-        "type": row.type,
-        "label": row.label,
-        "config": row.config,
     }
     out = out_cls.model_validate({**domain.model_dump(), **envelope, "kind": domain.KIND})
     # Cast: `out_class_for_kind` is typed as `type[BaseModel]` to keep the

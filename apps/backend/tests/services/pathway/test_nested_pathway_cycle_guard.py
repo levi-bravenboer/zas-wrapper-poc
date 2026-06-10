@@ -57,7 +57,7 @@ def _pathway_link_block(
         id=block_id or uuid.uuid4(),
         phase_id=phase_id,
         lane_id=lane_id,
-        type="pathway_link",
+        kind="pathway_link",
         config={
             "target_pathway_id": str(target_pathway_id),
             "mode": "blocking",
@@ -288,7 +288,7 @@ async def test_unrelated_block_types_skipped() -> None:
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={"title": "Intake"},
     )
     await assert_no_nested_pathway_cycles(

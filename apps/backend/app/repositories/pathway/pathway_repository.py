@@ -218,8 +218,11 @@ class PathwayRepository(BaseRepository[Pathway]):
             .where(
                 PathwayBlock.tenant_id == tenant_id,
                 PathwayBlock.deleted_at.is_(None),
-                PathwayBlock.type == "pathway_link",
-                PathwayBlock.config["target_pathway_id"].astext.in_(target_strs),
+                # Slot #2 §6 dropped `type` + `config` columns; the
+                # typed `kind` discriminator + per-kind columns are
+                # authoritative.
+                PathwayBlock.kind == "pathway_link",
+                PathwayBlock.pathway_link_target_pathway_id.in_(target_strs),
             )
             .distinct()
         )

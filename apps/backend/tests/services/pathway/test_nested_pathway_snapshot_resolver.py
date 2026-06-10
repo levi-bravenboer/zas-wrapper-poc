@@ -80,7 +80,7 @@ def _pathway_link(
         id=uuid.uuid4(),
         phase_id=phase_id,
         lane_id=lane_id,
-        type="pathway_link",
+        kind="pathway_link",
         config=config,
     )
 
@@ -136,7 +136,7 @@ async def _publish(db_session: AsyncSession, pathway: Pathway) -> PathwayVersion
 async def _pathway_link_block_row(db_session: AsyncSession, pathway_version_id) -> PathwayBlock:
     stmt = select(PathwayBlock).where(
         PathwayBlock.pathway_version_id == pathway_version_id,
-        PathwayBlock.type == "pathway_link",
+        PathwayBlock.kind == "pathway_link",
     )
     row = (await db_session.execute(stmt)).scalar_one()
     return row

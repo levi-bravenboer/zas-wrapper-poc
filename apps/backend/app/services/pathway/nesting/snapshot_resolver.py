@@ -41,30 +41,24 @@ async def resolve_pathway_link_snapshots(
     stmt = select(PathwayBlock).where(
         PathwayBlock.pathway_version_id == pathway_version_id,
         PathwayBlock.deleted_at.is_(None),
-        PathwayBlock.type == "pathway_link",
+        # Slot #2 §6: dispatch on the typed `kind` discriminator
+        # since the legacy `type` / `config` columns are gone.
+        PathwayBlock.kind == "pathway_link",
     )
     result = await session.execute(stmt)
     blocks = result.scalars().all()
 
     for block in blocks:
-        config = block.config or {}
-        try:
-            target_pathway_id = UUID(str(config["target_pathway_id"]))
-        except (KeyError, TypeError, ValueError):
-            # Required by JSON schema; if missing the version should never
-            # have persisted. Skip defensively rather than crash publish.
+        target_pathway_id_raw = block.pathway_link_target_pathway_id
+        if target_pathway_id_raw is None:
             continue
-
-        version_pin = config.get("version_pin", "latest_published")
+        target_pathway_id = target_pathway_id_raw
+        version_pin = block.pathway_link_version_pin or "latest_published"
 
         if version_pin == "specific":
-            pinned_raw = config.get("pinned_version_id")
-            if not pinned_raw:
+            pinned_version_id = block.pathway_link_pinned_version_id
+            if pinned_version_id is None:
                 # JSON schema + service validation already reject this; skip.
-                continue
-            try:
-                pinned_version_id = UUID(str(pinned_raw))
-            except (TypeError, ValueError):
                 continue
             block.snapshot_json = {
                 "target_pathway_id": str(target_pathway_id),

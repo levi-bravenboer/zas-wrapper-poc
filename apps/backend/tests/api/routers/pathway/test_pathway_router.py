@@ -55,7 +55,7 @@ def _replace_payload(name: str, lane_kinds: dict[str, PathwayLaneKind]) -> dict:
                 "id": block_id,
                 "phase_id": phase_id,
                 "lane_id": lane_id,
-                "type": "appointment",
+                "kind": "appointment",
                 "label": "Intake",
                 "config": {"title": "Intake"},
             }
@@ -321,7 +321,7 @@ async def test_replace_invalid_payload_returns_422(
     created = await _create(async_client)
 
     payload = _replace_payload("Bad", lane_kinds)
-    payload["blocks"][0]["type"] = "not-a-real-block-type"
+    payload["blocks"][0]["kind"] = "not-a-real-block-type"
 
     response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
 
@@ -337,7 +337,7 @@ async def test_replace_disallowed_lane_returns_422(
     created = await _create(async_client)
 
     payload = _replace_payload("Bad lane", lane_kinds)
-    payload["blocks"][0]["type"] = "message"
+    payload["blocks"][0]["kind"] = "message"
     payload["blocks"][0]["config"] = {
         "channel": "email",
         "subject": "Hi",
@@ -376,7 +376,7 @@ async def test_replace_invalid_edge_timing_returns_422(
             "id": second_block_id,
             "phase_id": payload["blocks"][0]["phase_id"],
             "lane_id": payload["blocks"][0]["lane_id"],
-            "type": "appointment",
+            "kind": "appointment",
             "label": "Follow-up",
             "config": {"title": "Follow-up"},
         }
@@ -448,7 +448,7 @@ async def test_parent_references_lists_referring_pathway(
                 "id": block_id,
                 "phase_id": phase_id,
                 "lane_id": lane_id,
-                "type": "pathway_link",
+                "kind": "pathway_link",
                 "config": {
                     "target_pathway_id": target["pathway"]["id"],
                     "mode": "blocking",
@@ -496,7 +496,7 @@ async def test_delete_pathway_with_referrers_returns_409(
                 "id": block_id,
                 "phase_id": phase_id,
                 "lane_id": lane_id,
-                "type": "pathway_link",
+                "kind": "pathway_link",
                 "config": {
                     "target_pathway_id": target["pathway"]["id"],
                     "mode": "blocking",

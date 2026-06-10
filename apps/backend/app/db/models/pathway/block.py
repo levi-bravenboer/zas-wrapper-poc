@@ -38,16 +38,19 @@ class PathwayBlock(TenantOwnedEntity):
         nullable=False,
         index=True,
     )
-    type: Mapped[str] = mapped_column(sa.String(63), nullable=False)
+    # `label` stores `BaseBlock.name` (the display label on the canvas).
+    # The slot-#1 nullability is retained for legacy rows; new writes
+    # always populate it via the mapper.
     label: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     duration_value_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         sa.ForeignKey("pathway_timing_value.id", ondelete="CASCADE"),
         nullable=True,
     )
-    config: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
-    )
+    # `type` + `config` legacy columns retired in chain slot #2 §6 —
+    # the typed per-kind columns + `kind` discriminator are now the
+    # sole source of truth. See alembic revision
+    # `20260609_1600_drop_legacy_block_columns.py`.
     # Frozen child reference produced at publish time for blocks whose body
     # is a link to a moving target (today: `pathway_link`). NULL on concept
     # rows, populated by the nested-pathway snapshot resolver when the parent
