@@ -11,7 +11,7 @@ Indexes:
 - `(enrollment_id, block_template_id, attr)` unique on deferred
   values — one value per spec entry per enrollment.
 
-Revision ID: f1a2b3c4d5e6
+Revision ID: a7b3c9e1d4f8
 Revises: e6f1a2d4c7b8
 Create Date: 2026-06-10 10:00:00.000000
 
@@ -26,7 +26,7 @@ from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 
 
-revision: str = "f1a2b3c4d5e6"
+revision: str = "a7b3c9e1d4f8"
 down_revision: str | None = "e6f1a2d4c7b8"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
