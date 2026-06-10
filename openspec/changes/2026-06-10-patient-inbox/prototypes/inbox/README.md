@@ -23,7 +23,13 @@ URL = source of truth for selection. Master-hidden (state 3) is session-local, n
 
 `<PatientDetailView>` is **surface-agnostic** — same component mounted by:
 - orchestrator inbox split-pane (via TanStack Router `<Outlet>`)
-- a future standalone full-page detail route (same URL, different shell wrapper)
+- standalone full-page detail route at `/_auth/patients/$patientId` (same component, different shell wrapper)
 - future `smart` / `embed` surface
 
 See `../../design.md` §"Component reuse audit" for the build plan.
+
+## Note on framing shift (post-v8)
+
+After v8 was locked, the surface was reframed from "patient inbox" to **"caregiver attention inbox of items"** (design.md D19-D24). Visually v8 is unchanged — each row still shows a patient identity + appointment meta. Conceptually the row is now an `InboxItem` (a thing demanding attention) whose `subject` is a patient. v1 ships only `resourceType: "Appointment"` items, so each row maps 1:1 to an upcoming appointment. Click → opens the subject patient at `/_auth/inbox/p/$patientId`.
+
+The route also moved: `/_auth/patients` → `/_auth/inbox` (promotes BL-065). Sidebar nav swaps `"Mijn patiënten"` → `"Inbox"`. The prototype's URL mock should be read as `/_auth/inbox?sort=...` instead of `/_auth/patients?sort=...` when implementing.

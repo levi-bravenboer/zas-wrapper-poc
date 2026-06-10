@@ -206,10 +206,11 @@ Component names, sort ids, query params, enum values, file names, i18n keys are 
 ## Migration Plan
 
 - **Data migration**: one alembic migration creates `appointments` + `appointment_participants` + four Postgres enums. No existing-row touchups.
-- **`PatientRead.next_appointment`**: additive nullable field. Existing clients ignore it.
-- **List route**: in-place swap. URL stays `/_auth/patients`, search params gain `sort`, realtime topic registration unchanged.
-- **Detail route**: same URL. Tab strip changes; `<CareTeamSlot>` import path + signature preserved; `<PatientHistoryPanel>` import path preserved.
-- **Rollback**: revert PR. No data to undo (no appointments seeded). The DataTable list page and the old tab strip are recoverable from git history.
+- **Patient list route**: `/_auth/patients` route file is deleted (per D24). Existing direct links to that URL would 404. Sidebar nav swaps `"Mijn patiënten"` → `"Inbox"` pointing to `/_auth/inbox`.
+- **Patient detail route**: `/_auth/patients/$patientId` URL is unchanged; the standalone full-page detail mounts the new `<PatientDetailView>`. Component swap is in-place.
+- **Inbox route**: `/_auth/inbox` placeholder (BL-065) is replaced by the real `<InboxList>` + nested `/_auth/inbox/p/$patientId` child route for split-pane patient detail.
+- **Tab strip on detail page**: changes per `patient-profile-ui` delta (Metingen / Labresultaten / Afspraken). `<CareTeamSlot>` import path + signature preserved; `<PatientHistoryPanel>` import path preserved.
+- **Rollback**: revert PR. No data to undo (no appointments seeded). The DataTable list page and the old tab strip are recoverable from git history. The inbox placeholder returns.
 
 ## Locked wireframe
 
@@ -221,8 +222,8 @@ Accepted wireframe is `prototypes/inbox/v8.html`. See `prototypes/inbox/README.m
 
 ### D15 — Three-state master/detail layout
 
-1. **State 1** — no patient selected. URL = `/_auth/patients`. Master inbox renders at full width; right pane absent.
-2. **State 2** — patient selected. URL = `/_auth/patients/$patientId`. Master compresses to a 320px rail (avatar + name + org tree-path + sort-strategy mini meta only — drops INSZ, team badge, kebab, sort counts, filter row, pager). Right pane renders `<PatientDetailView>`.
+1. **State 1** — no patient selected. URL = `/_auth/inbox`. Master inbox (item list) renders at full width; right pane absent.
+2. **State 2** — patient selected via an inbox item click. URL = `/_auth/inbox/p/$patientId`. Master compresses to a 320px rail (subject avatar + display name + mini meta only — drops INSZ, kebab, sort counts, filter row, pager). Right pane renders `<PatientDetailView>` for the subject patient.
 3. **State 3** — same URL as state 2, local UI toggle hides the master rail entirely (width 0). Detail fills the available width. A floating `panel-left-open` button at the top-left of the main area brings the rail back to state 2.
 
 URL is the source of truth for **selection** (states 1 ↔ 2). The master-hidden boolean (state 2 ↔ 3) is session-local UI state, NOT in the URL — collapsing a deep-linked detail view should not change the shareable URL.
@@ -249,17 +250,18 @@ The component owns: header layout (avatar + name + INSZ pill + DOB + org Badge +
 `<CareTeamSlot>` is reused as-is (self-fetching via its existing internal query). Dropping a `careTeam` data prop keeps the consumer seam intact and avoids a breaking change to `care-teams-ui`. The component's surface-agnostic guarantee holds because the slot itself does not import router state.
 
 Mount points in v1:
-- **Orchestrator inbox split-pane** — `routes/_auth/patients/route.tsx` (parent layout) renders `<PatientInbox>` + `<Outlet>`. `routes/_auth/patients/$patientId/index.tsx` (child) fetches the patient + care team and mounts `<PatientDetailView>` in the Outlet with router-bound `actions` + `onClose` callbacks.
+- **Inbox split-pane** — `routes/_auth/inbox/route.tsx` (parent layout) renders `<MasterDetailLayout master={<InboxList/>} detail={<Outlet/>}>`. `routes/_auth/inbox/p/$patientId/index.tsx` (child) fetches the patient and mounts `<PatientDetailView>` in the Outlet with router-bound `actions` + `onClose` callbacks.
+- **Standalone full-page detail** — `routes/_auth/patients/$patientId/index.tsx` retains its existing URL as a non-inbox-context entry point. Mounts the same `<PatientDetailView>` inside an `<EntityDetailPage>` chrome (no master rail). Used by admin/users links, care-team links, mobile fallback (per D17), and any future smart/embed host.
 - **Future smart / embed surface** — host imports the same component, provides its own data + actions wrapper. No code duplication.
 
-A standalone full-page detail route is intentionally NOT added — the master-hidden toggle on the same URL covers that use case (per D15).
+The same `<PatientDetailView>` mounts in all surfaces; only the host wrapper differs.
 
 ### D17 — Mobile (<md viewport) falls back to full-page navigation
 
 Below the `md` breakpoint (`<768px`), the 3-state master/detail layout from D15 does NOT apply. Instead:
 
-- `/_auth/patients` renders `<PatientInbox>` full-width.
-- Clicking a row navigates to `/_auth/patients/$patientId` as a **full-page route** — `<PatientDetailView>` fills the viewport, the inbox unmounts.
+- `/_auth/inbox` renders `<InboxList>` full-width.
+- Clicking an inbox item navigates to `/_auth/patients/$patientId` (the standalone full-page detail route) — `<PatientDetailView>` fills the viewport, the inbox unmounts.
 - The browser back button returns to the inbox.
 - State 3 (master-hidden toggle) does not exist on mobile.
 
@@ -276,6 +278,124 @@ The `appointments.pathway_block_instance_id` column SHALL be created as `UUID NU
 - Avoids dropping + recreating the column later (data already present).
 - Reserves the column shape now so no PATCH endpoint needs widening when the FK is added.
 - BL-NNN follow-up tracks the FK addition.
+
+### D19 — Inbox is a polymorphic feed of attention items, not a patient list
+
+The surface at `/_auth/inbox` is an **attention feed**: each row is an `InboxItem` representing a single thing demanding caregiver attention. v1 ships exactly one item type — an Appointment — but the architecture supports many. A row references a `subject` patient (the patient who owns the attention); clicking a row opens that patient.
+
+This reframes F4 from "Patients overview list" to "Caregiver attention inbox". The patient is the *destination*; the item is the *signal*. A patient with two upcoming appointments appears twice in the inbox (once per item); the same patient with no upcoming appointment does not appear at all.
+
+**Why:** the user explicitly described the screen as "an inbox of which patients I should attend to quickly" — that maps to items-driven-by-attention, not a patient directory. Sorting "by next appointment" implicitly already operates on items, not patients (it asks "what's the next thing?"). Modelling it as items from day one avoids a costly refactor when the second item type (tasks) lands.
+
+**Alternatives considered:**
+- Keep patient as the row entity, embed `next_appointment` summary per row (the prior framing). Rejected: doesn't generalise to tasks/measurements; a patient with three urgent items collapses into one row.
+- Ship appointments-only with patient-row framing, plan items refactor later. Rejected: refactor cost > polymorphic-from-day-1 cost.
+
+### D20 — Promotes BL-065 to canonical `/_auth/inbox` surface
+
+The placeholder `/_auth/inbox` route (BL-065 — "Real Inbox surface") is replaced by the real implementation specified by this change. The sidebar gains a navigation item labelled `"Inbox"` pointing to this route. The previous `"Mijn patiënten"` nav item (pointing to `/_auth/patients`) is removed because the corresponding list route is deleted (see D24).
+
+**Why:** BL-065 anticipated an inbox of tasks; this change ships the inbox shell with appointments as the first item type. The route + sidebar slot already exist; we just fill them.
+
+### D21 — Item envelope is FHIR-Resource-shaped
+
+Each `InboxItem` is shaped as a FHIR-Resource envelope (chosen pragmatically — payloads remain slim, but the discriminator + subject reference follow FHIR R4 conventions):
+
+```jsonc
+{
+  "id": "appointment:<source-row-uuid>",
+  "resourceType": "Appointment",
+  "subject": {                           // FHIR Reference
+    "reference": "Patient/<patient-uuid>",
+    "display": "<family>, <given>",
+    "identifier": { "system": "<urn:oid INSZ>", "value": "<insz>" }
+  },
+  "occurred_at": "<iso datetime>",       // sort dimension; per-resourceType source
+  "payload": { /* slim, kind-specific */ }
+}
+```
+
+`occurred_at` is the sort axis — what timestamp the item is "about". For Appointment it's `starts_at`. For a future Task it would be `due_at`. For a future Observation it would be `effective_at`.
+
+`payload` is render-ready and slim. Heavy fields stay on the underlying resource and are fetched on demand (e.g. `GET /appointments/{id}` for full participant list + location).
+
+**Why FHIR-shaped:**
+- `resourceType` discriminator is the natural FHIR way; aligns with later HiX FHIR adapter mappings.
+- `subject` as a FHIR Reference with `display` + `identifier` gives the row everything it needs to render an avatar + INSZ pill + name without joining backend data.
+- Future-proofs the envelope when MVP's `/fhir/*` passthrough lands (BL-002).
+
+**Trade-off accepted:** internal items that don't map to FHIR Resources (e.g. a "monitoring alert" with no canonical FHIR type) will need a project-internal `resourceType` value. Document at use time.
+
+### D22 — Backend `/inbox/items` aggregator with registry pattern
+
+The backend ships `GET /inbox/items` as a single aggregator endpoint backed by an `InboxService` that delegates to a registry of `InboxItemSource` adapters. v1 registers exactly one source: `AppointmentInboxSource` over `AppointmentRepository`.
+
+```python
+# pseudo-code
+class InboxItemSource(Protocol):
+    resource_type: str
+    def query(self, list_query: ListQuery, caller: SessionUser) -> list[InboxItem]: ...
+
+class AppointmentInboxSource:
+    resource_type = "Appointment"
+    def query(self, q, caller):
+        # AppointmentRepository.list with status='booked' + starts_at >= now()
+        # + patient-access predicate
+        # map AppointmentRow -> InboxItem envelope
+        ...
+
+class InboxService:
+    sources: list[InboxItemSource] = [AppointmentInboxSource()]
+    def list_items(self, q, caller) -> Page[InboxItem]:
+        # v1: single source; future: merge across sources, sort by occurred_at
+        ...
+```
+
+**Why aggregator over frontend-merge:**
+- Sort + pagination across sources is correct at the database / service level, not after fragmented page fetches.
+- One auth check, one tenant predicate, one realtime topic later.
+- Frontend gets one query key per sort, no `Promise.all` choreography.
+
+**Trade-off:** more backend code up front for a single-source v1. Mitigation: registry is ~30 lines; sources are clean. Pays off the moment the second type lands.
+
+### D23 — Frontend dispatcher on `resourceType` with graceful unknown fallback
+
+`<InboxItemRow>` is a dispatcher: given an `InboxItem`, it looks up a row component in a flat registry keyed by `resourceType` and renders it.
+
+```ts
+// modules/inbox/rowRegistry.ts
+export const inboxRowRegistry: Record<string, ComponentType<{ item: InboxItem }>> = {
+  Appointment: AppointmentInboxRow,
+  // future: Task: TaskInboxRow,
+};
+
+export function InboxItemRow({ item }: { item: InboxItem }) {
+  const Component = inboxRowRegistry[item.resourceType] ?? UnknownInboxRow;
+  return <Component item={item} />;
+}
+```
+
+`<UnknownInboxRow>` renders a muted single-line "Onbekend item type: <X>" and logs a `console.warn`. This is the **graceful fallback** for the case where the backend rolls out a new `resourceType` before the frontend registers it.
+
+**Why dispatcher + registry:**
+- New item kinds plug in as one entry + one row component, no edits to `<InboxList>` or the route.
+- Unknown kinds don't crash — the inbox always renders.
+- Mirrors the same pattern used for pathway block-type dispatch in the builder (`BlockNodeRouter`).
+
+### D24 — `/_auth/patients` list route is deleted, no replacement
+
+The orchestrator's `/_auth/patients` route (the patient list page built on `<DataTable<PatientRead>>`) is deleted by this change. The backend `GET /patients` list endpoint stays — admin tooling, patient pickers, and care-team flows still consume it.
+
+User-facing caregiver access to "browse all patients in my tenant" is intentionally NOT replaced. The inbox + filters cover "patients with attention items"; broader directory browsing is deferred until a stakeholder explicitly asks for it.
+
+The patient detail route `/_auth/patients/$patientId` is RETAINED as a standalone full-page detail surface (per D16). Two URLs now mount the same `<PatientDetailView>`:
+- `/_auth/inbox/p/$patientId` — split-pane variant (inbox-context)
+- `/_auth/patients/$patientId` — standalone variant (non-inbox-context, mobile fallback per D17)
+
+**Why no patient-directory replacement:**
+- PoC tenant has <100 seeded patients; inbox + filters cover the visible cohort.
+- Caregivers without an attention item for a patient typically don't need to browse to them.
+- If a follow-up surfaces the need, file a BL-NNN for a dedicated patient-directory component — not in this change.
 
 ## Component reuse audit
 

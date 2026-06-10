@@ -54,22 +54,44 @@
   - `test_patient_role_rejected.py`: patient-role session gets 403 on each route
   - `test_hix_adapter_stub.py`: import + NotImplementedError
 
-## 3. Backend: PatientRead.next_appointment + sort allow-list
+## 3. Backend: `inbox-base` capability
 
-- [ ] 3.1 Add `next_appointment: NextAppointmentSummary | None = None` to `PatientRead` in `app/schemas/patient/patient.py`
-- [ ] 3.2 Project the field in `PatientRepository.list_in_tenant` and `get_by_id` via `LEFT JOIN LATERAL (SELECT id, title, starts_at, ends_at, kind, modality FROM appointments WHERE patient_id = p.id AND status='booked' AND starts_at >= now() AND deleted_at IS NULL AND tenant_id = p.tenant_id ORDER BY starts_at ASC LIMIT 1) na ON TRUE`
-- [ ] 3.3 Add supporting index in same migration as 2.4 (or new migration): `CREATE INDEX appointments_patient_upcoming_idx ON appointments(patient_id, starts_at) WHERE status='booked' AND deleted_at IS NULL`
-- [ ] 3.4 Extend `PatientRepository.allowed_order_by` with `next_appointment_starts_at` (map to `na.starts_at NULLS LAST`) and `created_at` (skip if already present)
-- [ ] 3.5 Tests:
-  - `tests/api/test_patient_list_sort.py`: `order_by=next_appointment_starts_at&order=asc` returns ascending with null-`next_appointment` patients last; `&order=desc` still puts nulls last; `order_by=created_at&order=desc` returns newest first; `order_by=banana` → 422
-  - `tests/api/test_patient_next_appointment_field.py`: patient with one upcoming booked has matching summary; patient with multiple upcoming booked gets earliest; patient with only `cancelled`/`fulfilled`/`noshow`/past-`booked` returns null; patient with soft-deleted future booked returns null; field present on detail endpoint; cross-tenant defence-in-depth (synthetic crafted scenario)
+Per D22 — `InboxService` + source registry, single aggregator route, FHIR envelope.
 
-## 4. OpenAPI + typed client regen
+- [ ] 3.1 Create `app/schemas/inbox/inbox.py`:
+  - `FHIRReference` model: `{ reference: str, display: str, identifier?: { system: str, value: str } }`
+  - `AppointmentInboxPayload`: `{ title, kind, modality, starts_at, ends_at }` (slim — no description/location/participants/status)
+  - `InboxItem` discriminated union over `resourceType`. v1: `{ id, resourceType: Literal['Appointment'], subject: FHIRReference, occurred_at: datetime, payload: AppointmentInboxPayload }`. Backend models the union via `Annotated[..., Field(discriminator='resourceType')]`
+- [ ] 3.2 Create `app/services/inbox/sources/__init__.py` with `InboxItemSource` Protocol: `resource_type: str`, `query(list_query, caller) -> list[InboxItem]`
+- [ ] 3.3 Create `app/services/inbox/sources/appointment_source.py::AppointmentInboxSource` (`resource_type = 'Appointment'`). Implements `query()` by calling `AppointmentRepository.list_in_tenant` with predicate `status='booked' AND starts_at >= now() AND deleted_at IS NULL`, applies the caregiver patient-access predicate via subquery (`WHERE patient_id IN visible_patient_ids_for(caller)`), maps each `AppointmentRow + PatientRow` join → `InboxItem` envelope. Item `id` = `f"appointment:{appointment.id}"`. Subject `display` = `f"{family_name}, {given_name}"`. Subject `identifier` populated from INSZ if present
+- [ ] 3.4 Create `app/services/inbox/inbox_service.py::InboxService` — accepts a list of `InboxItemSource` (default = [`AppointmentInboxSource()`]). `list_items(list_query, caller) -> Page[InboxItem]`:
+  - v1 (single source): delegate to source.query, paginate at the source level
+  - Architecture: future multi-source will merge across sources + sort by `occurred_at` or `created_at` based on `list_query.order_by`. Spec is single-source v1 but `list_items` signature already handles the multi case (sort + paginate after merge)
+- [ ] 3.5 Create `app/api/routers/inbox/inbox_router.py` exposing `GET /inbox/items` with `# AUTH-HARDEN` marker. Guards: `require_role(Role.ADMIN, Role.CAREGIVER)`. Patient role rejected with `403`. Tenant-scoped via session actor's `tenant_id` enforced by the underlying repository. Accepts `ListQuery` envelope: `page`, `page_size`, `q`, `order_by` (`occurred_at` default | `created_at`), `order` (`asc` default)
+- [ ] 3.6 Tests (`tests/api/test_inbox_items_*.py`):
+  - `test_list.py`: tenant scope; caregiver patient-access predicate (sees items only for accessible patients); admin sees all in tenant
+  - `test_envelope.py`: response shape matches spec (`id`, `resourceType`, `subject.reference/display/identifier`, `occurred_at`, `payload`); `id` is deterministic across calls; subject identifier populated when patient has INSZ
+  - `test_v1_only_appointments.py`: only `resourceType: 'Appointment'` returned in v1
+  - `test_appointment_criteria.py`: booked + future + accessible patient → item present; past `booked` → absent; `cancelled`/`fulfilled`/`noshow` → absent; soft-deleted appointment → absent
+  - `test_sort.py`: default `order_by=occurred_at&order=asc`; `order_by=created_at&order=desc` orders by source-row creation; unknown `order_by` → 422
+  - `test_patient_role_rejected.py`: 403 on patient-role session
+  - `test_payload_slim.py`: payload contains exactly `title|kind|modality|starts_at|ends_at` and NOT `description|location_text|participants|status`
+  - `test_source_registry.py`: future kind extension stub — register a second `InboxItemSource` in-test, assert response includes both kinds, verify route handler did not need modification
 
-- [ ] 4.1 `moon run backend:openapi`
-- [ ] 4.2 `moon run orchestrator:typegen`
+## 4. Backend: `patients-base` modifications
 
-## 5. Frontend: reusable primitives (built first, before patient module)
+- [ ] 4.1 Extend `PatientRepository.allowed_order_by` with `created_at` (skip if already present). Explicitly REJECT `next_appointment_starts_at` (no projection added on `PatientRead` — sort lives on `/inbox/items`)
+- [ ] 4.2 Tests (`tests/api/test_patient_list_sort.py`):
+  - `order_by=created_at&order=desc` returns newest first
+  - `order_by=next_appointment_starts_at` → 422 (rejected; sort moved to `/inbox/items`)
+  - `order_by=banana` → 422 (unchanged)
+
+## 4b. OpenAPI + typed client regen
+
+- [ ] 4b.1 `moon run backend:openapi`
+- [ ] 4b.2 `moon run orchestrator:typegen`
+
+## 5. Frontend: reusable primitives (built first, before patient + inbox modules)
 
 Per design.md "Component reuse audit" → "New reusable primitives (broader value)". These are generic, tested in isolation, no patient-domain coupling.
 
@@ -86,65 +108,96 @@ These live under `modules/appointment/components/` — reused by inbox row meta 
 - [ ] 6.2 Build `<AppointmentRow>` at `apps/orchestrator/src/modules/appointment/components/AppointmentRow.tsx`. Props: `{ appointment: AppointmentRead; variant: 'upcoming' | 'history' }`. Composes `<KindTile>` + title + (history variant adds status Badge) + Dutch-locale time/location/modality line + participants strip (lead first, max 3, `+N` overflow). NO inline actions / no menus
 - [ ] 6.3 Build `<AppointmentsSection>` at `apps/orchestrator/src/modules/appointment/components/AppointmentsSection.tsx`. Props: `{ upcoming: AppointmentRead[]; history: AppointmentRead[] }`. Upcoming section always expanded + count. History section collapsible (default closed). Both empty → renders shared `EmptyState`
 
-## 7. Frontend: patient module — sort registry + hooks
+## 7. Frontend: inbox module — sort registry + hooks + query
 
-- [ ] 7.1 Create `apps/orchestrator/src/modules/patient/inbox/sorts/index.ts` exporting `PatientSortStrategy` type + readonly `patientSortStrategies` array
-- [ ] 7.2 Create `apps/orchestrator/src/modules/patient/inbox/sorts/nextAppointment.tsx` — id `next_appointment`, label via `t('inbox.sort.next_appointment')`, `queryParams()` returns `{ order_by: 'next_appointment_starts_at', order: 'asc' }`, `rowMeta()` renders `<KindTile size="sm">` + tabular time + muted kind+modality line when `p.next_appointment != null`, or muted `t('inbox.meta.next_appointment.none')` text when null
-- [ ] 7.3 Create `apps/orchestrator/src/modules/patient/inbox/sorts/newlyAdded.tsx` — id `newly_added`, label via `t('inbox.sort.newly_added')`, `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`, `rowMeta()` returns muted text via `t('inbox.meta.newly_added.added_days_ago', { count })` (today/yesterday/N variants)
-- [ ] 7.4 Create `apps/orchestrator/src/modules/patient/inbox/useSelectedSort.ts` — reads `?sort=` via TanStack Router's `useSearch` synchronously, returns active strategy on first render (no flash). Unknown id → fallback to `next_appointment` + `console.warn`. `setSort(id)` calls `navigate({ search: prev => ({ ...prev, sort: id }) })`
+Lives under `apps/orchestrator/src/modules/inbox/`. Sort strategies are over ITEMS, not patients (per D19).
 
-## 8. Frontend: patient module — components
+- [ ] 7.1 Create `modules/inbox/sorts/index.ts` exporting `InboxSortStrategy` type `{ id, label, queryParams }` and readonly `inboxSortStrategies` array
+- [ ] 7.2 Create `modules/inbox/sorts/nextAttention.ts` — id `next_attention`, label via `t('inbox.sort.next_attention')` ("Volgende afspraak" while only Appointment items ship; later relabel when other kinds land), `queryParams()` returns `{ order_by: 'occurred_at', order: 'asc' }`
+- [ ] 7.3 Create `modules/inbox/sorts/newlyAdded.ts` — id `newly_added`, label via `t('inbox.sort.newly_added')`, `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`
+- [ ] 7.4 Create `modules/inbox/useSelectedInboxSort.ts` — reads `?sort=` via TanStack Router `useSearch` synchronously, returns active strategy on first render (no flash). Unknown id → fallback to `next_attention` + `console.warn`. `setSort(id)` calls `navigate({ search: prev => ({ ...prev, sort: id }) })`
+- [ ] 7.5 Create `modules/inbox/useInboxQuery.ts` — `useInfiniteQuery` wrapper over `GET /inbox/items` keyed `[...inboxItemsKeyPrefix, { sort }]`. Sets `getNextPageParam` based on `total_pages`. Returns flattened items + `hasNextPage` + `fetchNextPage`
+- [ ] 7.6 Create `modules/inbox/types.ts` — re-exports typegen-derived `InboxItem`, `FHIRReference`, `AppointmentInboxPayload`. Adds frontend-only narrowing helpers: `isAppointmentItem(item): item is AppointmentInboxItem` based on `resourceType`
 
-- [ ] 8.1 Build `<PatientInboxRow>` at `apps/orchestrator/src/modules/patient/components/PatientInboxRow.tsx`. Composes `<InboxRow>` with patient bindings: `<Avatar tintBy={patient.id}>` initials, `family, given` primary, `INSZ • DOB • org tree-path` secondary, team `<Badge variant="soft">`, sort-strategy `rowMeta()` slot in trailing, kebab. Surface-agnostic — no router import
-- [ ] 8.2 Build `<PatientDetailHeader>` at `apps/orchestrator/src/modules/patient/components/PatientDetailHeader.tsx`. Props `{ patient: PatientRead; actions?: ReactNode }`. Avatar + h2 name + INSZ default Badge + DOB + org soft Badge + actions slot. Surface-agnostic
-- [ ] 8.3 Build `<PatientDetailView>` at `apps/orchestrator/src/modules/patient/components/PatientDetailView.tsx`. Props per D16: `{ patient; defaultTab?; actions?; onClose?; onEdit?; onDelete? }`. Composes `<PatientDetailHeader>` + `<CareTeamSlot patientId={patient.id} />` (self-fetching — preserves existing `care-teams-ui` consumer seam) + `<EntityDetailTabs>` underline Tabs with `Metingen` / `Labresultaten` / `Afspraken` triggers + tab bodies. Surface-agnostic — MUST NOT import from `@tanstack/react-router` or any inbox module. Verified by `eslint-no-router-imports` test
-- [ ] 8.4 Build `<PatientKebab>` at `apps/orchestrator/src/modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside
-- [ ] 8.5 Build `<PatientInbox>` at `apps/orchestrator/src/modules/patient/components/PatientInbox.tsx`. Composes underline `<Tabs>` sort control bound to `useSelectedSort`, `useInfiniteQuery` keyed `[...patientsListKeyPrefix, { sort }]` calling `getPatients({ ...strategy.queryParams(), page })`, maps rows through `<PatientInboxRow>` with `onSelect → navigate({ to: '/_auth/patients/$patientId', params: { patientId } })`. `"Meer laden"` button at end while `hasNextPage`. Empty-state via shared `EmptyState`. Header (PageHeader + filter row + sort Tabs) + body + pager
-- [ ] 8.6 Register existing realtime topic on `<PatientInbox>` — same topic, same `patientsListKeyPrefix`. No new realtime work
+## 8. Frontend: inbox module — row dispatcher + row components
 
-## 9. Frontend: route layout (nested per D16)
+Per D23 — flat `inboxRowRegistry` keyed by `resourceType`. Unknown kinds render `<UnknownInboxRow>` gracefully.
 
-- [ ] 9.1 Create `apps/orchestrator/src/routes/_auth/patients/route.tsx` (parent layout) — renders `<MasterDetailLayout master={<PatientInbox />} detail={<Outlet />} masterCollapsed={hasPatientIdParam} onMasterCollapsedChange={...}` where the local `masterHidden` state is owned by this layout (NOT in URL). `validateSearch` accepts `sort?: 'next_appointment' | 'newly_added'`
-- [ ] 9.2 Rewrite `apps/orchestrator/src/routes/_auth/patients/index.tsx` (child index) — renders an empty right-pane state ("Selecteer een patiënt") via shared `EmptyState`. Master is full-width because this child does not match a `$patientId`
-- [ ] 9.3 Rewrite `apps/orchestrator/src/routes/_auth/patients/$patientId/index.tsx` (child detail) — fetches patient via existing `usePatient`. Renders `<PatientDetailView patient={...} actions={<PatientKebab patient={...} />} onClose={() => navigate({ to: '/_auth/patients' })} />`. `<CareTeamSlot>` inside the view self-fetches the team data. Browser back/forward works for free via TanStack Router
+- [ ] 8.1 Create `modules/inbox/rowRegistry.ts` — exports `inboxRowRegistry: Record<string, ComponentType<{ item: InboxItem }>>`. v1 registers `Appointment: AppointmentInboxRow`
+- [ ] 8.2 Create `modules/inbox/InboxItemRow.tsx` — dispatcher. Looks up component in registry by `item.resourceType`, falls back to `<UnknownInboxRow>` (and `console.warn`) when unknown. Sets `data-resource-type={item.resourceType}` on the rendered node for E2E discoverability
+- [ ] 8.3 Create `modules/inbox/rows/AppointmentInboxRow.tsx` — composes generic `<InboxRow>` with appointment-item bindings: `<Avatar tintBy={subject.patientId}>` initials from `subject.display`, `subject.display` as primary line, INSZ from `subject.identifier.value` (font-mono tabular) as secondary, trailing slot = `<KindTile size="sm" kind={payload.kind}>` + tabular `occurred_at` (Dutch local) + muted `KIND_LABEL[payload.kind] · MODALITY_LABEL[payload.modality]`. `onSelect → navigate({ to: '/_auth/inbox/p/$patientId', params: { patientId: subject.patientId } })`. Surface-agnostic — no inbox-module imports beyond types
+- [ ] 8.4 Create `modules/inbox/rows/UnknownInboxRow.tsx` — muted single-line "Onbekend item type: {resourceType}" via `t('inbox.unknown_kind')`. Logs `console.warn` on mount with `item.resourceType`. Not clickable
+- [ ] 8.5 Create `modules/inbox/InboxList.tsx` — composes:
+  - PageHeader with title `t('inbox.title')` + sub `t('inbox.subtitle')` + actions slot (filter pills placeholder for v1)
+  - Filter row: search Input (placeholder copy via `t()`), Team Select + Status Select dropdowns (v1 stub — backend filters land later; the inputs render but don't drive query yet)
+  - Sort tabs via `useSelectedInboxSort` (underline Tabs primitive)
+  - List body — `useInboxQuery` → maps items through `<InboxItemRow>`
+  - `"Meer laden"` button while `hasNextPage`
+  - Pager strip ("Per pagina · 8 van 23 · Vorige 1/1 Volgende")
+  - Empty state via shared `EmptyState` — role-aware copy (`t('inbox.empty.caregiver.*')` vs `t('inbox.empty.admin.*')`)
+- [ ] 8.6 Realtime topic registration on `<InboxList>` is a SEAM ONLY (commented placeholder) — actual topic lands in BL-076. No-op for v1
+
+## 9. Frontend: patient module — detail components (unchanged from item-reframe)
+
+- [ ] 9.1 Build `<PatientDetailHeader>` at `modules/patient/components/PatientDetailHeader.tsx`. Props `{ patient: PatientRead; actions?: ReactNode }`. Avatar + h2 name + INSZ default Badge + DOB + org soft Badge + actions slot. Surface-agnostic
+- [ ] 9.2 Build `<PatientDetailView>` at `modules/patient/components/PatientDetailView.tsx`. Props per D16: `{ patient; defaultTab?; actions?; onClose?; onEdit?; onDelete? }`. Composes `<PatientDetailHeader>` + `<CareTeamSlot patientId={patient.id} />` (self-fetching) + `<EntityDetailTabs>` underline Tabs with `Metingen` / `Labresultaten` / `Afspraken` triggers + tab bodies. Surface-agnostic — MUST NOT import from `@tanstack/react-router` or any inbox module. Verified by `eslint-no-router-imports` test
+- [ ] 9.3 Build `<PatientKebab>` at `modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside
 - [ ] 9.4 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx`, `PatientsColumns.tsx` after confirming task 0.6 found no external consumers
-- [ ] 9.5 Verify `<CareTeamSlot>` import path and prop signature unchanged. Do NOT modify component body
+
+## 10. Frontend: routes
+
+- [ ] 10.1 Create `routes/_auth/inbox/route.tsx` (parent layout) — renders `<MasterDetailLayout master={<InboxList />} detail={<Outlet />} masterCollapsed={hasPatientIdParam} onMasterCollapsedChange={setLocalCollapsed}>`. Local `masterHidden` state owned here (not URL). `validateSearch` accepts `sort?: 'next_attention' | 'newly_added'`
+- [ ] 10.2 Create `routes/_auth/inbox/index.tsx` (child index) — empty-state right pane ("Selecteer een item") via shared `EmptyState`. Master is full-width
+- [ ] 10.3 Create `routes/_auth/inbox/p/$patientId/index.tsx` (child detail) — fetches patient via existing `usePatient`. Renders `<PatientDetailView patient={...} actions={<PatientKebab patient={...} />} onClose={() => navigate({ to: '/_auth/inbox' })} />`. Master collapses to 320px rail
+- [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — now mounts new `<PatientDetailView>` inside `<EntityDetailPage back={{ to: '/_auth/inbox' }}>` chrome. Used by admin/users links, care-team links, mobile fallback (per D17), and any non-inbox-context entry
+- [ ] 10.5 DELETE `routes/_auth/patients/index.tsx` (per D24). Verify with task 0.6 that no internal callers depend on this URL
+- [ ] 10.6 Update sidebar (`components/layout/navItems.ts` or `AppSidebar.tsx`) — replace `"Mijn patiënten" → /_auth/patients` with `"Inbox" → /_auth/inbox`. Icon: lucide `inbox`
 
 ## 10. i18n
 
-- [ ] 10.1 Create `nl/patient-inbox.json`: `inbox.title`, `inbox.empty.caregiver.headline`, `inbox.empty.caregiver.hint`, `inbox.empty.admin.headline`, `inbox.empty.admin.hint`, `inbox.empty.selection`, `inbox.load_more`, `inbox.sort.next_appointment`, `inbox.sort.newly_added`, `inbox.meta.next_appointment.none`, `inbox.meta.newly_added.added_days_ago` (with `{count}` plural), kind-icon labels, modality-icon labels
-- [ ] 10.2 Extend `nl/patient-profile-ui.json`: `detail.tab.measurements`, `detail.tab.lab_results`, `detail.tab.appointments`, `detail.tab.empty.measurements.headline/hint`, `detail.tab.empty.lab_results.headline/hint`, `detail.kebab.history`, `detail.kebab.history_dialog_title`
-- [ ] 10.3 Create `nl/patient-appointments.json`: `appointments.upcoming.title`, `appointments.history.title`, `appointments.empty.headline`, `appointments.empty.hint`, status chip labels (`status.proposed`, `status.pending`, `status.booked`, `status.arrived`, `status.fulfilled`, `status.cancelled`, `status.noshow`, `status.entered_in_error`, `status.checked_in`, `status.waitlist`), participants overflow `+N`
-- [ ] 10.4 Remove i18n keys for dropped `Overzicht` / `Zorgteam` / `Geschiedenis` tab labels (preserve `Geschiedenis` kebab + dialog keys)
-- [ ] 10.5 Verify no raw strings outside `t()` in changed files
+## 11. i18n
 
-## 11. Frontend tests
+- [ ] 11.1 Create `nl/inbox.json`: `inbox.title`, `inbox.subtitle`, `inbox.empty.caregiver.headline`, `inbox.empty.caregiver.hint`, `inbox.empty.admin.headline`, `inbox.empty.admin.hint`, `inbox.empty.selection.headline`, `inbox.empty.selection.hint`, `inbox.load_more`, `inbox.sort.next_attention`, `inbox.sort.newly_added`, `inbox.unknown_kind` (with `{resourceType}` placeholder), `inbox.filter.team`, `inbox.filter.status`, `inbox.search_placeholder`, sidebar nav label `nav.inbox`
+- [ ] 11.2 Extend `nl/patient-profile-ui.json`: `detail.tab.measurements`, `detail.tab.lab_results`, `detail.tab.appointments`, `detail.tab.empty.measurements.headline/hint`, `detail.tab.empty.lab_results.headline/hint`, `detail.kebab.history`, `detail.kebab.history_dialog_title`
+- [ ] 11.3 Create `nl/patient-appointments.json`: `appointments.upcoming.title`, `appointments.history.title`, `appointments.empty.headline`, `appointments.empty.hint`, status chip labels (10 FHIR values), participants overflow `+N`. Plus kind-icon labels (`kind.consultation/lab/imaging/procedure/other`) and modality labels (`modality.online/on_site`) — shared with inbox row rendering
+- [ ] 11.4 Remove i18n keys for dropped `Overzicht` / `Zorgteam` / `Geschiedenis` tab labels (preserve `Geschiedenis` kebab + dialog keys). Remove `Mijn patiënten` sidebar nav key
+- [ ] 11.5 Verify no raw strings outside `t()` in changed files
 
-Reusable primitives (tested in isolation, no patient-domain mocks):
-- [ ] 11.1 `MasterDetailLayout.test.tsx`: state 1 renders master only; state 2 (detail prop set) renders 320px master + detail; `masterCollapsed=true` hides master and shows floating reopen button; transitions reach final widths
-- [ ] 11.2 `InboxRow.test.tsx`: renders all slots; onSelect on click + Enter/Space; `selected` highlight; `compact` reduces padding
-- [ ] 11.3 `Avatar.test.tsx`: renders initials uppercased; same `tintBy` → same colour-class on two renders; missing `tintBy` → default tint; never renders `<img>`
+## 12. Frontend tests
+
+Reusable primitives:
+- [ ] 12.1 `MasterDetailLayout.test.tsx`: state 1 renders master only; state 2 (detail prop set) renders 320px master + detail; `masterCollapsed=true` hides master and shows floating reopen button; mobile fallback (<md) renders master full-width + skips detail
+- [ ] 12.2 `InboxRow.test.tsx`: renders all slots; onSelect on click + Enter/Space; `selected` highlight; `compact` reduces padding
+- [ ] 12.3 `Avatar.test.tsx`: same `tintBy` → same colour-class twice; missing `tintBy` → default tint; never renders `<img>`
 
 Appointment primitives:
-- [ ] 11.4 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon
-- [ ] 11.5 `AppointmentRow.test.tsx`: kind tile + title + formatted local-time line + modality icon + lead-first participants strip with `+N` overflow; History variant shows status Badge; mock `Europe/Brussels` timezone for time-format assertion
-- [ ] 11.6 `AppointmentsSection.test.tsx`: Upcoming always expanded; History collapsed by default and expands on click; both-empty renders `EmptyState`
+- [ ] 12.4 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon
+- [ ] 12.5 `AppointmentRow.test.tsx`: kind tile + title + formatted local-time line + modality icon + participants strip with `+N` overflow; History variant shows status Badge; mock `Europe/Brussels` timezone
+- [ ] 12.6 `AppointmentsSection.test.tsx`: Upcoming always expanded; History collapsed by default and expands on click; both-empty renders `EmptyState`
+
+Inbox module:
+- [ ] 12.7 `nextAttention.test.ts` + `newlyAdded.test.ts`: `queryParams()` shape
+- [ ] 12.8 `useSelectedInboxSort.test.ts`: returns default when search param absent; honours valid `?sort=`; falls back + warn on unknown; resolves synchronously on first render (no flash)
+- [ ] 12.9 `useInboxQuery.test.ts`: TanStack `useInfiniteQuery` integration; `fetchNextPage` advances `page`; key changes with sort
+- [ ] 12.10 `InboxItemRow.test.tsx` (dispatcher): registered `resourceType: 'Appointment'` renders `<AppointmentInboxRow>`; unknown `resourceType` renders `<UnknownInboxRow>` + `console.warn` fires + `data-resource-type` attribute set; future-stub (test registers a 2nd component for `resourceType: 'Task'`) → both kinds render correctly
+- [ ] 12.11 `AppointmentInboxRow.test.tsx`: composes `<InboxRow>` with `Avatar tintBy={subject.patientId}`, `subject.display` as primary, INSZ from `subject.identifier.value` as secondary, trailing slot has `<KindTile>` + tabular `occurred_at` + muted kind+modality; click invokes `onSelect` (router test harness asserts navigation to `/_auth/inbox/p/$id`)
+- [ ] 12.12 `UnknownInboxRow.test.tsx`: renders muted single-line copy with `resourceType` injected; not clickable
+- [ ] 12.13 `InboxList.test.tsx`: empty list renders `EmptyState` with role-aware copy (mock caregiver vs admin role); `useInboxQuery` with 0 pages → empty; with 1 page → list; with 2 pages → "Meer laden" visible + click fetches next; switching sort updates URL `?sort=`; deep-link `?sort=newly_added` does not flash default sort
 
 Patient module:
-- [ ] 11.7 `nextAppointmentStrategy.test.tsx` + `newlyAddedStrategy.test.tsx`: `queryParams()` shape; `rowMeta()` renders mini-card for non-null, muted text for null; relative-time copy correct for today/yesterday/N days
-- [ ] 11.8 `useSelectedSort.test.ts`: returns default when search param absent; honours valid `?sort=`; falls back + warn on unknown; resolves synchronously on first render (no flash)
-- [ ] 11.9 `PatientInboxRow.test.tsx`: composes `<InboxRow>` with correct slots; surface-agnostic (no router import — renders in plain `render()`)
-- [ ] 11.10 `PatientDetailHeader.test.tsx`: renders all demographics fields; takes an `actions` slot; surface-agnostic (no router import)
-- [ ] 11.11 `PatientDetailView.test.tsx`: composes header + Zorgteam line + clinical Tabs; default tab `Metingen`; Metingen + Labresultaten render `<EmptyState>`; tabs switch; surface-agnostic (no router import); `onClose` / `onEdit` / `onDelete` invoked
-- [ ] 11.12 `PatientInbox.test.tsx`: default sort `next_appointment`; switching tabs updates URL `?sort=`; rows render `sortMeta` from active strategy; clicking a row navigates to `/_auth/patients/<id>`; empty-state when list empty; realtime invalidation under `patientsListKeyPrefix` refetches; `"Meer laden"` fetches next page via `useInfiniteQuery`; deep-link `?sort=newly_added` renders correctly on first paint (no default flash); sort survives row-click + browser-back
+- [ ] 12.14 `PatientDetailHeader.test.tsx`: renders all demographics fields; takes an `actions` slot; surface-agnostic (no router import)
+- [ ] 12.15 `PatientDetailView.test.tsx`: composes header + `<CareTeamSlot>` + clinical Tabs; default tab `Metingen`; Metingen + Labresultaten render `<EmptyState>`; tabs switch; surface-agnostic (no router import); `onClose` / `onEdit` / `onDelete` invoked
 
 Routes:
-- [ ] 11.13 `routes/_auth/patients/route.test.tsx`: URL `/_auth/patients` → master full-width, detail empty-state; URL `/_auth/patients/$id` → master 320px + detail loaded; master-hidden toggle is local (URL unchanged); browser back from detail → state 1
+- [ ] 12.16 `routes/_auth/inbox/route.test.tsx`: URL `/_auth/inbox` → master full-width, empty-state on right; URL `/_auth/inbox/p/$id` → master 320px + `<PatientDetailView>` loaded; master-hidden toggle is local (URL unchanged); browser back from detail → state 1
+- [ ] 12.17 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<PatientDetailView>` inside `<EntityDetailPage>` chrome; `back` link points to `/_auth/inbox`
+- [ ] 12.18 Sidebar nav test: `"Inbox"` item present, points to `/_auth/inbox`; `"Mijn patiënten"` item ABSENT
 
-## 12. Verification
+## 13. Verification
 
-- [ ] 12.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
-- [ ] 12.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
-- [ ] 12.3 Manual smoke (desktop ≥md): open `/_auth/patients` → state 1 (inbox full); switch sort, confirm URL updates + list reorders; deep-link `/_auth/patients?sort=newly_added` directly, confirm no default-flash; click a row → state 2 (compact rail + detail); activate Afspraken tab, confirm Upcoming/History sections render (both empty since no seed); kebab Geschiedenis dialog opens; toggle master hidden → state 3 (detail full-width + floating reopen); reopen → back to state 2; close detail → back to state 1; browser back/forward preserves URL state
-- [ ] 12.4 Manual smoke (mobile <md): viewport ~375px wide. Open `/_auth/patients` → inbox full-width, no detail pane. Click row → full-page nav to `/_auth/patients/$id` rendering `<PatientDetailView>` full-screen. Browser back → inbox. No master-hidden toggle visible
-- [ ] 12.5 Run `/verify` for both apps before reporting done
+- [ ] 13.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
+- [ ] 13.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
+- [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Inbox"` item visible (no `"Mijn patiënten"`). Open `/_auth/inbox` → state 1 (inbox full, empty seeded → empty-state copy). Switch sort, confirm URL updates + list reorders. Deep-link `/_auth/inbox?sort=newly_added` directly, confirm no default-flash. Click an item → navigate to `/_auth/inbox/p/$id` → state 2 (compact rail + `<PatientDetailView>`). Activate Afspraken tab → Upcoming + History sections render. Kebab `Geschiedenis` dialog opens. Toggle master hidden → state 3 (detail full-width + floating reopen). Reopen → state 2. Close detail → state 1. Browser back/forward preserves URL state. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail (no inbox column)
+- [ ] 13.4 Manual smoke (mobile <md): viewport ~375px wide. Open `/_auth/inbox` → list full-width, no detail pane. Click item → full-page nav to `/_auth/patients/$id` rendering standalone detail. Browser back → inbox. No master-hidden toggle visible
+- [ ] 13.5 Manual smoke (unknown resourceType fallback): inject a synthetic `{resourceType: 'BananaResource', ...}` item via mock or temporary backend stub. Inbox renders `<UnknownInboxRow>` muted line + `console.warn` fires. No crash
+- [ ] 13.6 Run `/verify` for both apps before reporting done
