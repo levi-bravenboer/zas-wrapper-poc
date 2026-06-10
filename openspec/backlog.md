@@ -522,11 +522,17 @@ Note: v1 ships without a seed for `appointments`. The inbox default sort (`next_
 
 Note: `appointment-base` rejects `Role.PATIENT` sessions on every `/appointments` route in PoC. MVP adds `/mobile/appointments` (or similar) for the digital-front-door patient app to read their own appointments. Reuses `AppointmentRepository` with a patient-self predicate (patient sees only own rows). Patient-visibility predicate distinct from caregiver patient-access predicate. Depends on F9/F10 mobile patient features (BL-014, BL-022).
 
-### BL-080 — Inbox: Task as second item source
-- Tier: [poc]
-- Source: patient-inbox change (architectural seam, single-source v1)
+### BL-081 — Task write actions (create / complete / edit / delete)
+- Tier: [mvp]
+- Source: patient-inbox change (tasks-base ships read-only v1)
 
-Note: `inbox-base` ships with one `InboxItemSource` (`AppointmentInboxSource`) and a registry pattern. First natural follow-up adds Task as a second source — `TaskInboxSource` over the existing tasks domain. Backend: register source in `InboxService`. Frontend: register `Task → <TaskInboxRow>` in `inboxRowRegistry`. No route or `<InboxList>` edits required. Validates the polymorphic seam in real demo content. Depends on the tasks domain ripening.
+Note: `tasks-base` v1 ships only `GET /tasks` (list) and `GET /tasks/{id}` (read). Tasks are populated by `seed_tasks.py` and (at MVP) by the pathway runtime. MVP adds caregiver-facing write actions: `POST /tasks` (manual task creation), `PATCH /tasks/{id}` (status transitions including complete + cancel, plus title/description/priority edits), `DELETE /tasks/{id}` (soft). Frontend: inbox row gains a kebab with `Markeer voltooid` / `Bewerken` / `Verwijderen`; standalone create dialog from the inbox PageHeader. Depends on the task write UX design and on a decision about who can complete others' tasks (lock to assignee? team-wide? admin override?).
+
+### BL-080 — Inbox 2nd surface kind (alerts / messages)
+- Tier: [product]
+- Source: patient-inbox change (single-domain inbox v1)
+
+Note: PoC inbox surfaces tasks only. If a future product surface genuinely needs to merge tasks with other attention sources (measurement alerts, system messages, lab-result notifications), it gets its own route (e.g. `/_auth/notifications`) with its own architecture — the current `/_auth/inbox` stays a task list. Filed to document the rejected polymorphic-inbox alternative if it ever resurfaces.
 
 ### BL-079 — `appointments.pathway_block_instance_id` FK
 - Tier: [poc]
