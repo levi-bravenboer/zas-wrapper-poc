@@ -30,6 +30,7 @@ import type { OrganisationOption, PatientIdentifierRow } from '../types'
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
 import { EditPatientDialog } from './EditPatientDialog'
+import { LusciiPanel } from './LusciiPanel'
 import { PatientDemographicsPanel } from './PatientDemographicsPanel'
 import { PatientHistoryPanel } from './PatientHistoryPanel'
 import { PatientIdentifiersPanel } from './PatientIdentifiersPanel'
@@ -171,6 +172,11 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
                 value: 'careTeam',
                 label: t('tabs.careTeam'),
                 content: <CareTeamSlot patientId={patient.id} />,
+              },
+              {
+                value: 'luscii',
+                label: t('tabs.luscii'),
+                content: <LusciiPanel patientId={patient.id} />,
               },
               {
                 value: 'history',

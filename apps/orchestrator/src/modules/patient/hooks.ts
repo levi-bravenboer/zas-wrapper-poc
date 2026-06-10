@@ -1,8 +1,22 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
-import { fetchPatient, fetchPatientCareTeams, patientsListKeyPrefix, updatePatient } from './api'
+import {
+  fetchLusciiData,
+  fetchPatient,
+  fetchPatientCareTeams,
+  linkLuscii,
+  patientsListKeyPrefix,
+  unlinkLuscii,
+  updatePatient,
+} from './api'
 import { patientKeys } from './keys'
-import type { CareTeamRow, PatientRow, PatientUpdatePayload } from './types'
+import type {
+  CareTeamRow,
+  LusciiLinkResult,
+  LusciiPatientData,
+  PatientRow,
+  PatientUpdatePayload,
+} from './types'
 
 const PATIENT_STALE_MS = 30_000
 
@@ -47,5 +61,49 @@ export function useUpdatePatient() {
   return useMutation<PatientRow, Error, UpdatePatientVariables>({
     mutationFn: ({ patientId, payload }) => updatePatient(patientId, payload),
     onSuccess: (_row, { patientId }) => invalidatePatientCaches(qc, patientId),
+  })
+}
+
+export function useLusciiData(patientId: string | null) {
+  return useQuery<LusciiPatientData>({
+    queryKey: patientKeys.lusciiData(patientId ?? ''),
+    queryFn: () => {
+      if (!patientId) return Promise.reject(new Error('patientId required'))
+      return fetchLusciiData(patientId)
+    },
+    enabled: !!patientId,
+    staleTime: PATIENT_STALE_MS,
+    // Live proxy against an external vendor: a failing Luscii must not be
+    // hammered with automatic retries from every open patient view.
+    retry: false,
+  })
+}
+
+async function invalidateLusciiCaches(qc: QueryClient, patientId: string): Promise<void> {
+  await Promise.all([
+    qc.invalidateQueries({ queryKey: patientKeys.lusciiData(patientId) }),
+    // The link lives in patient.identifiers — refresh the detail too.
+    qc.invalidateQueries({ queryKey: patientKeys.detail(patientId) }),
+  ])
+}
+
+export interface LinkLusciiVariables {
+  patientId: string
+  lusciiPatientId: string
+}
+
+export function useLinkLuscii() {
+  const qc = useQueryClient()
+  return useMutation<LusciiLinkResult, Error, LinkLusciiVariables>({
+    mutationFn: ({ patientId, lusciiPatientId }) => linkLuscii(patientId, lusciiPatientId),
+    onSuccess: (_result, { patientId }) => invalidateLusciiCaches(qc, patientId),
+  })
+}
+
+export function useUnlinkLuscii() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, string>({
+    mutationFn: (patientId) => unlinkLuscii(patientId),
+    onSuccess: (_void, patientId) => invalidateLusciiCaches(qc, patientId),
   })
 }
