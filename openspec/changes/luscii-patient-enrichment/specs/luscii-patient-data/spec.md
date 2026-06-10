@@ -121,6 +121,11 @@ The aggregation payload SHALL decode each measurement's `details` JSON into disp
 
 The backend SHALL persist the three Luscii localisation catalogues in local tables (`luscii_instrument_localisations`, `luscii_instrument_item_localisations`, `luscii_item_response_localisations`) — vendor reference data: no tenant scope, no patient data, unique on their natural keys. `scripts/sync_luscii_catalogue.py` (moon task `backend:luscii-sync`) SHALL fetch all three catalogues to exhaustion and full-replace the tables in one transaction. The sync SHALL exit with a clear error when `BACKEND_LUSCII_API_TOKEN` is unset.
 
+#### Scenario: Upstream duplicate natural keys are deduped
+
+- **WHEN** the upstream catalogue repeats rows with identical natural keys (observed live: duplicated `(itemResponseId, locale)` rows)
+- **THEN** the sync stores one row per natural key (first occurrence wins) and logs the dropped count
+
 #### Scenario: Sync replaces instead of appending
 
 - **WHEN** the sync runs twice, the second time with a changed upstream catalogue

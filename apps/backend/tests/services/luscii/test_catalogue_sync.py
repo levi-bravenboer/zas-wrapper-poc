@@ -93,3 +93,37 @@ async def test_sync_is_full_replace_not_append(db_session: AsyncSession) -> None
     assert only is not None
     assert only.instrument_id == "i-2"
     assert only.name == "Bloeddruk"
+
+
+async def test_sync_dedupes_upstream_duplicate_natural_keys(db_session: AsyncSession) -> None:
+    # Observed live 2026-06-10: the upstream catalogue repeats identical
+    # (itemResponseId, locale) rows — the sync must not trip our unique index.
+    fake = _fake_with_catalogue()
+    fake.item_response_localisations = [
+        LusciiItemResponseLocalisation(
+            item_response_id="resp-dup", locale="de", response_text="Ja, wöchentlich"
+        ),
+        LusciiItemResponseLocalisation(
+            item_response_id="resp-dup", locale="de", response_text="Ja, wöchentlich"
+        ),
+        LusciiItemResponseLocalisation(
+            item_response_id="resp-dup", locale="nl", response_text="Ja, wekelijks"
+        ),
+    ]
+    fake.instrument_localisations = fake.instrument_localisations + [
+        fake.instrument_localisations[0]
+    ]
+
+    counts = await sync_luscii_catalogue(db_session, fake)
+    await db_session.commit()
+
+    assert counts["item_response_localisations"] == 2  # de + nl, dupe dropped
+    assert counts["instrument_localisations"] == 2  # nl + en, dupe dropped
+    rows = (
+        await db_session.scalars(
+            select(LusciiItemResponseLocalisationRow).where(
+                LusciiItemResponseLocalisationRow.item_response_id == "resp-dup"
+            )
+        )
+    ).all()
+    assert sorted(r.locale for r in rows) == ["de", "nl"]

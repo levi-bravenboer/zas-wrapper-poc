@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable, Hashable, Iterable
+from typing import TypeVar
 
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +31,18 @@ from app.db.models.luscii import (
 
 logger = logging.getLogger(__name__)
 
+_R = TypeVar("_R")
+
+
+def _dedupe(rows: Iterable[_R], key: Callable[[_R], Hashable]) -> tuple[list[_R], int]:
+    """First occurrence per key wins. Returns (unique rows, dropped count)."""
+    seen: dict[Hashable, _R] = {}
+    total = 0
+    for row in rows:
+        total += 1
+        seen.setdefault(key(row), row)
+    return list(seen.values()), total - len(seen)
+
 
 async def sync_luscii_catalogue(session: AsyncSession, client: LusciiClient) -> dict[str, int]:
     """Fetch all three catalogues and replace the local tables. Returns row counts."""
@@ -41,6 +55,27 @@ async def sync_luscii_catalogue(session: AsyncSession, client: LusciiClient) -> 
         client.get_instrument_item_localisations(),
         client.get_item_response_localisations(),
     )
+
+    # The upstream catalogues contain duplicate natural-key rows (observed
+    # 2026-06-10: identical (itemResponseId, locale) rows repeated with the
+    # same text). First occurrence wins; our unique constraints stay as
+    # local hygiene.
+    instrument_locs, instr_dupes = _dedupe(
+        instrument_locs, lambda r: (r.instrument_id, r.instrument_version, r.locale)
+    )
+    item_locs, item_dupes = _dedupe(
+        item_locs, lambda r: (r.item_id, r.item_version, r.locale)
+    )
+    response_locs, response_dupes = _dedupe(
+        response_locs, lambda r: (r.item_response_id, r.locale)
+    )
+    if instr_dupes or item_dupes or response_dupes:
+        logger.info(
+            "luscii catalogue upstream duplicates dropped: instruments=%d items=%d responses=%d",
+            instr_dupes,
+            item_dupes,
+            response_dupes,
+        )
 
     await session.execute(delete(LusciiInstrumentLocalisationRow))
     await session.execute(delete(LusciiInstrumentItemLocalisationRow))
