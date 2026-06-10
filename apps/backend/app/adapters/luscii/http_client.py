@@ -28,9 +28,11 @@ _PER_PAGE = 100
 # Runaway guard for cursor loops: raise rather than silently truncate.
 _MAX_PAGES_PER_CALL = 50
 # The localisation catalogues are legitimately huge (measured 2026-06-10:
-# 15.6k-40k+ rows each) and only fetched by the offline sync script — they
-# get a much larger page budget than request-path calls.
-_MAX_CATALOGUE_PAGES = 2000
+# 15.6k instrument-, 40k+ item-, 200k+ response-localisations) and only
+# fetched by the offline sync script — they get a much larger page budget
+# than request-path calls. Still finite: the guard catches runaway cursors,
+# not honest catalogue size.
+_MAX_CATALOGUE_PAGES = 10_000
 
 _M = TypeVar("_M", bound=BaseModel)
 
