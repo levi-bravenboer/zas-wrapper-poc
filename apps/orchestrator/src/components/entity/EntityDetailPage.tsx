@@ -43,7 +43,9 @@ export function EntityDetailPage({
   return (
     <>
       <PageHeader eyebrow={eyebrow} title={title} sub={subtitle} actions={actions} />
-      <div className="flex flex-col gap-3 px-6 pb-8">{body}</div>
+      {/* The shell pins the viewport (SidebarInset is h-svh overflow-hidden),
+          so the body must own its scroll; the header stays fixed above it. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-8">{body}</div>
     </>
   )
 }
