@@ -27,14 +27,10 @@ from app.db.base import TenantOwnedEntity
 class PathwayDeferredFieldValue(TenantOwnedEntity):
     __tablename__ = "pathway_deferred_field_value"
     __realtime_resource__: ClassVar[str | None] = None
-    __table_args__ = (
-        sa.UniqueConstraint(
-            "enrollment_id",
-            "block_template_id",
-            "attr",
-            name="uq_pathway_deferred_field_value_enrollment_block_attr",
-        ),
-    )
+    # `(enrollment_id, block_template_id, attr)` uniqueness is
+    # enforced by a partial unique index in alembic so soft-deleted
+    # entries don't collide with re-supplied values.
+    __table_args__ = ()
 
     enrollment_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),

@@ -104,11 +104,17 @@ def upgrade() -> None:
             "state IN ('active', 'paused', 'completed', 'cancelled')",
             name="ck_pathway_enrollment_state",
         ),
-        sa.UniqueConstraint(
-            "patient_id",
-            "pathway_version_id",
-            name="uq_pathway_enrollment_patient_version",
-        ),
+    )
+    # Partial unique on `deleted_at IS NULL` so a cancelled or
+    # soft-deleted enrollment doesn't permanently block a patient
+    # from being re-enrolled on the same pathway version (sibling
+    # tables follow the same convention — see e.g. patients_base).
+    op.create_index(
+        "uq_pathway_enrollment_patient_version_live",
+        "pathway_enrollment",
+        ["patient_id", "pathway_version_id"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL"),
     )
 
     op.create_table(
@@ -144,11 +150,15 @@ def upgrade() -> None:
             "state IN ('pending', 'eligible', 'active', 'completed', 'skipped', 'failed')",
             name="ck_pathway_block_execution_state",
         ),
-        sa.UniqueConstraint(
-            "enrollment_id",
-            "block_template_id",
-            name="uq_pathway_block_execution_enrollment_template",
-        ),
+    )
+    # Partial unique: a soft-deleted execution doesn't block
+    # rebuilding the runtime aggregate after an enrollment reset.
+    op.create_index(
+        "uq_pathway_block_execution_enrollment_template_live",
+        "pathway_block_execution",
+        ["enrollment_id", "block_template_id"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL"),
     )
     op.create_index(
         "ix_pathway_block_execution_enrollment_state",
@@ -181,20 +191,33 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.func.now(),
         ),
-        sa.UniqueConstraint(
-            "enrollment_id",
-            "block_template_id",
-            "attr",
-            name="uq_pathway_deferred_field_value_enrollment_block_attr",
-        ),
+    )
+    op.create_index(
+        "uq_pathway_deferred_field_value_enrollment_block_attr_live",
+        "pathway_deferred_field_value",
+        ["enrollment_id", "block_template_id", "attr"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL"),
     )
 
 
 def downgrade() -> None:
+    op.drop_index(
+        "uq_pathway_deferred_field_value_enrollment_block_attr_live",
+        table_name="pathway_deferred_field_value",
+    )
     op.drop_table("pathway_deferred_field_value")
     op.drop_index(
         "ix_pathway_block_execution_enrollment_state",
         table_name="pathway_block_execution",
     )
+    op.drop_index(
+        "uq_pathway_block_execution_enrollment_template_live",
+        table_name="pathway_block_execution",
+    )
     op.drop_table("pathway_block_execution")
+    op.drop_index(
+        "uq_pathway_enrollment_patient_version_live",
+        table_name="pathway_enrollment",
+    )
     op.drop_table("pathway_enrollment")

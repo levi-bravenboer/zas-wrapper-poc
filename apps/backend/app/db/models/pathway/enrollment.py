@@ -33,11 +33,9 @@ class PathwayEnrollment(TenantOwnedEntity):
             "state IN ('active', 'paused', 'completed', 'cancelled')",
             name="ck_pathway_enrollment_state",
         ),
-        sa.UniqueConstraint(
-            "patient_id",
-            "pathway_version_id",
-            name="uq_pathway_enrollment_patient_version",
-        ),
+        # `(patient_id, pathway_version_id)` uniqueness is enforced
+        # by a partial unique index in alembic (live rows only) so
+        # soft-deleted enrollments don't block re-enrolment.
     )
 
     patient_id: Mapped[UUID] = mapped_column(

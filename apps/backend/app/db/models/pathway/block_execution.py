@@ -37,11 +37,10 @@ class PathwayBlockExecution(TenantOwnedEntity):
             "state IN ('pending', 'eligible', 'active', 'completed', 'skipped', 'failed')",
             name="ck_pathway_block_execution_state",
         ),
-        sa.UniqueConstraint(
-            "enrollment_id",
-            "block_template_id",
-            name="uq_pathway_block_execution_enrollment_template",
-        ),
+        # Uniqueness is enforced by a partial index in alembic
+        # (`uq_pathway_block_execution_enrollment_template_live`)
+        # so a soft-deleted run doesn't block rebuilding the
+        # runtime aggregate.
         sa.Index(
             "ix_pathway_block_execution_enrollment_state",
             "enrollment_id",
