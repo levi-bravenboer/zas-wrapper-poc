@@ -3652,6 +3652,308 @@
         }
       }
     },
+    "/enrollments": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Create Enrollment",
+        "operationId": "create_enrollment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Get Enrollment",
+        "operationId": "get_enrollment",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}/executions/{execution_id}:start": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Start Block Execution",
+        "operationId": "start_block_execution",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockExecutionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}/executions/{execution_id}:complete": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Complete Block Execution",
+        "operationId": "complete_block_execution",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockExecutionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}/deferred-values/{attr}": {
+      "patch": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Patch Deferred Value",
+        "operationId": "patch_deferred_value",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "name": "attr",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attr"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeferredFieldValuePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeferredFieldValueOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
     "/luscii/programs": {
       "get": {
         "tags": [
@@ -4118,6 +4420,110 @@
         "title": "AtEnrollmentPickedDatePolicy",
         "description": "Schedule is the date supplied at enrollment as a deferred field."
       },
+      "BlockExecutionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "eligible",
+              "active",
+              "completed",
+              "skipped",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "result_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Json"
+          },
+          "decision_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_template_id",
+          "state"
+        ],
+        "title": "BlockExecutionResponse"
+      },
       "CareTeamCreate": {
         "properties": {
           "name": {
@@ -4545,6 +4951,88 @@
         "title": "DecisionOutputArgs",
         "description": "Producer `decision`-class block fired the named `output_key`."
       },
+      "DeferredFieldValueIn": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "attr": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Attr"
+          },
+          "value_json": {
+            "title": "Value Json"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "attr",
+          "value_json"
+        ],
+        "title": "DeferredFieldValueIn",
+        "description": "One `(block_template_id, attr, value_json)` triple at enrollment time."
+      },
+      "DeferredFieldValueOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "attr": {
+            "type": "string",
+            "title": "Attr"
+          },
+          "value_json": {
+            "title": "Value Json"
+          },
+          "set_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Set At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_template_id",
+          "attr",
+          "value_json",
+          "set_at"
+        ],
+        "title": "DeferredFieldValueOut"
+      },
+      "DeferredFieldValuePatch": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "value_json": {
+            "title": "Value Json"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "value_json"
+        ],
+        "title": "DeferredFieldValuePatch",
+        "description": "Body for `PATCH /enrollments/{id}/deferred-values/{attr}`.\n\nLate-supply value for a `DeferredFieldSpec` whose value wasn't\navailable at enrollment creation. The engine re-evaluates\neligibility once the value lands."
+      },
       "DerivedEdge": {
         "properties": {
           "target_block_id": {
@@ -4604,6 +5092,98 @@
         "title": "DueWithinPolicy",
         "description": "Block must complete within an ISO 8601 window of its eligibility."
       },
+      "EnrollmentCreate": {
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Version Id"
+          },
+          "anchor_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Anchor Date"
+          },
+          "deferred_values": {
+            "items": {
+              "$ref": "#/components/schemas/DeferredFieldValueIn"
+            },
+            "type": "array",
+            "title": "Deferred Values"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "patient_id",
+          "pathway_version_id",
+          "anchor_date"
+        ],
+        "title": "EnrollmentCreate",
+        "description": "Body for `POST /enrollments`."
+      },
+      "EnrollmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Version Id"
+          },
+          "anchor_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Anchor Date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "cancelled"
+            ],
+            "title": "State"
+          },
+          "executions": {
+            "items": {
+              "$ref": "#/components/schemas/BlockExecutionResponse"
+            },
+            "type": "array",
+            "title": "Executions"
+          },
+          "deferred_values": {
+            "items": {
+              "$ref": "#/components/schemas/DeferredFieldValueOut"
+            },
+            "type": "array",
+            "title": "Deferred Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "pathway_version_id",
+          "anchor_date",
+          "state"
+        ],
+        "title": "EnrollmentResponse"
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -4633,6 +5213,26 @@
           "message"
         ],
         "title": "ErrorResponse"
+      },
+      "ExecutionCompleteRequest": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ExecutionCompleteRequest",
+        "description": "Body for `POST /enrollments/{id}/executions/{exec_id}:complete`."
       },
       "ExternalAccessProfileRead": {
         "properties": {

@@ -988,6 +988,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Enrollment */
+        post: operations["create_enrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Enrollment */
+        get: operations["get_enrollment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}/executions/{execution_id}:start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Block Execution */
+        post: operations["start_block_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}/executions/{execution_id}:complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Block Execution */
+        post: operations["complete_block_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}/deferred-values/{attr}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Deferred Value */
+        patch: operations["patch_deferred_value"];
+        trace?: never;
+    };
     "/luscii/programs": {
         parameters: {
             query?: never;
@@ -1208,6 +1293,38 @@ export interface components {
              */
             kind: "at_enrollment_picked_date";
         };
+        /** BlockExecutionResponse */
+        BlockExecutionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Scheduled At */
+            scheduled_at?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "eligible" | "active" | "completed" | "skipped" | "failed";
+            /** Result Json */
+            result_json?: {
+                [key: string]: unknown;
+            } | null;
+            /** Decision Output */
+            decision_output?: string | null;
+        };
         /**
          * CareTeamCreate
          * @description `POST /patients/{patient_id}/care-teams` payload.
@@ -1404,6 +1521,60 @@ export interface components {
             output_key: string;
         };
         /**
+         * DeferredFieldValueIn
+         * @description One `(block_template_id, attr, value_json)` triple at enrollment time.
+         */
+        DeferredFieldValueIn: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Attr */
+            attr: string;
+            /** Value Json */
+            value_json: unknown;
+        };
+        /** DeferredFieldValueOut */
+        DeferredFieldValueOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Attr */
+            attr: string;
+            /** Value Json */
+            value_json: unknown;
+            /**
+             * Set At
+             * Format: date-time
+             */
+            set_at: string;
+        };
+        /**
+         * DeferredFieldValuePatch
+         * @description Body for `PATCH /enrollments/{id}/deferred-values/{attr}`.
+         *
+         *     Late-supply value for a `DeferredFieldSpec` whose value wasn't
+         *     available at enrollment creation. The engine re-evaluates
+         *     eligibility once the value lands.
+         */
+        DeferredFieldValuePatch: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Value Json */
+            value_json: unknown;
+        };
+        /**
          * DerivedEdge
          * @description One canvas connector derived from a target block's `input_logic` rule.
          *
@@ -1439,6 +1610,61 @@ export interface components {
             /** Window Iso */
             window_iso: string;
         };
+        /**
+         * EnrollmentCreate
+         * @description Body for `POST /enrollments`.
+         */
+        EnrollmentCreate: {
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /**
+             * Pathway Version Id
+             * Format: uuid
+             */
+            pathway_version_id: string;
+            /**
+             * Anchor Date
+             * Format: date
+             */
+            anchor_date: string;
+            /** Deferred Values */
+            deferred_values?: components["schemas"]["DeferredFieldValueIn"][];
+        };
+        /** EnrollmentResponse */
+        EnrollmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /**
+             * Pathway Version Id
+             * Format: uuid
+             */
+            pathway_version_id: string;
+            /**
+             * Anchor Date
+             * Format: date
+             */
+            anchor_date: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "paused" | "completed" | "cancelled";
+            /** Executions */
+            executions?: components["schemas"]["BlockExecutionResponse"][];
+            /** Deferred Values */
+            deferred_values?: components["schemas"]["DeferredFieldValueOut"][];
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Code */
@@ -1447,6 +1673,16 @@ export interface components {
             message: string;
             /** Details */
             details?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ExecutionCompleteRequest
+         * @description Body for `POST /enrollments/{id}/executions/{exec_id}:complete`.
+         */
+        ExecutionCompleteRequest: {
+            /** Result */
+            result?: {
                 [key: string]: unknown;
             } | null;
         };
@@ -6304,6 +6540,210 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_block_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockExecutionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_block_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecutionCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockExecutionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_deferred_value: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+                attr: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeferredFieldValuePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeferredFieldValueOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
