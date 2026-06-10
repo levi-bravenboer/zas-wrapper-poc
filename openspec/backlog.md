@@ -73,7 +73,7 @@ Note: Backend is meant to host an MCP server for agentic tooling. Not in PoC sco
 - Tier: [mvp]
 - Source: RFP working doc — "Luscii Vitals viewer embedded in Orchestrator"
 
-Note: Caregivers need to view Luscii monitoring data from inside Orchestrator. Mechanism TBD: iframe? deep-link? SSO?
+Note: Caregivers need to view Luscii monitoring data from inside Orchestrator. Mechanism TBD: iframe? deep-link? SSO? **Promoted to `changes/luscii-patient-enrichment/` on 2026-06-10** — mechanism chosen: native render via the Luscii public API (live proxy, display-only, bearer token). Remaining MVP-tier follow-ups: response caching / sync-into-DB, builder programme-picker live migration, webhooks/alerts.
 
 ### BL-009 — Non-HiX patient enrollment
 - Tier: [mvp]
