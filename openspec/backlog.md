@@ -259,6 +259,7 @@ Note: F3 backend domain lands as its own `[poc]` change in its own worktree. Sha
 ### BL-037 — F4 patient domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+- Promoted: 2026-06-10 to `changes/2026-06-10-patient-inbox/` (inbox surface + appointment-base domain + master/detail split-pane + surface-agnostic `<PatientDetailView>`)
 
 Note: F4 backend domain + orchestrator patients-overview land as their own `[poc]` change in their own worktree. Shape is designed inside that change.
 
@@ -475,3 +476,53 @@ Note: ZAS wants user lifecycle (create/update/role-assign/deactivate, individual
 - Source: Lastenboek REQ-FUN-3 (deferred from `access-entitlements`; interplays with `oidc-login-providers` + BL-067)
 
 Note: Representative/trusted-person relationships should come from CSAM mandate registration where possible, with self-service onboarding (invitation links, itsme/eID identification) and ZAS-assisted setup as fallback. In our model a mandate becomes a consent-backed grant (same shape as `external_grants`) whose source is the federal mandate registry instead of local administration. Requires the eHealth/itsme federation seam (`oidc-login-providers`).
+
+## Filed by patient-inbox (2026-06-10)
+
+### BL-072 — Frontend write actions on appointments
+- Tier: [mvp]
+- Source: patient-inbox change (frontend explicitly read-only in v1)
+
+Note: `appointment-base` ships full backend CRUD but the orchestrator surface is read-only at PoC — no create/edit/delete dialogs, no status-change actions. MVP adds caregiver-facing dialogs (new appointment, edit, cancel, mark fulfilled / no-show) using existing shadcn primitives. Pathway runtime (BL-038) also calls into `AppointmentService.create()` to materialise appointment blocks; both paths share the same backend.
+
+### BL-073 — Appointment participant edit endpoints
+- Tier: [mvp]
+- Source: patient-inbox change (participants frozen after create in v1)
+
+Note: v1 freezes `appointment_participants` rows after the appointment is created — changing attendees requires delete + recreate. MVP adds a `PATCH /appointments/{id}` participants field with replace-all semantics (parent diff, partial unique index dance on `lead`), or alternatively dedicated `POST/DELETE /appointments/{id}/participants/{user_id}` endpoints. Decision lands with the write-actions UI.
+
+### BL-074 — `Metingen` tab backend wiring
+- Tier: [mvp]
+- Source: patient-inbox change (clinical tab ships as empty-state)
+
+Note: Patient detail's `Metingen` tab renders `<EmptyState>` in PoC. MVP wires the monitoring-koppeling (Luscii Vitals embed + measurement aggregates) into the tab body. Depends on the Luscii API contract (BL-004).
+
+### BL-075 — `Labresultaten` tab backend wiring
+- Tier: [mvp]
+- Source: patient-inbox change (clinical tab ships as empty-state)
+
+Note: Patient detail's `Labresultaten` tab renders `<EmptyState>` in PoC. MVP wires the HiX-koppeling (`Observation` / `DiagnosticReport` reads via FHIR adapter) into the tab body. Depends on the HiX FHIR adapter (BL-001).
+
+### BL-076 — Realtime topic for appointments
+- Tier: [mvp]
+- Source: patient-inbox change (plain refetch v1)
+
+Note: `appointment-base` ships without a realtime topic — orchestrator uses TanStack `staleTime` refetch. MVP adds the realtime publisher when pathway runtime mutates appointments or the frontend write UI lands (BL-072), so two clinicians editing the same patient see updates without manual refresh. Mirrors the patient-base realtime contract.
+
+### BL-077 — Synthetic appointment seed
+- Tier: [poc]
+- Source: patient-inbox change (no seed v1 — sort renders trailing nulls)
+
+Note: v1 ships without a seed for `appointments`. The inbox default sort (`next_appointment_starts_at`) returns the same arbitrary order until appointment rows exist. Demo storytelling improves if a deterministic seed populates 1-3 upcoming appointments per seeded patient. Author `scripts/seed_appointments.py` mirroring `seed_patients.py` (PRNG-seeded, synthetic-only header). Cheap to land; demo-quality lift.
+
+### BL-078 — Patient-role mobile `/mobile/appointments` read route
+- Tier: [mvp]
+- Source: patient-inbox change (patient role explicitly forbidden on `/appointments` v1)
+
+Note: `appointment-base` rejects `Role.PATIENT` sessions on every `/appointments` route in PoC. MVP adds `/mobile/appointments` (or similar) for the digital-front-door patient app to read their own appointments. Reuses `AppointmentRepository` with a patient-self predicate (patient sees only own rows). Patient-visibility predicate distinct from caregiver patient-access predicate. Depends on F9/F10 mobile patient features (BL-014, BL-022).
+
+### BL-079 — `appointments.pathway_block_instance_id` FK
+- Tier: [poc]
+- Source: patient-inbox change (column reserved, FK deferred per D18)
+
+Note: v1 alembic creates `appointments.pathway_block_instance_id` as a nullable UUID column without a FOREIGN KEY constraint. Pathway runtime change (BL-038) introduces the `pathway_block_instances` table and a follow-up migration adds `FOREIGN KEY ... ON DELETE SET NULL` between the two. Tracking here so the FK isn't forgotten when the runtime lands.
