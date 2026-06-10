@@ -1,237 +1,293 @@
 ## ADDED Requirements
 
-### Requirement: Inbox aggregator endpoint returns FHIR-Resource-shaped item envelopes
+### Requirement: Tasks are tenant-scoped attention items tied to a patient and a caregiver
 
-The backend SHALL expose `GET /inbox/items` as a polymorphic aggregator that returns a paginated list of attention items for the authenticated caregiver or admin. Each item SHALL be wrapped in a FHIR-Resource-shaped envelope:
+The backend SHALL persist a `tasks` table where each row represents one attention item for a caregiver concerning a patient. `Task` SHALL inherit `TenantOwnedEntity` and `DeletableEntity`, so each row carries inherited columns plus task-specific columns:
 
-```jsonc
-// pseudo-schema, normative
-{
-  "id": "<uuid>",                          // stable per (resourceType, source-row-id) pair
-  "resourceType": "Appointment",            // discriminator; FHIR R4 ResourceType value
-  "subject": {                              // FHIR Reference shape
-    "reference": "Patient/<patient-uuid>",
-    "display": "<family>, <given>",
-    "identifier": { "system": "urn:oid:2.16.840.1.113883.2.8.4.1.1", "value": "<insz>" }
-  },
-  "occurred_at": "<iso datetime>",          // sort dimension; per-resourceType source (Appointment.start, Task.due, etc.)
-  "payload": { ... }                        // resourceType-specific slim summary
-}
-```
+- `patient_id` (UUID, NOT NULL, FK to `patients.id`, ON DELETE RESTRICT) — the patient the task is about.
+- `assigned_user_id` (UUID, NULL, FK to `users.id`, ON DELETE RESTRICT) — the caregiver expected to act. NULL means unassigned.
+- `pathway_block_instance_id` (UUID, NULL, NO FOREIGN KEY in v1 — reserved for the future pathway runtime; follow-up migration adds the `ON DELETE SET NULL` FK).
+- `title` (varchar 255, NOT NULL).
+- `description` (text, NULL).
+- `kind` (enum `task_kind`, NOT NULL).
+- `status` (enum `task_status`, NOT NULL, default `'open'`).
+- `due_at` (timestamptz, NULL) — the attention deadline. NULL means no specific deadline.
+- `priority` (enum `task_priority`, NOT NULL, default `'normal'`).
 
-`resourceType` SHALL be a value from the FHIR R4 `ResourceType` value set. v1 SHALL emit ONLY `resourceType: "Appointment"`. Future change-windows add `"Task"`, `"Observation"`, etc. by extending the aggregator service — frontend dispatcher already handles unknown kinds gracefully (see `Inbox unknown-resource graceful fallback` below).
+The referenced patient MUST belong to the same tenant as the task. The referenced assigned user (when not NULL) MUST belong to the same tenant. All non-id task queries SHALL be tenant-scoped through the inherited `tenant_id` filter.
 
-`payload` SHALL contain a slim, render-ready summary specific to the `resourceType`. For `resourceType: "Appointment"` the payload SHALL match `AppointmentInboxPayload` (defined below) and SHALL NOT include participants, location, or other heavy fields — those are fetched via `GET /appointments/{id}` if needed.
+#### Scenario: Table created by migration
 
-The route SHALL ride the shared `ListQuery` envelope (`page`, `page_size`, `q`, `order_by`, `order`, bracket-key filters). Response envelope is `Page[InboxItem]` with `items`, `page`, `page_size`, `total`, `total_pages`.
+- **WHEN** a fresh database is migrated to head (after `patients-base`)
+- **THEN** a `tasks` table exists with the columns specified above plus inherited columns
 
-The route SHALL require an authenticated user matching `require_role(Role.ADMIN, Role.CAREGIVER)`. `Role.PATIENT` SHALL be rejected with `403 Forbidden`.
+#### Scenario: Cross-tenant patient rejected
 
-#### Scenario: v1 emits only Appointment items
+- **WHEN** a write attempts to set `patient_id` to a patient row whose `tenant_id` differs from the task's `tenant_id`
+- **THEN** the service layer MUST raise a domain error and the write MUST NOT persist
 
-- **WHEN** `GET /inbox/items` is called and the tenant has appointments + (hypothetical future) tasks
-- **THEN** every item in the response MUST have `resourceType === "Appointment"`; no other resourceType MAY appear
+#### Scenario: Cross-tenant assigned user rejected
 
-#### Scenario: Item id is stable per source row
+- **WHEN** a write attempts to set `assigned_user_id` to a user whose `tenant_id` differs from the task's `tenant_id`
+- **THEN** the service layer MUST raise a domain error and the write MUST NOT persist
 
-- **WHEN** the same appointment row is returned across two `GET /inbox/items` calls
-- **THEN** the `id` field MUST be identical between the two responses (deterministic derivation, e.g. `"appointment:<appointment.id>"`)
+#### Scenario: Cross-tenant reads return 404
 
-#### Scenario: Subject is FHIR Reference with display + identifier
+- **WHEN** a caregiver in tenant A issues `GET /tasks/{id}` for a task whose `tenant_id` is tenant B
+- **THEN** the API MUST respond `404 Not Found`
 
-- **WHEN** an item is returned for a patient with INSZ
-- **THEN** `subject.reference` MUST equal `"Patient/<patient.id>"`, `subject.display` MUST equal `"<family>, <given>"`, and `subject.identifier` MUST include the INSZ system + value
+#### Scenario: pathway_block_instance_id is unused by v1 writes
 
-#### Scenario: occurred_at sources the sort dimension
+- **WHEN** any v1 write creates a task via the API
+- **THEN** the request MUST NOT accept `pathway_block_instance_id` (column populated only by future pathway runtime); the column MUST default to `null` on every v1-created row
 
-- **WHEN** an item's `resourceType === "Appointment"`
-- **THEN** the `occurred_at` field MUST equal the underlying `appointments.starts_at` value (ISO datetime, UTC)
+### Requirement: Task kind enum
+
+The backend SHALL define a `TaskKind` enum at `app/core/enums/task.py` with values `review`, `follow_up`, `call`, `intake`, `signoff`, `other` (string-valued via `StrEnum`), persisted as Postgres enum type `task_kind`. v1 seeded fixtures SHALL exercise at least three kinds.
+
+#### Scenario: Postgres enum type created by migration
+
+- **WHEN** the migration runs on a fresh database
+- **THEN** a Postgres enum type `task_kind` exists with exactly the values `('review', 'follow_up', 'call', 'intake', 'signoff', 'other')`
+
+### Requirement: Task status enum
+
+The backend SHALL define a `TaskStatus` enum at `app/core/enums/task.py` with values `open`, `in_progress`, `completed`, `cancelled` (string-valued via `StrEnum`), persisted as Postgres enum type `task_status`. Default on create is `open`. v1 ships read-only (no `PATCH /tasks/{id}` route) — status transitions are not exposed by any v1 endpoint.
+
+#### Scenario: Default status on create is open
+
+- **WHEN** a task is materialised by a seed script without an explicit `status`
+- **THEN** the row's `status` MUST be persisted as `'open'`
+
+### Requirement: Task priority enum
+
+The backend SHALL define a `TaskPriority` enum at `app/core/enums/task.py` with values `low`, `normal`, `high`, `urgent` (string-valued via `StrEnum`), persisted as Postgres enum type `task_priority`. Default on create is `normal`.
+
+#### Scenario: Default priority on create is normal
+
+- **WHEN** a task is materialised without an explicit `priority`
+- **THEN** the row's `priority` MUST be persisted as `'normal'`
+
+### Requirement: Tasks API exposes read-only access for caregivers and admins
+
+The backend SHALL expose under `/tasks` exactly these routes for v1: `GET /tasks` (list) and `GET /tasks/{id}` (read). NO create, update, or delete routes ship in v1 — tasks are populated by seeded fixtures (and, in the future, by the pathway runtime). Adding `POST` / `PATCH` / `DELETE` is a separate change.
+
+All routes SHALL require `require_role(Role.ADMIN, Role.CAREGIVER)`. The `Role.PATIENT` user SHALL be rejected with `403 Forbidden`. All routes SHALL be tenant-scoped via the session actor's `tenant_id`. Cross-tenant reads SHALL return `404`, never `403`.
+
+**Visibility within a tenant**:
+
+- `admin` users SHALL see all non-soft-deleted tasks in their tenant.
+- `caregiver` users SHALL see a task ONLY when they have access to its `patient_id` per `require_patient_access` (the existing care-team OR PractitionerRole-tree predicate). Assignment (`assigned_user_id`) does NOT factor into visibility — patient access alone gates it.
+
+Every route handler SHALL carry an `# AUTH-HARDEN` source comment.
+
+#### Scenario: Unauthenticated request rejected
+
+- **WHEN** an unauthenticated request calls any `/tasks` route
+- **THEN** the API MUST respond `401 Unauthorized`
 
 #### Scenario: Patient role rejected
 
-- **WHEN** a `patient`-role session calls `GET /inbox/items`
+- **WHEN** a `patient`-role user calls any `/tasks` route
 - **THEN** the API MUST respond `403 Forbidden`
 
-#### Scenario: Cross-tenant items are absent
+#### Scenario: Write routes are absent in v1
 
-- **WHEN** a caregiver in tenant A calls `GET /inbox/items` and tenant B has matching-criteria appointments
-- **THEN** the response MUST NOT include any item whose source row's `tenant_id` differs from the caller's `tenant_id`
+- **WHEN** the OpenAPI document for v1 is inspected
+- **THEN** NO `POST /tasks`, `PATCH /tasks/{id}`, or `DELETE /tasks/{id}` route MUST be present; only `GET /tasks` and `GET /tasks/{id}` MUST be advertised
 
-### Requirement: Visibility predicate matches patient access
+#### Scenario: Caregiver sees only tasks for accessible patients
 
-`GET /inbox/items` SHALL return ONLY items whose `subject` patient passes `require_patient_access(patient_id)` for the calling user. For admins, this is tenant-wide. For caregivers, this is the existing care-team OR PractitionerRole-tree predicate from `patients-base` + `practitioner-role-split`.
+- **WHEN** caregiver `C` has patient access to `P1` but not `P2`, and both patients have tasks
+- **THEN** `GET /tasks` for `C` MUST include tasks for `P1` and MUST NOT include tasks for `P2`
 
-The aggregator SHALL NOT introduce a separate visibility surface — the same predicate that gates `GET /patients/{id}` gates inbox items for that patient.
+#### Scenario: Caregiver sees unassigned tasks for accessible patients
 
-#### Scenario: Caregiver sees inbox items only for accessible patients
+- **WHEN** a task `T` has `assigned_user_id IS NULL` for patient `P`, and caregiver `C` has patient access to `P`
+- **THEN** `GET /tasks` for `C` MUST include `T`
 
-- **WHEN** caregiver `C` can access patient `P1` (open care-team row) but not patient `P2`, and both have qualifying future-booked appointments
-- **THEN** `GET /inbox/items` for `C` MUST include items for `P1` and MUST NOT include items for `P2`
+#### Scenario: Caregiver assignment does not grant access without patient access
 
-#### Scenario: Admin sees all inbox items in tenant
+- **WHEN** caregiver `C` is the `assigned_user_id` on task `T` for patient `P`, but `C` has lost patient access to `P`
+- **THEN** `GET /tasks/{T.id}` for `C` MUST return `404`
 
-- **WHEN** an admin in tenant `T` calls `GET /inbox/items`
-- **THEN** the response MUST include every qualifying item whose source row's `tenant_id == T`, regardless of care-team or PractitionerRole
+#### Scenario: Admin sees all tasks in tenant
 
-### Requirement: v1 Appointment-item criteria
+- **WHEN** an admin in tenant `T` calls `GET /tasks`
+- **THEN** the response MUST include every non-soft-deleted task row whose `tenant_id == T`
 
-For `resourceType: "Appointment"`, an `appointments` row qualifies as an inbox item when ALL of the following hold:
+### Requirement: Tasks list supports filter + sort dimensions
 
-- `appointments.status = 'booked'`
-- `appointments.starts_at >= now()`
-- `appointments.deleted_at IS NULL`
-- The source patient passes the caller's `require_patient_access` predicate
+The `GET /tasks` route SHALL ride the shared `ListQuery` envelope and expose:
 
-The default sort SHALL be `order_by=occurred_at&order=asc` (earliest upcoming first). `order_by` SHALL also accept `created_at` (mapped to the source row's creation timestamp) for the "newly added" sort strategy.
+- Pagination via `page` (default 1) and `page_size` (default 25, max 100); response envelope is `Page[TaskRead]`.
+- `filter[patient_id][eq]=<uuid>`.
+- `filter[status][eq|in]=<status>`.
+- `filter[kind][eq|in]=<kind>`.
+- `filter[priority][eq|in]=<priority>`.
+- `filter[assigned_user_id][eq]=<uuid>` — special value `me` resolves server-side to the caller's user id.
+- `filter[due_at][gte]=<datetime>` and `filter[due_at][lte]=<datetime>`.
+- `q=<value>` — case-insensitive substring on `title` via `searchable_fields`.
+- `order_by` SHALL accept at minimum `due_at`, `created_at`, `priority`. Default is `due_at`. Default `order` is `asc`.
 
-#### Scenario: Booked + future appointment becomes an item
+When `order_by=due_at`, rows with `due_at IS NULL` MUST be ordered last regardless of `order` direction (NULLS LAST).
 
-- **WHEN** an appointment row exists with `status='booked'`, `starts_at` 2 days from now, `deleted_at=NULL`, and its patient passes the caller's predicate
-- **THEN** the response MUST include a corresponding `resourceType: "Appointment"` item whose `occurred_at` equals that `starts_at`
+Unknown `order_by` values MUST be rejected with `422`.
 
-#### Scenario: Past or non-booked appointment is NOT an item v1
+#### Scenario: Default sort puts soonest-deadline first
 
-- **WHEN** an appointment row exists with `status='fulfilled'`, OR `status='cancelled'`, OR `starts_at < now()`
-- **THEN** the response MUST NOT include any item for that row in v1
+- **WHEN** `GET /tasks` is called with no `order_by` and no `order`
+- **THEN** the items MUST be ordered by `due_at` ascending with `due_at IS NULL` rows trailing
 
-#### Scenario: Soft-deleted appointment is NOT an item
+#### Scenario: assigned_user_id `me` resolves to caller
 
-- **WHEN** an appointment row exists with `deleted_at IS NOT NULL`
-- **THEN** the response MUST NOT include any item for that row
+- **WHEN** `GET /tasks?filter[assigned_user_id][eq]=me` is called by caregiver `C`
+- **THEN** the response MUST include only tasks whose `assigned_user_id == C.id`
 
-#### Scenario: Default sort orders earliest-first
+#### Scenario: Date-range filter on due_at
 
-- **WHEN** `GET /inbox/items` is called without `order_by` or `order`
-- **THEN** the response items MUST be ordered by `occurred_at` ascending
+- **WHEN** `GET /tasks?filter[due_at][gte]=2026-06-10T00:00:00Z&filter[due_at][lte]=2026-06-20T23:59:59Z` is called
+- **THEN** the response MUST contain only tasks whose `due_at` falls in that range
 
-#### Scenario: newly_added sort uses source creation timestamp
+### Requirement: TaskRead embeds patient summary
 
-- **WHEN** `GET /inbox/items?order_by=created_at&order=desc` is called
-- **THEN** the items MUST be ordered by the source-row `created_at` descending (most-recently-added first)
+`TaskRead` SHALL include an embedded `patient: PatientInlineSummary` field with shape `{ id, family_name, given_name, insz?: string | null, primary_organisation_id }`. The summary SHALL be projected via a join in the same query — the response SHALL NOT require the client to issue a follow-up `GET /patients/{id}` per row.
 
-### Requirement: AppointmentInboxPayload is a slim render-ready summary
+#### Scenario: TaskRead includes patient summary
 
-The `payload` field for `resourceType: "Appointment"` SHALL be shaped as:
+- **WHEN** `GET /tasks/{id}` returns a successful response
+- **THEN** the body MUST include `patient: { id, family_name, given_name, insz?, primary_organisation_id }`
 
-```jsonc
-{
-  "title": "<varchar>",
-  "kind": "<AppointmentKind>",
-  "modality": "<AppointmentModality>",
-  "starts_at": "<iso datetime>",
-  "ends_at": "<iso datetime>"
-}
-```
+#### Scenario: INSZ in patient summary is null when missing
 
-It SHALL NOT include `description`, `location_text`, `participants`, `status`, `pathway_block_instance_id`, or any audit columns. Full appointment data is fetched via `GET /appointments/{id}` on demand.
+- **WHEN** a task's patient has no INSZ identifier row
+- **THEN** the embedded `patient.insz` MUST be `null`
 
-#### Scenario: Payload omits heavy fields
+### Requirement: Seed script generates synthetic tasks only
 
-- **WHEN** any item with `resourceType: "Appointment"` is returned
-- **THEN** the `payload` object MUST contain exactly the keys `title`, `kind`, `modality`, `starts_at`, `ends_at` and MUST NOT contain `description`, `location_text`, `participants`, or `status`
+The backend SHALL provide `scripts/seed_tasks.py` that inserts a deterministic set of synthetic tasks against the seeded patient cohort. The script SHALL use a fixed PRNG seed for determinism. Each seeded patient SHALL receive between 0 and 3 tasks with varied `kind`, `status`, `priority`, and `due_at` values (mix of past-due, due-today, due-this-week, undated). The seed SHALL set `assigned_user_id` to the demo caregiver for ~60% of rows and leave the rest unassigned. The file SHALL carry a header comment stating `"SYNTHETIC ONLY — see openspec/project.md no-PHI invariant."`
 
-### Requirement: Aggregator service module
+#### Scenario: Re-running seed is idempotent
 
-The backend SHALL provide `app/services/inbox/inbox_service.py::InboxService` exposing `list_items(query: ListQuery, caller: SessionUser) -> Page[InboxItem]`. v1 SHALL implement the service as a single-source adapter over `AppointmentRepository`; the architecture SHALL support additional sources behind a registry pattern (`InboxItemSource[]`) without changing the route handler.
+- **WHEN** `seed_tasks.py` is run twice against the same database
+- **THEN** the second run MUST NOT create duplicate rows (idempotence enforced by a deterministic uniqueness key — implementer's choice)
 
-The router SHALL live at `app/api/routers/inbox/inbox_router.py` exposing `GET /inbox/items` with `# AUTH-HARDEN` marker. The route SHALL be tenant-scoped via the session actor's `tenant_id` enforced through the underlying repository (no separate tenant filter at the aggregator layer).
+#### Scenario: All seeded due_at values are timezone-aware
 
-#### Scenario: Service module is importable
+- **WHEN** the seed script runs
+- **THEN** every inserted `due_at` value MUST be a `timestamptz` (UTC); past-due, due-today, and future-due variants MUST all be represented
 
-- **WHEN** `from app.services.inbox.inbox_service import InboxService` is executed
+### Requirement: HiX task adapter module reserves the MVP wiring point
+
+The backend SHALL provide a module at `app/adapters/hix/tasks.py` exposing class `HixTaskAdapter` with methods `fetch(external_ref: str)` and `upsert_from_hix(payload)`. Both methods SHALL raise `NotImplementedError("HiX task adapter is MVP scope")` in PoC.
+
+#### Scenario: Adapter module is importable
+
+- **WHEN** `from app.adapters.hix.tasks import HixTaskAdapter` is executed
 - **THEN** the import MUST succeed without side effects
 
-#### Scenario: Router carries AUTH-HARDEN marker
+#### Scenario: Adapter methods raise NotImplementedError
 
-- **WHEN** any source-level scan of `app/api/routers/inbox/inbox_router.py` runs
-- **THEN** the `list_items` route handler MUST carry an `# AUTH-HARDEN` comment within its function body or as a leading guard-line comment
-
-#### Scenario: Source registry pattern accepts future kinds
-
-- **WHEN** a future change appends a `TaskInboxSource` to the registry and the service's `list_items` is called
-- **THEN** the route handler MUST NOT require modification; both Appointment and Task items MUST appear in the response
-
-## ADDED Requirements
+- **WHEN** `HixTaskAdapter().fetch("x")` or `HixTaskAdapter().upsert_from_hix({})` is called
+- **THEN** the call MUST raise `NotImplementedError` with the message `"HiX task adapter is MVP scope"`
 
 ### Requirement: Orchestrator ships /_auth/inbox as the canonical caregiver attention surface
 
-The orchestrator SHALL render at `/_auth/inbox` an `<InboxList>` showing one `<InboxItemRow>` per item returned by `GET /inbox/items`. The route SHALL be the canonical caregiver attention surface, satisfying PoC feature `F4` (renamed in `scope.md` per this change). The sidebar SHALL list a navigation item labelled `"Inbox"` pointing to this route — the existing `/_auth/inbox` placeholder (BL-065) is replaced by this real surface.
+The orchestrator SHALL render at `/_auth/inbox` an `<InboxList>` showing one `<TaskInboxRow>` per task returned by `GET /tasks`. The route SHALL satisfy PoC feature `F4` (renamed in `scope.md`). The sidebar SHALL list a navigation item labelled `"Inbox"` pointing to this route. The existing placeholder `TasksPage` at `apps/orchestrator/src/modules/tasks/TasksPage.tsx` and its `/_auth/tasks` route SHALL be removed; the `tasksPort` adapter + placeholder data SHALL be deleted.
 
-The list page SHALL use TanStack Query `useInfiniteQuery` keyed `[...inboxItemsKeyPrefix, { sort }]` with backend `page_size=25`. The page SHALL register a realtime invalidation topic when one lands (deferred for v1; placeholder hook reserves the seam).
+The list page SHALL use TanStack Query `useInfiniteQuery` keyed `[...tasksListKeyPrefix, { sort }]` with backend `page_size=25`. The page SHALL register a realtime invalidation topic seam (no-op v1; BL-076 follow-up wires the real topic).
 
-`<InboxItemRow>` SHALL be a dispatcher that, given an `InboxItem`, looks up a row component in a registry keyed by `resourceType`. v1 registers `Appointment → <AppointmentInboxRow>`. Unknown `resourceType` values SHALL render `<UnknownInboxRow>` (muted single-line "Onbekend item type: <X>") and log a warning — the route MUST NOT throw.
+`<TaskInboxRow>` composes the generic `<InboxRow>` primitive. Anatomy:
 
-#### Scenario: Inbox renders one row per item
+- **Subject avatar** (`<Avatar tintBy={task.patient.id}>`) — initials from `task.patient.family_name` + `task.patient.given_name`. Never an `<img>`.
+- **Primary line**: `family, given`.
+- **Secondary line** (muted): `INSZ • TaskKind label • due-time relative copy ("vandaag" / "morgen" / "over 3 dagen" / "verlopen 2 dagen" / "geen deadline")`.
+- **Trailing**: priority chip (Badge variant per priority) + status chip (only shown when `status !== 'open'`).
+- **Kebab** trailing (visible only when master is full / not-collapsed).
 
-- **WHEN** a caregiver loads `/_auth/inbox` with at least one item returned
-- **THEN** the page MUST render exactly one `<InboxItemRow>` per item; for v1 each row resolves to `<AppointmentInboxRow>`
+#### Scenario: Inbox renders one row per task
 
-#### Scenario: Unknown resourceType falls back gracefully
+- **WHEN** a caregiver loads `/_auth/inbox` with at least one task returned
+- **THEN** the page MUST render exactly one `<TaskInboxRow>` per task
 
-- **WHEN** the backend returns an item with `resourceType: "BananaResource"` that the frontend registry does not know
-- **THEN** the page MUST render `<UnknownInboxRow>` for that item with text matching `"Onbekend item type: BananaResource"`, MUST log a `console.warn`, and MUST NOT throw
-
-#### Scenario: Sidebar lists Inbox as the entry point
+#### Scenario: Sidebar lists Inbox
 
 - **WHEN** the sidebar renders
-- **THEN** the navigation item linking to `/_auth/inbox` MUST be labelled `"Inbox"`; the previous `"Mijn patiënten"` entry pointing to `/_auth/patients` MUST be removed
+- **THEN** the navigation item linking to `/_auth/inbox` MUST be labelled `"Inbox"`; any prior `"Taken"` or `"Mijn patiënten"` entry MUST be removed
 
-### Requirement: Inbox row click opens the referenced patient in a split-pane
+#### Scenario: Placeholder TasksPage is removed
 
-`<InboxItemRow>` SHALL navigate on click to `/_auth/inbox/p/$patientId` where `$patientId` is derived from the item's `subject.reference` (`"Patient/<id>"`). The route `/_auth/inbox/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: inbox list on the left (compacts to 320px rail when a patient is selected, can be fully hidden via toggle), `<PatientDetailView>` on the right.
+- **WHEN** the codebase is grepped for `TasksPage` after this change
+- **THEN** no React component named `TasksPage` and no `/_auth/tasks` route file MUST exist
 
-Below the `md` breakpoint per D17, the route SHALL render the patient detail full-width without the inbox column.
+#### Scenario: Priority chip variant matches priority
 
-#### Scenario: Row click derives patient id from subject.reference
+- **WHEN** a row renders for `priority='urgent'`
+- **THEN** the priority chip MUST be a destructive-variant Badge; `priority='high'` MUST be warning-variant; `priority='normal'` and `low` MUST be muted-variant
 
-- **WHEN** a caregiver clicks an `<AppointmentInboxRow>` whose `subject.reference === "Patient/abc-123"`
+#### Scenario: Status chip hidden for open tasks
+
+- **WHEN** a row renders for `status='open'`
+- **THEN** no status chip MUST be rendered (open is the default state)
+
+#### Scenario: Status chip visible for non-open tasks
+
+- **WHEN** a row renders for `status='in_progress' | 'completed' | 'cancelled'`
+- **THEN** a muted Badge MUST render with the appropriate Dutch label
+
+### Requirement: Row click opens the patient detail in split-pane
+
+`<TaskInboxRow>` SHALL navigate on click to `/_auth/inbox/p/$patientId` where `$patientId === task.patient.id`. The route `/_auth/inbox/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: inbox list on the left (compacts to 320px rail), `<PatientDetailView>` on the right.
+
+Below the `md` breakpoint per D17, the row click SHALL navigate to `/_auth/patients/$patientId` (the standalone full-page detail) instead; the inbox unmounts.
+
+#### Scenario: Row click navigates to inbox-context patient route
+
+- **WHEN** a caregiver clicks a `<TaskInboxRow>` whose `task.patient.id === "abc-123"` on a viewport ≥ md
 - **THEN** the orchestrator MUST navigate to `/_auth/inbox/p/abc-123`
 
-#### Scenario: Split-pane on desktop with selected patient
+#### Scenario: Split-pane on desktop
 
 - **WHEN** a caregiver loads `/_auth/inbox/p/abc-123` directly on a viewport ≥ md
 - **THEN** the page MUST render the inbox list as a 320px compact rail on the left and `<PatientDetailView patient={abc-123}>` on the right
 
-#### Scenario: Mobile fallback to full-page detail
+#### Scenario: Mobile fallback to standalone detail
 
-- **WHEN** the same URL loads on a viewport < md
-- **THEN** the page MUST render `<PatientDetailView>` full-width; the inbox list MUST NOT render in this viewport
+- **WHEN** a caregiver clicks a row on a viewport < md
+- **THEN** the orchestrator MUST navigate to `/_auth/patients/abc-123` (standalone); the inbox list MUST NOT render
 
-### Requirement: AppointmentInboxRow row anatomy
+### Requirement: Inbox sort registry over tasks
 
-`<AppointmentInboxRow>` SHALL render the following anatomy (left to right):
+The orchestrator SHALL define `apps/orchestrator/src/modules/inbox/sorts/index.ts` exporting `inboxSortStrategies: readonly InboxSortStrategy[]`. Each strategy has `{ id, label, queryParams }`. v1 strategies:
 
-- **Subject avatar** (`<Avatar tintBy={subject.patientId}>`) — initials from `subject.display` ("Janssens, Anke" → "JA"). Never an `<img>`.
-- **Identity column** (line 1: `subject.display`; line 2 muted: INSZ from `subject.identifier.value` + " · " + a future org-tree-path slot left blank in v1 since the payload does not carry it).
-- **Item meta column** (right): kind tile (`<KindTile size="sm" kind={payload.kind}>`) + tabular-time formatted `occurred_at` (Dutch locale, browser-local timezone) + muted single-line `KIND_LABEL[payload.kind] · MODALITY_LABEL[payload.modality]`.
-- **Kebab** trailing (visible only when the master is in full / not-collapsed state; hidden in compact rail mode).
+1. `next_attention` (default) — `queryParams()` returns `{ order_by: 'due_at', order: 'asc' }`. Earliest deadline first.
+2. `newly_added` — `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`. Most-recently-added task first.
 
-#### Scenario: Row shows subject display and INSZ
-
-- **WHEN** a row renders for `subject.display = "Janssens, Anke"` and `subject.identifier.value = "85.03.12-072.47"`
-- **THEN** the identity column MUST show `"Janssens, Anke"` as the primary line and the INSZ value in the muted secondary line
-
-#### Scenario: Row meta uses kind tile + tabular time
-
-- **WHEN** a row renders for `payload.kind = "consultation"`, `payload.modality = "on_site"`, `occurred_at = "2026-06-12T14:00:00Z"` (browser TZ = `Europe/Brussels`)
-- **THEN** the meta column MUST contain a consultation-tinted `<KindTile>` plus the Dutch-formatted local time and the text `"Consultatie · Op locatie"` on the muted sub-line
-
-### Requirement: Inbox sort registry sorts items, not patients
-
-The orchestrator SHALL define `apps/orchestrator/src/modules/inbox/sorts/index.ts` exporting `inboxSortStrategies: readonly InboxSortStrategy[]`. Each strategy has `{ id, label, queryParams }` — the registry is generic over items, not appointment-specific. `rowMeta` is NOT a registry-level concern (each row component owns its own meta rendering).
-
-v1 strategies:
-1. `next_attention` (default) — `queryParams()` returns `{ order_by: 'occurred_at', order: 'asc' }`. Earliest attention-deadline first.
-2. `newly_added` — `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`. Most-recently-added source row first.
-
-A `useSelectedInboxSort()` hook SHALL read `?sort=` via TanStack Router's `useSearch` synchronously (no flash), default to `next_attention`, and warn-log on unknown values.
+A `useSelectedInboxSort()` hook SHALL read `?sort=` via TanStack Router `useSearch` synchronously, default to `next_attention`, and warn-log on unknown values.
 
 #### Scenario: Default sort is next_attention
 
 - **WHEN** a caregiver loads `/_auth/inbox` without a `sort` query param
-- **THEN** the request to `GET /inbox/items` MUST include `order_by=occurred_at&order=asc`
+- **THEN** the request to `GET /tasks` MUST include `order_by=due_at&order=asc`
 
 #### Scenario: newly_added sort drives created_at descending
 
 - **WHEN** a caregiver activates the `newly_added` strategy
 - **THEN** the request MUST include `order_by=created_at&order=desc` and the URL MUST update to `?sort=newly_added`
+
+### Requirement: Inbox empty state copy is role-aware
+
+When `GET /tasks` returns zero items, the `<InboxList>` SHALL render `<EmptyState>` with role-aware copy:
+
+- `caregiver`: headline `"Geen openstaande taken"`, hint `"Wanneer een collega of het pathway een taak aanmaakt verschijnt deze hier."`.
+- `admin`: headline `"Geen taken in dit tenant"`, hint `"Pathway-runtime taken landen hier zodra de runtime live is."`.
+
+#### Scenario: Caregiver-role empty state
+
+- **WHEN** a caregiver with zero visible tasks loads `/_auth/inbox`
+- **THEN** the page MUST render the headline `"Geen openstaande taken"` and the caregiver-specific hint
+
+#### Scenario: Admin-role empty state
+
+- **WHEN** an admin in a tenant with zero tasks loads `/_auth/inbox`
+- **THEN** the page MUST render the headline `"Geen taken in dit tenant"` and the admin-specific hint
