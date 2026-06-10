@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from app.core.identifiers import INSZ_SYSTEM
+from app.core.identifiers import INSZ_SYSTEM, LUSCII_PATIENT_SYSTEM
 from app.core.validators.insz import is_valid_insz
 
 
@@ -28,6 +28,17 @@ class PatientIdentifierCreate(BaseModel):
     system: str
     value: str
     use: str | None = None
+
+    @field_validator("system")
+    @classmethod
+    def _reject_luscii_system(cls, system: str) -> str:
+        # Luscii links are created only via PUT /patients/{id}/luscii-link,
+        # which live-validates the UUID against Luscii first.
+        if system == LUSCII_PATIENT_SYSTEM:
+            raise ValueError(
+                "Luscii identifiers cannot be set at create; use the luscii-link endpoint"
+            )
+        return system
 
     @field_validator("value")
     @classmethod
