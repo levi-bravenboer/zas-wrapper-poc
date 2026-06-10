@@ -279,108 +279,61 @@ The `appointments.pathway_block_instance_id` column SHALL be created as `UUID NU
 - Reserves the column shape now so no PATCH endpoint needs widening when the FK is added.
 - BL-NNN follow-up tracks the FK addition.
 
-### D19 — Inbox is a polymorphic feed of attention items, not a patient list
+### D19 — Inbox = task list, not polymorphic items
 
-The surface at `/_auth/inbox` is an **attention feed**: each row is an `InboxItem` representing a single thing demanding caregiver attention. v1 ships exactly one item type — an Appointment — but the architecture supports many. A row references a `subject` patient (the patient who owns the attention); clicking a row opens that patient.
+The surface at `/_auth/inbox` is a **list of tasks**. Each row is a Task tied to a patient and (optionally) a caregiver. Tasks are the canonical attention items — they're discrete things that need to be done. Future surfaces (e.g. an "alerts" feed) get their own routes if/when needed; the inbox doesn't try to be a polymorphic feed of arbitrary item types.
 
-This reframes F4 from "Patients overview list" to "Caregiver attention inbox". The patient is the *destination*; the item is the *signal*. A patient with two upcoming appointments appears twice in the inbox (once per item); the same patient with no upcoming appointment does not appear at all.
+This reframes F4 from "Patients overview list" to "Caregiver task inbox". The patient is the *destination* (click a row → patient detail right); the task is the *signal*. A patient with three open tasks appears three times in the inbox.
 
-**Why:** the user explicitly described the screen as "an inbox of which patients I should attend to quickly" — that maps to items-driven-by-attention, not a patient directory. Sorting "by next appointment" implicitly already operates on items, not patients (it asks "what's the next thing?"). Modelling it as items from day one avoids a costly refactor when the second item type (tasks) lands.
+Appointments are a separate domain (own backend CRUD via `appointment-base`) consumed by the patient-detail Afspraken tab — NOT by the inbox. Appointments are *scheduled events for a patient*; tasks are *actions a caregiver needs to take*. Different concepts, different surfaces.
+
+**Why task-list over polymorphic items:**
+- The user explicitly described the inbox as a task list. Modelling it directly is simpler.
+- Avoids the FHIR envelope + aggregator + dispatcher overhead for a one-source surface.
+- If a future surface genuinely needs polymorphic items (e.g. measurement alerts merged with system messages), it can land as its own route with its own architecture.
 
 **Alternatives considered:**
-- Keep patient as the row entity, embed `next_appointment` summary per row (the prior framing). Rejected: doesn't generalise to tasks/measurements; a patient with three urgent items collapses into one row.
-- Ship appointments-only with patient-row framing, plan items refactor later. Rejected: refactor cost > polymorphic-from-day-1 cost.
+- Polymorphic inbox with FHIR-shaped envelope + backend aggregator + frontend dispatcher (prior draft). Rejected: heavy architecture for one source; YAGNI.
+- Inbox sourced from appointments. Rejected: appointments are about scheduling, not attention. A booked appointment doesn't necessarily demand caregiver action; a task explicitly does.
 
 ### D20 — Promotes BL-065 to canonical `/_auth/inbox` surface
 
-The placeholder `/_auth/inbox` route (BL-065 — "Real Inbox surface") is replaced by the real implementation specified by this change. The sidebar gains a navigation item labelled `"Inbox"` pointing to this route. The previous `"Mijn patiënten"` nav item (pointing to `/_auth/patients`) is removed because the corresponding list route is deleted (see D24).
+The placeholder `/_auth/tasks` route (and its `TasksPage` + `tasksPort` adapter at `apps/orchestrator/src/modules/tasks/*`) is replaced by the real `/_auth/inbox` surface specified by this change. The sidebar gains a navigation item labelled `"Inbox"` pointing to this route. The previous `"Taken"` and `"Mijn patiënten"` nav items are removed; the `/_auth/patients` list route is deleted (see D24).
 
-**Why:** BL-065 anticipated an inbox of tasks; this change ships the inbox shell with appointments as the first item type. The route + sidebar slot already exist; we just fill them.
+**Why:** BL-065 anticipated an inbox of tasks; this change ships exactly that. The placeholder + port + adapter were holding the slot until a real backend landed.
 
-### D21 — Item envelope is FHIR-Resource-shaped
+### D21 — Backend `tasks-base` capability is read-only v1
 
-Each `InboxItem` is shaped as a FHIR-Resource envelope (chosen pragmatically — payloads remain slim, but the discriminator + subject reference follow FHIR R4 conventions):
+Backend ships a `tasks` table + read-only `GET /tasks` (list) + `GET /tasks/{id}` (read). NO `POST` / `PATCH` / `DELETE` routes in v1. Tasks are populated by a seed script (`scripts/seed_tasks.py` — synthetic only, mix of past-due / due-today / due-this-week / undated, ~60% assigned to demo caregiver). Future pathway runtime materialises tasks via `TaskService` (not in this change).
 
-```jsonc
-{
-  "id": "appointment:<source-row-uuid>",
-  "resourceType": "Appointment",
-  "subject": {                           // FHIR Reference
-    "reference": "Patient/<patient-uuid>",
-    "display": "<family>, <given>",
-    "identifier": { "system": "<urn:oid INSZ>", "value": "<insz>" }
-  },
-  "occurred_at": "<iso datetime>",       // sort dimension; per-resourceType source
-  "payload": { /* slim, kind-specific */ }
-}
-```
+**Why read-only v1:**
+- Caregiver create/complete UI is not in the locked wireframe (v8 has no write action on inbox rows).
+- Pathway runtime will be the primary task creator at MVP.
+- Smaller backend lift now, faster demo signal.
 
-`occurred_at` is the sort axis — what timestamp the item is "about". For Appointment it's `starts_at`. For a future Task it would be `due_at`. For a future Observation it would be `effective_at`.
+`PATCH /tasks/{id}/complete` (status transition) is filed as BL-NNN follow-up. Caregivers acknowledging items from the inbox lands when the write UX is designed.
 
-`payload` is render-ready and slim. Heavy fields stay on the underlying resource and are fetched on demand (e.g. `GET /appointments/{id}` for full participant list + location).
+### D22 — TaskRead embeds a patient summary inline
 
-**Why FHIR-shaped:**
-- `resourceType` discriminator is the natural FHIR way; aligns with later HiX FHIR adapter mappings.
-- `subject` as a FHIR Reference with `display` + `identifier` gives the row everything it needs to render an avatar + INSZ pill + name without joining backend data.
-- Future-proofs the envelope when MVP's `/fhir/*` passthrough lands (BL-002).
+`TaskRead` includes `patient: { id, family_name, given_name, insz?, primary_organisation_id }` projected via a join in the same query. The inbox row renders directly from the task response — no N+1 follow-up to `/patients/{id}` per row.
 
-**Trade-off accepted:** internal items that don't map to FHIR Resources (e.g. a "monitoring alert" with no canonical FHIR type) will need a project-internal `resourceType` value. Document at use time.
+**Why embed:**
+- Inbox renders 25 rows per page; an N+1 pattern would be 25 extra patient fetches per page.
+- Same pattern used elsewhere (e.g. `PatientRead` shape on care-team responses).
+- Keeps the inbox query a single round trip.
 
-### D22 — Backend `/inbox/items` aggregator with registry pattern
+**Trade-off:** task list responses are slightly larger than they'd be with just `patient_id`. Acceptable — the inline summary is ≤8 fields.
 
-The backend ships `GET /inbox/items` as a single aggregator endpoint backed by an `InboxService` that delegates to a registry of `InboxItemSource` adapters. v1 registers exactly one source: `AppointmentInboxSource` over `AppointmentRepository`.
+### D23 — Visibility predicate is patient-driven, not assignment-driven
 
-```python
-# pseudo-code
-class InboxItemSource(Protocol):
-    resource_type: str
-    def query(self, list_query: ListQuery, caller: SessionUser) -> list[InboxItem]: ...
+Caregivers see a task if and only if they have `require_patient_access` to the task's patient. Assignment (`assigned_user_id`) does NOT factor into visibility. A caregiver sees unassigned tasks for patients they can see, and they see tasks assigned to other caregivers on the same care team.
 
-class AppointmentInboxSource:
-    resource_type = "Appointment"
-    def query(self, q, caller):
-        # AppointmentRepository.list with status='booked' + starts_at >= now()
-        # + patient-access predicate
-        # map AppointmentRow -> InboxItem envelope
-        ...
+The `assigned_user_id == me` filter is available to caregivers who want a personal-attention view (matches the "Mijn taken" framing some clinicians prefer). But the default inbox shows the *team's* attention, not just the individual's.
 
-class InboxService:
-    sources: list[InboxItemSource] = [AppointmentInboxSource()]
-    def list_items(self, q, caller) -> Page[InboxItem]:
-        # v1: single source; future: merge across sources, sort by occurred_at
-        ...
-```
-
-**Why aggregator over frontend-merge:**
-- Sort + pagination across sources is correct at the database / service level, not after fragmented page fetches.
-- One auth check, one tenant predicate, one realtime topic later.
-- Frontend gets one query key per sort, no `Promise.all` choreography.
-
-**Trade-off:** more backend code up front for a single-source v1. Mitigation: registry is ~30 lines; sources are clean. Pays off the moment the second type lands.
-
-### D23 — Frontend dispatcher on `resourceType` with graceful unknown fallback
-
-`<InboxItemRow>` is a dispatcher: given an `InboxItem`, it looks up a row component in a flat registry keyed by `resourceType` and renders it.
-
-```ts
-// modules/inbox/rowRegistry.ts
-export const inboxRowRegistry: Record<string, ComponentType<{ item: InboxItem }>> = {
-  Appointment: AppointmentInboxRow,
-  // future: Task: TaskInboxRow,
-};
-
-export function InboxItemRow({ item }: { item: InboxItem }) {
-  const Component = inboxRowRegistry[item.resourceType] ?? UnknownInboxRow;
-  return <Component item={item} />;
-}
-```
-
-`<UnknownInboxRow>` renders a muted single-line "Onbekend item type: <X>" and logs a `console.warn`. This is the **graceful fallback** for the case where the backend rolls out a new `resourceType` before the frontend registers it.
-
-**Why dispatcher + registry:**
-- New item kinds plug in as one entry + one row component, no edits to `<InboxList>` or the route.
-- Unknown kinds don't crash — the inbox always renders.
-- Mirrors the same pattern used for pathway block-type dispatch in the builder (`BlockNodeRouter`).
+**Why team-driven default:**
+- Matches care-team semantics: when a colleague is sick, their tasks should still be visible to the team.
+- Matches appointment visibility model (caregivers see appointments for their patients regardless of participation).
+- The `me` filter is opt-in; teams that prefer personal-inbox-by-default can flip a setting later (not in v1).
 
 ### D24 — `/_auth/patients` list route is deleted, no replacement
 

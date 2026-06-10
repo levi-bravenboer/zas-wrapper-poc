@@ -54,29 +54,41 @@
   - `test_patient_role_rejected.py`: patient-role session gets 403 on each route
   - `test_hix_adapter_stub.py`: import + NotImplementedError
 
-## 3. Backend: `inbox-base` capability
+## 3. Backend: `tasks-base` capability
 
-Per D22 — `InboxService` + source registry, single aggregator route, FHIR envelope.
+Per D21 — read-only domain in v1; pathway runtime adds writes later.
 
-- [ ] 3.1 Create `app/schemas/inbox/inbox.py`:
-  - `FHIRReference` model: `{ reference: str, display: str, identifier?: { system: str, value: str } }`
-  - `AppointmentInboxPayload`: `{ title, kind, modality, starts_at, ends_at }` (slim — no description/location/participants/status)
-  - `InboxItem` discriminated union over `resourceType`. v1: `{ id, resourceType: Literal['Appointment'], subject: FHIRReference, occurred_at: datetime, payload: AppointmentInboxPayload }`. Backend models the union via `Annotated[..., Field(discriminator='resourceType')]`
-- [ ] 3.2 Create `app/services/inbox/sources/__init__.py` with `InboxItemSource` Protocol: `resource_type: str`, `query(list_query, caller) -> list[InboxItem]`
-- [ ] 3.3 Create `app/services/inbox/sources/appointment_source.py::AppointmentInboxSource` (`resource_type = 'Appointment'`). Implements `query()` by calling `AppointmentRepository.list_in_tenant` with predicate `status='booked' AND starts_at >= now() AND deleted_at IS NULL`, applies the caregiver patient-access predicate via subquery (`WHERE patient_id IN visible_patient_ids_for(caller)`), maps each `AppointmentRow + PatientRow` join → `InboxItem` envelope. Item `id` = `f"appointment:{appointment.id}"`. Subject `display` = `f"{family_name}, {given_name}"`. Subject `identifier` populated from INSZ if present
-- [ ] 3.4 Create `app/services/inbox/inbox_service.py::InboxService` — accepts a list of `InboxItemSource` (default = [`AppointmentInboxSource()`]). `list_items(list_query, caller) -> Page[InboxItem]`:
-  - v1 (single source): delegate to source.query, paginate at the source level
-  - Architecture: future multi-source will merge across sources + sort by `occurred_at` or `created_at` based on `list_query.order_by`. Spec is single-source v1 but `list_items` signature already handles the multi case (sort + paginate after merge)
-- [ ] 3.5 Create `app/api/routers/inbox/inbox_router.py` exposing `GET /inbox/items` with `# AUTH-HARDEN` marker. Guards: `require_role(Role.ADMIN, Role.CAREGIVER)`. Patient role rejected with `403`. Tenant-scoped via session actor's `tenant_id` enforced by the underlying repository. Accepts `ListQuery` envelope: `page`, `page_size`, `q`, `order_by` (`occurred_at` default | `created_at`), `order` (`asc` default)
-- [ ] 3.6 Tests (`tests/api/test_inbox_items_*.py`):
-  - `test_list.py`: tenant scope; caregiver patient-access predicate (sees items only for accessible patients); admin sees all in tenant
-  - `test_envelope.py`: response shape matches spec (`id`, `resourceType`, `subject.reference/display/identifier`, `occurred_at`, `payload`); `id` is deterministic across calls; subject identifier populated when patient has INSZ
-  - `test_v1_only_appointments.py`: only `resourceType: 'Appointment'` returned in v1
-  - `test_appointment_criteria.py`: booked + future + accessible patient → item present; past `booked` → absent; `cancelled`/`fulfilled`/`noshow` → absent; soft-deleted appointment → absent
-  - `test_sort.py`: default `order_by=occurred_at&order=asc`; `order_by=created_at&order=desc` orders by source-row creation; unknown `order_by` → 422
-  - `test_patient_role_rejected.py`: 403 on patient-role session
-  - `test_payload_slim.py`: payload contains exactly `title|kind|modality|starts_at|ends_at` and NOT `description|location_text|participants|status`
-  - `test_source_registry.py`: future kind extension stub — register a second `InboxItemSource` in-test, assert response includes both kinds, verify route handler did not need modification
+- [ ] 3.1 Create enums at `app/core/enums/task.py`: `TaskKind` (`review|follow_up|call|intake|signoff|other`), `TaskStatus` (`open|in_progress|completed|cancelled`), `TaskPriority` (`low|normal|high|urgent`). Re-export from `app/core/enums/__init__.py`
+- [ ] 3.2 Create ORM model `app/domain/task/task.py::Task` — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id` (FK RESTRICT), `assigned_user_id` (FK RESTRICT, nullable), `pathway_block_instance_id` (nullable, NO FK in v1 per D18), `title`, `description`, `kind`, `status` (default `open`), `due_at` (nullable timestamptz), `priority` (default `normal`)
+- [ ] 3.3 Generate alembic migration via `moon run backend:make-migration -- "add tasks-base"`. Review autogen; ensure three enum types are created via `op.execute`. Add supporting index `CREATE INDEX tasks_patient_status_idx ON tasks(patient_id, status) WHERE deleted_at IS NULL` and `CREATE INDEX tasks_due_at_idx ON tasks(due_at NULLS LAST) WHERE deleted_at IS NULL`
+- [ ] 3.4 Create Pydantic schemas at `app/schemas/task/task.py`:
+  - `PatientInlineSummary`: `{ id, family_name, given_name, insz?: str | None, primary_organisation_id }`
+  - `TaskRead`: full row + `patient: PatientInlineSummary` projected via join
+- [ ] 3.5 Create `app/repositories/task_repository.py::TaskRepository` (subclass of `BaseListRepository`):
+  - `filterable_fields`: `patient_id`, `status`, `kind`, `priority`, `assigned_user_id`, `due_at`
+  - `searchable_fields`: `title`
+  - `allowed_order_by`: `due_at` (NULLS LAST), `created_at`, `priority`
+  - default `order_by=due_at`, `order=asc`
+  - special filter handler: `assigned_user_id=me` resolves server-side to caller's user id
+- [ ] 3.6 Create `app/services/task/task_service.py::TaskService`:
+  - `list_in_tenant(list_query, caller)` — wraps repository, applies caregiver patient-access filter via subquery `WHERE patient_id IN (visible_patient_ids_for(caller))`. Admin bypass
+  - `get_by_id(task_id, caller)` — applies same patient-access predicate
+  - NO `create()` / `patch()` / `soft_delete()` v1 — no writes
+- [ ] 3.7 Create `app/api/routers/task/task_router.py` — two read routes with `# AUTH-HARDEN` markers + `require_role(Role.ADMIN, Role.CAREGIVER)` (NOT `Role.PATIENT`):
+  - `GET /tasks` (list)
+  - `GET /tasks/{id}` (read)
+- [ ] 3.8 Create `app/adapters/hix/tasks.py::HixTaskAdapter` with `fetch` + `upsert_from_hix` raising `NotImplementedError("HiX task adapter is MVP scope")`. Import-test coverage
+- [ ] 3.9 Create `scripts/seed_tasks.py` — synthetic-only seed (header comment cites no-PHI invariant). Deterministic PRNG; for each seeded patient generates 0-3 tasks with varied `kind`, `status`, `priority`, `due_at` (past-due / due-today / due-this-week / undated mix). ~60% assigned to demo caregiver. Idempotent via deterministic uniqueness key
+- [ ] 3.10 Tests (`tests/api/test_tasks_*.py`):
+  - `test_list.py`: tenant scope; caregiver patient-access predicate; admin sees all; `assigned_user_id=me` resolves to caller; default sort `due_at` ascending with NULLS LAST; date-range filter on `due_at`
+  - `test_read.py`: caregiver patient-access predicate (lost-access → 404); cross-tenant → 404
+  - `test_no_write_routes.py`: OpenAPI document has no `POST/PATCH/DELETE` on `/tasks`
+  - `test_patient_role_rejected.py`: 403 on patient-role session for both `GET /tasks` and `GET /tasks/{id}`
+  - `test_embedded_patient.py`: `TaskRead.patient` populated with `{id, family_name, given_name, insz?, primary_organisation_id}`; INSZ is `null` when patient has no identifier row
+  - `test_visibility_unassigned.py`: caregiver with patient access sees unassigned tasks for that patient; assignment to another caregiver does NOT hide the task
+  - `test_visibility_assigned_no_access.py`: caregiver assigned to a task but without patient access → 404
+  - `test_hix_adapter_stub.py`: import + NotImplementedError
+  - `test_seed_tasks.py`: re-run idempotent; mix of past-due / due-today / undated represented; ~60% assigned ratio (allow ±10%)
 
 ## 4. Backend: `patients-base` modifications
 
@@ -110,32 +122,30 @@ These live under `modules/appointment/components/` — reused by inbox row meta 
 
 ## 7. Frontend: inbox module — sort registry + hooks + query
 
-Lives under `apps/orchestrator/src/modules/inbox/`. Sort strategies are over ITEMS, not patients (per D19).
+Lives under `apps/orchestrator/src/modules/inbox/`. Per D19, the inbox is a task list — no polymorphism, no dispatcher.
 
 - [ ] 7.1 Create `modules/inbox/sorts/index.ts` exporting `InboxSortStrategy` type `{ id, label, queryParams }` and readonly `inboxSortStrategies` array
-- [ ] 7.2 Create `modules/inbox/sorts/nextAttention.ts` — id `next_attention`, label via `t('inbox.sort.next_attention')` ("Volgende afspraak" while only Appointment items ship; later relabel when other kinds land), `queryParams()` returns `{ order_by: 'occurred_at', order: 'asc' }`
+- [ ] 7.2 Create `modules/inbox/sorts/nextAttention.ts` — id `next_attention`, label via `t('inbox.sort.next_attention')`, `queryParams()` returns `{ order_by: 'due_at', order: 'asc' }`
 - [ ] 7.3 Create `modules/inbox/sorts/newlyAdded.ts` — id `newly_added`, label via `t('inbox.sort.newly_added')`, `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`
 - [ ] 7.4 Create `modules/inbox/useSelectedInboxSort.ts` — reads `?sort=` via TanStack Router `useSearch` synchronously, returns active strategy on first render (no flash). Unknown id → fallback to `next_attention` + `console.warn`. `setSort(id)` calls `navigate({ search: prev => ({ ...prev, sort: id }) })`
-- [ ] 7.5 Create `modules/inbox/useInboxQuery.ts` — `useInfiniteQuery` wrapper over `GET /inbox/items` keyed `[...inboxItemsKeyPrefix, { sort }]`. Sets `getNextPageParam` based on `total_pages`. Returns flattened items + `hasNextPage` + `fetchNextPage`
-- [ ] 7.6 Create `modules/inbox/types.ts` — re-exports typegen-derived `InboxItem`, `FHIRReference`, `AppointmentInboxPayload`. Adds frontend-only narrowing helpers: `isAppointmentItem(item): item is AppointmentInboxItem` based on `resourceType`
+- [ ] 7.5 Create `modules/inbox/useInboxQuery.ts` — `useInfiniteQuery` wrapper over `GET /tasks` keyed `[...tasksListKeyPrefix, { sort }]`. Sets `getNextPageParam` based on `total_pages`. Returns flattened `TaskRead[]` + `hasNextPage` + `fetchNextPage`
+- [ ] 7.6 Create `modules/inbox/types.ts` — re-exports typegen-derived `TaskRead`, `PatientInlineSummary`. Local helpers: `dueLabel(task): string` (relative-time copy "vandaag" / "morgen" / "over 3 dagen" / "verlopen 2 dagen" / "geen deadline")
 
-## 8. Frontend: inbox module — row dispatcher + row components
+## 8. Frontend: inbox module — row + list components
 
-Per D23 — flat `inboxRowRegistry` keyed by `resourceType`. Unknown kinds render `<UnknownInboxRow>` gracefully.
-
-- [ ] 8.1 Create `modules/inbox/rowRegistry.ts` — exports `inboxRowRegistry: Record<string, ComponentType<{ item: InboxItem }>>`. v1 registers `Appointment: AppointmentInboxRow`
-- [ ] 8.2 Create `modules/inbox/InboxItemRow.tsx` — dispatcher. Looks up component in registry by `item.resourceType`, falls back to `<UnknownInboxRow>` (and `console.warn`) when unknown. Sets `data-resource-type={item.resourceType}` on the rendered node for E2E discoverability
-- [ ] 8.3 Create `modules/inbox/rows/AppointmentInboxRow.tsx` — composes generic `<InboxRow>` with appointment-item bindings: `<Avatar tintBy={subject.patientId}>` initials from `subject.display`, `subject.display` as primary line, INSZ from `subject.identifier.value` (font-mono tabular) as secondary, trailing slot = `<KindTile size="sm" kind={payload.kind}>` + tabular `occurred_at` (Dutch local) + muted `KIND_LABEL[payload.kind] · MODALITY_LABEL[payload.modality]`. `onSelect → navigate({ to: '/_auth/inbox/p/$patientId', params: { patientId: subject.patientId } })`. Surface-agnostic — no inbox-module imports beyond types
-- [ ] 8.4 Create `modules/inbox/rows/UnknownInboxRow.tsx` — muted single-line "Onbekend item type: {resourceType}" via `t('inbox.unknown_kind')`. Logs `console.warn` on mount with `item.resourceType`. Not clickable
-- [ ] 8.5 Create `modules/inbox/InboxList.tsx` — composes:
-  - PageHeader with title `t('inbox.title')` + sub `t('inbox.subtitle')` + actions slot (filter pills placeholder for v1)
-  - Filter row: search Input (placeholder copy via `t()`), Team Select + Status Select dropdowns (v1 stub — backend filters land later; the inputs render but don't drive query yet)
+- [ ] 8.1 Create `modules/inbox/TaskInboxRow.tsx` — composes generic `<InboxRow>` with task bindings: `<Avatar tintBy={task.patient.id}>` initials from `task.patient.family_name` + `given_name`, `family, given` as primary line, secondary line = `INSZ · TaskKind label · dueLabel(task)`. Trailing slot:
+  - priority Badge (variant: `urgent`→destructive, `high`→warning, `normal|low`→muted)
+  - status Badge (muted, ONLY rendered when `task.status !== 'open'`, Dutch label per status)
+- [ ] 8.2 `onSelect → navigate({ to: '/_auth/inbox/p/$patientId', params: { patientId: task.patient.id } })`. Below `md` breakpoint, navigate to `/_auth/patients/$patientId` (standalone) instead — `useMediaQuery` hook reads viewport
+- [ ] 8.3 Create `modules/inbox/InboxList.tsx` — composes:
+  - PageHeader with title `t('inbox.title')` + sub `t('inbox.subtitle')`
+  - Filter row: search Input (placeholder via `t()`), Status Select + Priority Select dropdowns (v1 stub — inputs render but only sort tabs drive query; filter wiring is task-7-follow-up)
   - Sort tabs via `useSelectedInboxSort` (underline Tabs primitive)
-  - List body — `useInboxQuery` → maps items through `<InboxItemRow>`
+  - List body — `useInboxQuery` → maps `TaskRead[]` through `<TaskInboxRow>`
   - `"Meer laden"` button while `hasNextPage`
-  - Pager strip ("Per pagina · 8 van 23 · Vorige 1/1 Volgende")
-  - Empty state via shared `EmptyState` — role-aware copy (`t('inbox.empty.caregiver.*')` vs `t('inbox.empty.admin.*')`)
-- [ ] 8.6 Realtime topic registration on `<InboxList>` is a SEAM ONLY (commented placeholder) — actual topic lands in BL-076. No-op for v1
+  - Pager strip
+  - Empty state via shared `<EmptyState>` — role-aware copy (`t('inbox.empty.caregiver.*')` vs `t('inbox.empty.admin.*')`)
+- [ ] 8.4 Realtime topic registration on `<InboxList>` is a SEAM ONLY (commented placeholder) — actual topic lands in BL-076. No-op for v1
 
 ## 9. Frontend: patient module — detail components (unchanged from item-reframe)
 
@@ -151,7 +161,8 @@ Per D23 — flat `inboxRowRegistry` keyed by `resourceType`. Unknown kinds rende
 - [ ] 10.3 Create `routes/_auth/inbox/p/$patientId/index.tsx` (child detail) — fetches patient via existing `usePatient`. Renders `<PatientDetailView patient={...} actions={<PatientKebab patient={...} />} onClose={() => navigate({ to: '/_auth/inbox' })} />`. Master collapses to 320px rail
 - [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — now mounts new `<PatientDetailView>` inside `<EntityDetailPage back={{ to: '/_auth/inbox' }}>` chrome. Used by admin/users links, care-team links, mobile fallback (per D17), and any non-inbox-context entry
 - [ ] 10.5 DELETE `routes/_auth/patients/index.tsx` (per D24). Verify with task 0.6 that no internal callers depend on this URL
-- [ ] 10.6 Update sidebar (`components/layout/navItems.ts` or `AppSidebar.tsx`) — replace `"Mijn patiënten" → /_auth/patients` with `"Inbox" → /_auth/inbox`. Icon: lucide `inbox`
+- [ ] 10.6 DELETE `routes/_auth/tasks.tsx` AND `modules/tasks/*` (TasksPage, tasksPort, placeholder adapter, types). The placeholder is fully replaced by the new inbox module
+- [ ] 10.7 Update sidebar (`components/layout/navItems.ts` or `AppSidebar.tsx`) — REMOVE `"Mijn patiënten"` AND `"Taken"` entries. ADD single `"Inbox"` entry pointing to `/_auth/inbox` with lucide `inbox` icon
 
 ## 10. i18n
 
@@ -179,10 +190,9 @@ Inbox module:
 - [ ] 12.7 `nextAttention.test.ts` + `newlyAdded.test.ts`: `queryParams()` shape
 - [ ] 12.8 `useSelectedInboxSort.test.ts`: returns default when search param absent; honours valid `?sort=`; falls back + warn on unknown; resolves synchronously on first render (no flash)
 - [ ] 12.9 `useInboxQuery.test.ts`: TanStack `useInfiniteQuery` integration; `fetchNextPage` advances `page`; key changes with sort
-- [ ] 12.10 `InboxItemRow.test.tsx` (dispatcher): registered `resourceType: 'Appointment'` renders `<AppointmentInboxRow>`; unknown `resourceType` renders `<UnknownInboxRow>` + `console.warn` fires + `data-resource-type` attribute set; future-stub (test registers a 2nd component for `resourceType: 'Task'`) → both kinds render correctly
-- [ ] 12.11 `AppointmentInboxRow.test.tsx`: composes `<InboxRow>` with `Avatar tintBy={subject.patientId}`, `subject.display` as primary, INSZ from `subject.identifier.value` as secondary, trailing slot has `<KindTile>` + tabular `occurred_at` + muted kind+modality; click invokes `onSelect` (router test harness asserts navigation to `/_auth/inbox/p/$id`)
-- [ ] 12.12 `UnknownInboxRow.test.tsx`: renders muted single-line copy with `resourceType` injected; not clickable
-- [ ] 12.13 `InboxList.test.tsx`: empty list renders `EmptyState` with role-aware copy (mock caregiver vs admin role); `useInboxQuery` with 0 pages → empty; with 1 page → list; with 2 pages → "Meer laden" visible + click fetches next; switching sort updates URL `?sort=`; deep-link `?sort=newly_added` does not flash default sort
+- [ ] 12.10 `TaskInboxRow.test.tsx`: composes `<InboxRow>` with `Avatar tintBy={task.patient.id}`, `family, given` as primary, secondary line includes INSZ + kind label + dueLabel relative-time copy; priority Badge variant matches priority (urgent→destructive, high→warning, normal|low→muted); status Badge only renders when `status !== 'open'`; click on viewport ≥md navigates to `/_auth/inbox/p/$id`; click on <md navigates to `/_auth/patients/$id`
+- [ ] 12.11 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy for vandaag / morgen / over N dagen / verlopen N dagen / geen deadline
+- [ ] 12.12 `InboxList.test.tsx`: empty list renders `EmptyState` with role-aware copy (mock caregiver vs admin role); `useInboxQuery` with 0 pages → empty; with 1 page → list; with 2 pages → "Meer laden" visible + click fetches next; switching sort updates URL `?sort=`; deep-link `?sort=newly_added` does not flash default sort
 
 Patient module:
 - [ ] 12.14 `PatientDetailHeader.test.tsx`: renders all demographics fields; takes an `actions` slot; surface-agnostic (no router import)
@@ -199,5 +209,5 @@ Routes:
 - [ ] 13.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
 - [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Inbox"` item visible (no `"Mijn patiënten"`). Open `/_auth/inbox` → state 1 (inbox full, empty seeded → empty-state copy). Switch sort, confirm URL updates + list reorders. Deep-link `/_auth/inbox?sort=newly_added` directly, confirm no default-flash. Click an item → navigate to `/_auth/inbox/p/$id` → state 2 (compact rail + `<PatientDetailView>`). Activate Afspraken tab → Upcoming + History sections render. Kebab `Geschiedenis` dialog opens. Toggle master hidden → state 3 (detail full-width + floating reopen). Reopen → state 2. Close detail → state 1. Browser back/forward preserves URL state. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail (no inbox column)
 - [ ] 13.4 Manual smoke (mobile <md): viewport ~375px wide. Open `/_auth/inbox` → list full-width, no detail pane. Click item → full-page nav to `/_auth/patients/$id` rendering standalone detail. Browser back → inbox. No master-hidden toggle visible
-- [ ] 13.5 Manual smoke (unknown resourceType fallback): inject a synthetic `{resourceType: 'BananaResource', ...}` item via mock or temporary backend stub. Inbox renders `<UnknownInboxRow>` muted line + `console.warn` fires. No crash
+- [ ] 13.5 Manual smoke (seeded tasks): after running `seed_tasks.py`, `/_auth/inbox` shows mix of past-due (red priority chip) / due-today / undated tasks per patient. Sort `Volgende afspraak` puts past-due + due-today first; switch to `Nieuw vs oud` and confirm reorder + URL update
 - [ ] 13.6 Run `/verify` for both apps before reporting done

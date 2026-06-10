@@ -30,6 +30,16 @@ See `../../design.md` §"Component reuse audit" for the build plan.
 
 ## Note on framing shift (post-v8)
 
-After v8 was locked, the surface was reframed from "patient inbox" to **"caregiver attention inbox of items"** (design.md D19-D24). Visually v8 is unchanged — each row still shows a patient identity + appointment meta. Conceptually the row is now an `InboxItem` (a thing demanding attention) whose `subject` is a patient. v1 ships only `resourceType: "Appointment"` items, so each row maps 1:1 to an upcoming appointment. Click → opens the subject patient at `/_auth/inbox/p/$patientId`.
+After v8 was locked, the surface was reframed twice (the locked WIREFRAME is still v8 — visually unchanged):
 
-The route also moved: `/_auth/patients` → `/_auth/inbox` (promotes BL-065). Sidebar nav swaps `"Mijn patiënten"` → `"Inbox"`. The prototype's URL mock should be read as `/_auth/inbox?sort=...` instead of `/_auth/patients?sort=...` when implementing.
+**Iteration 1**: from "patient inbox" to "caregiver attention inbox of items" with polymorphic FHIR envelope. *Rejected* after user pushback.
+
+**Iteration 2 (current)**: from polymorphic items to a focused **task list** (design.md D19-D24). Each row is a Task tied to a patient. Visually v8 is unchanged — rows still show patient identity + meta. Conceptually the row is now a `TaskRead`. Inbox row meta shows kind + due-time relative copy + priority chip + (optional) status chip — the v8 prototype's appointment-mini-card now represents task metadata.
+
+Architecture summary:
+- Inbox = task list. Click → opens the subject patient at `/_auth/inbox/p/$patientId` (split-pane) or `/_auth/patients/$patientId` (mobile fallback).
+- Appointments are a separate domain consumed by the patient-detail Afspraken tab.
+- Route shift: `/_auth/patients` (list) + `/_auth/tasks` (placeholder) → both deleted; replaced by `/_auth/inbox`. Promotes BL-065.
+- Sidebar: drop `"Mijn patiënten"` + `"Taken"`, add single `"Inbox"`.
+
+The prototype's URL mock should be read as `/_auth/inbox?sort=...` instead of `/_auth/patients?sort=...`. The "mini-card" right-meta in v8 (kind icon + time + modality) now represents task `(kind icon + dueLabel relative-time + priority chip)`.
