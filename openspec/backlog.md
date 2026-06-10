@@ -434,6 +434,7 @@ Note: `DashboardLanding` needs counts for **Open care teams** and **Recent assig
 ### BL-065 — Real Inbox surface
 - Tier: [poc]
 - Source: caregiver-shell change (sidebar inventory)
+- Promoted: 2026-06-10 to `changes/2026-06-10-patient-inbox/` (inbox-base capability + `/_auth/inbox` surface + polymorphic item dispatcher; v1 ships Appointment items)
 
 Note: `/inbox` route is reserved in the sidebar but unimplemented. PoC ships a placeholder; replace with an Inbox view (task list across patients) once the tasks surface is fleshed out.
 
@@ -520,6 +521,12 @@ Note: v1 ships without a seed for `appointments`. The inbox default sort (`next_
 - Source: patient-inbox change (patient role explicitly forbidden on `/appointments` v1)
 
 Note: `appointment-base` rejects `Role.PATIENT` sessions on every `/appointments` route in PoC. MVP adds `/mobile/appointments` (or similar) for the digital-front-door patient app to read their own appointments. Reuses `AppointmentRepository` with a patient-self predicate (patient sees only own rows). Patient-visibility predicate distinct from caregiver patient-access predicate. Depends on F9/F10 mobile patient features (BL-014, BL-022).
+
+### BL-080 — Inbox: Task as second item source
+- Tier: [poc]
+- Source: patient-inbox change (architectural seam, single-source v1)
+
+Note: `inbox-base` ships with one `InboxItemSource` (`AppointmentInboxSource`) and a registry pattern. First natural follow-up adds Task as a second source — `TaskInboxSource` over the existing tasks domain. Backend: register source in `InboxService`. Frontend: register `Task → <TaskInboxRow>` in `inboxRowRegistry`. No route or `<InboxList>` edits required. Validates the polymorphic seam in real demo content. Depends on the tasks domain ripening.
 
 ### BL-079 — `appointments.pathway_block_instance_id` FK
 - Tier: [poc]
