@@ -1,7 +1,10 @@
 from app.db.models.pathway.block import PathwayBlock
 from app.db.models.pathway.block_branch import PathwayBlockBranch
 from app.db.models.pathway.block_deferred_field import PathwayBlockDeferredField
+from app.db.models.pathway.block_execution import PathwayBlockExecution
+from app.db.models.pathway.deferred_field_value import PathwayDeferredFieldValue
 from app.db.models.pathway.edge_offset_direction import PathwayEdgeOffsetDirection
+from app.db.models.pathway.enrollment import PathwayEnrollment
 from app.db.models.pathway.lane import PathwayLane
 from app.db.models.pathway.lane_kind import PathwayLaneKind
 from app.db.models.pathway.pathway import Pathway
@@ -16,7 +19,10 @@ __all__ = [
     "PathwayBlock",
     "PathwayBlockBranch",
     "PathwayBlockDeferredField",
+    "PathwayBlockExecution",
+    "PathwayDeferredFieldValue",
     "PathwayEdgeOffsetDirection",
+    "PathwayEnrollment",
     "PathwayLane",
     "PathwayLaneKind",
     "PathwayPhase",
