@@ -103,32 +103,37 @@ class LusciiHttpClient:
             },
         )
 
-    async def get_instrument_localisations(self) -> list[LusciiInstrumentLocalisation]:
+    async def get_instrument_localisations(
+        self, *, expected_total: int | None = None
+    ) -> list[LusciiInstrumentLocalisation]:
         return await self._paginate(
             "/v1/instrument-localisations",
             LusciiInstrumentLocalisation,
             max_pages=_MAX_CATALOGUE_PAGES,
             progress_label="instrument-localisations",
+            expected_total=expected_total,
         )
 
     async def get_instrument_item_localisations(
-        self,
+        self, *, expected_total: int | None = None
     ) -> list[LusciiInstrumentItemLocalisation]:
         return await self._paginate(
             "/v1/instrument-item-localisations",
             LusciiInstrumentItemLocalisation,
             max_pages=_MAX_CATALOGUE_PAGES,
             progress_label="instrument-item-localisations",
+            expected_total=expected_total,
         )
 
     async def get_item_response_localisations(
-        self,
+        self, *, expected_total: int | None = None
     ) -> list[LusciiItemResponseLocalisation]:
         return await self._paginate(
             "/v1/instrument-item-response-localisations",
             LusciiItemResponseLocalisation,
             max_pages=_MAX_CATALOGUE_PAGES,
             progress_label="item-response-localisations",
+            expected_total=expected_total,
         )
 
     async def _request(
@@ -161,6 +166,7 @@ class LusciiHttpClient:
         params: dict[str, Any] | None = None,
         max_pages: int = _MAX_PAGES_PER_CALL,
         progress_label: str | None = None,
+        expected_total: int | None = None,
     ) -> list[_M]:
         rows: list[_M] = []
         cursor: str | None = None
@@ -173,10 +179,14 @@ class LusciiHttpClient:
             rows.extend(self._parse(model, item) for item in body.get("data", []))
             cursor = (body.get("meta") or {}).get("nextCursor")
             if progress_label and (cursor is None or page % _PROGRESS_EVERY_PAGES == 0):
+                # The API serves no totals; the caller may pass an estimate
+                # (e.g. the previous sync's row count).
+                of_total = f"/~{expected_total}" if expected_total else ""
                 logger.info(
-                    "luscii sync %s: %d rows in %d pages%s",
+                    "luscii sync %s: %d%s rows in %d pages%s",
                     progress_label,
                     len(rows),
+                    of_total,
                     page,
                     "" if cursor else " — done",
                 )

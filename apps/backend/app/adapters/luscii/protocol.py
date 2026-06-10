@@ -44,18 +44,21 @@ class LusciiClient(Protocol):
         """`GET /v1/measurements` — org-wide; the caller filters by patient."""
         ...
 
-    async def get_instrument_localisations(self) -> list[LusciiInstrumentLocalisation]:
-        """`GET /v1/instrument-localisations`, paged to exhaustion."""
+    async def get_instrument_localisations(
+        self, *, expected_total: int | None = None
+    ) -> list[LusciiInstrumentLocalisation]:
+        """`GET /v1/instrument-localisations`, paged to exhaustion.
+        `expected_total` only feeds progress logging (the API has no totals)."""
         ...
 
     async def get_instrument_item_localisations(
-        self,
+        self, *, expected_total: int | None = None
     ) -> list[LusciiInstrumentItemLocalisation]:
         """`GET /v1/instrument-item-localisations`, paged to exhaustion."""
         ...
 
     async def get_item_response_localisations(
-        self,
+        self, *, expected_total: int | None = None
     ) -> list[LusciiItemResponseLocalisation]:
         """`GET /v1/instrument-item-response-localisations`, paged to exhaustion."""
         ...

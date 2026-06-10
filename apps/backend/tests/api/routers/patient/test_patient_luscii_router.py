@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.luscii import (
@@ -29,6 +29,19 @@ from app.db.models.patient import Patient, PatientIdentifier
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
 from scripts.seed_users import ADMIN_EMAIL
 from tests.fakes.luscii import FakeLusciiClient
+
+
+@pytest.fixture(autouse=True)
+async def _clean_luscii_catalogue(db_session: AsyncSession) -> None:
+    # Catalogue tables are not tenant-scoped, so `clean_tenants` never wipes
+    # them — clear explicitly so natural-key inserts can't collide across tests.
+    for model in (
+        LusciiInstrumentLocalisationRow,
+        LusciiInstrumentItemLocalisationRow,
+        LusciiItemResponseLocalisationRow,
+    ):
+        await db_session.execute(delete(model))
+    await db_session.commit()
 
 _DEFAULT_PASSWORD = "changeme"
 

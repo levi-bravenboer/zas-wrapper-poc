@@ -19,7 +19,7 @@ import logging
 from collections.abc import Callable, Hashable, Iterable
 from typing import TypeVar
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.luscii import LusciiClient
@@ -47,13 +47,23 @@ def _dedupe(rows: Iterable[_R], key: Callable[[_R], Hashable]) -> tuple[list[_R]
 async def sync_luscii_catalogue(session: AsyncSession, client: LusciiClient) -> dict[str, int]:
     """Fetch all three catalogues and replace the local tables. Returns row counts."""
 
+    # Previous sync's row counts serve as progress estimates — the API
+    # itself exposes no totals. None on the first sync.
+    async def _count(model: type) -> int | None:
+        n = await session.scalar(select(func.count()).select_from(model))
+        return n or None
+
+    prev_instr = await _count(LusciiInstrumentLocalisationRow)
+    prev_items = await _count(LusciiInstrumentItemLocalisationRow)
+    prev_resps = await _count(LusciiItemResponseLocalisationRow)
+
     # Three independent cursor chains — pages within one catalogue are
     # inherently sequential (cursor pagination), but the catalogues
     # themselves fetch concurrently: wall time ≈ the longest chain.
     instrument_locs, item_locs, response_locs = await asyncio.gather(
-        client.get_instrument_localisations(),
-        client.get_instrument_item_localisations(),
-        client.get_item_response_localisations(),
+        client.get_instrument_localisations(expected_total=prev_instr),
+        client.get_instrument_item_localisations(expected_total=prev_items),
+        client.get_item_response_localisations(expected_total=prev_resps),
     )
 
     # The upstream catalogues contain duplicate natural-key rows (observed

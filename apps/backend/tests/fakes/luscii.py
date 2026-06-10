@@ -58,18 +58,20 @@ class FakeLusciiClient:
         self._gate("get_measurements")
         return list(self.measurements)
 
-    async def get_instrument_localisations(self) -> list[LusciiInstrumentLocalisation]:
+    async def get_instrument_localisations(
+        self, *, expected_total: int | None = None
+    ) -> list[LusciiInstrumentLocalisation]:
         self._gate("get_instrument_localisations")
         return list(self.instrument_localisations)
 
     async def get_instrument_item_localisations(
-        self,
+        self, *, expected_total: int | None = None
     ) -> list[LusciiInstrumentItemLocalisation]:
         self._gate("get_instrument_item_localisations")
         return list(self.instrument_item_localisations)
 
     async def get_item_response_localisations(
-        self,
+        self, *, expected_total: int | None = None
     ) -> list[LusciiItemResponseLocalisation]:
         self._gate("get_item_response_localisations")
         return list(self.item_response_localisations)

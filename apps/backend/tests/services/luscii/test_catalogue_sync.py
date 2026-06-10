@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from sqlalchemy import func, select
+import pytest
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.luscii import (
@@ -17,6 +18,19 @@ from app.db.models.luscii import (
 )
 from app.services.luscii.catalogue_sync import sync_luscii_catalogue
 from tests.fakes.luscii import FakeLusciiClient
+
+
+@pytest.fixture(autouse=True)
+async def _clean_luscii_catalogue(db_session: AsyncSession) -> None:
+    # Catalogue tables are not tenant-scoped, so `clean_tenants` never wipes
+    # them — clear explicitly so natural-key inserts can't collide across tests.
+    for model in (
+        LusciiInstrumentLocalisationRow,
+        LusciiInstrumentItemLocalisationRow,
+        LusciiItemResponseLocalisationRow,
+    ):
+        await db_session.execute(delete(model))
+    await db_session.commit()
 
 
 def _fake_with_catalogue() -> FakeLusciiClient:
