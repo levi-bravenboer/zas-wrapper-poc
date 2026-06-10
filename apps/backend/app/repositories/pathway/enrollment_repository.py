@@ -1,9 +1,10 @@
 """Persistence for the runtime aggregate (slot #3).
 
-Thin wrapper over `AsyncSession` — the engine is stateless, so the
-repo only handles fetch + bulk insert + state save. Cross-aggregate
-queries (per-patient summary, per-pathway dashboards) belong with
-downstream slots.
+`EnrollmentRepository` is the `BaseRepository[PathwayEnrollment]`
+single-model handle for enrollments; per-aggregate child rows
+(executions, deferred values) are reached through helper methods
+that join via `enrollment_id` so callers can stay on a single repo
+seam without sprouting per-table repos.
 """
 
 from __future__ import annotations
@@ -11,18 +12,17 @@ from __future__ import annotations
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.pathway import (
     PathwayBlockExecution,
     PathwayDeferredFieldValue,
     PathwayEnrollment,
 )
+from app.repositories.base import BaseRepository
 
 
-class EnrollmentRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
+class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
+    model = PathwayEnrollment
 
     async def get(self, enrollment_id: UUID, tenant_id: UUID) -> PathwayEnrollment | None:
         stmt = select(PathwayEnrollment).where(

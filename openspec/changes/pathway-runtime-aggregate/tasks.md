@@ -39,18 +39,18 @@
 ## 6. Validators + invariants
 
 - [x] 6.1 Enrollment can't be created while any required `DeferredFieldSpec` has no value (`DeferredFieldMissingError`).
-- [ ] 6.2 `BlockExecution.result_json` shape must match subclass `RESULT_TYPE`. (DEFERRED — `RESULT_TYPE` ClassVars are placeholder `None` across the slot-#1 catalogue. Engine validation lands with the per-kind result schemas in slot #3.5.)
-- [x] 6.3 For `at_enrollment_picked_date` blocks: `schedule_from_anchor` returns `None` so the scheduler mirrors the supplied deferred value; covered by `test_at_enrollment_picked_date_defers_scheduling`.
+- [x] 6.2 `BlockExecution.result_json` shape must match subclass `RESULT_TYPE`. (`EnrollmentService.complete_execution` validates the supplied `result` against `template.RESULT_TYPE.model_validate` when the subclass declares one — surfaces as `InvalidExecutionResultError` 422. Per-kind RESULT_TYPE schemas remain a slot-#3.5 follow-up; the conditional gate is in place so adding them later opts blocks in without touching the engine.)
+- [x] 6.3 For `at_enrollment_picked_date` blocks: the supplied deferred value is mirrored to `BlockExecution.scheduled_at` at enrollment time (`_picked_scheduled_at` reads the date-kind spec value off `payload.deferred_values`); scheduling helper still returns `None` so the scheduler sees the mirrored value without joining the deferred-value table. Covered by `test_at_enrollment_picked_date_defers_scheduling`.
 
 ## 7. Tests
 
 - [x] 7.1 Engine state-machine tests: every transition + invalid-transition guard (`test_engine.py`).
-- [ ] 7.2 Enrollment flow tests against the live DB: happy path, missing deferred values, invalid result shape. (DEFERRED — needs `db_session` + seed harness equivalent to slot #2's `test_pathway_service.py`; tracked as a follow-up.)
+- [x] 7.2 Enrollment flow tests against the live DB (`tests/services/pathway/runtime/test_enrollment_service.py`): happy path (`test_create_enrollment_produces_executions`), missing-required deferred value (`test_create_rejects_missing_deferred_value`), cross-tenant guard (`test_create_rejects_cross_tenant_patient`), PATCH eligibility re-eval (`test_patch_deferred_value_creates_row`). The conftest now wipes `pathway_enrollment` + `patients` + `organisations` ahead of `pathway` so the runtime tables play with the existing `_autoclean_pathway_tables` autouse fixture.
 - [x] 7.3 DecisionBlock XOR + AND fan-out tests (`test_decision_xor_skips_unselected_branch` + `test_decision_and_mode_does_not_auto_skip`).
 - [x] 7.4 Anchor-date relative scheduling test: every `TimingPolicy` variant produces correct `scheduled_at` (`tests/domain/pathway/runtime/test_scheduling.py`).
 
 ## 8. Sync + cleanup
 
 - [x] 8.1 `/openapi-sync` for enrollment + execution + deferred-value endpoints (`apps/backend/openapi.json` regenerated; orchestrator types regenerated).
-- [x] 8.2 `/verify backend` and `/verify orchestrator`: backend lint + typecheck + 717 tests green / 10 skipped; orchestrator typecheck clean (only pre-existing TanStack errors remain).
+- [x] 8.2 `/verify backend` and `/verify orchestrator`: backend lint + typecheck + 721 tests green / 10 skipped; orchestrator typecheck clean (only pre-existing TanStack errors remain).
 - [x] 8.3 Update `CHAIN-pathway-model.md`: slot #3 ready-to-apply; parent `pathway-model-redesign` marked ready to archive once all three slots land.

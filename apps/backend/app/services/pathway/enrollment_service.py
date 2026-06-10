@@ -13,7 +13,6 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import select
 
-from app.core.errors import AppError
 from app.db.models.patient import Patient
 from app.db.models.pathway import (
     Pathway,
@@ -24,45 +23,28 @@ from app.db.models.pathway import (
 )
 from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
 from app.domain.pathway.blocks.base import BaseBlock
-from app.domain.pathway.runtime.execution import BlockExecution
+from app.domain.pathway.runtime.execution import (
+    BlockExecution,
+    InvalidTransitionError,
+)
 from app.domain.pathway.runtime.scheduling import schedule_from_anchor
 from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.schemas.pathway.enrollment import (
-    EnrollmentCreate,
+    BlockExecutionResponse,
+    DeferredFieldValueOut,
     DeferredFieldValuePatch,
+    EnrollmentCreate,
+    EnrollmentResponse,
+)
+from app.services.pathway.errors import (
+    BlockExecutionNotFoundError,
+    CrossTenantReferenceError,
+    DeferredFieldMissingError,
+    EnrollmentNotFoundError,
+    InvalidExecutionResultError,
 )
 from app.services.pathway.runtime.engine import RuntimeEngine
-
-
-class EnrollmentNotFoundError(AppError):
-    code = "not-found.enrollment.unknown"
-    status_code = 404
-    message = "Enrollment not found."
-
-
-class BlockExecutionNotFoundError(AppError):
-    code = "not-found.block-execution.unknown"
-    status_code = 404
-    message = "Block execution not found."
-
-
-class DeferredFieldMissingError(AppError):
-    code = "invalid.enrollment.deferred-field-missing"
-    status_code = 422
-    message = "Enrollment missing a required deferred field value."
-
-
-class CrossTenantReferenceError(AppError):
-    code = "invalid.enrollment.cross-tenant-reference"
-    status_code = 422
-    message = "Enrollment references an entity outside the caller's tenant."
-
-    def __init__(self, *, field: str, reason: str) -> None:
-        super().__init__(
-            message=self.message,
-            details={"field": field, "reason": reason},
-        )
 
 
 class EnrollmentService:
@@ -134,6 +116,10 @@ class EnrollmentService:
             state="active",
         )
         session.add(enrollment)
+        # Flush before adding the child rows so PostgreSQL sees the
+        # parent enrollment row before the FK-bound executions /
+        # deferred values land in the same transaction.
+        await session.flush()
 
         # Persist deferred values up front so the eligibility pass
         # below already sees them on the typed view.
@@ -194,6 +180,32 @@ class EnrollmentService:
             raise EnrollmentNotFoundError()
         return row
 
+    async def get_view(
+        self,
+        enrollment_id: UUID,
+        *,
+        tenant_id: UUID,
+    ) -> EnrollmentResponse:
+        """Build the wire-shape `EnrollmentResponse` for the runtime aggregate.
+
+        Keeps the router on a stable service seam — no router has to
+        reach across into `service._repo` to assemble the view.
+        """
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        executions = await self._repo.list_executions(enrollment.id)
+        deferred = await self._repo.list_deferred_values(enrollment.id)
+        return EnrollmentResponse(
+            id=enrollment.id,
+            patient_id=enrollment.patient_id,
+            pathway_version_id=enrollment.pathway_version_id,
+            anchor_date=enrollment.anchor_date,
+            state=enrollment.state,  # type: ignore[arg-type]
+            executions=[BlockExecutionResponse.model_validate(row) for row in executions],
+            deferred_values=[
+                DeferredFieldValueOut.model_validate(row) for row in deferred
+            ],
+        )
+
     async def start_execution(
         self,
         enrollment_id: UUID,
@@ -206,7 +218,13 @@ class EnrollmentService:
         if row is None:
             raise BlockExecutionNotFoundError()
         domain = _row_to_domain_execution(row)
-        RuntimeEngine.start(domain, now=now)
+        try:
+            RuntimeEngine.start(domain, now=now)
+        except InvalidTransitionError as exc:
+            raise InvalidExecutionResultError(
+                field=f"executions[{execution_id}].state",
+                reason=str(exc),
+            ) from exc
         _apply_domain(row, domain)
         await self._repo._session.flush()  # noqa: SLF001
         return row
@@ -230,9 +248,33 @@ class EnrollmentService:
         executions = await self._load_executions(enrollment_id)
         if execution_id not in executions:
             raise BlockExecutionNotFoundError()
-        RuntimeEngine.complete(
-            executions, templates, execution_id, result=result, now=now
-        )
+
+        # §6.2 RESULT_TYPE validation: when the block subclass
+        # declares a typed result schema, the supplied `result` must
+        # parse against it. Subclasses without a RESULT_TYPE
+        # (catalogue-default `None`) accept any dict payload — the
+        # check stays opt-in so older kinds don't suddenly 422.
+        template = templates.get(executions[execution_id].block_template_id)
+        if template is not None and template.RESULT_TYPE is not None:
+            try:
+                template.RESULT_TYPE.model_validate(result or {})  # type: ignore[attr-defined]
+            except Exception as exc:
+                raise InvalidExecutionResultError(
+                    field=f"executions[{execution_id}].result",
+                    reason=str(exc),
+                ) from exc
+
+        try:
+            RuntimeEngine.complete(
+                executions, templates, execution_id, result=result, now=now
+            )
+        except InvalidTransitionError as exc:
+            # Engine internals leak through as 500s otherwise; reshape
+            # to the documented 422 surface.
+            raise InvalidExecutionResultError(
+                field=f"executions[{execution_id}].state",
+                reason=str(exc),
+            ) from exc
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 

@@ -189,15 +189,65 @@ class PublishApprovalError(PathwayValidationError):
     code = "invalid.pathway.publish-approval"
 
 
+# ---- Slot #3 runtime aggregate errors -----------------------------------
+
+
+class EnrollmentNotFoundError(AppError):
+    code = "not-found.enrollment.unknown"
+    status_code = 404
+    message = "Enrollment not found."
+
+
+class BlockExecutionNotFoundError(AppError):
+    code = "not-found.block-execution.unknown"
+    status_code = 404
+    message = "Block execution not found."
+
+
+class DeferredFieldMissingError(AppError):
+    code = "invalid.enrollment.deferred-field-missing"
+    status_code = 422
+    message = "Enrollment missing a required deferred field value."
+
+
+class CrossTenantReferenceError(AppError):
+    code = "invalid.enrollment.cross-tenant-reference"
+    status_code = 422
+    message = "Enrollment references an entity outside the caller's tenant."
+
+    def __init__(self, *, field: str, reason: str) -> None:
+        super().__init__(
+            message=self.message,
+            details={"field": field, "reason": reason},
+        )
+
+
+class InvalidExecutionResultError(AppError):
+    code = "invalid.enrollment.execution-result"
+    status_code = 422
+    message = "Block execution result does not match the subclass RESULT_TYPE."
+
+    def __init__(self, *, field: str, reason: str) -> None:
+        super().__init__(
+            message=self.message,
+            details={"field": field, "reason": reason},
+        )
+
+
 __all__ = [
     "BlockConfigError",
+    "BlockExecutionNotFoundError",
     "BlockLaneNotAllowedError",
     "BranchOwnershipError",
     "ConceptAlreadyExistsError",
+    "CrossTenantReferenceError",
     "DeferredFieldError",
+    "DeferredFieldMissingError",
     "EdgeTimingValidationError",
     "EdgeValidationError",
+    "EnrollmentNotFoundError",
     "ForkSourceNotPublishedError",
+    "InvalidExecutionResultError",
     "NestedPathwayCycleError",
     "NoConceptVersionError",
     "PathwayHasReferrersError",

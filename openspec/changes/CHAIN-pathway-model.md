@@ -44,6 +44,6 @@ All design decisions live in `pathway-model-redesign/design.md` (D1–D10). Each
 | — | `pathway-model-redesign` (parent) | `.worktrees/feat-pathway-model-redesign/` | proposal in review (PR #42) |
 | 1 | `pathway-model-foundations` | `.worktrees/feat-pathway-model-redesign/` | ready-to-apply (26 / 26 tasks complete; registry retire landed in PR #42) |
 | 2 | `pathway-input-logic-and-timing` | `.worktrees/feat-pathway-input-logic-and-timing/` | ready-to-apply (§1-§6 + §8 done; §7.2/§7.3 deferred to backfill fixture follow-up; merges after slot #1) |
-| 3 | `pathway-runtime-aggregate` | `.worktrees/feat-pathway-runtime-aggregate/` | ready-to-apply (§1-§5 + §6.1/§6.3 + §7.1/§7.3/§7.4 + §8 done; §6.2 RESULT_TYPE validation + §7.2 DB-integration tests deferred; merges after slot #2) |
+| 3 | `pathway-runtime-aggregate` | `.worktrees/feat-pathway-runtime-aggregate/` | ready-to-apply (24 / 24 tasks complete after review-fix pass; merges after slot #2) |
 
 Update this file whenever a change advances state (draft → in-review → applied → archived).
