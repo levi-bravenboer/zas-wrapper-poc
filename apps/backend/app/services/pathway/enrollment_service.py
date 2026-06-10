@@ -72,11 +72,15 @@ class EnrollmentService:
         stack and bypassing the check here would let a caller seed
         enrollments against cross-tenant references.
         """
-        # Cross-tenant guard: confirm the patient + pathway version
-        # both belong to the caller's tenant before persisting any
-        # row. The FK columns are already tenant-owned, but enforcing
-        # at the service layer keeps the response shaped as a 422 (not
-        # a foreign-key 500 a few flushes later).
+        # Cross-tenant guard: HTTP callers already pass the router-level
+        # Keto-graduated guard
+        # (`app.api.routers.pathway.enrollment_router._require_enrollment_access`
+        # for enrollment-id-keyed routes, an inline
+        # `resolve_patient_with_relation` + `require_carepath_access` pair
+        # for the body-keyed `create_enrollment`). The service is also
+        # reachable from non-HTTP callers (tests, future background jobs),
+        # so we keep the defence-in-depth assertions here — surfaces a 422
+        # instead of a foreign-key 500 a few flushes later.
         await self._assert_patient_in_tenant(payload.patient_id, tenant_id)
         await self._assert_pathway_version_in_tenant(
             payload.pathway_version_id, tenant_id
