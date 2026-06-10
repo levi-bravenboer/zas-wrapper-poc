@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 async def _sync(session: AsyncSession) -> None:
+    # One INFO line per request (httpx) would be ~2.6k lines; the client's
+    # periodic progress lines (every 25 pages) carry the signal instead.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     client = build_luscii_client(get_settings())
     if client is None:
         raise SystemExit(

@@ -7,6 +7,7 @@ and status reach exception messages and logs.
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from typing import Any, TypeVar
 
@@ -35,6 +36,12 @@ _MAX_PAGES_PER_CALL = 50
 _MAX_CATALOGUE_PAGES = 10_000
 
 _M = TypeVar("_M", bound=BaseModel)
+
+logger = logging.getLogger(__name__)
+
+# Cursor pagination exposes no totals, so long fetches report progress as
+# periodic log lines instead of a bar.
+_PROGRESS_EVERY_PAGES = 25
 
 
 class LusciiHttpClient:
@@ -101,6 +108,7 @@ class LusciiHttpClient:
             "/v1/instrument-localisations",
             LusciiInstrumentLocalisation,
             max_pages=_MAX_CATALOGUE_PAGES,
+            progress_label="instrument-localisations",
         )
 
     async def get_instrument_item_localisations(
@@ -110,6 +118,7 @@ class LusciiHttpClient:
             "/v1/instrument-item-localisations",
             LusciiInstrumentItemLocalisation,
             max_pages=_MAX_CATALOGUE_PAGES,
+            progress_label="instrument-item-localisations",
         )
 
     async def get_item_response_localisations(
@@ -119,6 +128,7 @@ class LusciiHttpClient:
             "/v1/instrument-item-response-localisations",
             LusciiItemResponseLocalisation,
             max_pages=_MAX_CATALOGUE_PAGES,
+            progress_label="item-response-localisations",
         )
 
     async def _request(
@@ -150,10 +160,11 @@ class LusciiHttpClient:
         *,
         params: dict[str, Any] | None = None,
         max_pages: int = _MAX_PAGES_PER_CALL,
+        progress_label: str | None = None,
     ) -> list[_M]:
         rows: list[_M] = []
         cursor: str | None = None
-        for _ in range(max_pages):
+        for page in range(1, max_pages + 1):
             page_params: dict[str, Any] = {**(params or {}), "perPage": _PER_PAGE}
             if cursor is not None:
                 page_params["cursor"] = cursor
@@ -161,6 +172,14 @@ class LusciiHttpClient:
             body = self._json_of(response)
             rows.extend(self._parse(model, item) for item in body.get("data", []))
             cursor = (body.get("meta") or {}).get("nextCursor")
+            if progress_label and (cursor is None or page % _PROGRESS_EVERY_PAGES == 0):
+                logger.info(
+                    "luscii sync %s: %d rows in %d pages%s",
+                    progress_label,
+                    len(rows),
+                    page,
+                    "" if cursor else " — done",
+                )
             if cursor is None:
                 return rows
         raise LusciiApiError(
