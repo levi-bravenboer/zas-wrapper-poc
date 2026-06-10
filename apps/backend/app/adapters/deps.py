@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from app.adapters.hix import HixClient, HixStubClient
-from app.adapters.luscii import LusciiClient, LusciiStubClient
+from app.adapters.luscii import LusciiClient, LusciiHttpClient
 from app.core.settings import Settings, SettingsDep
 
 
@@ -22,19 +22,26 @@ def build_hix_client(settings: Settings) -> HixClient:
     raise NotImplementedError("Live HiX client not implemented in PoC scope.")
 
 
-def build_luscii_client(settings: Settings) -> LusciiClient:
-    if settings.luscii_mode == "stub":
-        return LusciiStubClient()
-    raise NotImplementedError("Live Luscii client not implemented in PoC scope.")
+def build_luscii_client(settings: Settings) -> LusciiHttpClient | None:
+    """Token-presence-driven: token set ⇒ live client, unset ⇒ unconfigured.
+
+    No mode setting, no stub. Callers must handle `None` (routes answer
+    503 `luscii_not_configured`; boot skips the readiness registration).
+    """
+    if settings.luscii_api_token is None:
+        return None
+    return LusciiHttpClient(str(settings.luscii_api_url), settings.luscii_api_token)
 
 
 def get_hix_client(settings: SettingsDep) -> HixClient:
     return build_hix_client(settings)
 
 
-def get_luscii_client(settings: SettingsDep) -> LusciiClient:
-    return build_luscii_client(settings)
+def get_luscii_client(request: Request) -> LusciiClient | None:
+    # App-lifetime client built once at boot (owns a pooled httpx client);
+    # rebuilding per request would leak connection pools.
+    return request.app.state.luscii_client
 
 
 HixClientDep = Annotated[HixClient, Depends(get_hix_client)]
-LusciiClientDep = Annotated[LusciiClient, Depends(get_luscii_client)]
+LusciiClientDep = Annotated[LusciiClient | None, Depends(get_luscii_client)]

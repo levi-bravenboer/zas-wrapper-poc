@@ -15,9 +15,21 @@ from app.adapters.luscii.program import (
     LusciiProgramData,
     LusciiProtocol,
 )
+from app.adapters.luscii.api_models import (
+    LusciiInstrumentItemLocalisation,
+    LusciiInstrumentLocalisation,
+    LusciiItemResponseLocalisation,
+    LusciiMeasurement,
+    LusciiMeasurementDetailItem,
+    LusciiPatientDetails,
+    LusciiPlannedAction,
+    LusciiProgramRef,
+    LusciiProtocolRef,
+)
+from app.adapters.luscii.errors import LusciiApiError, LusciiPatientNotFoundError
+from app.adapters.luscii.http_client import LusciiHttpClient
 from app.adapters.luscii.programs import LUSCII_STUB_PROGRAMS, LUSCII_STUB_PROGRAMS_BY_ID
 from app.adapters.luscii.protocol import LusciiClient
-from app.adapters.luscii.stub import LusciiStubClient
 
 __all__ = [
     "LUSCII_PROGRAM_BLOCK_TYPE",
@@ -27,14 +39,25 @@ __all__ = [
     "LUSCII_STUB_PROGRAMS",
     "LUSCII_STUB_PROGRAMS_BY_ID",
     "LusciiAlertThreshold",
+    "LusciiApiError",
     "LusciiClient",
+    "LusciiHttpClient",
     "LusciiInstrument",
+    "LusciiInstrumentItemLocalisation",
+    "LusciiInstrumentLocalisation",
+    "LusciiItemResponseLocalisation",
     "LusciiLayout",
     "LusciiLayoutEdge",
     "LusciiLayoutLane",
     "LusciiLayoutNode",
     "LusciiLayoutPhase",
+    "LusciiMeasurement",
+    "LusciiMeasurementDetailItem",
+    "LusciiPatientDetails",
+    "LusciiPatientNotFoundError",
+    "LusciiPlannedAction",
     "LusciiProgramData",
+    "LusciiProgramRef",
     "LusciiProtocol",
-    "LusciiStubClient",
+    "LusciiProtocolRef",
 ]
