@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE — inbox v4</title>
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.0.3/index.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.0.3/index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-background: oklch(1 0 0);
+        --color-surface-1: oklch(0.985 0.003 175);
+        --color-surface-2: oklch(0.97 0.01 175);
+        --color-foreground: oklch(0.21 0.04 265);
+        --color-foreground-muted: oklch(0.5 0.02 265);
+        --color-muted-foreground: var(--color-foreground-muted);
+        --color-card: var(--color-background);
+        --color-card-foreground: var(--color-foreground);
+        --color-popover: var(--color-background);
+        --color-popover-foreground: var(--color-foreground);
+        --color-muted: var(--color-surface-2);
+        --color-primary: oklch(0.46 0.07 175);
+        --color-primary-hover: oklch(0.4 0.07 175);
+        --color-primary-pressed: oklch(0.34 0.06 175);
+        --color-primary-foreground: oklch(1 0 0);
+        --color-primary-soft: oklch(0.93 0.04 175);
+        --color-primary-subtle: oklch(0.97 0.01 175);
+        --color-accent-mint: oklch(0.78 0.08 175);
+        --color-destructive: oklch(0.6 0.22 30);
+        --color-destructive-foreground: oklch(1 0 0);
+        --color-warning: oklch(0.75 0.18 65);
+        --color-warning-foreground: oklch(0.21 0.04 265);
+        --color-success: oklch(0.55 0.1 175);
+        --color-success-foreground: oklch(1 0 0);
+        --color-border: oklch(0.91 0.005 265);
+        --color-border-strong: oklch(0.82 0.01 265);
+        --color-input: var(--color-border);
+        --color-ring: var(--color-primary);
+        --radius-xs: 0.25rem;
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-xs: 0 1px 0 oklch(0.21 0.04 265 / 0.04);
+        --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+        --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+        --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
+        --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --font-size-xs: 0.75rem;
+        --font-size-sm: 0.8125rem;
+        --font-size-base: 0.875rem;
+        --font-size-md: 1rem;
+        --font-size-lg: 1.125rem;
+        --font-size-xl: 1.25rem;
+        --font-size-2xl: 1.5rem;
+        --font-size-3xl: 1.875rem;
+        --leading-tight: 1.25;
+        --leading-snug: 1.4;
+        --leading-normal: 1.55;
+        --tracking-tight: -0.011em;
+      }
+
+      :root {
+        --glass-panel: rgba(255, 255, 255, 0.55);
+        --glass-panel-strong: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.7);
+        --glass-blur: 20px;
+        --glass-blur-strong: 24px;
+        --glass-saturate: 180%;
+        --shadow-glass: 0 12px 32px rgba(38, 107, 94, 0.08), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+        --gradient-aurora-soft:
+          radial-gradient(ellipse 50% 40% at 100% 100%, rgba(111, 199, 182, 0.10) 0%, transparent 70%),
+          linear-gradient(180deg, #fafbfa 0%, #f4f6f5 100%);
+        --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+      }
+
+      body {
+        font-family: var(--font-sans);
+        color: var(--color-foreground);
+        background: var(--gradient-aurora-soft);
+        letter-spacing: var(--tracking-tight);
+        font-size: var(--font-size-base);
+        font-feature-settings: 'ss01' on, 'cv11' on;
+      }
+    </style>
+
+    <style>
+      .glass        { background: var(--glass-panel);        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));    border: 1px solid var(--glass-border); box-shadow: var(--shadow-glass); }
+      .glass-strong { background: var(--glass-panel-strong); backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate)); -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate)); border: 1px solid var(--glass-border); box-shadow: var(--shadow-glass); }
+      .gradient-active { background-image: var(--gradient-active); }
+
+      .avatar-palette-0 { background: oklch(0.93 0.04 175); color: oklch(0.34 0.06 175); }
+      .avatar-palette-1 { background: oklch(0.78 0.08 175 / .35); color: oklch(0.34 0.06 175); }
+      .avatar-palette-2 { background-image: var(--gradient-active); color: #fff; }
+      .avatar-palette-3 { background: oklch(0.4 0.07 175); color: #fff; }
+      .avatar-palette-4 { background: oklch(0.55 0.1 175); color: #fff; }
+      .avatar-palette-5 { background: oklch(0.97 0.01 175); color: oklch(0.46 0.07 175); border: 1px solid oklch(0.82 0.07 175); }
+      .avatar-palette-6 { background: oklch(0.34 0.06 175); color: #fff; }
+      .avatar-palette-7 { background: oklch(0.85 0.06 175); color: oklch(0.34 0.06 175); }
+
+      .sort-tab { position: relative; padding: 6px 2px; }
+      .sort-tab[data-active="true"]::after {
+        content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px; background: oklch(0.34 0.06 175); border-radius: 2px;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen">
+    <!--
+      v4 changes vs v3:
+        - Strip card chrome on main content. Glass kept ONLY on sidebar
+        - Aurora background dialed down (almost flat off-white)
+        - Inbox: flat panel, no border/rounded card. Single 1px hairline
+          divider between inbox + detail
+        - Detail pane: flat, no card chrome
+        - Sort control: text-with-underline tabs (Linear-style), no pill bg
+        - Rows: tighter, single line meta (kind icon + time / modality muted)
+        - Quiet footer: collapses to "Meer laden 8/23"
+        - Header drops sub-line; title-only at left
+        - Detail tabs use same underline-tab style as sort
+        - Type scale denser; tabular-nums on INSZ / dates / counts
+    -->
+
+    <div class="flex h-screen overflow-hidden">
+
+      <aside class="glass hidden lg:flex w-60 shrink-0 flex-col rounded-none">
+        <div class="px-3 py-4">
+          <div class="flex items-center gap-2 px-1">
+            <span aria-hidden="true" class="grid size-8 shrink-0 place-items-center rounded-md gradient-active text-sm font-semibold text-white shadow-sm">Z</span>
+            <span class="truncate text-sm font-semibold">ZAS Orchestrator</span>
+          </div>
+        </div>
+
+        <nav class="flex-1 px-2 py-1 space-y-0.5 text-[--font-size-sm]">
+          <div class="px-2 pb-1 pt-2 text-[10px] uppercase tracking-wider text-[--color-foreground-muted]">Navigatie</div>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="layout-dashboard" class="size-4 opacity-70"></i><span>Dashboard</span></a>
+          <a aria-current="page" class="flex items-center gap-2 px-3 py-1.5 rounded-md gradient-active text-white shadow-sm"><i data-lucide="users" class="size-4"></i><span>Patiënten</span></a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="git-branch" class="size-4 opacity-70"></i><span>Carepaths</span></a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="inbox" class="size-4 opacity-70"></i><span>Inbox</span></a>
+
+          <div class="px-2 pb-1 pt-4 text-[10px] uppercase tracking-wider text-[--color-foreground-muted]">Admin</div>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="building-2" class="size-4 opacity-70"></i><span>Organisaties</span></a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="user-cog" class="size-4 opacity-70"></i><span>Gebruikers</span></a>
+        </nav>
+
+        <div class="px-2 pb-3 pt-2 border-t border-[--color-border]/40">
+          <button class="glass-strong w-full flex items-center gap-2 px-2 py-2 rounded-md text-left">
+            <div class="size-7 rounded-full avatar-palette-2 flex items-center justify-center text-[11px] font-medium">DJ</div>
+            <div class="min-w-0 flex-1 leading-tight">
+              <div class="truncate text-[--font-size-sm] font-medium">Dr. Janssen</div>
+              <div class="truncate text-[11px] text-[--color-foreground-muted]">caregiver</div>
+            </div>
+            <i data-lucide="chevrons-up-down" class="size-3.5 opacity-60"></i>
+          </button>
+        </div>
+      </aside>
+
+      <main class="flex-1 flex flex-col overflow-hidden">
+
+        <div class="shrink-0 px-8 pt-7 pb-4 flex items-center gap-6">
+          <h1 class="text-2xl font-semibold tracking-tight">Patiënten</h1>
+
+          <div class="flex items-center gap-5 text-[--font-size-sm]">
+            <button data-sort="next_appointment" data-active="true" class="sort-tab font-medium">
+              Volgende afspraak
+            </button>
+            <button data-sort="newly_added" data-active="false" class="sort-tab font-medium text-[--color-foreground-muted] hover:text-[--color-foreground]">
+              Nieuw vs oud
+            </button>
+          </div>
+
+          <div class="ml-auto flex items-center gap-2 text-[--font-size-xs] font-mono text-[--color-foreground-muted]">
+            <span id="urlMock">/_auth/patients?sort=next_appointment</span>
+          </div>
+        </div>
+
+        <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[380px_1fr] overflow-hidden border-t border-[--color-border]/60">
+
+          <section class="flex flex-col overflow-hidden min-h-0 border-r border-[--color-border]/60">
+            <ul id="patientList" role="list" class="flex-1 min-h-0 overflow-y-auto"></ul>
+
+            <div class="shrink-0 border-t border-[--color-border]/60">
+              <button class="w-full py-2 inline-flex items-center justify-center gap-1.5 text-[11px] text-[--color-foreground-muted] hover:text-[--color-foreground]">
+                <span>Meer laden</span>
+                <span class="font-mono opacity-70">8/23</span>
+              </button>
+            </div>
+          </section>
+
+          <section id="detailPane" class="flex flex-col overflow-hidden min-h-0"></section>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const PATIENTS = [
+        { id: '7b9d', given: 'Anke', family: 'Janssens', insz: '85.03.12-072.47', dob: '12 mrt 1985', org: 'Zas Hospital · Cardiologie', created_days_ago: 3, next_appointment: { title: 'Controle na operatie', starts_at: '+2d 14:00', kind: 'consultation', modality: 'on_site', location: 'Polikliniek 3, kamer 12' }, team: 'Cardio Team A', lead: 'Dr. Janssen' },
+        { id: '24aa', given: 'Jan', family: 'Kowalski', insz: '78.09.04-189.13', dob: '4 sep 1978', org: 'Zas Hospital · Klinisch Lab', created_days_ago: 0, next_appointment: { title: 'Bloedafname nuchter', starts_at: 'morgen 08:15', kind: 'lab', modality: 'on_site', location: 'Lab balie 2' }, team: 'Lab Team', lead: 'Dr. Mertens' },
+        { id: '90c1', given: 'Marc', family: 'De Vries', insz: '62.11.27-301.05', dob: '27 nov 1962', org: 'Zas Hospital · Radiologie', created_days_ago: 14, next_appointment: { title: 'MRI lumbale wervelkolom', starts_at: 'Wo 18 jun', kind: 'imaging', modality: 'online', location: null }, team: 'Radiologie Team', lead: 'Dr. Peeters' },
+        { id: 'f3e0', given: 'Lisa', family: 'Bakker', insz: '91.05.22-455.61', dob: '22 mei 1991', org: 'Zas Hospital · Orthopedie', created_days_ago: 1, next_appointment: { title: 'Kleine ingreep — knie', starts_at: 'vandaag 15:45', kind: 'procedure', modality: 'on_site', location: 'OK 4' }, team: 'Orthopedie Team B', lead: 'Dr. Hendriks' },
+        { id: '5b2f', given: 'Tom', family: 'Peeters', insz: '70.02.14-218.92', dob: '14 feb 1970', org: 'Huisartsenpraktijk De Linde', created_days_ago: 5, next_appointment: null, team: null, lead: null },
+        { id: 'a187', given: 'Eva', family: 'Van der Berg', insz: '88.07.30-664.18', dob: '30 jul 1988', org: 'Zas Hospital · Interne geneeskunde', created_days_ago: 8, next_appointment: { title: 'Opvolggesprek', starts_at: 'Ma 16 jun', kind: 'consultation', modality: 'online', location: null }, team: 'Interne Team A', lead: 'Dr. Janssen' },
+        { id: 'c4d6', given: 'Sven', family: 'Hendriks', insz: '95.12.05-902.34', dob: '5 dec 1995', org: 'Zas Hospital · Cardiologie', created_days_ago: 22, next_appointment: { title: 'Holter terugbrengen', starts_at: 'Za 21 jun', kind: 'other', modality: 'on_site', location: 'Onthaal' }, team: 'Cardio Team A', lead: 'Dr. Janssen' },
+        { id: 'e0b8', given: 'Sofie', family: 'Mertens', insz: '83.08.18-540.76', dob: '18 aug 1983', org: 'Huisartsenpraktijk De Linde', created_days_ago: 30, next_appointment: null, team: null, lead: null },
+      ];
+
+      const KIND_ICON = { consultation: 'stethoscope', lab: 'flask-conical', imaging: 'scan', procedure: 'syringe', other: 'calendar' };
+      const KIND_TINT = { consultation: 'text-[--color-primary]', lab: 'text-[--color-warning]', imaging: 'text-[--color-accent-mint]', procedure: 'text-[--color-destructive]', other: 'text-[--color-foreground-muted]' };
+      const MODALITY_LABEL = { online: 'Online', on_site: 'Op locatie' };
+
+      function avatarClass(id) { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0; return 'avatar-palette-' + (Math.abs(h) % 8); }
+      function initials(g, f) { return (g[0] || '').toUpperCase() + (f[0] || '').toUpperCase(); }
+      function newlyAddedCopy(d) { if (d === 0) return 'vandaag'; if (d === 1) return 'gisteren'; return d + 'd geleden'; }
+
+      function el(tag, opts = {}) {
+        const n = document.createElement(tag);
+        if (opts.cls) n.className = opts.cls;
+        if (opts.text != null) n.textContent = opts.text;
+        if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) n.setAttribute(k, v);
+        return n;
+      }
+      function icon(name, cls) { const i = document.createElement('i'); i.setAttribute('data-lucide', name); if (cls) i.className = cls; return i; }
+      function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+      function buildRow(p, sort, selectedId) {
+        const li = el('li');
+        const isSelected = selectedId === p.id;
+        const a = el('button', {
+          cls: 'group relative w-full text-left flex items-center gap-3 pl-6 pr-4 py-2.5 transition-colors ' +
+               (isSelected ? 'bg-[--color-primary-soft]/30' : 'hover:bg-[--color-surface-2]/70'),
+          attrs: { 'data-patient-id': p.id, type: 'button' }
+        });
+
+        if (isSelected) a.appendChild(el('span', { cls: 'absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-r gradient-active' }));
+
+        const avatar = el('div', {
+          cls: 'size-7 rounded-full ' + avatarClass(p.id) + ' flex items-center justify-center font-mono text-[10px] font-semibold shrink-0',
+          text: initials(p.given, p.family)
+        });
+
+        const id = el('div', { cls: 'flex-1 min-w-0' });
+        id.appendChild(el('div', { cls: 'text-[--font-size-sm] font-medium truncate', text: p.family + ', ' + p.given }));
+        id.appendChild(el('div', { cls: 'text-[10.5px] text-[--color-foreground-muted] font-mono tabular-nums truncate', text: p.insz }));
+
+        const meta = el('div', { cls: 'shrink-0 text-right max-w-[120px]' });
+        if (sort === 'next_appointment') {
+          if (p.next_appointment) {
+            const ap = p.next_appointment;
+            const line = el('div', { cls: 'flex items-center justify-end gap-1.5 text-[11px]' });
+            line.appendChild(icon(KIND_ICON[ap.kind], 'size-3 ' + KIND_TINT[ap.kind]));
+            line.appendChild(el('span', { cls: 'tabular-nums', text: ap.starts_at }));
+            meta.appendChild(line);
+            meta.appendChild(el('div', { cls: 'text-[10px] text-[--color-foreground-muted] mt-0.5', text: MODALITY_LABEL[ap.modality] }));
+          } else {
+            meta.appendChild(el('div', { cls: 'text-[11px] text-[--color-foreground-muted]', text: '—' }));
+          }
+        } else {
+          meta.appendChild(el('div', { cls: 'text-[11px] text-[--color-foreground-muted] tabular-nums', text: newlyAddedCopy(p.created_days_ago) }));
+        }
+
+        a.appendChild(avatar);
+        a.appendChild(id);
+        a.appendChild(meta);
+        li.appendChild(a);
+        return li;
+      }
+
+      function reorder(sort) {
+        const copy = [...PATIENTS];
+        if (sort === 'next_appointment') {
+          copy.sort((a, b) => {
+            const aHas = !!a.next_appointment, bHas = !!b.next_appointment;
+            if (aHas && !bHas) return -1;
+            if (!aHas && bHas) return 1;
+            if (!aHas && !bHas) return 0;
+            return a.next_appointment.starts_at.localeCompare(b.next_appointment.starts_at);
+          });
+        } else {
+          copy.sort((a, b) => a.created_days_ago - b.created_days_ago);
+        }
+        return copy;
+      }
+
+      function renderEmptyDetail() {
+        const pane = document.getElementById('detailPane');
+        clear(pane);
+        const wrap = el('div', { cls: 'flex-1 grid place-items-center px-10 py-16 text-center' });
+        const inner = el('div', { cls: 'max-w-sm' });
+        const iconWrap = el('div', { cls: 'mx-auto size-12 rounded-full bg-[--color-surface-2] flex items-center justify-center mb-4' });
+        iconWrap.appendChild(icon('user-round', 'size-5 text-[--color-foreground-muted]'));
+        inner.appendChild(iconWrap);
+        inner.appendChild(el('div', { cls: 'text-[--font-size-sm] font-medium', text: 'Selecteer een patiënt' }));
+        inner.appendChild(el('div', { cls: 'text-[11px] text-[--color-foreground-muted] mt-1', text: 'Klik een rij links om hier het detail te tonen.' }));
+        const kbd = el('div', { cls: 'mt-5 text-[10px] text-[--color-foreground-muted] flex items-center justify-center gap-1.5' });
+        kbd.appendChild(el('kbd', { cls: 'px-1.5 py-0.5 rounded border border-[--color-border] bg-[--color-background] font-mono', text: '↑↓' }));
+        kbd.appendChild(el('span', { text: 'navigeer' }));
+        kbd.appendChild(el('span', { cls: 'mx-1 opacity-50', text: '·' }));
+        kbd.appendChild(el('kbd', { cls: 'px-1.5 py-0.5 rounded border border-[--color-border] bg-[--color-background] font-mono', text: 'Enter' }));
+        kbd.appendChild(el('span', { text: 'open' }));
+        inner.appendChild(kbd);
+        wrap.appendChild(inner);
+        pane.appendChild(wrap);
+      }
+
+      function renderPatientDetail(p) {
+        const pane = document.getElementById('detailPane');
+        clear(pane);
+
+        const header = el('div', { cls: 'shrink-0 px-8 pt-7 pb-5 flex items-start gap-4' });
+        const av = el('div', { cls: 'size-11 rounded-full ' + avatarClass(p.id) + ' flex items-center justify-center font-mono text-[--font-size-xs] font-semibold shrink-0', text: initials(p.given, p.family) });
+        const idCol = el('div', { cls: 'flex-1 min-w-0' });
+        idCol.appendChild(el('div', { cls: 'text-xl font-semibold tracking-tight truncate', text: p.family + ', ' + p.given }));
+        const sub = el('div', { cls: 'mt-1 flex items-center gap-2 text-[11px] text-[--color-foreground-muted] flex-wrap' });
+        sub.appendChild(el('span', { cls: 'font-mono tabular-nums', text: p.insz }));
+        sub.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+        sub.appendChild(el('span', { text: p.dob }));
+        sub.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+        sub.appendChild(el('span', { cls: 'truncate', text: p.org }));
+        idCol.appendChild(sub);
+
+        const teamWrap = el('div', { cls: 'shrink-0 flex items-center gap-2' });
+        if (p.team) {
+          const teamChip = el('div', { cls: 'flex items-center gap-2 px-2.5 py-1 rounded-md bg-[--color-surface-1] border border-[--color-border]/60 text-[11px]' });
+          teamChip.appendChild(icon('users-round', 'size-3 text-[--color-primary]'));
+          const tt = el('div', { cls: 'leading-tight' });
+          tt.appendChild(el('div', { cls: 'font-medium', text: p.team }));
+          tt.appendChild(el('div', { cls: 'text-[10px] text-[--color-foreground-muted]', text: 'Lead: ' + p.lead }));
+          teamChip.appendChild(tt);
+          teamWrap.appendChild(teamChip);
+        } else {
+          teamWrap.appendChild(el('span', { cls: 'text-[11px] text-[--color-foreground-muted] italic', text: 'Geen zorgteam' }));
+        }
+        const kebab = el('button', { cls: 'p-1.5 rounded hover:bg-[--color-surface-2]', attrs: { 'aria-label': 'Acties' } });
+        kebab.appendChild(icon('more-vertical', 'size-4 text-[--color-foreground-muted]'));
+        teamWrap.appendChild(kebab);
+
+        header.appendChild(av);
+        header.appendChild(idCol);
+        header.appendChild(teamWrap);
+        pane.appendChild(header);
+
+        const tabs = el('div', { cls: 'shrink-0 px-8 border-b border-[--color-border]/60' });
+        const tabRow = el('div', { cls: 'flex items-center gap-5 text-[--font-size-sm]' });
+        const TAB_DEFS = [
+          { id: 'measurements', label: 'Metingen' },
+          { id: 'lab_results', label: 'Labresultaten' },
+          { id: 'appointments', label: 'Afspraken' },
+        ];
+        TAB_DEFS.forEach((t, i) => {
+          const b = el('button', {
+            cls: 'sort-tab py-2.5 font-medium ' + (i === 0 ? '' : 'text-[--color-foreground-muted] hover:text-[--color-foreground]'),
+            attrs: { 'data-tab': t.id, 'data-active': i === 0 ? 'true' : 'false', type: 'button' }
+          });
+          b.textContent = t.label;
+          tabRow.appendChild(b);
+        });
+        tabs.appendChild(tabRow);
+        pane.appendChild(tabs);
+
+        const body = el('div', { cls: 'flex-1 min-h-0 overflow-y-auto px-8 py-6' });
+        renderTabBody(body, 'measurements', p);
+        pane.appendChild(body);
+
+        tabRow.querySelectorAll('button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            tabRow.querySelectorAll('button').forEach((b) => {
+              b.dataset.active = 'false';
+              b.className = 'sort-tab py-2.5 font-medium text-[--color-foreground-muted] hover:text-[--color-foreground]';
+            });
+            btn.dataset.active = 'true';
+            btn.className = 'sort-tab py-2.5 font-medium';
+            renderTabBody(body, btn.dataset.tab, p);
+          });
+        });
+
+        window.lucide && window.lucide.createIcons();
+      }
+
+      function renderTabBody(node, tab, p) {
+        clear(node);
+        if (tab === 'measurements') return node.appendChild(emptyTab('activity', 'Nog geen metingen gekoppeld', 'Wordt geleverd door de monitoring-koppeling.'));
+        if (tab === 'lab_results') return node.appendChild(emptyTab('flask-conical', 'Nog geen labresultaten gekoppeld', 'Wordt geleverd door de HiX-koppeling.'));
+        if (tab === 'appointments') return renderAppointmentsTab(node, p);
+      }
+
+      function renderAppointmentsTab(node, p) {
+        const up = el('section');
+        const upH = el('div', { cls: 'flex items-baseline gap-2 mb-2' });
+        upH.appendChild(el('h3', { cls: 'text-[10px] uppercase tracking-wider text-[--color-foreground-muted] font-medium', text: 'Aankomend' }));
+        upH.appendChild(el('span', { cls: 'text-[10px] text-[--color-foreground-muted] tabular-nums', text: p.next_appointment ? '1' : '0' }));
+        up.appendChild(upH);
+        if (p.next_appointment) up.appendChild(appointmentRow(p.next_appointment, p, false));
+        else up.appendChild(el('div', { cls: 'text-[--font-size-sm] text-[--color-foreground-muted] italic py-4', text: 'Geen aankomende afspraken' }));
+
+        const hist = el('details', { cls: 'mt-8 group' });
+        const sum = el('summary', { cls: 'cursor-pointer flex items-baseline gap-2 select-none' });
+        sum.appendChild(el('span', { cls: 'text-[10px] uppercase tracking-wider text-[--color-foreground-muted] font-medium', text: 'Geschiedenis' }));
+        sum.appendChild(el('span', { cls: 'text-[10px] text-[--color-foreground-muted] tabular-nums', text: '2' }));
+        sum.appendChild(icon('chevron-down', 'size-3 ml-1 text-[--color-foreground-muted] transition-transform group-open:rotate-180'));
+        hist.appendChild(sum);
+        const histList = el('div', { cls: 'mt-2' });
+        histList.appendChild(appointmentRow({ title: 'Eerste consult', starts_at: '12 mei • 09:00', kind: 'consultation', modality: 'on_site', location: 'Polikliniek 3' }, p, true, 'fulfilled'));
+        histList.appendChild(appointmentRow({ title: 'CT scan thorax', starts_at: '3 mei • 14:30', kind: 'imaging', modality: 'on_site', location: 'CT 2' }, p, true, 'cancelled'));
+        hist.appendChild(histList);
+
+        node.appendChild(up);
+        node.appendChild(hist);
+      }
+
+      function appointmentRow(ap, p, isHistory, status) {
+        const row = el('div', { cls: 'flex items-start gap-3 py-3 border-t border-[--color-border]/40 first:border-t-0' });
+        const ico = el('div', { cls: 'size-7 rounded-md bg-[--color-surface-2] flex items-center justify-center shrink-0 mt-0.5' });
+        ico.appendChild(icon(KIND_ICON[ap.kind], 'size-3.5 ' + KIND_TINT[ap.kind]));
+        row.appendChild(ico);
+        const body = el('div', { cls: 'flex-1 min-w-0' });
+        const l1 = el('div', { cls: 'flex items-center gap-2 min-w-0' });
+        l1.appendChild(el('span', { cls: 'text-[--font-size-sm] font-medium truncate', text: ap.title }));
+        if (isHistory && status) {
+          const STATUS_LBL = { fulfilled: 'Voltooid', cancelled: 'Geannuleerd', noshow: 'Niet verschenen' };
+          l1.appendChild(el('span', { cls: 'text-[10px] text-[--color-foreground-muted] px-1.5 py-0.5 rounded bg-[--color-surface-2]', text: STATUS_LBL[status] || status }));
+        }
+        body.appendChild(l1);
+        const l2 = el('div', { cls: 'mt-0.5 text-[11px] text-[--color-foreground-muted] flex items-center gap-1.5 flex-wrap tabular-nums' });
+        l2.appendChild(el('span', { text: ap.starts_at }));
+        l2.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+        l2.appendChild(el('span', { text: MODALITY_LABEL[ap.modality] }));
+        if (ap.location) {
+          l2.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+          l2.appendChild(el('span', { cls: 'truncate', text: ap.location }));
+        }
+        body.appendChild(l2);
+        row.appendChild(body);
+        const tail = el('div', { cls: 'shrink-0 text-[10px] text-[--color-foreground-muted] mt-0.5' });
+        tail.textContent = (p.lead || '—') + ' +2';
+        row.appendChild(tail);
+        return row;
+      }
+
+      function emptyTab(iconName, headline, hint) {
+        const wrap = el('div', { cls: 'flex flex-col items-center justify-center text-center py-16' });
+        const ico = el('div', { cls: 'mx-auto size-10 rounded-full bg-[--color-surface-2] flex items-center justify-center mb-3' });
+        ico.appendChild(icon(iconName, 'size-4 text-[--color-foreground-muted]'));
+        wrap.appendChild(ico);
+        wrap.appendChild(el('div', { cls: 'text-[--font-size-sm] font-medium', text: headline }));
+        wrap.appendChild(el('div', { cls: 'text-[11px] text-[--color-foreground-muted] mt-1 max-w-xs', text: hint }));
+        return wrap;
+      }
+
+      let currentSort = 'next_appointment';
+      let selectedId = null;
+
+      function renderList() {
+        const list = document.getElementById('patientList');
+        clear(list);
+        reorder(currentSort).forEach((p) => list.appendChild(buildRow(p, currentSort, selectedId)));
+        document.getElementById('urlMock').textContent = selectedId
+          ? '/_auth/patients/' + selectedId + '?sort=' + currentSort
+          : '/_auth/patients?sort=' + currentSort;
+        document.querySelectorAll('button.sort-tab[data-sort]').forEach((b) => {
+          const isActive = b.dataset.sort === currentSort;
+          b.dataset.active = isActive ? 'true' : 'false';
+          b.className = 'sort-tab font-medium' + (isActive ? '' : ' text-[--color-foreground-muted] hover:text-[--color-foreground]');
+        });
+        list.querySelectorAll('button[data-patient-id]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedId = btn.dataset.patientId;
+            const p = PATIENTS.find((x) => x.id === selectedId);
+            renderList();
+            renderPatientDetail(p);
+          });
+        });
+        window.lucide && window.lucide.createIcons();
+      }
+
+      document.querySelectorAll('button.sort-tab[data-sort]').forEach((b) => {
+        b.addEventListener('click', () => { currentSort = b.dataset.sort; renderList(); });
+      });
+
+      renderList();
+      renderEmptyDetail();
+      window.lucide && window.lucide.createIcons();
+    </script>
+  </body>
+</html>
