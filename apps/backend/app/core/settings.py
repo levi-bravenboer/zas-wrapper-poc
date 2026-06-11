@@ -51,6 +51,7 @@ class Settings(BaseSettings):
         if isinstance(v, str) and not v.strip():
             return None
         return v
+
     database_url: str = DEFAULT_DATABASE_URL
 
     # Ory access plane. Localhost defaults serve host-run dev + tests;

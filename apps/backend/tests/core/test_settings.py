@@ -8,7 +8,12 @@ from tests._settings import build_settings
 
 def test_settings_load_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     # CI sets BACKEND_ENV=test in the workflow env; clear so defaults apply.
-    for var in ("BACKEND_ENV", "BACKEND_HIX_MODE", "BACKEND_LUSCII_API_URL", "BACKEND_LUSCII_API_TOKEN"):
+    for var in (
+        "BACKEND_ENV",
+        "BACKEND_HIX_MODE",
+        "BACKEND_LUSCII_API_URL",
+        "BACKEND_LUSCII_API_TOKEN",
+    ):
         monkeypatch.delenv(var, raising=False)
     settings = build_settings()
     assert settings.env == "dev"

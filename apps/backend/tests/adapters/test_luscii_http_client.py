@@ -22,9 +22,7 @@ END = date(2026, 6, 10)
 
 
 def _client(handler: httpx.MockTransport) -> LusciiHttpClient:
-    return LusciiHttpClient(
-        "https://vitals.test", SecretStr(TOKEN), transport=handler
-    )
+    return LusciiHttpClient("https://vitals.test", SecretStr(TOKEN), transport=handler)
 
 
 def _page(rows: list[dict[str, Any]], next_cursor: str | None) -> httpx.Response:
@@ -58,9 +56,7 @@ async def test_bearer_header_sent_and_pagination_exhausted() -> None:
         return _page([_planned_action(3)], None)
 
     client = _client(httpx.MockTransport(handler))
-    rows = await client.get_planned_actions(
-        "22222222-2222-2222-2222-222222222222", START, END
-    )
+    rows = await client.get_planned_actions("22222222-2222-2222-2222-222222222222", START, END)
 
     assert [r.id[-1] for r in rows] == ["1", "2", "3"]
     assert len(seen) == 2
@@ -76,9 +72,7 @@ async def test_page_cap_overrun_raises_instead_of_truncating() -> None:
 
     client = _client(httpx.MockTransport(handler))
     with pytest.raises(LusciiApiError, match="refusing to truncate"):
-        await client.get_planned_actions(
-            "22222222-2222-2222-2222-222222222222", START, END
-        )
+        await client.get_planned_actions("22222222-2222-2222-2222-222222222222", START, END)
 
 
 async def test_upstream_500_maps_to_typed_error_without_leaking() -> None:

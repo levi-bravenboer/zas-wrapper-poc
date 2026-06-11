@@ -76,9 +76,7 @@ class LusciiPatientDataService:
         try:
             details = await client.get_patient(value)
         except LusciiPatientNotFoundError as exc:
-            raise LusciiLinkPatientNotFoundError(
-                details={"luscii_patient_id": value}
-            ) from exc
+            raise LusciiLinkPatientNotFoundError(details={"luscii_patient_id": value}) from exc
         except LusciiApiError as exc:
             raise LusciiUnavailableError() from exc
 
@@ -191,9 +189,7 @@ class LusciiPatientDataService:
             unmatched_measurements=unmatched,
         )
 
-    async def _build_decoder(
-        self, measurements: list[LusciiMeasurement]
-    ) -> _MeasurementDecoder:
+    async def _build_decoder(self, measurements: list[LusciiMeasurement]) -> _MeasurementDecoder:
         """Key-filtered lookups against the synced catalogue tables.
 
         Unsynced catalogue ⇒ empty lookups ⇒ decoder degrades to raw values
@@ -241,9 +237,7 @@ class LusciiPatientDataService:
             response_rows = list(
                 await self._session.scalars(
                     select(LusciiItemResponseLocalisationRow).where(
-                        LusciiItemResponseLocalisationRow.item_response_id.in_(
-                            list(response_ids)
-                        )
+                        LusciiItemResponseLocalisationRow.item_response_id.in_(list(response_ids))
                     )
                 )
             )
@@ -261,9 +255,7 @@ def _program_view(details: LusciiPatientDetails) -> LusciiProgramView | None:
     return LusciiProgramView(
         id=details.program.id,
         name=details.program.name,
-        start_date=details.program.start_date.isoformat()
-        if details.program.start_date
-        else None,
+        start_date=details.program.start_date.isoformat() if details.program.start_date else None,
     )
 
 
@@ -316,19 +308,18 @@ class _MeasurementDecoder:
     ) -> None:
         self._instruments: dict[tuple[str, str], dict[str, str | None]] = {}
         for loc in instrument_locs:
-            self._instruments.setdefault(
-                (loc.instrument_id, loc.instrument_version), {}
-            )[loc.locale] = loc.name
+            self._instruments.setdefault((loc.instrument_id, loc.instrument_version), {})[
+                loc.locale
+            ] = loc.name
         self._items: dict[tuple[str, str], dict[str, tuple[str | None, str | None]]] = {}
         for item in item_locs:
-            self._items.setdefault((item.item_id, item.item_version), {})[
-                item.locale
-            ] = (item.title, item.unit)
+            self._items.setdefault((item.item_id, item.item_version), {})[item.locale] = (
+                item.title,
+                item.unit,
+            )
         self._responses: dict[str, dict[str, str | None]] = {}
         for resp in response_locs:
-            self._responses.setdefault(resp.item_response_id, {})[
-                resp.locale
-            ] = resp.response_text
+            self._responses.setdefault(resp.item_response_id, {})[resp.locale] = resp.response_text
 
     def decode(self, measurement: LusciiMeasurement) -> LusciiMeasurementView:
         return LusciiMeasurementView(
@@ -343,9 +334,7 @@ class _MeasurementDecoder:
         if measurement.instrument_id is None or measurement.instrument_version is None:
             return None
         return _pick_locale(
-            self._instruments.get(
-                (measurement.instrument_id, measurement.instrument_version), {}
-            )
+            self._instruments.get((measurement.instrument_id, measurement.instrument_version), {})
         )
 
     def _decode_details(self, details: str) -> list[LusciiMeasurementValueView]:

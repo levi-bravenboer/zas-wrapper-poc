@@ -52,9 +52,7 @@ class FakeLusciiClient:
         self._gate("get_planned_actions")
         return [a for a in self.planned_actions if a.patient_id == luscii_patient_id]
 
-    async def get_measurements(
-        self, start_date: date, end_date: date
-    ) -> list[LusciiMeasurement]:
+    async def get_measurements(self, start_date: date, end_date: date) -> list[LusciiMeasurement]:
         self._gate("get_measurements")
         return list(self.measurements)
 

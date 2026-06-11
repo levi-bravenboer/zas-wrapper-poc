@@ -74,12 +74,8 @@ async def sync_luscii_catalogue(session: AsyncSession, client: LusciiClient) -> 
     instrument_locs, instr_dupes = _dedupe(
         instrument_locs, lambda r: (r.instrument_id, r.instrument_version, r.locale)
     )
-    item_locs, item_dupes = _dedupe(
-        item_locs, lambda r: (r.item_id, r.item_version, r.locale)
-    )
-    response_locs, response_dupes = _dedupe(
-        response_locs, lambda r: (r.item_response_id, r.locale)
-    )
+    item_locs, item_dupes = _dedupe(item_locs, lambda r: (r.item_id, r.item_version, r.locale))
+    response_locs, response_dupes = _dedupe(response_locs, lambda r: (r.item_response_id, r.locale))
     if instr_dupes or item_dupes or response_dupes:
         logger.info(
             "luscii catalogue upstream duplicates dropped: instruments=%d items=%d responses=%d",

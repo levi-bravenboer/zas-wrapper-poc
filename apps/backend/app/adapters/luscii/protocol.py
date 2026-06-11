@@ -38,9 +38,7 @@ class LusciiClient(Protocol):
         """`GET /v1/patients/{uuid}/planned-actions`, paged to exhaustion."""
         ...
 
-    async def get_measurements(
-        self, start_date: date, end_date: date
-    ) -> list[LusciiMeasurement]:
+    async def get_measurements(self, start_date: date, end_date: date) -> list[LusciiMeasurement]:
         """`GET /v1/measurements` — org-wide; the caller filters by patient."""
         ...
 

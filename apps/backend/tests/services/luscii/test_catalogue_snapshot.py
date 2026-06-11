@@ -63,9 +63,7 @@ async def _counts(session: AsyncSession) -> tuple[int, int, int]:
     )
 
 
-async def test_export_writes_one_file_per_locale(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_export_writes_one_file_per_locale(db_session: AsyncSession, tmp_path: Path) -> None:
     await _seed_catalogue(db_session)
 
     counts = await export_catalogue_snapshots(db_session, tmp_path)
@@ -131,9 +129,7 @@ async def test_export_import_round_trip_replaces_tables(
     assert restored.unit == "kg"
 
 
-async def test_case_colliding_locales_round_trip(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_case_colliding_locales_round_trip(db_session: AsyncSession, tmp_path: Path) -> None:
     # Observed live 2026-06-11: upstream has both en-US and en-us. On a
     # case-insensitive filesystem (macOS/Windows) plain <locale>.json names
     # silently overwrite each other — the collider must get a ~N suffix.
@@ -167,9 +163,7 @@ async def test_case_colliding_locales_round_trip(
     ]
 
 
-async def test_export_removes_stale_locale_files(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_export_removes_stale_locale_files(db_session: AsyncSession, tmp_path: Path) -> None:
     (tmp_path / "fr.json").write_text("{}", encoding="utf-8")
     await _seed_catalogue(db_session)
 
@@ -178,16 +172,12 @@ async def test_export_removes_stale_locale_files(
     assert not (tmp_path / "fr.json").exists()
 
 
-async def test_export_errors_on_empty_tables(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_export_errors_on_empty_tables(db_session: AsyncSession, tmp_path: Path) -> None:
     with pytest.raises(SnapshotError, match="luscii-sync"):
         await export_catalogue_snapshots(db_session, tmp_path)
 
 
-async def test_import_errors_on_empty_directory(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_import_errors_on_empty_directory(db_session: AsyncSession, tmp_path: Path) -> None:
     with pytest.raises(SnapshotError, match="no snapshot files"):
         await import_catalogue_snapshots(db_session, tmp_path)
 
@@ -207,9 +197,7 @@ async def test_import_rejects_locale_filename_mismatch(
         await import_catalogue_snapshots(db_session, tmp_path)
 
 
-async def test_if_empty_imports_into_empty_tables(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_if_empty_imports_into_empty_tables(db_session: AsyncSession, tmp_path: Path) -> None:
     await _seed_catalogue(db_session)
     await export_catalogue_snapshots(db_session, tmp_path)
     for model in (
@@ -227,9 +215,7 @@ async def test_if_empty_imports_into_empty_tables(
     assert await _counts(db_session) == (2, 1, 1)
 
 
-async def test_if_empty_skips_populated_tables(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_if_empty_skips_populated_tables(db_session: AsyncSession, tmp_path: Path) -> None:
     # Any populated table means a sync or import already ran — the boot-time
     # seed must never overwrite it (the snapshots could be older).
     await _seed_catalogue(db_session)
@@ -247,9 +233,7 @@ async def test_if_empty_degrades_without_snapshots(
     assert await _counts(db_session) == (0, 0, 0)
 
 
-async def test_import_rejects_malformed_file(
-    db_session: AsyncSession, tmp_path: Path
-) -> None:
+async def test_import_rejects_malformed_file(db_session: AsyncSession, tmp_path: Path) -> None:
     (tmp_path / "nl.json").write_text('{"locale": "nl"}', encoding="utf-8")
 
     with pytest.raises(SnapshotError, match="not a valid catalogue snapshot"):

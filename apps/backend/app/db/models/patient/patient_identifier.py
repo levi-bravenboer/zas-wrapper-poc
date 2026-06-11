@@ -43,9 +43,7 @@ class PatientIdentifier(AuditableEntity):
             "uq_patient_identifiers_luscii_value",
             "value",
             unique=True,
-            postgresql_where=sa.text(
-                "system = 'urn:zas:luscii:patient' AND deleted_at IS NULL"
-            ),
+            postgresql_where=sa.text("system = 'urn:zas:luscii:patient' AND deleted_at IS NULL"),
         ),
     )
 

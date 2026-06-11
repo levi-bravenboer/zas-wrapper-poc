@@ -43,6 +43,7 @@ async def _clean_luscii_catalogue(db_session: AsyncSession) -> None:
         await db_session.execute(delete(model))
     await db_session.commit()
 
+
 _DEFAULT_PASSWORD = "changeme"
 
 LUSCII_ID = "7659dfb3-c089-4d12-95b7-46ff8ce1e7dd"
@@ -89,9 +90,7 @@ async def test_link_happy_path_persists_and_echoes_program(
 ) -> None:
     patient = seeded_zas_patients[0]
     await _login(async_client, ADMIN_EMAIL)
-    response = await async_client.put(
-        _link_url(patient), json={"luscii_patient_id": LUSCII_ID}
-    )
+    response = await async_client.put(_link_url(patient), json={"luscii_patient_id": LUSCII_ID})
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["luscii_patient_id"] == LUSCII_ID
@@ -135,9 +134,7 @@ async def test_link_upstream_down_returns_502_and_persists_nothing(
     luscii.fail = True
     patient = seeded_zas_patients[0]
     await _login(async_client, ADMIN_EMAIL)
-    response = await async_client.put(
-        _link_url(patient), json={"luscii_patient_id": LUSCII_ID}
-    )
+    response = await async_client.put(_link_url(patient), json={"luscii_patient_id": LUSCII_ID})
     assert response.status_code == 502
     assert response.json()["code"] == "unavailable.luscii.upstream"
     count = (
@@ -160,9 +157,7 @@ async def test_relink_replaces_previous_link(
         await async_client.put(_link_url(patient), json={"luscii_patient_id": LUSCII_ID})
     ).status_code == 200
     assert (
-        await async_client.put(
-            _link_url(patient), json={"luscii_patient_id": OTHER_LUSCII_ID}
-        )
+        await async_client.put(_link_url(patient), json={"luscii_patient_id": OTHER_LUSCII_ID})
     ).status_code == 200
 
     rows = (
@@ -188,9 +183,7 @@ async def test_link_conflict_when_luscii_id_linked_to_other_patient(
     assert (
         await async_client.put(_link_url(first), json={"luscii_patient_id": LUSCII_ID})
     ).status_code == 200
-    response = await async_client.put(
-        _link_url(second), json={"luscii_patient_id": LUSCII_ID}
-    )
+    response = await async_client.put(_link_url(second), json={"luscii_patient_id": LUSCII_ID})
     assert response.status_code == 409
     assert response.json()["code"] == "conflict.luscii.already_linked"
 
@@ -247,9 +240,7 @@ async def test_replaced_link_not_exposed_in_patient_read(
     response = await async_client.get(f"/patients/{patient.id}")
     assert response.status_code == 200
     luscii_values = [
-        i["value"]
-        for i in response.json()["identifiers"]
-        if i["system"] == LUSCII_PATIENT_SYSTEM
+        i["value"] for i in response.json()["identifiers"] if i["system"] == LUSCII_PATIENT_SYSTEM
     ]
     assert luscii_values == [OTHER_LUSCII_ID]
 
@@ -457,7 +448,5 @@ async def test_luscii_data_days_bounds(
     luscii: FakeLusciiClient,
 ) -> None:
     await _login(async_client, ADMIN_EMAIL)
-    response = await async_client.get(
-        _data_url(seeded_zas_patients[0]), params={"days": 400}
-    )
+    response = await async_client.get(_data_url(seeded_zas_patients[0]), params={"days": 400})
     assert response.status_code == 422

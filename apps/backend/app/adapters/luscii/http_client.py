@@ -74,9 +74,7 @@ class LusciiHttpClient:
             expect_404=True,
         )
         if response.status_code in (403, 404):
-            raise LusciiPatientNotFoundError(
-                luscii_patient_id, status_code=response.status_code
-            )
+            raise LusciiPatientNotFoundError(luscii_patient_id, status_code=response.status_code)
         return self._parse(LusciiPatientDetails, self._data_of(response))
 
     async def get_planned_actions(
@@ -91,9 +89,7 @@ class LusciiHttpClient:
             },
         )
 
-    async def get_measurements(
-        self, start_date: date, end_date: date
-    ) -> list[LusciiMeasurement]:
+    async def get_measurements(self, start_date: date, end_date: date) -> list[LusciiMeasurement]:
         return await self._paginate(
             "/v1/measurements",
             LusciiMeasurement,
@@ -149,9 +145,7 @@ class LusciiHttpClient:
         except httpx.HTTPError as exc:
             # httpx exception reprs don't carry request headers; safe to chain.
             raise LusciiApiError(f"Luscii {method} {path} transport failure") from exc
-        if response.status_code >= 400 and not (
-            expect_404 and response.status_code in (403, 404)
-        ):
+        if response.status_code >= 400 and not (expect_404 and response.status_code in (403, 404)):
             raise LusciiApiError(
                 f"Luscii {method} {path} returned {response.status_code}",
                 status_code=response.status_code,
@@ -192,9 +186,7 @@ class LusciiHttpClient:
                 )
             if cursor is None:
                 return rows
-        raise LusciiApiError(
-            f"Luscii GET {path} exceeded {max_pages} pages; refusing to truncate"
-        )
+        raise LusciiApiError(f"Luscii GET {path} exceeded {max_pages} pages; refusing to truncate")
 
     def _data_of(self, response: httpx.Response) -> Any:
         return self._json_of(response).get("data")

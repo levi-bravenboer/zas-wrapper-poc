@@ -114,13 +114,9 @@ async def export_catalogue_snapshots(
     in the tables and removes stale `<locale>.json` files for locales that no
     longer exist. Returns per-locale row counts.
     """
-    instrument_rows = (
-        await session.scalars(select(LusciiInstrumentLocalisationRow))
-    ).all()
+    instrument_rows = (await session.scalars(select(LusciiInstrumentLocalisationRow))).all()
     item_rows = (await session.scalars(select(LusciiInstrumentItemLocalisationRow))).all()
-    response_rows = (
-        await session.scalars(select(LusciiItemResponseLocalisationRow))
-    ).all()
+    response_rows = (await session.scalars(select(LusciiItemResponseLocalisationRow))).all()
     if not (instrument_rows or item_rows or response_rows):
         raise SnapshotError(
             "Luscii catalogue tables are empty — run `moon run backend:luscii-sync` first."
@@ -250,7 +246,9 @@ async def import_catalogue_snapshots(
                 f"{path.name} declares locale {snapshot.locale!r}; filename and payload must agree"
             )
         if snapshot.locale in seen_locales:
-            raise SnapshotError(f"locale {snapshot.locale!r} appears in more than one snapshot file")
+            raise SnapshotError(
+                f"locale {snapshot.locale!r} appears in more than one snapshot file"
+            )
         seen_locales.add(snapshot.locale)
         snapshots.append(snapshot)
 
@@ -301,9 +299,7 @@ def _render(payload: SnapshotFile) -> str:
             return "[]"
         lines = ",\n".join(
             "    "
-            + json.dumps(
-                item.model_dump(exclude_none=True), ensure_ascii=False, sort_keys=True
-            )
+            + json.dumps(item.model_dump(exclude_none=True), ensure_ascii=False, sort_keys=True)
             for item in items
         )
         return "[\n" + lines + "\n  ]"
