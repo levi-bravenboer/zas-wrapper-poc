@@ -36,29 +36,48 @@ async def _create(client: AsyncClient, name: str = "Test") -> dict:
 def _replace_payload(name: str, lane_kinds: dict[str, PathwayLaneKind]) -> dict:
     del lane_kinds
     phase_id = str(uuid.uuid4())
-    lane_id = str(uuid.uuid4())
-    block_id = str(uuid.uuid4())
+    caregiver_lane_id = str(uuid.uuid4())
+    system_lane_id = str(uuid.uuid4())
+    start_block_id = str(uuid.uuid4())
+    appointment_block_id = str(uuid.uuid4())
     return {
         "name": name,
         "phases": [{"id": phase_id, "template_id": "pre-op", "label": "Pre-op", "ord": 0}],
         "lanes": [
             {
-                "id": lane_id,
+                "id": caregiver_lane_id,
                 "lane_kind_code": "caregiver",
                 "label": "Caregiver",
                 "ord": 0,
                 "is_default": True,
-            }
+            },
+            {
+                "id": system_lane_id,
+                "lane_kind_code": "system",
+                "label": "System",
+                "ord": 1,
+                "is_default": False,
+            },
         ],
         "blocks": [
+            # Catalogue-expansion § 1: every published pathway needs a
+            # StartBlock on a `system` lane (publish-time invariant).
             {
-                "id": block_id,
+                "id": start_block_id,
                 "phase_id": phase_id,
-                "lane_id": lane_id,
+                "lane_id": system_lane_id,
+                "kind": "start",
+                "label": "Start",
+                "config": {"name": "Start"},
+            },
+            {
+                "id": appointment_block_id,
+                "phase_id": phase_id,
+                "lane_id": caregiver_lane_id,
                 "kind": "appointment",
                 "label": "Intake",
                 "config": {"title": "Intake"},
-            }
+            },
         ],
     }
 
@@ -87,6 +106,7 @@ async def test_list_block_types(
     rows = response.json()
     codes = {row["type"] for row in rows}
     assert codes == {
+        "start",
         "appointment",
         "task",
         "message",
@@ -99,6 +119,7 @@ async def test_list_block_types(
     }
     for row in rows:
         assert row["semantics"] in {
+            "start",
             "appointment",
             "task",
             "message",
@@ -257,8 +278,10 @@ async def test_pathway_summary_returns_counts(
     body = response.json()
     assert body["id"] == created["pathway"]["id"]
     assert body["name"] == "ChildPath"
-    assert body["lane_count"] == 1
-    assert body["block_count"] == 1
+    # _replace_payload now seeds 2 lanes (caregiver + system) and 2 blocks
+    # (StartBlock + Appointment) per catalogue-expansion § 1.
+    assert body["lane_count"] == 2
+    assert body["block_count"] == 2
     assert body["latest_published_version_id"] is None
 
 
@@ -298,9 +321,11 @@ async def test_replace_pathway_overwrites(
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["pathway"]["name"] == "After"
-    assert len(body["version"]["blocks"]) == 1
+    # _replace_payload now seeds 2 lanes (caregiver + system) and 2 blocks
+    # (StartBlock + Appointment) per catalogue-expansion § 1.
+    assert len(body["version"]["blocks"]) == 2
     assert len(body["version"]["phases"]) == 1
-    assert len(body["version"]["lanes"]) == 1
+    assert len(body["version"]["lanes"]) == 2
 
 
 async def test_replace_unknown_pathway_returns_404(
@@ -337,8 +362,10 @@ async def test_replace_disallowed_lane_returns_422(
     created = await _create(async_client)
 
     payload = _replace_payload("Bad lane", lane_kinds)
-    payload["blocks"][0]["kind"] = "message"
-    payload["blocks"][0]["config"] = {
+    # _replace_payload now seeds [StartBlock(system), Appointment(caregiver)];
+    # mutate the appointment block to a message kind that requires patient lane.
+    payload["blocks"][1]["kind"] = "message"
+    payload["blocks"][1]["config"] = {
         "channel": "email",
         "subject": "Hi",
         "body": "Welcome",
@@ -350,7 +377,7 @@ async def test_replace_disallowed_lane_returns_422(
     assert response.status_code == 422, response.text
     body = response.json()
     details = body["details"]
-    assert details["block_id"] == payload["blocks"][0]["id"]
+    assert details["block_id"] == payload["blocks"][1]["id"]
     assert details["lane_kind_code"] == "caregiver"
     assert details["allowed_lane_kind_codes"] == ["patient"]
 

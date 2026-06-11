@@ -28,6 +28,7 @@ from uuid import UUID
 
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic import InputLogic
 from app.domain.pathway.input_logic.evaluator import (
     BlockExecutionView,
@@ -43,6 +44,38 @@ from app.domain.pathway.runtime.execution import BlockExecution
 
 class RuntimeEngine:
     """Pure state-machine driver. No DB / I/O."""
+
+    @staticmethod
+    def auto_fire_starts(
+        executions: dict[UUID, BlockExecution],
+        templates: dict[UUID, BaseBlock],
+        *,
+        now: datetime,
+    ) -> list[UUID]:
+        """Force every `StartBlock` execution still in `pending` straight
+        through to `completed` (catalogue-expansion § 1).
+
+        Idempotent — non-pending starts are skipped. Stamps
+        `started_at` and `completed_at` to `now`. Returns the ids that
+        moved so the caller can ship realtime hints. Downstream
+        eligibility is left to `evaluate_eligibility`, which will see
+        the start as `done` and fire any `if_done(start)` rules in the
+        same pass.
+        """
+        fired: list[UUID] = []
+        for exec_id, execution in executions.items():
+            if execution.state != "pending":
+                continue
+            template = templates.get(execution.block_template_id)
+            if not isinstance(template, StartBlock):
+                continue
+            execution.transition("eligible")
+            execution.transition("active")
+            execution.started_at = now
+            execution.transition("completed")
+            execution.completed_at = now
+            fired.append(exec_id)
+        return fired
 
     @staticmethod
     def evaluate_eligibility(

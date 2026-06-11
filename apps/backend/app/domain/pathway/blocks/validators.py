@@ -11,10 +11,39 @@ from __future__ import annotations
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.resolver import BLOCK_CLASSES
+from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic.predicates import (
     DecisionOutputArgs,
     PredicateKind,
 )
+
+
+class StartBlockCardinalityError(ValueError):
+    """Pathway version has 0 or >1 `StartBlock`s (catalogue-expansion § 1).
+
+    Spec invariant: every published pathway version SHALL contain
+    exactly one entry block. Surfaces from the publish gate.
+    """
+
+    def __init__(self, *, count: int) -> None:
+        super().__init__(
+            f"pathway version must contain exactly one StartBlock, found {count}"
+        )
+        self.count = count
+
+
+class StartBlockShapeError(ValueError):
+    """`StartBlock` carries forbidden input_logic / timing_policy.
+
+    Spec invariant: a start block cannot wait on anything (empty
+    `input_logic`) and has no timing of its own (`timing_policy=None`).
+    Surfaces from the publish gate.
+    """
+
+    def __init__(self, *, field: str, reason: str) -> None:
+        super().__init__(f"StartBlock.{field}: {reason}")
+        self.field = field
+        self.reason = reason
 
 
 class DeferredFieldAttrUnknownError(LookupError):
@@ -218,16 +247,48 @@ def validate_publish_block(block: BaseBlock) -> None:
         raise BlockPublishValidationError(cls, exc) from exc
 
 
+def validate_start_block_invariants(blocks: dict[str, BaseBlock]) -> None:
+    """Enforce StartBlock cardinality + shape across a pathway version.
+
+    Catalogue-expansion § 1:
+
+    1. Exactly one `StartBlock` per version (publish-time invariant —
+       no 0 / >1).
+    2. The start's `input_logic` must be the empty aggregate (it has
+       no upstream).
+    3. The start's `timing_policy` must be `None` (it fires at t=0).
+    """
+
+    starts = [b for b in blocks.values() if isinstance(b, StartBlock)]
+    if len(starts) != 1:
+        raise StartBlockCardinalityError(count=len(starts))
+
+    start = starts[0]
+    if start.input_logic.rules:
+        raise StartBlockShapeError(
+            field="input_logic",
+            reason="StartBlock cannot wait on upstream blocks — input_logic must be empty",
+        )
+    if start.timing_policy is not None:
+        raise StartBlockShapeError(
+            field="timing_policy",
+            reason="StartBlock fires at enrollment t=0 — timing_policy must be None",
+        )
+
+
 __all__ = [
     "BlockPublishValidationError",
     "DecisionOutputReferenceError",
     "DecisionOutputsEmptyError",
     "DeferredFieldAttrUnknownError",
     "LaneKindNotAllowedError",
+    "StartBlockCardinalityError",
+    "StartBlockShapeError",
     "validate_all_block_classes",
     "validate_decision_block_outputs",
     "validate_decision_output_references",
     "validate_deferred_field_attrs",
     "validate_lane_kind",
     "validate_publish_block",
+    "validate_start_block_invariants",
 ]

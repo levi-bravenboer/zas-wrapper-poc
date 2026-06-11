@@ -10,6 +10,7 @@ import pytest
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.input_logic import (
     DecisionOutputArgs,
@@ -59,6 +60,73 @@ def test_state_machine_terminal_rejects_outbound() -> None:
     e = make_execution(uuid4(), state="completed")
     with pytest.raises(InvalidTransitionError):
         e.transition("active")
+
+
+# ---- auto_fire_starts (catalogue-expansion § 1) -------------------------
+
+
+def test_auto_fire_starts_lands_start_at_completed() -> None:
+    start_id = uuid4()
+    template = StartBlock(name="Start")
+    run = make_execution(start_id)
+    executions = {run.id: run}
+    fired = RuntimeEngine.auto_fire_starts(
+        executions, {start_id: template}, now=_NOW
+    )
+    assert fired == [run.id]
+    assert run.state == "completed"
+    assert run.started_at == _NOW
+    assert run.completed_at == _NOW
+
+
+def test_auto_fire_starts_is_idempotent() -> None:
+    start_id = uuid4()
+    template = StartBlock(name="Start")
+    run = make_execution(start_id)
+    executions = {run.id: run}
+    RuntimeEngine.auto_fire_starts(executions, {start_id: template}, now=_NOW)
+    fired_again = RuntimeEngine.auto_fire_starts(
+        executions, {start_id: template}, now=_NOW
+    )
+    assert fired_again == []
+    assert run.state == "completed"
+
+
+def test_auto_fire_starts_makes_if_done_downstream_eligible() -> None:
+    start_id = uuid4()
+    follow_id = uuid4()
+    start = StartBlock(name="Start")
+    follow = AppointmentBlock(
+        name="Intake",
+        title="Intake",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(node=start_id, args=IfDoneArgs(after_block=start_id)),
+            ],
+        ),
+    )
+    start_run = make_execution(start_id)
+    follow_run = make_execution(follow_id)
+    executions = {start_run.id: start_run, follow_run.id: follow_run}
+    templates: dict[UUID, BaseBlock] = {start_id: start, follow_id: follow}
+
+    RuntimeEngine.auto_fire_starts(executions, templates, now=_NOW)
+    RuntimeEngine.evaluate_eligibility(executions, templates)
+
+    assert start_run.state == "completed"
+    assert follow_run.state == "eligible"
+
+
+def test_auto_fire_starts_ignores_non_start_blocks() -> None:
+    intake_id = uuid4()
+    template = AppointmentBlock(name="Intake", title="Intake")
+    run = make_execution(intake_id)
+    executions = {run.id: run}
+    fired = RuntimeEngine.auto_fire_starts(
+        executions, {intake_id: template}, now=_NOW
+    )
+    assert fired == []
+    assert run.state == "pending"
 
 
 # ---- evaluate_eligibility ------------------------------------------------

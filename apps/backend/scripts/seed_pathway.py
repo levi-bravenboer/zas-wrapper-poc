@@ -61,6 +61,7 @@ LANE_CAREGIVER_ID: UUID = UUID("00000000-0000-4000-8000-000000000202")
 LANE_SYSTEM_ID: UUID = UUID("00000000-0000-4000-8000-000000000203")
 LANE_EXTERNAL_ID: UUID = UUID("00000000-0000-4000-8000-000000000204")
 
+BLOCK_START_ID: UUID = UUID("00000000-0000-4000-8000-000000000300")
 BLOCK_INTAKE_ID: UUID = UUID("00000000-0000-4000-8000-000000000301")
 BLOCK_OPERATIE_ID: UUID = UUID("00000000-0000-4000-8000-000000000302")
 BLOCK_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000303")
@@ -119,6 +120,18 @@ def _build_payload() -> PathwayDefinitionReplace:
             ),
         ],
         blocks=[
+            # Catalogue-expansion § 1: every published pathway needs a
+            # StartBlock on a `system` lane. Auto-fires at enrollment.
+            PathwayBlockIn(
+                id=BLOCK_START_ID,
+                phase_id=PHASE_PRE_OP_ID,
+                lane_id=LANE_SYSTEM_ID,
+                kind="start",
+                label="Start",
+                config={"name": "Start"},
+                x=-240,
+                y=0,
+            ),
             PathwayBlockIn(
                 id=BLOCK_INTAKE_ID,
                 phase_id=PHASE_PRE_OP_ID,

@@ -30,6 +30,7 @@ from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
 from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
+from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.blocks.wait.typed import WaitBlock
 
@@ -52,6 +53,10 @@ class _BlockEnvelopeFields(BaseModel):
     duration_value_id: UUID | None = None
     x: int = 0
     y: int = 0
+
+
+class StartBlockOut(StartBlock, _BlockEnvelopeFields):
+    kind: Literal["start"] = "start"
 
 
 class AppointmentBlockOut(AppointmentBlock, _BlockEnvelopeFields):
@@ -92,6 +97,7 @@ class ExternalProgramBlockOut(ExternalProgramBlock, _BlockEnvelopeFields):
 
 PathwayTypedBlockOut = Annotated[
     Union[
+        StartBlockOut,
         AppointmentBlockOut,
         TaskBlockOut,
         DecisionBlockOut,
@@ -107,6 +113,7 @@ PathwayTypedBlockOut = Annotated[
 
 
 _OUT_BY_KIND: dict[str, type[BaseModel]] = {
+    "start": StartBlockOut,
     "appointment": AppointmentBlockOut,
     "task": TaskBlockOut,
     "decision": DecisionBlockOut,
@@ -130,6 +137,10 @@ def out_class_for_kind(kind: str) -> type[BaseModel]:
 # rather than aliases so future field divergence between read and write
 # (e.g. server-computed fields on the Out side) stays expressible
 # without re-typing every call site.
+
+
+class StartBlockIn(StartBlock, _BlockEnvelopeFields):
+    kind: Literal["start"] = "start"
 
 
 class AppointmentBlockIn(AppointmentBlock, _BlockEnvelopeFields):
@@ -170,6 +181,7 @@ class ExternalProgramBlockIn(ExternalProgramBlock, _BlockEnvelopeFields):
 
 PathwayTypedBlockIn = Annotated[
     Union[
+        StartBlockIn,
         AppointmentBlockIn,
         TaskBlockIn,
         DecisionBlockIn,
@@ -201,6 +213,8 @@ __all__ = [
     "PathwayLinkBlockOut",
     "PathwayTypedBlockIn",
     "PathwayTypedBlockOut",
+    "StartBlockIn",
+    "StartBlockOut",
     "TaskBlockIn",
     "TaskBlockOut",
     "WaitBlockIn",

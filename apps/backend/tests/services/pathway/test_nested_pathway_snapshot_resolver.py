@@ -61,6 +61,18 @@ def _lane() -> PathwayLaneIn:
     )
 
 
+def _start_block(*, phase_id, lane_id) -> PathwayBlockIn:
+    """Catalogue-expansion § 1 fixture: minimal valid StartBlock."""
+    return PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase_id,
+        lane_id=lane_id,
+        kind="start",
+        label="Start",
+        config={"name": "Start"},
+    )
+
+
 def _pathway_link(
     *,
     phase_id,
@@ -102,12 +114,49 @@ async def _seed_concept_pathway(db_session: AsyncSession, *, name: str) -> Pathw
     pathway = Pathway(name=name, clinical_goal=None, patient_goal=None)
     db_session.add(pathway)
     await db_session.flush()
+    version = PathwayVersion(
+        pathway_id=pathway.id,
+        version_no=1,
+        status="concept",
+        kind="initial",
+    )
+    db_session.add(version)
+    await db_session.flush()
+    # Catalogue-expansion § 1: every publishable pathway needs a
+    # StartBlock on a `system` lane. Seed the minimal phase + system
+    # lane + start so the publish gate accepts the concept.
+    phase = PathwayPhase(
+        id=uuid.uuid4(),
+        pathway_version_id=version.id,
+        template_id="pre-op",
+        label="Pre-op",
+        ord=10,
+        width_px=200,
+    )
+    db_session.add(phase)
+    system_kind_id = (
+        await db_session.execute(
+            select(PathwayLaneKind.id).where(PathwayLaneKind.code == "system")
+        )
+    ).scalar_one()
+    lane = PathwayLane(
+        id=uuid.uuid4(),
+        pathway_version_id=version.id,
+        pathway_lane_kind_id=system_kind_id,
+        label="System",
+        ord=10,
+        is_default=True,
+    )
+    db_session.add(lane)
+    await db_session.flush()
     db_session.add(
-        PathwayVersion(
-            pathway_id=pathway.id,
-            version_no=1,
-            status="concept",
-            kind="initial",
+        PathwayBlock(
+            id=uuid.uuid4(),
+            pathway_version_id=version.id,
+            phase_id=phase.id,
+            lane_id=lane.id,
+            label="Start",
+            kind="start",
         )
     )
     await db_session.commit()
@@ -170,7 +219,11 @@ async def test_specific_pin_snapshots_configured_version(
     await service.replace_definition(
         parent.id,
         parent.tenant_id,
-        _payload(phases=[phase], lanes=[lane], blocks=[block]),
+        _payload(
+            phases=[phase],
+            lanes=[lane],
+            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), block],
+        ),
     )
     await db_session.commit()
 
@@ -208,7 +261,11 @@ async def test_latest_published_pin_snapshots_latest(
     await service.replace_definition(
         parent.id,
         parent.tenant_id,
-        _payload(phases=[phase], lanes=[lane], blocks=[block]),
+        _payload(
+            phases=[phase],
+            lanes=[lane],
+            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), block],
+        ),
     )
     await db_session.commit()
 
@@ -244,7 +301,11 @@ async def test_latest_published_pin_publish_fails_without_target_publish(
     await service.replace_definition(
         parent.id,
         parent.tenant_id,
-        _payload(phases=[phase], lanes=[lane], blocks=[block]),
+        _payload(
+            phases=[phase],
+            lanes=[lane],
+            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), block],
+        ),
     )
     await db_session.commit()
 

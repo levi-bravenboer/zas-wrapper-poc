@@ -25,7 +25,10 @@ from app.domain.pathway.blocks.validators import (
     validate_decision_block_outputs,
     validate_decision_output_references,
     validate_lane_kind,
+    StartBlockCardinalityError,
+    StartBlockShapeError,
     validate_publish_block,
+    validate_start_block_invariants,
 )
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
@@ -216,6 +219,27 @@ class PathwayVersionService:
                     f".input_logic.decision_output"
                 ),
                 reason=str(err),
+            ) from err
+
+        # Catalogue-expansion § 1: pathway-wide StartBlock invariants.
+        # Enforces exactly one StartBlock per version + empty
+        # input_logic + null timing_policy on that block.
+        try:
+            validate_start_block_invariants(domain_blocks)
+        except StartBlockCardinalityError as err:
+            raise BlockConfigError(
+                field="blocks",
+                reason=str(err),
+            ) from err
+        except StartBlockShapeError as err:
+            # Find the StartBlock id to surface the field path.
+            start_id = next(
+                (bid for bid, b in domain_blocks.items() if type(b).KIND == "start"),
+                "",
+            )
+            raise BlockConfigError(
+                field=f"blocks[{start_id}].{err.field}",
+                reason=err.reason,
             ) from err
 
     # ---- Helpers ---------------------------------------------------------

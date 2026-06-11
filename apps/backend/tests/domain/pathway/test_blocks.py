@@ -33,6 +33,7 @@ from app.domain.pathway import (
 # `BaseBlock` subclasses. These tests now exercise the derived shape.
 _EXPECTED_SEMANTICS: frozenset[str] = frozenset(
     {
+        "start",
         "appointment",
         "task",
         "message",
@@ -48,6 +49,7 @@ _EXPECTED_SEMANTICS: frozenset[str] = frozenset(
 
 _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
     {
+        "start",
         "appointment",
         "task",
         "message",

@@ -15,18 +15,29 @@ from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.validators import (
     DeferredFieldAttrUnknownError,
     LaneKindNotAllowedError,
+    StartBlockCardinalityError,
+    StartBlockShapeError,
     validate_all_block_classes,
     validate_deferred_field_attrs,
     validate_lane_kind,
+    validate_start_block_invariants,
+)
+from app.domain.pathway.input_logic import (
+    IfDoneArgs,
+    InputLogic,
+    InputLogicRule,
 )
 from app.domain.pathway.lanes import (
     LANE_KIND_CAREGIVER,
     LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,
 )
+from app.domain.pathway.timing import WaitAfterPolicy
+from uuid import uuid4
 
 
 class _GoodBlock(BaseBlock):
@@ -96,3 +107,54 @@ def test_validate_lane_kind_multi_kind_subclass() -> None:
     validate_lane_kind(TaskBlock, LANE_KIND_CAREGIVER)
     with pytest.raises(LaneKindNotAllowedError):
         validate_lane_kind(TaskBlock, LANE_KIND_EXTERNAL)
+
+
+# ---- StartBlock invariants (catalogue-expansion § 1) -------------------
+
+
+def test_start_invariants_pass_for_lone_clean_start() -> None:
+    start = StartBlock(name="Start")
+    other = AppointmentBlock(name="Intake", title="Intake")
+    blocks: dict[str, BaseBlock] = {str(uuid4()): start, str(uuid4()): other}
+    validate_start_block_invariants(blocks)
+
+
+def test_start_invariants_reject_zero_starts() -> None:
+    blocks: dict[str, BaseBlock] = {
+        str(uuid4()): AppointmentBlock(name="Intake", title="Intake")
+    }
+    with pytest.raises(StartBlockCardinalityError) as exc_info:
+        validate_start_block_invariants(blocks)
+    assert exc_info.value.count == 0
+
+
+def test_start_invariants_reject_two_starts() -> None:
+    blocks: dict[str, BaseBlock] = {
+        str(uuid4()): StartBlock(name="Start A"),
+        str(uuid4()): StartBlock(name="Start B"),
+    }
+    with pytest.raises(StartBlockCardinalityError) as exc_info:
+        validate_start_block_invariants(blocks)
+    assert exc_info.value.count == 2
+
+
+def test_start_invariants_reject_non_empty_input_logic() -> None:
+    upstream_id = uuid4()
+    start = StartBlock(
+        name="Start",
+        input_logic=InputLogic(
+            rules=[InputLogicRule(node=upstream_id, args=IfDoneArgs(after_block=upstream_id))],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): start}
+    with pytest.raises(StartBlockShapeError) as exc_info:
+        validate_start_block_invariants(blocks)
+    assert exc_info.value.field == "input_logic"
+
+
+def test_start_invariants_reject_timing_policy() -> None:
+    start = StartBlock(name="Start", timing_policy=WaitAfterPolicy(offset_iso="PT5M"))
+    blocks: dict[str, BaseBlock] = {str(uuid4()): start}
+    with pytest.raises(StartBlockShapeError) as exc_info:
+        validate_start_block_invariants(blocks)
+    assert exc_info.value.field == "timing_policy"
