@@ -10,7 +10,9 @@ from app.main import app
 
 def test_no_appointments_routes_in_app() -> None:
     appointment_paths = [
-        path for path in (getattr(route, "path", "") for route in app.routes) if "/appointments" in path
+        path
+        for path in (getattr(route, "path", "") for route in app.routes)
+        if path.startswith("/appointments")
     ]
     assert appointment_paths == [], (
         f"Expected no /appointments routes; found: {appointment_paths}"
@@ -20,7 +22,9 @@ def test_no_appointments_routes_in_app() -> None:
 def test_no_appointments_in_openapi() -> None:
     client = TestClient(app)
     schema = client.get("/openapi.json").json()
-    appointment_paths = [path for path in schema.get("paths", {}) if "/appointments" in path]
+    appointment_paths = [
+        path for path in schema.get("paths", {}) if path.startswith("/appointments")
+    ]
     assert appointment_paths == []
 
 

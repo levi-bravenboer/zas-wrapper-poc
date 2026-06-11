@@ -12,6 +12,28 @@ from app.schemas.patient.patient_identifier import (
 )
 
 
+class PatientInlineSummary(BaseModel):
+    """Thin patient projection used as a JOIN-resolved inline summary.
+
+    Lives in the patient domain so any caller that needs a "patient
+    headline" projection (today: `tasks-base` aggregator; tomorrow:
+    notification feeds, alerts, anywhere a patient name + INSZ + org is
+    needed without a full `PatientRead`) shares one shape.
+
+    `insz` is the value of the patient's INSZ identifier row from
+    `patient_identifiers`, NULL when missing. Resolved by the caller via
+    JOIN at projection time — the model itself does not load it.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    family_name: str
+    given_name: str
+    insz: str | None = None
+    primary_organisation_id: UUID
+
+
 class PatientRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

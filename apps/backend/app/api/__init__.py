@@ -13,6 +13,7 @@ from app.api.routers.patient import router as patient_router
 from app.api.routers.practitioner import router as practitioner_router
 from app.api.routers.practitioner_role import router as practitioner_role_router
 from app.api.routers.system_router import router as system_router
+from app.api.routers.task import router as task_router
 from app.api.routers.user import router as user_router
 
 
@@ -27,6 +28,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(practitioner_router)
     app.include_router(practitioner_role_router)
     app.include_router(events_router)
+    app.include_router(task_router)
     app.include_router(pathway_router)
     app.include_router(luscii_router)
     app.include_router(mobile_router)
