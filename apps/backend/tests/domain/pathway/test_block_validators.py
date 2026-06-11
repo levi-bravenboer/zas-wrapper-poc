@@ -15,14 +15,18 @@ from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.validators import (
     DeferredFieldAttrUnknownError,
+    EndPathwayBlockMissingError,
+    EndPathwayBlockShapeError,
     LaneKindNotAllowedError,
     StartBlockCardinalityError,
     StartBlockShapeError,
     validate_all_block_classes,
     validate_deferred_field_attrs,
+    validate_end_pathway_block_invariants,
     validate_lane_kind,
     validate_start_block_invariants,
 )
@@ -158,3 +162,48 @@ def test_start_invariants_reject_timing_policy() -> None:
     with pytest.raises(StartBlockShapeError) as exc_info:
         validate_start_block_invariants(blocks)
     assert exc_info.value.field == "timing_policy"
+
+
+# ---- EndPathwayBlock invariants (catalogue-expansion § 2) --------------
+
+
+def test_end_invariants_pass_for_single_end() -> None:
+    end = EndPathwayBlock(name="End")
+    blocks: dict[str, BaseBlock] = {str(uuid4()): end}
+    validate_end_pathway_block_invariants(blocks)
+
+
+def test_end_invariants_pass_for_multiple_ends() -> None:
+    blocks: dict[str, BaseBlock] = {
+        str(uuid4()): EndPathwayBlock(name="End A"),
+        str(uuid4()): EndPathwayBlock(name="End B"),
+    }
+    validate_end_pathway_block_invariants(blocks)
+
+
+def test_end_invariants_reject_zero_ends() -> None:
+    blocks: dict[str, BaseBlock] = {
+        str(uuid4()): AppointmentBlock(name="Intake", title="Intake"),
+    }
+    with pytest.raises(EndPathwayBlockMissingError):
+        validate_end_pathway_block_invariants(blocks)
+
+
+def test_end_invariants_reject_timing_policy() -> None:
+    end = EndPathwayBlock(name="End", timing_policy=WaitAfterPolicy(offset_iso="PT1M"))
+    blocks: dict[str, BaseBlock] = {str(uuid4()): end}
+    with pytest.raises(EndPathwayBlockShapeError) as exc_info:
+        validate_end_pathway_block_invariants(blocks)
+    assert exc_info.value.field == "timing_policy"
+
+
+def test_end_invariants_allow_input_logic() -> None:
+    upstream_id = uuid4()
+    end = EndPathwayBlock(
+        name="End",
+        input_logic=InputLogic(
+            rules=[InputLogicRule(node=upstream_id, args=IfDoneArgs(after_block=upstream_id))],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): end}
+    validate_end_pathway_block_invariants(blocks)

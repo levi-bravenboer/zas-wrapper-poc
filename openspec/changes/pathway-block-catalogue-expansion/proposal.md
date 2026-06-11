@@ -67,3 +67,29 @@ Filled in as each kind lands.
   create (D-CAT-S4).
 - Frontend: no custom node component — generic `BlockNode` picks it
   up via the catalogue's `Play` icon hint.
+
+### `end-pathway` — landed in this PR
+
+- Wire `kind`: `end_pathway` (snake-case to align with `pathway_link` /
+  `luscii_program`; the parent catalogue's hyphenated label is treated
+  as documentation-only).
+- Cardinality: 1..N per pathway version. Publish-time validator rejects
+  0 (D-CAT-E1). Multiple terminals are explicitly supported so each
+  decision branch can own its own end.
+- Per-kind columns: none. `BaseBlock.name` is the only stored field.
+- Lane: `system` (terminal is a structural marker, not a caregiver
+  task).
+- Input logic: ALLOWED — author wires each end to its gating
+  predicate (e.g. `decision_output` of the negative branch).
+- Timing policy: forbidden — must be `None`. Publish-time validator
+  rejects any `timing_policy` on an `EndPathwayBlock` (D-CAT-E2).
+- Runtime: when the first reachable `EndPathwayBlock` execution
+  transitions `active → completed` via
+  `EnrollmentService.complete_execution`, the enrollment is flipped
+  `state="active" → "completed"`. Idempotent: subsequent end
+  completions on an already-`completed` enrollment are a no-op
+  (D-CAT-E3). Engine fanout / eligibility passes are unchanged — the
+  enrollment-level state flip is owned by the service, not the engine,
+  so the engine stays pure.
+- Frontend: no custom node component — generic `BlockNode` picks it
+  up via the catalogue's `Stop` icon hint.

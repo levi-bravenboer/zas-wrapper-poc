@@ -38,7 +38,29 @@ commit. Tests + verify gate every commit.
 
 ## § 2 `end-pathway`
 
-(Not started — semantic + scope decided when § 1 lands.)
+- [x] 2.1 `app/domain/pathway/blocks/end_pathway/__init__.py` + `typed.py` —
+  `EndPathwayBlock(BaseBlock)` with `KIND="end_pathway"`,
+  `TYPE_CODE="end_pathway"`, `LABEL`, `DESCRIPTION`, `ICON="stop"`,
+  `allowed_lane_kinds=(LANE_KIND_SYSTEM,)`, no per-kind cols, name-only
+  CONFIG_SCHEMA. Wire kind is snake-case to match `pathway_link` /
+  `luscii_program`.
+- [x] 2.2 Register `EndPathwayBlock` in
+  `app/domain/pathway/blocks/resolver.py::BLOCK_CLASSES` (appended last
+  so terminal kinds sit at the end of the palette).
+- [x] 2.3 Add `"end_pathway"` to
+  `app/schemas/pathway/blocks.py::BlockSemanticsLiteral`.
+- [x] 2.4 Add `EndPathwayBlockOut` + `EndPathwayBlockIn` + union members
+  + lookup entry in `app/schemas/pathway/typed_blocks.py`.
+- [x] 2.5 Publish-time validator: reject 0 `EndPathwayBlock` per
+  version; reject any `timing_policy` on an `EndPathwayBlock`.
+  `input_logic` allowed.
+- [x] 2.6 Enrollment service: on `complete_execution` for an
+  `EndPathwayBlock` template, flip `enrollment.state="active" →
+  "completed"`. Idempotent on re-fire.
+- [x] 2.7 Tests: catalogue projection, validator cardinality + shape,
+  router fixture seeds end on system lane, snapshot resolver concept
+  pathway seeds end before publish.
+- [x] 2.8 `/verify` backend; commit.
 
 ## § 3 `notification`
 

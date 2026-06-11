@@ -64,3 +64,68 @@ At enrollment create, `RuntimeEngine.auto_fire_starts` SHALL transition every `S
 - **GIVEN** an enrollment whose `StartBlock` execution is already `completed`
 - **WHEN** `auto_fire_starts` runs again
 - **THEN** no execution state changes and the returned id list is empty
+
+### Requirement: EndPathwayBlock as the pathway terminal kind
+
+The system SHALL model the pathway terminal block as `EndPathwayBlock` — a `BaseBlock` subclass with `KIND="end_pathway"`, `TYPE_CODE="end_pathway"`, `ICON="stop"`, `allowed_lane_kinds=(LANE_KIND_SYSTEM,)`, no per-kind columns, and a CONFIG_SCHEMA that exposes only the inherited `name`. `EndPathwayBlock` SHALL be registered in `BLOCK_CLASSES`, added to the read-API discriminated union (`EndPathwayBlockOut`) and the write-API union (`EndPathwayBlockIn`), and to the kind lookup table under `"end_pathway"`. The wire kind uses snake-case `end_pathway` to align with `pathway_link` / `luscii_program`; the original catalogue note (`end-pathway`) is treated as a label-only convention.
+
+#### Scenario: Catalogue projection includes end_pathway
+
+- **WHEN** the block-type catalogue is queried
+- **THEN** the response contains a row with `type="end_pathway"` and `semantics="end_pathway"`
+- **AND** the row carries `LABEL`, `DESCRIPTION`, and `ICON="stop"` sourced from `EndPathwayBlock`
+
+#### Scenario: Read API serialises end_pathway via discriminated union
+
+- **GIVEN** a pathway version containing an `EndPathwayBlock`
+- **WHEN** the pathway is fetched via the read API
+- **THEN** the block payload has `kind="end_pathway"` and round-trips through `EndPathwayBlockOut`
+
+### Requirement: At least one EndPathwayBlock per pathway version
+
+The publish-time validator SHALL reject any pathway version that contains zero `EndPathwayBlock`s. Multiple terminals are explicitly allowed — each branch may carry its own terminal. The zero-end case raises `EndPathwayBlockMissingError` and surfaces from `PathwayVersionService` as a `BlockConfigError` keyed on the `blocks` field.
+
+#### Scenario: Publishing without an end is rejected
+
+- **GIVEN** a concept pathway version with no `EndPathwayBlock`
+- **WHEN** the version is published
+- **THEN** publish fails with `BlockConfigError(field="blocks")` whose reason names `EndPathwayBlockMissingError`
+
+#### Scenario: Publishing with multiple ends is accepted
+
+- **GIVEN** a concept pathway version with two `EndPathwayBlock` instances on distinct decision branches
+- **WHEN** the version is published
+- **THEN** publish succeeds and both terminals are persisted
+
+### Requirement: EndPathwayBlock carries no timing_policy; input_logic is allowed
+
+The publish-time validator SHALL reject any `EndPathwayBlock` whose `timing_policy` is not `None`, raising `EndPathwayBlockShapeError(field="timing_policy")` which surfaces as `BlockConfigError` keyed on `blocks[<end_id>].timing_policy`. The `input_logic` field is unrestricted — it is the author's responsibility to wire each terminal to its upstream gating predicate.
+
+#### Scenario: End with timing_policy is rejected
+
+- **GIVEN** a pathway version whose `EndPathwayBlock` has a non-null `timing_policy`
+- **WHEN** the version is published
+- **THEN** publish fails with `BlockConfigError(field="blocks[<id>].timing_policy")` and `EndPathwayBlockShapeError`
+
+#### Scenario: End with input_logic is accepted
+
+- **GIVEN** a pathway version whose `EndPathwayBlock` carries a non-empty `input_logic` referencing an upstream decision output
+- **WHEN** the version is published
+- **THEN** publish succeeds
+
+### Requirement: EndPathwayBlock completion flips the enrollment terminal
+
+When a `BlockExecution` whose template is an `EndPathwayBlock` transitions from `active` to `completed` via `EnrollmentService.complete_execution`, the enrollment SHALL transition `state="active" → "completed"`. The flip is idempotent: completing a second `EndPathwayBlock` on an already-`completed` enrollment SHALL NOT raise and SHALL leave the enrollment state untouched. The flip does NOT cascade through pending downstream blocks — engine fanout / eligibility passes are unchanged.
+
+#### Scenario: First end completion flips enrollment
+
+- **GIVEN** an active enrollment with one eligible `EndPathwayBlock` execution
+- **WHEN** the caregiver completes that execution
+- **THEN** the enrollment's `state` becomes `"completed"`
+- **AND** the execution's `state` is `"completed"`
+
+#### Scenario: Subsequent end completion is a no-op on enrollment state
+
+- **GIVEN** an enrollment already in `state="completed"` after one terminal fired
+- **WHEN** a second `EndPathwayBlock` execution is completed
+- **THEN** the enrollment's `state` remains `"completed"` and no error is raised

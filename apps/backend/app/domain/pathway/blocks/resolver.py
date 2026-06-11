@@ -12,6 +12,7 @@ from __future__ import annotations
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.base import BaseBlock, UnknownBlockKindError
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.form.typed import FormBlock
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
@@ -33,6 +34,7 @@ BLOCK_CLASSES: tuple[type[BaseBlock], ...] = (
     WaitBlock,
     PathwayLinkBlock,
     ExternalProgramBlock,
+    EndPathwayBlock,
 )
 
 

@@ -23,6 +23,7 @@ from app.db.models.pathway import (
 )
 from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
 from app.domain.pathway.blocks.base import BaseBlock
+from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.runtime.execution import (
     BlockExecution,
     InvalidTransitionError,
@@ -279,6 +280,16 @@ class EnrollmentService:
                 field=f"executions[{execution_id}].state",
                 reason=str(exc),
             ) from exc
+        # Catalogue-expansion § 2: completing the first reachable
+        # EndPathwayBlock flips the enrollment terminal. Idempotent —
+        # subsequent end completions on an already-`completed`
+        # enrollment leave the state untouched. Mutating the tracked
+        # ORM row is sufficient; the session commit persists it.
+        if (
+            isinstance(template, EndPathwayBlock)
+            and enrollment.state == "active"
+        ):
+            enrollment.state = "completed"
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 

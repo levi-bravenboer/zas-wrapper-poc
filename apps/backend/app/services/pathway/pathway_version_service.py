@@ -22,8 +22,11 @@ from app.domain.pathway.blocks.validators import (
     BlockPublishValidationError,
     DecisionOutputReferenceError,
     DecisionOutputsEmptyError,
+    EndPathwayBlockMissingError,
+    EndPathwayBlockShapeError,
     validate_decision_block_outputs,
     validate_decision_output_references,
+    validate_end_pathway_block_invariants,
     validate_lane_kind,
     StartBlockCardinalityError,
     StartBlockShapeError,
@@ -239,6 +242,31 @@ class PathwayVersionService:
             )
             raise BlockConfigError(
                 field=f"blocks[{start_id}].{err.field}",
+                reason=err.reason,
+            ) from err
+
+        # Catalogue-expansion § 2: pathway-wide EndPathwayBlock invariants.
+        # Enforces ≥1 EndPathwayBlock per version + null timing_policy on
+        # every terminal. `input_logic` is intentionally unrestricted —
+        # authors gate which branch leads to which terminal.
+        try:
+            validate_end_pathway_block_invariants(domain_blocks)
+        except EndPathwayBlockMissingError as err:
+            raise BlockConfigError(
+                field="blocks",
+                reason=str(err),
+            ) from err
+        except EndPathwayBlockShapeError as err:
+            end_id = next(
+                (
+                    bid
+                    for bid, b in domain_blocks.items()
+                    if type(b).KIND == "end_pathway" and b.timing_policy is not None
+                ),
+                "",
+            )
+            raise BlockConfigError(
+                field=f"blocks[{end_id}].timing_policy",
                 reason=err.reason,
             ) from err
 

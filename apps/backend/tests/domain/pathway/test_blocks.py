@@ -43,6 +43,7 @@ _EXPECTED_SEMANTICS: frozenset[str] = frozenset(
         "wait",
         "pathway_link",
         "external_program",
+        "end_pathway",
     }
 )
 
@@ -59,6 +60,7 @@ _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
         "wait",
         "pathway_link",
         LUSCII_PROGRAM_BLOCK_TYPE,
+        "end_pathway",
     }
 )
 

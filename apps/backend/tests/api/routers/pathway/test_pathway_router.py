@@ -40,6 +40,7 @@ def _replace_payload(name: str, lane_kinds: dict[str, PathwayLaneKind]) -> dict:
     system_lane_id = str(uuid.uuid4())
     start_block_id = str(uuid.uuid4())
     appointment_block_id = str(uuid.uuid4())
+    end_block_id = str(uuid.uuid4())
     return {
         "name": name,
         "phases": [{"id": phase_id, "template_id": "pre-op", "label": "Pre-op", "ord": 0}],
@@ -77,6 +78,16 @@ def _replace_payload(name: str, lane_kinds: dict[str, PathwayLaneKind]) -> dict:
                 "kind": "appointment",
                 "label": "Intake",
                 "config": {"title": "Intake"},
+            },
+            # Catalogue-expansion § 2: every published pathway needs at
+            # least one EndPathwayBlock on a `system` lane.
+            {
+                "id": end_block_id,
+                "phase_id": phase_id,
+                "lane_id": system_lane_id,
+                "kind": "end_pathway",
+                "label": "End",
+                "config": {"name": "End"},
             },
         ],
     }
@@ -116,10 +127,12 @@ async def test_list_block_types(
         "wait",
         "pathway_link",
         LUSCII_PROGRAM_BLOCK_TYPE,
+        "end_pathway",
     }
     for row in rows:
         assert row["semantics"] in {
             "start",
+            "end_pathway",
             "appointment",
             "task",
             "message",
@@ -278,10 +291,11 @@ async def test_pathway_summary_returns_counts(
     body = response.json()
     assert body["id"] == created["pathway"]["id"]
     assert body["name"] == "ChildPath"
-    # _replace_payload now seeds 2 lanes (caregiver + system) and 2 blocks
-    # (StartBlock + Appointment) per catalogue-expansion § 1.
+    # _replace_payload now seeds 2 lanes (caregiver + system) and 3 blocks
+    # (StartBlock + Appointment + EndPathwayBlock) per catalogue-expansion
+    # § 1 + § 2.
     assert body["lane_count"] == 2
-    assert body["block_count"] == 2
+    assert body["block_count"] == 3
     assert body["latest_published_version_id"] is None
 
 
@@ -321,9 +335,10 @@ async def test_replace_pathway_overwrites(
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["pathway"]["name"] == "After"
-    # _replace_payload now seeds 2 lanes (caregiver + system) and 2 blocks
-    # (StartBlock + Appointment) per catalogue-expansion § 1.
-    assert len(body["version"]["blocks"]) == 2
+    # _replace_payload now seeds 2 lanes (caregiver + system) and 3 blocks
+    # (StartBlock + Appointment + EndPathwayBlock) per catalogue-expansion
+    # § 1 + § 2.
+    assert len(body["version"]["blocks"]) == 3
     assert len(body["version"]["phases"]) == 1
     assert len(body["version"]["lanes"]) == 2
 

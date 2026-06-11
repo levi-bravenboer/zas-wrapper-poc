@@ -73,6 +73,18 @@ def _start_block(*, phase_id, lane_id) -> PathwayBlockIn:
     )
 
 
+def _end_block(*, phase_id, lane_id) -> PathwayBlockIn:
+    """Catalogue-expansion § 2 fixture: minimal valid EndPathwayBlock."""
+    return PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase_id,
+        lane_id=lane_id,
+        kind="end_pathway",
+        label="End",
+        config={"name": "End"},
+    )
+
+
 def _pathway_link(
     *,
     phase_id,
@@ -159,6 +171,18 @@ async def _seed_concept_pathway(db_session: AsyncSession, *, name: str) -> Pathw
             kind="start",
         )
     )
+    # Catalogue-expansion § 2: every publishable pathway also needs at
+    # least one EndPathwayBlock. Drop one on the same system lane.
+    db_session.add(
+        PathwayBlock(
+            id=uuid.uuid4(),
+            pathway_version_id=version.id,
+            phase_id=phase.id,
+            lane_id=lane.id,
+            label="End",
+            kind="end_pathway",
+        )
+    )
     await db_session.commit()
     return pathway
 
@@ -222,7 +246,7 @@ async def test_specific_pin_snapshots_configured_version(
         _payload(
             phases=[phase],
             lanes=[lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), block],
+            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
         ),
     )
     await db_session.commit()
@@ -264,7 +288,7 @@ async def test_latest_published_pin_snapshots_latest(
         _payload(
             phases=[phase],
             lanes=[lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), block],
+            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
         ),
     )
     await db_session.commit()
@@ -304,7 +328,7 @@ async def test_latest_published_pin_publish_fails_without_target_publish(
         _payload(
             phases=[phase],
             lanes=[lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), block],
+            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
         ),
     )
     await db_session.commit()

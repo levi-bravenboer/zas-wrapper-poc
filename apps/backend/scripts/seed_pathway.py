@@ -68,6 +68,7 @@ BLOCK_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000303")
 BLOCK_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000304")
 BLOCK_ONTSLAG_ID: UUID = UUID("00000000-0000-4000-8000-000000000305")
 BLOCK_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000306")
+BLOCK_END_ID: UUID = UUID("00000000-0000-4000-8000-000000000307")
 
 BRANCH_GOED_ID: UUID = UUID("00000000-0000-4000-8000-000000000401")
 BRANCH_SLECHT_ID: UUID = UUID("00000000-0000-4000-8000-000000000402")
@@ -207,6 +208,19 @@ def _build_payload() -> PathwayDefinitionReplace:
                 config={"title": "Extra controle", "duration_minutes": 20},
                 x=960,
                 y=80,
+            ),
+            # Catalogue-expansion § 2: every published pathway needs at
+            # least one EndPathwayBlock on a `system` lane. Completing
+            # this terminal flips the enrollment to `state=completed`.
+            PathwayBlockIn(
+                id=BLOCK_END_ID,
+                phase_id=PHASE_FOLLOW_UP_ID,
+                lane_id=LANE_SYSTEM_ID,
+                kind="end_pathway",
+                label="Einde",
+                config={"name": "Einde"},
+                x=1200,
+                y=0,
             ),
         ],
         branches=[

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.resolver import BLOCK_CLASSES
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic.predicates import (
@@ -247,6 +248,58 @@ def validate_publish_block(block: BaseBlock) -> None:
         raise BlockPublishValidationError(cls, exc) from exc
 
 
+class EndPathwayBlockMissingError(ValueError):
+    """Pathway version has zero `EndPathwayBlock`s (catalogue-expansion § 2).
+
+    Spec invariant: every published pathway version SHALL contain at
+    least one terminal block so the runtime has a defined completion
+    surface. Surfaces from the publish gate.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            "pathway version must contain at least one EndPathwayBlock"
+        )
+
+
+class EndPathwayBlockShapeError(ValueError):
+    """`EndPathwayBlock` carries a forbidden `timing_policy`.
+
+    Spec invariant: a terminal block fires immediately once eligible —
+    `timing_policy` MUST be `None`. `input_logic` IS allowed (and
+    typically required) to gate which branch leads to which terminal.
+    Surfaces from the publish gate.
+    """
+
+    def __init__(self, *, reason: str) -> None:
+        super().__init__(f"EndPathwayBlock.timing_policy: {reason}")
+        self.field = "timing_policy"
+        self.reason = reason
+
+
+def validate_end_pathway_block_invariants(blocks: dict[str, BaseBlock]) -> None:
+    """Enforce EndPathwayBlock cardinality + shape across a pathway version.
+
+    Catalogue-expansion § 2:
+
+    1. At least one `EndPathwayBlock` per version. Multiple are allowed —
+       each terminal branch carries its own end.
+    2. Every `EndPathwayBlock.timing_policy` must be `None`. `input_logic`
+       is unrestricted; the publish gate trusts the upstream graph
+       validator to ensure each end is reachable.
+    """
+
+    ends = [b for b in blocks.values() if isinstance(b, EndPathwayBlock)]
+    if not ends:
+        raise EndPathwayBlockMissingError()
+
+    for end in ends:
+        if end.timing_policy is not None:
+            raise EndPathwayBlockShapeError(
+                reason="EndPathwayBlock fires on eligibility — timing_policy must be None",
+            )
+
+
 def validate_start_block_invariants(blocks: dict[str, BaseBlock]) -> None:
     """Enforce StartBlock cardinality + shape across a pathway version.
 
@@ -281,6 +334,8 @@ __all__ = [
     "DecisionOutputReferenceError",
     "DecisionOutputsEmptyError",
     "DeferredFieldAttrUnknownError",
+    "EndPathwayBlockMissingError",
+    "EndPathwayBlockShapeError",
     "LaneKindNotAllowedError",
     "StartBlockCardinalityError",
     "StartBlockShapeError",
@@ -288,6 +343,7 @@ __all__ = [
     "validate_decision_block_outputs",
     "validate_decision_output_references",
     "validate_deferred_field_attrs",
+    "validate_end_pathway_block_invariants",
     "validate_lane_kind",
     "validate_publish_block",
     "validate_start_block_invariants",

@@ -25,6 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.form.typed import FormBlock
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
@@ -95,6 +96,10 @@ class ExternalProgramBlockOut(ExternalProgramBlock, _BlockEnvelopeFields):
     kind: Literal["external_program"] = "external_program"
 
 
+class EndPathwayBlockOut(EndPathwayBlock, _BlockEnvelopeFields):
+    kind: Literal["end_pathway"] = "end_pathway"
+
+
 PathwayTypedBlockOut = Annotated[
     Union[
         StartBlockOut,
@@ -107,6 +112,7 @@ PathwayTypedBlockOut = Annotated[
         WaitBlockOut,
         PathwayLinkBlockOut,
         ExternalProgramBlockOut,
+        EndPathwayBlockOut,
     ],
     Field(discriminator="kind"),
 ]
@@ -123,6 +129,7 @@ _OUT_BY_KIND: dict[str, type[BaseModel]] = {
     "wait": WaitBlockOut,
     "pathway_link": PathwayLinkBlockOut,
     "external_program": ExternalProgramBlockOut,
+    "end_pathway": EndPathwayBlockOut,
 }
 
 
@@ -179,6 +186,10 @@ class ExternalProgramBlockIn(ExternalProgramBlock, _BlockEnvelopeFields):
     kind: Literal["external_program"] = "external_program"
 
 
+class EndPathwayBlockIn(EndPathwayBlock, _BlockEnvelopeFields):
+    kind: Literal["end_pathway"] = "end_pathway"
+
+
 PathwayTypedBlockIn = Annotated[
     Union[
         StartBlockIn,
@@ -191,6 +202,7 @@ PathwayTypedBlockIn = Annotated[
         WaitBlockIn,
         PathwayLinkBlockIn,
         ExternalProgramBlockIn,
+        EndPathwayBlockIn,
     ],
     Field(discriminator="kind"),
 ]
@@ -201,6 +213,8 @@ __all__ = [
     "AppointmentBlockOut",
     "DecisionBlockIn",
     "DecisionBlockOut",
+    "EndPathwayBlockIn",
+    "EndPathwayBlockOut",
     "ExternalProgramBlockIn",
     "ExternalProgramBlockOut",
     "FormBlockIn",

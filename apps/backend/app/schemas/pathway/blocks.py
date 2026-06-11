@@ -25,6 +25,7 @@ BlockSemanticsLiteral = Literal[
     "wait",
     "pathway_link",
     "external_program",
+    "end_pathway",
 ]
 
 # Single-source-of-truth for the native / external / internal provenance
