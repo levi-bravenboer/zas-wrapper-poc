@@ -2,10 +2,16 @@
 
 Rules for working inside `openspec/`. The artifacts here are the project's living scope + change pipeline. Edit them with care.
 
+> **READ FIRST**: `openspec/NOW.md` names the active change chain. Pick
+> work from there, not from `changes/` directly. Frozen chains carry a
+> `STATUS: FROZEN` banner — skip them for new work.
+
 ## OpenSpec File Map
 
 | File / Folder | What it is | When to read | When to write |
 |---|---|---|---|
+| `NOW.md` | **Current focus pointer.** Names the active change chain and which slot to pick next. Always read first. | At the start of every session, before opening any `changes/` folder. | A chain completes, a new chain starts, or focus shifts. |
+| `changes/CHAIN-*.md` | Chain coordination docs for multi-change work. Status table per slot + cross-change blockers. The active chain is named in `NOW.md`. Frozen chains carry a `STATUS: FROZEN` banner at the top. | Picking the next slot to work on. Updating a slot's status. | A slot advances, a blocker resolves, or a new chain is created. |
 | `project.md` | Long-lived project context: pitch, stakeholders (tiered), integrated systems, hard constraints, conventions. | Joining the project. Onboarding any new agent. Confirming who owns what. | Stakeholders, systems, or constraints change. Conventions shift. |
 | `scope.md` | Living **PoC scope ledger**: in-scope features (with IDs `F1`..`Fn`), out-of-scope list, mocks table, PoC → MVP delta. Every line tier-tagged. | Before proposing any OpenSpec change. Before starting any task. After pulling main. | Adding / removing a feature. Re-tiering a feature. Updating a mock or delta. Always part of the same PR as the change that motivates the edit. |
 | `roadmap.md` | Tier-progression view: PoC → MVP → Product. Current-tier flag at top; per-tier theme, exit criteria, highlights, non-goals. Cross-links `BL-NNN` and `Fn` IDs. | Confirming what tier comes next. Checking exit criteria for the current tier. | A tier's exit criteria shift, a major item lands or moves, current-tier flag changes. |

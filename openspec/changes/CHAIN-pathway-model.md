@@ -1,5 +1,13 @@
 # Change Chain — Pathway Model Redesign
 
+> **STATUS: FROZEN.** This chain bundled the redesign into PR #42 (slots
+> #1 + #2 + #3). Reference this file for design context (D1-D10
+> decisions, urology example, concurrency rules) but do NOT pick new
+> work from it.
+>
+> **Next work tracked in**: `openspec/changes/pathway-completion/`.
+> **Current focus**: `openspec/NOW.md`.
+
 Parent: `pathway-model-redesign` (design only — no implementation tasks).
 
 OpenSpec has no native cross-change dependency field, so the order below is the source of truth. Each child change depends on **all** prior children being archived (or at minimum applied + tests green on the integration branch).
