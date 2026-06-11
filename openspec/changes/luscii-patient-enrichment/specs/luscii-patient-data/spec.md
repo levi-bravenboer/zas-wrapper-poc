@@ -160,6 +160,11 @@ The backend SHALL support dumping the synced catalogue tables into per-locale JS
 - **WHEN** `en.json` declares `"locale": "nl"`
 - **THEN** the import refuses the file with a clear error
 
+#### Scenario: Boot seeding imports snapshots into an empty catalogue
+
+- **WHEN** `scripts.seed_all` runs (container entrypoint) and all three catalogue tables are empty and snapshot files exist
+- **THEN** the catalogue is imported from the snapshots; when any table already holds rows the import is skipped (a fresher sync is never clobbered), and when snapshots are absent seeding logs a warning and still succeeds
+
 #### Scenario: Case-colliding locales survive case-insensitive filesystems
 
 - **WHEN** the catalogue contains locales differing only by case (observed live 2026-06-11: `en-US` and `en-us`)

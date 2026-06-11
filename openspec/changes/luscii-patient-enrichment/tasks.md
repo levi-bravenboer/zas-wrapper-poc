@@ -56,6 +56,7 @@
 - [x] 9.4 Tests: sync populate + full-replace semantics; aggregation tests seed DB catalogue rows; assert no upstream catalogue calls on the request path
 - [x] 9.5 Versioned JSON snapshots (added 2026-06-11): `backend:luscii-export` dumps per-locale files under `apps/backend/data/luscii_catalogue/`, `backend:luscii-import` full-replaces from them (no token, seconds); round-trip + validation tests
 - [x] 9.6 Run the export after the live sync lands and commit the snapshot files (2026-06-11: 11 locales, 15,665/64,334/77,221 rows; import round-trip verified against the dev DB)
+- [x] 9.7 Boot-time auto-import: `seed_all` loads the snapshots when the catalogue tables are empty (skip when populated, warn when snapshots absent); verified live on container boot + restart
 
 ## 8. Verify
 
