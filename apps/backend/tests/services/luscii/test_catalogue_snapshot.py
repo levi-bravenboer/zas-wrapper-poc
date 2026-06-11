@@ -130,6 +130,42 @@ async def test_export_import_round_trip_replaces_tables(
     assert restored.unit == "kg"
 
 
+async def test_case_colliding_locales_round_trip(
+    db_session: AsyncSession, tmp_path: Path
+) -> None:
+    # Observed live 2026-06-11: upstream has both en-US and en-us. On a
+    # case-insensitive filesystem (macOS/Windows) plain <locale>.json names
+    # silently overwrite each other — the collider must get a ~N suffix.
+    db_session.add_all(
+        [
+            LusciiInstrumentItemLocalisationRow(
+                item_id="item-a", item_version="v1", locale="en-US", title="Upper"
+            ),
+            LusciiInstrumentItemLocalisationRow(
+                item_id="item-b", item_version="v1", locale="en-us", title="Lower"
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    await export_catalogue_snapshots(db_session, tmp_path)
+
+    names = sorted(p.name for p in tmp_path.glob("*.json"))
+    assert names == ["en-US.json", "en-us~2.json"]
+    assert json.loads((tmp_path / "en-US.json").read_text(encoding="utf-8"))["locale"] == "en-US"
+    assert json.loads((tmp_path / "en-us~2.json").read_text(encoding="utf-8"))["locale"] == "en-us"
+
+    counts = await import_catalogue_snapshots(db_session, tmp_path)
+    await db_session.commit()
+
+    assert counts["instrument_item_localisations"] == 2
+    rows = (await db_session.scalars(select(LusciiInstrumentItemLocalisationRow))).all()
+    assert sorted((r.locale, r.title or "") for r in rows) == [
+        ("en-US", "Upper"),
+        ("en-us", "Lower"),
+    ]
+
+
 async def test_export_removes_stale_locale_files(
     db_session: AsyncSession, tmp_path: Path
 ) -> None:

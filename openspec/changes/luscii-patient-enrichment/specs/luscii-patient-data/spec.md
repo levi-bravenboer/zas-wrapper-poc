@@ -160,6 +160,11 @@ The backend SHALL support dumping the synced catalogue tables into per-locale JS
 - **WHEN** `en.json` declares `"locale": "nl"`
 - **THEN** the import refuses the file with a clear error
 
+#### Scenario: Case-colliding locales survive case-insensitive filesystems
+
+- **WHEN** the catalogue contains locales differing only by case (observed live 2026-06-11: `en-US` and `en-us`)
+- **THEN** the export writes the collider to a deterministic `<locale>~N.json` filename (instead of silently overwriting on macOS/Windows) and the import restores both locales' rows exactly
+
 ### Requirement: Luscii data is display-only (non-MDR invariant)
 
 The aggregation payload SHALL contain only values, labels, units, timestamps, identifiers, and Luscii's own status fields, passed through unmodified. The backend MUST NOT compute thresholds, scores, rankings, flags, trends, or any derived clinical signal from measurement values. Any future change adding such a field MUST first add an entry to `openspec/mdr-watchlist.md`.

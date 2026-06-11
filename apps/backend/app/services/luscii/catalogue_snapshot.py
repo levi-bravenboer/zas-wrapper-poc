@@ -11,6 +11,12 @@ File format: one `<locale>.json` per locale, rows sorted by natural key and
 serialized one per line so git diffs stay row-granular. The locale lives at
 file level only; rows omit it (and omit null fields, for size — the response
 catalogue alone is 100k+ rows).
+
+Filenames must survive case-insensitive checkouts (macOS/Windows): the
+upstream catalogue contains locales differing only by case (observed
+2026-06-11: `en-US` and `en-us`), so case-colliding locales get a
+deterministic `~N` suffix by sort order. The payload `locale` field is
+authoritative either way.
 """
 
 from __future__ import annotations
@@ -76,6 +82,29 @@ class SnapshotFile(_SnapshotModel):
     item_response_localisations: list[SnapshotItemResponseLocalisation]
 
 
+def _snapshot_filenames(locales: list[str]) -> dict[str, str]:
+    """Deterministic filename per locale, safe on case-insensitive filesystems.
+
+    Locales that collide case-insensitively would silently overwrite each
+    other's files on macOS/Windows; the second and later ones (sort order)
+    get a `~N` suffix instead.
+    """
+    names: dict[str, str] = {}
+    fold_counts: dict[str, int] = {}
+    for locale in sorted(locales):
+        n = fold_counts.get(locale.casefold(), 0) + 1
+        fold_counts[locale.casefold()] = n
+        names[locale] = f"{locale}.json" if n == 1 else f"{locale}~{n}.json"
+    return names
+
+
+def _stem_matches_locale(stem: str, locale: str) -> bool:
+    if stem == locale:
+        return True
+    prefix = f"{locale}~"
+    return stem.startswith(prefix) and stem[len(prefix) :].isdigit()
+
+
 async def export_catalogue_snapshots(
     session: AsyncSession, directory: Path = DEFAULT_SNAPSHOT_DIR
 ) -> dict[str, dict[str, int]]:
@@ -107,6 +136,7 @@ async def export_catalogue_snapshots(
             raise SnapshotError(f"locale {locale!r} is not filename-safe; refusing to export")
 
     directory.mkdir(parents=True, exist_ok=True)
+    filenames = _snapshot_filenames(locales)
     counts: dict[str, dict[str, int]] = {}
     for locale in locales:
         payload = SnapshotFile(
@@ -150,16 +180,22 @@ async def export_catalogue_snapshots(
                 key=lambda s: s.item_response_id,
             ),
         )
-        (directory / f"{locale}.json").write_text(_render(payload), encoding="utf-8")
+        target = directory / filenames[locale]
+        if target.exists():
+            # Case-insensitive filesystems resolve e.g. en-us.json to an
+            # existing en-US.json and keep the old name — recreate instead.
+            target.unlink()
+        target.write_text(_render(payload), encoding="utf-8")
         counts[locale] = {
             "instrument_localisations": len(payload.instrument_localisations),
             "instrument_item_localisations": len(payload.instrument_item_localisations),
             "item_response_localisations": len(payload.item_response_localisations),
         }
-        logger.info("luscii snapshot exported %s.json: %s", locale, counts[locale])
+        logger.info("luscii snapshot exported %s: %s", filenames[locale], counts[locale])
 
+    expected = set(filenames.values())
     for stale in sorted(directory.glob("*.json")):
-        if stale.stem not in locales:
+        if stale.name not in expected:
             stale.unlink()
             logger.info("luscii snapshot removed stale %s", stale.name)
 
@@ -178,15 +214,19 @@ async def import_catalogue_snapshots(
         )
 
     snapshots: list[SnapshotFile] = []
+    seen_locales: set[str] = set()
     for path in files:
         try:
             snapshot = SnapshotFile.model_validate(json.loads(path.read_text(encoding="utf-8")))
         except (ValueError, ValidationError) as exc:
             raise SnapshotError(f"{path.name} is not a valid catalogue snapshot") from exc
-        if snapshot.locale != path.stem:
+        if not _stem_matches_locale(path.stem, snapshot.locale):
             raise SnapshotError(
                 f"{path.name} declares locale {snapshot.locale!r}; filename and payload must agree"
             )
+        if snapshot.locale in seen_locales:
+            raise SnapshotError(f"locale {snapshot.locale!r} appears in more than one snapshot file")
+        seen_locales.add(snapshot.locale)
         snapshots.append(snapshot)
 
     counts = await replace_catalogue(
