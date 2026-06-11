@@ -1610,6 +1610,54 @@ export interface components {
             /** Window Iso */
             window_iso: string;
         };
+        /** EndPathwayBlockOut */
+        EndPathwayBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "end_pathway";
+        };
         /**
          * EnrollmentCreate
          * @description Body for `POST /enrollments`.
@@ -2731,7 +2779,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program";
+            semantics: "start" | "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -3247,7 +3295,7 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: (components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"])[];
+            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
@@ -3784,6 +3832,54 @@ export interface components {
             display: string;
             /** Source */
             source: string;
+        };
+        /** StartBlockOut */
+        StartBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "start";
         };
         /** TaskBlockOut */
         TaskBlockOut: {
@@ -6301,7 +6397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"];
+                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
                 };
             };
             /** @description Not Found */
@@ -6578,6 +6674,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Unprocessable Content */

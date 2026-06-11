@@ -816,9 +816,23 @@ def _resolve_or_materialize_lane(
     return materialized_id
 
 
+_BLOCK_ENVELOPE_KEYS: frozenset[str] = frozenset(
+    {"lane_kind", "input_logic", "timing_policy"}
+)
+
+
 def _validate_block_config(block_id: UUID, schema: dict[str, Any], config: dict[str, Any]) -> None:
+    # Slot #2 §6 introduced typed envelope fields (`name`, `lane_kind`,
+    # `input_logic`, `timing_policy`) that the frontend ships inside
+    # the same `config` bag as the per-kind fields. The legacy slot #1
+    # `CONFIG_SCHEMA` is `additionalProperties: false` and only declares
+    # per-kind properties, so it spuriously rejects the envelope keys.
+    # Pydantic strict validation in `block_in_to_typed` is authoritative
+    # for those keys; strip them here before running the JSON Schema
+    # pre-check.
+    per_kind_config = {k: v for k, v in config.items() if k not in _BLOCK_ENVELOPE_KEYS}
     validator = Draft202012Validator(schema)
-    errors = sorted(validator.iter_errors(config), key=lambda e: list(e.absolute_path))
+    errors = sorted(validator.iter_errors(per_kind_config), key=lambda e: list(e.absolute_path))
     if not errors:
         return
     first = errors[0]

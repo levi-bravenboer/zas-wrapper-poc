@@ -171,6 +171,7 @@ describe('parseBlockConfig — invalid configs throw with the right path', () =>
 describe('AnyBlockConfig — type coverage smoke', () => {
   it('compiles when assembling a record over all semantics', () => {
     const sample: Record<BlockSemantics, AnyBlockConfig> = {
+      start: { name: 'Start' },
       appointment: { kind: 'consult' },
       task: { assignee: 'caregiver' },
       message: { channel: 'email' },
@@ -188,7 +189,8 @@ describe('AnyBlockConfig — type coverage smoke', () => {
         protocol_id: 'proto-std-12w',
         mode: 'blocking',
       },
+      end_pathway: { name: 'End' },
     }
-    expect(Object.keys(sample)).toHaveLength(9)
+    expect(Object.keys(sample)).toHaveLength(11)
   })
 })

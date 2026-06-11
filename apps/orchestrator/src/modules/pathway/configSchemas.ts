@@ -95,7 +95,18 @@ const ExternalProgramConfig = z.object({
   mode: z.enum(PATHWAY_LINK_MODES).optional(),
 })
 
+// catalogue-expansion § 1 / § 2: structural marker kinds. Both carry only
+// `name`, no per-kind authoring surface beyond the inherited label.
+const StartConfig = z.object({
+  name: z.string().optional(),
+})
+
+const EndPathwayConfig = z.object({
+  name: z.string().optional(),
+})
+
 export const CONFIG_SCHEMAS = {
+  start: StartConfig,
   appointment: AppointmentConfig,
   task: TaskConfig,
   message: MessageConfig,
@@ -105,6 +116,7 @@ export const CONFIG_SCHEMAS = {
   wait: WaitConfig,
   pathway_link: PathwayLinkConfig,
   external_program: ExternalProgramConfig,
+  end_pathway: EndPathwayConfig,
 } as const satisfies Record<BlockSemantics, z.ZodObject>
 
 export type ConfigForSemantics<S extends BlockSemantics> = z.infer<(typeof CONFIG_SCHEMAS)[S]>

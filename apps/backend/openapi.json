@@ -3244,6 +3244,9 @@
                 "schema": {
                   "oneOf": [
                     {
+                      "$ref": "#/components/schemas/StartBlockOut"
+                    },
+                    {
                       "$ref": "#/components/schemas/AppointmentBlockOut"
                     },
                     {
@@ -3269,11 +3272,15 @@
                     },
                     {
                       "$ref": "#/components/schemas/ExternalProgramBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EndPathwayBlockOut"
                     }
                   ],
                   "discriminator": {
                     "propertyName": "kind",
                     "mapping": {
+                      "start": "#/components/schemas/StartBlockOut",
                       "appointment": "#/components/schemas/AppointmentBlockOut",
                       "task": "#/components/schemas/TaskBlockOut",
                       "decision": "#/components/schemas/DecisionBlockOut",
@@ -3282,7 +3289,8 @@
                       "milestone": "#/components/schemas/MilestoneBlockOut",
                       "wait": "#/components/schemas/WaitBlockOut",
                       "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
-                      "external_program": "#/components/schemas/ExternalProgramBlockOut"
+                      "external_program": "#/components/schemas/ExternalProgramBlockOut",
+                      "end_pathway": "#/components/schemas/EndPathwayBlockOut"
                     }
                   },
                   "title": "Response Get Pathway Block"
@@ -3676,6 +3684,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EnrollmentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -5091,6 +5109,117 @@
         ],
         "title": "DueWithinPolicy",
         "description": "Block must complete within an ISO 8601 window of its eligibility."
+      },
+      "EndPathwayBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "kind": {
+            "type": "string",
+            "const": "end_pathway",
+            "title": "Kind",
+            "default": "end_pathway"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name"
+        ],
+        "title": "EndPathwayBlockOut"
       },
       "EnrollmentCreate": {
         "properties": {
@@ -7592,6 +7721,7 @@
           "semantics": {
             "type": "string",
             "enum": [
+              "start",
               "appointment",
               "task",
               "message",
@@ -7600,7 +7730,8 @@
               "milestone",
               "wait",
               "pathway_link",
-              "external_program"
+              "external_program",
+              "end_pathway"
             ],
             "title": "Semantics",
             "description": "Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching."
@@ -8787,6 +8918,9 @@
             "items": {
               "oneOf": [
                 {
+                  "$ref": "#/components/schemas/StartBlockOut"
+                },
+                {
                   "$ref": "#/components/schemas/AppointmentBlockOut"
                 },
                 {
@@ -8812,6 +8946,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/ExternalProgramBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/EndPathwayBlockOut"
                 }
               ],
               "discriminator": {
@@ -8819,11 +8956,13 @@
                 "mapping": {
                   "appointment": "#/components/schemas/AppointmentBlockOut",
                   "decision": "#/components/schemas/DecisionBlockOut",
+                  "end_pathway": "#/components/schemas/EndPathwayBlockOut",
                   "external_program": "#/components/schemas/ExternalProgramBlockOut",
                   "form": "#/components/schemas/FormBlockOut",
                   "message": "#/components/schemas/MessageBlockOut",
                   "milestone": "#/components/schemas/MilestoneBlockOut",
                   "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
+                  "start": "#/components/schemas/StartBlockOut",
                   "task": "#/components/schemas/TaskBlockOut",
                   "wait": "#/components/schemas/WaitBlockOut"
                 }
@@ -10093,6 +10232,117 @@
           "source"
         ],
         "title": "SpecialismRead"
+      },
+      "StartBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "kind": {
+            "type": "string",
+            "const": "start",
+            "title": "Kind",
+            "default": "start"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name"
+        ],
+        "title": "StartBlockOut"
       },
       "TaskBlockOut": {
         "properties": {

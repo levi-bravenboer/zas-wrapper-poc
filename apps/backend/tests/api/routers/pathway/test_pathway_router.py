@@ -343,6 +343,28 @@ async def test_replace_pathway_overwrites(
     assert len(body["version"]["lanes"]) == 2
 
 
+async def test_replace_pathway_accepts_envelope_keys_in_config(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Slot #2 §6 envelope keys (input_logic, timing_policy, lane_kind) ride
+    inside the `config` bag on the wire — the legacy slot #1 CONFIG_SCHEMA
+    validator must NOT reject them as additional properties."""
+
+    await _login(async_client)
+    created = await _create(async_client, name="EnvelopeKeys")
+
+    payload = _replace_payload("EnvelopeKeys", lane_kinds)
+    # Stuff envelope-shared fields into every block's config — mirrors
+    # what `useAutosavePathway.buildPayload` ships from the orchestrator.
+    for block in payload["blocks"]:
+        block["config"]["input_logic"] = {"rules": [], "aggregator": "all_of"}
+        block["config"]["timing_policy"] = None
+        block["config"]["lane_kind"] = None
+
+    response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
+    assert response.status_code == 200, response.text
+
+
 async def test_replace_unknown_pathway_returns_404(
     async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
 ) -> None:
