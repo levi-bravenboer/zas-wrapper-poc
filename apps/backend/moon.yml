@@ -74,6 +74,22 @@ tasks:
       cache: false
       runInCI: false
 
+  # Dump the synced catalogue tables into per-locale JSON snapshots under
+  # data/luscii_catalogue/ (committed). Local DB only — no token needed.
+  luscii-export:
+    command: "uv run python -m scripts.export_luscii_catalogue"
+    options:
+      cache: false
+      runInCI: false
+
+  # Full-replace the catalogue tables from the committed JSON snapshots.
+  # Seconds instead of the ~30-45 min live sync; no token needed.
+  luscii-import:
+    command: "uv run python -m scripts.import_luscii_catalogue"
+    options:
+      cache: false
+      runInCI: false
+
   shell:
     command: "docker compose exec backend bash"
     env:
