@@ -2,14 +2,14 @@
 
 ### Requirement: Orchestrator exposes a patients overview screen built on `DataTable<T>`
 
-**Reason**: F4 is reframed by this change from "patients overview list" to "caregiver attention inbox". The canonical attention surface moves to `/_auth/inbox` (specified by the new `inbox-base` capability). The `/_auth/patients` route is removed entirely — no list-style patient surface ships with this change.
+**Reason**: F4 is reframed by this change from "patients overview list" to "caregiver task list". The canonical attention surface moves to `/_auth/tasks` (specified by the new `tasks-base` capability — a server-side aggregator endpoint, NOT a tasks table). The `/_auth/patients` route is removed entirely — no list-style patient surface ships with this change.
 
 **Migration**:
 - The `/_auth/patients/index.tsx` route file is deleted.
 - The route's `<FilterableListPage>` + `<DataTable<PatientRead>>` composition is deleted.
-- The sidebar `"Mijn patiënten"` nav item is removed; a new `"Inbox"` nav item points to `/_auth/inbox`.
+- The sidebar `"Mijn patiënten"` nav item is removed; a new `"Taken"` nav item points to `/_auth/tasks` (specified by `tasks-base`).
 - Direct caregiver-facing access to "browse all patients" is intentionally NOT replaced in this change. If a stakeholder asks for a patient-directory browser at MVP, file a follow-up.
-- The patient detail route `/_auth/patients/$patientId` is RETAINED as a standalone full-page detail surface (per design.md D16/D17). Inbox-context patient detail mounts the same `<PatientDetailView>` at `/_auth/inbox/p/$patientId`.
+- The patient detail route `/_auth/patients/$patientId` is RETAINED as a standalone full-page detail surface (per design.md D16/D17). Tasks-context patient detail mounts the same `<PatientDetailView>` at `/_auth/tasks/p/$patientId`.
 - The backend `GET /patients` list endpoint (with its `ListQuery` envelope and FHIR-aligned filters) is RETAINED — admin tooling, patient pickers, and care-team flows still consume it. Only the orchestrator's user-facing list route is dropped.
 
 ## MODIFIED Requirements
@@ -26,7 +26,7 @@ The `GET /patients` route SHALL ride on the shared `ListQuery` envelope (`page`,
 - `q=<value>` — free-text search across `family_name`/`given_name` via `searchable_fields`.
 - `identifier=<value>` — a flat router query param (NOT a `filter[...]` key) that short-circuits the rest of the query with an exact match on `patient_identifiers.value` joined through `patient_id` within the caller's tenant.
 
-`order_by` SHALL accept at minimum `family_name`, `given_name`, `birth_date`, `created_at`. Unknown values MUST be rejected with `422` by the shared `ListQuery` validator. (The previously-considered `next_appointment_starts_at` sort key is NOT added — inbox sorting happens server-side on `/inbox/items`, not on patient rows.)
+`order_by` SHALL accept at minimum `family_name`, `given_name`, `birth_date`, `created_at`. Unknown values MUST be rejected with `422` by the shared `ListQuery` validator. (The previously-considered `next_appointment_starts_at` sort key is NOT added — the task list is a server-side aggregator over `GET /tasks`, not a patient-list sort.)
 
 When `identifier` is provided, it SHALL short-circuit all other filters and `q` (return the at-most-one matching row). When `identifier` is absent, the `filter[...]` entries SHALL be AND-combined and intersected with `q`. All matches SHALL be tenant-scoped via the session actor's `tenant_id` enforced by `BaseListRepository._tenant_predicate`. Filter field names align with FHIR R4 `Patient` search (`family`, `given`, `birthdate`, `identifier`) so MVP HiX adapter wiring is a direct mapping.
 
@@ -38,7 +38,7 @@ When `identifier` is provided, it SHALL short-circuit all other filters and `q` 
 #### Scenario: order_by rejects next_appointment_starts_at
 
 - **WHEN** `GET /patients?order_by=next_appointment_starts_at` is called
-- **THEN** the response MUST be `422 Unprocessable Entity` (sort moved to `/inbox/items`)
+- **THEN** the response MUST be `422 Unprocessable Entity` (no embedded next_appointment field; task aggregator lives at `GET /tasks`)
 
 #### Scenario: Identifier short-circuits other filters
 

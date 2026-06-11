@@ -1,293 +1,216 @@
 ## ADDED Requirements
 
-### Requirement: Tasks are tenant-scoped attention items tied to a patient and a caregiver
+### Requirement: `/tasks` is a server-side aggregator over multiple source domains, not a standalone table
 
-The backend SHALL persist a `tasks` table where each row represents one attention item for a caregiver concerning a patient. `Task` SHALL inherit `TenantOwnedEntity` and `DeletableEntity`, so each row carries inherited columns plus task-specific columns:
+The backend SHALL expose `/tasks` as an aggregator endpoint that projects items from one or more underlying source domains into a unified `TaskItem` envelope. There is NO `tasks` table, NO `task_*` Postgres enums, NO ORM model named `Task`, and NO HiX task adapter in this change. Each `TaskItem` is materialised at request time from the active source(s); adding a new source is a backend-only change (new source key + projection function + query plan).
 
-- `patient_id` (UUID, NOT NULL, FK to `patients.id`, ON DELETE RESTRICT) — the patient the task is about.
-- `assigned_user_id` (UUID, NULL, FK to `users.id`, ON DELETE RESTRICT) — the caregiver expected to act. NULL means unassigned.
-- `pathway_block_instance_id` (UUID, NULL, NO FOREIGN KEY in v1 — reserved for the future pathway runtime; follow-up migration adds the `ON DELETE SET NULL` FK).
-- `title` (varchar 255, NOT NULL).
-- `description` (text, NULL).
-- `kind` (enum `task_kind`, NOT NULL).
-- `status` (enum `task_status`, NOT NULL, default `'open'`).
-- `due_at` (timestamptz, NULL) — the attention deadline. NULL means no specific deadline.
-- `priority` (enum `task_priority`, NOT NULL, default `'normal'`).
+v1 source set is exactly: `appointment`. Future sources (e.g. `form_response`, `monitoring_alert`) plug into the same envelope without a wire-shape change.
 
-The referenced patient MUST belong to the same tenant as the task. The referenced assigned user (when not NULL) MUST belong to the same tenant. All non-id task queries SHALL be tenant-scoped through the inherited `tenant_id` filter.
+#### Scenario: No tasks table is created
 
-#### Scenario: Table created by migration
+- **WHEN** the database is migrated to head on this change
+- **THEN** there MUST NOT exist a table named `tasks`, nor Postgres enum types named `task_kind`, `task_status`, or `task_priority`
 
-- **WHEN** a fresh database is migrated to head (after `patients-base`)
-- **THEN** a `tasks` table exists with the columns specified above plus inherited columns
+#### Scenario: No HiX task adapter ships
 
-#### Scenario: Cross-tenant patient rejected
+- **WHEN** the codebase under `app/adapters/hix/` is inspected
+- **THEN** there MUST NOT exist a file `tasks.py` or a class `HixTaskAdapter`
 
-- **WHEN** a write attempts to set `patient_id` to a patient row whose `tenant_id` differs from the task's `tenant_id`
-- **THEN** the service layer MUST raise a domain error and the write MUST NOT persist
+### Requirement: `GET /tasks` returns a unified `TaskItem` envelope with typed source payload
 
-#### Scenario: Cross-tenant assigned user rejected
+The backend SHALL expose `GET /tasks` (list) and `GET /tasks/{source}/{source_id}` (read-one) returning the `TaskItem` envelope:
 
-- **WHEN** a write attempts to set `assigned_user_id` to a user whose `tenant_id` differs from the task's `tenant_id`
-- **THEN** the service layer MUST raise a domain error and the write MUST NOT persist
+```python
+class TaskItem(BaseModel):
+    id: str                             # synthetic stable id: f"{source}:{source_id}"
+    source: Literal["appointment"]      # extends as sources are added
+    source_id: UUID                     # primary key in the source domain
+    patient: PatientInlineSummary       # { id, family_name, given_name, insz?, primary_organisation_id }
+    due_at: datetime                    # the "act-by" timestamp the task list sorts on
+    title: str                          # source-derived display title
+    kind: str | None                    # source-derived classification (e.g. AppointmentKind value)
+    priority: TaskPriority | None       # uniform optional; null for v1 appointment source
+    payload: AppointmentPayload         # discriminated union by `source`; v1 only `AppointmentPayload`
+```
 
-#### Scenario: Cross-tenant reads return 404
+`PatientInlineSummary` SHALL be defined once in `app/schemas/patient/patient.py` and re-used by `tasks-base`. Shape: `{ id, family_name, given_name, insz?: string | null, primary_organisation_id }` — projected via JOIN, never N+1.
 
-- **WHEN** a caregiver in tenant A issues `GET /tasks/{id}` for a task whose `tenant_id` is tenant B
-- **THEN** the API MUST respond `404 Not Found`
+For the v1 `appointment` source:
+- `id` = `f"appointment:{appointment.id}"`.
+- `source_id` = `appointment.id`.
+- `due_at` = `appointment.starts_at`.
+- `title` = `appointment.title`.
+- `kind` = `appointment.kind` value (string).
+- `priority` = `null`.
+- `payload` = `AppointmentPayload` = `{ id, starts_at, ends_at, kind, modality, location_text, status, participants: list[AppointmentParticipantInlineSummary] }`.
 
-#### Scenario: pathway_block_instance_id is unused by v1 writes
+#### Scenario: TaskItem includes typed source payload
 
-- **WHEN** any v1 write creates a task via the API
-- **THEN** the request MUST NOT accept `pathway_block_instance_id` (column populated only by future pathway runtime); the column MUST default to `null` on every v1-created row
+- **WHEN** `GET /tasks` returns an appointment-source item
+- **THEN** the body MUST include `source: "appointment"`, `source_id` matching the underlying appointment row id, `id` formatted as `f"appointment:{source_id}"`, and a `payload` object matching the `AppointmentPayload` shape
 
-### Requirement: Task kind enum
+#### Scenario: PatientInlineSummary is projected via JOIN
 
-The backend SHALL define a `TaskKind` enum at `app/core/enums/task.py` with values `review`, `follow_up`, `call`, `intake`, `signoff`, `other` (string-valued via `StrEnum`), persisted as Postgres enum type `task_kind`. v1 seeded fixtures SHALL exercise at least three kinds.
+- **WHEN** `GET /tasks` returns N items spanning M distinct patients
+- **THEN** the backend MUST resolve the patient summary in a single round-trip JOIN, NOT N follow-up patient fetches
 
-#### Scenario: Postgres enum type created by migration
+### Requirement: `GET /tasks` v1 window is hardcoded to the next 3 days
 
-- **WHEN** the migration runs on a fresh database
-- **THEN** a Postgres enum type `task_kind` exists with exactly the values `('review', 'follow_up', 'call', 'intake', 'signoff', 'other')`
+For the v1 `appointment` source, `GET /tasks` SHALL surface ONLY appointments where `status = 'booked'` AND `starts_at` is between `now()` and `now() + INTERVAL '3 days'` inclusive. The window SHALL NOT be configurable via a query parameter in v1; widening the window is a follow-up change.
 
-### Requirement: Task status enum
+Soft-deleted appointments SHALL be excluded. Appointments outside the window SHALL be excluded from `GET /tasks` even if otherwise visible to the caller.
 
-The backend SHALL define a `TaskStatus` enum at `app/core/enums/task.py` with values `open`, `in_progress`, `completed`, `cancelled` (string-valued via `StrEnum`), persisted as Postgres enum type `task_status`. Default on create is `open`. v1 ships read-only (no `PATCH /tasks/{id}` route) — status transitions are not exposed by any v1 endpoint.
+Unknown query parameters (e.g. `?within=7d`) SHALL be silently ignored, NOT rejected with `422`. This preserves forward compatibility when v2 introduces a configurable window.
 
-#### Scenario: Default status on create is open
+#### Scenario: Appointment beyond 3-day window excluded
 
-- **WHEN** a task is materialised by a seed script without an explicit `status`
-- **THEN** the row's `status` MUST be persisted as `'open'`
+- **WHEN** an appointment has `status='booked'` and `starts_at = now() + 5 days`
+- **THEN** it MUST NOT appear in `GET /tasks`
 
-### Requirement: Task priority enum
+#### Scenario: Appointment with non-booked status excluded
 
-The backend SHALL define a `TaskPriority` enum at `app/core/enums/task.py` with values `low`, `normal`, `high`, `urgent` (string-valued via `StrEnum`), persisted as Postgres enum type `task_priority`. Default on create is `normal`.
+- **WHEN** an appointment has `status='cancelled'` and `starts_at = now() + 1 day`
+- **THEN** it MUST NOT appear in `GET /tasks`
 
-#### Scenario: Default priority on create is normal
+#### Scenario: Past appointment excluded
 
-- **WHEN** a task is materialised without an explicit `priority`
-- **THEN** the row's `priority` MUST be persisted as `'normal'`
+- **WHEN** an appointment has `status='booked'` and `starts_at = now() - 1 hour`
+- **THEN** it MUST NOT appear in `GET /tasks`
 
-### Requirement: Tasks API exposes read-only access for caregivers and admins
+#### Scenario: Unknown query param silently ignored
 
-The backend SHALL expose under `/tasks` exactly these routes for v1: `GET /tasks` (list) and `GET /tasks/{id}` (read). NO create, update, or delete routes ship in v1 — tasks are populated by seeded fixtures (and, in the future, by the pathway runtime). Adding `POST` / `PATCH` / `DELETE` is a separate change.
+- **WHEN** `GET /tasks?within=7d` is called
+- **THEN** the server MUST return the same response as `GET /tasks` with no `within` param (the 3-day window stays fixed) and MUST NOT respond `422`
 
-All routes SHALL require `require_role(Role.ADMIN, Role.CAREGIVER)`. The `Role.PATIENT` user SHALL be rejected with `403 Forbidden`. All routes SHALL be tenant-scoped via the session actor's `tenant_id`. Cross-tenant reads SHALL return `404`, never `403`.
+### Requirement: `GET /tasks` visibility is participant-driven, scoped to the caller's user id
 
-**Visibility within a tenant**:
+`GET /tasks` SHALL surface a source item ONLY when the caller is the relevant actor on the underlying source row. For the v1 `appointment` source, that means: the caller has an active (non-soft-deleted) row in `appointment_participants` with `user_id = caller.id` (any role: `lead`, `support`, or `observer`).
 
-- `admin` users SHALL see all non-soft-deleted tasks in their tenant.
-- `caregiver` users SHALL see a task ONLY when they have access to its `patient_id` per `require_patient_access` (the existing care-team OR PractitionerRole-tree predicate). Assignment (`assigned_user_id`) does NOT factor into visibility — patient access alone gates it.
+The caller's role bound is `require_role(Role.ADMIN, Role.CAREGIVER)`. `Role.PATIENT` SHALL receive `403 Forbidden`. Admin users SHALL be subject to the same participant predicate as caregivers — admins do NOT bypass it. An admin who is not a participant on any appointment in the window SHALL receive an empty list.
+
+Cross-tenant reads SHALL return `404`, never `403`.
 
 Every route handler SHALL carry an `# AUTH-HARDEN` source comment.
 
-#### Scenario: Unauthenticated request rejected
-
-- **WHEN** an unauthenticated request calls any `/tasks` route
-- **THEN** the API MUST respond `401 Unauthorized`
-
 #### Scenario: Patient role rejected
 
-- **WHEN** a `patient`-role user calls any `/tasks` route
+- **WHEN** a `patient`-role user calls `GET /tasks` or `GET /tasks/{source}/{source_id}`
 - **THEN** the API MUST respond `403 Forbidden`
 
-#### Scenario: Write routes are absent in v1
+#### Scenario: Caregiver sees only items they participate in
 
-- **WHEN** the OpenAPI document for v1 is inspected
-- **THEN** NO `POST /tasks`, `PATCH /tasks/{id}`, or `DELETE /tasks/{id}` route MUST be present; only `GET /tasks` and `GET /tasks/{id}` MUST be advertised
+- **WHEN** caregiver `C` is the `lead` participant on appointment `A1` and a `support` participant on `A2`, but is NOT a participant on `A3` (all three booked within 3 days)
+- **THEN** `GET /tasks` for `C` MUST include items for `A1` and `A2` only
 
-#### Scenario: Caregiver sees only tasks for accessible patients
+#### Scenario: Admin sees only their own participations
 
-- **WHEN** caregiver `C` has patient access to `P1` but not `P2`, and both patients have tasks
-- **THEN** `GET /tasks` for `C` MUST include tasks for `P1` and MUST NOT include tasks for `P2`
+- **WHEN** an admin `A` calls `GET /tasks` and `A` is a participant on zero appointments in the window
+- **THEN** the response MUST be `{ items: [], page: 1, page_size: 25, total: 0, total_pages: 0 }`
 
-#### Scenario: Caregiver sees unassigned tasks for accessible patients
+#### Scenario: Caregiver no longer participant returns 404 on read-one
 
-- **WHEN** a task `T` has `assigned_user_id IS NULL` for patient `P`, and caregiver `C` has patient access to `P`
-- **THEN** `GET /tasks` for `C` MUST include `T`
+- **WHEN** caregiver `C` was a participant on appointment `A` but their participant row is soft-deleted
+- **THEN** `GET /tasks/appointment/{A.id}` for `C` MUST return `404`
 
-#### Scenario: Caregiver assignment does not grant access without patient access
+#### Scenario: Cross-tenant read returns 404
 
-- **WHEN** caregiver `C` is the `assigned_user_id` on task `T` for patient `P`, but `C` has lost patient access to `P`
-- **THEN** `GET /tasks/{T.id}` for `C` MUST return `404`
+- **WHEN** a caregiver in tenant `T1` calls `GET /tasks/appointment/{source_id}` for an appointment in tenant `T2`
+- **THEN** the API MUST respond `404 Not Found`
 
-#### Scenario: Admin sees all tasks in tenant
+### Requirement: `GET /tasks` rides shared `ListQuery` envelope with a single fixed sort
 
-- **WHEN** an admin in tenant `T` calls `GET /tasks`
-- **THEN** the response MUST include every non-soft-deleted task row whose `tenant_id == T`
+The `GET /tasks` route SHALL ride the shared `ListQuery` envelope:
 
-### Requirement: Tasks list supports filter + sort dimensions
+- Pagination via `page` (default 1) and `page_size` (default 25, max 100); response envelope is `Page[TaskItem]`.
+- `filter[patient_id][eq]=<uuid>` — restricts to one patient (used by tooling / tests; the task-list UI does NOT send it v1).
+- `order_by` SHALL accept exactly one value: `due_at`. Default is `due_at`. `order` SHALL accept exactly `asc`. Any other `order_by` or `order` value MUST be rejected with `422`.
 
-The `GET /tasks` route SHALL ride the shared `ListQuery` envelope and expose:
+There is no `q=`, no `filter[status]`, no `filter[priority]`, no `filter[assigned_user_id]`, no `filter[due_at][gte/lte]` in v1 — the hardcoded window covers the only relevant date range, and the participant predicate covers personal scope.
 
-- Pagination via `page` (default 1) and `page_size` (default 25, max 100); response envelope is `Page[TaskRead]`.
-- `filter[patient_id][eq]=<uuid>`.
-- `filter[status][eq|in]=<status>`.
-- `filter[kind][eq|in]=<kind>`.
-- `filter[priority][eq|in]=<priority>`.
-- `filter[assigned_user_id][eq]=<uuid>` — special value `me` resolves server-side to the caller's user id.
-- `filter[due_at][gte]=<datetime>` and `filter[due_at][lte]=<datetime>`.
-- `q=<value>` — case-insensitive substring on `title` via `searchable_fields`.
-- `order_by` SHALL accept at minimum `due_at`, `created_at`, `priority`. Default is `due_at`. Default `order` is `asc`.
-
-When `order_by=due_at`, rows with `due_at IS NULL` MUST be ordered last regardless of `order` direction (NULLS LAST).
-
-Unknown `order_by` values MUST be rejected with `422`.
-
-#### Scenario: Default sort puts soonest-deadline first
+#### Scenario: Default sort is `due_at asc`
 
 - **WHEN** `GET /tasks` is called with no `order_by` and no `order`
-- **THEN** the items MUST be ordered by `due_at` ascending with `due_at IS NULL` rows trailing
+- **THEN** the items MUST be ordered by `due_at` ascending (earliest first)
 
-#### Scenario: assigned_user_id `me` resolves to caller
+#### Scenario: Alternative `order_by` rejected
 
-- **WHEN** `GET /tasks?filter[assigned_user_id][eq]=me` is called by caregiver `C`
-- **THEN** the response MUST include only tasks whose `assigned_user_id == C.id`
+- **WHEN** `GET /tasks?order_by=created_at` is called
+- **THEN** the API MUST respond `422 Unprocessable Entity`
 
-#### Scenario: Date-range filter on due_at
+#### Scenario: Descending `order` rejected
 
-- **WHEN** `GET /tasks?filter[due_at][gte]=2026-06-10T00:00:00Z&filter[due_at][lte]=2026-06-20T23:59:59Z` is called
-- **THEN** the response MUST contain only tasks whose `due_at` falls in that range
+- **WHEN** `GET /tasks?order=desc` is called
+- **THEN** the API MUST respond `422 Unprocessable Entity`
 
-### Requirement: TaskRead embeds patient summary
+### Requirement: Orchestrator ships `/_auth/tasks` as the canonical caregiver task list surface
 
-`TaskRead` SHALL include an embedded `patient: PatientInlineSummary` field with shape `{ id, family_name, given_name, insz?: string | null, primary_organisation_id }`. The summary SHALL be projected via a join in the same query — the response SHALL NOT require the client to issue a follow-up `GET /patients/{id}` per row.
+The orchestrator SHALL render at `/_auth/tasks` a `<TaskList>` showing one `<TaskRow>` per `TaskItem` returned by `GET /tasks`. The sidebar SHALL list a navigation item labelled `"Taken"` pointing to `/_auth/tasks` with a lucide `inbox` icon (icon-name only — the surface concept is "tasks", not "inbox").
 
-#### Scenario: TaskRead includes patient summary
+The previous sidebar entries `"Mijn patiënten"` and the placeholder `"Taken"` SHALL be removed. The placeholder route file (`apps/orchestrator/src/routes/_auth/tasks.tsx`) and the placeholder `apps/orchestrator/src/modules/tasks/` directory (`TasksPage.tsx`, `tasksPort.ts`, placeholder adapter, `types.ts`) SHALL be DELETED FIRST; the new `/_auth/tasks/` route directory and the new `modules/tasks/` directory are CREATED AFTER deletion to avoid naming collisions.
 
-- **WHEN** `GET /tasks/{id}` returns a successful response
-- **THEN** the body MUST include `patient: { id, family_name, given_name, insz?, primary_organisation_id }`
+The list page SHALL fetch with TanStack Query (single page; no infinite scroll v1 — the 3-day window caps result size). The page SHALL register a realtime invalidation topic seam (no-op v1; follow-up wires the real topic).
 
-#### Scenario: INSZ in patient summary is null when missing
+`<TaskRow>` is a flat clickable row composed directly (no `<InboxRow>` / `<ListRow>` generic abstraction layer in this change). Anatomy:
 
-- **WHEN** a task's patient has no INSZ identifier row
-- **THEN** the embedded `patient.insz` MUST be `null`
-
-### Requirement: Seed script generates synthetic tasks only
-
-The backend SHALL provide `scripts/seed_tasks.py` that inserts a deterministic set of synthetic tasks against the seeded patient cohort. The script SHALL use a fixed PRNG seed for determinism. Each seeded patient SHALL receive between 0 and 3 tasks with varied `kind`, `status`, `priority`, and `due_at` values (mix of past-due, due-today, due-this-week, undated). The seed SHALL set `assigned_user_id` to the demo caregiver for ~60% of rows and leave the rest unassigned. The file SHALL carry a header comment stating `"SYNTHETIC ONLY — see openspec/project.md no-PHI invariant."`
-
-#### Scenario: Re-running seed is idempotent
-
-- **WHEN** `seed_tasks.py` is run twice against the same database
-- **THEN** the second run MUST NOT create duplicate rows (idempotence enforced by a deterministic uniqueness key — implementer's choice)
-
-#### Scenario: All seeded due_at values are timezone-aware
-
-- **WHEN** the seed script runs
-- **THEN** every inserted `due_at` value MUST be a `timestamptz` (UTC); past-due, due-today, and future-due variants MUST all be represented
-
-### Requirement: HiX task adapter module reserves the MVP wiring point
-
-The backend SHALL provide a module at `app/adapters/hix/tasks.py` exposing class `HixTaskAdapter` with methods `fetch(external_ref: str)` and `upsert_from_hix(payload)`. Both methods SHALL raise `NotImplementedError("HiX task adapter is MVP scope")` in PoC.
-
-#### Scenario: Adapter module is importable
-
-- **WHEN** `from app.adapters.hix.tasks import HixTaskAdapter` is executed
-- **THEN** the import MUST succeed without side effects
-
-#### Scenario: Adapter methods raise NotImplementedError
-
-- **WHEN** `HixTaskAdapter().fetch("x")` or `HixTaskAdapter().upsert_from_hix({})` is called
-- **THEN** the call MUST raise `NotImplementedError` with the message `"HiX task adapter is MVP scope"`
-
-### Requirement: Orchestrator ships /_auth/inbox as the canonical caregiver attention surface
-
-The orchestrator SHALL render at `/_auth/inbox` an `<InboxList>` showing one `<TaskInboxRow>` per task returned by `GET /tasks`. The route SHALL satisfy PoC feature `F4` (renamed in `scope.md`). The sidebar SHALL list a navigation item labelled `"Inbox"` pointing to this route. The existing placeholder `TasksPage` at `apps/orchestrator/src/modules/tasks/TasksPage.tsx` and its `/_auth/tasks` route SHALL be removed; the `tasksPort` adapter + placeholder data SHALL be deleted.
-
-The list page SHALL use TanStack Query `useInfiniteQuery` keyed `[...tasksListKeyPrefix, { sort }]` with backend `page_size=25`. The page SHALL register a realtime invalidation topic seam (no-op v1; BL-076 follow-up wires the real topic).
-
-`<TaskInboxRow>` composes the generic `<InboxRow>` primitive. Anatomy:
-
-- **Subject avatar** (`<Avatar tintBy={task.patient.id}>`) — initials from `task.patient.family_name` + `task.patient.given_name`. Never an `<img>`.
+- **Subject avatar** (`<Avatar tintBy={taskItem.patient.id}>`) — initials from `taskItem.patient.family_name` + `taskItem.patient.given_name`. Never an `<img>`.
 - **Primary line**: `family, given`.
-- **Secondary line** (muted): `INSZ • TaskKind label • due-time relative copy ("vandaag" / "morgen" / "over 3 dagen" / "verlopen 2 dagen" / "geen deadline")`.
-- **Trailing**: priority chip (Badge variant per priority) + status chip (only shown when `status !== 'open'`).
-- **Kebab** trailing (visible only when master is full / not-collapsed).
+- **Secondary line** (muted): `INSZ • <kind label via t('appointment:kind.<value>')> • <relative due copy: "vandaag X uur" / "morgen X uur" / "over N dagen">`.
+- **Trailing**: `<KindTile>` (v1 source-specific decoration; lives in `modules/tasks/components/KindTile.tsx` since no Afspraken tab consumes it).
+- **Chevron** at the right end.
 
-#### Scenario: Inbox renders one row per task
+No per-row kebab. No checkbox. No inline action.
 
-- **WHEN** a caregiver loads `/_auth/inbox` with at least one task returned
-- **THEN** the page MUST render exactly one `<TaskInboxRow>` per task
+#### Scenario: Task list renders one row per TaskItem
 
-#### Scenario: Sidebar lists Inbox
+- **WHEN** a caregiver loads `/_auth/tasks` with at least one `TaskItem` returned
+- **THEN** the page MUST render exactly one `<TaskRow>` per item
+
+#### Scenario: Sidebar lists "Taken" pointing to `/_auth/tasks`
 
 - **WHEN** the sidebar renders
-- **THEN** the navigation item linking to `/_auth/inbox` MUST be labelled `"Inbox"`; any prior `"Taken"` or `"Mijn patiënten"` entry MUST be removed
+- **THEN** exactly one navigation item linking to `/_auth/tasks` MUST be present, labelled `"Taken"`; any prior `"Mijn patiënten"` entry MUST be removed; no duplicate `"Taken"` entries from the placeholder MUST remain
 
 #### Scenario: Placeholder TasksPage is removed
 
 - **WHEN** the codebase is grepped for `TasksPage` after this change
-- **THEN** no React component named `TasksPage` and no `/_auth/tasks` route file MUST exist
+- **THEN** no React component named `TasksPage` MUST exist, and the new `modules/tasks/` directory MUST NOT contain a `TasksPage.tsx` file (the placeholder is replaced by `TaskList.tsx`)
 
-#### Scenario: Priority chip variant matches priority
+#### Scenario: No counter, no pager, no "load more"
 
-- **WHEN** a row renders for `priority='urgent'`
-- **THEN** the priority chip MUST be a destructive-variant Badge; `priority='high'` MUST be warning-variant; `priority='normal'` and `low` MUST be muted-variant
+- **WHEN** the task list renders any number of rows (including zero)
+- **THEN** the page MUST NOT render a count header, a numbered pager strip, or a `"Meer laden"` button
 
-#### Scenario: Status chip hidden for open tasks
+### Requirement: Row click opens the patient detail in split-pane (or full-page on mobile)
 
-- **WHEN** a row renders for `status='open'`
-- **THEN** no status chip MUST be rendered (open is the default state)
+`<TaskRow>` SHALL navigate on click to `/_auth/tasks/p/$patientId` where `$patientId === taskItem.patient.id` on viewports ≥ `md`. The route `/_auth/tasks/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: task list on the left (compacts to 320px rail), `<PatientDetailView>` on the right.
 
-#### Scenario: Status chip visible for non-open tasks
+Below the `md` breakpoint per design.md D17, the row click SHALL navigate to `/_auth/patients/$patientId` (the standalone full-page detail) instead; the task list unmounts.
 
-- **WHEN** a row renders for `status='in_progress' | 'completed' | 'cancelled'`
-- **THEN** a muted Badge MUST render with the appropriate Dutch label
+#### Scenario: Row click navigates to tasks-context patient route
 
-### Requirement: Row click opens the patient detail in split-pane
-
-`<TaskInboxRow>` SHALL navigate on click to `/_auth/inbox/p/$patientId` where `$patientId === task.patient.id`. The route `/_auth/inbox/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: inbox list on the left (compacts to 320px rail), `<PatientDetailView>` on the right.
-
-Below the `md` breakpoint per D17, the row click SHALL navigate to `/_auth/patients/$patientId` (the standalone full-page detail) instead; the inbox unmounts.
-
-#### Scenario: Row click navigates to inbox-context patient route
-
-- **WHEN** a caregiver clicks a `<TaskInboxRow>` whose `task.patient.id === "abc-123"` on a viewport ≥ md
-- **THEN** the orchestrator MUST navigate to `/_auth/inbox/p/abc-123`
+- **WHEN** a caregiver clicks a `<TaskRow>` whose `taskItem.patient.id === "abc-123"` on a viewport ≥ `md`
+- **THEN** the orchestrator MUST navigate to `/_auth/tasks/p/abc-123`
 
 #### Scenario: Split-pane on desktop
 
-- **WHEN** a caregiver loads `/_auth/inbox/p/abc-123` directly on a viewport ≥ md
-- **THEN** the page MUST render the inbox list as a 320px compact rail on the left and `<PatientDetailView patient={abc-123}>` on the right
+- **WHEN** a caregiver loads `/_auth/tasks/p/abc-123` directly on a viewport ≥ `md`
+- **THEN** the page MUST render the task list as a 320px compact rail on the left and `<PatientDetailView patient={abc-123}>` on the right
 
 #### Scenario: Mobile fallback to standalone detail
 
-- **WHEN** a caregiver clicks a row on a viewport < md
-- **THEN** the orchestrator MUST navigate to `/_auth/patients/abc-123` (standalone); the inbox list MUST NOT render
+- **WHEN** a caregiver clicks a row on a viewport < `md`
+- **THEN** the orchestrator MUST navigate to `/_auth/patients/abc-123` (standalone); the task list MUST NOT render
 
-### Requirement: Inbox sort registry over tasks
+### Requirement: Empty state copy is single, source-agnostic
 
-The orchestrator SHALL define `apps/orchestrator/src/modules/inbox/sorts/index.ts` exporting `inboxSortStrategies: readonly InboxSortStrategy[]`. Each strategy has `{ id, label, queryParams }`. v1 strategies:
+When `GET /tasks` returns zero items, the `<TaskList>` SHALL render `<EmptyState>` (the existing component already renders icon-in-circle + headline + body — no `<TabEmptyState>` wrapper needed) with:
 
-1. `next_attention` (default) — `queryParams()` returns `{ order_by: 'due_at', order: 'asc' }`. Earliest deadline first.
-2. `newly_added` — `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`. Most-recently-added task first.
+- title: `"Geen taken"`
+- body: `"Nieuwe taken verschijnen automatisch"`
 
-A `useSelectedInboxSort()` hook SHALL read `?sort=` via TanStack Router `useSearch` synchronously, default to `next_attention`, and warn-log on unknown values.
+The copy SHALL be identical for caregiver and admin roles — there is no role-aware empty-state variant in v1.
 
-#### Scenario: Default sort is next_attention
+#### Scenario: Empty task list renders fixed copy
 
-- **WHEN** a caregiver loads `/_auth/inbox` without a `sort` query param
-- **THEN** the request to `GET /tasks` MUST include `order_by=due_at&order=asc`
-
-#### Scenario: newly_added sort drives created_at descending
-
-- **WHEN** a caregiver activates the `newly_added` strategy
-- **THEN** the request MUST include `order_by=created_at&order=desc` and the URL MUST update to `?sort=newly_added`
-
-### Requirement: Inbox empty state copy is role-aware
-
-When `GET /tasks` returns zero items, the `<InboxList>` SHALL render `<EmptyState>` with role-aware copy:
-
-- `caregiver`: headline `"Geen openstaande taken"`, hint `"Wanneer een collega of het pathway een taak aanmaakt verschijnt deze hier."`.
-- `admin`: headline `"Geen taken in dit tenant"`, hint `"Pathway-runtime taken landen hier zodra de runtime live is."`.
-
-#### Scenario: Caregiver-role empty state
-
-- **WHEN** a caregiver with zero visible tasks loads `/_auth/inbox`
-- **THEN** the page MUST render the headline `"Geen openstaande taken"` and the caregiver-specific hint
-
-#### Scenario: Admin-role empty state
-
-- **WHEN** an admin in a tenant with zero tasks loads `/_auth/inbox`
-- **THEN** the page MUST render the headline `"Geen taken in dit tenant"` and the admin-specific hint
+- **WHEN** a caregiver or admin loads `/_auth/tasks` and `GET /tasks` returns zero items
+- **THEN** the page MUST render `<EmptyState>` with title `"Geen taken"` and body `"Nieuwe taken verschijnen automatisch"`

@@ -1,51 +1,64 @@
 ## Context
 
-`patients-base` shipped `/_auth/patients` as a `<DataTable<PatientRead>>` and `patient-profile-ui` shipped the patient detail page with three meta tabs (Overzicht, Zorgteam, Geschiedenis). Backend `GET /patients` supports `ListQuery` filters, search, and a tenant-scoped + care-team / PractitionerRole visibility predicate. Realtime invalidation runs through `patientsListKeyPrefix` + a topic registered by the list page.
+`patients-base` shipped `/_auth/patients` as a `<DataTable<PatientRead>>`. `patient-profile-ui` shipped the patient detail page with three meta tabs (`Overzicht`, `Zorgteam`, `Geschiedenis`). The placeholder `/_auth/tasks` route renders nothing real.
 
-Pathway has an `appointment` block type (template inside a pathway definition), but there is no runtime `appointments` table. PoC pathway runtime is BL-038 — not built. To make the inbox sort meaningful, this change ships the appointment domain itself. The frontend stays read-only; the backend exposes full CRUD so pathway runtime can later call into it without schema churn.
+This change reframes F4 from "patients overview" to **"caregiver task list"** under a single mental model: the task list at `/_auth/tasks` is a list of *things the logged-in caregiver needs to do*, aggregated server-side from one or more source domains. v1 ships exactly one source — **appointments booked in the next 3 days that the caregiver participates in**. Future sources (form responses, monitoring alerts, pathway-runtime work items) plug into the same envelope without a wire-shape change.
 
-Tenancy, visibility, and realtime for patients are correct as-is and are not touched. This change reshapes the rendering surface + sort dimension + tab strip, AND introduces a new appointment-base capability.
+The change ships:
+- A new backend `appointment-base` capability (full CRUD) so the source exists.
+- A new backend `tasks-base` capability that is a **server-side aggregator endpoint** (`GET /tasks`) — NO `tasks` table, NO ORM `Task` model, NO HiX task adapter.
+- A frontend `<TaskList>` + `<TaskRow>` at `/_auth/tasks` consuming `GET /tasks`.
+- A patient detail re-layout (`patient-profile-ui`): two tabs (Metingen + Labresultaten) both empty-state v1. NO Afspraken tab — appointment-as-task surfacing lives entirely in `/_auth/tasks`.
+- Route surgery: delete `/_auth/patients` list route, delete `/_auth/tasks.tsx` placeholder + `modules/tasks/` placeholder dir FIRST, then add the new `/_auth/tasks/` directory route + new `modules/tasks/` directory + `/_auth/tasks/p/$patientId` child.
+
+Tenancy, visibility, and realtime for patients are correct as-is and are not touched.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Caregiver opens `/_auth/patients` and sees an inbox sorted by next upcoming appointment. Each row shows a mini-card with the next appointment's title + kind + local time + modality, or muted "no appointment" text.
-- Switching to "Nieuw vs oud" reorders in place and updates URL — no full page reload. Sort survives row click + browser back.
-- Inbox grows via infinite scroll; no spreadsheet pager.
-- Caregiver opens a patient detail page and sees a header with demographics + a small care-team card, then three clinical tabs: Metingen + Labresultaten empty, Afspraken renders real data (read-only Upcoming + collapsible History).
-- Backend ships `appointment-base` capability: table + participants + FHIR-aligned enums + 5 CRUD endpoints + tenant + patient-access visibility.
-- `PatientRead` carries embedded `next_appointment` summary so the inbox card renders without N+1.
-- Component split (`<PatientInboxRow>`, `<PatientDetailHeader>`) is clean enough that a future `smart` or `embed` surface can re-mount with its own host wrapper.
+- Caregiver opens `/_auth/tasks` and sees a chronological list of items they need to act on in the next 3 days. v1 = upcoming appointments where they are a participant.
+- Each row identifies the patient + the act-by time + the kind of work. Click → patient detail in a split-pane.
+- Backend ships `appointment-base` (table + participants + FHIR-aligned enums + 5 CRUD endpoints + tenant + patient-access visibility).
+- Backend ships `tasks-base` as a *thin aggregator endpoint* that projects appointment rows into a uniform `TaskItem` envelope. Source-agnostic envelope means adding a second source is a backend-only change.
+- Patient detail re-layout: sticky header + adjacent care-team card + two clinical tabs (`Metingen`, `Labresultaten`). Both empty-state v1.
+- Component split (`<PatientDetailView>`, `<PatientDetailHeader>`, `<TaskRow>`) is clean enough that a future `smart` or `embed` surface can re-mount with its own host wrapper.
 
 **Non-Goals:**
-- Frontend write actions on appointments.
-- Filters, search-as-you-type, bulk actions, read/unread state, row selection on the inbox.
+- A `Afspraken` tab on patient detail. Appointments live as tasks in `/_auth/tasks` only.
+- Frontend write actions on appointments (no create / edit / delete UI v1).
+- A `tasks` table, `task_*` enums, a `Task` ORM model, or a HiX task adapter.
+- Configurable task list time window (hardcoded ≤3 days v1).
+- A sort registry / multiple sort strategies (single fixed sort: `due_at asc`).
+- Counter / pager / infinite scroll on the task list (flat list within the 3-day window).
+- Filters, search-as-you-type, bulk actions, row selection on the task list.
+- A generic `<InboxRow>` / `<ListRow>` primitive — `<TaskRow>` is built directly, no abstraction layer.
+- An `<AppointmentRow>` / `<AppointmentsSection>` / `<TabEmptyState>` component — not needed v1.
 - Real data for Metingen / Labresultaten tabs.
-- Conflict / double-booking detection.
-- Recurrence, reminders, notifications.
-- Seeded synthetic appointments.
-- Realtime topic for appointments.
-- Patient-facing reads of appointments.
+- Conflict / double-booking detection, recurrence, reminders, notifications.
+- Seeded synthetic appointments — demo runs through the empty-state until live data lands.
+- Realtime topic for appointments / tasks.
+- Patient-facing reads of appointments or tasks.
 - A `smart` or `embed` surface itself — only the component split.
 - Touching the patient visibility predicate or the patient realtime topic.
+- Backend URL prefix split (`/caregiver/...` vs `/patient/...`) — deferred to a separate change.
 
 ## Decisions
 
-### D1 — Ship appointment domain with this change, not defer
+### D1 — Ship `appointment-base` (full CRUD) with this change
 
-The user explicitly asked for the inbox to be appointment-sorted. Without `appointments` rows the sort signal is null for every patient and the entire feature degrades to "newly_added" by default. Building a thin appointment domain (read-and-write backend, read-only frontend) is the cheapest path to a working inbox.
+The task list needs upcoming appointments to surface anything. Without `appointments` rows the task list is empty for every caregiver. Building the appointment domain with full CRUD now is the cheapest path to a working demo + clean pathway-runtime seam later.
 
-**Why:** Doing one combined backend bump now is smaller than (a) ship inbox without working sort, (b) ship appointment domain in a separate change, (c) re-wire the inbox after. Pathway runtime (BL-038) calls into `AppointmentService` later without schema churn — the FK column `pathway_block_instance_id` is already reserved on day one.
+**Why CRUD even though frontend stays read-only:** POST/PATCH/DELETE land server-side so the pathway runtime + future write UI plug in without schema/route churn. Same validation rules are debated once. Marginal cost is a handful of extra tests.
+
+The FE does NOT consume `GET /appointments` list directly in v1 — `/tasks` is the only consumer surface. The list endpoint still ships for: tests, admin tooling, future pathway runtime, future write UI.
 
 **Alternatives considered:**
-- Mock the sort: `next_appointment_at` deterministically derived from `patient.id` hash. Rejected — fixture lie in a demo.
-- Drop the sort: ship only `newly_added`. Rejected — doesn't match the user's brief; the sort registry abstraction loses its point with one strategy.
+- Read-only `/appointments` v1. Rejected — schema/validation gets debated twice.
+- Defer appointment domain entirely, ship task list against nothing. Rejected — demo is empty anyway, but rewiring once appointments arrive doubles the frontend work.
 
 ### D2 — Appointment schema follows FHIR `Appointment` shape but stays domain-internal
 
-Columns mirror FHIR R4 `Appointment` where it fits cheaply (`start`, `end`, `status`, `participant`) but skip FHIR concepts that are heavy and not load-bearing for PoC (`serviceType`, `appointmentType`, `priority`, `serviceCategory`, `requestedPeriod`). `kind` is a domain enum (`consultation | lab | imaging | procedure | other`) — translated to FHIR `serviceType` coding only at the HiX adapter boundary at MVP. `status` is the full FHIR `AppointmentStatus` enum verbatim (10 values) so the wire is FHIR-faithful from day one — the cost is one enum, no other code changes.
-
-**Why:** FHIR-shape is the project's hard contract for clinical data; full-FHIR-schema is overkill for PoC and would inflate validation surface. This is the same trade-off `patients-base` made (FHIR shape, not FHIR library).
+Columns mirror FHIR R4 `Appointment` where it fits cheaply (`start`, `end`, `status`, `participant`) but skip FHIR concepts that are heavy and not load-bearing for PoC (`serviceType`, `appointmentType`, `priority`, `serviceCategory`, `requestedPeriod`). `kind` is a domain enum (`consultation | lab | imaging | procedure | other`) — translated to FHIR `serviceType` coding only at the HiX adapter boundary at MVP. `status` is the full FHIR `AppointmentStatus` enum verbatim (10 values) so the wire is FHIR-faithful from day one.
 
 **Trade-off:** `entered-in-error` FHIR code has a hyphen, illegal in Python identifiers. Store as `entered_in_error` enum symbol, serialise as `entered-in-error` on wire. Pydantic field-serialiser handles the round-trip; spec scenario locks it.
 
@@ -53,178 +66,116 @@ Columns mirror FHIR R4 `Appointment` where it fits cheaply (`start`, `end`, `sta
 
 `appointment_participants` is populated only at appointment-create time. `PATCH` rejects a `participants` field. To change attendees, caregiver deletes + recreates the appointment.
 
-**Why:** v1 frontend is read-only — there is no write UI to mutate participants. Backend without a write UI implies clinical discipline rather than enforced workflow. The cost of supporting mid-flight participant edits is non-trivial (audit semantics, status implications, partial unique index on lead while transitioning) for zero PoC value.
-
-**Alternatives considered:**
-- Replace-all on PATCH (send full desired participants list). Rejected — costs participant-diff logic, partial-unique-index dance, plus audit ambiguity (was a removed user "soft-deleted" or "never on it"?). Not worth it without a UI.
-- Dedicated add/remove endpoints. Rejected — more routes, more tests, same no-UI status.
-
-**Future:** when a write UI lands, expand to replace-all on PATCH. Schema is forward-compatible (the participant join table is the right shape already).
+**Why:** v1 frontend is read-only — there is no write UI to mutate participants. Backend without a write UI implies clinical discipline rather than enforced workflow. Cost of supporting mid-flight participant edits is non-trivial (audit semantics, status implications, partial unique index on lead while transitioning) for zero PoC value.
 
 ### D4 — Lead participant enforced by partial unique index, not service-only
 
 Service layer validates "exactly one lead at create". DB partial unique index `(appointment_id) WHERE role = 'lead' AND deleted_at IS NULL` is defence-in-depth — a buggy service code path or a future PATCH that mutates participants cannot leave the row in a multi-lead state.
 
-**Why:** invariants worth holding belong in the DB.
+### D-AGG — `/tasks` is a server-side aggregator, not a domain table
 
-### D5 — `next_appointment` embedded on `PatientRead`, projected via lateral join
+`tasks-base` exposes `GET /tasks` + `GET /tasks/{source}/{source_id}` and projects items from one or more underlying source domains into a uniform `TaskItem` envelope. There is **no** `tasks` table, **no** `task_*` Postgres enums, **no** `Task` ORM model, **no** HiX task adapter. The aggregator's plan is:
 
-```python
-class NextAppointmentSummary(BaseModel):
-    id: UUID
-    title: str
-    starts_at: datetime
-    ends_at: datetime
-    kind: AppointmentKind
-    modality: AppointmentModality
+1. Resolve caller identity → tenant + user id.
+2. For each enabled source (v1 = exactly `appointment`):
+   a. Build the source-specific query: filter to the time window, filter to caller's participation, tenant-scope, join `patients` for the inline summary.
+   b. Project source rows into `TaskItem` rows.
+3. Concatenate, sort by `due_at asc`, paginate, return `Page[TaskItem]`.
 
-class PatientRead(...):
-    ...
-    next_appointment: NextAppointmentSummary | None = None
-```
+The `id` field of `TaskItem` is synthetic: `f"{source}:{source_id}"`. The read-one route is `GET /tasks/{source}/{source_id}` so URLs are stable across sources.
 
-The query projects a `LEFT JOIN LATERAL (SELECT id, title, starts_at, ends_at, kind, modality FROM appointments WHERE patient_id = p.id AND status = 'booked' AND starts_at >= now() AND deleted_at IS NULL AND tenant_id = p.tenant_id ORDER BY starts_at ASC LIMIT 1) na ON TRUE`. `ORDER BY na.starts_at NULLS LAST` for the synthetic sort key `next_appointment_starts_at`.
+**Why an aggregator endpoint instead of a `tasks` table:**
+- A `tasks` table either duplicates the source row (sync hell) or wraps it (extra row per appointment, audit ambiguity).
+- The aggregator is one SQL query per source — small, traceable, no materialisation drift.
+- Adding a new source is a backend-only change. Wire shape is stable.
+- The caller's "things to do" is inherently a *projection* of multiple domains — modelling it as a table fights that.
 
-**Why:** one query, one projection. No N+1. The lateral join with `LIMIT 1` is the planner's friend given the supporting index `appointments(patient_id, starts_at) WHERE status='booked' AND deleted_at IS NULL`.
+**Why server-side over frontend union:**
+- One round-trip vs N.
+- Pagination + ordering live in the source of truth.
+- Adding a source doesn't ship a frontend change.
+- Visibility/authz logic stays in the backend.
 
-**Alternatives considered:**
-- Two API calls (list + `?include=next_appointment`). Rejected — same cost, more knob.
-- Client-side fetch per row. Rejected — N+1 on a 25-row page.
-- Materialised view. Rejected — over-engineered for PoC; the lateral subquery is fast enough.
+### D-WINDOW — Hardcoded 3-day window for the v1 `appointment` source
 
-### D6 — Sort registry is a flat readonly array of strategy objects
+v1 `/tasks` projects ONLY appointments where `status = 'booked'` AND `starts_at BETWEEN now() AND now() + INTERVAL '3 days'`. The window is hardcoded — no `?within=` query param. Unknown query params are silently ignored (forward-compat when v2 ships `?within=`).
 
-```ts
-export type PatientSortStrategy = {
-  id: 'next_appointment' | 'newly_added';
-  label: () => string;
-  queryParams: () => Partial<ListQuery>;
-  rowMeta: (p: PatientRead) => ReactNode;
-};
-export const patientSortStrategies: readonly PatientSortStrategy[] = [...];
-```
+### D-PART — Participant-driven visibility, identical for admin and caregiver
 
-`useSelectedSort()` reads `?sort=` from TanStack Router synchronously, defaults to `next_appointment`, warn-logs on unknown values, and exposes `setSort(id)` which calls `navigate({ search })`.
+A `TaskItem` is visible if and only if the caller is the relevant actor on the underlying source row. For the v1 `appointment` source: the caller has an active row in `appointment_participants` with `user_id = caller.id` (any role).
 
-**Why:** smallest abstraction that closes the user's "extensible sort" requirement. Adding a third strategy is one file + one array entry. If the third never lands the cost is ~30 lines.
+`Role.PATIENT` → `403`. Admin and caregiver share the same predicate — admin does NOT bypass to tenant-wide. An admin who is not a participant on any in-window appointment sees an empty list.
 
-**Hydration safety:** the hook resolves the active strategy synchronously on first render — there is NO render pass where the default strategy is selected while the URL specifies a non-default sort. TanStack Router exposes search params on the loader; the page uses the loader value as the initial state to avoid a default-flash on deep-linked loads.
+**Why identical for admin:** `/tasks` is a personal attention surface. Admins doing ops oversight use `/appointments` (when wired) or other admin endpoints. The FE doesn't consume `/appointments` list in v1, but the predicate-asymmetry is intentional: same backend, different consumers, different filters.
 
-**Alternatives considered:**
-- Hardcoded switch in the page. Rejected — user asked for extensible.
-- DI / context provider. Rejected — only the page consumes the registry.
-- localStorage-backed sort. Rejected — breaks shareable URLs.
+### D-NOSORT — Single fixed sort, no registry
 
-### D7 — Inbox row anatomy
+`GET /tasks` accepts exactly `order_by=due_at` + `order=asc`. The frontend does NOT ship a sort tab strip, a `useSelectedSort` hook, or a strategy registry. Re-add when a 2nd source lands and the user picks a different rhythm.
+
+### D7 — Task row anatomy
 
 ```
-[Avatar slab 40px] [Identity column flex-1] [Sort meta column max-240px] [Chevron]
+[Avatar slab 40px] [Identity column flex-1] [Kind tile max-240px] [Chevron]
 ```
 
-- **Avatar slab:** initials only (first letter of `given_name` + first letter of `family_name`, uppercased) on a deterministically-tinted background derived from `hash(patient.id) % palette_size`. Never an `<img>`. Palette = 8 colours from the orchestrator Tailwind ZAS-teal palette.
-- **Identity column:** line 1 `family_name, given_name`. Line 2 muted `INSZ • birth_date • org tree-path`.
-- **Sort meta column:** populated by `strategy.rowMeta(patient)`. For `next_appointment` — when non-null, a two-line mini-card (kind icon + truncated title / formatted local time + modality icon); when null, plain muted text `"Geen geplande afspraak"` with no card chrome. For `newly_added` — single muted line `"toegevoegd N dagen geleden"`.
+- **Avatar slab:** initials only (first letter of `given_name` + first letter of `family_name`, uppercased) on a deterministically-tinted background derived from `hash(patient.id) % palette_size`. Never an `<img>`. Palette = 8 colours from the orchestrator Tailwind ZAS-teal palette with WCAG AA white-text contrast.
+- **Identity column:** line 1 `family_name, given_name`. Line 2 muted `INSZ • kind label • relative due copy ("vandaag X uur" / "morgen X uur" / "over N dagen")`.
+- **Kind tile:** `<KindTile>` for v1 appointment source (subtle color-mix tile with the kind's lucide icon). When a 2nd source lands, the trailing slot accepts any source-specific decoration.
 - **Chevron:** right end, full row is the click target.
 
 No per-row kebab. No checkbox. No inline action.
 
-**Why:** triage UX. Caregiver scans left-to-right: who → what → when → next.
+`<TaskRow>` is built directly (no generic `<InboxRow>` / `<ListRow>` abstraction layer in this change). Add one when a 2nd flat-list surface emerges.
 
 ### D8 — Browser-local timezone everywhere on the frontend
 
 Backend stores `timestamptz` UTC. Wire emits ISO 8601. Frontend renders via `Intl.DateTimeFormat('nl-BE', { ... })` using the browser's local timezone. No tenant-level timezone setting, no Europe/Brussels hard-pin.
 
-**Why:** ZAS is one timezone for now; rendering in browser-local works for the demo and for any future Belgian-hospital deployment. Tenant timezone setting is filed implicitly under MVP scope if a multi-region tenant ever appears.
+### D-FLAT — Flat list, no counter, no pager, no infinite scroll
 
-### D9 — Infinite scroll, not classic pagination
+The task list renders a single flat list of all `TaskItem`s returned by one `GET /tasks` call. No header counter (`12 taken`), no bottom pager strip, no `"Meer laden"` button. 3-day window caps the result size for any realistic caregiver to <50 items.
 
-Inbox uses `useInfiniteQuery` with backend `page_size=25`. Rows from all fetched pages render as a single continuous list. A `"Meer laden"` button appears at the end when `total_pages > fetched_pages`. No numbered pager, no Next/Prev.
+### D10 — Detail page tab strip = two tabs (`Metingen / Labresultaten`)
 
-**Why:** caregiver scans inbox top-down and stops when triage is done. A pager forces "page 1 of 4" reading, which is the spreadsheet rhythm the inbox UX was meant to leave behind.
-
-**Trade-off:** Cmd-F search within the inbox is limited to what's rendered. Acceptable for PoC.
-
-### D10 — Detail page tab strip = `Metingen / Labresultaten / Afspraken`, old tabs relocated
-
-Tab strip becomes three clinical tabs:
+Tab strip becomes exactly two clinical tabs:
 - `Metingen` (id `measurements`) — empty state v1, hint references monitoring koppeling.
 - `Labresultaten` (id `lab_results`) — empty state v1, hint references HiX koppeling.
-- `Afspraken` (id `appointments`) — real data v1, read-only.
+
+NO `Afspraken` tab. Appointment surfacing lives entirely in `/_auth/tasks` — there is no second place to see appointments. Patient-centric appointment history is out of scope; it lands as a separate change when prioritised.
 
 Old tabs relocate:
 - `Overzicht` content (demographics + identifiers) → already in `<PatientDetailHeader>`. Tab dropped.
 - `Zorgteam` content → `<CareTeamSlot>` moves to a header-adjacent card. Import path + prop signature unchanged so `care-teams-ui` is unaffected. Tab dropped.
 - `Geschiedenis` content → `<PatientHistoryPanel>` moves into a kebab → `Geschiedenis` dialog. Tab dropped.
 
-Default active tab = `measurements`. The user reads the page top-down; the first thing in view should be the most clinically dense surface they'll wire later.
-
-**Alternatives considered:**
-- Keep all six tabs. Rejected — dilutes the clinical focus.
-- Default to `Afspraken` (the only tab with real data). Considered — keeps demo lively. Rejected for v1 because the user spec'd `Metingen` first in their list; respect that order.
-
-### D11 — Afspraken tab: Upcoming + History sections, READ-ONLY
-
-`AppointmentsTab` calls `GET /appointments?filter[patient_id][eq]=<id>` and splits results client-side into Upcoming (status `booked` AND `starts_at >= now()`) + History (everything else). Upcoming is expanded, History is collapsible (collapsed default). Each row shows kind icon + title + local-time formatted `starts_at` + modality icon + truncated participants strip (lead first, max 3 visible, overflow `+N`). History rows additionally show a muted status chip (`Voltooid`, `Geannuleerd`, `Niet verschenen`, etc).
-
-No buttons. No menus. No status changes. Read-only.
-
-**Why:** caregiver glance-mode. Write actions land later via pathway runtime + a dedicated write UI change.
-
-**Alternatives considered:**
-- Two backend list calls (Upcoming + History endpoints). Rejected — same data, double the round trips, and one call is cheap.
-- Flat list. Rejected — user picked split view.
+Default active tab = `measurements`. Empty-state copy explicitly references the data source ("Wordt geleverd door X").
 
 ### D12 — Component seam for future `smart` / `embed`
 
 Two components extracted as **surface-agnostic** (no router import, no shell coupling):
-- `<PatientInboxRow patient sortMeta onSelect />`
+- `<TaskRow taskItem onSelect />`
 - `<PatientDetailHeader patient actions? />`
+- `<PatientDetailView patient actions? onClose? onEdit? onDelete? />`
 
-Orchestrator wraps both in router-aware wrappers (link to `/_auth/patients/$patientId`, kebab actions). A future `apps/smart-*` or embed host imports the same two components and supplies its own wrapper.
-
-**Why:** cheapest way to honour the "architect for smart/embed later" requirement. One extra boundary on each side.
+Orchestrator wraps them in router-aware wrappers. A future `apps/smart-*` or embed host imports the same components and supplies its own wrapper.
 
 ### D13 — HTML prototype first
 
-Per project rule, tasks.md mandates self-contained HTML prototypes under `prototypes/inbox/v1.html` and `prototypes/detail/v1.html` using orchestrator Tailwind tokens. Sign-off on prototypes gates React + backend builds. Each iteration is a new `vN.html` — never edit prior versions.
+Per project rule, `prototypes/inbox/v1.html` ... `v8.html` — **v8 accepted** as the locked wireframe. See `prototypes/inbox/README.md`. Each iteration is a new `vN.html` — never edit prior versions.
+
+The prototype directory keeps the name `prototypes/inbox/` for archival continuity (these files are accepted-state artifacts, not concept references). Spec decisions D-FLAT + D-NOSORT supersede the prototype's pager strip and sort tabs; the React build follows the design.md decisions where they conflict with the prototype.
 
 ### D14 — i18n: Dutch copy, English identifiers
 
-Component names, sort ids, query params, enum values, file names, i18n keys are English (`next_appointment`, `newly_added`, `inbox.empty.next_appointment`). Display copy is Dutch (`"Nieuw vs oud"`, `"Nog geen metingen gekoppeld"`). All user-visible copy goes through `t()`.
+Component names, query params, enum values, file names, i18n namespaces are English (`/tasks`, `appointment`, `task_item`, `tasks.*`). Display copy is Dutch (`"Taken"`, `"Geen taken"`). All user-visible copy goes through `t()`.
 
-## Risks / Trade-offs
-
-- **R1 — Appointment domain bumps PR size significantly.** The single PR ships ~1 alembic migration + 4 new enums + 2 new tables + 1 service + 1 router + 5 schemas + 1 adapter stub + tests, plus the frontend reshape. **Trade-off accepted:** alternative (two PRs) requires throwing away an inbox built against a null sort and rewriting it once appointments arrive. Cost is review effort, not architectural debt.
-- **R2 — Lateral join hot path.** Every `GET /patients` projects `next_appointment` even when sorted by `newly_added`. **Mitigation:** supporting index, `LIMIT 1`, planner short-circuit. If profiling regresses, gate with `select_options.include_next_appointment` flag — additive, non-breaking.
-- **R3 — `entered-in-error` hyphen round-trip.** **Mitigation:** Pydantic field-serialiser maps the symbol; spec scenario locks the wire form. Tested both directions.
-- **R4 — Read-only Afspraken tab might disappoint demo viewers expecting create UI.** **Mitigation:** empty-state copy plus product narrative: pathway runtime lands write semantics. Acceptable for PoC.
-- **R5 — Avatar deterministic-color palette could land on a low-contrast tint for accessibility.** **Mitigation:** the 8-colour palette is curated from ZAS Tailwind tokens with WCAG AA on white-text overlay. Spec scenario asserts contrast-token usage, not raw hex.
-- **R6 — Sort registry is one too many abstractions for two strategies.** **Mitigation accepted:** ~30 lines of indirection in exchange for the user's explicit "extensible sort" requirement. If a third strategy never lands, the cost is bounded.
-- **R7 — `useSelectedSort` hydration-safety is router-implementation-coupled.** TanStack Router loader exposes search params synchronously; the hook reads them via `useSearch`. **Mitigation:** spec scenario explicitly forbids a default-flash render — the test acts as a regression guard if loader semantics change in a future TanStack Router upgrade.
-- **R8 — Component split for smart/embed is speculative.** **Mitigation:** the split is a single component boundary, not a directory restructure or package extraction. Reverting is trivial.
-
-## Migration Plan
-
-- **Data migration**: one alembic migration creates `appointments` + `appointment_participants` + four Postgres enums. No existing-row touchups.
-- **Patient list route**: `/_auth/patients` route file is deleted (per D24). Existing direct links to that URL would 404. Sidebar nav swaps `"Mijn patiënten"` → `"Inbox"` pointing to `/_auth/inbox`.
-- **Patient detail route**: `/_auth/patients/$patientId` URL is unchanged; the standalone full-page detail mounts the new `<PatientDetailView>`. Component swap is in-place.
-- **Inbox route**: `/_auth/inbox` placeholder (BL-065) is replaced by the real `<InboxList>` + nested `/_auth/inbox/p/$patientId` child route for split-pane patient detail.
-- **Tab strip on detail page**: changes per `patient-profile-ui` delta (Metingen / Labresultaten / Afspraken). `<CareTeamSlot>` import path + signature preserved; `<PatientHistoryPanel>` import path preserved.
-- **Rollback**: revert PR. No data to undo (no appointments seeded). The DataTable list page and the old tab strip are recoverable from git history. The inbox placeholder returns.
-
-## Locked wireframe
-
-Accepted wireframe is `prototypes/inbox/v8.html`. See `prototypes/inbox/README.md` for the version history. v8 locks:
-
-- Admin-page chrome (solid sidebar, pill filter row, soft Badge pills, underline Tabs for sort + detail tabs).
-- **Three-state master/detail layout** (locked under D15 below).
-- **`<PatientDetailView>` as a surface-agnostic primitive** (locked under D16 below).
+Kind labels (`consultation`, `lab`, `imaging`, `procedure`, `other`) live in `nl/appointment.json` (appointment domain owns them). `<TaskRow>` calls `t('appointment:kind.<value>')` via cross-namespace lookup — no duplication. When a 2nd source lands with its own kind values, that source owns its label namespace.
 
 ### D15 — Three-state master/detail layout
 
-1. **State 1** — no patient selected. URL = `/_auth/inbox`. Master inbox (item list) renders at full width; right pane absent.
-2. **State 2** — patient selected via an inbox item click. URL = `/_auth/inbox/p/$patientId`. Master compresses to a 320px rail (subject avatar + display name + mini meta only — drops INSZ, kebab, sort counts, filter row, pager). Right pane renders `<PatientDetailView>` for the subject patient.
-3. **State 3** — same URL as state 2, local UI toggle hides the master rail entirely (width 0). Detail fills the available width. A floating `panel-left-open` button at the top-left of the main area brings the rail back to state 2.
+1. **State 1** — no patient selected. URL = `/_auth/tasks`. Master task list renders at full width; right pane absent.
+2. **State 2** — patient selected via a row click. URL = `/_auth/tasks/p/$patientId`. Master compresses to a 320px rail (subject avatar + display name + mini meta only — drops INSZ). Right pane renders `<PatientDetailView>` for the subject patient.
+3. **State 3** — same URL as state 2, local UI toggle hides the master rail entirely (width 0). Detail fills available width. A floating `panel-left-open` button at the top-left of the main area brings the rail back to state 2.
 
 URL is the source of truth for **selection** (states 1 ↔ 2). The master-hidden boolean (state 2 ↔ 3) is session-local UI state, NOT in the URL — collapsing a deep-linked detail view should not change the shareable URL.
 
@@ -232,12 +183,12 @@ CSS transitions on master width are 250ms ease. Detail pane mounts/unmounts; no 
 
 ### D16 — `<PatientDetailView>` is a surface-agnostic primitive
 
-`<PatientDetailView>` SHALL NOT import from `@tanstack/react-router`, the inbox module, or any orchestrator-shell-specific layout. Its prop signature:
+`<PatientDetailView>` SHALL NOT import from `@tanstack/react-router`, the tasks module, or any orchestrator-shell-specific layout. Its prop signature:
 
 ```ts
 type PatientDetailViewProps = {
   patient: PatientRead;
-  defaultTab?: 'measurements' | 'lab_results' | 'appointments';
+  defaultTab?: 'measurements' | 'lab_results';
   actions?: ReactNode;                  // host injects its kebab / edit button cluster
   onClose?: () => void;                 // optional; if absent, no close affordance renders
   onEdit?: () => void;                  // optional
@@ -245,132 +196,116 @@ type PatientDetailViewProps = {
 };
 ```
 
-The component owns: header layout (avatar + name + INSZ pill + DOB + org Badge + actions slot), Zorgteam line via `<CareTeamSlot patientId={patient.id} />` (self-fetching — preserves the existing `care-teams-ui` consumer seam), tab strip, three tab bodies (Metingen empty, Labresultaten empty, Afspraken read-only Upcoming + History). It does NOT own: patient or appointments data fetching, navigation, dialog management.
-
-`<CareTeamSlot>` is reused as-is (self-fetching via its existing internal query). Dropping a `careTeam` data prop keeps the consumer seam intact and avoids a breaking change to `care-teams-ui`. The component's surface-agnostic guarantee holds because the slot itself does not import router state.
+The component owns: header layout (avatar + name + INSZ pill + DOB + org Badge + actions slot), Zorgteam line via `<CareTeamSlot patientId={patient.id} />` (self-fetching — preserves the existing `care-teams-ui` consumer seam), tab strip, two tab bodies (Metingen empty, Labresultaten empty). It does NOT own: patient data fetching, navigation, dialog management.
 
 Mount points in v1:
-- **Inbox split-pane** — `routes/_auth/inbox/route.tsx` (parent layout) renders `<MasterDetailLayout master={<InboxList/>} detail={<Outlet/>}>`. `routes/_auth/inbox/p/$patientId/index.tsx` (child) fetches the patient and mounts `<PatientDetailView>` in the Outlet with router-bound `actions` + `onClose` callbacks.
-- **Standalone full-page detail** — `routes/_auth/patients/$patientId/index.tsx` retains its existing URL as a non-inbox-context entry point. Mounts the same `<PatientDetailView>` inside an `<EntityDetailPage>` chrome (no master rail). Used by admin/users links, care-team links, mobile fallback (per D17), and any future smart/embed host.
+- **Task-list split-pane** — `routes/_auth/tasks/route.tsx` (parent layout) renders `<MasterDetailLayout master={<TaskList/>} detail={<Outlet/>}>`. `routes/_auth/tasks/p/$patientId/index.tsx` (child) fetches the patient and mounts `<PatientDetailView>` in the Outlet with router-bound `actions` + `onClose` callbacks.
+- **Standalone full-page detail** — `routes/_auth/patients/$patientId/index.tsx` retains its existing URL as a non-tasks-context entry point. Mounts the same `<PatientDetailView>` inside an `<EntityDetailPage>` chrome (no master rail). Used by admin/users links, care-team links, mobile fallback (per D17).
 - **Future smart / embed surface** — host imports the same component, provides its own data + actions wrapper. No code duplication.
-
-The same `<PatientDetailView>` mounts in all surfaces; only the host wrapper differs.
 
 ### D17 — Mobile (<md viewport) falls back to full-page navigation
 
 Below the `md` breakpoint (`<768px`), the 3-state master/detail layout from D15 does NOT apply. Instead:
 
-- `/_auth/inbox` renders `<InboxList>` full-width.
-- Clicking an inbox item navigates to `/_auth/patients/$patientId` (the standalone full-page detail route) — `<PatientDetailView>` fills the viewport, the inbox unmounts.
-- The browser back button returns to the inbox.
+- `/_auth/tasks` renders `<TaskList>` full-width.
+- Clicking a row navigates to `/_auth/patients/$patientId` (the standalone full-page detail route) — `<PatientDetailView>` fills the viewport, the task list unmounts.
+- The browser back button returns to the task list.
 - State 3 (master-hidden toggle) does not exist on mobile.
 
 `<MasterDetailLayout>` SHALL render its `master` slot full-width and skip the detail column when its container is below `md`. The route hierarchy is unchanged; only the rendering swaps.
 
-**Why:** split-pane assumes ≥1024px breathing room. Forcing horizontal scroll or stacking both panes vertically defeats inbox UX on a phone. Mobile clinicians get the same URLs (shareable) with a single-pane UX matching what they'd expect from a mobile-first page.
-
 ### D18 — `pathway_block_instance_id` ships as column-only without FK in v1
 
-The `appointments.pathway_block_instance_id` column SHALL be created as `UUID NULL` in v1 alembic without a FOREIGN KEY constraint. The future pathway runtime change (BL-038 follow-up) adds the FK once the `pathway_block_instances` table lands.
+The `appointments.pathway_block_instance_id` column SHALL be created as `UUID NULL` in v1 alembic without a FOREIGN KEY constraint. The future pathway runtime change adds the FK once the `pathway_block_instances` table lands.
 
-**Why:**
-- Avoids conditional alembic logic (inspector calls + `if table_exists` branching).
-- Avoids dropping + recreating the column later (data already present).
-- Reserves the column shape now so no PATCH endpoint needs widening when the FK is added.
-- BL-NNN follow-up tracks the FK addition.
+### D-EMPTY — No demo seed; task list empty-state holds the demo
 
-### D19 — Inbox = task list, not polymorphic items
+There is NO `seed_appointments.py` and NO `seed_tasks.py` in this change. The demo runs against an empty task list until live data lands via the (out-of-scope) write UI or HiX adapter wiring.
 
-The surface at `/_auth/inbox` is a **list of tasks**. Each row is a Task tied to a patient and (optionally) a caregiver. Tasks are the canonical attention items — they're discrete things that need to be done. Future surfaces (e.g. an "alerts" feed) get their own routes if/when needed; the inbox doesn't try to be a polymorphic feed of arbitrary item types.
+Task-list empty-state copy is **single, source-agnostic**:
+- title: `"Geen taken"`
+- body: `"Nieuwe taken verschijnen automatisch"`
 
-This reframes F4 from "Patients overview list" to "Caregiver task inbox". The patient is the *destination* (click a row → patient detail right); the task is the *signal*. A patient with three open tasks appears three times in the inbox.
-
-Appointments are a separate domain (own backend CRUD via `appointment-base`) consumed by the patient-detail Afspraken tab — NOT by the inbox. Appointments are *scheduled events for a patient*; tasks are *actions a caregiver needs to take*. Different concepts, different surfaces.
-
-**Why task-list over polymorphic items:**
-- The user explicitly described the inbox as a task list. Modelling it directly is simpler.
-- Avoids the FHIR envelope + aggregator + dispatcher overhead for a one-source surface.
-- If a future surface genuinely needs polymorphic items (e.g. measurement alerts merged with system messages), it can land as its own route with its own architecture.
-
-**Alternatives considered:**
-- Polymorphic inbox with FHIR-shaped envelope + backend aggregator + frontend dispatcher (prior draft). Rejected: heavy architecture for one source; YAGNI.
-- Inbox sourced from appointments. Rejected: appointments are about scheduling, not attention. A booked appointment doesn't necessarily demand caregiver action; a task explicitly does.
-
-### D20 — Promotes BL-065 to canonical `/_auth/inbox` surface
-
-The placeholder `/_auth/tasks` route (and its `TasksPage` + `tasksPort` adapter at `apps/orchestrator/src/modules/tasks/*`) is replaced by the real `/_auth/inbox` surface specified by this change. The sidebar gains a navigation item labelled `"Inbox"` pointing to this route. The previous `"Taken"` and `"Mijn patiënten"` nav items are removed; the `/_auth/patients` list route is deleted (see D24).
-
-**Why:** BL-065 anticipated an inbox of tasks; this change ships exactly that. The placeholder + port + adapter were holding the slot until a real backend landed.
-
-### D21 — Backend `tasks-base` capability is read-only v1
-
-Backend ships a `tasks` table + read-only `GET /tasks` (list) + `GET /tasks/{id}` (read). NO `POST` / `PATCH` / `DELETE` routes in v1. Tasks are populated by a seed script (`scripts/seed_tasks.py` — synthetic only, mix of past-due / due-today / due-this-week / undated, ~60% assigned to demo caregiver). Future pathway runtime materialises tasks via `TaskService` (not in this change).
-
-**Why read-only v1:**
-- Caregiver create/complete UI is not in the locked wireframe (v8 has no write action on inbox rows).
-- Pathway runtime will be the primary task creator at MVP.
-- Smaller backend lift now, faster demo signal.
-
-`PATCH /tasks/{id}/complete` (status transition) is filed as BL-NNN follow-up. Caregivers acknowledging items from the inbox lands when the write UX is designed.
-
-### D22 — TaskRead embeds a patient summary inline
-
-`TaskRead` includes `patient: { id, family_name, given_name, insz?, primary_organisation_id }` projected via a join in the same query. The inbox row renders directly from the task response — no N+1 follow-up to `/patients/{id}` per row.
-
-**Why embed:**
-- Inbox renders 25 rows per page; an N+1 pattern would be 25 extra patient fetches per page.
-- Same pattern used elsewhere (e.g. `PatientRead` shape on care-team responses).
-- Keeps the inbox query a single round trip.
-
-**Trade-off:** task list responses are slightly larger than they'd be with just `patient_id`. Acceptable — the inline summary is ≤8 fields.
-
-### D23 — Visibility predicate is patient-driven, not assignment-driven
-
-Caregivers see a task if and only if they have `require_patient_access` to the task's patient. Assignment (`assigned_user_id`) does NOT factor into visibility. A caregiver sees unassigned tasks for patients they can see, and they see tasks assigned to other caregivers on the same care team.
-
-The `assigned_user_id == me` filter is available to caregivers who want a personal-attention view (matches the "Mijn taken" framing some clinicians prefer). But the default inbox shows the *team's* attention, not just the individual's.
-
-**Why team-driven default:**
-- Matches care-team semantics: when a colleague is sick, their tasks should still be visible to the team.
-- Matches appointment visibility model (caregivers see appointments for their patients regardless of participation).
-- The `me` filter is opt-in; teams that prefer personal-inbox-by-default can flip a setting later (not in v1).
+Same copy for caregiver and admin. No role-aware variants. Uses the existing `<EmptyState>` component directly (already supports icon-in-circle + headline + body — no `<TabEmptyState>` wrapper).
 
 ### D24 — `/_auth/patients` list route is deleted, no replacement
 
 The orchestrator's `/_auth/patients` route (the patient list page built on `<DataTable<PatientRead>>`) is deleted by this change. The backend `GET /patients` list endpoint stays — admin tooling, patient pickers, and care-team flows still consume it.
 
-User-facing caregiver access to "browse all patients in my tenant" is intentionally NOT replaced. The inbox + filters cover "patients with attention items"; broader directory browsing is deferred until a stakeholder explicitly asks for it.
+User-facing caregiver access to "browse all patients in my tenant" is intentionally NOT replaced. The task list covers "things I need to do"; broader directory browsing is deferred until a stakeholder explicitly asks for it.
 
 The patient detail route `/_auth/patients/$patientId` is RETAINED as a standalone full-page detail surface (per D16). Two URLs now mount the same `<PatientDetailView>`:
-- `/_auth/inbox/p/$patientId` — split-pane variant (inbox-context)
-- `/_auth/patients/$patientId` — standalone variant (non-inbox-context, mobile fallback per D17)
+- `/_auth/tasks/p/$patientId` — split-pane variant (tasks-context)
+- `/_auth/patients/$patientId` — standalone variant (non-tasks-context, mobile fallback per D17)
 
-**Why no patient-directory replacement:**
-- PoC tenant has <100 seeded patients; inbox + filters cover the visible cohort.
-- Caregivers without an attention item for a patient typically don't need to browse to them.
-- If a follow-up surfaces the need, file a BL-NNN for a dedicated patient-directory component — not in this change.
+### D-PREFIX — Defer backend URL prefix split
+
+A caregiver/admin-vs-patient URL prefix split (`/caregiver/...` vs `/patient/...`) is conceptually clean but not necessary for this change. New routes ship flat (`/tasks`, `/appointments`) matching the existing convention (`/patients`, `/care-teams`, ...). A separate change `backend-url-prefix-split` performs the rename in one sweep when prioritised.
+
+### D-RENAME — Route + module rename sequence (placeholder first, new dir after)
+
+`apps/orchestrator/src/routes/_auth/tasks.tsx` (single-file placeholder route) and `apps/orchestrator/src/modules/tasks/` (placeholder dir) collide in name with the new `routes/_auth/tasks/` directory route and new `modules/tasks/` directory.
+
+Order:
+1. DELETE the placeholder route file `routes/_auth/tasks.tsx`.
+2. DELETE the placeholder module dir `modules/tasks/` (`TasksPage.tsx`, `tasksPort.ts`, adapter, `types.ts`).
+3. CREATE new `routes/_auth/tasks/` directory with `route.tsx`, `index.tsx`, `p/$patientId/index.tsx`.
+4. CREATE new `modules/tasks/` directory with `TaskList.tsx`, `TaskRow.tsx`, `KindTile.tsx`, `useTasksQuery.ts`, `types.ts`, `dueLabel.ts`.
+
+The tasks.md sequencing reflects this (delete tasks before create tasks).
+
+## Risks / Trade-offs
+
+- **R1 — Two new backend domains in one PR is larger than either alone.** **Mitigation:** they're independent (aggregator depends on appointments at the projection layer only). Independent migrations (only appointment has one), independent services, independent tests.
+- **R2 — Empty seed means the demo shows empty-state.** **Mitigation accepted:** D-EMPTY rationale. Follow-up `seed_appointments.py` is a 30-min change when wanted.
+- **R3 — `/_auth/patients` list route deletion breaks direct links.** **Mitigation:** existing internal links go through TanStack Router's typed routes — compile-time check catches breakage.
+- **R4 — Participant-driven visibility means tasks for other caregivers do NOT surface in my task list.** This is intentional (D-PART) — the surface is personal attention. Team-handover view is a separate surface (out of scope).
+- **R5 — Admins see empty task list in day-to-day use.** **Mitigation accepted (D-PART):** admins use `/appointments` directly for ops oversight (when wired); `/tasks` is the caregiver-attention model.
+- **R6 — Frozen-after-create participants on appointments forces delete-and-recreate to change attendees.** **Mitigation accepted:** PoC clinical reality.
+- **R7 — Empty Metingen + Labresultaten tabs read as broken in demo.** **Mitigation:** `<EmptyState>` copy explicitly says "wordt geleverd door X".
+- **R8 — Mobile (<md viewport) split-pane fallback per D17.** Row click navigates to `/_auth/patients/$patientId` standalone. Browser back returns to task list.
+- **R9 — `entered-in-error` FHIR status hyphen vs Python identifier.** Stored as `entered_in_error`, serialised as `entered-in-error`. Tested round-trip.
+- **R10 — Aggregator over one source v1 is over-engineered if a 2nd source never lands.** **Mitigation:** indirection is ~50 LOC. Wire shape stable, so cost is contained.
+- **R11 — No patient-centric appointment history anywhere.** **Mitigation accepted:** out of scope for this change. Files as follow-up when stakeholder asks.
+- **R12 — Route + module rename collision.** **Mitigation:** D-RENAME locks the sequence; tasks.md enforces delete-then-create order.
+
+## Migration Plan
+
+- **Data migration**: one alembic migration creates `appointments` + `appointment_participants` + four Postgres enums. No `tasks` table — `tasks-base` is route-only. No existing-row touchups.
+- **Patient list route**: `/_auth/patients` route file is deleted. Existing direct links to that URL would 404. Sidebar nav swaps `"Mijn patiënten"` → `"Taken"` pointing to `/_auth/tasks`.
+- **Patient detail route**: `/_auth/patients/$patientId` URL is unchanged; the standalone full-page detail mounts the new `<PatientDetailView>` (two tabs only). Component swap is in-place.
+- **Task-list route**: `/_auth/tasks.tsx` placeholder + `apps/orchestrator/src/modules/tasks/` placeholder directory deleted FIRST. New `/_auth/tasks/` directory route + new `modules/tasks/` directory + `/_auth/tasks/p/$patientId` child added AFTER (per D-RENAME).
+- **Tab strip on detail page**: changes per `patient-profile-ui` delta (Metingen + Labresultaten only). `<CareTeamSlot>` import path + signature preserved; `<PatientHistoryPanel>` import path preserved.
+- **Rollback**: revert PR. No appointment / task data to undo (no seed). The DataTable list page and the old tab strip are recoverable from git history. The `/_auth/tasks.tsx` placeholder returns.
+
+## Locked wireframe
+
+Accepted wireframe is `prototypes/inbox/v8.html`. See `prototypes/inbox/README.md` for the version history. v8 locks:
+
+- Admin-page chrome (solid sidebar, pill filter row, soft Badge pills).
+- **Three-state master/detail layout** (D15).
+- **`<PatientDetailView>` as a surface-agnostic primitive** (D16).
+- **Flat list, no counter, no pager** (D-FLAT — supersedes earlier prototype pager strip).
+
+The prototype shows three patient-detail tabs including `Afspraken`. This is SUPERSEDED by D10 (two tabs only). The React build follows the design decision, not the prototype.
 
 ## Component reuse audit
 
-Before writing any new code, audit the existing orchestrator primitive surface. The build plan distinguishes **reuse-as-is**, **reuse with extension**, **drop** (delete on archive), and **new reusable** (build with broader value beyond patient-inbox).
+Before writing any new code, audit the existing orchestrator primitive surface.
 
 ### Reuse as-is
 
-Existing primitives that cover the wireframe without modification:
-
 | Primitive | Used for |
 |---|---|
-| `components/layout/Shell.tsx` + `AppSidebar.tsx` | Outer chrome — already correct vibe per locked wireframe. |
-| `components/layout/PageHeader.tsx` | Title + sub + actions slot on `<PatientInbox>` and standalone `<PatientDetailView>` host. |
-| `components/ui/button.tsx` (default/ghost/icon variants) | Primary "Nieuwe patiënt" CTA + kebab + edit. |
-| `components/ui/badge.tsx` (default/soft/outline/muted) | INSZ default Badge, org soft Badge, status muted Badge, team soft Badge. |
-| `components/ui/tabs.tsx` (underline variant) | Sort tabs on `<PatientInbox>` + clinical tabs on `<PatientDetailView>`. |
-| `components/ui/input.tsx` | Search field in inbox filter row. |
-| `components/ui/select.tsx` | Team / Status filter dropdowns. |
-| `components/ui/dropdown-menu.tsx` | Kebab actions (per row + detail page). |
-| `components/ui/dialog.tsx` | Kebab `Geschiedenis` dialog + edit dialog (reuses existing `EditPatientDialog`). |
-| `components/ui/avatar.tsx` + `AvatarFallback` | Sidebar user pill + inbox row avatar + detail header avatar. |
-| `components/states/EmptyState.tsx` | Generic empty-state base for `Metingen` / `Labresultaten` / `Afspraken` empty + inbox-empty + selection-empty right pane. |
+| `components/layout/Shell.tsx` + `AppSidebar.tsx` | Outer chrome. |
+| `components/layout/PageHeader.tsx` | Title + sub + actions slot on `<TaskList>` and standalone `<PatientDetailView>` host. |
+| `components/ui/button.tsx` | Kebab + future write CTAs. |
+| `components/ui/badge.tsx` | INSZ Badge, org Badge. |
+| `components/ui/tabs.tsx` (underline) | Clinical tabs on `<PatientDetailView>`. |
+| `components/ui/dropdown-menu.tsx` | Page kebab on detail. |
+| `components/ui/dialog.tsx` | Kebab `Geschiedenis` dialog + edit dialog. |
+| `components/ui/avatar.tsx` + `AvatarFallback` | Sidebar pill + task row avatar + detail header avatar. |
+| `components/states/EmptyState.tsx` | Used directly for `Metingen` / `Labresultaten` tab empty / task list empty / selection-empty right pane. Already supports icon-in-circle + headline + body — no wrapper needed. |
 | `components/entity/EntityErrorCard.tsx` | Detail-view error fallback. |
 | `components/entity/EntityNotFound.tsx` | Outside-visibility caregiver hitting `/_auth/patients/$id`. |
 | `components/entity/EntityDetailSkeleton.tsx` | Detail-pane loading skeleton. |
@@ -380,67 +315,57 @@ Existing primitives that cover the wireframe without modification:
 | `modules/patient/components/BreakGlassPrompt.tsx` | Existing 404 handler retained. |
 | `modules/patient/api.ts` + `hooks/usePatient` | Patient detail fetch + soft-delete mutation. |
 | `hooks/entity/useEntityDelete` | Destructive-confirm pattern for kebab `Verwijderen`. |
-| `lib/api/client` typed client | Patient + appointment endpoints (post `typegen`). |
-| `lib/i18n/*` + `useTranslation` | All copy through `t()`; new namespaces `patient-inbox`, `patient-appointments`; extend `patient-profile-ui`. |
+| `lib/api/client` typed client | Patient + appointment + tasks endpoints (post `typegen`). |
+| `lib/i18n/*` + `useTranslation` | All copy through `t()`; new namespaces `tasks`, `appointment`; extend `patient-profile-ui`. |
 | `components/ui/sonner` / `toaster` | Success + error toasts on edit / delete. |
-
-### Reuse with extension
-
-| Primitive | Extension |
-|---|---|
-| `components/entity/EntityDetailPage.tsx` | Currently combines `PageHeader` + body in a single shell. For `<PatientDetailView>` standalone mount, wrap this around the view; for inbox split-pane mount, render `<PatientDetailView>` directly without `EntityDetailPage` chrome (the inbox layout provides the outer chrome). The component itself is unchanged. |
-| `components/entity/EntityDetailTabs.tsx` | Already wraps shadcn `Tabs` underline. Use as-is for the clinical tab strip. |
-| `hooks/use-paginated-query` | Inbox needs infinite pagination, not classic `Page[T]`. Either add a parallel `use-infinite-list-query` helper or use TanStack `useInfiniteQuery` directly with the patients endpoint. Decide during task 5.7. |
 
 ### Drop on archive
 
-These components were specific to the prior `Overzicht` tab and are no longer mounted by `<PatientDetailView>` per locked spec. They have no other consumers in the codebase (verify in prereq task 0.6).
+These components were specific to the prior `/_auth/patients` DataTable list and `Overzicht` tab; they have no other consumers (verified in prereq 0.4).
 
 | Primitive | Why |
 |---|---|
-| `modules/patient/components/PatientDemographicsPanel.tsx` | Content absorbed into `<PatientDetailHeader>` (name + sub badges + DOB). |
-| `modules/patient/components/PatientIdentifiersPanel.tsx` | INSZ becomes a Badge default pill in the header; other identifiers (rare in PoC) are out of v1 scope. |
-| `modules/patient/components/PatientsColumns.tsx` (`patientColumns`, `patientFilters`, `patientRowActions`) | DataTable-specific; the inbox renders `<PatientInboxRow>` instead. Delete after `routes/_auth/patients/index.tsx` rewrite. |
+| `modules/patient/components/PatientDemographicsPanel.tsx` | Content absorbed into `<PatientDetailHeader>`. |
+| `modules/patient/components/PatientIdentifiersPanel.tsx` | INSZ becomes a Badge in the header. |
+| `modules/patient/components/PatientsColumns.tsx` (`patientColumns`, `patientFilters`, `patientRowActions`) | DataTable-specific; list route is deleted. |
+| `modules/tasks/TasksPage.tsx` + `tasksPort.ts` + adapter + `types.ts` | Placeholder fully replaced by the new task list surface. |
 
-### New reusable primitives (broader value beyond patient-inbox)
+### New reusable primitives (broader value)
 
-These three are built as **generic** components in shared locations because at least one future feature will reuse them:
+Only ONE genuinely reusable primitive ships:
 
-1. **`<MasterDetailLayout>`** at `components/layout/MasterDetailLayout.tsx`. Props: `{ master, detail, masterCollapsed, onMasterCollapsedChange }`. Owns the 3-state CSS + transitions + floating reopen button. Generic over content. **Reuse targets:** future tasks inbox (`/_auth/inbox`), organisation browser, care-team browser.
-2. **`<InboxRow>`** at `components/list/InboxRow.tsx`. Generic flat clickable row. Props: `{ leading, primary, secondary, trailing, selected, onSelect }`. Slot-based — no patient-specific logic. **Reuse targets:** tasks inbox, notification inbox, anywhere a "scannable list of clickable items" is the right primitive.
-3. **`<TabEmptyState>`** (a variant of existing `EmptyState`) — adds the icon-in-circle + headline + hint shape locked in the spec. Could just be a `variant="centered"` prop on the existing `EmptyState`. Decide in task 6.3.
+1. **`<MasterDetailLayout>`** at `components/layout/MasterDetailLayout.tsx`. Props: `{ master, detail, masterCollapsed, onMasterCollapsedChange }`. Owns the 3-state CSS + transitions + floating reopen button. Generic over content. **Reuse targets:** organisation browser, care-team browser, future workspace surfaces.
 
-### New patient-feature components (scope-bound)
+`<InboxRow>` / `<ListRow>` (a generic flat-row primitive) is NOT built in this change. `<TaskRow>` is constructed directly. Add a generic abstraction when a 2nd flat-list surface emerges.
 
-These live under `modules/patient/components/` and `modules/appointment/components/` — no broader reuse expected.
+`<TabEmptyState>` is NOT built — `<EmptyState>` already covers the visual.
+
+### New feature components (scope-bound)
 
 | Component | Location | Notes |
 |---|---|---|
-| `<PatientInbox>` | `modules/patient/components/PatientInbox.tsx` | Composes `<MasterDetailLayout>`. Owns sort registry, query, list render, infinite scroll. |
-| `<PatientInboxRow>` | `modules/patient/components/PatientInboxRow.tsx` | Wraps generic `<InboxRow>` with patient-specific bindings: `<Avatar>` initials, family/given identity, INSZ/org sub-line, team `<Badge>`, sort-strategy meta slot, kebab. |
-| `<Avatar>` (initials with deterministic tint) | `modules/patient/components/PatientAvatar.tsx` OR shared `components/ui/avatar.tsx` extension | If multiple modules want deterministic-tint initials, lift to the shared `Avatar` primitive with a `tintBy?: string` prop. Decide in task 5.1. Default: lift to shared — accessibility palette belongs at the design-system layer (resolves design.md Open Q2). |
-| `<PatientDetailHeader>` | `modules/patient/components/PatientDetailHeader.tsx` | Surface-agnostic per D16 — no router import. Drives the title row inside `<PatientDetailView>`. |
-| `<PatientDetailView>` | `modules/patient/components/PatientDetailView.tsx` | Surface-agnostic per D16. Composes `<PatientDetailHeader>`, `<CareTeamSlot>`, clinical Tabs, the three tab bodies. |
-| `<KindTile>` | `modules/appointment/components/KindTile.tsx` | Subtle color-mix tile per `AppointmentKind`. Reused by inbox row meta + Afspraken tab rows. |
-| `<AppointmentRow>` | `modules/appointment/components/AppointmentRow.tsx` | Kind tile + title + status Badge (history variant) + time/location/participants line. Reused in Afspraken tab + (future) caregiver appointments dashboard. |
-| `<AppointmentsSection>` | `modules/appointment/components/AppointmentsSection.tsx` | Upcoming (expanded) + History (collapsible) split. Composes `<AppointmentRow>`. |
-| `<KebabPatientActions>` | `modules/patient/components/PatientKebab.tsx` | `Bewerken` / `Verwijderen` / `Geschiedenis` entries. Wires `EditPatientDialog`, `useEntityDelete`, history `Dialog`. |
-| Sort registry (`patientSortStrategies`, `useSelectedSort`) | `modules/patient/inbox/sorts/*` | Already specified earlier; module-local. |
+| `<TaskList>` | `modules/tasks/TaskList.tsx` | Composes `<MasterDetailLayout>` (via the parent route). Owns the `useTasksQuery` call, flat list render, empty-state. |
+| `<TaskRow>` | `modules/tasks/TaskRow.tsx` | Flat clickable row. v1 source-aware (renders `<KindTile>` from the appointment-source payload). When 2nd source lands, refactor to source-aware decoration. |
+| `<KindTile>` | `modules/tasks/components/KindTile.tsx` | Subtle color-mix tile per `AppointmentKind`. Lives in `modules/tasks/` since no Afspraken tab consumes it. |
+| `<Avatar>` (initials with deterministic tint) | `components/ui/avatar.tsx` extension | Lift to shared with `tintBy?: string` prop. |
+| `<PatientDetailHeader>` | `modules/patient/components/PatientDetailHeader.tsx` | Surface-agnostic per D16 — no router import. |
+| `<PatientDetailView>` | `modules/patient/components/PatientDetailView.tsx` | Surface-agnostic per D16. Two tabs only (Metingen + Labresultaten). |
+| `<PatientKebab>` | `modules/patient/components/PatientKebab.tsx` | `Bewerken` / `Verwijderen` / `Geschiedenis` entries. |
 
-### Build order (revised)
+### Build order
 
-1. Reusable layer first: `<MasterDetailLayout>` + `<InboxRow>` + lift `<Avatar>` to support deterministic tint. Tests with stub content.
-2. Appointment primitives: `<KindTile>`, `<AppointmentRow>`, `<AppointmentsSection>`. Backed by `AppointmentRead` typegen.
-3. Patient-feature components: `<PatientDetailHeader>` → `<PatientDetailView>` → `<PatientInboxRow>` → `<PatientInbox>`.
+1. Reusable layer first: `<MasterDetailLayout>` + lift `<Avatar>` to support deterministic tint. Tests with stub content.
+2. Tasks primitives: `<KindTile>` + `<TaskRow>` + `useTasksQuery` + `<TaskList>`. Backed by `TaskItem` typegen.
+3. Patient-detail primitives: `<PatientDetailHeader>` → `<PatientDetailView>`.
 4. Route layout: parent `route.tsx` + child `$patientId/index.tsx`. Wire query + mutations + dialogs.
 
 ### Tests strategy
 
-- Generic primitives (`<MasterDetailLayout>`, `<InboxRow>`) get their own tests against contract — independent of patient domain.
+- `<MasterDetailLayout>` gets its own tests against contract — independent of any domain.
 - `<PatientDetailView>` is tested in isolation with mock props (router-free) to enforce D16.
 - Route components get integration tests (router + query mocks) for: URL drives selection, browser back/forward preserves state, master-hidden toggle is local UI only.
 
-## Open Questions
+## Resolved questions
 
-- **Q1:** Should the inbox surface a counter ("12 patiënten") above the list? Lockable visually now — prototype v8 puts it in the pager strip ("8 van 23") and drops the header counter. Confirm before task 5.7.
-- **Q3:** Should `next_appointment` field be returned on `GET /patients/{id}` too (the detail endpoint)? Spec says yes; verify the patient detail page doesn't accidentally re-fetch appointments for the header by reading this field instead of paying for the Afspraken-tab list call.
+- **Q1 (counter):** RESOLVED by D-FLAT — no counter, no pager.
+- **Q3 (`next_appointment` on `GET /patients/{id}`):** RESOLVED by D-AGG — no embedded next_appointment anywhere; aggregator is the canonical attention projection. `PatientRead` carries no appointment-derived fields.

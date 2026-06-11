@@ -1,28 +1,27 @@
 ## 0. Prerequisites
 
-- [ ] 0.1 Confirm `patients-base`, `patient-profile-ui`, `users-base`, `care-teams-base` are archived
-- [ ] 0.2 Confirm `<CareTeamSlot>` export path (`apps/orchestrator/src/modules/patient/components/CareTeamSlot.tsx`) and prop shape (`{ patientId: string }`) match what `patient-profile-ui` spec promised
+- [ ] 0.1 Confirm `patients-base`, `patient-profile-ui`, `user-base` (archived as `backend-user-auth-base`), `care-teams-base` are archived
+- [ ] 0.2 Confirm `<CareTeamSlot>` is at `apps/orchestrator/src/modules/patient/components/CareTeamSlot.tsx` with prop signature `{ patientId: string }` (canonical path; supersedes any older spec mention of `features/patient-profile/CareTeamSlot.tsx`)
 - [ ] 0.3 Confirm `<PatientHistoryPanel>` export path matches what we will mount inside the kebab `Geschiedenis` dialog
-- [ ] 0.4 Confirm `patientsListKeyPrefix` location + the realtime topic the current list page registers — both must transfer to `<PatientInbox>` unchanged
-- [ ] 0.5 Confirm TanStack Router's `useSearch` exposes `?sort=` synchronously on first render (hydration-safe) — read the version pinned in `package.json` and skim its loader docs
-- [ ] 0.6 Confirm no external consumers of `PatientDemographicsPanel` / `PatientIdentifiersPanel` / `PatientsColumns` outside `modules/patient` (these are dropped per design.md "Component reuse audit" → "Drop on archive")
-- [ ] 0.7 Read `design.md` "Component reuse audit" section before writing any new component — the audit dictates whether a need is satisfied by an existing primitive, an extension, or a new component
+- [ ] 0.4 Confirm no external consumers of `PatientDemographicsPanel` / `PatientIdentifiersPanel` / `PatientsColumns` outside `modules/patient` (dropped per design.md "Component reuse audit" → "Drop on archive")
+- [ ] 0.5 Confirm TanStack Router's `useSearch` (or loader) exposes URL search params synchronously on first render for the parent `/_auth/tasks` route — read the version pinned in `package.json` and skim its loader docs
+- [ ] 0.6 Read `design.md` "Component reuse audit" section before writing any new component
 
 ## 1. Prototype (HTML, before any React or backend)
 
-- [x] 1.1 Build inbox prototype iterations under `prototypes/inbox/v*.html`. **Accepted: `v8.html`** per `prototypes/inbox/README.md`. v8 locks: admin-page chrome, 3-state master/detail layout (D15), surface-agnostic `<PatientDetailView>` mount pattern (D16)
+- [x] 1.1 Built inbox prototype iterations under `prototypes/inbox/v*.html`. **Accepted: `v8.html`** per `prototypes/inbox/README.md`. v8 locks: admin-page chrome, 3-state master/detail layout (D15), surface-agnostic `<PatientDetailView>` mount pattern (D16). Subsequent design decisions (D-FLAT, D-NOSORT, D10 two-tabs) supersede the prototype's pager strip, sort tabs, and three-tab patient detail — the React build follows design.md, not the prototype, where they conflict. Prototype directory keeps the name `prototypes/inbox/` (archival artifact, not a concept reference)
 - [ ] 1.2 Confirm with the user that any future visual tweak lands as `vN+1.html` — never edit a prior version
 
-## 2. Backend: appointment-base capability
+## 2. Backend: `appointment-base` capability
 
 - [ ] 2.1 Create enums at `app/core/enums/appointment.py`: `AppointmentKind`, `AppointmentStatus` (FHIR R4 — store `entered_in_error` symbol, serialise `entered-in-error`), `AppointmentModality`, `AppointmentParticipantRole`. Re-export from `app/core/enums/__init__.py`
-- [ ] 2.2 Create ORM model `app/domain/appointment/appointment.py::Appointment` — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id`, `pathway_block_instance_id` (nullable, FK conditional on table existence — without FK if not), `title`, `description`, `kind`, `starts_at`, `ends_at`, `modality`, `location_text`, `status`. Add `CHECK (ends_at > starts_at)`
+- [ ] 2.2 Create ORM model `app/domain/appointment/appointment.py::Appointment` — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id`, `pathway_block_instance_id` (nullable, NO FK in v1 per D18), `title`, `description`, `kind`, `starts_at`, `ends_at`, `modality`, `location_text`, `status`. Add `CHECK (ends_at > starts_at)`
 - [ ] 2.3 Create ORM model `app/domain/appointment/appointment_participant.py::AppointmentParticipant` — inherits `BaseEntity` + `DeletableEntity`. Columns: `appointment_id` (FK CASCADE), `user_id` (FK RESTRICT), `role`. Partial unique indexes: `(appointment_id) WHERE role='lead' AND deleted_at IS NULL` + `(appointment_id, user_id) WHERE deleted_at IS NULL`
-- [ ] 2.4 Generate alembic migration via `moon run backend:make-migration -- "add appointment-base"` and review autogen. Manually add the partial unique indexes if alembic missed them. Enum types created in `op.execute`
+- [ ] 2.4 Generate alembic migration via `moon run backend:make-migration -- "add appointment-base"` and review autogen. Manually add the partial unique indexes if alembic missed them. Enum types created in `op.execute`. Supporting indexes: `appointments(patient_id, starts_at) WHERE status='booked' AND deleted_at IS NULL` for the aggregator hot path, and `appointment_participants(user_id) WHERE deleted_at IS NULL` for the participant predicate
 - [ ] 2.5 Create Pydantic schemas at `app/schemas/appointment/appointment.py`:
-  - `NextAppointmentSummary` — `{ id, title, starts_at, ends_at, kind, modality }`
   - `AppointmentParticipantCreate` — `{ user_id, role }`
   - `AppointmentParticipantRead` — `{ id, user_id, role, user_display_name }`
+  - `AppointmentParticipantInlineSummary` — `{ user_id, role, user_display_name }` (used by `TaskItem.payload`)
   - `AppointmentCreate` — `{ patient_id, title, description?, kind, starts_at, ends_at, modality, location_text?, status? (default booked), participants: list[AppointmentParticipantCreate] (required, ≥1 with one lead) }`
   - `AppointmentPatch` — partial of `AppointmentCreate` MINUS `patient_id`, `participants`, `pathway_block_instance_id`
   - `AppointmentRead` — full row + `participants: list[AppointmentParticipantRead]`
@@ -54,48 +53,45 @@
   - `test_patient_role_rejected.py`: patient-role session gets 403 on each route
   - `test_hix_adapter_stub.py`: import + NotImplementedError
 
-## 3. Backend: `tasks-base` capability
+## 3. Backend: `tasks-base` aggregator capability (NO table, NO ORM)
 
-Per D21 — read-only domain in v1; pathway runtime adds writes later.
+Per D-AGG — server-side aggregator over source domains. v1 source set: `appointment` only.
 
-- [ ] 3.1 Create enums at `app/core/enums/task.py`: `TaskKind` (`review|follow_up|call|intake|signoff|other`), `TaskStatus` (`open|in_progress|completed|cancelled`), `TaskPriority` (`low|normal|high|urgent`). Re-export from `app/core/enums/__init__.py`
-- [ ] 3.2 Create ORM model `app/domain/task/task.py::Task` — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id` (FK RESTRICT), `assigned_user_id` (FK RESTRICT, nullable), `pathway_block_instance_id` (nullable, NO FK in v1 per D18), `title`, `description`, `kind`, `status` (default `open`), `due_at` (nullable timestamptz), `priority` (default `normal`)
-- [ ] 3.3 Generate alembic migration via `moon run backend:make-migration -- "add tasks-base"`. Review autogen; ensure three enum types are created via `op.execute`. Add supporting index `CREATE INDEX tasks_patient_status_idx ON tasks(patient_id, status) WHERE deleted_at IS NULL` and `CREATE INDEX tasks_due_at_idx ON tasks(due_at NULLS LAST) WHERE deleted_at IS NULL`
-- [ ] 3.4 Create Pydantic schemas at `app/schemas/task/task.py`:
-  - `PatientInlineSummary`: `{ id, family_name, given_name, insz?: str | None, primary_organisation_id }`
-  - `TaskRead`: full row + `patient: PatientInlineSummary` projected via join
-- [ ] 3.5 Create `app/repositories/task_repository.py::TaskRepository` (subclass of `BaseListRepository`):
-  - `filterable_fields`: `patient_id`, `status`, `kind`, `priority`, `assigned_user_id`, `due_at`
-  - `searchable_fields`: `title`
-  - `allowed_order_by`: `due_at` (NULLS LAST), `created_at`, `priority`
-  - default `order_by=due_at`, `order=asc`
-  - special filter handler: `assigned_user_id=me` resolves server-side to caller's user id
-- [ ] 3.6 Create `app/services/task/task_service.py::TaskService`:
-  - `list_in_tenant(list_query, caller)` — wraps repository, applies caregiver patient-access filter via subquery `WHERE patient_id IN (visible_patient_ids_for(caller))`. Admin bypass
-  - `get_by_id(task_id, caller)` — applies same patient-access predicate
-  - NO `create()` / `patch()` / `soft_delete()` v1 — no writes
-- [ ] 3.7 Create `app/api/routers/task/task_router.py` — two read routes with `# AUTH-HARDEN` markers + `require_role(Role.ADMIN, Role.CAREGIVER)` (NOT `Role.PATIENT`):
-  - `GET /tasks` (list)
-  - `GET /tasks/{id}` (read)
-- [ ] 3.8 Create `app/adapters/hix/tasks.py::HixTaskAdapter` with `fetch` + `upsert_from_hix` raising `NotImplementedError("HiX task adapter is MVP scope")`. Import-test coverage
-- [ ] 3.9 Create `scripts/seed_tasks.py` — synthetic-only seed (header comment cites no-PHI invariant). Deterministic PRNG; for each seeded patient generates 0-3 tasks with varied `kind`, `status`, `priority`, `due_at` (past-due / due-today / due-this-week / undated mix). ~60% assigned to demo caregiver. Idempotent via deterministic uniqueness key
-- [ ] 3.10 Tests (`tests/api/test_tasks_*.py`):
-  - `test_list.py`: tenant scope; caregiver patient-access predicate; admin sees all; `assigned_user_id=me` resolves to caller; default sort `due_at` ascending with NULLS LAST; date-range filter on `due_at`
-  - `test_read.py`: caregiver patient-access predicate (lost-access → 404); cross-tenant → 404
+- [ ] 3.1 Add `PatientInlineSummary` to `app/schemas/patient/patient.py` — shape `{ id, family_name, given_name, insz: str | None, primary_organisation_id }`. Patient domain owns it; tasks-base imports
+- [ ] 3.2 Create `app/schemas/task/task_item.py`:
+  - `Source = Literal["appointment"]` (extends as sources are added)
+  - `TaskPriority = Literal["low","normal","high","urgent"]` (envelope-level type, NOT a Postgres enum)
+  - `AppointmentPayload` — `{ id, starts_at, ends_at, kind, modality, location_text, status, participants: list[AppointmentParticipantInlineSummary] }`
+  - `TaskItem` — `{ id: str, source: Source, source_id: UUID, patient: PatientInlineSummary, due_at: datetime, title: str, kind: str | None, priority: TaskPriority | None, payload: AppointmentPayload }`
+- [ ] 3.3 Create `app/services/tasks/sources/appointment_source.py::AppointmentSource`:
+  - `name = "appointment"`
+  - `list(caller, page, page_size) -> Page[TaskItem]`:
+    - SQL: `SELECT a.*, p.* FROM appointments a JOIN patients p ON p.id = a.patient_id JOIN appointment_participants ap ON ap.appointment_id = a.id WHERE a.status='booked' AND a.starts_at BETWEEN now() AND now()+INTERVAL '3 days' AND a.deleted_at IS NULL AND ap.user_id = :caller_id AND ap.deleted_at IS NULL AND a.tenant_id = :caller_tenant_id ORDER BY a.starts_at ASC LIMIT :page_size OFFSET ...`
+    - Project each row into `TaskItem` (`id="appointment:{a.id}"`, `due_at=a.starts_at`, etc.)
+    - Resolve `participants` for the payload via additional JOIN (or post-query batch) — `user_display_name` from the existing users projection
+  - `get(caller, source_id) -> TaskItem | None` — same predicate + `a.id = :source_id`
+- [ ] 3.4 Create `app/services/tasks/tasks_aggregator.py::TasksAggregator`:
+  - `SOURCES: dict[Source, AppointmentSource]` — registry; v1 = `{"appointment": AppointmentSource()}`
+  - `list(caller, page, page_size) -> Page[TaskItem]` — for v1 (one source) delegates directly; multi-source ordering becomes a top-K merge by `due_at asc` when 2nd source lands
+  - `get(caller, source: Source, source_id: UUID) -> TaskItem` — dispatches to `SOURCES[source].get(...)`; raises NotFound on miss
+- [ ] 3.5 Create `app/api/routers/task/task_router.py` — two read routes with `# AUTH-HARDEN` markers + `require_role(Role.ADMIN, Role.CAREGIVER)`:
+  - `GET /tasks` — `ListQuery` envelope; `order_by` allow-list = `["due_at"]`; `order` allow-list = `["asc"]`; `filter[patient_id][eq]` accepted (tools/tests); other filters → 422; unknown FLAT query params (e.g. `?within=7d`) silently ignored
+  - `GET /tasks/{source}/{source_id}` — read-one; 404 on miss or visibility fail
+- [ ] 3.6 Tests (`tests/api/test_tasks_*.py`):
+  - `test_no_table_or_orm.py`: assert no SQLAlchemy model named `Task` is registered; assert `tasks` table absent in metadata (or covered by a fresh-DB assertion)
+  - `test_window.py`: appointments outside `[now, now+3d]` excluded; non-`booked` excluded; soft-deleted excluded; past `starts_at` excluded
+  - `test_visibility.py`: caregiver participant on A1+A2 but not A3 → sees A1+A2; lost participation → 404 on read-one; admin same predicate (empty unless participant); patient role → 403; cross-tenant → 404
+  - `test_envelope.py`: `id == f"appointment:{source_id}"`; `due_at == appointment.starts_at`; `title == appointment.title`; `priority is null`; `payload` matches `AppointmentPayload` (incl. participants list with `user_display_name`)
+  - `test_sort_and_pagination.py`: default `order_by=due_at order=asc`; alternative `order_by` → 422; `order=desc` → 422; pagination envelope shape
   - `test_no_write_routes.py`: OpenAPI document has no `POST/PATCH/DELETE` on `/tasks`
-  - `test_patient_role_rejected.py`: 403 on patient-role session for both `GET /tasks` and `GET /tasks/{id}`
-  - `test_embedded_patient.py`: `TaskRead.patient` populated with `{id, family_name, given_name, insz?, primary_organisation_id}`; INSZ is `null` when patient has no identifier row
-  - `test_visibility_unassigned.py`: caregiver with patient access sees unassigned tasks for that patient; assignment to another caregiver does NOT hide the task
-  - `test_visibility_assigned_no_access.py`: caregiver assigned to a task but without patient access → 404
-  - `test_hix_adapter_stub.py`: import + NotImplementedError
-  - `test_seed_tasks.py`: re-run idempotent; mix of past-due / due-today / undated represented; ~60% assigned ratio (allow ±10%)
+  - `test_filter_patient_id.py`: `filter[patient_id][eq]=<id>` restricts within the existing predicate
+  - `test_within_param_silently_ignored.py`: `?within=7d` returns same response as no param (NOT 422)
+  - `test_patient_inline_summary.py`: INSZ resolves correctly, `null` when missing; same-tenant guarantee
 
 ## 4. Backend: `patients-base` modifications
 
-- [ ] 4.1 Extend `PatientRepository.allowed_order_by` with `created_at` (skip if already present). Explicitly REJECT `next_appointment_starts_at` (no projection added on `PatientRead` — sort lives on `/inbox/items`)
-- [ ] 4.2 Tests (`tests/api/test_patient_list_sort.py`):
-  - `order_by=created_at&order=desc` returns newest first
-  - `order_by=next_appointment_starts_at` → 422 (rejected; sort moved to `/inbox/items`)
+- [ ] 4.1 Tests (`tests/api/test_patient_list_sort.py`):
+  - `order_by=next_appointment_starts_at` → 422 (rejected; no embedded next_appointment field)
   - `order_by=banana` → 422 (unchanged)
 
 ## 4b. OpenAPI + typed client regen
@@ -103,111 +99,97 @@ Per D21 — read-only domain in v1; pathway runtime adds writes later.
 - [ ] 4b.1 `moon run backend:openapi`
 - [ ] 4b.2 `moon run orchestrator:typegen`
 
-## 5. Frontend: reusable primitives (built first, before patient + inbox modules)
+## 5. Frontend: reusable primitives
 
-Per design.md "Component reuse audit" → "New reusable primitives (broader value)". These are generic, tested in isolation, no patient-domain coupling.
+Per design.md "Component reuse audit". Only ONE genuinely reusable primitive ships. Tested in isolation, no domain coupling.
 
 - [ ] 5.1 Build `<MasterDetailLayout>` at `apps/orchestrator/src/components/layout/MasterDetailLayout.tsx`. Props: `{ master: ReactNode; detail: ReactNode | null; masterCollapsed: boolean; onMasterCollapsedChange: (v: boolean) => void }`. Implements the 3-state CSS (full / compact 320px / hidden) with 250ms ease width transition. Renders the floating "panel-left-open" reopen button when master is hidden. **Mobile fallback per D17:** below `md` breakpoint the layout SHALL render master full-width and skip the detail column entirely (route swap handles detail display). NO content opinions — pure layout primitive. Tests: state transitions, reopen-button visibility, prop-driven width, mobile fallback
-- [ ] 5.2 Build `<InboxRow>` at `apps/orchestrator/src/components/list/InboxRow.tsx`. Props: `{ leading?: ReactNode; primary: ReactNode; secondary?: ReactNode; trailing?: ReactNode; selected?: boolean; onSelect?: () => void; compact?: boolean }`. Flat clickable button row. NO patient-domain logic. `compact` variant tightens padding + smaller `leading` size. Tests: slot rendering, selected highlight, onSelect callback, keyboard nav
-- [ ] 5.3 Lift `<Avatar>` from `components/ui/avatar.tsx` — add optional `tintBy?: string` prop. When set, derives a deterministic background colour from `hash(tintBy) % 8` against a curated ZAS-teal palette with WCAG AA white-text contrast. Default behaviour unchanged. Tests: same `tintBy` → same colour-class; missing `tintBy` → default; palette accessibility
-- [ ] 5.4 Reuse `components/states/EmptyState.tsx` — confirm it already supports the icon-in-circle + headline + hint shape. If not, extend with a `variant="centered"` prop. Locks the empty-state visual for tabs + inbox + selection-empty right pane
+- [ ] 5.2 Lift `<Avatar>` from `components/ui/avatar.tsx` — add optional `tintBy?: string` prop. When set, derives a deterministic background colour from `hash(tintBy) % 8` against a curated ZAS-teal palette with WCAG AA white-text contrast. Default behaviour unchanged. Tests: same `tintBy` → same colour-class; missing `tintBy` → default; palette accessibility
+- [ ] 5.3 Confirm `components/states/EmptyState.tsx` already renders icon-in-circle + headline + body. NO new `<TabEmptyState>` wrapper needed — use `<EmptyState>` directly with `icon` + `title` + `body` props
 
-## 6. Frontend: appointment primitives
+## 6. Delete placeholder before creating new (per D-RENAME)
 
-These live under `modules/appointment/components/` — reused by inbox row meta + Afspraken tab + (future) caregiver appointments dashboard.
+The new `/_auth/tasks/` directory route and the new `modules/tasks/` directory collide in name with the old placeholders. Delete first to avoid conflict.
 
-- [ ] 6.1 Build `<KindTile>` at `apps/orchestrator/src/modules/appointment/components/KindTile.tsx`. Props: `{ kind: AppointmentKind; size?: 'sm' | 'md' }`. Renders a subtle color-mix background tile per kind with the matching lucide icon. Tests: each kind maps to expected tint + icon
-- [ ] 6.2 Build `<AppointmentRow>` at `apps/orchestrator/src/modules/appointment/components/AppointmentRow.tsx`. Props: `{ appointment: AppointmentRead; variant: 'upcoming' | 'history' }`. Composes `<KindTile>` + title + (history variant adds status Badge) + Dutch-locale time/location/modality line + participants strip (lead first, max 3, `+N` overflow). NO inline actions / no menus
-- [ ] 6.3 Build `<AppointmentsSection>` at `apps/orchestrator/src/modules/appointment/components/AppointmentsSection.tsx`. Props: `{ upcoming: AppointmentRead[]; history: AppointmentRead[] }`. Upcoming section always expanded + count. History section collapsible (default closed). Both empty → renders shared `EmptyState`
+- [ ] 6.1 DELETE `apps/orchestrator/src/routes/_auth/tasks.tsx` (single-file placeholder route)
+- [ ] 6.2 DELETE `apps/orchestrator/src/modules/tasks/` directory entirely (`TasksPage.tsx`, `tasksPort.ts`, placeholder adapter, `types.ts`, `__tests__/`)
 
-## 7. Frontend: inbox module — sort registry + hooks + query
+## 7. Frontend: tasks module — query hook + types
 
-Lives under `apps/orchestrator/src/modules/inbox/`. Per D19, the inbox is a task list — no polymorphism, no dispatcher.
+Lives under `apps/orchestrator/src/modules/tasks/` (new dir, after task 6.2 deleted the placeholder).
 
-- [ ] 7.1 Create `modules/inbox/sorts/index.ts` exporting `InboxSortStrategy` type `{ id, label, queryParams }` and readonly `inboxSortStrategies` array
-- [ ] 7.2 Create `modules/inbox/sorts/nextAttention.ts` — id `next_attention`, label via `t('inbox.sort.next_attention')`, `queryParams()` returns `{ order_by: 'due_at', order: 'asc' }`
-- [ ] 7.3 Create `modules/inbox/sorts/newlyAdded.ts` — id `newly_added`, label via `t('inbox.sort.newly_added')`, `queryParams()` returns `{ order_by: 'created_at', order: 'desc' }`
-- [ ] 7.4 Create `modules/inbox/useSelectedInboxSort.ts` — reads `?sort=` via TanStack Router `useSearch` synchronously, returns active strategy on first render (no flash). Unknown id → fallback to `next_attention` + `console.warn`. `setSort(id)` calls `navigate({ search: prev => ({ ...prev, sort: id }) })`
-- [ ] 7.5 Create `modules/inbox/useInboxQuery.ts` — `useInfiniteQuery` wrapper over `GET /tasks` keyed `[...tasksListKeyPrefix, { sort }]`. Sets `getNextPageParam` based on `total_pages`. Returns flattened `TaskRead[]` + `hasNextPage` + `fetchNextPage`
-- [ ] 7.6 Create `modules/inbox/types.ts` — re-exports typegen-derived `TaskRead`, `PatientInlineSummary`. Local helpers: `dueLabel(task): string` (relative-time copy "vandaag" / "morgen" / "over 3 dagen" / "verlopen 2 dagen" / "geen deadline")
+- [ ] 7.1 Create `modules/tasks/types.ts` — re-exports typegen-derived `TaskItem`, `AppointmentPayload`, `PatientInlineSummary`
+- [ ] 7.2 Create `modules/tasks/dueLabel.ts` — `dueLabel(item): string` helper (relative-time copy "vandaag X uur" / "morgen X uur" / "over N dagen"). Pure function, no React
+- [ ] 7.3 Create `modules/tasks/useTasksQuery.ts` — `useQuery` wrapper over `GET /tasks` keyed `tasksListKeyPrefix`. Single page (no `useInfiniteQuery`). Returns `TaskItem[]` + `isLoading` + `isError`. No `?sort=` param sent
 
-## 8. Frontend: inbox module — row + list components
+## 8. Frontend: tasks module — row + list components
 
-- [ ] 8.1 Create `modules/inbox/TaskInboxRow.tsx` — composes generic `<InboxRow>` with task bindings: `<Avatar tintBy={task.patient.id}>` initials from `task.patient.family_name` + `given_name`, `family, given` as primary line, secondary line = `INSZ · TaskKind label · dueLabel(task)`. Trailing slot:
-  - priority Badge (variant: `urgent`→destructive, `high`→warning, `normal|low`→muted)
-  - status Badge (muted, ONLY rendered when `task.status !== 'open'`, Dutch label per status)
-- [ ] 8.2 `onSelect → navigate({ to: '/_auth/inbox/p/$patientId', params: { patientId: task.patient.id } })`. Below `md` breakpoint, navigate to `/_auth/patients/$patientId` (standalone) instead — `useMediaQuery` hook reads viewport
-- [ ] 8.3 Create `modules/inbox/InboxList.tsx` — composes:
-  - PageHeader with title `t('inbox.title')` + sub `t('inbox.subtitle')`
-  - Filter row: search Input (placeholder via `t()`), Status Select + Priority Select dropdowns (v1 stub — inputs render but only sort tabs drive query; filter wiring is task-7-follow-up)
-  - Sort tabs via `useSelectedInboxSort` (underline Tabs primitive)
-  - List body — `useInboxQuery` → maps `TaskRead[]` through `<TaskInboxRow>`
-  - `"Meer laden"` button while `hasNextPage`
-  - Pager strip
-  - Empty state via shared `<EmptyState>` — role-aware copy (`t('inbox.empty.caregiver.*')` vs `t('inbox.empty.admin.*')`)
-- [ ] 8.4 Realtime topic registration on `<InboxList>` is a SEAM ONLY (commented placeholder) — actual topic lands in BL-076. No-op for v1
+- [ ] 8.1 Create `modules/tasks/components/KindTile.tsx` — `<KindTile>` with props `{ kind: AppointmentKind; size?: 'sm' | 'md' }`. Renders subtle color-mix background tile + matching lucide icon. Tests: each kind maps to expected tint + icon
+- [ ] 8.2 Create `modules/tasks/TaskRow.tsx` — flat clickable row built directly (no `<InboxRow>` abstraction):
+  - **Leading**: `<Avatar tintBy={item.patient.id}>` initials from `item.patient.family_name` + `given_name`
+  - **Primary**: `family, given`
+  - **Secondary** (muted): `INSZ · <t('appointment:kind.<value>') via cross-ns lookup> · dueLabel(item)`
+  - **Trailing**: `<KindTile kind={item.payload.kind} size="sm" />`
+  - **Chevron** at right
+  - **Click**: `navigate({ to: '/_auth/tasks/p/$patientId', params: { patientId: item.patient.id } })`. Below `md`, navigate to `/_auth/patients/$patientId` standalone — `useMediaQuery` reads viewport
+  - No per-row kebab. No checkbox. No inline action
+- [ ] 8.3 Create `modules/tasks/TaskList.tsx`:
+  - PageHeader with title `t('tasks:title')` ("Taken") + sub `t('tasks:subtitle')` (optional)
+  - `useTasksQuery` → maps `TaskItem[]` through `<TaskRow>`
+  - Empty state via `<EmptyState>` (used directly): `icon`, `title=t('tasks:empty.title')` ("Geen taken"), `body=t('tasks:empty.body')` ("Nieuwe taken verschijnen automatisch")
+  - NO filter row, NO sort tabs, NO counter, NO pager, NO "Meer laden" button (per D-FLAT + D-NOSORT)
+- [ ] 8.4 Realtime topic registration on `<TaskList>` is a SEAM ONLY (commented placeholder). No-op for v1
 
-## 9. Frontend: patient module — detail components (unchanged from item-reframe)
+## 9. Frontend: patient module — detail components
 
-- [ ] 9.1 Build `<PatientDetailHeader>` at `modules/patient/components/PatientDetailHeader.tsx`. Props `{ patient: PatientRead; actions?: ReactNode }`. Avatar + h2 name + INSZ default Badge + DOB + org soft Badge + actions slot. Surface-agnostic
-- [ ] 9.2 Build `<PatientDetailView>` at `modules/patient/components/PatientDetailView.tsx`. Props per D16: `{ patient; defaultTab?; actions?; onClose?; onEdit?; onDelete? }`. Composes `<PatientDetailHeader>` + `<CareTeamSlot patientId={patient.id} />` (self-fetching) + `<EntityDetailTabs>` underline Tabs with `Metingen` / `Labresultaten` / `Afspraken` triggers + tab bodies. Surface-agnostic — MUST NOT import from `@tanstack/react-router` or any inbox module. Verified by `eslint-no-router-imports` test
+- [ ] 9.1 Build `<PatientDetailHeader>` at `modules/patient/components/PatientDetailHeader.tsx`. Props `{ patient: PatientRead; actions?: ReactNode }`. Avatar + h2 name + INSZ default Badge + DOB + org soft Badge + actions slot. Surface-agnostic — no router import
+- [ ] 9.2 Build `<PatientDetailView>` at `modules/patient/components/PatientDetailView.tsx`. Props per D16: `{ patient; defaultTab?; actions?; onClose?; onEdit?; onDelete? }`. Composes `<PatientDetailHeader>` + `<CareTeamSlot patientId={patient.id} />` + `<EntityDetailTabs>` underline Tabs with TWO tabs `Metingen` / `Labresultaten` (no Afspraken) + two tab bodies (both render `<EmptyState>`). Surface-agnostic — MUST NOT import from `@tanstack/react-router` or any tasks module. Verified by `eslint-no-router-imports` test
 - [ ] 9.3 Build `<PatientKebab>` at `modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside
-- [ ] 9.4 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx`, `PatientsColumns.tsx` after confirming task 0.6 found no external consumers
+- [ ] 9.4 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx`, `PatientsColumns.tsx` after confirming task 0.4 found no external consumers
 
-## 10. Frontend: routes
+## 10. Frontend: routes (new dirs, created after task 6 deletion)
 
-- [ ] 10.1 Create `routes/_auth/inbox/route.tsx` (parent layout) — renders `<MasterDetailLayout master={<InboxList />} detail={<Outlet />} masterCollapsed={hasPatientIdParam} onMasterCollapsedChange={setLocalCollapsed}>`. Local `masterHidden` state owned here (not URL). `validateSearch` accepts `sort?: 'next_attention' | 'newly_added'`
-- [ ] 10.2 Create `routes/_auth/inbox/index.tsx` (child index) — empty-state right pane ("Selecteer een item") via shared `EmptyState`. Master is full-width
-- [ ] 10.3 Create `routes/_auth/inbox/p/$patientId/index.tsx` (child detail) — fetches patient via existing `usePatient`. Renders `<PatientDetailView patient={...} actions={<PatientKebab patient={...} />} onClose={() => navigate({ to: '/_auth/inbox' })} />`. Master collapses to 320px rail
-- [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — now mounts new `<PatientDetailView>` inside `<EntityDetailPage back={{ to: '/_auth/inbox' }}>` chrome. Used by admin/users links, care-team links, mobile fallback (per D17), and any non-inbox-context entry
-- [ ] 10.5 DELETE `routes/_auth/patients/index.tsx` (per D24). Verify with task 0.6 that no internal callers depend on this URL
-- [ ] 10.6 DELETE `routes/_auth/tasks.tsx` AND `modules/tasks/*` (TasksPage, tasksPort, placeholder adapter, types). The placeholder is fully replaced by the new inbox module
-- [ ] 10.7 Update sidebar (`components/layout/navItems.ts` or `AppSidebar.tsx`) — REMOVE `"Mijn patiënten"` AND `"Taken"` entries. ADD single `"Inbox"` entry pointing to `/_auth/inbox` with lucide `inbox` icon
-
-## 10. i18n
+- [ ] 10.1 Create `routes/_auth/tasks/route.tsx` (parent layout) — renders `<MasterDetailLayout master={<TaskList />} detail={<Outlet />} masterCollapsed={hasPatientIdParam} onMasterCollapsedChange={setLocalCollapsed}>`. Local `masterHidden` state owned here (not URL). No `validateSearch` for `?sort=` (single fixed sort)
+- [ ] 10.2 Create `routes/_auth/tasks/index.tsx` (child index) — empty-state right pane ("Selecteer een taak") via shared `<EmptyState>`. Master is full-width
+- [ ] 10.3 Create `routes/_auth/tasks/p/$patientId/index.tsx` (child detail) — fetches patient via existing `usePatient`. Renders `<PatientDetailView patient={...} actions={<PatientKebab patient={...} />} onClose={() => navigate({ to: '/_auth/tasks' })} />`. Master collapses to 320px rail
+- [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — now mounts new `<PatientDetailView>` inside `<EntityDetailPage back={{ to: '/_auth/tasks' }}>` chrome. Used by admin/users links, care-team links, mobile fallback (per D17)
+- [ ] 10.5 DELETE `routes/_auth/patients/index.tsx` (per D24). Verify with task 0.4 that no internal callers depend on this URL
+- [ ] 10.6 Update sidebar (`components/layout/navItems.ts` or `AppSidebar.tsx`) — REMOVE `"Mijn patiënten"` entry. The old placeholder `"Taken"` was already removed when `routes/_auth/tasks.tsx` was deleted (task 6.1) — ADD single `"Taken"` entry pointing to `/_auth/tasks` with lucide `inbox` icon (icon-name only). Ensure exactly one nav item with that label exists post-change
 
 ## 11. i18n
 
-- [ ] 11.1 Create `nl/inbox.json`: `inbox.title`, `inbox.subtitle`, `inbox.empty.caregiver.headline`, `inbox.empty.caregiver.hint`, `inbox.empty.admin.headline`, `inbox.empty.admin.hint`, `inbox.empty.selection.headline`, `inbox.empty.selection.hint`, `inbox.load_more`, `inbox.sort.next_attention`, `inbox.sort.newly_added`, `inbox.unknown_kind` (with `{resourceType}` placeholder), `inbox.filter.team`, `inbox.filter.status`, `inbox.search_placeholder`, sidebar nav label `nav.inbox`
-- [ ] 11.2 Extend `nl/patient-profile-ui.json`: `detail.tab.measurements`, `detail.tab.lab_results`, `detail.tab.appointments`, `detail.tab.empty.measurements.headline/hint`, `detail.tab.empty.lab_results.headline/hint`, `detail.kebab.history`, `detail.kebab.history_dialog_title`
-- [ ] 11.3 Create `nl/patient-appointments.json`: `appointments.upcoming.title`, `appointments.history.title`, `appointments.empty.headline`, `appointments.empty.hint`, status chip labels (10 FHIR values), participants overflow `+N`. Plus kind-icon labels (`kind.consultation/lab/imaging/procedure/other`) and modality labels (`modality.online/on_site`) — shared with inbox row rendering
-- [ ] 11.4 Remove i18n keys for dropped `Overzicht` / `Zorgteam` / `Geschiedenis` tab labels (preserve `Geschiedenis` kebab + dialog keys). Remove `Mijn patiënten` sidebar nav key
+- [ ] 11.1 Create `nl/tasks.json` namespace: `title` ("Taken"), `subtitle` (optional), `empty.title` ("Geen taken"), `empty.body` ("Nieuwe taken verschijnen automatisch"), `due.today` ("vandaag {time}"), `due.tomorrow` ("morgen {time}"), `due.in_days` ("over {n} dagen"), `selection.title` ("Selecteer een taak"), `selection.body` (optional), `nav.tasks` ("Taken")
+- [ ] 11.2 Create `nl/appointment.json` namespace: `kind.consultation`, `kind.lab`, `kind.imaging`, `kind.procedure`, `kind.other`, `modality.online`, `modality.on_site`. Owned by appointment domain. `<TaskRow>` calls `t('appointment:kind.<value>')` via cross-namespace lookup — no duplication
+- [ ] 11.3 Extend `nl/patient-profile-ui.json`: `detail.tab.measurements`, `detail.tab.lab_results`, `detail.tab.empty.measurements.title/body`, `detail.tab.empty.lab_results.title/body`, `detail.kebab.history`, `detail.kebab.history_dialog_title`. Remove any prior `detail.tab.appointments` key (no Afspraken tab)
+- [ ] 11.4 Remove i18n keys for dropped `Overzicht` / `Zorgteam` / `Geschiedenis` tab labels (preserve `Geschiedenis` kebab + dialog keys). Remove `Mijn patiënten` sidebar nav key. Remove old placeholder `Taken` key if its value differed
 - [ ] 11.5 Verify no raw strings outside `t()` in changed files
 
 ## 12. Frontend tests
 
 Reusable primitives:
 - [ ] 12.1 `MasterDetailLayout.test.tsx`: state 1 renders master only; state 2 (detail prop set) renders 320px master + detail; `masterCollapsed=true` hides master and shows floating reopen button; mobile fallback (<md) renders master full-width + skips detail
-- [ ] 12.2 `InboxRow.test.tsx`: renders all slots; onSelect on click + Enter/Space; `selected` highlight; `compact` reduces padding
-- [ ] 12.3 `Avatar.test.tsx`: same `tintBy` → same colour-class twice; missing `tintBy` → default tint; never renders `<img>`
+- [ ] 12.2 `Avatar.test.tsx`: same `tintBy` → same colour-class twice; missing `tintBy` → default tint; never renders `<img>`
 
-Appointment primitives:
-- [ ] 12.4 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon
-- [ ] 12.5 `AppointmentRow.test.tsx`: kind tile + title + formatted local-time line + modality icon + participants strip with `+N` overflow; History variant shows status Badge; mock `Europe/Brussels` timezone
-- [ ] 12.6 `AppointmentsSection.test.tsx`: Upcoming always expanded; History collapsed by default and expands on click; both-empty renders `EmptyState`
-
-Inbox module:
-- [ ] 12.7 `nextAttention.test.ts` + `newlyAdded.test.ts`: `queryParams()` shape
-- [ ] 12.8 `useSelectedInboxSort.test.ts`: returns default when search param absent; honours valid `?sort=`; falls back + warn on unknown; resolves synchronously on first render (no flash)
-- [ ] 12.9 `useInboxQuery.test.ts`: TanStack `useInfiniteQuery` integration; `fetchNextPage` advances `page`; key changes with sort
-- [ ] 12.10 `TaskInboxRow.test.tsx`: composes `<InboxRow>` with `Avatar tintBy={task.patient.id}`, `family, given` as primary, secondary line includes INSZ + kind label + dueLabel relative-time copy; priority Badge variant matches priority (urgent→destructive, high→warning, normal|low→muted); status Badge only renders when `status !== 'open'`; click on viewport ≥md navigates to `/_auth/inbox/p/$id`; click on <md navigates to `/_auth/patients/$id`
-- [ ] 12.11 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy for vandaag / morgen / over N dagen / verlopen N dagen / geen deadline
-- [ ] 12.12 `InboxList.test.tsx`: empty list renders `EmptyState` with role-aware copy (mock caregiver vs admin role); `useInboxQuery` with 0 pages → empty; with 1 page → list; with 2 pages → "Meer laden" visible + click fetches next; switching sort updates URL `?sort=`; deep-link `?sort=newly_added` does not flash default sort
+Tasks module:
+- [ ] 12.3 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon
+- [ ] 12.4 `useTasksQuery.test.ts`: single-page `useQuery` integration; key matches `tasksListKeyPrefix`; no `?sort=` param sent
+- [ ] 12.5 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy for `vandaag X uur` / `morgen X uur` / `over N dagen`
+- [ ] 12.6 `TaskRow.test.tsx`: `<Avatar tintBy={item.patient.id}>`, `family, given` as primary, secondary line includes INSZ + kind label (via cross-ns lookup) + dueLabel; trailing slot renders `<KindTile>`; click on viewport ≥md navigates to `/_auth/tasks/p/$patientId`; click on <md navigates to `/_auth/patients/$patientId`
+- [ ] 12.7 `TaskList.test.tsx`: empty list renders `<EmptyState>` with fixed copy ("Geen taken" / "Nieuwe taken verschijnen automatisch") — same for caregiver + admin role mocks; populated list renders one `<TaskRow>` per `TaskItem`; no counter, no pager, no `"Meer laden"` button anywhere in the DOM
 
 Patient module:
-- [ ] 12.14 `PatientDetailHeader.test.tsx`: renders all demographics fields; takes an `actions` slot; surface-agnostic (no router import)
-- [ ] 12.15 `PatientDetailView.test.tsx`: composes header + `<CareTeamSlot>` + clinical Tabs; default tab `Metingen`; Metingen + Labresultaten render `<EmptyState>`; tabs switch; surface-agnostic (no router import); `onClose` / `onEdit` / `onDelete` invoked
+- [ ] 12.8 `PatientDetailHeader.test.tsx`: renders all demographics fields; takes an `actions` slot; surface-agnostic (no router import)
+- [ ] 12.9 `PatientDetailView.test.tsx`: composes header + `<CareTeamSlot>` + clinical Tabs with TWO triggers (`Metingen`, `Labresultaten`) only; default tab `Metingen`; both tabs render `<EmptyState>`; tabs switch; surface-agnostic (no router import); `onClose` / `onEdit` / `onDelete` invoked; NO `Afspraken` trigger anywhere
 
 Routes:
-- [ ] 12.16 `routes/_auth/inbox/route.test.tsx`: URL `/_auth/inbox` → master full-width, empty-state on right; URL `/_auth/inbox/p/$id` → master 320px + `<PatientDetailView>` loaded; master-hidden toggle is local (URL unchanged); browser back from detail → state 1
-- [ ] 12.17 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<PatientDetailView>` inside `<EntityDetailPage>` chrome; `back` link points to `/_auth/inbox`
-- [ ] 12.18 Sidebar nav test: `"Inbox"` item present, points to `/_auth/inbox`; `"Mijn patiënten"` item ABSENT
+- [ ] 12.10 `routes/_auth/tasks/route.test.tsx`: URL `/_auth/tasks` → master full-width, empty-state on right; URL `/_auth/tasks/p/$id` → master 320px + `<PatientDetailView>` loaded; master-hidden toggle is local (URL unchanged); browser back from detail → state 1
+- [ ] 12.11 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<PatientDetailView>` inside `<EntityDetailPage>` chrome; `back` link points to `/_auth/tasks`
+- [ ] 12.12 Sidebar nav test: single `"Taken"` item present, points to `/_auth/tasks`; `"Mijn patiënten"` item ABSENT; no duplicate `"Taken"` from the placeholder
 
 ## 13. Verification
 
 - [ ] 13.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
 - [ ] 13.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
-- [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Inbox"` item visible (no `"Mijn patiënten"`). Open `/_auth/inbox` → state 1 (inbox full, empty seeded → empty-state copy). Switch sort, confirm URL updates + list reorders. Deep-link `/_auth/inbox?sort=newly_added` directly, confirm no default-flash. Click an item → navigate to `/_auth/inbox/p/$id` → state 2 (compact rail + `<PatientDetailView>`). Activate Afspraken tab → Upcoming + History sections render. Kebab `Geschiedenis` dialog opens. Toggle master hidden → state 3 (detail full-width + floating reopen). Reopen → state 2. Close detail → state 1. Browser back/forward preserves URL state. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail (no inbox column)
-- [ ] 13.4 Manual smoke (mobile <md): viewport ~375px wide. Open `/_auth/inbox` → list full-width, no detail pane. Click item → full-page nav to `/_auth/patients/$id` rendering standalone detail. Browser back → inbox. No master-hidden toggle visible
-- [ ] 13.5 Manual smoke (seeded tasks): after running `seed_tasks.py`, `/_auth/inbox` shows mix of past-due (red priority chip) / due-today / undated tasks per patient. Sort `Volgende afspraak` puts past-due + due-today first; switch to `Nieuw vs oud` and confirm reorder + URL update
-- [ ] 13.6 Run `/verify` for both apps before reporting done
+- [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Taken"` item visible (no `"Mijn patiënten"`, exactly one `"Taken"`). Open `/_auth/tasks` → state 1 (task list full, no seed → empty-state copy `"Geen taken"`). Click an item (once data exists) → navigate to `/_auth/tasks/p/$id` → state 2 (compact rail + `<PatientDetailView>`). Patient detail shows TWO tabs (Metingen + Labresultaten), both empty-state. Kebab `Geschiedenis` dialog opens. Toggle master hidden → state 3 (detail full-width + floating reopen). Reopen → state 2. Close detail → state 1. Browser back/forward preserves URL state. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail (no master column)
+- [ ] 13.4 Manual smoke (mobile <md): viewport ~375px wide. Open `/_auth/tasks` → list full-width, no detail pane. Click item → full-page nav to `/_auth/patients/$id` rendering standalone detail. Browser back → tasks list. No master-hidden toggle visible
+- [ ] 13.5 Manual smoke (when appointments exist): create an appointment via `POST /appointments` (e.g. via API call or test fixture) with `starts_at = now() + 1 day`, caller as `lead` participant → row appears in `/_auth/tasks`. Create one with `starts_at = now() + 5 days` → does NOT appear. Create one without caller as participant → does NOT appear. Append `?within=7d` to URL — no effect on results (param silently ignored)
