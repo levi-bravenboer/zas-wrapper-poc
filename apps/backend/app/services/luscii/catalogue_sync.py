@@ -19,7 +19,7 @@ import logging
 from collections.abc import Callable, Hashable, Iterable
 from typing import TypeVar
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.luscii import LusciiClient
@@ -28,6 +28,7 @@ from app.db.models.luscii import (
     LusciiInstrumentLocalisationRow,
     LusciiItemResponseLocalisationRow,
 )
+from app.services.luscii.catalogue_store import replace_catalogue
 
 logger = logging.getLogger(__name__)
 
@@ -87,45 +88,37 @@ async def sync_luscii_catalogue(session: AsyncSession, client: LusciiClient) -> 
             response_dupes,
         )
 
-    await session.execute(delete(LusciiInstrumentLocalisationRow))
-    await session.execute(delete(LusciiInstrumentItemLocalisationRow))
-    await session.execute(delete(LusciiItemResponseLocalisationRow))
-
-    session.add_all(
-        LusciiInstrumentLocalisationRow(
-            instrument_id=loc.instrument_id,
-            instrument_version=loc.instrument_version,
-            locale=loc.locale,
-            name=loc.name,
-            unit=loc.unit,
-        )
-        for loc in instrument_locs
+    counts = await replace_catalogue(
+        session,
+        instrument_rows=(
+            LusciiInstrumentLocalisationRow(
+                instrument_id=loc.instrument_id,
+                instrument_version=loc.instrument_version,
+                locale=loc.locale,
+                name=loc.name,
+                unit=loc.unit,
+            )
+            for loc in instrument_locs
+        ),
+        item_rows=(
+            LusciiInstrumentItemLocalisationRow(
+                item_id=loc.item_id,
+                item_version=loc.item_version,
+                locale=loc.locale,
+                title=loc.title,
+                subtitle=loc.subtitle,
+                unit=loc.unit,
+            )
+            for loc in item_locs
+        ),
+        response_rows=(
+            LusciiItemResponseLocalisationRow(
+                item_response_id=loc.item_response_id,
+                locale=loc.locale,
+                response_text=loc.response_text,
+            )
+            for loc in response_locs
+        ),
     )
-    session.add_all(
-        LusciiInstrumentItemLocalisationRow(
-            item_id=loc.item_id,
-            item_version=loc.item_version,
-            locale=loc.locale,
-            title=loc.title,
-            subtitle=loc.subtitle,
-            unit=loc.unit,
-        )
-        for loc in item_locs
-    )
-    session.add_all(
-        LusciiItemResponseLocalisationRow(
-            item_response_id=loc.item_response_id,
-            locale=loc.locale,
-            response_text=loc.response_text,
-        )
-        for loc in response_locs
-    )
-    await session.flush()
-
-    counts = {
-        "instrument_localisations": len(instrument_locs),
-        "instrument_item_localisations": len(item_locs),
-        "item_response_localisations": len(response_locs),
-    }
     logger.info("luscii catalogue synced: %s", counts)
     return counts
