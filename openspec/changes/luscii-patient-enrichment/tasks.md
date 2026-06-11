@@ -59,5 +59,5 @@
 
 ## 8. Verify
 
-- [ ] 8.1 Run `/verify` (backend + orchestrator) and quote results
+- [x] 8.1 Run `/verify` (backend + orchestrator) and quote results (2026-06-11: backend lint "All checks passed!", pyright "0 errors, 0 warnings", pytest "691 passed in 62.44s"; orchestrator lint+typecheck clean, vitest "Test Files 112 passed (112), Tests 522 passed (522)")
 - [ ] 8.2 Manual smoke with a real token in `.env`: link a known Luscii patient, view merged data, unlink; confirm unconfigured behaviour after removing the token
