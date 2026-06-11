@@ -141,6 +141,25 @@ The backend SHALL persist the three Luscii localisation catalogues in local tabl
 - **WHEN** `GET /patients/{id}/luscii-data` is served
 - **THEN** no upstream catalogue endpoint is called (labels come from the local tables only)
 
+### Requirement: Catalogue snapshots export/import as versioned JSON
+
+The backend SHALL support dumping the synced catalogue tables into per-locale JSON snapshot files under `apps/backend/data/luscii_catalogue/<locale>.json` (committed to version control; `moon run backend:luscii-export`) and full-replacing the tables from those files (`moon run backend:luscii-import`) so a fresh checkout loads the catalogue in seconds without a token or the ~30-45 minute live sync. Snapshot rows SHALL be sorted by natural key and serialized one per line (row-granular git diffs); the locale lives at file level only. Export SHALL remove stale `<locale>.json` files for locales no longer present and SHALL error when the tables are empty. Import SHALL validate each file (schema, filename/locale agreement) and SHALL error when the snapshot directory has no files.
+
+#### Scenario: Export/import round trip restores the tables
+
+- **WHEN** the tables are exported, mutated, and then imported from the snapshot files
+- **THEN** the tables contain exactly the exported rows (full replace, locale reattached from the file)
+
+#### Scenario: Import without snapshots errors clearly
+
+- **WHEN** `backend:luscii-import` runs with no `<locale>.json` files present
+- **THEN** it exits with an error pointing at `backend:luscii-export` / version control, and the tables are untouched
+
+#### Scenario: Snapshot file disagrees with its filename
+
+- **WHEN** `en.json` declares `"locale": "nl"`
+- **THEN** the import refuses the file with a clear error
+
 ### Requirement: Luscii data is display-only (non-MDR invariant)
 
 The aggregation payload SHALL contain only values, labels, units, timestamps, identifiers, and Luscii's own status fields, passed through unmodified. The backend MUST NOT compute thresholds, scores, rankings, flags, trends, or any derived clinical signal from measurement values. Any future change adding such a field MUST first add an entry to `openspec/mdr-watchlist.md`.

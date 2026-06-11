@@ -55,6 +55,8 @@ Every `GET /patients/{id}/luscii-data` request fans out to Luscii for patient da
 
 Three tables (`luscii_instrument_localisations`, `luscii_instrument_item_localisations`, `luscii_item_response_localisations`) hold the localisation catalogues — vendor reference data: no tenant scope, no PII, plain `Entity` rows, hard-deleted on re-sync (full replace in one transaction). `scripts/sync_luscii_catalogue.py` (moon task `backend:luscii-sync`, host-run, token from `.env`) fetches all three to exhaustion (~1000 requests, minutes) — run rarely, the catalogue is near-static. The request-path decoder does key-filtered `IN` selects for exactly the instruments/items/response-ids present in the patient's window. Unsynced catalogue degrades to raw values (never an error). The client's page-cap stays 50 for request-path endpoints; catalogue fetches get a 2000-page budget (sync-only callers).
 
+Amendment (2026-06-11) — versioned JSON snapshots: because the live sync costs ~30-45 minutes of cursor pagination, the synced tables export to per-locale JSON files under `apps/backend/data/luscii_catalogue/<locale>.json` (committed; rows natural-key-sorted, one per line for row-granular diffs) via `backend:luscii-export`, and any checkout reloads them in seconds via `backend:luscii-import` — no token needed. The live sync remains the only path that talks to Luscii; snapshots are how the result travels.
+
 ### D7 — Display-only invariant is spec-level
 
 The aggregation payload contains only values, labels, units, timestamps, and Luscii's own status fields. No computed fields that rank, score, threshold, or flag values. This is a named requirement in `luscii-patient-data` so any future change touching it trips the MDR watchlist review.

@@ -54,6 +54,8 @@
 - [x] 9.2 `sync_luscii_catalogue` service (full replace) + `scripts/sync_luscii_catalogue.py` + moon task `backend:luscii-sync`; client catalogue fetches get a 2000-page budget
 - [x] 9.3 Decoder reads key-filtered rows from the local tables; request path makes only 3 upstream calls; unsynced catalogue degrades to raw values
 - [x] 9.4 Tests: sync populate + full-replace semantics; aggregation tests seed DB catalogue rows; assert no upstream catalogue calls on the request path
+- [x] 9.5 Versioned JSON snapshots (added 2026-06-11): `backend:luscii-export` dumps per-locale files under `apps/backend/data/luscii_catalogue/`, `backend:luscii-import` full-replaces from them (no token, seconds); round-trip + validation tests
+- [ ] 9.6 Run the export after the live sync lands and commit the snapshot files
 
 ## 8. Verify
 
