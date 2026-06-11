@@ -18,6 +18,7 @@ from app.services.luscii.catalogue_snapshot import (
     SnapshotError,
     export_catalogue_snapshots,
     import_catalogue_snapshots,
+    import_catalogue_snapshots_if_empty,
 )
 
 
@@ -204,6 +205,46 @@ async def test_import_rejects_locale_filename_mismatch(
 
     with pytest.raises(SnapshotError, match="filename and payload must agree"):
         await import_catalogue_snapshots(db_session, tmp_path)
+
+
+async def test_if_empty_imports_into_empty_tables(
+    db_session: AsyncSession, tmp_path: Path
+) -> None:
+    await _seed_catalogue(db_session)
+    await export_catalogue_snapshots(db_session, tmp_path)
+    for model in (
+        LusciiInstrumentLocalisationRow,
+        LusciiInstrumentItemLocalisationRow,
+        LusciiItemResponseLocalisationRow,
+    ):
+        await db_session.execute(delete(model))
+    await db_session.commit()
+
+    counts = await import_catalogue_snapshots_if_empty(db_session, tmp_path)
+    await db_session.commit()
+
+    assert counts is not None
+    assert await _counts(db_session) == (2, 1, 1)
+
+
+async def test_if_empty_skips_populated_tables(
+    db_session: AsyncSession, tmp_path: Path
+) -> None:
+    # Any populated table means a sync or import already ran — the boot-time
+    # seed must never overwrite it (the snapshots could be older).
+    await _seed_catalogue(db_session)
+    await export_catalogue_snapshots(db_session, tmp_path)
+
+    assert await import_catalogue_snapshots_if_empty(db_session, tmp_path) is None
+    assert await _counts(db_session) == (2, 1, 1)
+
+
+async def test_if_empty_degrades_without_snapshots(
+    db_session: AsyncSession, tmp_path: Path
+) -> None:
+    # No snapshot files: warn-and-skip, never raise — seeding must succeed.
+    assert await import_catalogue_snapshots_if_empty(db_session, tmp_path) is None
+    assert await _counts(db_session) == (0, 0, 0)
 
 
 async def test_import_rejects_malformed_file(

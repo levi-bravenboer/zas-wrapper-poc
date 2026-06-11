@@ -28,7 +28,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, ValidationError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.luscii import (
@@ -200,6 +200,31 @@ async def export_catalogue_snapshots(
             logger.info("luscii snapshot removed stale %s", stale.name)
 
     return counts
+
+
+async def import_catalogue_snapshots_if_empty(
+    session: AsyncSession, directory: Path = DEFAULT_SNAPSHOT_DIR
+) -> dict[str, int] | None:
+    """Boot-time variant (seed_all): import only into empty tables.
+
+    The seed runs on every container boot, so this must stay cheap and must
+    never clobber a populated catalogue (e.g. a fresher manual sync). Missing
+    or empty snapshot directory degrades to a warning — the app works either
+    way, measurements just show raw values until an import runs.
+    """
+    for model in (
+        LusciiInstrumentLocalisationRow,
+        LusciiInstrumentItemLocalisationRow,
+        LusciiItemResponseLocalisationRow,
+    ):
+        if await session.scalar(select(func.count()).select_from(model)):
+            logger.info("luscii catalogue already populated — snapshot import skipped")
+            return None
+    try:
+        return await import_catalogue_snapshots(session, directory)
+    except SnapshotError as exc:
+        logger.warning("luscii catalogue snapshot import skipped: %s", exc)
+        return None
 
 
 async def import_catalogue_snapshots(
