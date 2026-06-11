@@ -126,7 +126,7 @@ Secrets MUST NOT be committed. `.env` files are gitignored.
 
 The stack runs fine without any Luscii setup — the patient profile's Luscii panel just shows "not configured". To go live, add `BACKEND_LUSCII_API_TOKEN=<bearer token>` to `apps/backend/.env` (compose feeds this file into `zas_backend` via `env_file`, so one gitignored file serves both the container and host-side scripts) and recreate the backend (`docker compose up -d backend` or `moon run :up`).
 
-The measurement-label catalogue seeds itself: on boot, `seed_all` imports the committed snapshots from `apps/backend/data/luscii_catalogue/` whenever the catalogue tables are empty (no token needed). `moon run backend:luscii-import` forces a re-import (e.g. after pulling newer snapshots); `moon run backend:luscii-sync` (~30-45 min, token required) refetches from the live API, followed by `backend:luscii-export` to refresh the committed snapshots.
+The measurement-label catalogue needs no manual step: every backend boot (so any `moon run :up`) runs `seed_all`, which imports the committed snapshots from `apps/backend/data/luscii_catalogue/` whenever the catalogue tables are empty (no token needed). The live `moon run backend:luscii-sync` (~30-45 min, token required) is only needed when you want a fresher catalogue than the committed snapshots — follow it with `backend:luscii-export` to update the snapshots in version control. `moon run backend:luscii-import` forces a re-import, e.g. after pulling newer snapshots.
 
 ## Ports
 
