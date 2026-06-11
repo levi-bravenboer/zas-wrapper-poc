@@ -20,7 +20,7 @@ moon run :install             # uv sync + pnpm install (host-side)
 moon run :up                  # boots zas_db + zas_backend + vite
 ```
 
-Defaults inside `zas_backend`: `BACKEND_ENV=dev`, CORS open to `http://localhost:5173`, HiX + Luscii adapters in `stub` mode, log level `INFO`. `production` boot refuses to start if `BACKEND_SESSION_SECRET_KEY` is the placeholder or `BACKEND_CORS_ORIGINS` is empty.
+Defaults inside `zas_backend`: `BACKEND_ENV=dev`, CORS open to `http://localhost:5173`, HiX adapter in `stub` mode, Luscii live iff `BACKEND_LUSCII_API_TOKEN` is set in `apps/backend/.env` (compose loads that file via `env_file`; unset ⇒ Luscii endpoints answer 503 `not_configured`), log level `INFO`. `production` boot refuses to start if `BACKEND_SESSION_SECRET_KEY` is the placeholder or `BACKEND_CORS_ORIGINS` is empty.
 
 Host-side env defaults live in `.env.example` and assume the dev DB on `localhost:5434` (host port; container-internal stays `5432`). Inside the container, compose overrides `BACKEND_DATABASE_URL` to `postgresql+asyncpg://zas:zas@db:5432/zas`.
 
@@ -81,9 +81,9 @@ Interactive API docs: <http://localhost:18000/docs> while `:up` is running.
 ## Architecture
 
 - **`app/`** — FastAPI app package. `create_app()` factory in `app/main.py` builds the application, wires settings, logging, error handlers, CORS, adapter stubs and readiness checks.
-- **`app/api/routers/`** — routers grouped by tag (`health`, `auth`, future `fhir`, `luscii`).
+- **`app/api/routers/`** — routers grouped by tag (`health`, `auth`, `patients` incl. Luscii link/data, future `fhir`).
 - **`app/core/`** — cross-cutting concerns: `settings`, `errors`, `logging`, `readiness`, `security`.
-- **`app/adapters/`** — external integrations. Each vendor (HiX, Luscii) has a `protocol.py` defining the seam plus `stub.py` for the PoC.
+- **`app/adapters/`** — external integrations. Each vendor has a `protocol.py` defining the seam; HiX ships a `stub.py` for the PoC, Luscii a live `http_client.py` (token-presence-driven).
 - **`app/schemas/`** — request / response Pydantic models. Future `view/` subdir holds the FHIR view-model DTOs.
 - **`app/services/`** — business logic. PoC scope keeps this small.
 
