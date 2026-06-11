@@ -1,0 +1,8 @@
+{
+  "locale": "en-us",
+  "instrument_localisations": [],
+  "instrument_item_localisations": [
+    {"item_id": "888d41d3-bb05-47a6-85ed-2ae9350f18ca", "item_version": "587171ab-1799-4efd-a41a-368a642698b0", "title": "Senden Sie Ihr Ergebnis", "unit": "Punkte"}
+  ],
+  "item_response_localisations": []
+}
