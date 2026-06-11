@@ -129,7 +129,12 @@ describe('LusciiPanel', () => {
   it('renders link form for unlinked patient and submits UUID', () => {
     const link = mockIdleMutations()
     useLusciiDataMock.mockReturnValue({
-      data: { state: 'not_linked', window_days: 30, planned_actions: [], unmatched_measurements: [] },
+      data: {
+        state: 'not_linked',
+        window_days: 30,
+        planned_actions: [],
+        unmatched_measurements: [],
+      },
       isLoading: false,
       error: null,
       refetch: vi.fn(),
@@ -156,7 +161,12 @@ describe('LusciiPanel', () => {
     })
     useUnlinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
     useLusciiDataMock.mockReturnValue({
-      data: { state: 'not_linked', window_days: 30, planned_actions: [], unmatched_measurements: [] },
+      data: {
+        state: 'not_linked',
+        window_days: 30,
+        planned_actions: [],
+        unmatched_measurements: [],
+      },
       isLoading: false,
       error: null,
       refetch: vi.fn(),

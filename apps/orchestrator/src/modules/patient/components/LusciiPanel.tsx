@@ -43,9 +43,7 @@ export function LusciiPanel({ patientId }: LusciiPanelProps): ReactElement {
 
   if (dataQuery.error) {
     if (isApiError(dataQuery.error) && dataQuery.error.code === NOT_CONFIGURED_CODE) {
-      return (
-        <LusciiCardMessage title={t('luscii.title')} message={t('luscii.notConfigured')} />
-      )
+      return <LusciiCardMessage title={t('luscii.title')} message={t('luscii.notConfigured')} />
     }
     return (
       <Card>
