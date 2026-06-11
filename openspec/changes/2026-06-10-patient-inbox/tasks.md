@@ -12,46 +12,29 @@
 - [x] 1.1 Built inbox prototype iterations under `prototypes/inbox/v*.html`. **Accepted: `v8.html`** per `prototypes/inbox/README.md`. v8 locks: admin-page chrome, 3-state master/detail layout (D15), surface-agnostic `<PatientDetailView>` mount pattern (D16). Subsequent design decisions (D-FLAT, D-NOSORT, D10 two-tabs) supersede the prototype's pager strip, sort tabs, and three-tab patient detail — the React build follows design.md, not the prototype, where they conflict. Prototype directory keeps the name `prototypes/inbox/` (archival artifact, not a concept reference)
 - [ ] 1.2 Confirm with the user that any future visual tweak lands as `vN+1.html` — never edit a prior version
 
-## 2. Backend: `appointment-base` capability
+## 2. Backend: `appointment-base` capability (data layer only — NO HTTP routes v1)
 
 - [ ] 2.1 Create enums at `app/core/enums/appointment.py`: `AppointmentKind`, `AppointmentStatus` (FHIR R4 — store `entered_in_error` symbol, serialise `entered-in-error`), `AppointmentModality`, `AppointmentParticipantRole`. Re-export from `app/core/enums/__init__.py`
-- [ ] 2.2 Create ORM model `app/domain/appointment/appointment.py::Appointment` — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id`, `pathway_block_instance_id` (nullable, NO FK in v1 per D18), `title`, `description`, `kind`, `starts_at`, `ends_at`, `modality`, `location_text`, `status`. Add `CHECK (ends_at > starts_at)`
+- [ ] 2.2 Create ORM model `app/domain/appointment/appointment.py::Appointment` — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id`, `pathway_block_instance_id` (nullable, NO FK in v1 per D18), `title`, `description`, `kind`, `starts_at`, `ends_at`, `modality`, `location_text`, `status` (default `'booked'`). Add `CHECK (ends_at > starts_at)`
 - [ ] 2.3 Create ORM model `app/domain/appointment/appointment_participant.py::AppointmentParticipant` — inherits `BaseEntity` + `DeletableEntity`. Columns: `appointment_id` (FK CASCADE), `user_id` (FK RESTRICT), `role`. Partial unique indexes: `(appointment_id) WHERE role='lead' AND deleted_at IS NULL` + `(appointment_id, user_id) WHERE deleted_at IS NULL`
-- [ ] 2.4 Generate alembic migration via `moon run backend:make-migration -- "add appointment-base"` and review autogen. Manually add the partial unique indexes if alembic missed them. Enum types created in `op.execute`. Supporting indexes: `appointments(patient_id, starts_at) WHERE status='booked' AND deleted_at IS NULL` for the aggregator hot path, and `appointment_participants(user_id) WHERE deleted_at IS NULL` for the participant predicate
-- [ ] 2.5 Create Pydantic schemas at `app/schemas/appointment/appointment.py`:
-  - `AppointmentParticipantCreate` — `{ user_id, role }`
-  - `AppointmentParticipantRead` — `{ id, user_id, role, user_display_name }`
-  - `AppointmentParticipantInlineSummary` — `{ user_id, role, user_display_name }` (used by `TaskItem.payload`)
-  - `AppointmentCreate` — `{ patient_id, title, description?, kind, starts_at, ends_at, modality, location_text?, status? (default booked), participants: list[AppointmentParticipantCreate] (required, ≥1 with one lead) }`
-  - `AppointmentPatch` — partial of `AppointmentCreate` MINUS `patient_id`, `participants`, `pathway_block_instance_id`
-  - `AppointmentRead` — full row + `participants: list[AppointmentParticipantRead]`
-- [ ] 2.6 Create `app/repositories/appointment_repository.py::AppointmentRepository` (subclass of `BaseListRepository`):
-  - `filterable_fields`: `patient_id`, `status`, `kind`, `modality`, `starts_at`
-  - `searchable_fields`: `title`
-  - `allowed_order_by`: `starts_at`, `created_at`, `status`
-  - default `order_by=starts_at`, `order=asc`
-- [ ] 2.7 Create `app/services/appointment/appointment_service.py::AppointmentService`:
-  - `create()` — validates participants (≥1, exactly one `lead`, no duplicate user_id, all same-tenant as appointment), validates `ends_at > starts_at`, validates `modality='on_site' ⇒ location_text non-empty`, opens row + participant rows in single UoW
-  - `list_in_tenant()` — wraps repository, applies caregiver patient-access filter via subquery `WHERE patient_id IN (visible_patient_ids_for(caregiver))`
-  - `get_by_id()` — applies same patient-access predicate
-  - `patch()` — rejects `participants` / `patient_id`, validates time + location rules on the merged row
-  - `soft_delete()` — stamps `deleted_at` + `deleted_by` on appointment + all participant rows in same transaction
-- [ ] 2.8 Create `app/api/routers/appointment/appointment_router.py` — five routes, each with `# AUTH-HARDEN` markers and `require_role(Role.ADMIN, Role.CAREGIVER)` (no `Role.PATIENT`):
-  - `GET /appointments` (list)
-  - `GET /appointments/{id}` (read)
-  - `POST /appointments` (create)
-  - `PATCH /appointments/{id}` (patch)
-  - `DELETE /appointments/{id}` (soft delete)
-- [ ] 2.9 Create `app/adapters/hix/appointments.py::HixAppointmentAdapter` with `fetch` + `upsert_from_hix` raising `NotImplementedError("HiX appointment adapter is MVP scope")`. Import-test coverage
-- [ ] 2.10 Tests (`tests/api/test_appointments_*.py`):
-  - `test_create.py`: ok-cases; 422 on `ends_at <= starts_at`; 422 on `on_site` + null `location_text`; 422 on zero / multi `lead`; 422 on duplicate user_id; cross-tenant patient → domain error; cross-tenant participant → domain error
-  - `test_read.py`: caregiver patient-access predicate (sees only patients they can see); cross-tenant returns 404
-  - `test_list.py`: tenant scope; patient-access filter; pagination envelope; `filter[patient_id]`, `filter[status]`, `filter[kind]`, `filter[modality]`, `filter[starts_at][gte/lte]`; `order_by=starts_at` default; `q=title-substring`; unknown filter rejected
-  - `test_patch.py`: title / description / kind / starts_at / ends_at / modality / location_text / status updates; reject `participants`, `patient_id`, `pathway_block_instance_id`; free status transitions accepted; time + location validation on merged row
-  - `test_delete.py`: soft delete + cascade soft delete of participants in same transaction; subsequent read returns 404
-  - `test_status_enum.py`: `entered_in_error` symbol round-trips as `entered-in-error` on wire
-  - `test_patient_role_rejected.py`: patient-role session gets 403 on each route
-  - `test_hix_adapter_stub.py`: import + NotImplementedError
+- [ ] 2.4 Generate alembic migration via `moon run backend:make-migration -- "add appointment-base"` and review autogen. Manually add the partial unique indexes + CHECK constraint if alembic missed them. Enum types created in `op.execute`. Supporting indexes: `appointments(patient_id, starts_at) WHERE status='booked' AND deleted_at IS NULL` for the aggregator hot path, and `appointment_participants(user_id) WHERE deleted_at IS NULL` for the participant predicate
+- [ ] 2.5 Create minimal Pydantic schemas at `app/schemas/appointment/appointment.py`:
+  - `AppointmentParticipantInlineSummary` — `{ user_id, role, user_display_name }` (used inside `TaskItem.payload`)
+  - DO NOT create `AppointmentCreate`, `AppointmentPatch`, `AppointmentRead`, or `AppointmentParticipantRead` — no HTTP surface consumes them v1
+- [ ] 2.6 Create `app/domain/appointment/validator.py::AppointmentValidator` (module-level functions or thin class) enforcing: `ends_at > starts_at`; `modality='on_site' ⇒ location_text non-empty`; participants invariants (≥1, exactly one `lead`, no duplicate user_id); all participants same-tenant as appointment; patient same-tenant. Reusable by test fixtures, future routes, pathway runtime, HiX adapter
+- [ ] 2.7 Test fixture: `tests/fixtures/appointment_factory.py` — helper that builds valid `Appointment` + `AppointmentParticipant` rows through the validator, used by tasks-base tests + any future appointment-domain test
+- [ ] 2.8 Tests (`tests/domain/test_appointment_*.py` and `tests/migrations/test_appointment_base.py`):
+  - `test_validator_temporal.py`: `ends_at <= starts_at` rejected; `ends_at > starts_at` accepted; past `starts_at` accepted
+  - `test_validator_modality.py`: `on_site` + null/empty `location_text` rejected; `online` + null `location_text` accepted; `on_site` + non-empty `location_text` accepted
+  - `test_validator_participants.py`: zero `lead` rejected; two `lead` rejected; duplicate `user_id` rejected; cross-tenant participant rejected; valid set accepted
+  - `test_validator_patient.py`: cross-tenant patient rejected
+  - `test_db_check_constraint.py`: raw INSERT bypassing validator with `ends_at <= starts_at` → CHECK constraint violation
+  - `test_partial_unique_lead.py`: raw INSERT of second active `lead` for same `appointment_id` → unique constraint violation
+  - `test_partial_unique_user.py`: raw INSERT of duplicate `(appointment_id, user_id)` with `deleted_at IS NULL` → unique constraint violation
+  - `test_enum_round_trip.py`: `AppointmentStatus.entered_in_error` symbol Python-side serialises to `entered-in-error` string and parses back
+  - `test_no_http_routes.py`: OpenAPI document inspection — no operation under `/appointments` path
+  - `test_no_service_or_repository.py`: importing `app.services.appointment.appointment_service` raises `ImportError` OR no class named `AppointmentService` with `create/patch/soft_delete` exists; same for `AppointmentRepository`, `HixAppointmentAdapter`
+  - `test_orm_registered.py`: SQLAlchemy metadata includes `Appointment` + `AppointmentParticipant` models with expected columns; tables exist post-migration with expected indexes + CHECK
 
 ## 3. Backend: `tasks-base` aggregator capability (NO table, NO ORM)
 
@@ -61,13 +44,14 @@ Per D-AGG — server-side aggregator over source domains. v1 source set: `appoin
 - [ ] 3.2 Create `app/schemas/task/task_item.py`:
   - `Source = Literal["appointment"]` (extends as sources are added)
   - `TaskPriority = Literal["low","normal","high","urgent"]` (envelope-level type, NOT a Postgres enum)
-  - `AppointmentPayload` — `{ id, starts_at, ends_at, kind, modality, location_text, status, participants: list[AppointmentParticipantInlineSummary] }`
-  - `TaskItem` — `{ id: str, source: Source, source_id: UUID, patient: PatientInlineSummary, due_at: datetime, title: str, kind: str | None, priority: TaskPriority | None, payload: AppointmentPayload }`
+  - `AppointmentPayload` — `{ id: UUID, patient: PatientInlineSummary, starts_at, ends_at, kind, modality, location_text, status, participants: list[AppointmentParticipantInlineSummary] }`
+  - `TaskItem` — `{ id: UUID, source: Source, source_id: UUID, due_at: datetime, title: str, kind: str | None, priority: TaskPriority | None, payload: AppointmentPayload }`
+  - NO top-level `patient` on `TaskItem` — patient lives inside `payload.patient`. `id` and `source_id` are both the source row's UUID PK v1 (identical value)
 - [ ] 3.3 Create `app/services/tasks/sources/appointment_source.py::AppointmentSource`:
   - `name = "appointment"`
   - `list(caller, page, page_size) -> Page[TaskItem]`:
     - SQL: `SELECT a.*, p.* FROM appointments a JOIN patients p ON p.id = a.patient_id JOIN appointment_participants ap ON ap.appointment_id = a.id WHERE a.status='booked' AND a.starts_at BETWEEN now() AND now()+INTERVAL '3 days' AND a.deleted_at IS NULL AND ap.user_id = :caller_id AND ap.deleted_at IS NULL AND a.tenant_id = :caller_tenant_id ORDER BY a.starts_at ASC LIMIT :page_size OFFSET ...`
-    - Project each row into `TaskItem` (`id="appointment:{a.id}"`, `due_at=a.starts_at`, etc.)
+    - Project each row into `TaskItem` (`id = a.id`, `source = "appointment"`, `source_id = a.id`, `due_at = a.starts_at`, `payload.patient = PatientInlineSummary(p.*)`, etc.)
     - Resolve `participants` for the payload via additional JOIN (or post-query batch) — `user_display_name` from the existing users projection
   - `get(caller, source_id) -> TaskItem | None` — same predicate + `a.id = :source_id`
 - [ ] 3.4 Create `app/services/tasks/tasks_aggregator.py::TasksAggregator`:
@@ -81,7 +65,7 @@ Per D-AGG — server-side aggregator over source domains. v1 source set: `appoin
   - `test_no_table_or_orm.py`: assert no SQLAlchemy model named `Task` is registered; assert `tasks` table absent in metadata (or covered by a fresh-DB assertion)
   - `test_window.py`: appointments outside `[now, now+3d]` excluded; non-`booked` excluded; soft-deleted excluded; past `starts_at` excluded
   - `test_visibility.py`: caregiver participant on A1+A2 but not A3 → sees A1+A2; lost participation → 404 on read-one; admin same predicate (empty unless participant); patient role → 403; cross-tenant → 404
-  - `test_envelope.py`: `id == f"appointment:{source_id}"`; `due_at == appointment.starts_at`; `title == appointment.title`; `priority is null`; `payload` matches `AppointmentPayload` (incl. participants list with `user_display_name`)
+  - `test_envelope.py`: `id == appointment.id` (UUID, not composite string); `source == "appointment"`; `source_id == appointment.id`; NO top-level `patient` field on envelope; `payload.patient` populated; `due_at == appointment.starts_at`; `title == appointment.title`; `priority is null`; `payload` matches `AppointmentPayload` (incl. participants list with `user_display_name`)
   - `test_sort_and_pagination.py`: default `order_by=due_at order=asc`; alternative `order_by` → 422; `order=desc` → 422; pagination envelope shape
   - `test_no_write_routes.py`: OpenAPI document has no `POST/PATCH/DELETE` on `/tasks`
   - `test_filter_patient_id.py`: `filter[patient_id][eq]=<id>` restricts within the existing predicate
@@ -126,12 +110,12 @@ Lives under `apps/orchestrator/src/modules/tasks/` (new dir, after task 6.2 dele
 
 - [ ] 8.1 Create `modules/tasks/components/KindTile.tsx` — `<KindTile>` with props `{ kind: AppointmentKind; size?: 'sm' | 'md' }`. Renders subtle color-mix background tile + matching lucide icon. Tests: each kind maps to expected tint + icon
 - [ ] 8.2 Create `modules/tasks/TaskRow.tsx` — flat clickable row built directly (no `<InboxRow>` abstraction):
-  - **Leading**: `<Avatar tintBy={item.patient.id}>` initials from `item.patient.family_name` + `given_name`
+  - **Leading**: `<Avatar tintBy={item.payload.patient.id}>` initials from `item.payload.patient.family_name` + `item.payload.patient.given_name`
   - **Primary**: `family, given`
   - **Secondary** (muted): `INSZ · <t('appointment:kind.<value>') via cross-ns lookup> · dueLabel(item)`
   - **Trailing**: `<KindTile kind={item.payload.kind} size="sm" />`
   - **Chevron** at right
-  - **Click**: `navigate({ to: '/_auth/tasks/p/$patientId', params: { patientId: item.patient.id } })`. Below `md`, navigate to `/_auth/patients/$patientId` standalone — `useMediaQuery` reads viewport
+  - **Click**: `navigate({ to: '/_auth/tasks/p/$patientId', params: { patientId: item.payload.patient.id } })`. Below `md`, navigate to `/_auth/patients/$patientId` standalone — `useMediaQuery` reads viewport
   - No per-row kebab. No checkbox. No inline action
 - [ ] 8.3 Create `modules/tasks/TaskList.tsx`:
   - PageHeader with title `t('tasks:title')` ("Taken") + sub `t('tasks:subtitle')` (optional)
@@ -174,7 +158,7 @@ Tasks module:
 - [ ] 12.3 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon
 - [ ] 12.4 `useTasksQuery.test.ts`: single-page `useQuery` integration; key matches `tasksListKeyPrefix`; no `?sort=` param sent
 - [ ] 12.5 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy for `vandaag X uur` / `morgen X uur` / `over N dagen`
-- [ ] 12.6 `TaskRow.test.tsx`: `<Avatar tintBy={item.patient.id}>`, `family, given` as primary, secondary line includes INSZ + kind label (via cross-ns lookup) + dueLabel; trailing slot renders `<KindTile>`; click on viewport ≥md navigates to `/_auth/tasks/p/$patientId`; click on <md navigates to `/_auth/patients/$patientId`
+- [ ] 12.6 `TaskRow.test.tsx`: `<Avatar tintBy={item.payload.patient.id}>`, `family, given` as primary, secondary line includes INSZ + kind label (via cross-ns lookup) + dueLabel; trailing slot renders `<KindTile>`; click on viewport ≥md navigates to `/_auth/tasks/p/$patientId`; click on <md navigates to `/_auth/patients/$patientId`
 - [ ] 12.7 `TaskList.test.tsx`: empty list renders `<EmptyState>` with fixed copy ("Geen taken" / "Nieuwe taken verschijnen automatisch") — same for caregiver + admin role mocks; populated list renders one `<TaskRow>` per `TaskItem`; no counter, no pager, no `"Meer laden"` button anywhere in the DOM
 
 Patient module:

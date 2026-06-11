@@ -22,10 +22,9 @@ The backend SHALL expose `GET /tasks` (list) and `GET /tasks/{source}/{source_id
 
 ```python
 class TaskItem(BaseModel):
-    id: str                             # synthetic stable id: f"{source}:{source_id}"
-    source: Literal["appointment"]      # extends as sources are added
-    source_id: UUID                     # primary key in the source domain
-    patient: PatientInlineSummary       # { id, family_name, given_name, insz?, primary_organisation_id }
+    id: UUID                            # the source row's database PK (no composite encoding)
+    source: Literal["appointment"]      # which source domain this row came from; extends as sources are added
+    source_id: UUID                     # primary key in the source domain (identical to `id` v1)
     due_at: datetime                    # the "act-by" timestamp the task list sorts on
     title: str                          # source-derived display title
     kind: str | None                    # source-derived classification (e.g. AppointmentKind value)
@@ -33,26 +32,32 @@ class TaskItem(BaseModel):
     payload: AppointmentPayload         # discriminated union by `source`; v1 only `AppointmentPayload`
 ```
 
-`PatientInlineSummary` SHALL be defined once in `app/schemas/patient/patient.py` and re-used by `tasks-base`. Shape: `{ id, family_name, given_name, insz?: string | null, primary_organisation_id }` — projected via JOIN, never N+1.
+`PatientInlineSummary` SHALL be defined once in `app/schemas/patient/patient.py` and re-used wherever a thin patient projection is needed. Shape: `{ id, family_name, given_name, insz?: string | null, primary_organisation_id }` — projected via JOIN, never N+1. It lives INSIDE `AppointmentPayload`, NOT at the `TaskItem` top level.
 
 For the v1 `appointment` source:
-- `id` = `f"appointment:{appointment.id}"`.
-- `source_id` = `appointment.id`.
+- `id` = `appointment.id` (UUID).
+- `source` = `"appointment"`.
+- `source_id` = `appointment.id` (same UUID; the field is kept distinct so future non-UUID-PK sources can use a different shape).
 - `due_at` = `appointment.starts_at`.
 - `title` = `appointment.title`.
 - `kind` = `appointment.kind` value (string).
 - `priority` = `null`.
-- `payload` = `AppointmentPayload` = `{ id, starts_at, ends_at, kind, modality, location_text, status, participants: list[AppointmentParticipantInlineSummary] }`.
+- `payload` = `AppointmentPayload` = `{ id, patient: PatientInlineSummary, starts_at, ends_at, kind, modality, location_text, status, participants: list[AppointmentParticipantInlineSummary] }`.
 
-#### Scenario: TaskItem includes typed source payload
+#### Scenario: TaskItem id is the source row's PK (no composite encoding)
 
-- **WHEN** `GET /tasks` returns an appointment-source item
-- **THEN** the body MUST include `source: "appointment"`, `source_id` matching the underlying appointment row id, `id` formatted as `f"appointment:{source_id}"`, and a `payload` object matching the `AppointmentPayload` shape
+- **WHEN** `GET /tasks` returns an appointment-source item for appointment row `A`
+- **THEN** the body MUST include `id == A.id` (UUID, not a string like `"appointment:<uuid>"`), `source: "appointment"`, `source_id == A.id`, and a `payload` object matching the `AppointmentPayload` shape
+
+#### Scenario: TaskItem does not carry a top-level patient field
+
+- **WHEN** any `GET /tasks` or `GET /tasks/{source}/{source_id}` response is inspected
+- **THEN** the envelope MUST NOT contain a top-level `patient` field; the patient summary MUST live inside `payload.patient`
 
 #### Scenario: PatientInlineSummary is projected via JOIN
 
 - **WHEN** `GET /tasks` returns N items spanning M distinct patients
-- **THEN** the backend MUST resolve the patient summary in a single round-trip JOIN, NOT N follow-up patient fetches
+- **THEN** the backend MUST resolve `payload.patient` for each row in a single round-trip JOIN, NOT N follow-up patient fetches
 
 ### Requirement: `GET /tasks` v1 window is hardcoded to the next 3 days
 
@@ -152,7 +157,7 @@ The list page SHALL fetch with TanStack Query (single page; no infinite scroll v
 
 `<TaskRow>` is a flat clickable row composed directly (no `<InboxRow>` / `<ListRow>` generic abstraction layer in this change). Anatomy:
 
-- **Subject avatar** (`<Avatar tintBy={taskItem.patient.id}>`) — initials from `taskItem.patient.family_name` + `taskItem.patient.given_name`. Never an `<img>`.
+- **Subject avatar** (`<Avatar tintBy={taskItem.payload.patient.id}>`) — initials from `taskItem.payload.patient.family_name` + `taskItem.payload.patient.given_name`. Never an `<img>`.
 - **Primary line**: `family, given`.
 - **Secondary line** (muted): `INSZ • <kind label via t('appointment:kind.<value>')> • <relative due copy: "vandaag X uur" / "morgen X uur" / "over N dagen">`.
 - **Trailing**: `<KindTile>` (v1 source-specific decoration; lives in `modules/tasks/components/KindTile.tsx` since no Afspraken tab consumes it).
@@ -182,13 +187,13 @@ No per-row kebab. No checkbox. No inline action.
 
 ### Requirement: Row click opens the patient detail in split-pane (or full-page on mobile)
 
-`<TaskRow>` SHALL navigate on click to `/_auth/tasks/p/$patientId` where `$patientId === taskItem.patient.id` on viewports ≥ `md`. The route `/_auth/tasks/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: task list on the left (compacts to 320px rail), `<PatientDetailView>` on the right.
+`<TaskRow>` SHALL navigate on click to `/_auth/tasks/p/$patientId` where `$patientId === taskItem.payload.patient.id` on viewports ≥ `md`. The route `/_auth/tasks/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: task list on the left (compacts to 320px rail), `<PatientDetailView>` on the right.
 
 Below the `md` breakpoint per design.md D17, the row click SHALL navigate to `/_auth/patients/$patientId` (the standalone full-page detail) instead; the task list unmounts.
 
 #### Scenario: Row click navigates to tasks-context patient route
 
-- **WHEN** a caregiver clicks a `<TaskRow>` whose `taskItem.patient.id === "abc-123"` on a viewport ≥ `md`
+- **WHEN** a caregiver clicks a `<TaskRow>` whose `taskItem.payload.patient.id === "abc-123"` on a viewport ≥ `md`
 - **THEN** the orchestrator MUST navigate to `/_auth/tasks/p/abc-123`
 
 #### Scenario: Split-pane on desktop

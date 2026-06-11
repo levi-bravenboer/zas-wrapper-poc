@@ -11,7 +11,7 @@
 
 This change ships:
 - The caregiver task list (`/_auth/tasks`) backed by a server-side aggregator (`GET /tasks`) that projects items from one or more underlying source domains into a unified `TaskItem` envelope. v1 source set = `appointment` only.
-- The appointment domain (`appointment-base`, full backend CRUD) for patient–caregiver scheduling. FE does NOT consume `GET /appointments` list directly in v1 — `/tasks` is the only consumer surface. The list endpoint still ships for: tests, admin tooling, future pathway runtime, future write UI.
+- The appointment domain (`appointment-base`) for patient–caregiver scheduling. **Data layer only v1**: tables, enums, ORM, alembic migration, `AppointmentValidator` module. NO HTTP routes (`GET /appointments`, `POST`, `PATCH`, `DELETE`) ship in this change. NO `AppointmentService`, NO `AppointmentRepository`, NO `HixAppointmentAdapter`, NO `AppointmentRead` / `AppointmentCreate` / `AppointmentPatch` schemas. Rows enter via test fixtures using the validator. A future change adds the HTTP surface when a consumer (write UI, pathway runtime, HiX adapter) materialises.
 - The patient detail re-layout (`patient-profile-ui`): two tabs (Metingen + Labresultaten), both empty-state v1. NO Afspraken tab.
 - The route surgery to make the new framing consistent (delete `/_auth/patients` list, delete `/_auth/tasks.tsx` placeholder + `modules/tasks/` placeholder dir FIRST, add new `/_auth/tasks/` directory route + new `modules/tasks/` directory + `/_auth/tasks/p/$patientId` child AFTER).
 
@@ -23,17 +23,16 @@ The task list is a **server-side aggregator over source domains** (per D-AGG). T
 
 - New `appointments` table (`patient_id` FK, `title`, `description`, `kind` enum, `starts_at`, `ends_at`, `modality` enum, `location_text`, `status` FHIR enum, `pathway_block_instance_id` nullable column with NO FK in v1 per D18, audit + soft-delete inherited).
 - New `appointment_participants` join table (`appointment_id`, `user_id`, `role` enum `lead | support | observer`) with a partial unique index enforcing exactly one active `lead` per appointment.
-- Full CRUD: `GET /appointments`, `GET /appointments/{id}`, `POST /appointments`, `PATCH /appointments/{id}` (no participants — frozen after create v1), `DELETE /appointments/{id}` (soft).
-- Visibility: caregivers see appointments only for patients they can see; admins tenant-wide. `patient` role rejected. (FE does not consume this list in v1; visibility predicate kept for future consumers + tests.)
-- Validation: `ends_at > starts_at` strict; one `lead` required at create; `modality='on_site'` requires `location_text`; state-machine free.
-- HiX adapter module stub (`HixAppointmentAdapter`).
-- No seed data v1; no realtime topic v1.
+- **NO HTTP routes v1** — no `GET /appointments`, no POST, no PATCH, no DELETE. Future change adds when consumer exists.
+- Validation rules (`ends_at > starts_at` strict; ≥1 participant with exactly one `lead`; `modality='on_site'` requires `location_text`; same-tenant patient + participants; participant set frozen after create) live in an `AppointmentValidator` module reusable by test fixtures and future writers. DB layer adds CHECK constraint + partial unique indexes for defence-in-depth.
+- NO `HixAppointmentAdapter` v1 — adapter ships with the HiX integration change.
+- NO seed data v1; NO realtime topic v1.
 
 ### New backend capability — `tasks-base` (server-side aggregator, no table)
 
 - Two routes: `GET /tasks` (list) and `GET /tasks/{source}/{source_id}` (read-one).
-- Unified envelope `TaskItem` = `{ id, source, source_id, patient: PatientInlineSummary, due_at, title, kind, priority?, payload: <source>Payload }`. `id` = `f"{source}:{source_id}"`.
-- v1 source set: `appointment`. Source row projected: `due_at = appointment.starts_at`, `title = appointment.title`, `kind = appointment.kind`, `priority = null`, `payload = AppointmentPayload`.
+- Unified envelope `TaskItem` = `{ id: UUID, source, source_id: UUID, due_at, title, kind, priority?, payload: <source>Payload }`. `id` is the source row's UUID PK (no composite encoding). No top-level `patient` field — patient lives inside `payload.patient`.
+- v1 source set: `appointment`. Source row projected: `id = source_id = appointment.id`, `due_at = appointment.starts_at`, `title = appointment.title`, `kind = appointment.kind`, `priority = null`, `payload = AppointmentPayload` where `payload.patient: PatientInlineSummary` is JOIN-projected.
 - **Window hardcoded** to next 3 days for the v1 appointment source (`status='booked' AND starts_at BETWEEN now() AND now()+INTERVAL '3 days'`). No `?within=` parameter v1 — unknown params silently ignored for forward-compat.
 - **Visibility**: participant-driven, scoped to the caller's user id — caller must have an active `appointment_participants` row (any role) for the appointment to surface. Admins use the same predicate (no tenant-wide bypass). Patient role 403.
 - **Sort**: fixed `order_by=due_at order=asc`. No sort registry, no `created_at` sort, no `desc`.
@@ -77,7 +76,7 @@ Task list surface implementation:
 
 ### Added Capabilities
 
-- `appointment-base` — new backend capability covering appointment domain (table, participants, FHIR-aligned enums, CRUD endpoints, visibility, HiX adapter stub). Consumed by `tasks-base` aggregator only in v1.
+- `appointment-base` — new backend capability covering appointment domain (table, participants, FHIR-aligned enums, ORM models, alembic migration, `AppointmentValidator` module). **Data layer only v1 — no HTTP routes.** Consumed by `tasks-base` aggregator via direct SQL.
 - `tasks-base` — new backend aggregator capability (`GET /tasks` projecting source rows into a uniform `TaskItem` envelope; v1 source = `appointment` only; ≤3-day window; participant-driven visibility) AND orchestrator task list surface (sidebar entry, `/_auth/tasks` list route, `/_auth/tasks/p/$patientId` split-pane child route, `<TaskList>`, `<TaskRow>`).
 
 ### Modified Capabilities
@@ -93,17 +92,14 @@ Task list surface implementation:
   - One alembic migration. No tasks table — `tasks-base` is route-only.
 - **Backend code** (`apps/backend/app/`):
   - `core/enums/appointment.py` — four enums.
-  - `domain/appointment/` — ORM models.
-  - `repositories/appointment_repository.py` — `BaseListRepository` subclass.
-  - `services/appointment/appointment_service.py` — appointment CRUD + tenant + patient-access.
+  - `domain/appointment/` — ORM models (`Appointment`, `AppointmentParticipant`) + `validator.py` (`AppointmentValidator` module).
   - `services/tasks/tasks_aggregator.py` — aggregator orchestration: source registry + per-source projection.
   - `services/tasks/sources/appointment_source.py` — v1 source projection (`AppointmentRow → TaskItem`).
-  - `api/routers/appointment/appointment_router.py` — five CRUD routes.
   - `api/routers/task/task_router.py` — two read routes (`GET /tasks`, `GET /tasks/{source}/{source_id}`).
-  - `schemas/appointment/appointment.py` — appointment schemas.
-  - `schemas/patient/patient.py` — `PatientInlineSummary` added here (domain owner).
-  - `schemas/task/task_item.py` — `TaskItem` envelope + `AppointmentPayload`.
-  - `adapters/hix/appointments.py` — adapter stub.
+  - `schemas/appointment/appointment.py` — `AppointmentParticipantInlineSummary` only (used by `TaskItem.payload`). No `AppointmentRead/Create/Patch`.
+  - `schemas/patient/patient.py` — `PatientInlineSummary` added here (domain owner; used inside `AppointmentPayload`).
+  - `schemas/task/task_item.py` — `TaskItem` envelope + `AppointmentPayload` (with `patient: PatientInlineSummary` inside).
+  - `tests/fixtures/appointment_factory.py` — test fixture using the validator to materialise valid rows.
 - **Frontend code** (`apps/orchestrator/src/`):
   - New `components/layout/MasterDetailLayout.tsx` — generic 3-state primitive.
   - Extend `components/ui/avatar.tsx` with `tintBy` prop.

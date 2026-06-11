@@ -5,7 +5,7 @@
 This change reframes F4 from "patients overview" to **"caregiver task list"** under a single mental model: the task list at `/_auth/tasks` is a list of *things the logged-in caregiver needs to do*, aggregated server-side from one or more source domains. v1 ships exactly one source — **appointments booked in the next 3 days that the caregiver participates in**. Future sources (form responses, monitoring alerts, pathway-runtime work items) plug into the same envelope without a wire-shape change.
 
 The change ships:
-- A new backend `appointment-base` capability (full CRUD) so the source exists.
+- A new backend `appointment-base` capability — **data layer only** (tables, ORM, migration, validator module). NO HTTP routes v1. Rows enter via test fixtures.
 - A new backend `tasks-base` capability that is a **server-side aggregator endpoint** (`GET /tasks`) — NO `tasks` table, NO ORM `Task` model, NO HiX task adapter.
 - A frontend `<TaskList>` + `<TaskRow>` at `/_auth/tasks` consuming `GET /tasks`.
 - A patient detail re-layout (`patient-profile-ui`): two tabs (Metingen + Labresultaten) both empty-state v1. NO Afspraken tab — appointment-as-task surfacing lives entirely in `/_auth/tasks`.
@@ -18,7 +18,7 @@ Tenancy, visibility, and realtime for patients are correct as-is and are not tou
 **Goals:**
 - Caregiver opens `/_auth/tasks` and sees a chronological list of items they need to act on in the next 3 days. v1 = upcoming appointments where they are a participant.
 - Each row identifies the patient + the act-by time + the kind of work. Click → patient detail in a split-pane.
-- Backend ships `appointment-base` (table + participants + FHIR-aligned enums + 5 CRUD endpoints + tenant + patient-access visibility).
+- Backend ships `appointment-base` (table + participants + FHIR-aligned enums + ORM models + alembic migration + `AppointmentValidator`). NO HTTP routes v1 — rows enter via test fixtures, future API change adds endpoints.
 - Backend ships `tasks-base` as a *thin aggregator endpoint* that projects appointment rows into a uniform `TaskItem` envelope. Source-agnostic envelope means adding a second source is a backend-only change.
 - Patient detail re-layout: sticky header + adjacent care-team card + two clinical tabs (`Metingen`, `Labresultaten`). Both empty-state v1.
 - Component split (`<PatientDetailView>`, `<PatientDetailHeader>`, `<TaskRow>`) is clean enough that a future `smart` or `embed` surface can re-mount with its own host wrapper.
@@ -44,17 +44,24 @@ Tenancy, visibility, and realtime for patients are correct as-is and are not tou
 
 ## Decisions
 
-### D1 — Ship `appointment-base` (full CRUD) with this change
+### D1 — Ship `appointment-base` as data layer only (NO HTTP routes v1)
 
-The task list needs upcoming appointments to surface anything. Without `appointments` rows the task list is empty for every caregiver. Building the appointment domain with full CRUD now is the cheapest path to a working demo + clean pathway-runtime seam later.
+The task list needs upcoming appointments to surface anything. Without `appointments` rows the task list is empty for every caregiver. The appointment domain ships in this change as **data layer only**: tables, enums, ORM models, alembic migration, and a reusable `AppointmentValidator` module.
 
-**Why CRUD even though frontend stays read-only:** POST/PATCH/DELETE land server-side so the pathway runtime + future write UI plug in without schema/route churn. Same validation rules are debated once. Marginal cost is a handful of extra tests.
+NO HTTP routes (`GET /appointments`, `POST`, `PATCH`, `DELETE`) ship in this change. No `AppointmentService` (CRUD wrapper), no `AppointmentRepository`, no `HixAppointmentAdapter`. No `AppointmentRead` / `AppointmentCreate` / `AppointmentPatch` schemas. Rows enter the table via test fixtures using the validator.
 
-The FE does NOT consume `GET /appointments` list directly in v1 — `/tasks` is the only consumer surface. The list endpoint still ships for: tests, admin tooling, future pathway runtime, future write UI.
+**Why no HTTP routes v1:**
+- No FE consumer exists v1 — `<TaskList>` reads only `/tasks`.
+- No write UI exists v1 — no caller for POST/PATCH/DELETE.
+- Shipping routes without consumers means shipping tests + maintenance burden for code that runs only in tests.
+- A future change can add the HTTP surface in one focused PR when a consumer materialises (pathway runtime, write UI, HiX adapter integration). The schema + ORM + validator + table layout is the load-bearing part; HTTP is a thin shell.
+
+**Why ship the validator now:** invariants (`ends_at > starts_at`, `modality=on_site ⇒ location_text`, participant rules) are domain logic that future writers reuse. Lives once, used by test fixtures + future API + future runtime.
 
 **Alternatives considered:**
-- Read-only `/appointments` v1. Rejected — schema/validation gets debated twice.
-- Defer appointment domain entirely, ship task list against nothing. Rejected — demo is empty anyway, but rewiring once appointments arrive doubles the frontend work.
+- Full CRUD v1. Rejected — no consumers; routes become orphan code.
+- Defer appointment domain entirely. Rejected — `/tasks` aggregator needs the table to project from.
+- Ship only ORM + migration, drop the validator. Rejected — every future writer would reimplement the rules.
 
 ### D2 — Appointment schema follows FHIR `Appointment` shape but stays domain-internal
 
