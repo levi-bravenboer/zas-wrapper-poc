@@ -21,8 +21,8 @@
 
 ## 4. Linking (schema + endpoints)
 
-- [ ] 4.1 Register `LUSCII_PATIENT_SYSTEM = "urn:zas:luscii:patient"` in `app/core/identifiers.py`
-- [ ] 4.2 Alembic migration via `/new-migration`: partial unique index on `patient_identifiers (system, value) WHERE system='urn:zas:luscii:patient' AND deleted_at IS NULL`
+- [x] 4.1 Register `LUSCII_PATIENT_SYSTEM = "urn:zas:luscii:patient"` in `app/core/identifiers.py`
+- [x] 4.2 Alembic migration via `/new-migration`: partial unique index on `patient_identifiers (system, value) WHERE system='urn:zas:luscii:patient' AND deleted_at IS NULL` (`20260610_1050_add_luscii_patient_identifier_unique_.py`)
 - [x] 4.3 Implement `PUT /patients/{id}/luscii-link` (live validation → 422/502, replacement upsert, 409 on cross-patient duplicate, programme/protocol echo) and `DELETE /patients/{id}/luscii-link` (idempotent 204), both `require_patient_access` + `# AUTH-HARDEN`
 - [x] 4.4 `POST /patients`: reject initial identifiers with the Luscii system (422); confirm `PATCH` identifier rejection still covered by tests
 - [x] 4.5 Endpoint tests: link happy path, unknown ID, Luscii down, relink replacement, cross-patient 409, unlink idempotency, access guard, not-configured 503
@@ -60,5 +60,5 @@
 
 ## 8. Verify
 
-- [x] 8.1 Run `/verify` (backend + orchestrator) and quote results (2026-06-11: backend lint "All checks passed!", pyright "0 errors, 0 warnings", pytest "691 passed in 62.44s"; orchestrator lint+typecheck clean, vitest "Test Files 112 passed (112), Tests 522 passed (522)")
-- [ ] 8.2 Manual smoke with a real token in `.env`: link a known Luscii patient, view merged data, unlink; confirm unconfigured behaviour after removing the token
+- [x] 8.1 Run `/verify` (backend + orchestrator) and quote results (2026-06-11: backend lint "All checks passed!", pyright "0 errors, 0 warnings", pytest "694 passed in 66.73s"; orchestrator lint+typecheck clean, vitest "Test Files 112 passed (112), Tests 522 passed (522)")
+- [x] 8.2 Manual smoke with a real token in `.env`: link a known Luscii patient, view merged data, unlink; confirm unconfigured behaviour after removing the token (2026-06-11: tested manually by Daniel with and without the token — works)
