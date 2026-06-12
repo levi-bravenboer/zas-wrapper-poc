@@ -338,6 +338,57 @@ def validate_if_not_done_within_rules(
                 ) from exc
 
 
+class InputLogicNodeUnknownError(ValueError):
+    """An `input_logic` rule references a block outside this version.
+
+    Pathway-completion § C6: the builder's cascade-delete strips rules
+    pointing at a deleted block; this gate catches any reference the UI
+    cascade missed (or hand-crafted payloads) so a published version
+    never carries dangling rules.
+    """
+
+    def __init__(
+        self,
+        *,
+        target_block: BaseBlock,
+        node_id: str,
+        rule_index: int,
+    ) -> None:
+        super().__init__(
+            f"input_logic rule {rule_index} on '{target_block.name}' "
+            f"references unknown block {node_id}"
+        )
+        self.target_block = target_block
+        self.node_id = node_id
+        self.rule_index = rule_index
+
+
+def validate_input_logic_node_references(
+    blocks_by_id: dict[str, BaseBlock],
+) -> None:
+    """Reject rules whose `node` points outside the version (§ C6).
+
+    Predicate-specific gates (`decision_output`, `if_not_done_within`,
+    `event`) double-check their own `after_block` semantics; this walk
+    is the generic net over the rule-level `node` reference every rule
+    carries.
+    """
+    for block in blocks_by_id.values():
+        for index, rule in enumerate(block.input_logic.rules):
+            args = rule.args
+            # `wait_after` references a time marker, not a block — the
+            # rule-level `node` mirrors the marker id there, which is
+            # validated by the marker gate, not this walk.
+            if args.predicate is PredicateKind.WAIT_AFTER:
+                continue
+            if str(rule.node) not in blocks_by_id:
+                raise InputLogicNodeUnknownError(
+                    target_block=block,
+                    node_id=str(rule.node),
+                    rule_index=index,
+                )
+
+
 class EventRuleError(ValueError):
     """An `event` rule is malformed at publish time.
 
@@ -487,6 +538,7 @@ __all__ = [
     "EventRuleError",
     "IfNotDoneWithinRuleError",
     "InformedConsentShapeError",
+    "InputLogicNodeUnknownError",
     "LaneKindNotAllowedError",
     "StartBlockCardinalityError",
     "StartBlockShapeError",
@@ -498,6 +550,7 @@ __all__ = [
     "validate_event_rules",
     "validate_if_not_done_within_rules",
     "validate_informed_consent_invariants",
+    "validate_input_logic_node_references",
     "validate_lane_kind",
     "validate_publish_block",
     "validate_start_block_invariants",

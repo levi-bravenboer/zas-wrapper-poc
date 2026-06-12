@@ -362,15 +362,14 @@ complete.
 
 ### § C6 Backend rule-reference check
 
-- [ ] C6.1 Add `validate_input_logic_node_references(blocks)` to
-  `app/domain/pathway/blocks/validators.py`. Walks every block's
-  `input_logic.rules` and asserts every `node` / `after_block`
-  references a block in the same version. Raises
+- [x] C6.1 `validate_input_logic_node_references(blocks)` in
+  `validators.py`. Walks every rule's `node`; `wait_after` exempt
+  (references a marker, not a block). Raises
   `InputLogicNodeUnknownError(target_block, node_id, rule_index)`.
-- [ ] C6.2 Wire into `PathwayVersionService._validate_publish_blocks`
-  after the existing decision-output reference check.
-- [ ] C6.3 Tests: dangling reference rejected; same-version
-  reference accepted.
+- [x] C6.2 Wired into `PathwayVersionService._validate_publish_blocks`
+  as `BlockConfigError(blocks[<id>].input_logic.rules[i].node)`.
+- [x] C6.3 Tests: dangling reference rejected; same-version
+  accepted; wait_after marker rule skipped.
 
 ### § C7 Fixture cleanup
 

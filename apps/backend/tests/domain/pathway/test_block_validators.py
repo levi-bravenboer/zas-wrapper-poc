@@ -565,3 +565,81 @@ def test_event_rule_with_unknown_reference_rejected() -> None:
     with pytest.raises(EventRuleError) as exc_info:
         validate_event_rules(blocks)
     assert "not in pathway version" in exc_info.value.reason
+
+
+# ---- input_logic node reference net (pathway-completion § C6) -----------
+
+
+def test_input_logic_node_reference_within_version_passes() -> None:
+    from app.domain.pathway.blocks.validators import (
+        validate_input_logic_node_references,
+    )
+
+    upstream_id = uuid4()
+    upstream = AppointmentBlock(name="Intake", title="Intake")
+    downstream = AppointmentBlock(
+        name="Follow-up",
+        title="Follow-up",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=upstream_id, args=IfDoneArgs(after_block=upstream_id)
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(upstream_id): upstream,
+        str(uuid4()): downstream,
+    }
+    validate_input_logic_node_references(blocks)
+
+
+def test_input_logic_dangling_node_reference_rejected() -> None:
+    from app.domain.pathway.blocks.validators import (
+        InputLogicNodeUnknownError,
+        validate_input_logic_node_references,
+    )
+
+    ghost_id = uuid4()
+    downstream = AppointmentBlock(
+        name="Follow-up",
+        title="Follow-up",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(node=ghost_id, args=IfDoneArgs(after_block=ghost_id)),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): downstream}
+    with pytest.raises(InputLogicNodeUnknownError) as exc_info:
+        validate_input_logic_node_references(blocks)
+    assert exc_info.value.node_id == str(ghost_id)
+    assert exc_info.value.rule_index == 0
+
+
+def test_input_logic_wait_after_marker_rule_skipped() -> None:
+    """wait_after references a time marker, not a block — exempt from
+    the node-reference net."""
+    from app.domain.pathway.input_logic import WaitAfterArgs
+    from app.domain.pathway.blocks.validators import (
+        validate_input_logic_node_references,
+    )
+
+    marker_id = uuid4()
+    downstream = AppointmentBlock(
+        name="Follow-up",
+        title="Follow-up",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=marker_id,
+                    args=WaitAfterArgs(
+                        marker_id=marker_id, offset_iso="P3D", direction="after"
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): downstream}
+    validate_input_logic_node_references(blocks)

@@ -27,12 +27,14 @@ from app.domain.pathway.blocks.validators import (
     EventRuleError,
     IfNotDoneWithinRuleError,
     InformedConsentShapeError,
+    InputLogicNodeUnknownError,
     validate_decision_block_outputs,
     validate_decision_output_references,
     validate_end_pathway_block_invariants,
     validate_event_rules,
     validate_if_not_done_within_rules,
     validate_informed_consent_invariants,
+    validate_input_logic_node_references,
     validate_lane_kind,
     StartBlockCardinalityError,
     StartBlockShapeError,
@@ -226,6 +228,20 @@ class PathwayVersionService:
                 field=(
                     f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
                     f".input_logic.decision_output"
+                ),
+                reason=str(err),
+            ) from err
+
+        # Pathway-completion § C6: generic rule-level node reference
+        # check — every `input_logic` rule must point at a block in
+        # this version (the builder cascade-delete's safety net).
+        try:
+            validate_input_logic_node_references(domain_blocks)
+        except InputLogicNodeUnknownError as err:
+            raise BlockConfigError(
+                field=(
+                    f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
+                    f".input_logic.rules[{err.rule_index}].node"
                 ),
                 reason=str(err),
             ) from err
