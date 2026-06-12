@@ -320,17 +320,20 @@ complete.
 
 ### § C3 Layout engine
 
-- [ ] C3.1 `useBuilderLayout` — pure function over
-  `PathwayVersionDefinition` returning `{blocks: {id, x, y}[]}` per
-  the topological-sort-within-cell rule. Each (phase, lane) cell:
-  DAG of `input_logic` references → topo order left-to-right;
-  branches stack vertically.
-- [ ] C3.2 Layout constants (`COLUMN_WIDTH`, `ROW_HEIGHT`, gutters)
-  in `layout/constants.ts`.
-- [ ] C3.3 Empty-lane hiding: selector that filters
-  `version.lanes` to lanes referenced by at least one block.
-- [ ] C3.4 Unit tests: linear chain, decision fan-out, multi-lane
-  interleave, empty lane hide.
+- [x] C3.1 `layout/computeBlockLayout.ts` — pure function returning
+  `Map<blockId, {x, y}>`. Per (phase, lane) cell: Kahn topo pass
+  over rule-level `node` references → column; per-column row
+  stacking (branch fan-out vertical); cross-cell upstreams ignored
+  for columns; cycle remainder lands in a trailing column (never
+  dropped).
+- [x] C3.2 Layout constants in `layout/constants.ts`
+  (column/row gutters + cell padding); block dimensions reuse
+  `canvasLayout.BLOCK_WIDTH/HEIGHT`.
+- [x] C3.3 `visibleLanes(lanes, blocks)` — canvas-only filter; the
+  dialog lane picker keeps the full lane list.
+- [x] C3.4 Unit tests (9): linear chain, decision fan-out, fan-in
+  join, multi-lane interleave, cycle fallback, independent cells,
+  lane hiding ×3.
 
 ### § C4 Dialog
 
