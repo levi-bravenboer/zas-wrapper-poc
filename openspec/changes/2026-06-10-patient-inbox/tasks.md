@@ -50,7 +50,7 @@ Per D-AGG — server-side aggregator over source domains. v1 source set: `appoin
 - [x] 3.3 Create `app/services/tasks/sources/appointment_source.py::AppointmentSource`:
   - `name = "appointment"`
   - `list(caller, page, page_size) -> Page[TaskItem]`:
-    - SQL: `SELECT a.*, p.* FROM appointments a JOIN patients p ON p.id = a.patient_id JOIN appointment_participants ap ON ap.appointment_id = a.id WHERE a.status='booked' AND a.starts_at BETWEEN now() AND now()+INTERVAL '3 days' AND a.deleted_at IS NULL AND ap.user_id = :caller_id AND ap.deleted_at IS NULL AND a.tenant_id = :caller_tenant_id ORDER BY a.starts_at ASC LIMIT :page_size OFFSET ...`
+    - SQL: `SELECT a.*, p.* FROM appointments a JOIN patients p ON p.id = a.patient_id JOIN appointment_participants ap ON ap.appointment_id = a.id WHERE a.status='booked' AND a.starts_at BETWEEN now() AND now()+INTERVAL '30 days' AND a.deleted_at IS NULL AND ap.user_id = :caller_id AND ap.deleted_at IS NULL AND a.tenant_id = :caller_tenant_id ORDER BY a.starts_at ASC LIMIT :page_size OFFSET ...` (window widened 3d→30d post-lock; see 13.1)
     - Project each row into `TaskItem` (`id = a.id`, `source = "appointment"`, `source_id = a.id`, `due_at = a.starts_at`, `payload.patient = PatientInlineSummary(p.*)`, etc.)
     - Resolve `participants` for the payload via additional JOIN (or post-query batch) — `user_display_name` from the existing users projection
   - `get(caller, source_id) -> TaskItem | None` — same predicate + `a.id = :source_id`
@@ -170,10 +170,20 @@ Routes:
 - [ ] 12.10 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<EntityDetailPage>` chrome with TWO clinical tabs (Metingen + Lab) + `<CareTeamSlot>` adjacent + kebab Geschiedenis dialog; `back` link points to `/_auth/tasks`
 - [ ] 12.11 Sidebar nav test: single `"Taken"` item present, points to `/_auth/tasks`; `"Mijn patiënten"` item ABSENT; no duplicate `"Taken"` from the placeholder
 
-## 13. Verification
+## 13. v12 spec-sync fixes (post-lock deltas)
 
-- [ ] 13.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
-- [ ] 13.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
-- [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Taken"` item visible (no `"Mijn patiënten"`, exactly one `"Taken"`). Open `/_auth/tasks` → rail (280px, grouped by due bucket) + right pane `<EmptyState>` "Selecteer een taak". Click a rail row → URL = `/_auth/tasks/$taskId`, right pane = `<EntityDetailPage>` with `<AppointmentContextBlock>` above the Metingen + Lab tabs. Active rail row carries the 3px accent + tinted bg. Same patient appearing in two rows → two distinct selectable URLs. Browser back from a task detail returns to index. Deep link `/_auth/tasks/$taskId` opens directly. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail
-- [ ] 13.4 Mobile (<md): out of scope v1. No assertion
-- [ ] 13.5 Manual smoke (when appointments exist): create an appointment via the validator + ORM with `starts_at = now() + 1 day`, caller as `lead` participant → row appears in `/_auth/tasks`. Create one with `starts_at = now() + 5 days` → does NOT appear. Create one without caller as participant → does NOT appear. Append `?within=7d` to URL — no effect on results (param silently ignored)
+Decisions taken after the v12 wireframe lock (window widened, rail anatomy aligned to prototype, day grouping). Spec is updated; implementation must follow.
+
+- [ ] 13.1 Backend: widen aggregator window 3d → 30d (`WINDOW_DAYS = 30` in `appointment_source.py`). Update window tests: `now()+35d` excluded, `now()+5d` INCLUDED (was excluded)
+- [ ] 13.2 FE: refactor `<TaskRow>` to rail anatomy per D7 — `<KindTile size="sm">` leading + `family, given` primary + relative-due secondary. REMOVE avatar, INSZ line, trailing KindTile, chevron. Active state = 3px primary left accent + tinted background (driven by `selected` prop)
+- [ ] 13.3 FE: `<TaskList>` groups rows per calendar day — `Vandaag` / `Morgen` / formatted day label (`za 14 jun`, `nl-BE` locale). Sticky mini-headers in the rail. Request `page_size=100` on `GET /tasks`
+- [ ] 13.4 i18n: rail subtitle → `Aankomende taken`; `selection.body` → `"Kies links een taak om de patiënt en de afspraak te bekijken."` (align with spec); add day-label formatting helper if needed
+- [ ] 13.5 Tests: update `TaskRow` assertions (no avatar/INSZ; KindTile leading; accent state), add `TaskList` day-grouping assertions, update backend window tests per 13.1
+
+## 14. Verification
+
+- [ ] 14.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
+- [ ] 14.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
+- [ ] 14.3 Manual smoke (desktop ≥md): sidebar `"Taken"` item visible (no `"Mijn patiënten"`, exactly one `"Taken"`). Open `/_auth/tasks` → rail (280px, day-grouped) + right pane `<EmptyState>` "Selecteer een taak". Click a rail row → URL = `/_auth/tasks/$taskId`, right pane = `<EntityDetailPage>` with `<AppointmentContextBlock>` above the Metingen + Lab tabs. Active rail row carries the 3px accent + tinted bg. Same patient appearing in two rows → two distinct selectable URLs. Browser back from a task detail returns to index. Deep link `/_auth/tasks/$taskId` opens directly. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail
+- [ ] 14.4 Mobile (<md): out of scope v1. No assertion
+- [ ] 14.5 Manual smoke (when appointments exist): create an appointment via the validator + ORM with `starts_at = now() + 1 day`, caller as `lead` participant → row appears in `/_auth/tasks` under `Morgen`. Create one with `starts_at = now() + 35 days` → does NOT appear. Create one without caller as participant → does NOT appear. Append `?within=7d` to URL — no effect on results (param silently ignored)

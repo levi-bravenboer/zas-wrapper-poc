@@ -33,7 +33,7 @@ The task list is a **server-side aggregator over source domains** (per D-AGG). T
 - Two routes: `GET /tasks` (list) and `GET /tasks/{source}/{source_id}` (read-one).
 - Unified envelope `TaskItem` = `{ id: UUID, source, source_id: UUID, due_at, title, kind, priority?, payload: <source>Payload }`. `id` is the source row's UUID PK (no composite encoding). No top-level `patient` field — patient lives inside `payload.patient`.
 - v1 source set: `appointment`. Source row projected: `id = source_id = appointment.id`, `due_at = appointment.starts_at`, `title = appointment.title`, `kind = appointment.kind`, `priority = null`, `payload = AppointmentPayload` where `payload.patient: PatientInlineSummary` is JOIN-projected.
-- **Window hardcoded** to next 3 days for the v1 appointment source (`status='booked' AND starts_at BETWEEN now() AND now()+INTERVAL '3 days'`). No `?within=` parameter v1 — unknown params silently ignored for forward-compat.
+- **Window hardcoded** to next 30 days for the v1 appointment source (`status='booked' AND starts_at BETWEEN now() AND now()+INTERVAL '30 days'`). No `?within=` parameter v1 — unknown params silently ignored for forward-compat.
 - **Visibility**: participant-driven, scoped to the caller's user id — caller must have an active `appointment_participants` row (any role) for the appointment to surface. Admins use the same predicate (no tenant-wide bypass). Patient role 403.
 - **Sort**: fixed `order_by=due_at order=asc`. No sort registry, no `created_at` sort, no `desc`.
 - `PatientInlineSummary` defined once in `app/schemas/patient/patient.py`, imported by `tasks-base`.
@@ -61,9 +61,9 @@ The task list is a **server-side aggregator over source domains** (per D-AGG). T
 - Sidebar nav: `"Mijn patiënten"` + placeholder `"Taken"` → single `"Taken"` item pointing to `/_auth/tasks` (lucide `inbox` icon — icon name only).
 
 Task list surface implementation:
-- `<TaskRow>` built directly (no generic `<InboxRow>` / `<ListRow>` abstraction layer). Anatomy: subject avatar, INSZ + kind label + relative due copy, `<KindTile>` trailing, chevron. Click navigates to `/_auth/tasks/$taskId`. Rail rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`); the URL-active row carries a 3px primary left accent.
+- `<TaskRow>` built directly (no generic `<InboxRow>` / `<ListRow>` abstraction layer). Compact rail anatomy per D7: `<KindTile>` leading + `family, given` + relative due copy. NO avatar, NO INSZ, NO chevron in the rail. Click navigates to `/_auth/tasks/$taskId`. Rail rows grouped per calendar day (`Vandaag` / `Morgen` / `za 14 jun`); the URL-active row carries a 3px primary left accent.
 - Single fixed sort (D-NOSORT). No sort registry, no tab strip for strategies.
-- Flat list (D-FLAT). No counter, no pager, no `"Meer laden"` — the 3-day window caps result size.
+- Day-grouped scrolling list (D-FLAT). Rows grouped per calendar day (`Vandaag` / `Morgen` / `za 14 jun`). No counter, no pager UI, no `"Meer laden"` — single request at `page_size=100`, natural scroll.
 - `<AppointmentContextBlock>` is a new task-scoped widget (flat strip with KindTile + title + meta + lead + `Open afspraak` ghost button) rendered above the clinical tabs on the task detail route. Lives in `modules/tasks/components/`.
 - `<MasterDetailLayout>` shipped earlier in this change as a generic 3-state collapse primitive. NOT consumed by `/_auth/tasks` v12 (the surface is a plain two-column flex). Available for future surfaces.
 - `<Avatar>` lifted to support deterministic `tintBy` prop (palette at the design-system layer).
@@ -78,7 +78,7 @@ Task list surface implementation:
 ### Added Capabilities
 
 - `appointment-base` — new backend capability covering appointment domain (table, participants, FHIR-aligned enums, ORM models, alembic migration, `AppointmentValidator` module). **Data layer only v1 — no HTTP routes.** Consumed by `tasks-base` aggregator via direct SQL.
-- `tasks-base` — new backend aggregator capability (`GET /tasks` projecting source rows into a uniform `TaskItem` envelope; v1 source = `appointment` only; ≤3-day window; participant-driven visibility) AND orchestrator task list surface (sidebar entry, `/_auth/tasks` list route, `/_auth/tasks/$taskId` task detail route, `<TaskList>`, `<TaskRow>`, `<AppointmentContextBlock>`).
+- `tasks-base` — new backend aggregator capability (`GET /tasks` projecting source rows into a uniform `TaskItem` envelope; v1 source = `appointment` only; ≤30-day window; participant-driven visibility) AND orchestrator task list surface (sidebar entry, `/_auth/tasks` list route, `/_auth/tasks/$taskId` task detail route, `<TaskList>`, `<TaskRow>`, `<AppointmentContextBlock>`).
 
 ### Modified Capabilities
 

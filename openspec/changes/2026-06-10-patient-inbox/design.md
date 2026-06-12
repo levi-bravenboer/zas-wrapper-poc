@@ -2,7 +2,7 @@
 
 `patients-base` shipped `/_auth/patients` as a `<DataTable<PatientRead>>`. `patient-profile-ui` shipped the patient detail page with three meta tabs (`Overzicht`, `Zorgteam`, `Geschiedenis`). The placeholder `/_auth/tasks` route renders nothing real.
 
-This change reframes F4 from "patients overview" to **"caregiver task list"** under a single mental model: the task list at `/_auth/tasks` is a list of *things the logged-in caregiver needs to do*, aggregated server-side from one or more source domains. v1 ships exactly one source — **appointments booked in the next 3 days that the caregiver participates in**. Future sources (form responses, monitoring alerts, pathway-runtime work items) plug into the same envelope without a wire-shape change.
+This change reframes F4 from "patients overview" to **"caregiver task list"** under a single mental model: the task list at `/_auth/tasks` is a list of *things the logged-in caregiver needs to do*, aggregated server-side from one or more source domains. v1 ships exactly one source — **appointments booked in the next 30 days that the caregiver participates in**. Future sources (form responses, monitoring alerts, pathway-runtime work items) plug into the same envelope without a wire-shape change.
 
 The change ships:
 - A new backend `appointment-base` capability — **data layer only** (tables, ORM, migration, validator module). NO HTTP routes v1. Rows enter via test fixtures.
@@ -16,20 +16,20 @@ Tenancy, visibility, and realtime for patients are correct as-is and are not tou
 ## Goals / Non-Goals
 
 **Goals:**
-- Caregiver opens `/_auth/tasks` and sees a chronological list of items they need to act on in the next 3 days. v1 = upcoming appointments where they are a participant.
+- Caregiver opens `/_auth/tasks` and sees a chronological, day-grouped list of items they need to act on in the next 30 days. v1 = upcoming appointments where they are a participant.
 - Each row identifies the patient + the act-by time + the kind of work. Click → patient detail in a split-pane.
 - Backend ships `appointment-base` (table + participants + FHIR-aligned enums + ORM models + alembic migration + `AppointmentValidator`). NO HTTP routes v1 — rows enter via test fixtures, future API change adds endpoints.
 - Backend ships `tasks-base` as a *thin aggregator endpoint* that projects appointment rows into a uniform `TaskItem` envelope. Source-agnostic envelope means adding a second source is a backend-only change.
-- Patient detail re-layout: sticky header + adjacent care-team card + two clinical tabs (`Metingen`, `Labresultaten`). Both empty-state v1.
+- Patient detail re-layout: `<PageHeader>` (via `<EntityDetailPage>`) + adjacent care-team card + two clinical tabs (`Metingen`, `Labresultaten`). Both empty-state v1.
 - `<TaskRow>` + `<AppointmentContextBlock>` are surface-agnostic enough that a future `smart` or `embed` host can re-mount the same widgets with its own router wrapper. The patient-detail chrome reuses the existing `<EntityDetailPage>` + `<EntityDetailTabs>` primitives — no bespoke `<PatientDetailView>` ships.
 
 **Non-Goals:**
 - A `Afspraken` tab on patient detail. Appointments live as tasks in `/_auth/tasks` only.
 - Frontend write actions on appointments (no create / edit / delete UI v1).
 - A `tasks` table, `task_*` enums, a `Task` ORM model, or a HiX task adapter.
-- Configurable task list time window (hardcoded ≤3 days v1).
+- Configurable task list time window (hardcoded ≤30 days v1).
 - A sort registry / multiple sort strategies (single fixed sort: `due_at asc`).
-- Counter / pager / infinite scroll on the task list (flat list within the 3-day window).
+- Counter / pager UI / `useInfiniteQuery` machinery on the task list (one request at `page_size=100`, naturally scrolling day-grouped list per D-FLAT).
 - Filters, search-as-you-type, bulk actions, row selection on the task list.
 - A generic `<InboxRow>` / `<ListRow>` primitive — `<TaskRow>` is built directly, no abstraction layer.
 - An `<AppointmentRow>` / `<AppointmentsSection>` / `<TabEmptyState>` component — not needed v1.
@@ -89,7 +89,7 @@ Service layer validates "exactly one lead at create". DB partial unique index `(
    b. Project source rows into `TaskItem` rows.
 3. Concatenate, sort by `due_at asc`, paginate, return `Page[TaskItem]`.
 
-The `id` field of `TaskItem` is synthetic: `f"{source}:{source_id}"`. The read-one route is `GET /tasks/{source}/{source_id}` so URLs are stable across sources.
+The `id` field of `TaskItem` is the source row's database PK (plain UUID — no composite encoding); `source` + `source_id` form the explicit addressing tuple. The read-one route is `GET /tasks/{source}/{source_id}` so URLs are stable across sources.
 
 **Why an aggregator endpoint instead of a `tasks` table:**
 - A `tasks` table either duplicates the source row (sync hell) or wraps it (extra row per appointment, audit ambiguity).
@@ -103,9 +103,11 @@ The `id` field of `TaskItem` is synthetic: `f"{source}:{source_id}"`. The read-o
 - Adding a source doesn't ship a frontend change.
 - Visibility/authz logic stays in the backend.
 
-### D-WINDOW — Hardcoded 3-day window for the v1 `appointment` source
+### D-WINDOW — Hardcoded 30-day window for the v1 `appointment` source
 
-v1 `/tasks` projects ONLY appointments where `status = 'booked'` AND `starts_at BETWEEN now() AND now() + INTERVAL '3 days'`. The window is hardcoded — no `?within=` query param. Unknown query params are silently ignored (forward-compat when v2 ships `?within=`).
+v1 `/tasks` projects ONLY appointments where `status = 'booked'` AND `starts_at BETWEEN now() AND now() + INTERVAL '30 days'`. The window is hardcoded — no `?within=` query param. Unknown query params are silently ignored (forward-compat when v2 ships `?within=`).
+
+**Why 30 days:** the rail is the caregiver's forward planning view, not just same-day triage. 30 days bounds the result to a planning horizon while keeping N small for a personal participations feed (realistically <100 items). The FE renders the full window as one naturally-scrolling list grouped per day — no pager UI (see D-FLAT).
 
 ### D-PART — Participant-driven visibility, identical for admin and caregiver
 
@@ -119,18 +121,17 @@ A `TaskItem` is visible if and only if the caller is the relevant actor on the u
 
 `GET /tasks` accepts exactly `order_by=due_at` + `order=asc`. The frontend does NOT ship a sort tab strip, a `useSelectedSort` hook, or a strategy registry. Re-add when a 2nd source lands and the user picks a different rhythm.
 
-### D7 — Task row anatomy
+### D7 — Rail row anatomy (locks v12 prototype)
 
 ```
-[Avatar slab 40px] [Identity column flex-1] [Kind tile max-240px] [Chevron]
+[KindTile 28px] [Identity column flex-1: name / relative-due]
 ```
 
-- **Avatar slab:** initials only (first letter of `given_name` + first letter of `family_name`, uppercased) on a deterministically-tinted background derived from `hash(patient.id) % palette_size`. Never an `<img>`. Palette = 8 colours from the orchestrator Tailwind ZAS-teal palette with WCAG AA white-text contrast.
-- **Identity column:** line 1 `family_name, given_name`. Line 2 muted `INSZ • kind label • relative due copy ("vandaag X uur" / "morgen X uur" / "over N dagen")`.
-- **Kind tile:** `<KindTile>` for v1 appointment source (subtle color-mix tile with the kind's lucide icon). When a 2nd source lands, the trailing slot accepts any source-specific decoration.
-- **Chevron:** right end, full row is the click target.
+- **Kind tile (leading):** `<KindTile size="sm">` — subtle colour-mix tile with the kind's lucide icon. When a 2nd source lands, the leading slot accepts any source-specific decoration.
+- **Identity column:** line 1 `family_name, given_name` (13px medium, truncate). Line 2 muted relative due copy (`"vandaag 15:45"` / `"morgen 08:15"` / `"over N dagen"`, 11px tabular).
+- **Active state:** the row whose `$taskId` matches the URL carries a 3px primary left accent + tinted (`primary-soft` mix) background.
 
-No per-row kebab. No checkbox. No inline action.
+NO avatar, NO INSZ, NO chevron, NO per-row kebab, NO checkbox, NO inline action — the rail is a compact 280px jump list; full patient identity lives in the right pane. Deterministic-tint avatars (`Avatar tintBy`) remain in use on the detail header.
 
 `<TaskRow>` is built directly (no generic `<InboxRow>` / `<ListRow>` abstraction layer in this change). Add one when a 2nd flat-list surface emerges.
 
@@ -138,9 +139,11 @@ No per-row kebab. No checkbox. No inline action.
 
 Backend stores `timestamptz` UTC. Wire emits ISO 8601. Frontend renders via `Intl.DateTimeFormat('nl-BE', { ... })` using the browser's local timezone. No tenant-level timezone setting, no Europe/Brussels hard-pin.
 
-### D-FLAT — Flat list, no counter, no pager, no infinite scroll
+### D-FLAT — Day-grouped scrolling list, no pager UI
 
-The task list renders a single flat list of all `TaskItem`s returned by one `GET /tasks` call. No header counter (`12 taken`), no bottom pager strip, no `"Meer laden"` button. 3-day window caps the result size for any realistic caregiver to <50 items.
+The rail renders ALL `TaskItem`s in the 30-day window as one naturally-scrolling list, **grouped per calendar day**: `Vandaag`, `Morgen`, then a formatted day label (`za 14 jun`). No header counter, no bottom pager strip, no `"Meer laden"` button — the list scrolls.
+
+Fetch strategy: the FE requests `page_size=100` (the ListQuery max). A personal participations feed over 30 days realistically stays well under that cap; if it ever exceeds 100 the list silently truncates at the cap (acceptable v1 — log a follow-up when a real tenant hits it). No `useInfiniteQuery` machinery: one request, one scrolling list.
 
 ### D10 — Detail page tab strip = two tabs (`Metingen / Labresultaten`)
 
@@ -165,9 +168,9 @@ The patient-detail chrome reuses the **existing** `<EntityDetailPage>` + `<Entit
 
 ### D13 — HTML prototype first
 
-Per project rule, `prototypes/inbox/v1.html` ... `v8.html` — **v8 accepted** as the locked wireframe. See `prototypes/inbox/README.md`. Each iteration is a new `vN.html` — never edit prior versions.
+Per project rule, `prototypes/inbox/v1.html` ... `v12.html` — **v12 accepted** as the locked wireframe. See `prototypes/inbox/README.md` for the iteration log. Each iteration is a new `vN.html` — never edit prior versions.
 
-The prototype directory keeps the name `prototypes/inbox/` for archival continuity (these files are accepted-state artifacts, not concept references). Spec decisions D-FLAT + D-NOSORT supersede the prototype's pager strip and sort tabs; the React build follows the design.md decisions where they conflict with the prototype.
+The prototype directory keeps the name `prototypes/inbox/` for archival continuity (these files are accepted-state artifacts, not concept references). Where later design decisions conflict with the locked prototype (e.g. D-WINDOW's 30-day horizon vs the prototype's 3-day mock data), the React build follows design.md.
 
 ### D14 — i18n: Dutch copy, English identifiers
 
@@ -179,7 +182,7 @@ Kind labels (`consultation`, `lab`, `imaging`, `procedure`, `other`) live in `nl
 
 The `/_auth/tasks` surface ships as a **plain two-column flex** — no master/detail collapse, no state machine. Both columns always visible at `≥md`:
 
-- **LEFT** (`<TaskRail>`, fixed 280px): rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`). Each row = kind tile + `family, given` + relative due copy. Active row carries a 3px left accent + tinted background.
+- **LEFT** (`<TaskList>` rail, fixed 280px): rail header (`Taken` h1 + `Aankomende taken` subtitle) + rows grouped per calendar day (`Vandaag` / `Morgen` / `za 14 jun` ...). Each row = kind tile + `family, given` + relative due copy (per D7). Active row carries a 3px left accent + tinted background.
 - **RIGHT** (`<Outlet>`): two children:
   - Index route (`/_auth/tasks`): centered `<EmptyState>` with `Selecteer een taak` title + body referencing the rail.
   - Task detail route (`/_auth/tasks/$taskId`): reuses the existing `<EntityDetailPage>` chrome (eyebrow back link → `/_auth/tasks` index, `<PageHeader>` with `family, given` h1 + INSZ Badge default + Geboren muted + org Badge soft, `Bewerken` button + kebab actions slot). Body slot = `<AppointmentContextBlock task />` followed by `<EntityDetailTabs>` underline variant with `Metingen` + `Labresultaten`.
@@ -246,13 +249,11 @@ A caregiver/admin-vs-patient URL prefix split (`/caregiver/...` vs `/patient/...
 
 `apps/orchestrator/src/routes/_auth/tasks.tsx` (single-file placeholder route) and `apps/orchestrator/src/modules/tasks/` (placeholder dir) collided in name with the new `routes/_auth/tasks/` directory route and new `modules/tasks/` directory. Delete the placeholders first; new dirs created after.
 
-Order:
-1. DELETE the placeholder route file `routes/_auth/tasks.tsx`.
-2. DELETE the placeholder module dir `modules/tasks/` (`TasksPage.tsx`, `tasksPort.ts`, adapter, `types.ts`).
-3. CREATE new `routes/_auth/tasks/` directory with `route.tsx`, `index.tsx`, `p/$patientId/index.tsx`.
-4. CREATE new `modules/tasks/` directory with `TaskList.tsx`, `TaskRow.tsx`, `KindTile.tsx`, `useTasksQuery.ts`, `types.ts`, `dueLabel.ts`.
-
-The tasks.md sequencing reflects this (delete tasks before create tasks).
+Order (executed):
+1. DELETED the placeholder route file `routes/_auth/tasks.tsx` (+ unused `routes/embed/tasks.tsx`, `routes/s/tasks.tsx`).
+2. DELETED the placeholder module dir `modules/tasks/` (`TasksPage.tsx`, `tasksPort.ts`, adapter, `types.ts`).
+3. CREATED new `routes/_auth/tasks/` directory with `route.tsx`, `index.tsx`, `$taskId/index.tsx`.
+4. CREATED new `modules/tasks/` directory with `TaskList.tsx`, `TaskRow.tsx`, `api.ts`, `types.ts`, `dueLabel.ts`, `components/KindTile.tsx`, `components/AppointmentContextBlock.tsx`.
 
 ## Risks / Trade-offs
 

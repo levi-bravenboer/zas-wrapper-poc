@@ -59,18 +59,23 @@ For the v1 `appointment` source:
 - **WHEN** `GET /tasks` returns N items spanning M distinct patients
 - **THEN** the backend MUST resolve `payload.patient` for each row in a single round-trip JOIN, NOT N follow-up patient fetches
 
-### Requirement: `GET /tasks` v1 window is hardcoded to the next 3 days
+### Requirement: `GET /tasks` v1 window is hardcoded to the next 30 days
 
-For the v1 `appointment` source, `GET /tasks` SHALL surface ONLY appointments where `status = 'booked'` AND `starts_at` is between `now()` and `now() + INTERVAL '3 days'` inclusive. The window SHALL NOT be configurable via a query parameter in v1; widening the window is a follow-up change.
+For the v1 `appointment` source, `GET /tasks` SHALL surface ONLY appointments where `status = 'booked'` AND `starts_at` is between `now()` and `now() + INTERVAL '30 days'` inclusive. The window SHALL NOT be configurable via a query parameter in v1; changing the horizon is a follow-up change.
 
 Soft-deleted appointments SHALL be excluded. Appointments outside the window SHALL be excluded from `GET /tasks` even if otherwise visible to the caller.
 
 Unknown query parameters (e.g. `?within=7d`) SHALL be silently ignored, NOT rejected with `422`. This preserves forward compatibility when v2 introduces a configurable window.
 
-#### Scenario: Appointment beyond 3-day window excluded
+#### Scenario: Appointment beyond 30-day window excluded
 
-- **WHEN** an appointment has `status='booked'` and `starts_at = now() + 5 days`
+- **WHEN** an appointment has `status='booked'` and `starts_at = now() + 35 days`
 - **THEN** it MUST NOT appear in `GET /tasks`
+
+#### Scenario: Appointment within the 30-day window included
+
+- **WHEN** an appointment has `status='booked'` and `starts_at = now() + 5 days`, with the caller as an active participant
+- **THEN** it MUST appear in `GET /tasks`
 
 #### Scenario: Appointment with non-booked status excluded
 
@@ -85,7 +90,7 @@ Unknown query parameters (e.g. `?within=7d`) SHALL be silently ignored, NOT reje
 #### Scenario: Unknown query param silently ignored
 
 - **WHEN** `GET /tasks?within=7d` is called
-- **THEN** the server MUST return the same response as `GET /tasks` with no `within` param (the 3-day window stays fixed) and MUST NOT respond `422`
+- **THEN** the server MUST return the same response as `GET /tasks` with no `within` param (the 30-day window stays fixed) and MUST NOT respond `422`
 
 ### Requirement: `GET /tasks` visibility is participant-driven, scoped to the caller's user id
 
@@ -104,7 +109,7 @@ Every route handler SHALL carry an `# AUTH-HARDEN` source comment.
 
 #### Scenario: Caregiver sees only items they participate in
 
-- **WHEN** caregiver `C` is the `lead` participant on appointment `A1` and a `support` participant on `A2`, but is NOT a participant on `A3` (all three booked within 3 days)
+- **WHEN** caregiver `C` is the `lead` participant on appointment `A1` and a `support` participant on `A2`, but is NOT a participant on `A3` (all three booked within the window)
 - **THEN** `GET /tasks` for `C` MUST include items for `A1` and `A2` only
 
 #### Scenario: Admin sees only their own participations
@@ -153,17 +158,15 @@ The orchestrator SHALL render at `/_auth/tasks` a `<TaskList>` showing one `<Tas
 
 The previous sidebar entries `"Mijn patiënten"` and the placeholder `"Taken"` SHALL be removed. The placeholder route file (`apps/orchestrator/src/routes/_auth/tasks.tsx`) and the placeholder `apps/orchestrator/src/modules/tasks/` directory (`TasksPage.tsx`, `tasksPort.ts`, placeholder adapter, `types.ts`) SHALL be DELETED FIRST; the new `/_auth/tasks/` route directory and the new `modules/tasks/` directory are CREATED AFTER deletion to avoid naming collisions.
 
-The list page SHALL fetch with TanStack Query (single page; no infinite scroll v1 — the 3-day window caps result size). The page SHALL register a realtime invalidation topic seam (no-op v1; follow-up wires the real topic).
+The list page SHALL fetch with TanStack Query in a single request at `page_size=100` (the ListQuery max) — no `useInfiniteQuery` machinery, no pager UI; the rail scrolls naturally. If the window ever exceeds the cap the list silently truncates (file a follow-up when a real tenant hits it). The page SHALL register a realtime invalidation topic seam (no-op v1; follow-up wires the real topic).
 
-`<TaskRow>` is a flat clickable row composed directly (no `<InboxRow>` / `<ListRow>` generic abstraction layer in this change). Anatomy:
+`<TaskRow>` is a compact rail row composed directly (no `<InboxRow>` / `<ListRow>` generic abstraction layer in this change). Anatomy per D7 (locks v12):
 
-- **Subject avatar** (`<Avatar tintBy={taskItem.payload.patient.id}>`) — initials from `taskItem.payload.patient.family_name` + `taskItem.payload.patient.given_name`. Never an `<img>`.
-- **Primary line**: `family, given`.
-- **Secondary line** (muted): `INSZ • <kind label via t('appointment:kind.<value>')> • <relative due copy: "vandaag X uur" / "morgen X uur" / "over N dagen">`.
-- **Trailing**: `<KindTile>` (v1 source-specific decoration; lives in `modules/tasks/components/KindTile.tsx` since no Afspraken tab consumes it).
-- **Chevron** at the right end.
+- **Kind tile (leading)**: `<KindTile size="sm">` — source-specific decoration; lives in `modules/tasks/components/KindTile.tsx`.
+- **Primary line**: `family, given` (13px medium, truncate).
+- **Secondary line** (muted, 11px tabular): relative due copy (`"vandaag 15:45"` / `"morgen 08:15"` / `"over N dagen"`).
 
-No per-row kebab. No checkbox. No inline action.
+NO avatar, NO INSZ, NO chevron, NO per-row kebab, NO checkbox, NO inline action — the rail is a compact jump list; full patient identity lives in the right pane.
 
 #### Scenario: Task list renders one row per TaskItem
 
@@ -189,7 +192,7 @@ No per-row kebab. No checkbox. No inline action.
 
 The `/_auth/tasks` parent route SHALL render a plain two-column flex layout with NO master/detail collapse and NO state machine:
 
-- **Left column** (`<TaskList>` rail): fixed width `280px`, scrollable, contains the rail header (`Taken` h1 + `Komende 3 dagen` subtitle) and the task rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`). Always visible at viewports ≥ `md`.
+- **Left column** (`<TaskList>` rail): fixed width `280px`, scrollable, contains the rail header (`Taken` h1 + `Aankomende taken` subtitle) and the task rows grouped per calendar day (`Vandaag` / `Morgen` / formatted day label e.g. `za 14 jun`). Always visible at viewports ≥ `md`.
 - **Right column** (`<Outlet>`): scrollable, hosts one of two children:
   - **`/_auth/tasks/` index** — `<EmptyState>` (icon `inbox`, title `"Selecteer een taak"`, body `"Kies links een taak om de patiënt en de afspraak te bekijken."`) centered in the right pane.
   - **`/_auth/tasks/$taskId`** — `<EntityDetailPage>` chrome (eyebrow back-link → `/_auth/tasks`, `<PageHeader>` with `family, given` h1 + INSZ Badge + Geboren + org Badge + Bewerken/kebab actions). Body slot = `<AppointmentContextBlock task />` followed by `<EntityDetailTabs>` underline variant with `Metingen` + `Labresultaten` tabs (both render `<EmptyState>` v1 per D10).
@@ -219,6 +222,11 @@ Mobile (`<md`) layout is OUT OF SCOPE v1 — the orchestrator is desktop-first; 
 
 - **WHEN** the URL is `/_auth/tasks/abc-123` and the rail includes the matching row
 - **THEN** that row MUST carry the `data-active="true"` state (3px primary left accent + tinted background); all other rows MUST NOT
+
+#### Scenario: Rail rows are grouped per calendar day
+
+- **WHEN** the rail renders tasks due today, tomorrow, and 5 days out
+- **THEN** the rows MUST appear under three group headers — `Vandaag`, `Morgen`, and the formatted day label for the third date — in chronological order
 
 #### Scenario: Same patient with two tasks shows two distinct rows
 
