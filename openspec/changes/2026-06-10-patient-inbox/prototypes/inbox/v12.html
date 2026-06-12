@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE — inbox v12</title>
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.0.3/index.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.0.3/index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-background: oklch(1 0 0);
+        --color-surface-1: oklch(0.985 0.003 175);
+        --color-surface-2: oklch(0.97 0.01 175);
+        --color-foreground: oklch(0.21 0.04 265);
+        --color-foreground-muted: oklch(0.5 0.02 265);
+        --color-muted-foreground: var(--color-foreground-muted);
+        --color-muted: var(--color-surface-2);
+        --color-primary: oklch(0.46 0.07 175);
+        --color-primary-hover: oklch(0.4 0.07 175);
+        --color-primary-pressed: oklch(0.34 0.06 175);
+        --color-primary-foreground: oklch(1 0 0);
+        --color-primary-soft: oklch(0.93 0.04 175);
+        --color-accent-mint: oklch(0.78 0.08 175);
+        --color-destructive: oklch(0.6 0.22 30);
+        --color-destructive-foreground: oklch(1 0 0);
+        --color-warning: oklch(0.75 0.18 65);
+        --color-success: oklch(0.55 0.1 175);
+        --color-success-foreground: oklch(1 0 0);
+        --color-border: oklch(0.91 0.005 265);
+        --color-border-strong: oklch(0.82 0.01 265);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+        --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.06);
+        --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --tracking-tight: -0.011em;
+      }
+      :root {
+        --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+        --bg-canvas: linear-gradient(180deg, #fafbfa 0%, #f3f6f4 100%);
+        --hairline: oklch(0.91 0.005 265);
+      }
+      body {
+        font-family: var(--font-sans);
+        color: var(--color-foreground);
+        background: var(--bg-canvas);
+        letter-spacing: var(--tracking-tight);
+        font-size: 14px;
+      }
+    </style>
+
+    <style>
+      .gradient-active { background-image: var(--gradient-active); }
+
+      .side { background: var(--color-background); border-right: 1px solid var(--hairline); }
+      .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 14px; color: var(--color-foreground); }
+      .nav-item:hover { background: var(--color-surface-2); }
+      .nav-item[aria-current="page"] { background-image: var(--gradient-active); color: #fff; box-shadow: var(--shadow-sm); }
+      .nav-item[aria-current="page"] i { color: #fff; }
+      .nav-group-h { font-size: 12px; color: var(--color-foreground-muted); padding: 14px 10px 6px; display: flex; align-items: center; justify-content: space-between; }
+
+      /* Avatar — deterministic tint (mirrors src/components/ui/avatar.tsx getAvatarTintClass) */
+      .av { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 600; color: #fff; }
+      .av[data-tint="0"] { background: oklch(0.55 0.13 175); }
+      .av[data-tint="1"] { background: oklch(0.55 0.13 160); }
+      .av[data-tint="2"] { background: oklch(0.55 0.13 230); }
+      .av[data-tint="3"] { background: oklch(0.55 0.13 260); }
+      .av[data-tint="4"] { background: oklch(0.55 0.13 290); }
+      .av[data-tint="5"] { background: oklch(0.55 0.13 330); }
+      .av[data-tint="6"] { background: oklch(0.55 0.13 25); }
+      .av[data-tint="7"] { background: oklch(0.55 0.13 65); }
+
+      /* Mirror src/components/ui/badge.tsx variants 1:1 */
+      .badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        border-radius: 9999px; border: 1px solid transparent;
+        padding: 2px 8px; font-size: 12px; font-weight: 500;
+        transition: background-color .12s, color .12s;
+      }
+      .badge[data-variant="default"]     { background: var(--color-primary);            color: var(--color-primary-foreground); }
+      .badge[data-variant="soft"]        { background: var(--color-primary-soft);       color: var(--color-primary); }
+      .badge[data-variant="outline"]     { background: transparent;                     color: var(--color-foreground); border-color: var(--color-border); }
+      .badge[data-variant="muted"]       { background: var(--color-muted);              color: var(--color-foreground-muted); }
+      .badge[data-variant="destructive"] { background: var(--color-destructive);        color: var(--color-destructive-foreground); }
+
+      /* Mirror src/components/ui/button.tsx variants (default + ghost) */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        white-space: nowrap; border-radius: var(--radius-sm);
+        font-size: 14px; font-weight: 500;
+        transition: background-color .12s, color .12s, box-shadow .12s;
+      }
+      .btn[data-variant="default"] { background: var(--color-primary); color: var(--color-primary-foreground); height: 36px; padding: 0 14px; }
+      .btn[data-variant="default"]:hover { background: var(--color-primary-hover); }
+      .btn[data-variant="ghost"]   { background: transparent; color: var(--color-foreground); height: 36px; padding: 0 12px; }
+      .btn[data-variant="ghost"]:hover { background: var(--color-surface-2); }
+      .btn[data-size="icon"] { height: 36px; width: 36px; padding: 0; }
+
+      /* Mirror Tabs underline variant — gap-4 border-b border-border + trigger px-1 pb-2 border-b-2 transparent → border-primary */
+      .tabs-list { display: inline-flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--color-border); }
+      .tab-trigger {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 0 4px 8px; font-size: 14px; font-weight: 500;
+        color: var(--color-foreground-muted);
+        border-bottom: 2px solid transparent; margin-bottom: -1px;
+        transition: color .12s, border-color .12s;
+        background: transparent;
+      }
+      .tab-trigger:hover { color: var(--color-foreground); }
+      .tab-trigger[data-state="active"] { color: var(--color-foreground); border-color: var(--color-primary); }
+
+      /* Task rail */
+      .rail-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; transition: background-color .12s;
+        border-bottom: 1px solid var(--hairline);
+        cursor: pointer; width: 100%; text-align: left;
+        background: transparent;
+        position: relative;
+      }
+      .rail-row:hover { background: var(--color-surface-1); }
+      .rail-row[data-active="true"] { background: color-mix(in srgb, var(--color-primary-soft) 55%, white); }
+      .rail-row[data-active="true"]::before {
+        content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+        width: 3px; border-radius: 0 2px 2px 0;
+        background: var(--color-primary);
+      }
+
+      .kind-tile { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border-radius: 6px; flex-shrink: 0; }
+      .kind-tile[data-kind="consultation"] { background: color-mix(in srgb, var(--color-primary) 10%, white); color: var(--color-primary); }
+      .kind-tile[data-kind="lab"]          { background: color-mix(in srgb, var(--color-warning) 14%, white); color: #92400e; }
+      .kind-tile[data-kind="imaging"]      { background: color-mix(in srgb, var(--color-accent-mint) 18%, white); color: var(--color-primary-pressed); }
+      .kind-tile[data-kind="procedure"]    { background: color-mix(in srgb, var(--color-destructive) 10%, white); color: var(--color-destructive); }
+      .kind-tile[data-kind="other"]        { background: var(--color-surface-2); color: var(--color-foreground-muted); }
+      .kind-tile.lg { height: 40px; width: 40px; border-radius: 8px; }
+    </style>
+  </head>
+
+  <body class="min-h-screen">
+    <!--
+      v12 — iteration on v11 per user direction:
+        "alright bit better, should just open the normal patient view in the
+         right pane. but with a little block of the appointment. more inline
+         with our actually styling should use later on our components we
+         already have in the orchestrator app"
+
+      Reframe vs v11:
+        - RIGHT pane = the real <PatientProfilePage> chrome. Mirrors
+            EntityDetailPage (eyebrow back-link, PageHeader title/sub/actions,
+            body with EntityDetailTabs underline variant).
+        - Appointment block sits INSIDE the body slot, ABOVE the tabs strip.
+            One slim flat strip. Kind tile + title + relative time + modality
+            icon + location + lead participant + "Open afspraak" ghost button.
+            NOT a card-in-card; reads as "this task is what brought you here".
+        - Tabs = Metingen + Labresultaten (D10) using the exact underline
+            variant styling from src/components/ui/tabs.tsx.
+        - Empty state on right pane mirrors src/components/states/EmptyState.tsx
+            (dashed border, icon-in-circle, h3 title, max-w-sm body).
+
+      All styles in this file mirror real orchestrator primitives 1:1:
+        - .badge[data-variant]        → src/components/ui/badge.tsx variants
+        - .btn[data-variant]          → src/components/ui/button.tsx variants
+        - .tabs-list / .tab-trigger   → src/components/ui/tabs.tsx underline variant
+        - .av[data-tint]              → src/components/ui/avatar.tsx getAvatarTintClass
+        - .empty (inline)             → src/components/states/EmptyState.tsx
+
+      When promoting to React: right pane = <EntityDetailPage> + <AppointmentContextBlock>
+      slotted ABOVE <EntityDetailTabs>. No new primitives — only the appointment
+      block is a new task-bound widget (lives in modules/tasks/components/).
+    -->
+
+    <div class="flex h-screen overflow-hidden">
+
+      <!-- APP SIDEBAR -->
+      <aside class="side hidden lg:flex w-60 shrink-0 flex-col">
+        <div class="px-3 pt-4 pb-3 flex items-center gap-2">
+          <span aria-hidden="true" class="grid size-7 shrink-0 place-items-center rounded-md gradient-active text-[12px] font-semibold text-white shadow-sm">Z</span>
+          <span class="truncate text-[14px] font-semibold">ZAS Orchestrator</span>
+        </div>
+
+        <nav class="flex-1 px-2 py-1">
+          <a class="nav-item"><i data-lucide="layout-dashboard" class="size-4"></i><span>Overzicht</span></a>
+          <a class="nav-item" aria-current="page"><i data-lucide="inbox" class="size-4"></i><span>Taken</span></a>
+          <a class="nav-item"><i data-lucide="git-branch" class="size-4"></i><span>Zorgpaden</span></a>
+
+          <div class="nav-group-h">
+            <span>Beheer</span>
+            <i data-lucide="chevron-down" class="size-3.5"></i>
+          </div>
+          <a class="nav-item"><i data-lucide="users" class="size-4"></i><span>Gebruikers</span></a>
+          <a class="nav-item"><i data-lucide="building-2" class="size-4"></i><span>Organisaties</span></a>
+          <a class="nav-item"><i data-lucide="user-cog" class="size-4"></i><span>Affiliaties</span></a>
+        </nav>
+
+        <div class="px-3 pb-4 pt-2 border-t" style="border-color: var(--hairline);">
+          <button class="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[--color-surface-2]">
+            <div class="av size-8 rounded-full text-[12px]" data-tint="0">DJ</div>
+            <div class="flex-1 min-w-0 leading-tight text-left">
+              <div class="truncate text-[13px] font-medium">Dr. Janssen</div>
+              <div class="truncate text-[12px] text-[--color-foreground-muted]">caregiver</div>
+            </div>
+            <i data-lucide="chevrons-up-down" class="size-3.5 opacity-60"></i>
+          </button>
+          <button class="mt-2 w-full nav-item" style="font-size:13px;"><i data-lucide="settings" class="size-4"></i><span>Instellingen</span></button>
+        </div>
+      </aside>
+
+      <main class="flex-1 flex min-h-0">
+
+        <!-- LEFT: narrow task rail -->
+        <section class="side w-[280px] shrink-0 flex flex-col">
+          <div class="px-4 pt-5 pb-3 text-[14px] text-[--color-foreground-muted] flex items-center gap-1.5">
+            <a href="#" class="hover:text-[--color-foreground]">Home</a>
+            <i data-lucide="chevron-right" class="size-3 opacity-50"></i>
+            <span class="text-[--color-foreground]">Taken</span>
+          </div>
+
+          <header class="px-4 pt-1 pb-3">
+            <h1 class="text-[18px] leading-tight font-semibold tracking-tight">Taken</h1>
+            <p class="mt-0.5 text-[12px] text-[--color-foreground-muted]">Komende 3 dagen</p>
+          </header>
+
+          <ul id="taskRail" role="list" class="flex-1 overflow-y-auto border-t" style="border-color: var(--hairline);"></ul>
+        </section>
+
+        <!-- RIGHT: real PatientProfilePage chrome with appointment context block -->
+        <section id="rightPane" class="flex-1 min-w-0 overflow-y-auto bg-[--color-background]">
+          <div id="rightInner" class="h-full"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // -------- Mock domain data --------
+      const PATIENTS = {
+        'p-7b9d': { id: 'p-7b9d', given: 'Anke',  family: 'Janssens',     insz: '85.03.12-072.47', dob: '12 mrt 1985', org: 'ZAS Antwerpen — Cardiologie',         team: 'Cardio Team A',     lead: 'Dr. Janssen' },
+        'p-24aa': { id: 'p-24aa', given: 'Jan',   family: 'Kowalski',     insz: '78.09.04-189.13', dob: '4 sep 1978',  org: 'ZAS Antwerpen — Klinisch Lab',        team: 'Lab Team',          lead: 'Dr. Mertens' },
+        'p-90c1': { id: 'p-90c1', given: 'Marc',  family: 'De Vries',     insz: '62.11.27-301.05', dob: '27 nov 1962', org: 'ZAS Antwerpen — Radiologie',          team: 'Radiologie Team',   lead: 'Dr. Peeters' },
+        'p-f3e0': { id: 'p-f3e0', given: 'Lisa',  family: 'Bakker',       insz: '91.05.22-455.61', dob: '22 mei 1991', org: 'ZAS Antwerpen — Orthopedie',          team: 'Orthopedie Team B', lead: 'Dr. Hendriks' },
+        'p-a187': { id: 'p-a187', given: 'Eva',   family: 'Van der Berg', insz: '88.07.30-664.18', dob: '30 jul 1988', org: 'ZAS Antwerpen — Interne geneeskunde', team: 'Interne Team A',    lead: 'Dr. Janssen' },
+        'p-c4d6': { id: 'p-c4d6', given: 'Sven',  family: 'Hendriks',     insz: '95.12.05-902.34', dob: '5 dec 1995',  org: 'ZAS Antwerpen — Cardiologie',         team: 'Cardio Team A',     lead: 'Dr. Janssen' },
+      };
+
+      const TASKS = [
+        { id: 'a-001', source: 'appointment', kind: 'procedure',    title: 'Kleine ingreep — knie',          due_label: 'vandaag 15:45', due_group: 'Vandaag',     payload: { patientId: 'p-f3e0', modality: 'on_site', location: 'OK 4',                  participants: [{ role: 'lead', name: 'Dr. Hendriks' }, { role: 'support', name: 'Verp. Smets' }] } },
+        { id: 'a-002', source: 'appointment', kind: 'consultation', title: 'Controle bloeddruk — opvolging', due_label: 'vandaag 16:30', due_group: 'Vandaag',     payload: { patientId: 'p-7b9d', modality: 'on_site', location: 'Polikliniek 1, kamer 4', participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+        { id: 'a-003', source: 'appointment', kind: 'lab',          title: 'Bloedafname nuchter',            due_label: 'morgen 08:15',  due_group: 'Morgen',      payload: { patientId: 'p-24aa', modality: 'on_site', location: 'Lab balie 2',            participants: [{ role: 'lead', name: 'Dr. Mertens' }] } },
+        { id: 'a-004', source: 'appointment', kind: 'consultation', title: 'Opvolggesprek',                  due_label: 'morgen 11:00',  due_group: 'Morgen',      payload: { patientId: 'p-a187', modality: 'online',  location: null,                     participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+        { id: 'a-005', source: 'appointment', kind: 'consultation', title: 'Controle na operatie',           due_label: 'morgen 14:00',  due_group: 'Morgen',      payload: { patientId: 'p-7b9d', modality: 'on_site', location: 'Polikliniek 3, kamer 12', participants: [{ role: 'lead', name: 'Dr. Janssen' }, { role: 'observer', name: 'Stagiair Devos' }] } },
+        { id: 'a-006', source: 'appointment', kind: 'imaging',      title: 'MRI lumbale wervelkolom',        due_label: 'over 2 dagen',  due_group: 'Over 2 dagen', payload: { patientId: 'p-90c1', modality: 'on_site', location: 'MRI 1',                  participants: [{ role: 'lead', name: 'Dr. Peeters' }] } },
+        { id: 'a-007', source: 'appointment', kind: 'other',        title: 'Holter terugbrengen',            due_label: 'over 2 dagen',  due_group: 'Over 2 dagen', payload: { patientId: 'p-c4d6', modality: 'on_site', location: 'Onthaal',                participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+        { id: 'a-008', source: 'appointment', kind: 'imaging',      title: 'Bekkenscan — vervolg',           due_label: 'over 3 dagen',  due_group: 'Over 3 dagen', payload: { patientId: 'p-a187', modality: 'on_site', location: 'CT 2',                   participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+      ];
+
+      const KIND_ICON  = { consultation: 'stethoscope', lab: 'flask-conical', imaging: 'scan', procedure: 'syringe', other: 'calendar' };
+      const KIND_LABEL = { consultation: 'Consultatie', lab: 'Labafname', imaging: 'Beeldvorming', procedure: 'Ingreep', other: 'Overig' };
+      const MODALITY_LABEL = { online: 'Online', on_site: 'Op locatie' };
+
+      // -------- Helpers --------
+      function initials(g, f) { return (g[0] || '').toUpperCase() + (f[0] || '').toUpperCase(); }
+      function tintIndex(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h % 8; }
+      function el(tag, opts = {}) {
+        const n = document.createElement(tag);
+        if (opts.cls) n.className = opts.cls;
+        if (opts.text != null) n.textContent = opts.text;
+        if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) n.setAttribute(k, v);
+        if (opts.style) n.setAttribute('style', opts.style);
+        return n;
+      }
+      function icon(name, cls) { const i = document.createElement('i'); i.setAttribute('data-lucide', name); if (cls) i.className = cls; return i; }
+      function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+      function badge(variant, content) {
+        const b = el('span', { cls: 'badge', attrs: { 'data-variant': variant } });
+        if (typeof content === 'string') b.textContent = content;
+        else b.appendChild(content);
+        return b;
+      }
+
+      // -------- Task rail row --------
+      function buildRailRow(task) {
+        const patient = PATIENTS[task.payload.patientId];
+        const li = el('li');
+        const a = el('button', { cls: 'rail-row', attrs: { 'data-task-id': task.id, type: 'button' } });
+
+        const tile = el('span', { cls: 'kind-tile', attrs: { 'data-kind': task.kind, 'aria-hidden': 'true' } });
+        tile.appendChild(icon(KIND_ICON[task.kind], 'size-4'));
+
+        const idCol = el('div', { cls: 'flex-1 min-w-0' });
+        idCol.appendChild(el('div', { cls: 'text-[13px] font-medium truncate', text: patient.family + ', ' + patient.given }));
+        idCol.appendChild(el('div', { cls: 'mt-0.5 text-[11px] text-[--color-foreground-muted] tabular-nums truncate', text: task.due_label }));
+
+        a.appendChild(tile);
+        a.appendChild(idCol);
+        li.appendChild(a);
+        return li;
+      }
+
+      // -------- Right pane: real PatientProfilePage chrome --------
+      // Mirrors EntityDetailPage + PageHeader + EntityDetailTabs from
+      // apps/orchestrator/src/components/entity/* + components/layout/PageHeader
+      function buildPatientView(task) {
+        const patient = PATIENTS[task.payload.patientId];
+        const root = el('div');
+
+        // <PageHeader> — px-6 pt-6 pb-4 flex flex-col gap-4
+        const header = el('header', { cls: 'flex flex-col gap-4 px-6 pt-6 pb-4', attrs: { 'data-slot': 'page-header' } });
+
+        // Top row: title block (eyebrow back + h1 + subtitle) + actions slot
+        const topRow = el('div', { cls: 'flex items-start justify-between gap-4' });
+        const titleBlock = el('div', { cls: 'flex min-w-0 flex-1 flex-col gap-1' });
+
+        // Eyebrow back link (mirrors EntityDetailPage)
+        const eyebrow = el('a', {
+          cls: 'inline-flex items-center gap-1 text-xs font-medium text-[--color-foreground-muted] hover:text-[--color-foreground]',
+          attrs: { href: '#' },
+        });
+        eyebrow.appendChild(icon('arrow-left', 'size-3'));
+        eyebrow.appendChild(document.createTextNode('Terug'));
+        // eyebrow is wrapped in a small uppercase muted div in PageHeader; mirror that
+        const eyebrowWrap = el('div', { cls: 'text-xs font-medium tracking-wide text-[--color-foreground-muted] uppercase' });
+        eyebrowWrap.appendChild(eyebrow);
+        titleBlock.appendChild(eyebrowWrap);
+
+        // h1 — text-3xl font-semibold tracking-tight
+        titleBlock.appendChild(el('h1', { cls: 'text-3xl font-semibold tracking-tight text-[--color-foreground]', text: patient.family + ', ' + patient.given }));
+
+        // Subtitle (PatientProfilePage subtitle structure) — INSZ Badge default + muted "Geboren …" + Badge soft org
+        const sub = el('p', { cls: 'flex flex-wrap items-center gap-2 text-sm text-[--color-foreground-muted]' });
+        const inszBadge = el('span', { cls: 'badge', attrs: { 'data-variant': 'default' } });
+        inszBadge.appendChild(document.createTextNode('INSZ:'));
+        inszBadge.appendChild(el('span', { cls: 'ml-1 font-mono', text: patient.insz }));
+        sub.appendChild(inszBadge);
+        sub.appendChild(el('span', { text: 'Geboren ' + patient.dob }));
+        sub.appendChild(badge('soft', patient.org));
+        titleBlock.appendChild(sub);
+
+        topRow.appendChild(titleBlock);
+
+        // Actions — Bewerken + kebab (mirrors PatientProfilePage exactly)
+        const actions = el('div', { cls: 'flex shrink-0 items-center gap-2' });
+        const editBtn = el('button', { cls: 'btn', attrs: { 'data-variant': 'default' } });
+        editBtn.appendChild(document.createTextNode('Bewerken'));
+        actions.appendChild(editBtn);
+        const kebab = el('button', { cls: 'btn', attrs: { 'data-variant': 'ghost', 'data-size': 'icon', 'aria-label': 'Acties' } });
+        kebab.appendChild(icon('more-horizontal', 'size-4 text-[--color-foreground-muted]'));
+        actions.appendChild(kebab);
+        topRow.appendChild(actions);
+
+        header.appendChild(topRow);
+        root.appendChild(header);
+
+        // Body — px-6 pb-8 flex flex-col gap-3 (mirrors EntityDetailPage body slot)
+        const body = el('div', { cls: 'flex flex-col gap-3 px-6 pb-8' });
+
+        // Appointment-context block (the "little block of the appointment")
+        body.appendChild(buildAppointmentBlock(task));
+
+        // Tabs — Metingen + Labresultaten (D10) using EntityDetailTabs underline shape
+        const tabsBlock = el('div', { cls: 'flex flex-col gap-4' });
+        const tabsList = el('div', { cls: 'tabs-list', attrs: { role: 'tablist' } });
+        const TABS = [{ id: 'measurements', label: 'Metingen' }, { id: 'lab_results', label: 'Labresultaten' }];
+        const tabBody = el('div', { cls: 'pt-1' });
+        TABS.forEach((tab, i) => {
+          const b = el('button', {
+            cls: 'tab-trigger',
+            attrs: { 'data-tab': tab.id, 'data-state': i === 0 ? 'active' : 'inactive', role: 'tab', type: 'button' },
+            text: tab.label,
+          });
+          b.addEventListener('click', () => {
+            tabsList.querySelectorAll('.tab-trigger').forEach((t) => t.setAttribute('data-state', 'inactive'));
+            b.setAttribute('data-state', 'active');
+            renderTabBody(tabBody, tab.id);
+          });
+          tabsList.appendChild(b);
+        });
+        tabsBlock.appendChild(tabsList);
+        tabsBlock.appendChild(tabBody);
+        renderTabBody(tabBody, 'measurements');
+        body.appendChild(tabsBlock);
+
+        root.appendChild(body);
+        return root;
+      }
+
+      // The "little block of the appointment" — slim flat strip above the tabs.
+      // Kind tile + title + meta + lead participant + "Open afspraak" ghost button.
+      // Reads as: this task is what brought you here.
+      function buildAppointmentBlock(task) {
+        const wrap = el('div', { cls: 'flex items-center gap-3 rounded-md border px-4 py-3', style: 'border-color: var(--color-border); background: color-mix(in srgb, var(--color-primary-soft) 25%, var(--color-background));' });
+
+        const tile = el('span', { cls: 'kind-tile lg', attrs: { 'data-kind': task.kind, 'aria-hidden': 'true' } });
+        tile.appendChild(icon(KIND_ICON[task.kind], 'size-5'));
+        wrap.appendChild(tile);
+
+        const mid = el('div', { cls: 'flex-1 min-w-0' });
+        const top = el('div', { cls: 'flex items-center gap-2 flex-wrap' });
+        top.appendChild(el('span', { cls: 'text-[15px] font-medium text-[--color-foreground]', text: task.title }));
+        top.appendChild(badge('soft', KIND_LABEL[task.kind]));
+        mid.appendChild(top);
+
+        const metaLine = el('div', { cls: 'mt-1 flex flex-wrap items-center gap-3 text-xs text-[--color-foreground-muted]' });
+        const timeWrap = el('span', { cls: 'inline-flex items-center gap-1 tabular-nums' });
+        timeWrap.appendChild(icon('clock-3', 'size-3.5'));
+        timeWrap.appendChild(el('span', { text: task.due_label }));
+        metaLine.appendChild(timeWrap);
+
+        const modWrap = el('span', { cls: 'inline-flex items-center gap-1' });
+        modWrap.appendChild(icon(task.payload.modality === 'online' ? 'video' : 'map-pin', 'size-3.5'));
+        modWrap.appendChild(el('span', { text: MODALITY_LABEL[task.payload.modality] + (task.payload.location ? ' · ' + task.payload.location : '') }));
+        metaLine.appendChild(modWrap);
+
+        const lead = task.payload.participants.find((p) => p.role === 'lead');
+        if (lead) {
+          const leadWrap = el('span', { cls: 'inline-flex items-center gap-1' });
+          leadWrap.appendChild(icon('user-round', 'size-3.5'));
+          leadWrap.appendChild(el('span', { text: 'Lead ' + lead.name }));
+          metaLine.appendChild(leadWrap);
+        }
+        mid.appendChild(metaLine);
+        wrap.appendChild(mid);
+
+        // Open-source button (deep link to underlying appointment / no-op v1)
+        const openBtn = el('button', { cls: 'btn shrink-0', attrs: { 'data-variant': 'ghost' } });
+        openBtn.appendChild(icon('external-link', 'size-3.5'));
+        openBtn.appendChild(document.createTextNode('Open afspraak'));
+        wrap.appendChild(openBtn);
+
+        return wrap;
+      }
+
+      function renderTabBody(node, tab) {
+        clear(node);
+        if (tab === 'measurements') {
+          node.appendChild(emptyState('activity', 'Nog geen metingen gekoppeld', 'Wordt geleverd door de monitoring-koppeling.'));
+        } else {
+          node.appendChild(emptyState('flask-conical', 'Nog geen labresultaten gekoppeld', 'Wordt geleverd door de HiX-koppeling.'));
+        }
+        window.lucide && window.lucide.createIcons();
+      }
+
+      // Mirrors src/components/states/EmptyState.tsx
+      // (dashed border, icon-in-circle on muted bg, h3 title text-base semibold, body max-w-sm text-sm muted)
+      function emptyState(iconName, title, body) {
+        const wrap = el('div', {
+          cls: 'flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed px-6 py-12 text-center',
+          style: 'border-color: color-mix(in srgb, var(--color-border) 60%, transparent);',
+          attrs: { role: 'status', 'data-slot': 'empty-state' },
+        });
+        const iconWrap = el('div', { cls: 'grid size-12 place-items-center rounded-full', style: 'background: var(--color-muted); color: var(--color-foreground-muted);' });
+        iconWrap.appendChild(icon(iconName, 'size-6'));
+        wrap.appendChild(iconWrap);
+        wrap.appendChild(el('h3', { cls: 'text-base font-semibold text-[--color-foreground]', text: title }));
+        wrap.appendChild(el('p', { cls: 'max-w-sm text-sm text-[--color-foreground-muted]', text: body }));
+        return wrap;
+      }
+
+      function renderEmptySelection() {
+        const wrap = el('div', { cls: 'h-full flex items-center justify-center px-6 py-12' });
+        wrap.appendChild(emptyState('inbox', 'Selecteer een taak', 'Kies links een taak om de patiënt en de afspraak te bekijken.'));
+        return wrap;
+      }
+
+      // -------- Render --------
+      let selectedTaskId = null;
+
+      function renderRail() {
+        const rail = document.getElementById('taskRail');
+        clear(rail);
+        let currentGroup = null;
+        TASKS.forEach((task) => {
+          if (task.due_group !== currentGroup) {
+            currentGroup = task.due_group;
+            rail.appendChild(el('li', { cls: 'px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-[--color-foreground-muted]', text: currentGroup }));
+          }
+          const row = buildRailRow(task);
+          if (task.id === selectedTaskId) row.querySelector('button').setAttribute('data-active', 'true');
+          rail.appendChild(row);
+        });
+        rail.querySelectorAll('button[data-task-id]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedTaskId = btn.dataset.taskId;
+            renderRail();
+            renderRight();
+          });
+        });
+      }
+
+      function renderRight() {
+        const host = document.getElementById('rightInner');
+        clear(host);
+        if (selectedTaskId == null) {
+          host.appendChild(renderEmptySelection());
+        } else {
+          const task = TASKS.find((t) => t.id === selectedTaskId);
+          if (task) host.appendChild(buildPatientView(task));
+        }
+        window.lucide && window.lucide.createIcons();
+      }
+
+      renderRail();
+      renderRight();
+      window.lucide && window.lucide.createIcons();
+    </script>
+  </body>
+</html>

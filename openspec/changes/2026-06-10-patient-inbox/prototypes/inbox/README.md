@@ -12,26 +12,52 @@
 | v8 | superseded | v7 + 3-state master/detail collapse. Surface-agnostic `<PatientDetailView>` architecture. Pre-reframe (patient list with sort tabs + Afspraken tab). |
 | v9 | superseded | Reframe-final master/detail. Click row → expand patient detail right. |
 | v10 | superseded | Narrow rail + scroll-stack of ALL tasks open. Scroll-spy. Too noisy — user wants single-task focus. |
-| **v11** | **LOCKED** | Narrow 280px rail (always visible) + right pane shows ONE task at a time. URL drives selection. Empty state when nothing selected. Single-card focus replaces stack. |
+| v11 | superseded | Narrow rail + single-task right pane with custom card chrome. Didn't mirror real `PatientProfilePage` styling closely enough. |
+| **v12** | **LOCKED** | Right pane = real `<PatientProfilePage>` chrome (EntityDetailPage + PageHeader + EntityDetailTabs, all mirroring orchestrator primitives 1:1). Small appointment-context block in the body slot, ABOVE the tabs. Empty state mirrors `<EmptyState>`. |
 
-## v11 = accepted wireframe
+## v12 = accepted wireframe
 
-Open `v11.html`. Two-pane layout, both panes always visible:
+Open `v12.html`. Two-pane layout, both panes always visible. Right pane mirrors the **real `<PatientProfilePage>` chrome** + adds a small appointment-context block above the tabs.
 
-- **LEFT** — narrow `280px` rail (`<TaskRail>`). Always visible. Rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`). Each row = kind tile + `family, given` + relative due copy. Active row has a 3px left accent and tinted background.
-- **RIGHT** — single-task viewport (`<TaskDetail>`). Renders exactly ONE state:
-  - **Nothing selected** (URL `/_auth/tasks`): `<EmptyState>` with `Selecteer een taak` headline + `Kies links een taak om de patiënt en de afspraak te bekijken.` hint.
-  - **One selected** (URL `/_auth/tasks/$taskId`): that task's full card — patient identity (avatar + name + INSZ pill + DOB + org + Zorgteam) + appointment block (kind tile + title + time + modality + location + participants strip) + Metingen/Labresultaten tabs (both empty v1).
-- Per-card actions: `Open patiënt` (deep link to `/_auth/patients/$id`) + kebab (`Bewerken` / `Verwijderen` / `Geschiedenis`).
+### Layout
 
-### What v11 reframes vs v10
+- **LEFT** — narrow `280px` task rail (`<TaskRail>`). Always visible. Rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`).
+- **RIGHT** — `<EntityDetailPage>` chrome with appointment context:
+  - **`<PageHeader>`** (px-6 pt-6 pb-4): eyebrow back-link, `h1` text-3xl semibold tracking-tight = `family, given`, subtitle row = `<Badge variant="default">INSZ:&nbsp;<mono /></Badge>` + `Geboren …` muted + `<Badge variant="soft">{org}</Badge>`. Actions = `<Button>Bewerken</Button>` + ghost-icon kebab.
+  - **Body** (px-6 pb-8 flex flex-col gap-3):
+    1. **Appointment context block** — flat slim strip with kind tile + title + relative time + modality icon/location + lead participant + `Open afspraak` ghost button. Subtle primary-soft background to nudge the eye but no card-in-card depth.
+    2. **`<EntityDetailTabs>`** underline variant — `Metingen` + `Labresultaten` (D10). Both render `<EmptyState>` v1.
+- **Empty state** when nothing selected mirrors `<EmptyState>` (dashed border, icon-in-circle on muted bg, `h3` text-base semibold + `p` max-w-sm text-sm muted).
 
-- **One task at a time** on the right. No scroll-stack. No scroll-spy.
-- **URL drives selection** (state 1 ↔ state 2). Selection is shareable.
-- **Empty state on first load.** Caregiver lands on `/_auth/tasks` → sees the rail + a centered "Selecteer een taak" empty state on the right.
-- **Rail still narrow 280px** and always visible (no collapse, no hide).
+### Why mirror existing primitives 1:1
 
-### What stays from v10
+User direction: *"more inline with our actually styling should use later on our components we already have in the orchestrator app"*. The prototype CSS replicates the relevant components so the React build is a 1:1 port — no surprise styling drift:
+
+| Prototype class | Real component |
+|---|---|
+| `.badge[data-variant]` | `src/components/ui/badge.tsx` variants (`default` / `soft` / `outline` / `muted` / `destructive`) |
+| `.btn[data-variant]` | `src/components/ui/button.tsx` variants (`default` / `ghost`) |
+| `.tabs-list` / `.tab-trigger` | `src/components/ui/tabs.tsx` underline variant |
+| `.av[data-tint]` | `src/components/ui/avatar.tsx` `getAvatarTintClass` palette |
+| Right-pane chrome | `src/components/entity/EntityDetailPage.tsx` + `src/components/layout/PageHeader.tsx` |
+| Tabs strip | `src/components/entity/EntityDetailTabs.tsx` (underline variant) |
+| `emptyState()` | `src/components/states/EmptyState.tsx` |
+
+### Implications for the React build (when promoting)
+
+- `/_auth/tasks` parent route: plain two-column flex (`<TaskRail>` 280px + `<Outlet>`).
+- `/_auth/tasks/index.tsx` child: `<EmptyState icon={Inbox} title="Selecteer een taak" body="..." />`.
+- `/_auth/tasks/$taskId/index.tsx` child: fetches task + patient, renders `<EntityDetailPage>` with:
+  - `back` → `{ to: '/_auth/tasks' }`.
+  - `title` → `family, given`.
+  - `subtitle` → INSZ Badge default + Geboren + Org Badge soft (reuse `pickInsz` + organisation lookup from existing `PatientProfilePage.tsx`).
+  - `actions` → `Bewerken` + kebab (`useEntityDelete` + `Geschiedenis` dialog).
+  - `body` → `<AppointmentContextBlock task={...} />` + `<EntityDetailTabs>` with Metingen + Lab.
+- New components scoped to `modules/tasks/`:
+  - `<AppointmentContextBlock>` — slim flat strip described above. Owns kind tile + relative-time copy + modality + lead participant + `Open afspraak` button.
+- Reuse from `modules/patient/`: `usePatient`, `pickInsz`, organisation cache pattern, `EditPatientDialog`, `<PatientHistoryPanel>`, `useEntityDelete`.
+
+### What stays from v11 / v9
 
 - Sidebar nav = `Taken` (lucide `inbox`).
 - Narrow `280px` task rail, grouped by due bucket.
@@ -40,14 +66,7 @@ Open `v11.html`. Two-pane layout, both panes always visible:
 - Fixed sort `due_at asc` (D-NOSORT).
 - Two patient tabs only (`Metingen` + `Labresultaten`) per D10.
 - Deterministic-tint avatars (D7) by `patient.id`.
-- Single source-agnostic empty-state copy (D-EMPTY) on rail; separate "selection" empty state on right pane.
-
-### Implications for the React build (when promoting)
-
-- Drop `<MasterDetailLayout>` from `/_auth/tasks` route — replace with a plain two-column flex layout (the layout primitive stays available for other surfaces).
-- Route shape: parent `/_auth/tasks` renders rail + `<Outlet>`; child `/_auth/tasks/$taskId/index.tsx` renders the selected task card; child `/_auth/tasks/index.tsx` renders the selection-empty state.
-- URL param is `$taskId` (not `$patientId`) — selection is per-task, not per-patient. Same patient can have two tasks → two distinct selectable rows + URLs.
-- Patient-detail components from `<PatientDetailView>` (D16) are reused as the upper section of the right card; the appointment block is a new piece (lives in `modules/tasks/`).
+- URL drives selection — selection is shareable.
 
 ### What v9 reframes vs v8
 
