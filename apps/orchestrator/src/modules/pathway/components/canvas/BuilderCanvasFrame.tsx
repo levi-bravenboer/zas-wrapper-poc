@@ -1,11 +1,4 @@
-import {
-  applyNodeChanges,
-  Background,
-  BackgroundVariant,
-  ReactFlow,
-  ViewportPortal,
-  type NodeChange,
-} from '@xyflow/react'
+import { applyNodeChanges, Background, BackgroundVariant, ReactFlow, ViewportPortal, type NodeChange } from '@xyflow/react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,6 +6,7 @@ import { buildCanvasGeometry, type CanvasGeometry, type BlockFitInput } from '..
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { inkAlpha } from '../../constants/theme'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
+import { computeBlockLayout, visibleLanes } from '../../layout/computeBlockLayout'
 import {
   legacyBlockType,
   type PathwayBlock,
@@ -24,7 +18,6 @@ import {
 } from '../../types'
 import type { BuilderAction, BuilderSelection } from '../../useBuilderState'
 import { getBlockDimensions } from '../../utils/blockDimensions'
-import { isLaneAllowed } from '../../utils/laneRules'
 
 import { BackgroundLayers } from './BackgroundLayers'
 import { SmoothstepEdge } from './edges/SmoothstepEdge'
@@ -33,18 +26,10 @@ import { type LaneDropState } from './LaneRow'
 import { NavigatorPanel } from './NavigatorPanel'
 import { type BlockFlowNode } from './nodes/BlockNode'
 import { BlockNodeRouter } from './nodes/BlockNodeRouter'
-import type { DragContextApi } from './useDragContext'
 import { useFlowEdges } from './useFlowEdges'
 import { useFlowNodes } from './useFlowNodes'
 
 import '@xyflow/react/dist/style.css'
-
-export type CanvasDropTarget = {
-  phaseId: string
-  laneId: string
-  x: number
-  y: number
-}
 
 type Props = {
   phases: PathwayPhase[]
@@ -55,8 +40,6 @@ type Props = {
   blockTypes: PathwayBlockType[]
   selection: BuilderSelection
   dispatch: (action: BuilderAction) => void
-  onDropBlockType: (typeCode: string, target: CanvasDropTarget | null) => void
-  dragApi: DragContextApi
 }
 
 // One xyflow node type, ever. The router dispatches on `data.block.type`
@@ -67,6 +50,10 @@ type Props = {
 const NODE_TYPES = { block: BlockNodeRouter } as const
 const EDGE_TYPES = { smoothstep: SmoothstepEdge } as const
 
+// Pathway-completion § C2.2: the canvas is a read-only render of the
+// derived layout. No block dragging, no edge dragging, no drop targets —
+// authoring happens in the block dialog; placement comes from
+// `computeBlockLayout`; edges derive from `input_logic` server-side.
 export function BuilderCanvasFrame({
   phases,
   lanes,
@@ -76,36 +63,44 @@ export function BuilderCanvasFrame({
   blockTypes,
   selection,
   dispatch,
-  onDropBlockType,
-  dragApi,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
+
+  // § C3: computed positions per (phase, lane) cell. Authored x/y ignored.
+  const layout = useMemo(() => computeBlockLayout(blocks), [blocks])
+
+  // § C3.3: hide lanes without blocks — canvas render only; the block
+  // dialog's lane picker keeps consuming the full lane list.
+  const lanesOnCanvas = useMemo(() => visibleLanes(lanes, blocks), [lanes, blocks])
+
   const fitInputs = useMemo<BlockFitInput[]>(() => {
     const byCode = new Map(blockTypes.map((bt) => [bt.type, bt]))
     return blocks.map((b) => {
       const dims = getBlockDimensions(b, byCode.get(legacyBlockType(b)) ?? null)
+      const pos = layout.get(b.id) ?? { x: 0, y: 0 }
       return {
         phase_id: b.phase_id,
         lane_id: b.lane_id,
-        x: b.x,
-        y: b.y,
+        x: pos.x,
+        y: pos.y,
         width: dims.width,
         height: dims.height,
       }
     })
-  }, [blocks, blockTypes])
+  }, [blocks, blockTypes, layout])
   const geometry: CanvasGeometry = useMemo(
-    () => buildCanvasGeometry(phases, lanes, fitInputs),
-    [phases, lanes, fitInputs],
+    () => buildCanvasGeometry(phases, lanesOnCanvas, fitInputs),
+    [phases, lanesOnCanvas, fitInputs],
   )
 
   const derivedNodes = useFlowNodes({
     blocks,
-    lanes,
+    lanes: lanesOnCanvas,
     blockTypes,
     timingValues,
     edges,
     geometry,
+    layout,
     selection,
   })
 
@@ -118,52 +113,15 @@ export function BuilderCanvasFrame({
 
   const flowEdges = useFlowEdges({ edges, blocks, blockTypes, timingValues, selection })
 
-  const {
-    onNodesChange: dispatchNodesChange,
-    onEdgesChange,
-    onConnect,
-    onDrop,
-    onDragOver,
-    onPaneClick,
-  } = useCanvasHandlers({
-    blocks,
-    blockTypes,
-    lanes,
-    geometry,
+  const { onNodesChange: dispatchNodesChange, onEdgesChange, onPaneClick } = useCanvasHandlers({
     dispatch,
-    onDropBlockType,
-    dragApi,
   })
-
-  const onNodeDragStart = useCallback(
-    (_event: React.MouseEvent, node: BlockFlowNode) => {
-      const block = blocks.find((b) => b.id === node.id)
-      if (!block) return
-      const bt = blockTypes.find((c) => c.type === legacyBlockType(block))
-      if (!bt) return
-      dragApi.startMoveDrag(block.id, bt.type, bt.allowed_lane_kind_codes)
-    },
-    [blocks, blockTypes, dragApi],
-  )
-
-  const onNodeDragStop = useCallback(() => {
-    dragApi.endDrag()
-  }, [dragApi])
 
   const laneDropStates = useMemo<Record<string, LaneDropState>>(() => {
     const out: Record<string, LaneDropState> = {}
-    if (dragApi.drag.kind === 'idle') {
-      for (const lane of lanes) out[lane.id] = 'idle'
-      return out
-    }
-    const allowed = dragApi.drag.allowedLaneKindCodes
-    for (const lane of lanes) {
-      out[lane.id] = isLaneAllowed({ allowed_lane_kind_codes: [...allowed] }, lane.lane_kind_code)
-        ? 'valid'
-        : 'invalid'
-    }
+    for (const lane of lanesOnCanvas) out[lane.id] = 'idle'
     return out
-  }, [dragApi.drag, lanes])
+  }, [lanesOnCanvas])
 
   const onNodesChange = useCallback(
     (changes: NodeChange<BlockFlowNode>[]) => {
@@ -176,13 +134,7 @@ export function BuilderCanvasFrame({
   const scaffoldPresent = !!phases.length && !!lanes.length
 
   return (
-    <div
-      role="application"
-      aria-label={t('canvas.label')}
-      className="absolute inset-0 overflow-hidden"
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-    >
+    <div role="application" aria-label={t('canvas.label')} className="absolute inset-0 overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}
@@ -190,9 +142,6 @@ export function BuilderCanvasFrame({
         edgeTypes={EDGE_TYPES}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onNodeDragStart={onNodeDragStart}
-        onNodeDragStop={onNodeDragStop}
-        onConnect={onConnect}
         onPaneClick={onPaneClick}
         defaultViewport={CANVAS_VIEWPORT.initial}
         onInit={(instance) => {
@@ -205,8 +154,8 @@ export function BuilderCanvasFrame({
         zoomOnScroll={scaffoldPresent}
         zoomOnPinch={scaffoldPresent}
         zoomOnDoubleClick={scaffoldPresent}
-        nodesDraggable={scaffoldPresent}
-        nodeDragThreshold={CANVAS_VIEWPORT.dragThreshold}
+        nodesDraggable={false}
+        nodesConnectable={false}
         selectNodesOnDrag={false}
         proOptions={{ hideAttribution: true }}
       >
@@ -214,7 +163,7 @@ export function BuilderCanvasFrame({
         <ViewportPortal>
           <BackgroundLayers
             phases={phases}
-            lanes={lanes}
+            lanes={lanesOnCanvas}
             blocks={blocks}
             geometry={geometry}
             laneDropStates={laneDropStates}
@@ -226,7 +175,7 @@ export function BuilderCanvasFrame({
         {scaffoldPresent && (
           <NavigatorPanel
             phases={phases}
-            lanes={lanes}
+            lanes={lanesOnCanvas}
             blocks={blocks}
             edges={edges}
             geometry={geometry}

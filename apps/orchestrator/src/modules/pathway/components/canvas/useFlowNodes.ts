@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 
 import { indexById } from '@/lib/utils/indexBy'
 
-import { blockOrigin, type CanvasGeometry } from '../../canvasLayout'
+import { type CanvasGeometry } from '../../canvasLayout'
+import type { BlockPosition } from '../../layout/computeBlockLayout'
 import {
   legacyBlockType,
   type PathwayBlock,
@@ -23,6 +24,9 @@ type Params = {
   timingValues: PathwayTimingValue[]
   edges: PathwayEdge[]
   geometry: CanvasGeometry
+  // Pathway-completion § C3: computed per-cell positions from the
+  // auto-layout pass. Authored block.x / block.y are ignored.
+  layout: Map<string, BlockPosition>
   selection: BuilderSelection
 }
 
@@ -33,6 +37,7 @@ export function useFlowNodes({
   timingValues,
   edges,
   geometry,
+  layout,
   selection,
 }: Params): BlockFlowNode[] {
   const lanesById = useMemo(() => indexById(lanes), [lanes])
@@ -49,10 +54,14 @@ export function useFlowNodes({
       blocks.map((block) => {
         const blockType = typesByCode.get(legacyBlockType(block)) ?? null
         const dimensions = getBlockDimensions(block, blockType)
+        const cellPos = layout.get(block.id) ?? { x: 0, y: 0 }
         return {
           id: block.id,
           type: 'block',
-          position: blockOrigin(block, geometry, dimensions),
+          position: {
+            x: geometry.phaseX(block.phase_id) + cellPos.x,
+            y: geometry.laneY(block.lane_id) + cellPos.y,
+          },
           data: {
             block,
             blockType,
@@ -67,6 +76,6 @@ export function useFlowNodes({
           height: dimensions.height,
         }
       }),
-    [blocks, geometry, lanesById, typesByCode, timingById, incomingByTarget, selection],
+    [blocks, geometry, layout, lanesById, typesByCode, timingById, incomingByTarget, selection],
   )
 }

@@ -26,9 +26,8 @@ import { createBlock } from '../utils/createBlock'
 import { defaultLaneKindCode } from '../utils/laneRules'
 import { findSelectedBlock } from '../utils/selection'
 
-import { BuilderCanvasFrame, type CanvasDropTarget } from './canvas/BuilderCanvasFrame'
+import { BuilderCanvasFrame } from './canvas/BuilderCanvasFrame'
 import { BuilderFlushProvider } from './canvas/BuilderFlushContext'
-import { useDragContext } from './canvas/useDragContext'
 import { DeletePathwayDialog } from './DeletePathwayDialog'
 import { BuilderDock } from './dock/BuilderDock'
 import { BuilderDrawer } from './drawer/BuilderDrawer'
@@ -127,8 +126,6 @@ function Inner({
 
   useBuilderKeyboard({ flush, dispatch })
 
-  const dragApi = useDragContext()
-
   const { phases, lanes, blocks, edges, timingValues, branches } = useMemo(
     () => ({
       phases: state.version.phases ?? [],
@@ -141,6 +138,10 @@ function Inner({
     [state.version],
   )
 
+  // Pathway-completion § C2: clicking a dock tile adds the block in the
+  // first phase on the kind's default lane; position is computed by the
+  // auto-layout pass (authored x/y are placeholders the layout ignores).
+  // § C2.3 swaps this direct-add for the BlockDialog add-mode flow.
   const onAddBlock = useCallback(
     (blockType: PathwayBlockType) => {
       const preferredCode = defaultLaneKindCode(blockType)
@@ -166,28 +167,6 @@ function Inner({
       })
     },
     [lanes, phases, dispatch, t],
-  )
-
-  const onDropBlockType = useCallback(
-    (typeCode: string, target: CanvasDropTarget | null) => {
-      const bt = catalogue.find((c) => c.type === typeCode)
-      if (!bt) return
-      if (!target) {
-        onAddBlock(bt)
-        return
-      }
-      dispatch({
-        type: 'add-block',
-        block: createBlock({
-          blockType: bt,
-          phaseId: target.phaseId,
-          laneId: target.laneId,
-          x: target.x,
-          y: target.y,
-        }),
-      })
-    },
-    [catalogue, dispatch, onAddBlock],
   )
 
   const onJumpToPhase = useCallback((_phaseId: string) => {
@@ -281,15 +260,8 @@ function Inner({
             blockTypes={catalogue}
             selection={state.selection}
             dispatch={dispatch}
-            onDropBlockType={onDropBlockType}
-            dragApi={dragApi}
           />
-          <BuilderDock
-            catalogue={catalogue}
-            onAddBlock={onAddBlock}
-            onDragStartType={(bt) => dragApi.startNewDrag(bt.type, bt.allowed_lane_kind_codes)}
-            onDragEndType={dragApi.endDrag}
-          />
+          <BuilderDock catalogue={catalogue} onAddBlock={onAddBlock} />
           {selectedBlock && (
             <BuilderDrawer
               block={selectedBlock}
