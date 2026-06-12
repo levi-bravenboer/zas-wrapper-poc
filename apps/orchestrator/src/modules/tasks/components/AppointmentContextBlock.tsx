@@ -1,10 +1,4 @@
-import {
-  Clock3,
-  ExternalLink,
-  MapPin,
-  UserRound,
-  Video,
-} from 'lucide-react'
+import { Clock3, ExternalLink, MapPin, UserRound, Video } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -30,9 +24,7 @@ export type AppointmentContextBlockProps = {
  * and renders. The `Open afspraak` button is a no-op v1 (no `/appointments`
  * surface ships); a host can wrap and pass through later.
  */
-export function AppointmentContextBlock({
-  task,
-}: AppointmentContextBlockProps): ReactElement {
+export function AppointmentContextBlock({ task }: AppointmentContextBlockProps): ReactElement {
   const { t } = useTranslation(['tasks', 'appointment'])
   const payload = task.payload
   const lead = payload.participants.find((p) => p.role === 'lead')

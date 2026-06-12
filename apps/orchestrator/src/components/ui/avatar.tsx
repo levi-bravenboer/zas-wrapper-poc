@@ -69,7 +69,9 @@ export function AvatarImage({ className, ...props }: AvatarImageProps) {
   )
 }
 
-export type AvatarFallbackProps = React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback> & {
+export type AvatarFallbackProps = React.ComponentPropsWithoutRef<
+  typeof AvatarPrimitive.Fallback
+> & {
   // When the parent `Avatar` carries a `tintBy`, the fallback should not
   // re-apply the default muted background.
   tinted?: boolean

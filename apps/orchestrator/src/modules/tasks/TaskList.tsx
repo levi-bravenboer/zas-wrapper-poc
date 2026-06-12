@@ -37,10 +37,7 @@ export function TaskList(): ReactElement {
   // `$taskId` from `/_auth/tasks/$taskId`.
   const selectedTaskId = (params as { taskId?: string }).taskId
 
-  const groups = useMemo(
-    () => (query.data ? groupByDay(t, query.data) : []),
-    [query.data, t],
-  )
+  const groups = useMemo(() => (query.data ? groupByDay(t, query.data) : []), [query.data, t])
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="task-list">

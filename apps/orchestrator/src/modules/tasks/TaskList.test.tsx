@@ -7,10 +7,9 @@ import { i18n } from '@/lib/i18n'
 import { TaskList } from './TaskList'
 import type { TaskItem } from './types'
 
-const { useTasksQueryMock, useParamsMock, useNavigateMock } = vi.hoisted(() => ({
+const { useTasksQueryMock, useParamsMock } = vi.hoisted(() => ({
   useTasksQueryMock: vi.fn(),
   useParamsMock: vi.fn(),
-  useNavigateMock: vi.fn(),
 }))
 
 vi.mock('./api', () => ({
@@ -19,12 +18,15 @@ vi.mock('./api', () => ({
 
 vi.mock('@tanstack/react-router', () => ({
   useParams: useParamsMock,
-  useNavigate: () => useNavigateMock,
   Link: ({ children, ...props }: { children?: React.ReactNode } & Record<string, unknown>) => {
     const { to, params, ...rest } = props
     void to
     void params
-    return <a href="#" {...(rest as object)}>{children}</a>
+    return (
+      <a href="#" {...(rest as object)}>
+        {children}
+      </a>
+    )
   },
 }))
 

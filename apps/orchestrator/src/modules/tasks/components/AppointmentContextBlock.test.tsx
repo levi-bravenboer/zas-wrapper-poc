@@ -33,9 +33,7 @@ function makeTask(overrides: Partial<TaskItem> = {}): TaskItem {
       modality: 'on_site',
       location_text: 'Polikliniek 1, kamer 4',
       status: 'booked',
-      participants: [
-        { user_id: 'u-1', role: 'lead', user_display_name: 'Dr. Janssen' },
-      ],
+      participants: [{ user_id: 'u-1', role: 'lead', user_display_name: 'Dr. Janssen' }],
     },
     ...overrides,
   } as TaskItem
@@ -62,9 +60,7 @@ describe('AppointmentContextBlock', () => {
     const task = makeTask({
       payload: {
         ...makeTask().payload,
-        participants: [
-          { user_id: 'u-2', role: 'support', user_display_name: 'Verp. Smets' },
-        ],
+        participants: [{ user_id: 'u-2', role: 'support', user_display_name: 'Verp. Smets' }],
       },
     })
     render(wrap(<AppointmentContextBlock task={task} />))

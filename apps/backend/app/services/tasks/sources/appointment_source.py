@@ -100,9 +100,12 @@ class AppointmentSource:
                 )
             )
 
+        # Guard the READ COMMITTED race where a patient is soft-deleted between
+        # the window query and the summary lookup — drop the row instead of 500.
         return [
             _project(row, summaries[row.patient_id], participants.get(row.id, []))
             for row in rows
+            if row.patient_id in summaries
         ]
 
     async def list(

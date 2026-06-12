@@ -48,7 +48,7 @@ async def make_appointment(
     """Validate + persist an appointment with its participants.
 
     Defaults to a `booked`, `online`, 1-hour appointment 1 day in the future
-    so it lands inside the `/tasks` aggregator's 3-day window for the
+    so it lands inside the `/tasks` aggregator's 30-day window for the
     happy-path tests.
     """
 

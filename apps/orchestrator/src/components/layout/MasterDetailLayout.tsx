@@ -40,9 +40,7 @@ export function MasterDetailLayout({
     <div className="relative flex h-full min-h-0 w-full">
       <div
         data-slot="master"
-        data-state={
-          !inSplitMode ? 'full' : masterCollapsed ? 'hidden' : 'compact'
-        }
+        data-state={!inSplitMode ? 'full' : masterCollapsed ? 'hidden' : 'compact'}
         className={cn(
           'flex h-full min-h-0 flex-col overflow-hidden transition-[width] duration-250 ease-out',
           // mobile: full-width regardless of split mode (detail column skipped)

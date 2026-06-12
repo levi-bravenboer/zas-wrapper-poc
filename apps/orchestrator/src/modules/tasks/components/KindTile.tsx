@@ -1,10 +1,4 @@
-import {
-  Activity,
-  FlaskConical,
-  Scan,
-  Stethoscope,
-  type LucideIcon,
-} from 'lucide-react'
+import { Activity, FlaskConical, Scan, Stethoscope, type LucideIcon } from 'lucide-react'
 import { type ReactElement } from 'react'
 
 import { cn } from '@/lib/style/cn'

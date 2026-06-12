@@ -19,9 +19,7 @@ function localDateOnly(d: Date): Date {
 
 function deltaDays(dueAtIso: string, now: Date): number {
   const due = new Date(dueAtIso)
-  return Math.round(
-    (localDateOnly(due).getTime() - localDateOnly(now).getTime()) / ONE_DAY_MS,
-  )
+  return Math.round((localDateOnly(due).getTime() - localDateOnly(now).getTime()) / ONE_DAY_MS)
 }
 
 /**

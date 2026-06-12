@@ -20,9 +20,7 @@ export async function fetchTasks(): Promise<TaskItem[]> {
   if (data.total > data.items.length) {
     // Surface truncation instead of silently dropping items — when a real
     // tenant hits the cap, this is the signal to add paging (D-FLAT note).
-    console.warn(
-      `tasks list truncated: showing ${data.items.length} of ${data.total} items`,
-    )
+    console.warn(`tasks list truncated: showing ${data.items.length} of ${data.total} items`)
   }
   return data.items
 }
