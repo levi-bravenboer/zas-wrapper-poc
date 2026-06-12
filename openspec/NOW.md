@@ -28,9 +28,12 @@ Three parts, executed strictly in order:
   frozen catalogue + predicate set. BLOCKED until Parts A + B
   complete.
 
-Cross-Part dependencies inside Part A:
-- A7 `mdo` blocked on B2 `aggregator_n_of_m`.
-- A8 `informed_consent` blocked on B3 `event`.
+Cross-Part dependencies (locked after Round-1 design decisions):
+- A7 `mdo` blocked on B3 `event` (`contributed` endpoint).
+- A8 `informed_consent` blocked on B1 re-evaluation tick scheduler.
+- A3, A6, B2 are DROPPED / DEFERRED — no implementation work.
+
+Suggested execution order: **B1 → A8 → B3 → A7 → A4 → A5 → Part C**.
 
 Full task list + status snapshot live in
 `openspec/changes/pathway-completion/tasks.md`. Update that file

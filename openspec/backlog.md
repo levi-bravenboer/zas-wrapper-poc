@@ -475,3 +475,17 @@ Note: ZAS wants user lifecycle (create/update/role-assign/deactivate, individual
 - Source: Lastenboek REQ-FUN-3 (deferred from `access-entitlements`; interplays with `oidc-login-providers` + BL-067)
 
 Note: Representative/trusted-person relationships should come from CSAM mandate registration where possible, with self-service onboarding (invitation links, itsme/eID identification) and ZAS-assisted setup as fallback. In our model a mandate becomes a consent-backed grant (same shape as `external_grants`) whose source is the federal mandate registry instead of local administration. Requires the eHealth/itsme federation seam (`oidc-login-providers`).
+
+## Filed by pathway-completion (2026-06-12)
+
+### BL-072 — Cross-pathway handoff (`bridge` block)
+- Tier: [mvp]
+- Source: Urology demo flow (`openspec/changes/pathway-model-redesign/example-flow-urology.md`); deferred from `pathway-completion` § A6
+
+Note: Terminal block kind that closes the current enrollment AND opens a new enrollment for the patient on a target pathway (e.g. "Cancer treatment" handoff). Touches enrollment lifecycle + identity carry-over to a new enrollment, neither of which is in PoC scope. Builder palette currently does NOT surface a "bridge" tile. Re-evaluate at MVP once enrollment-to-enrollment handoff semantics are designed.
+
+### BL-073 — `aggregator_n_of_m(count, total)` input_logic aggregator
+- Tier: [mvp]
+- Source: Urology demo flow (`openspec/changes/pathway-model-redesign/example-flow-urology.md`); deferred from `pathway-completion` § B2
+
+Note: Partial-completion aggregator on `InputLogic.aggregator` ("block eligible when ≥ N of M rules resolve true"). Originally scoped for MDO attendees; the MDO redesign in `pathway-completion` § A7 replaced the gate with leading-caregiver-completes, so no PoC consumer remains. Future MVP flows needing "N-of-M upstream gates" (e.g. partial team consensus, fallback paths) will promote this back. Small predicate — `NOfMArgs(count, total)` + evaluator branch + publish gate `1 <= count <= total`.
