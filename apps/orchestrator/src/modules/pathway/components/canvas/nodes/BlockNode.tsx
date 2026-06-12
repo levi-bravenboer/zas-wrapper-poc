@@ -1,5 +1,6 @@
 import { type Node, type NodeProps } from '@xyflow/react'
 import type { TFunction } from 'i18next'
+import { X } from 'lucide-react'
 import { memo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -48,6 +49,8 @@ export type BlockNodeData = {
   lane: PathwayLane | null
   duration: PathwayTimingValue | null
   isEntry: boolean
+  /** Pathway-completion § C2.5: hover-X delete affordance → confirm dialog. */
+  onRequestDelete?: (blockId: string) => void
 }
 
 export type BlockFlowNode = Node<BlockNodeData, 'block'>
@@ -86,9 +89,22 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
       tabIndex={0}
       aria-label={`${name}, type ${typeLabel}`}
       data-selected={isSelected || undefined}
-      className="relative grid grid-cols-[4px_36px_1fr] grid-rows-[auto_auto] rounded-[6px] border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-accent)_22%,transparent)]"
+      className="group relative grid grid-cols-[4px_36px_1fr] grid-rows-[auto_auto] rounded-[6px] border bg-card shadow-sm transition-[box-shadow,border-color] hover:border-[color:var(--color-border-strong)] data-[selected]:shadow-[0_0_0_4px_color-mix(in_srgb,var(--lane-accent)_22%,transparent)]"
       style={containerStyle}
     >
+      {data.onRequestDelete && (
+        <button
+          type="button"
+          aria-label={t('deleteBlock.title', { defaultValue: 'Blok verwijderen?' })}
+          onClick={(e) => {
+            e.stopPropagation()
+            data.onRequestDelete?.(data.block.id)
+          }}
+          className="absolute -right-1.5 -top-1.5 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm hover:opacity-90 group-hover:flex"
+        >
+          <X className="size-3" />
+        </button>
+      )}
       <div className="row-span-2 rounded-l-[5px]" style={railStyle} aria-hidden="true" />
       <div
         className="row-span-2 my-auto ml-1 inline-flex h-7 w-7 items-center justify-center rounded-sm"

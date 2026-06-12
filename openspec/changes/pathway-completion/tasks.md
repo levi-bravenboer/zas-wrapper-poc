@@ -321,9 +321,10 @@ complete.
   the typed envelope; "Opslaan" applies the whole draft (name,
   phase, lane, config, input_logic) in one patch.
   `BuilderDrawer` (sidebar inspector) deleted.
-- [ ] C2.5 Hover X icon → `ConfirmDeleteDialog` listing dependent
-  blocks → on confirm dispatch the cascade-cleanup reducer action.
-  (Lands with § C5.)
+- [x] C2.5 Hover X icon on block nodes → `ConfirmDeleteBlockDialog`
+  listing dependents → confirm dispatches the cascading
+  `delete-block`. Edit-dialog delete routes through the same
+  confirm.
 
 ### § C3 Layout engine
 
@@ -371,12 +372,18 @@ complete.
 
 ### § C5 Cascade-delete
 
-- [ ] C5.1 Reducer action `delete-block-cascade` that drops the
-  block and walks every other block's `input_logic.rules` to strip
-  references to the deleted block.
-- [ ] C5.2 Confirm dialog enumerates the dependent blocks by name.
-- [ ] C5.3 Unit tests: no dependents → silent, with dependents →
-  surfaces names, after delete the rules are gone.
+- [x] C5.1 Cascade lives in the existing `delete-block` reducer case
+  (no separate action — every delete cascades):
+  `cascadeDeleteBlock(version, blockId)` strips dependent
+  `input_logic.rules`, drops the block's `branches[]`, drops
+  derived edges. Exported for tests; `dependentBlocks()` feeds the
+  confirm dialog.
+- [x] C5.2 `ConfirmDeleteBlockDialog` enumerates dependents by name
+  + icon; copy switches to "Verwijderen + opschonen" when
+  dependents exist.
+- [x] C5.3 Unit tests (8): dependents listing, self-reference
+  exclusion, rule stripping, untouched-reference identity,
+  branch + edge cleanup.
 
 ### § C6 Backend rule-reference check
 

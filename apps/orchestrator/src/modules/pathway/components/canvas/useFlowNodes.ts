@@ -28,6 +28,8 @@ type Params = {
   // auto-layout pass. Authored block.x / block.y are ignored.
   layout: Map<string, BlockPosition>
   selection: BuilderSelection
+  // § C2.5: hover-X delete affordance → confirm dialog in the shell.
+  onRequestDelete: (blockId: string) => void
 }
 
 export function useFlowNodes({
@@ -39,6 +41,7 @@ export function useFlowNodes({
   geometry,
   layout,
   selection,
+  onRequestDelete,
 }: Params): BlockFlowNode[] {
   const lanesById = useMemo(() => indexById(lanes), [lanes])
   const typesByCode = useMemo(() => new Map(blockTypes.map((t) => [t.type, t])), [blockTypes])
@@ -70,12 +73,23 @@ export function useFlowNodes({
               ? (timingById.get(block.duration_value_id) ?? null)
               : null,
             isEntry: (incomingByTarget.get(block.id) ?? 0) === 0,
+            onRequestDelete,
           },
           selected: selection.kind === 'block' && selection.blockId === block.id,
           width: dimensions.width,
           height: dimensions.height,
         }
       }),
-    [blocks, geometry, layout, lanesById, typesByCode, timingById, incomingByTarget, selection],
+    [
+      blocks,
+      geometry,
+      layout,
+      lanesById,
+      typesByCode,
+      timingById,
+      incomingByTarget,
+      selection,
+      onRequestDelete,
+    ],
   )
 }

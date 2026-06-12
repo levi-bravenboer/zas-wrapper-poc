@@ -20,7 +20,7 @@ import {
   type PathwayPhaseTemplate,
   type PathwayVersionDefinition,
 } from '../types'
-import { useBuilderState, type BuilderAction } from '../useBuilderState'
+import { dependentBlocks, useBuilderState, type BuilderAction } from '../useBuilderState'
 import { useCollapsedSidebar } from '../useCollapsedSidebar'
 import { createBlock } from '../utils/createBlock'
 import { defaultLaneKindCode } from '../utils/laneRules'
@@ -30,6 +30,7 @@ import { BuilderCanvasFrame } from './canvas/BuilderCanvasFrame'
 import { BuilderFlushProvider } from './canvas/BuilderFlushContext'
 import { DeletePathwayDialog } from './DeletePathwayDialog'
 import { BlockDialog, type BlockDraft } from './dialog/BlockDialog'
+import { ConfirmDeleteBlockDialog } from './dialog/ConfirmDeleteBlockDialog'
 import { BuilderDock } from './dock/BuilderDock'
 import { EdgeInspector } from './drawer/EdgeInspector'
 import { GeschiedenisDrawer } from './drawer/GeschiedenisDrawer'
@@ -141,6 +142,8 @@ function Inner({
   // Pathway-completion § C2.3: clicking a dock tile opens the block
   // dialog in add mode. The block only exists once the author submits.
   const [pendingAddType, setPendingAddType] = useState<PathwayBlockType | null>(null)
+  // § C5.2: delete goes through a confirm dialog enumerating dependents.
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const onAddBlock = useCallback(
     (blockType: PathwayBlockType) => {
@@ -293,6 +296,7 @@ function Inner({
             blockTypes={catalogue}
             selection={state.selection}
             dispatch={dispatch}
+            onRequestDeleteBlock={setPendingDeleteId}
           />
           <BuilderDock catalogue={catalogue} onAddBlock={onAddBlock} />
           {pendingAddType && (
@@ -324,13 +328,28 @@ function Inner({
               branches={selectedBlockBranches}
               currentPathwayId={pathway.id}
               onSubmit={(draft) => onSubmitEdit(selectedBlock.id, draft)}
-              onDelete={() => {
-                dispatch({ type: 'delete-block', blockId: selectedBlock.id })
-                dispatch({ type: 'select', selection: { kind: 'none' } })
-              }}
+              onDelete={() => setPendingDeleteId(selectedBlock.id)}
               onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
             />
           )}
+          {pendingDeleteId &&
+            (() => {
+              const target = blocks.find((b) => b.id === pendingDeleteId)
+              if (!target) return null
+              return (
+                <ConfirmDeleteBlockDialog
+                  open
+                  block={target}
+                  dependents={dependentBlocks(blocks, pendingDeleteId)}
+                  blockTypes={catalogue}
+                  onConfirm={() => {
+                    dispatch({ type: 'delete-block', blockId: pendingDeleteId })
+                    setPendingDeleteId(null)
+                  }}
+                  onClose={() => setPendingDeleteId(null)}
+                />
+              )
+            })()}
           {selectedEdge && (
             <EdgeInspector
               edge={selectedEdge}

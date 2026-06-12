@@ -40,6 +40,7 @@ type Props = {
   blockTypes: PathwayBlockType[]
   selection: BuilderSelection
   dispatch: (action: BuilderAction) => void
+  onRequestDeleteBlock: (blockId: string) => void
 }
 
 // One xyflow node type, ever. The router dispatches on `data.block.type`
@@ -63,6 +64,7 @@ export function BuilderCanvasFrame({
   blockTypes,
   selection,
   dispatch,
+  onRequestDeleteBlock,
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
 
@@ -102,6 +104,7 @@ export function BuilderCanvasFrame({
     geometry,
     layout,
     selection,
+    onRequestDelete: onRequestDeleteBlock,
   })
 
   const [nodes, setNodes] = useState<BlockFlowNode[]>(derivedNodes)

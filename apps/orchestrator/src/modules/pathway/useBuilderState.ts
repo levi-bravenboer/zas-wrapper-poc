@@ -115,13 +115,9 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'delete-block': {
       const history = pushHistory(state)
-      const blocks = (state.version.blocks ?? []).filter((b) => b.id !== action.blockId)
-      const edges = (state.version.edges ?? []).filter(
-        (e) => e.source_block_id !== action.blockId && e.target_block_id !== action.blockId,
-      )
       return {
         ...state,
-        version: { ...state.version, blocks, edges },
+        version: cascadeDeleteBlock(state.version, action.blockId),
         history,
         selection: { kind: 'none' },
       }
@@ -200,6 +196,42 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     case 'mark-saved':
       return { ...state, baseline: state.version, history: { past: [], future: [] } }
   }
+}
+
+/** Blocks whose `input_logic.rules` reference `blockId` — shown in the
+ * delete-confirm dialog and stripped by the cascade
+ * (pathway-completion § C5). */
+export function dependentBlocks(blocks: PathwayBlock[], blockId: string): PathwayBlock[] {
+  return blocks.filter(
+    (b) => b.id !== blockId && (b.input_logic?.rules ?? []).some((r) => r.node === blockId),
+  )
+}
+
+/** Cascade-delete (pathway-completion § C5.1): drop the block, strip
+ * every other block's `input_logic.rules` entries that reference it,
+ * drop its branches, and drop derived edges touching it. Concept
+ * version template only — published versions are immutable and active
+ * runtime enrollments are never mutated by builder edits. */
+export function cascadeDeleteBlock(
+  version: PathwayVersionDefinition,
+  blockId: string,
+): PathwayVersionDefinition {
+  const blocks = ((version.blocks ?? []) as PathwayBlock[])
+    .filter((b) => b.id !== blockId)
+    .map((b) => {
+      const rules = b.input_logic?.rules ?? []
+      const kept = rules.filter((r) => r.node !== blockId)
+      if (kept.length === rules.length) return b
+      return {
+        ...b,
+        input_logic: { ...(b.input_logic ?? { aggregator: 'all_of' }), rules: kept },
+      } as PathwayBlock
+    })
+  const edges = (version.edges ?? []).filter(
+    (e) => e.source_block_id !== blockId && e.target_block_id !== blockId,
+  )
+  const branches = (version.branches ?? []).filter((br) => br.block_id !== blockId)
+  return { ...version, blocks, edges, branches }
 }
 
 const DEFAULT_LANE_SCAFFOLD: Array<{
