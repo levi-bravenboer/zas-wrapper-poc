@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { MoreHorizontal } from 'lucide-react'
 import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,8 +17,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useEntityDelete } from '@/hooks/entity'
+import { tasksListKeyPrefix } from '@/modules/tasks/api'
 
-import { softDeletePatient } from '../api'
+import { patientsListKeyPrefix, softDeletePatient } from '../api'
 import type { PatientRow } from '../types'
 
 import { EditPatientDialog } from './EditPatientDialog'
@@ -35,6 +37,7 @@ export type PatientKebabProps = {
  */
 export function PatientKebab({ patient }: PatientKebabProps): ReactElement {
   const { t } = useTranslation('patient-profile')
+  const queryClient = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
 
@@ -42,7 +45,15 @@ export function PatientKebab({ patient }: PatientKebabProps): ReactElement {
   const deleteAction = useEntityDelete({
     entityName: fullName,
     listPath: { to: '/tasks' },
-    mutate: () => softDeletePatient(patient.id),
+    mutate: async () => {
+      await softDeletePatient(patient.id)
+      // The task rail stays mounted across the navigate back to /tasks —
+      // stale task items for the deleted patient must drop immediately.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: tasksListKeyPrefix }),
+        queryClient.invalidateQueries({ queryKey: patientsListKeyPrefix }),
+      ])
+    },
     successMessage: t('delete.toast.success'),
     errorMessage: t('delete.toast.error'),
   })

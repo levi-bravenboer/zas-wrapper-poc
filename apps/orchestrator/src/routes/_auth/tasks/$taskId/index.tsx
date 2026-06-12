@@ -15,9 +15,10 @@ import { EmptyState } from '@/components/states/EmptyState'
 import { Badge } from '@/components/ui/badge'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
-import { usePatient } from '@/modules/patient/hooks'
 import { PatientKebab } from '@/modules/patient/components/PatientKebab'
-import { AppointmentContextBlock, useTaskQuery } from '@/modules/tasks'
+import { usePatient } from '@/modules/patient/hooks'
+import { useTaskQuery } from '@/modules/tasks/api'
+import { AppointmentContextBlock } from '@/modules/tasks/components/AppointmentContextBlock'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
   component: TaskDetailRoute,
@@ -41,6 +42,10 @@ function TaskDetailRoute(): ReactElement {
       return <EntityNotFound backTo={{ to: '/tasks' }} />
     }
     return <EntityErrorCard onRetry={() => void taskQuery.refetch()} />
+  }
+
+  if (patientQuery.error) {
+    return <EntityErrorCard onRetry={() => void patientQuery.refetch()} />
   }
 
   const task = taskQuery.data

@@ -14,7 +14,7 @@
 
 ## 2. Backend: `appointment-base` capability (data layer only — NO HTTP routes v1)
 
-- [x] 2.1 Create enums at `app/core/enums/appointment.py`: `AppointmentKind`, `AppointmentStatus` (FHIR R4 — store `entered_in_error` symbol, serialise `entered-in-error`), `AppointmentModality`, `AppointmentParticipantRole`. Re-export from `app/core/enums/__init__.py`
+- [x] 2.1 Create enums at `app/core/enums/appointment.py`: `AppointmentKind`, `AppointmentStatus` (FHIR R4 — store + serialise `entered_in_error`; hyphen translation at HiX adapter boundary), `AppointmentModality`, `AppointmentParticipantRole`. Re-export from `app/core/enums/__init__.py`
 - [x] 2.2 Create ORM model (built at `app/db/models/appointment/appointment.py` — not `domain/`, per existing codebase convention) — inherits `TenantOwnedEntity` + `DeletableEntity`. Columns: `patient_id`, `pathway_block_instance_id` (nullable, NO FK in v1 per D18), `title`, `description`, `kind`, `starts_at`, `ends_at`, `modality`, `location_text`, `status` (default `'booked'`). Add `CHECK (ends_at > starts_at)`
 - [x] 2.3 Create ORM model (built at `app/db/models/appointment/appointment_participant.py`) — inherits `BaseEntity` + `DeletableEntity`. Columns: `appointment_id` (FK CASCADE), `user_id` (FK RESTRICT), `role`. Partial unique indexes: `(appointment_id) WHERE role='lead' AND deleted_at IS NULL` + `(appointment_id, user_id) WHERE deleted_at IS NULL`
 - [x] 2.4 Alembic migration written by hand at `alembic/versions/20260611_1530_appointment_base.py` (autogen pollution from shared docker DB forced hand-write); includes enums + tables + CHECK + partial indexes + supporting indexes and review autogen. Manually add the partial unique indexes + CHECK constraint if alembic missed them. Enum types created in `op.execute`. Supporting indexes: `appointments(patient_id, starts_at) WHERE status='booked' AND deleted_at IS NULL` for the aggregator hot path, and `appointment_participants(user_id) WHERE deleted_at IS NULL` for the participant predicate
@@ -31,7 +31,7 @@
   - `test_db_check_constraint.py`: raw INSERT bypassing validator with `ends_at <= starts_at` → CHECK constraint violation
   - `test_partial_unique_lead.py`: raw INSERT of second active `lead` for same `appointment_id` → unique constraint violation
   - `test_partial_unique_user.py`: raw INSERT of duplicate `(appointment_id, user_id)` with `deleted_at IS NULL` → unique constraint violation
-  - `test_enum_round_trip.py`: `AppointmentStatus.entered_in_error` symbol Python-side serialises to `entered-in-error` string and parses back
+  - `test_enum_round_trip.py`: `AppointmentStatus.entered_in_error` round-trips as `entered_in_error` (hyphen translation deferred to adapter boundary)
   - `test_no_http_routes.py`: OpenAPI document inspection — no operation under `/appointments` path
   - `test_no_service_or_repository.py`: importing `app.services.appointment.appointment_service` raises `ImportError` OR no class named `AppointmentService` with `create/patch/soft_delete` exists; same for `AppointmentRepository`, `HixAppointmentAdapter`
   - `test_orm_registered.py`: SQLAlchemy metadata includes `Appointment` + `AppointmentParticipant` models with expected columns; tables exist post-migration with expected indexes + CHECK

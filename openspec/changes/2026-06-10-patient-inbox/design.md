@@ -67,7 +67,7 @@ NO HTTP routes (`GET /appointments`, `POST`, `PATCH`, `DELETE`) ship in this cha
 
 Columns mirror FHIR R4 `Appointment` where it fits cheaply (`start`, `end`, `status`, `participant`) but skip FHIR concepts that are heavy and not load-bearing for PoC (`serviceType`, `appointmentType`, `priority`, `serviceCategory`, `requestedPeriod`). `kind` is a domain enum (`consultation | lab | imaging | procedure | other`) — translated to FHIR `serviceType` coding only at the HiX adapter boundary at MVP. `status` is the full FHIR `AppointmentStatus` enum verbatim (10 values) so the wire is FHIR-faithful from day one.
 
-**Trade-off:** `entered-in-error` FHIR code has a hyphen, illegal in Python identifiers. Store as `entered_in_error` enum symbol, serialise as `entered-in-error` on wire. Pydantic field-serialiser handles the round-trip; spec scenario locks it.
+**Trade-off:** `entered-in-error` FHIR code has a hyphen, illegal in Python identifiers. Store and serialise as `entered_in_error` everywhere inside this system; the HiX adapter boundary translates to the hyphenated FHIR literal at MVP. No serialiser swap in this codebase.
 
 ### D3 — Participants frozen after create
 
@@ -78,6 +78,10 @@ Columns mirror FHIR R4 `Appointment` where it fits cheaply (`start`, `end`, `sta
 ### D4 — Lead participant enforced by partial unique index, not service-only
 
 Service layer validates "exactly one lead at create". DB partial unique index `(appointment_id) WHERE role = 'lead' AND deleted_at IS NULL` is defence-in-depth — a buggy service code path or a future PATCH that mutates participants cannot leave the row in a multi-lead state.
+
+### D4b — `AppointmentParticipant` inherits `Entity` (not `TenantOwnedEntity`), ratified
+
+`appointment_participants` rows inherit `Entity` with a hand-rolled denormalised `tenant_id` — deliberately below the `TenantOwnedEntity` base. This mirrors the ratified `CareTeamParticipant` precedent: participant rows piggyback on the parent appointment's audit context, and the audit hook's `created_by`/`updated_by` columns would duplicate information already carried by the appointment row. The denormalised `tenant_id` keeps the aggregator's participant predicate JOIN-free. This deviation from the ORM-base hierarchy rule is intentional and ratified here.
 
 ### D-AGG — `/tasks` is a server-side aggregator, not a domain table
 
@@ -265,7 +269,7 @@ Order (executed):
 - **R6 — Frozen-after-create participants on appointments forces delete-and-recreate to change attendees.** **Mitigation accepted:** PoC clinical reality.
 - **R7 — Empty Metingen + Labresultaten tabs read as broken in demo.** **Mitigation:** `<EmptyState>` copy explicitly says "wordt geleverd door X".
 - **R8 — Mobile (<md viewport)** is out of scope v1 — the orchestrator is desktop-first. Below `md` the rail/right two-column stacks (rail collapses to a drawer). Mobile work is a follow-up change.
-- **R9 — `entered-in-error` FHIR status hyphen vs Python identifier.** Stored as `entered_in_error`, serialised as `entered-in-error`. Tested round-trip.
+- **R9 — `entered-in-error` FHIR status hyphen vs Python identifier.** Stored + serialised as `entered_in_error` internally; hyphen translation deferred to the HiX adapter boundary.
 - **R10 — Aggregator over one source v1 is over-engineered if a 2nd source never lands.** **Mitigation:** indirection is ~50 LOC. Wire shape stable, so cost is contained.
 - **R11 — No patient-centric appointment history anywhere.** **Mitigation accepted:** out of scope for this change. Files as follow-up when stakeholder asks.
 - **R12 — Route + module rename collision.** **Mitigation:** D-RENAME locks the sequence; tasks.md enforces delete-then-create order.
@@ -336,6 +340,8 @@ These components were specific to the prior `/_auth/patients` DataTable list and
 ### New reusable primitives (broader value)
 
 `<MasterDetailLayout>` SHIPPED earlier in this change and remains available for non-task surfaces (organisation browser, care-team browser). **Not used by `/_auth/tasks` v12** — the tasks surface is a plain two-column flex (see D-LAYOUT-V12). Keep it; deletion is out of scope.
+
+The `Avatar` `tintBy` extension is likewise shipped-but-parked: the v12 rail dropped the avatar (D7) and the detail header avatar lands in a follow-up. Tests cover the deterministic palette; first consumer wires it in.
 
 `<InboxRow>` / `<ListRow>` (a generic flat-row primitive) is NOT built in this change. `<TaskRow>` is constructed directly. Add a generic abstraction when a 2nd flat-list surface emerges.
 

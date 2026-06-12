@@ -10,15 +10,21 @@ export const tasksListKeyPrefix = ['tasks', TASKS_PATH] as const
 
 export async function fetchTasks(): Promise<TaskItem[]> {
   // page_size=100 (ListQuery max) — one request renders the whole 30-day
-  // window per D-FLAT; if a tenant ever exceeds the cap the list silently
-  // truncates and a follow-up adds paging.
+  // window per D-FLAT.
   const { data, response } = await api.GET('/tasks', {
     params: { query: { page_size: 100 } },
   })
   if (!response.ok || !data) {
     throw apiError('Tasks fetch failed', response.status)
   }
-  return data.items as TaskItem[]
+  if (data.total > data.items.length) {
+    // Surface truncation instead of silently dropping items — when a real
+    // tenant hits the cap, this is the signal to add paging (D-FLAT note).
+    console.warn(
+      `tasks list truncated: showing ${data.items.length} of ${data.total} items`,
+    )
+  }
+  return data.items
 }
 
 export function useTasksQuery(): UseQueryResult<TaskItem[], Error> {
@@ -44,7 +50,7 @@ export async function fetchTaskById(taskId: string): Promise<TaskItem> {
   if (!response.ok || !data) {
     throw apiError('Task fetch failed', response.status)
   }
-  return data as TaskItem
+  return data
 }
 
 export function taskQueryKey(taskId: string): readonly unknown[] {

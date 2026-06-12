@@ -12,6 +12,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "9f3d2c8b5e41"
 down_revision: str | None = "e5f48e021dbe"
@@ -37,9 +38,17 @@ APPOINTMENT_PARTICIPANT_ROLE_VALUES = ("lead", "support", "observer")
 
 
 def upgrade() -> None:
-    # Enum types are created by the `alembic_postgresql_enum` plugin (wired in
-    # env.py) when the tables below reference them — explicit CREATE TYPE here
-    # would collide inside the same transaction.
+    # Explicit type creation up front; the column defs below use
+    # `postgresql.ENUM(create_type=False)` so `op.create_table` does not
+    # try to create them a second time (repo precedent:
+    # 20260604_1435_access_entitlements_tables.py).
+    sa.Enum(*APPOINTMENT_KIND_VALUES, name="appointment_kind").create(op.get_bind())
+    sa.Enum(*APPOINTMENT_STATUS_VALUES, name="appointment_status").create(op.get_bind())
+    sa.Enum(*APPOINTMENT_MODALITY_VALUES, name="appointment_modality").create(op.get_bind())
+    sa.Enum(
+        *APPOINTMENT_PARTICIPANT_ROLE_VALUES, name="appointment_participant_role"
+    ).create(op.get_bind())
+
     op.create_table(
         "appointments",
         sa.Column("patient_id", sa.UUID(), nullable=False),
@@ -48,14 +57,16 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column(
             "kind",
-            sa.Enum(*APPOINTMENT_KIND_VALUES, name="appointment_kind", create_type=False),
+            postgresql.ENUM(
+                *APPOINTMENT_KIND_VALUES, name="appointment_kind", create_type=False
+            ),
             nullable=False,
         ),
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("ends_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "modality",
-            sa.Enum(
+            postgresql.ENUM(
                 *APPOINTMENT_MODALITY_VALUES,
                 name="appointment_modality",
                 create_type=False,
@@ -65,7 +76,9 @@ def upgrade() -> None:
         sa.Column("location_text", sa.String(length=255), nullable=True),
         sa.Column(
             "status",
-            sa.Enum(*APPOINTMENT_STATUS_VALUES, name="appointment_status", create_type=False),
+            postgresql.ENUM(
+                *APPOINTMENT_STATUS_VALUES, name="appointment_status", create_type=False
+            ),
             server_default=sa.text("'booked'"),
             nullable=False,
         ),
@@ -124,7 +137,7 @@ def upgrade() -> None:
         sa.Column("user_id", sa.UUID(), nullable=False),
         sa.Column(
             "role",
-            sa.Enum(
+            postgresql.ENUM(
                 *APPOINTMENT_PARTICIPANT_ROLE_VALUES,
                 name="appointment_participant_role",
                 create_type=False,

@@ -126,7 +126,7 @@ Task list surface implementation:
 - **R6 — Frozen-after-create participants on appointments.** **Mitigation accepted**: PoC clinical reality.
 - **R7 — Empty Metingen + Labresultaten tabs read as broken in demo.** **Mitigation**: `<EmptyState>` copy explicitly says "wordt geleverd door X".
 - **R8 — Mobile (<md)** out of scope v1 — desktop-first; mobile work is a follow-up.
-- **R9 — `entered-in-error` FHIR status hyphen.** Stored as `entered_in_error`, serialised as `entered-in-error`.
+- **R9 — `entered-in-error` FHIR status hyphen.** Stored + serialised as `entered_in_error` internally; hyphen translation at the HiX adapter boundary.
 - **R10 — Aggregator over one source v1 is over-engineered if a 2nd source never lands.** **Mitigation**: ~50 LOC; wire shape stable.
 - **R11 — No patient-centric appointment history surface anywhere.** Out of scope this change; follow-up when stakeholder asks.
 - **R12 — Route + module rename collision (placeholder vs new).** **Mitigation**: D-RENAME locks delete-then-create sequence in tasks.md.

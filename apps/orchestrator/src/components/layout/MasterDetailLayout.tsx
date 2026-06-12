@@ -1,5 +1,6 @@
 import { PanelLeftOpen } from 'lucide-react'
 import { type ReactElement, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/style/cn'
@@ -31,6 +32,7 @@ export function MasterDetailLayout({
   masterCollapsed,
   onMasterCollapsedChange,
 }: MasterDetailLayoutProps): ReactElement {
+  const { t } = useTranslation('common')
   const hasDetail = detail !== null
   const inSplitMode = hasDetail
 
@@ -70,7 +72,7 @@ export function MasterDetailLayout({
           data-slot="master-reopen"
           variant="outline"
           size="icon"
-          aria-label="Open master"
+          aria-label={t('masterDetail.openMaster')}
           onClick={() => onMasterCollapsedChange(false)}
           className="absolute left-3 top-3 z-10 hidden md:inline-flex"
         >

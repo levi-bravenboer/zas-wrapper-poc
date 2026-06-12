@@ -24,8 +24,8 @@ const { useTaskQueryMock, usePatientMock, useTasksQueryMock } = vi.hoisted(() =>
   useTasksQueryMock: vi.fn(),
 }))
 
-vi.mock('@/modules/tasks', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/modules/tasks')>()
+vi.mock('@/modules/tasks/api', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/modules/tasks/api')>()
   return {
     ...original,
     useTaskQuery: useTaskQueryMock,

@@ -27,17 +27,17 @@ The backend SHALL define a `AppointmentKind` enum at `app/core/enums/appointment
 
 ### Requirement: Appointment status conforms to FHIR R4 AppointmentStatus
 
-The backend SHALL define an `AppointmentStatus` enum at `app/core/enums/appointment.py` with the full FHIR R4 value set: `proposed`, `pending`, `booked`, `arrived`, `fulfilled`, `cancelled`, `noshow`, `entered_in_error`, `checked_in`, `waitlist` (string-valued via `StrEnum`, the FHIR `entered-in-error` code is stored as `entered_in_error` in the enum and serialised as `entered-in-error` on the wire). Persisted as Postgres enum type `appointment_status`. Default at the ORM column level is `booked`. v1 imposes NO state-machine constraints on transitions.
+The backend SHALL define an `AppointmentStatus` enum at `app/core/enums/appointment.py` with the full FHIR R4 value set: `proposed`, `pending`, `booked`, `arrived`, `fulfilled`, `cancelled`, `noshow`, `entered_in_error`, `checked_in`, `waitlist` (string-valued via `StrEnum`; the FHIR `entered-in-error` code is stored AND serialised as `entered_in_error` inside this system — translation to the hyphenated FHIR literal happens only at the HiX adapter boundary, MVP scope). Persisted as Postgres enum type `appointment_status`. Default at the ORM column level is `booked`. v1 imposes NO state-machine constraints on transitions.
 
 #### Scenario: Default status on insert is booked
 
 - **WHEN** a row is inserted via the ORM without an explicit `status`
 - **THEN** the persisted `status` MUST be `'booked'`
 
-#### Scenario: Wire serialisation preserves FHIR hyphen
+#### Scenario: Wire serialisation uses the underscore form
 
 - **WHEN** an appointment with `status='entered_in_error'` is serialised through the `tasks-base` payload projection
-- **THEN** the field value in the response body MUST be the string `"entered-in-error"`
+- **THEN** the field value in the response body MUST be the string `"entered_in_error"` (hyphen translation is an adapter-boundary concern, not a wire concern)
 
 ### Requirement: Appointment modality enum captures online vs on-site
 

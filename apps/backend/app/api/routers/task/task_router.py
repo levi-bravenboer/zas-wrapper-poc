@@ -13,30 +13,32 @@ ignored at the FastAPI dependency layer per design.md D-WINDOW.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import ListQueryParamsDep, SessionDep
+from app.api.deps import ListQueryParamsDep
 from app.core.enums.user import Role
 from app.schemas._list.list_query import Operator
 from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
 from app.schemas.task.task_item import TaskItem
 from app.services.access.identity.deps import require_role
-from app.services.tasks.tasks_aggregator import VALID_SOURCES, TasksAggregator
+from app.services.tasks.deps import TasksAggregatorDep
 
 router = APIRouter(tags=["tasks"])
 
 _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 
 
-def _raise_422(detail: str) -> None:
+def _raise_422(detail: str) -> NoReturn:
     raise HTTPException(status_code=422, detail=detail)
 
 
-def _resolve_patient_id_filter(query_filters: dict[str, dict[Operator, list[str]]]) -> UUID | None:
+def _resolve_patient_id_filter(
+    query_filters: dict[str, dict[Operator, list[str]]],
+) -> UUID | None:
     """Pull `filter[patient_id][eq]=<uuid>` out of the parsed `ListQuery`.
 
     Anything else (other fields, other ops) → 422.
@@ -59,7 +61,6 @@ def _resolve_patient_id_filter(query_filters: dict[str, dict[Operator, list[str]
         return UUID(values[0])
     except ValueError:
         _raise_422(f"`filter[patient_id][eq]` must be a UUID; got {values[0]!r}")
-        raise  # pragma: no cover
 
 
 @router.get(
@@ -68,7 +69,7 @@ def _resolve_patient_id_filter(query_filters: dict[str, dict[Operator, list[str]
     response_model=Page[TaskItem],
 )
 async def list_tasks(
-    session: SessionDep,
+    aggregator: TasksAggregatorDep,
     query: ListQueryParamsDep,
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
 ) -> Page[TaskItem]:
@@ -81,9 +82,7 @@ async def list_tasks(
 
     patient_id_filter = _resolve_patient_id_filter(query.filters)
 
-    aggregator = TasksAggregator()
     return await aggregator.list(
-        session,
         current_user,
         page=query.page,
         page_size=query.page_size,
@@ -99,12 +98,9 @@ async def list_tasks(
 async def get_task(
     source: str,
     source_id: UUID,
-    session: SessionDep,
+    aggregator: TasksAggregatorDep,
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
 ) -> TaskItem:
-    if source not in VALID_SOURCES:
-        # Match the cross-source-id-not-found shape so attackers cannot
-        # distinguish "source unknown" from "task not found".
-        raise HTTPException(status_code=404, detail="Task not found")
-    aggregator = TasksAggregator()
-    return await aggregator.get(session, current_user, source=source, source_id=source_id)
+    # Unknown source vs missing id are indistinguishable — the aggregator
+    # raises the same `TaskNotFoundError` for both (existence hiding).
+    return await aggregator.get(current_user, source=source, source_id=source_id)

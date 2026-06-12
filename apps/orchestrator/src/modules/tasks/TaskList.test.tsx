@@ -20,6 +20,12 @@ vi.mock('./api', () => ({
 vi.mock('@tanstack/react-router', () => ({
   useParams: useParamsMock,
   useNavigate: () => useNavigateMock,
+  Link: ({ children, ...props }: { children?: React.ReactNode } & Record<string, unknown>) => {
+    const { to, params, ...rest } = props
+    void to
+    void params
+    return <a href="#" {...(rest as object)}>{children}</a>
+  },
 }))
 
 function isoAt(daysFromNow: number, hour = 10): string {
@@ -115,8 +121,8 @@ describe('TaskList', () => {
     })
     render(wrap(<TaskList />))
 
-    const active = screen.getByRole('button', { name: /Bakker, Anke/ })
-    const inactive = screen.getByRole('button', { name: /Janssens, Anke/ })
+    const active = screen.getByRole('link', { name: /Bakker, Anke/ })
+    const inactive = screen.getByRole('link', { name: /Janssens, Anke/ })
     expect(active).toHaveAttribute('data-active', 'true')
     expect(inactive).not.toHaveAttribute('data-active')
   })

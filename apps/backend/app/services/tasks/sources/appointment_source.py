@@ -8,12 +8,8 @@
 #   Admins use the same predicate as caregivers; no tenant-wide bypass.
 # - Tenant scope: appointments belong to the caller's tenant.
 #
-# Query plan: SELECT appointments JOIN appointment_participants ON the
-# caller's user_id (with active deleted_at IS NULL). The patient inline
-# summary and participants list are resolved by separate queries keyed by
-# the matched appointment ids, then assembled into `TaskItem`. INSZ is
-# resolved through the same `patient_identifiers` query the patient API
-# uses (`urn:oid:...` for the Belgian eHealth INSZ system).
+# SQL lives in `AppointmentTaskRepository` (layer rules: services hold no
+# SQL); this module owns projection into the `TaskItem` envelope only.
 
 from __future__ import annotations
 
@@ -21,14 +17,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Final
 from uuid import UUID
 
-from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.identifiers import INSZ_SYSTEM
-from app.db.models.appointment import Appointment, AppointmentParticipant
-from app.db.models.patient import Patient
-from app.db.models.patient.patient_identifier import PatientIdentifier
-from app.db.models.user import User
+from app.db.models.appointment import Appointment
+from app.repositories.task.appointment_task_repository import AppointmentTaskRepository
 from app.schemas._list.page import Page
 from app.schemas.appointment.appointment import AppointmentParticipantInlineSummary
 from app.schemas.auth.auth import SessionUser
@@ -39,102 +31,9 @@ SOURCE_NAME: Final[str] = "appointment"
 WINDOW_DAYS: Final[int] = 30
 
 
-def _now() -> datetime:
-    return datetime.now(UTC)
-
-
 def _window_bounds() -> tuple[datetime, datetime]:
-    now = _now()
+    now = datetime.now(UTC)
     return now, now + timedelta(days=WINDOW_DAYS)
-
-
-def _base_predicate(caller: SessionUser, start: datetime, end: datetime) -> tuple:  # type: ignore[type-arg]
-    """Predicate clauses shared between list/get/count."""
-
-    return (
-        Appointment.tenant_id == caller.tenant_id,
-        Appointment.deleted_at.is_(None),
-        Appointment.status == "booked",
-        Appointment.starts_at >= start,
-        Appointment.starts_at <= end,
-        AppointmentParticipant.user_id == caller.id,
-        AppointmentParticipant.deleted_at.is_(None),
-        AppointmentParticipant.tenant_id == caller.tenant_id,
-    )
-
-
-async def _resolve_patient_summaries(
-    session: AsyncSession, patient_ids: list[UUID]
-) -> dict[UUID, PatientInlineSummary]:
-    if not patient_ids:
-        return {}
-
-    patient_rows = (
-        await session.execute(
-            select(
-                Patient.id,
-                Patient.family_name,
-                Patient.given_name,
-                Patient.primary_organisation_id,
-            ).where(Patient.id.in_(patient_ids))
-        )
-    ).all()
-
-    insz_rows = (
-        await session.execute(
-            select(PatientIdentifier.patient_id, PatientIdentifier.value).where(
-                PatientIdentifier.patient_id.in_(patient_ids),
-                PatientIdentifier.system == INSZ_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
-            )
-        )
-    ).all()
-    insz_by_patient = {patient_id: value for patient_id, value in insz_rows}
-
-    return {
-        row.id: PatientInlineSummary(
-            id=row.id,
-            family_name=row.family_name,
-            given_name=row.given_name,
-            insz=insz_by_patient.get(row.id),
-            primary_organisation_id=row.primary_organisation_id,
-        )
-        for row in patient_rows
-    }
-
-
-async def _resolve_participants(
-    session: AsyncSession, appointment_ids: list[UUID]
-) -> dict[UUID, list[AppointmentParticipantInlineSummary]]:
-    if not appointment_ids:
-        return {}
-
-    rows = (
-        await session.execute(
-            select(
-                AppointmentParticipant.appointment_id,
-                AppointmentParticipant.user_id,
-                AppointmentParticipant.role,
-                User.display_name,
-            )
-            .join(User, User.id == AppointmentParticipant.user_id)
-            .where(
-                AppointmentParticipant.appointment_id.in_(appointment_ids),
-                AppointmentParticipant.deleted_at.is_(None),
-            )
-        )
-    ).all()
-
-    by_appointment: dict[UUID, list[AppointmentParticipantInlineSummary]] = {}
-    for appointment_id, user_id, role, display_name in rows:
-        by_appointment.setdefault(appointment_id, []).append(
-            AppointmentParticipantInlineSummary(
-                user_id=user_id,
-                role=role,
-                user_display_name=display_name,
-            )
-        )
-    return by_appointment
 
 
 def _project(
@@ -170,92 +69,80 @@ class AppointmentSource:
 
     name: Final[str] = SOURCE_NAME
 
+    def __init__(self, session: AsyncSession) -> None:
+        self._repository = AppointmentTaskRepository(session)
+
+    async def _assemble(self, rows: list[Appointment]) -> list[TaskItem]:
+        patient_ids = [row.patient_id for row in rows]
+        appointment_ids = [row.id for row in rows]
+
+        insz_by_patient = await self._repository.insz_by_patient(patient_ids)
+        summaries: dict[UUID, PatientInlineSummary] = {
+            patient_id: PatientInlineSummary(
+                id=patient_id,
+                family_name=family_name,
+                given_name=given_name,
+                insz=insz_by_patient.get(patient_id),
+                primary_organisation_id=primary_organisation_id,
+            )
+            for patient_id, family_name, given_name, primary_organisation_id in (
+                await self._repository.patient_rows(patient_ids)
+            )
+        }
+
+        participants: dict[UUID, list[AppointmentParticipantInlineSummary]] = {}
+        for appointment_id, user_id, role, display_name in (
+            await self._repository.participant_rows(appointment_ids)
+        ):
+            participants.setdefault(appointment_id, []).append(
+                AppointmentParticipantInlineSummary(
+                    user_id=user_id, role=role, user_display_name=display_name
+                )
+            )
+
+        return [
+            _project(row, summaries[row.patient_id], participants.get(row.id, []))
+            for row in rows
+        ]
+
     async def list(
         self,
-        session: AsyncSession,
         caller: SessionUser,
         *,
         page: int,
         page_size: int,
         patient_id_filter: UUID | None = None,
     ) -> Page[TaskItem]:
-        start, end = _window_bounds()
-        predicates = _base_predicate(caller, start, end)
-        if patient_id_filter is not None:
-            predicates = (*predicates, Appointment.patient_id == patient_id_filter)
-
-        base_query = (
-            select(Appointment)
-            .join(
-                AppointmentParticipant,
-                AppointmentParticipant.appointment_id == Appointment.id,
-            )
-            .where(and_(*predicates))
+        window_start, window_end = _window_bounds()
+        total = await self._repository.count_window(
+            tenant_id=caller.tenant_id,
+            caller_id=caller.id,
+            window_start=window_start,
+            window_end=window_end,
+            patient_id=patient_id_filter,
         )
-
-        total = (
-            await session.execute(
-                select(func.count())
-                .select_from(Appointment)
-                .join(
-                    AppointmentParticipant,
-                    AppointmentParticipant.appointment_id == Appointment.id,
-                )
-                .where(and_(*predicates))
-            )
-        ).scalar_one()
-
-        offset = (page - 1) * page_size
-        rows = (
-            (
-                await session.execute(
-                    base_query.order_by(Appointment.starts_at.asc())
-                    .offset(offset)
-                    .limit(page_size)
-                )
-            )
-            .scalars()
-            .all()
+        rows = await self._repository.list_window(
+            tenant_id=caller.tenant_id,
+            caller_id=caller.id,
+            window_start=window_start,
+            window_end=window_end,
+            patient_id=patient_id_filter,
+            offset=(page - 1) * page_size,
+            limit=page_size,
         )
+        items = await self._assemble(list(rows))
+        return Page[TaskItem].build(items=items, page=page, page_size=page_size, total=total)
 
-        patient_ids = [row.patient_id for row in rows]
-        appointment_ids = [row.id for row in rows]
-        patient_summaries = await _resolve_patient_summaries(session, patient_ids)
-        participants_by_appointment = await _resolve_participants(session, appointment_ids)
-
-        items = [
-            _project(
-                row,
-                patient_summaries[row.patient_id],
-                participants_by_appointment.get(row.id, []),
-            )
-            for row in rows
-        ]
-        return Page[TaskItem].build(
-            items=items, page=page, page_size=page_size, total=total
+    async def get(self, caller: SessionUser, source_id: UUID) -> TaskItem | None:
+        window_start, window_end = _window_bounds()
+        row = await self._repository.get_window_row(
+            tenant_id=caller.tenant_id,
+            caller_id=caller.id,
+            window_start=window_start,
+            window_end=window_end,
+            appointment_id=source_id,
         )
-
-    async def get(
-        self, session: AsyncSession, caller: SessionUser, source_id: UUID
-    ) -> TaskItem | None:
-        start, end = _window_bounds()
-        predicates = (*_base_predicate(caller, start, end), Appointment.id == source_id)
-        row = (
-            await session.execute(
-                select(Appointment)
-                .join(
-                    AppointmentParticipant,
-                    AppointmentParticipant.appointment_id == Appointment.id,
-                )
-                .where(and_(*predicates))
-            )
-        ).scalar_one_or_none()
         if row is None:
             return None
-        patient_summaries = await _resolve_patient_summaries(session, [row.patient_id])
-        participants_by_appointment = await _resolve_participants(session, [row.id])
-        return _project(
-            row,
-            patient_summaries[row.patient_id],
-            participants_by_appointment.get(row.id, []),
-        )
+        items = await self._assemble([row])
+        return items[0]

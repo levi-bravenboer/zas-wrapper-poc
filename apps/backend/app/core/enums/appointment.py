@@ -8,9 +8,10 @@ source of truth in PoC.
 `AppointmentStatus` mirrors the full FHIR R4 `AppointmentStatus` value set
 (`http://hl7.org/fhir/ValueSet/appointmentstatus`). The FHIR code
 `entered-in-error` has a hyphen, which is illegal in a Python identifier;
-we store the symbol as `ENTERED_IN_ERROR` / value `entered_in_error` and
-the serialiser at the projection boundary swaps the underscore for a
-hyphen on the wire. The scenario in `tasks-base` locks that round-trip.
+we store symbol `ENTERED_IN_ERROR` / value `entered_in_error` and the wire
+emits the underscore form everywhere inside this system. Translating to
+the hyphenated FHIR literal happens only at the HiX adapter boundary (MVP
+scope) — no serialiser in this codebase swaps it.
 
 `AppointmentModality` distinguishes `online | on_site` clinical encounters.
 When `modality = 'on_site'`, `appointments.location_text` MUST be
