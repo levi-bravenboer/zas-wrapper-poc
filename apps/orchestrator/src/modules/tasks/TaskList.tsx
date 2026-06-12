@@ -12,7 +12,9 @@ export function TaskList(): ReactElement {
   const { t } = useTranslation(['tasks'])
   const query = useTasksQuery()
   const params = useParams({ strict: false })
-  const selectedPatientId = (params as { patientId?: string }).patientId
+  // URL drives selection per D-LAYOUT-V12; the active row matches the
+  // `$taskId` from `/_auth/tasks/$taskId`.
+  const selectedTaskId = (params as { taskId?: string }).taskId
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="task-list">
@@ -30,10 +32,7 @@ export function TaskList(): ReactElement {
           <ul className="flex flex-col">
             {query.data.map((item) => (
               <li key={item.id}>
-                <TaskRow
-                  item={item}
-                  selected={selectedPatientId === item.payload.patient.id}
-                />
+                <TaskRow item={item} selected={selectedTaskId === item.id} />
               </li>
             ))}
           </ul>

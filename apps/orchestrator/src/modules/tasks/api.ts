@@ -22,3 +22,34 @@ export function useTasksQuery(): UseQueryResult<TaskItem[], Error> {
     queryFn: fetchTasks,
   })
 }
+
+/**
+ * Resolve a `TaskItem` by its synthetic id (`source:source_id` pair).
+ *
+ * Per the tasks-base aggregator: v1 source is always `appointment` and the
+ * route is `GET /tasks/appointment/{source_id}`. We split the synthetic id
+ * here so route components stay decoupled from the source axis — they pass
+ * the `$taskId` URL param directly.
+ */
+export async function fetchTaskById(taskId: string): Promise<TaskItem> {
+  // v1 source set is exactly `appointment`. `taskId` equals the underlying
+  // appointment uuid (no composite encoding per design.md D-AGG).
+  const { data, response } = await api.GET('/tasks/{source}/{source_id}', {
+    params: { path: { source: 'appointment', source_id: taskId } },
+  })
+  if (!response.ok || !data) {
+    throw apiError('Task fetch failed', response.status)
+  }
+  return data as TaskItem
+}
+
+export function taskQueryKey(taskId: string): readonly unknown[] {
+  return [...tasksListKeyPrefix, taskId] as const
+}
+
+export function useTaskQuery(taskId: string): UseQueryResult<TaskItem, Error> {
+  return useQuery({
+    queryKey: taskQueryKey(taskId),
+    queryFn: () => fetchTaskById(taskId),
+  })
+}

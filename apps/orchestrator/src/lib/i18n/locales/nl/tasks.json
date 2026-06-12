@@ -18,5 +18,23 @@
   "selection": {
     "title": "Selecteer een taak",
     "body": "Kies een taak links om de patiëntdetails te zien"
+  },
+  "context": {
+    "lead": "Lead {{name}}",
+    "open_appointment": "Open afspraak"
+  },
+  "tabs": {
+    "measurements": "Metingen",
+    "lab_results": "Labresultaten",
+    "empty": {
+      "measurements": {
+        "title": "Nog geen metingen gekoppeld",
+        "body": "Wordt geleverd door de monitoring-koppeling."
+      },
+      "lab_results": {
+        "title": "Nog geen labresultaten gekoppeld",
+        "body": "Wordt geleverd door de HiX-koppeling."
+      }
+    }
   }
 }

@@ -30,11 +30,12 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
   const kind = item.payload.kind
 
   const onClick = (): void => {
-    const patientId = patient.id
     if (isMobile) {
-      void navigate({ to: '/patients/$patientId', params: { patientId } })
+      // Mobile is out of scope v1; fall through to the standalone patient route
+      // so a phone caregiver still reaches the same patient detail.
+      void navigate({ to: '/patients/$patientId', params: { patientId: patient.id } })
     } else {
-      void navigate({ to: '/tasks/p/$patientId', params: { patientId } })
+      void navigate({ to: '/tasks/$taskId', params: { taskId: item.id } })
     }
   }
 
