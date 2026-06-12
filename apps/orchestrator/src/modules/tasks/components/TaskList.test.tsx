@@ -76,6 +76,13 @@ describe('TaskList', () => {
     useParamsMock.mockReturnValue({})
   })
 
+  it('renders skeleton rows while loading', () => {
+    useTasksQueryMock.mockReturnValue({ data: undefined, isLoading: true, isError: false })
+    render(wrap(<TaskList />))
+
+    expect(screen.getByTestId('task-list-loading')).toBeInTheDocument()
+  })
+
   it('renders the fixed empty-state copy when there are no tasks', () => {
     useTasksQueryMock.mockReturnValue({ data: [], isLoading: false, isError: false })
     render(wrap(<TaskList />))

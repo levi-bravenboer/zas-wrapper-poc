@@ -4,6 +4,7 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/states/EmptyState'
+import { RowSkeleton } from '@/components/states/Skeleton'
 
 import { dayGroupLabel } from '../dueLabel'
 import { useTasksQuery } from '../hooks'
@@ -31,7 +32,13 @@ function TaskListBody({ selectedTaskId }: { selectedTaskId: string | undefined }
   const query = useTasksQuery()
 
   if (query.isLoading) {
-    return <></>
+    return (
+      <div className="flex flex-col gap-2 p-3" aria-busy data-testid="task-list-loading">
+        <RowSkeleton />
+        <RowSkeleton />
+        <RowSkeleton />
+      </div>
+    )
   }
   if (query.isError) {
     return <EmptyState icon={Inbox} title={t('tasks:error.title')} body={t('tasks:error.body')} />
