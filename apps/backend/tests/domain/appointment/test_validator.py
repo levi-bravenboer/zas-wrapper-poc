@@ -20,6 +20,8 @@ from app.domain.appointment import (
     DuplicateParticipantUserError,
     EndsBeforeStartsError,
     InvalidLeadCountError,
+    InvalidTitleError,
+    LocationTextTooLongError,
     OnSiteLocationRequiredError,
 )
 
@@ -63,6 +65,41 @@ def _spec(
         location_text=location_text,
         status=status,
         participants=participants,
+    )
+
+
+# ── text ──────────────────────────────────────────────────────────────────
+
+
+def test_empty_title_rejected() -> None:
+    with pytest.raises(InvalidTitleError):
+        AppointmentValidator.validate(_spec(title=""))
+
+
+def test_whitespace_title_rejected() -> None:
+    with pytest.raises(InvalidTitleError):
+        AppointmentValidator.validate(_spec(title="   "))
+
+
+def test_title_over_255_rejected() -> None:
+    with pytest.raises(InvalidTitleError):
+        AppointmentValidator.validate(_spec(title="x" * 256))
+
+
+def test_title_at_255_accepted() -> None:
+    AppointmentValidator.validate(_spec(title="x" * 255))
+
+
+def test_location_text_over_255_rejected() -> None:
+    with pytest.raises(LocationTextTooLongError):
+        AppointmentValidator.validate(
+            _spec(modality=AppointmentModality.ON_SITE, location_text="x" * 256)
+        )
+
+
+def test_location_text_at_255_accepted() -> None:
+    AppointmentValidator.validate(
+        _spec(modality=AppointmentModality.ON_SITE, location_text="x" * 255)
     )
 
 

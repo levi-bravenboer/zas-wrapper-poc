@@ -7,6 +7,8 @@ from app.domain.appointment.validator import (
     DuplicateParticipantUserError,
     EndsBeforeStartsError,
     InvalidLeadCountError,
+    InvalidTitleError,
+    LocationTextTooLongError,
     OnSiteLocationRequiredError,
 )
 
@@ -19,5 +21,7 @@ __all__ = [
     "DuplicateParticipantUserError",
     "EndsBeforeStartsError",
     "InvalidLeadCountError",
+    "InvalidTitleError",
+    "LocationTextTooLongError",
     "OnSiteLocationRequiredError",
 ]

@@ -35,6 +35,18 @@ class OnSiteLocationRequiredError(AppError):
     message = "Appointment `location_text` is required when `modality='on_site'`."
 
 
+class InvalidTitleError(AppError):
+    code = "invalid.appointment.invalid_title"
+    status_code = 422
+    message = "Appointment `title` must be non-empty and at most 255 characters."
+
+
+class LocationTextTooLongError(AppError):
+    code = "invalid.appointment.location_text_too_long"
+    status_code = 422
+    message = "Appointment `location_text` must be at most 255 characters."
+
+
 class InvalidLeadCountError(AppError):
     code = "invalid.appointment.invalid_lead_count"
     status_code = 422
@@ -93,15 +105,28 @@ class AppointmentSpec:
     participants: tuple[AppointmentParticipantSpec, ...]
 
 
+TEXT_MAX_LENGTH = 255
+
+
 class AppointmentValidator:
     """Stateless validator. Raises on first violation."""
 
     @staticmethod
     def validate(spec: AppointmentSpec) -> None:
+        AppointmentValidator._validate_text(spec)
         AppointmentValidator._validate_temporal(spec)
         AppointmentValidator._validate_modality(spec)
         AppointmentValidator._validate_patient_tenant(spec)
         AppointmentValidator._validate_participants(spec)
+
+    @staticmethod
+    def _validate_text(spec: AppointmentSpec) -> None:
+        # Mirror the varchar(255) columns so writers get a 422 instead of a
+        # DB DataError (500).
+        if not spec.title.strip() or len(spec.title) > TEXT_MAX_LENGTH:
+            raise InvalidTitleError()
+        if spec.location_text is not None and len(spec.location_text) > TEXT_MAX_LENGTH:
+            raise LocationTextTooLongError()
 
     @staticmethod
     def _validate_temporal(spec: AppointmentSpec) -> None:
