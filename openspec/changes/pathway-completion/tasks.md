@@ -398,12 +398,12 @@ complete.
 
 ### § C7 Fixture cleanup
 
-- [ ] C7.1 Update the demo Rugrevalidatie seed pathway to use all
-  kinds the prototype renders (start + appointment + decision +
-  end_pathway minimum; richer mix to taste).
-- [ ] C7.2 Remove prebaked `pathway_block.x` / `y` values from
-  fixtures that hand-placed blocks; the layout engine owns them
-  now.
+- [x] C7.1 Rugrevalidatie seed covers start + appointment +
+  treatment (Operatie upgraded from milestone) + wait + decision +
+  milestone + end_pathway.
+- [x] C7.2 Authored `x` / `y` in fixtures are now harmless
+  placeholders — the § C3 layout pass ignores them on render.
+  Left in place (the wire shape still carries them).
 
 ### § C8 Verify + ship
 

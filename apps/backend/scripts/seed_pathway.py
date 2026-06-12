@@ -147,13 +147,20 @@ def _build_payload() -> PathwayDefinitionReplace:
                 x=0,
                 y=0,
             ),
+            # Pathway-completion § C7.1: the operation is a real
+            # TreatmentBlock (typed result at completion), not a
+            # milestone marker.
             PathwayBlockIn(
                 id=BLOCK_OPERATIE_ID,
                 phase_id=PHASE_SURGERY_ID,
-                lane_id=LANE_SYSTEM_ID,
-                kind="milestone",
+                lane_id=LANE_CAREGIVER_ID,
+                kind="treatment",
                 label="Operatie",
-                config={"label": "Operatie"},
+                config={
+                    "title": "Lumbale spinale fusie",
+                    "location": "OK 3, campus Zuid",
+                    "duration_minutes": 120,
+                },
                 x=240,
                 y=0,
             ),
