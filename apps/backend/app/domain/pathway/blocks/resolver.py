@@ -14,6 +14,7 @@ from app.domain.pathway.blocks.base import BaseBlock, UnknownBlockKindError
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.form.typed import FormBlock
+from app.domain.pathway.blocks.informed_consent.typed import InformedConsentBlock
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
 from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
@@ -31,6 +32,7 @@ BLOCK_CLASSES: tuple[type[BaseBlock], ...] = (
     TaskBlock,
     DecisionBlock,
     MessageBlock,
+    InformedConsentBlock,
     FormBlock,
     MilestoneBlock,
     WaitBlock,

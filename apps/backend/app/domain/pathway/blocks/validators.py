@@ -11,6 +11,7 @@ from __future__ import annotations
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
+from app.domain.pathway.blocks.informed_consent.typed import InformedConsentBlock
 from app.domain.pathway.blocks.resolver import BLOCK_CLASSES
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic.predicates import (
@@ -237,6 +238,58 @@ def validate_decision_output_references(
                 )
 
 
+class InformedConsentShapeError(ValueError):
+    """`InformedConsentBlock` carries an invalid lifecycle shape.
+
+    Pathway-completion § A8.6: `timing_policy` is forbidden (the
+    lifecycle is owned by the per-kind reminder/expiry fields) and the
+    ISO duration fields must parse. `questions` / `channels`
+    non-emptiness + `reminder_max` range live on the Pydantic field
+    constraints; this validator covers what Pydantic can't express.
+    """
+
+    def __init__(self, *, field: str, reason: str) -> None:
+        super().__init__(f"InformedConsentBlock.{field}: {reason}")
+        self.field = field
+        self.reason = reason
+
+
+def validate_informed_consent_invariants(blocks: dict[str, BaseBlock]) -> None:
+    """Enforce InformedConsentBlock lifecycle shape (§ A8.6).
+
+    1. `timing_policy` must be `None` — send/remind/expire timing is
+       owned by the per-kind fields.
+    2. `reminder_offset_iso` must parse as an ISO 8601 duration.
+    3. `expires_at_iso`, when set, must parse as an ISO 8601 duration.
+    """
+    for block in blocks.values():
+        if not isinstance(block, InformedConsentBlock):
+            continue
+        if block.timing_policy is not None:
+            raise InformedConsentShapeError(
+                field="timing_policy",
+                reason=(
+                    "lifecycle timing is owned by reminder/expiry fields — "
+                    "timing_policy must be None"
+                ),
+            )
+        try:
+            parse_iso_duration_timedelta(block.reminder_offset_iso)
+        except InvalidIsoDurationError as exc:
+            raise InformedConsentShapeError(
+                field="reminder_offset_iso",
+                reason=str(exc),
+            ) from exc
+        if block.expires_at_iso is not None:
+            try:
+                parse_iso_duration_timedelta(block.expires_at_iso)
+            except InvalidIsoDurationError as exc:
+                raise InformedConsentShapeError(
+                    field="expires_at_iso",
+                    reason=str(exc),
+                ) from exc
+
+
 class IfNotDoneWithinRuleError(ValueError):
     """An `if_not_done_within` rule is malformed at publish time.
 
@@ -389,6 +442,7 @@ __all__ = [
     "EndPathwayBlockMissingError",
     "EndPathwayBlockShapeError",
     "IfNotDoneWithinRuleError",
+    "InformedConsentShapeError",
     "LaneKindNotAllowedError",
     "StartBlockCardinalityError",
     "StartBlockShapeError",
@@ -398,6 +452,7 @@ __all__ = [
     "validate_deferred_field_attrs",
     "validate_end_pathway_block_invariants",
     "validate_if_not_done_within_rules",
+    "validate_informed_consent_invariants",
     "validate_lane_kind",
     "validate_publish_block",
     "validate_start_block_invariants",

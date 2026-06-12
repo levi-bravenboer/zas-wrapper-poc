@@ -25,10 +25,12 @@ from app.domain.pathway.blocks.validators import (
     EndPathwayBlockMissingError,
     EndPathwayBlockShapeError,
     IfNotDoneWithinRuleError,
+    InformedConsentShapeError,
     validate_decision_block_outputs,
     validate_decision_output_references,
     validate_end_pathway_block_invariants,
     validate_if_not_done_within_rules,
+    validate_informed_consent_invariants,
     validate_lane_kind,
     StartBlockCardinalityError,
     StartBlockShapeError,
@@ -237,6 +239,24 @@ class PathwayVersionService:
                     f".input_logic.if_not_done_within"
                 ),
                 reason=str(err),
+            ) from err
+
+        # Pathway-completion § A8.6: InformedConsentBlock lifecycle shape
+        # (no timing_policy; reminder/expiry ISO durations parse).
+        try:
+            validate_informed_consent_invariants(domain_blocks)
+        except InformedConsentShapeError as err:
+            consent_id = next(
+                (
+                    bid
+                    for bid, b in domain_blocks.items()
+                    if type(b).KIND == "informed_consent"
+                ),
+                "",
+            )
+            raise BlockConfigError(
+                field=f"blocks[{consent_id}].{err.field}",
+                reason=err.reason,
             ) from err
 
         # Catalogue-expansion § 1: pathway-wide StartBlock invariants.

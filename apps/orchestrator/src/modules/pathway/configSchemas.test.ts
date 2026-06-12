@@ -190,8 +190,9 @@ describe('AnyBlockConfig — type coverage smoke', () => {
         protocol_id: 'proto-std-12w',
         mode: 'blocking',
       },
+      informed_consent: { questions: [], channels: ['email'] },
       end_pathway: { name: 'End' },
     }
-    expect(Object.keys(sample)).toHaveLength(12)
+    expect(Object.keys(sample)).toHaveLength(13)
   })
 })

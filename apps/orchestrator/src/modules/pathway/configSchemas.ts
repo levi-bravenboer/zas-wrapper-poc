@@ -115,12 +115,26 @@ const TreatmentConfig = z.object({
   treatment_notes: z.string().max(2000).optional(),
 })
 
+// pathway-completion § A8: InformedConsentBlock — two-actor consent
+// lifecycle. Reminder/expiry timing is owned by these fields;
+// timing_policy is forbidden for this kind.
+export const INFORMED_CONSENT_CHANNELS = ['email', 'sms', 'push', 'in_app'] as const
+
+const InformedConsentConfig = z.object({
+  questions: z.array(FormQuestion).default([]),
+  channels: z.array(z.enum(INFORMED_CONSENT_CHANNELS)).default(['email', 'push']),
+  reminder_offset_iso: z.string().max(63).optional(),
+  reminder_max: z.number().int().min(0).max(10).optional(),
+  expires_at_iso: z.string().max(63).nullable().optional(),
+})
+
 export const CONFIG_SCHEMAS = {
   start: StartConfig,
   appointment: AppointmentConfig,
   treatment: TreatmentConfig,
   task: TaskConfig,
   message: MessageConfig,
+  informed_consent: InformedConsentConfig,
   form: FormConfig,
   decision: DecisionConfig,
   milestone: MilestoneConfig,

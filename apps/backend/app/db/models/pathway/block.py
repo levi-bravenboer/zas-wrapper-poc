@@ -128,6 +128,19 @@ class PathwayBlock(TenantOwnedEntity):
     message_cta_label: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
     message_cta_target: Mapped[str | None] = mapped_column(sa.String(1024), nullable=True)
 
+    # Pathway-completion § A8: InformedConsentBlock per-kind columns
+    informed_consent_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True
+    )
+    informed_consent_channels: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    informed_consent_reminder_offset_iso: Mapped[str | None] = mapped_column(
+        sa.String(63), nullable=True
+    )
+    informed_consent_reminder_max: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    informed_consent_expires_at_iso: Mapped[str | None] = mapped_column(
+        sa.String(63), nullable=True
+    )
+
     form_title: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     form_intro: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     form_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)

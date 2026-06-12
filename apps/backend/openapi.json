@@ -3262,6 +3262,9 @@
                       "$ref": "#/components/schemas/MessageBlockOut"
                     },
                     {
+                      "$ref": "#/components/schemas/InformedConsentBlockOut"
+                    },
+                    {
                       "$ref": "#/components/schemas/FormBlockOut"
                     },
                     {
@@ -3289,6 +3292,7 @@
                       "task": "#/components/schemas/TaskBlockOut",
                       "decision": "#/components/schemas/DecisionBlockOut",
                       "message": "#/components/schemas/MessageBlockOut",
+                      "informed_consent": "#/components/schemas/InformedConsentBlockOut",
                       "form": "#/components/schemas/FormBlockOut",
                       "milestone": "#/components/schemas/MilestoneBlockOut",
                       "wait": "#/components/schemas/WaitBlockOut",
@@ -6042,6 +6046,189 @@
         "title": "IfDoneArgs",
         "description": "Predecessor block has completed (with optional `delay_iso` wait)."
       },
+      "IfNotDoneWithinArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "if_not_done_within",
+            "title": "Predicate",
+            "default": "if_not_done_within"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block",
+          "offset_iso"
+        ],
+        "title": "IfNotDoneWithinArgs",
+        "description": "SLA / timeout: the referenced block is STILL not done after a window.\n\nTrue when the referenced block's execution is NOT in a terminal\nstate (`completed` / `skipped`) AND `now >= sla_anchor + offset_iso`.\nThe anchor is the referenced block's eligibility moment\n(`scheduled_at` until a dedicated `eligible_at` runtime column\nlands). `offset_iso` is an ISO 8601 duration (`\"P14D\"`, `\"PT4H\"`)\n\u2014 one duration grammar across the model, matching `TimingPolicy`."
+      },
+      "InformedConsentBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/FormQuestion"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Questions"
+          },
+          "channels": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms",
+                "push",
+                "in_app"
+              ]
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Channels"
+          },
+          "reminder_offset_iso": {
+            "type": "string",
+            "title": "Reminder Offset Iso",
+            "default": "P3D"
+          },
+          "reminder_max": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Reminder Max",
+            "default": 3
+          },
+          "expires_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At Iso"
+          },
+          "kind": {
+            "type": "string",
+            "const": "informed_consent",
+            "title": "Kind",
+            "default": "informed_consent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name"
+        ],
+        "title": "InformedConsentBlockOut"
+      },
       "InputLogic": {
         "properties": {
           "rules": {
@@ -6114,6 +6301,9 @@
               },
               {
                 "$ref": "#/components/schemas/DecisionOutputArgs"
+              },
+              {
+                "$ref": "#/components/schemas/IfNotDoneWithinArgs"
               }
             ],
             "title": "Args",
@@ -6123,6 +6313,7 @@
                 "decision_output": "#/components/schemas/DecisionOutputArgs",
                 "has_data": "#/components/schemas/HasDataArgs",
                 "if_done": "#/components/schemas/IfDoneArgs",
+                "if_not_done_within": "#/components/schemas/IfNotDoneWithinArgs",
                 "value_equals": "#/components/schemas/ValueEqualsArgs",
                 "value_gt": "#/components/schemas/ValueGtArgs",
                 "wait_after": "#/components/schemas/WaitAfterArgs"
@@ -7730,6 +7921,7 @@
               "treatment",
               "task",
               "message",
+              "informed_consent",
               "form",
               "decision",
               "milestone",
@@ -8941,6 +9133,9 @@
                   "$ref": "#/components/schemas/MessageBlockOut"
                 },
                 {
+                  "$ref": "#/components/schemas/InformedConsentBlockOut"
+                },
+                {
                   "$ref": "#/components/schemas/FormBlockOut"
                 },
                 {
@@ -8967,6 +9162,7 @@
                   "end_pathway": "#/components/schemas/EndPathwayBlockOut",
                   "external_program": "#/components/schemas/ExternalProgramBlockOut",
                   "form": "#/components/schemas/FormBlockOut",
+                  "informed_consent": "#/components/schemas/InformedConsentBlockOut",
                   "message": "#/components/schemas/MessageBlockOut",
                   "milestone": "#/components/schemas/MilestoneBlockOut",
                   "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
@@ -9910,7 +10106,8 @@
           "value_equals",
           "value_gt",
           "wait_after",
-          "decision_output"
+          "decision_output",
+          "if_not_done_within"
         ],
         "title": "PredicateKind",
         "description": "Closed enum of supported input-logic predicates (D3).\n\nNo expression language. Adding a new predicate is a typed code\nchange here + a new `Args` model + an evaluator branch."

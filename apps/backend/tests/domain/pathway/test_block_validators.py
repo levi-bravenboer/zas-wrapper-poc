@@ -33,6 +33,7 @@ from app.domain.pathway.blocks.validators import (
     validate_deferred_field_attrs,
     validate_end_pathway_block_invariants,
     validate_if_not_done_within_rules,
+    validate_informed_consent_invariants,
     validate_lane_kind,
     validate_start_block_invariants,
 )
@@ -361,3 +362,116 @@ def test_if_not_done_within_invalid_iso_rejected() -> None:
     with pytest.raises(IfNotDoneWithinRuleError) as exc_info:
         validate_if_not_done_within_rules(blocks)
     assert "offset_iso invalid" in exc_info.value.reason
+
+
+# ---- InformedConsentBlock invariants (pathway-completion § A8.6) --------
+
+
+def test_informed_consent_defaults_pass() -> None:
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+
+    consent = InformedConsentBlock(name="Toestemming")
+    blocks: dict[str, BaseBlock] = {str(uuid4()): consent}
+    validate_informed_consent_invariants(blocks)
+    assert consent.reminder_offset_iso == "P3D"
+    assert consent.reminder_max == 3
+    assert consent.channels == ["email", "push"]
+    assert consent.questions[0].label == "Ik geef toestemming"
+
+
+def test_informed_consent_rejects_timing_policy() -> None:
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+    from app.domain.pathway.blocks.validators import InformedConsentShapeError
+
+    consent = InformedConsentBlock(
+        name="Toestemming",
+        timing_policy=WaitAfterPolicy(offset_iso="P1D"),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): consent}
+    with pytest.raises(InformedConsentShapeError) as exc_info:
+        validate_informed_consent_invariants(blocks)
+    assert exc_info.value.field == "timing_policy"
+
+
+def test_informed_consent_rejects_invalid_reminder_offset() -> None:
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+    from app.domain.pathway.blocks.validators import InformedConsentShapeError
+
+    consent = InformedConsentBlock(
+        name="Toestemming", reminder_offset_iso="drie dagen"
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): consent}
+    with pytest.raises(InformedConsentShapeError) as exc_info:
+        validate_informed_consent_invariants(blocks)
+    assert exc_info.value.field == "reminder_offset_iso"
+
+
+def test_informed_consent_rejects_invalid_expiry() -> None:
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+    from app.domain.pathway.blocks.validators import InformedConsentShapeError
+
+    consent = InformedConsentBlock(name="Toestemming", expires_at_iso="ooit")
+    blocks: dict[str, BaseBlock] = {str(uuid4()): consent}
+    with pytest.raises(InformedConsentShapeError) as exc_info:
+        validate_informed_consent_invariants(blocks)
+    assert exc_info.value.field == "expires_at_iso"
+
+
+def test_informed_consent_valid_expiry_passes() -> None:
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+
+    consent = InformedConsentBlock(name="Toestemming", expires_at_iso="P30D")
+    blocks: dict[str, BaseBlock] = {str(uuid4()): consent}
+    validate_informed_consent_invariants(blocks)
+
+
+def test_informed_consent_result_mutual_exclusion() -> None:
+    from datetime import UTC, datetime
+
+    from pydantic import ValidationError
+
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentResult,
+    )
+
+    InformedConsentResult(
+        consented=True,
+        expired=False,
+        signed_at=datetime(2026, 6, 12, tzinfo=UTC),
+        responses={"consent": "yes"},
+    )
+    InformedConsentResult(consented=False, expired=True)
+    with pytest.raises(ValidationError):
+        InformedConsentResult(consented=True, expired=True)
+
+
+def test_informed_consent_rejects_empty_channels() -> None:
+    from pydantic import ValidationError
+
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+
+    with pytest.raises(ValidationError):
+        InformedConsentBlock(name="Toestemming", channels=[])
+
+
+def test_informed_consent_rejects_out_of_range_reminder_max() -> None:
+    from pydantic import ValidationError
+
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+    )
+
+    with pytest.raises(ValidationError):
+        InformedConsentBlock(name="Toestemming", reminder_max=11)

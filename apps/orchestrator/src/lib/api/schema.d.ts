@@ -2043,6 +2043,95 @@ export interface components {
             delay_iso?: string | null;
         };
         /**
+         * IfNotDoneWithinArgs
+         * @description SLA / timeout: the referenced block is STILL not done after a window.
+         *
+         *     True when the referenced block's execution is NOT in a terminal
+         *     state (`completed` / `skipped`) AND `now >= sla_anchor + offset_iso`.
+         *     The anchor is the referenced block's eligibility moment
+         *     (`scheduled_at` until a dedicated `eligible_at` runtime column
+         *     lands). `offset_iso` is an ISO 8601 duration (`"P14D"`, `"PT4H"`)
+         *     — one duration grammar across the model, matching `TimingPolicy`.
+         */
+        IfNotDoneWithinArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "if_not_done_within";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Offset Iso */
+            offset_iso: string;
+        };
+        /** InformedConsentBlockOut */
+        InformedConsentBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Questions */
+            questions?: components["schemas"]["FormQuestion"][];
+            /** Channels */
+            channels?: ("email" | "sms" | "push" | "in_app")[];
+            /**
+             * Reminder Offset Iso
+             * @default P3D
+             */
+            reminder_offset_iso: string;
+            /**
+             * Reminder Max
+             * @default 3
+             */
+            reminder_max: number;
+            /** Expires At Iso */
+            expires_at_iso?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "informed_consent";
+        };
+        /**
          * InputLogic
          * @description Aggregate of rules attached to a `BaseBlock`.
          *
@@ -2086,7 +2175,7 @@ export interface components {
              */
             node: string;
             /** Args */
-            args: components["schemas"]["IfDoneArgs"] | components["schemas"]["HasDataArgs"] | components["schemas"]["ValueEqualsArgs"] | components["schemas"]["ValueGtArgs"] | components["schemas"]["WaitAfterArgs"] | components["schemas"]["DecisionOutputArgs"];
+            args: components["schemas"]["IfDoneArgs"] | components["schemas"]["HasDataArgs"] | components["schemas"]["ValueEqualsArgs"] | components["schemas"]["ValueGtArgs"] | components["schemas"]["WaitAfterArgs"] | components["schemas"]["DecisionOutputArgs"] | components["schemas"]["IfNotDoneWithinArgs"];
         };
         /**
          * ItemCategory
@@ -2779,7 +2868,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
+            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -3295,7 +3384,7 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
+            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
@@ -3683,7 +3772,7 @@ export interface components {
          *     change here + a new `Args` model + an evaluator branch.
          * @enum {string}
          */
-        PredicateKind: "if_done" | "has_data" | "value_equals" | "value_gt" | "wait_after" | "decision_output";
+        PredicateKind: "if_done" | "has_data" | "value_equals" | "value_gt" | "wait_after" | "decision_output" | "if_not_done_within";
         /** ProviderDescriptor */
         ProviderDescriptor: {
             /** Key */
@@ -6453,7 +6542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
+                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
                 };
             };
             /** @description Not Found */

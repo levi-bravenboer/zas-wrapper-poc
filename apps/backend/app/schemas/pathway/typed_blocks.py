@@ -27,6 +27,7 @@ from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.form.typed import FormBlock
+from app.domain.pathway.blocks.informed_consent.typed import InformedConsentBlock
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
 from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
@@ -81,6 +82,10 @@ class MessageBlockOut(MessageBlock, _BlockEnvelopeFields):
     kind: Literal["message"] = "message"
 
 
+class InformedConsentBlockOut(InformedConsentBlock, _BlockEnvelopeFields):
+    kind: Literal["informed_consent"] = "informed_consent"
+
+
 class FormBlockOut(FormBlock, _BlockEnvelopeFields):
     kind: Literal["form"] = "form"
 
@@ -113,6 +118,7 @@ PathwayTypedBlockOut = Annotated[
         TaskBlockOut,
         DecisionBlockOut,
         MessageBlockOut,
+        InformedConsentBlockOut,
         FormBlockOut,
         MilestoneBlockOut,
         WaitBlockOut,
@@ -131,6 +137,7 @@ _OUT_BY_KIND: dict[str, type[BaseModel]] = {
     "task": TaskBlockOut,
     "decision": DecisionBlockOut,
     "message": MessageBlockOut,
+    "informed_consent": InformedConsentBlockOut,
     "form": FormBlockOut,
     "milestone": MilestoneBlockOut,
     "wait": WaitBlockOut,
@@ -177,6 +184,10 @@ class MessageBlockIn(MessageBlock, _BlockEnvelopeFields):
     kind: Literal["message"] = "message"
 
 
+class InformedConsentBlockIn(InformedConsentBlock, _BlockEnvelopeFields):
+    kind: Literal["informed_consent"] = "informed_consent"
+
+
 class FormBlockIn(FormBlock, _BlockEnvelopeFields):
     kind: Literal["form"] = "form"
 
@@ -209,6 +220,7 @@ PathwayTypedBlockIn = Annotated[
         TaskBlockIn,
         DecisionBlockIn,
         MessageBlockIn,
+        InformedConsentBlockIn,
         FormBlockIn,
         MilestoneBlockIn,
         WaitBlockIn,
@@ -231,6 +243,8 @@ __all__ = [
     "ExternalProgramBlockOut",
     "FormBlockIn",
     "FormBlockOut",
+    "InformedConsentBlockIn",
+    "InformedConsentBlockOut",
     "MessageBlockIn",
     "MessageBlockOut",
     "MilestoneBlockIn",

@@ -167,34 +167,30 @@ Decision: out of PoC. Park in `backlog.md` as `[mvp]`.
 
 **This PR — template only:**
 
-- [ ] A8.1 `app/domain/pathway/blocks/informed_consent/typed.py` —
-  `InformedConsentBlock` with `questions: list[FormQuestion]`,
-  `channels: list[Literal["email","sms","push","in_app"]]`
-  (default `["email", "push"]`, minLength 1),
+- [x] A8.1 `app/domain/pathway/blocks/informed_consent/typed.py` —
+  `InformedConsentBlock` with `questions: list[FormQuestion]`
+  (default: single yes/no "Ik geef toestemming"),
+  `channels` (default `["email", "push"]`, minLength 1),
   `reminder_offset_iso: str = "P3D"`,
   `reminder_max: int = 3` (range [0, 10]),
   `expires_at_iso: str | None = None`. Lane:
   `(LANE_KIND_PATIENT,)`. `ICON="signature"`.
-- [ ] A8.2 `InformedConsentResult(BaseModel)` with
-  `consented: bool`, `expired: bool`, `signed_at: datetime | None`,
-  `responses: dict[str, Any] | None`. `consented` + `expired`
-  mutually exclusive (model_validator). Set as `RESULT_TYPE`.
-- [ ] A8.3 Register in `BLOCK_CLASSES`; add `"informed_consent"`
-  to `BlockSemanticsLiteral`; add `InformedConsentBlockIn/Out`.
-- [ ] A8.4 Migration: nullable per-kind columns
-  (`informed_consent_questions`,
-  `informed_consent_channels`,
-  `informed_consent_reminder_offset_iso`,
-  `informed_consent_reminder_max`,
-  `informed_consent_expires_at_iso`).
-- [ ] A8.6 Publish validator: `questions` non-empty;
-  `channels` non-empty; `reminder_max` ∈ [0, 10];
-  `expires_at_iso` parseable as ISO 8601 duration when set; lane
-  MUST be `patient`.
-- [ ] A8.7a Tests: class shape, catalogue projection, mapper
-  round-trip, validator branches, RESULT_TYPE mutual-exclusion
-  rejection.
-- [ ] A8.8 `/verify`; commit.
+- [x] A8.2 `InformedConsentResult` with mutual-exclusion
+  model_validator on `consented` + `expired`. Set as `RESULT_TYPE`.
+- [x] A8.3 Registered in `BLOCK_CLASSES`; `"informed_consent"` in
+  `BlockSemanticsLiteral`; `InformedConsentBlockIn/Out` unions.
+- [x] A8.4 Migration `c0n5e4t8b1ck`: 5 nullable per-kind columns.
+- [x] A8.6 Publish validator
+  (`validate_informed_consent_invariants`): timing_policy
+  forbidden; reminder/expiry ISO durations parse. Field-level
+  constraints (questions/channels non-empty, reminder_max range)
+  live on the Pydantic model. Wired into publish gate.
+- [x] A8.7a Tests: defaults, timing rejection, invalid ISO
+  rejections, valid expiry pass, RESULT_TYPE mutual exclusion,
+  empty channels rejection, reminder_max range rejection,
+  catalogue projection (expected-set updates).
+- [x] A8.8 `/verify`; commit. Frontend: `InformedConsentConfig`
+  Zod schema + type coverage updated in lockstep.
 
 **Deferred to follow-up "pathway-nested-runtime" PR:**
 
