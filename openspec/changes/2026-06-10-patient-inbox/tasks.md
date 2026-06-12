@@ -74,7 +74,7 @@ Per D-AGG — server-side aggregator over source domains. v1 source set: `appoin
 
 ## 4. Backend: `patients-base` modifications
 
-- [ ] 4.1 Tests (`tests/api/test_patient_list_sort.py`):
+- [x] 4.1 Tests (`tests/api/test_patient_list_sort.py`):
   - `order_by=next_appointment_starts_at` → 422 (rejected; no embedded next_appointment field)
   - `order_by=banana` → 422 (unchanged)
 
@@ -122,22 +122,22 @@ Lives under `apps/orchestrator/src/modules/tasks/` (new dir, after task 6.2 dele
   - `useTasksQuery` → maps `TaskItem[]` through `<TaskRow>`
   - Empty state via `<EmptyState>` (used directly): `icon`, `title=t('tasks:empty.title')` ("Geen taken"), `body=t('tasks:empty.body')` ("Nieuwe taken verschijnen automatisch")
   - NO filter row, NO sort tabs, NO counter, NO pager, NO "Meer laden" button (per D-FLAT + D-NOSORT)
-- [ ] 8.4 Realtime topic registration on `<TaskList>` is a SEAM ONLY (commented placeholder). No-op for v1
+- [x] 8.4 Realtime topic registration on `<TaskList>` is a SEAM ONLY (commented placeholder). No-op for v1
 
 ## 9. Frontend: appointment context block + patient actions
 
 Per D-CTX-BLOCK. No bespoke `<PatientDetailView>` or `<PatientDetailHeader>` ships — both routes consume `<EntityDetailPage>` + `<EntityDetailTabs>` directly.
 
 - [x] 9.1 Build `<AppointmentContextBlock>` at `modules/tasks/components/AppointmentContextBlock.tsx`
-- [ ] 9.2 Build `<PatientKebab>` at `modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside. Reused by the task detail route and the standalone patient route
-- [ ] 9.3 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx` after confirming task 0.4 found no external consumers (already deleted in earlier section by 10.6/PatientsColumns sweep)
+- [x] 9.2 Build `<PatientKebab>` at `modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside. Reused by the task detail route and the standalone patient route
+- [x] 9.3 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx` after confirming task 0.4 found no external consumers (already deleted in earlier section by 10.6/PatientsColumns sweep)
 
 ## 10. Frontend: routes (new dirs, created after section 6 deletion)
 
 - [x] 10.1 Create `routes/_auth/tasks/route.tsx` (parent layout) — plain two-column flex per D-LAYOUT-V12
 - [x] 10.2 Create `routes/_auth/tasks/index.tsx` (child index) — selection `<EmptyState>`
 - [x] 10.3 Create `routes/_auth/tasks/$taskId/index.tsx` (child detail). NOTE: `actions = PatientKebab` deferred until 9.2 lands; route currently renders without the actions slot
-- [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — keep existing `<PatientProfilePage>` shell, collapse its tab strip to TWO clinical tabs (Metingen + Lab) per D10, move `<CareTeamSlot>` to the header-adjacent card, move `<PatientHistoryPanel>` behind kebab `Geschiedenis` dialog. `back = { to: '/_auth/tasks' }`. Used by admin/users links + care-team links + any non-task-context entry
+- [x] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — keep existing `<PatientProfilePage>` shell, collapse its tab strip to TWO clinical tabs (Metingen + Lab) per D10, move `<CareTeamSlot>` to the header-adjacent card, move `<PatientHistoryPanel>` behind kebab `Geschiedenis` dialog. `back = { to: '/_auth/tasks' }`. Used by admin/users links + care-team links + any non-task-context entry
 - [x] 10.5 DELETED `routes/_auth/patients/index.tsx` (per D24). Verified no internal consumers
 - [x] 10.6 Updated sidebar: `Mijn patiënten` replaced with single `Taken` (lucide `inbox`) entry pointing to `/_auth/tasks`
 
@@ -145,9 +145,9 @@ Per D-CTX-BLOCK. No bespoke `<PatientDetailView>` or `<PatientDetailHeader>` shi
 
 - [x] 11.1 Created `nl/tasks.json` namespace (+ extended with `context.lead`, `context.open_appointment`, `tabs.*` for the task detail route)
 - [x] 11.2 Created `nl/appointment.json` namespace
-- [ ] 11.3 Extend `nl/patient-profile-ui.json`: `detail.tab.measurements`, `detail.tab.lab_results`, `detail.tab.empty.measurements.title/body`, `detail.tab.empty.lab_results.title/body`, `detail.kebab.history`, `detail.kebab.history_dialog_title`. Remove any prior `detail.tab.appointments` key (no Afspraken tab)
-- [ ] 11.4 Remove i18n keys for dropped `Overzicht` / `Zorgteam` / `Geschiedenis` tab labels (preserve `Geschiedenis` kebab + dialog keys). Remove `Mijn patiënten` sidebar nav key. Remove old placeholder `Taken` key if its value differed
-- [ ] 11.5 Verify no raw strings outside `t()` in changed files
+- [x] 11.3 Extend `nl/patient-profile-ui.json`: `detail.tab.measurements`, `detail.tab.lab_results`, `detail.tab.empty.measurements.title/body`, `detail.tab.empty.lab_results.title/body`, `detail.kebab.history`, `detail.kebab.history_dialog_title`. Remove any prior `detail.tab.appointments` key (no Afspraken tab)
+- [x] 11.4 Remove i18n keys for dropped `Overzicht` / `Zorgteam` / `Geschiedenis` tab labels (preserve `Geschiedenis` kebab + dialog keys). Remove `Mijn patiënten` sidebar nav key. Remove old placeholder `Taken` key if its value differed
+- [x] 11.5 Verify no raw strings outside `t()` in changed files
 
 ## 12. Frontend tests
 
@@ -160,30 +160,30 @@ Tasks module:
 - [x] 12.4 `useTasksQuery.test.ts`: single-page `useQuery` integration; key matches `tasksListKeyPrefix` (already shipped)
 - [x] 12.5 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy (already shipped)
 - [x] 12.6 `TaskRow.test.tsx`: avatar tint + identity + secondary line + KindTile trailing + navigation (already shipped — updated to navigate to `/_auth/tasks/$taskId`)
-- [ ] 12.7 `TaskList.test.tsx`: empty list renders `<EmptyState>` with fixed copy ("Geen taken" / "Nieuwe taken verschijnen automatisch"); populated list renders one `<TaskRow>` per `TaskItem`; rows grouped by due bucket headers; no counter, no pager, no `"Meer laden"` button anywhere in the DOM
+- [x] 12.7 `TaskList.test.tsx`: empty list renders `<EmptyState>` with fixed copy ("Geen taken" / "Nieuwe taken verschijnen automatisch"); populated list renders one `<TaskRow>` per `TaskItem`; rows grouped by due bucket headers; no counter, no pager, no `"Meer laden"` button anywhere in the DOM
 
 Appointment context block:
 - [x] 12.8 `AppointmentContextBlock.test.tsx` — 4 green (title + kind badge + location; lead present; lead absent; Open afspraak action)
 
 Routes:
-- [ ] 12.9 `routes/_auth/tasks/route.test.tsx`: URL `/_auth/tasks` → rail (280px) + selection `<EmptyState>` in right pane; URL `/_auth/tasks/$taskId` → rail + `<EntityDetailPage>` with `<AppointmentContextBlock>` above the tabs; active rail row reflects URL; rail row click updates URL; browser back from detail returns to index
-- [ ] 12.10 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<EntityDetailPage>` chrome with TWO clinical tabs (Metingen + Lab) + `<CareTeamSlot>` adjacent + kebab Geschiedenis dialog; `back` link points to `/_auth/tasks`
-- [ ] 12.11 Sidebar nav test: single `"Taken"` item present, points to `/_auth/tasks`; `"Mijn patiënten"` item ABSENT; no duplicate `"Taken"` from the placeholder
+- [x] 12.9 `routes/_auth/tasks/route.test.tsx`: URL `/_auth/tasks` → rail (280px) + selection `<EmptyState>` in right pane; URL `/_auth/tasks/$taskId` → rail + `<EntityDetailPage>` with `<AppointmentContextBlock>` above the tabs; active rail row reflects URL; rail row click updates URL; browser back from detail returns to index
+- [x] 12.10 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<EntityDetailPage>` chrome with TWO clinical tabs (Metingen + Lab) + `<CareTeamSlot>` adjacent + kebab Geschiedenis dialog; `back` link points to `/_auth/tasks`
+- [x] 12.11 Sidebar nav test: single `"Taken"` item present, points to `/_auth/tasks`; `"Mijn patiënten"` item ABSENT; no duplicate `"Taken"` from the placeholder
 
 ## 13. v12 spec-sync fixes (post-lock deltas)
 
 Decisions taken after the v12 wireframe lock (window widened, rail anatomy aligned to prototype, day grouping). Spec is updated; implementation must follow.
 
-- [ ] 13.1 Backend: widen aggregator window 3d → 30d (`WINDOW_DAYS = 30` in `appointment_source.py`). Update window tests: `now()+35d` excluded, `now()+5d` INCLUDED (was excluded)
-- [ ] 13.2 FE: refactor `<TaskRow>` to rail anatomy per D7 — `<KindTile size="sm">` leading + `family, given` primary + relative-due secondary. REMOVE avatar, INSZ line, trailing KindTile, chevron. Active state = 3px primary left accent + tinted background (driven by `selected` prop)
-- [ ] 13.3 FE: `<TaskList>` groups rows per calendar day — `Vandaag` / `Morgen` / formatted day label (`za 14 jun`, `nl-BE` locale). Sticky mini-headers in the rail. Request `page_size=100` on `GET /tasks`
-- [ ] 13.4 i18n: rail subtitle → `Aankomende taken`; `selection.body` → `"Kies links een taak om de patiënt en de afspraak te bekijken."` (align with spec); add day-label formatting helper if needed
-- [ ] 13.5 Tests: update `TaskRow` assertions (no avatar/INSZ; KindTile leading; accent state), add `TaskList` day-grouping assertions, update backend window tests per 13.1
+- [x] 13.1 Backend: widen aggregator window 3d → 30d (`WINDOW_DAYS = 30` in `appointment_source.py`). Update window tests: `now()+35d` excluded, `now()+5d` INCLUDED (was excluded)
+- [x] 13.2 FE: refactor `<TaskRow>` to rail anatomy per D7 — `<KindTile size="sm">` leading + `family, given` primary + relative-due secondary. REMOVE avatar, INSZ line, trailing KindTile, chevron. Active state = 3px primary left accent + tinted background (driven by `selected` prop)
+- [x] 13.3 FE: `<TaskList>` groups rows per calendar day — `Vandaag` / `Morgen` / formatted day label (`za 14 jun`, `nl-BE` locale). Sticky mini-headers in the rail. Request `page_size=100` on `GET /tasks`
+- [x] 13.4 i18n: rail subtitle → `Aankomende taken`; `selection.body` → `"Kies links een taak om de patiënt en de afspraak te bekijken."` (align with spec); add day-label formatting helper if needed
+- [x] 13.5 Tests: update `TaskRow` assertions (no avatar/INSZ; KindTile leading; accent state), add `TaskList` day-grouping assertions, update backend window tests per 13.1
 
 ## 14. Verification
 
-- [ ] 14.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
-- [ ] 14.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
+- [x] 14.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
+- [x] 14.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
 - [ ] 14.3 Manual smoke (desktop ≥md): sidebar `"Taken"` item visible (no `"Mijn patiënten"`, exactly one `"Taken"`). Open `/_auth/tasks` → rail (280px, day-grouped) + right pane `<EmptyState>` "Selecteer een taak". Click a rail row → URL = `/_auth/tasks/$taskId`, right pane = `<EntityDetailPage>` with `<AppointmentContextBlock>` above the Metingen + Lab tabs. Active rail row carries the 3px accent + tinted bg. Same patient appearing in two rows → two distinct selectable URLs. Browser back from a task detail returns to index. Deep link `/_auth/tasks/$taskId` opens directly. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail
 - [ ] 14.4 Mobile (<md): out of scope v1. No assertion
 - [ ] 14.5 Manual smoke (when appointments exist): create an appointment via the validator + ORM with `starts_at = now() + 1 day`, caller as `lead` participant → row appears in `/_auth/tasks` under `Morgen`. Create one with `starts_at = now() + 35 days` → does NOT appear. Create one without caller as participant → does NOT appear. Append `?within=7d` to URL — no effect on results (param silently ignored)
