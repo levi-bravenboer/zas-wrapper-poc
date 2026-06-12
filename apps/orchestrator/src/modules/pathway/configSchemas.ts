@@ -128,6 +128,13 @@ const InformedConsentConfig = z.object({
   expires_at_iso: z.string().max(63).nullable().optional(),
 })
 
+// pathway-completion § A7: MdoBlock — multi-disciplinair overleg.
+// 1 leading caregiver + unlimited extras; leading completes.
+const MdoConfig = z.object({
+  topic: z.string().min(1).max(500).optional(),
+  expected_attendees_note: z.string().max(2000).optional(),
+})
+
 export const CONFIG_SCHEMAS = {
   start: StartConfig,
   appointment: AppointmentConfig,
@@ -135,6 +142,7 @@ export const CONFIG_SCHEMAS = {
   task: TaskConfig,
   message: MessageConfig,
   informed_consent: InformedConsentConfig,
+  mdo: MdoConfig,
   form: FormConfig,
   decision: DecisionConfig,
   milestone: MilestoneConfig,

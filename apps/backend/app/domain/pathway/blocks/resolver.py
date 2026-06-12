@@ -16,6 +16,7 @@ from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.form.typed import FormBlock
 from app.domain.pathway.blocks.informed_consent.typed import InformedConsentBlock
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
+from app.domain.pathway.blocks.mdo.typed import MdoBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
 from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
@@ -31,6 +32,7 @@ BLOCK_CLASSES: tuple[type[BaseBlock], ...] = (
     TreatmentBlock,
     TaskBlock,
     DecisionBlock,
+    MdoBlock,
     MessageBlock,
     InformedConsentBlock,
     FormBlock,

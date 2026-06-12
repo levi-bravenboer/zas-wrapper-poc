@@ -136,22 +136,24 @@ Decision: out of PoC. Park in `backlog.md` as `[mvp]`.
 
 **This PR — template only:**
 
-- [ ] A7.1 `app/domain/pathway/blocks/mdo/typed.py` — `MdoBlock`
+- [x] A7.1 `app/domain/pathway/blocks/mdo/typed.py` — `MdoBlock`
   with `topic: str`, `expected_attendees_note: str | None`. Lane:
   `(LANE_KIND_CAREGIVER,)`. `EVENTS = ("contributed",)`.
   `ICON="users"`.
-- [ ] A7.2 `MdoResult(BaseModel)` with `contributors: list[UUID]`,
+- [x] A7.2 `MdoResult` with `contributors: list[UUID]`,
   `notes: str`, `closed_at: datetime`. Set as `RESULT_TYPE`.
-- [ ] A7.3 Register in `BLOCK_CLASSES`; add `"mdo"` to
-  `BlockSemanticsLiteral`; add `MdoBlockIn/Out`.
-- [ ] A7.4 Migration: `mdo_topic` (TEXT) +
-  `mdo_expected_attendees_note` (TEXT, nullable) on `pathway_block`.
-- [ ] A7.6 Publish validator: `topic` non-empty (already covered by
-  CONFIG_SCHEMA `required=["topic"]`); lane = caregiver (covered by
-  `allowed_lane_kinds`); confirmation tests land here.
-- [ ] A7.7a Tests: class shape, catalogue projection, mapper
-  round-trip, topic-empty rejection, lane-kind rejection.
-- [ ] A7.8 `/verify`; commit.
+- [x] A7.3 Registered in `BLOCK_CLASSES`; `"mdo"` in
+  `BlockSemanticsLiteral`; `MdoBlockIn/Out` unions.
+- [x] A7.4 Migration `m4d0b1l0ckk1`: `mdo_topic` +
+  `mdo_expected_attendees_note`.
+- [x] A7.6 Publish validator: `topic` required via CONFIG_SCHEMA +
+  Pydantic; lane via `allowed_lane_kinds`. Event-type gate (`event`
+  rules against `MdoBlock.EVENTS`) covered by §B3
+  `validate_event_rules`.
+- [x] A7.7a Tests: class shape, RESULT_TYPE round-trip, topic
+  rejection, catalogue expected-set updates.
+- [x] A7.8 `/verify`; commit. Frontend: `MdoConfig` Zod schema +
+  type coverage in lockstep.
 
 **Deferred to follow-up "pathway-nested-runtime" PR:**
 
@@ -393,9 +395,9 @@ complete.
 
 | Part | Sections | Done / Decided | Pending (this PR) | Deferred (next PR) |
 | --- | --- | --- | --- | --- |
-| A | A1-A8 | A1 ✓, A2 ✓, A3 ✓ (drop+relabel), A4 ✓, A5 ✓ (template), A6 ✓ (defer, BL-072) | A7 template, A8 template | A5.2/A5.5, A7.5, A8.5 runtime |
-| B | B1-B3 | B2 ✓ (defer, BL-073) | B1 template+evaluator, B3 template+gate | B1.4 tick, B3.3/B3.4 endpoint+store |
-| C | C1-C8 | designs locked, v1.html prototype done (C1.1) | C1.2-C8 (after A + B template work) | — |
+| A | A1-A8 | ALL template work ✓ (A1, A2, A3 drop, A4, A5, A6 defer BL-072, A7, A8) | — | A5.2/A5.5, A7.5, A8.5 runtime |
+| B | B1-B3 | B1 ✓, B2 ✓ (defer, BL-073), B3 ✓ | — | B1.4 tick, B3.3/B3.4 endpoint+store |
+| C | C1-C8 | designs locked, v1.html prototype done (C1.1) | C2-C8 — **UNBLOCKED**, catalogue + predicates frozen | — |
 
 ## Cross-Part dependencies
 

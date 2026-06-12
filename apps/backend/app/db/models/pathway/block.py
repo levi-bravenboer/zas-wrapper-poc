@@ -128,6 +128,10 @@ class PathwayBlock(TenantOwnedEntity):
     message_cta_label: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
     message_cta_target: Mapped[str | None] = mapped_column(sa.String(1024), nullable=True)
 
+    # Pathway-completion § A7: MdoBlock per-kind columns
+    mdo_topic: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
+    mdo_expected_attendees_note: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     # Pathway-completion § A8: InformedConsentBlock per-kind columns
     informed_consent_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB, nullable=True

@@ -21,6 +21,7 @@ BlockSemanticsLiteral = Literal[
     "task",
     "message",
     "informed_consent",
+    "mdo",
     "form",
     "decision",
     "milestone",

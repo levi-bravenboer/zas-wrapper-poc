@@ -166,3 +166,53 @@ def test_external_program_block_provider() -> None:
     block = ExternalProgramBlock(name="Luscii anesthesie", provider="luscii")
     assert block.provider == "luscii"
     assert ExternalProgramBlock.allowed_lane_kinds == (LANE_KIND_EXTERNAL,)
+
+
+def test_mdo_block_instantiates_with_minimal_fields() -> None:
+    from app.domain.pathway.blocks.mdo.typed import MdoBlock, MdoResult
+
+    block = MdoBlock(name="MDO oncologie", topic="Bespreking pathologie-uitslag")
+    assert block.KIND == "mdo"
+    assert block.TYPE_CODE == "mdo"
+    assert block.topic == "Bespreking pathologie-uitslag"
+    assert block.expected_attendees_note is None
+    assert MdoBlock.allowed_lane_kinds == (LANE_KIND_CAREGIVER,)
+    assert MdoBlock.EVENTS == ("contributed",)
+    assert MdoBlock.RESULT_TYPE is MdoResult
+
+
+def test_mdo_block_rejects_missing_topic() -> None:
+    from pydantic import ValidationError
+
+    from app.domain.pathway.blocks.mdo.typed import MdoBlock
+
+    with pytest.raises(ValidationError):
+        MdoBlock(name="MDO")  # type: ignore[call-arg]
+
+
+def test_mdo_result_round_trip() -> None:
+    from datetime import UTC, datetime
+
+    from app.domain.pathway.blocks.mdo.typed import MdoResult
+
+    contributors = [uuid4(), uuid4()]
+    result = MdoResult(
+        contributors=contributors,
+        notes="Consensus: doorverwijzen",
+        closed_at=datetime(2026, 6, 12, 14, 0, tzinfo=UTC),
+    )
+    payload = result.model_dump(mode="json")
+    parsed = MdoResult.model_validate(payload)
+    assert parsed.contributors == contributors
+    assert parsed.notes == "Consensus: doorverwijzen"
+
+
+def test_informed_consent_block_class_shape() -> None:
+    from app.domain.pathway.blocks.informed_consent.typed import (
+        InformedConsentBlock,
+        InformedConsentResult,
+    )
+
+    assert InformedConsentBlock.KIND == "informed_consent"
+    assert InformedConsentBlock.allowed_lane_kinds == (LANE_KIND_PATIENT,)
+    assert InformedConsentBlock.RESULT_TYPE is InformedConsentResult

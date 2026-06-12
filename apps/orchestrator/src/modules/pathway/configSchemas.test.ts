@@ -191,8 +191,9 @@ describe('AnyBlockConfig — type coverage smoke', () => {
         mode: 'blocking',
       },
       informed_consent: { questions: [], channels: ['email'] },
+      mdo: { topic: 'Bespreking pathologie' },
       end_pathway: { name: 'End' },
     }
-    expect(Object.keys(sample)).toHaveLength(13)
+    expect(Object.keys(sample)).toHaveLength(14)
   })
 })

@@ -29,6 +29,7 @@ from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.form.typed import FormBlock
 from app.domain.pathway.blocks.informed_consent.typed import InformedConsentBlock
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
+from app.domain.pathway.blocks.mdo.typed import MdoBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
 from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
@@ -86,6 +87,10 @@ class InformedConsentBlockOut(InformedConsentBlock, _BlockEnvelopeFields):
     kind: Literal["informed_consent"] = "informed_consent"
 
 
+class MdoBlockOut(MdoBlock, _BlockEnvelopeFields):
+    kind: Literal["mdo"] = "mdo"
+
+
 class FormBlockOut(FormBlock, _BlockEnvelopeFields):
     kind: Literal["form"] = "form"
 
@@ -119,6 +124,7 @@ PathwayTypedBlockOut = Annotated[
         DecisionBlockOut,
         MessageBlockOut,
         InformedConsentBlockOut,
+        MdoBlockOut,
         FormBlockOut,
         MilestoneBlockOut,
         WaitBlockOut,
@@ -138,6 +144,7 @@ _OUT_BY_KIND: dict[str, type[BaseModel]] = {
     "decision": DecisionBlockOut,
     "message": MessageBlockOut,
     "informed_consent": InformedConsentBlockOut,
+    "mdo": MdoBlockOut,
     "form": FormBlockOut,
     "milestone": MilestoneBlockOut,
     "wait": WaitBlockOut,
@@ -188,6 +195,10 @@ class InformedConsentBlockIn(InformedConsentBlock, _BlockEnvelopeFields):
     kind: Literal["informed_consent"] = "informed_consent"
 
 
+class MdoBlockIn(MdoBlock, _BlockEnvelopeFields):
+    kind: Literal["mdo"] = "mdo"
+
+
 class FormBlockIn(FormBlock, _BlockEnvelopeFields):
     kind: Literal["form"] = "form"
 
@@ -221,6 +232,7 @@ PathwayTypedBlockIn = Annotated[
         DecisionBlockIn,
         MessageBlockIn,
         InformedConsentBlockIn,
+        MdoBlockIn,
         FormBlockIn,
         MilestoneBlockIn,
         WaitBlockIn,
@@ -245,6 +257,8 @@ __all__ = [
     "FormBlockOut",
     "InformedConsentBlockIn",
     "InformedConsentBlockOut",
+    "MdoBlockIn",
+    "MdoBlockOut",
     "MessageBlockIn",
     "MessageBlockOut",
     "MilestoneBlockIn",

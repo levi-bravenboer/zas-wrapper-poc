@@ -1725,6 +1725,32 @@ export interface components {
             } | null;
         };
         /**
+         * EventArgs
+         * @description In-execution event: the referenced block fired a typed event.
+         *
+         *     `event_type` must be declared in the referenced block kind's
+         *     class-level `EVENTS` tuple (enforced at publish time — no kind is
+         *     silently usable as an event source). True once the event has been
+         *     recorded for the referenced execution; the receive endpoint +
+         *     event store land in the "pathway-nested-runtime" PR
+         *     (pathway-completion § B3.3/B3.4) — until then this predicate
+         *     evaluates to `False` at runtime.
+         */
+        EventArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "event";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Event Type */
+            event_type: string;
+        };
+        /**
          * ExecutionCompleteRequest
          * @description Body for `POST /enrollments/{id}/executions/{exec_id}:complete`.
          */
@@ -2175,7 +2201,7 @@ export interface components {
              */
             node: string;
             /** Args */
-            args: components["schemas"]["IfDoneArgs"] | components["schemas"]["HasDataArgs"] | components["schemas"]["ValueEqualsArgs"] | components["schemas"]["ValueGtArgs"] | components["schemas"]["WaitAfterArgs"] | components["schemas"]["DecisionOutputArgs"] | components["schemas"]["IfNotDoneWithinArgs"];
+            args: components["schemas"]["IfDoneArgs"] | components["schemas"]["HasDataArgs"] | components["schemas"]["ValueEqualsArgs"] | components["schemas"]["ValueGtArgs"] | components["schemas"]["WaitAfterArgs"] | components["schemas"]["DecisionOutputArgs"] | components["schemas"]["IfNotDoneWithinArgs"] | components["schemas"]["EventArgs"];
         };
         /**
          * ItemCategory
@@ -2395,6 +2421,58 @@ export interface components {
              * @default false
              */
             is_default: boolean;
+        };
+        /** MdoBlockOut */
+        MdoBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Topic */
+            topic: string;
+            /** Expected Attendees Note */
+            expected_attendees_note?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "mdo";
         };
         /** MessageBlockOut */
         MessageBlockOut: {
@@ -2868,7 +2946,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
+            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "mdo" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -3384,7 +3462,7 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
+            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
@@ -3772,7 +3850,7 @@ export interface components {
          *     change here + a new `Args` model + an evaluator branch.
          * @enum {string}
          */
-        PredicateKind: "if_done" | "has_data" | "value_equals" | "value_gt" | "wait_after" | "decision_output" | "if_not_done_within";
+        PredicateKind: "if_done" | "has_data" | "value_equals" | "value_gt" | "wait_after" | "decision_output" | "if_not_done_within" | "event";
         /** ProviderDescriptor */
         ProviderDescriptor: {
             /** Key */
@@ -6542,7 +6620,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
+                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
                 };
             };
             /** @description Not Found */
