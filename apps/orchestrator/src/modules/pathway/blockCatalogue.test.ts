@@ -11,10 +11,16 @@ describe('resolveLucideIcon', () => {
     'clock',
     'flag',
     'git-branch',
+    'git-merge',
     'hourglass',
     'link-2',
     'list-checks',
     'mail',
+    'play',
+    'signature',
+    'square',
+    'stethoscope',
+    'users',
     'workflow',
   ])('resolves catalogue icon %s to a lucide component', (name) => {
     const Icon = resolveLucideIcon(name)
@@ -49,6 +55,7 @@ describe('blockSemanticsSummary', () => {
     ['milestone', { note: 'baseline' }, 'baseline'],
     ['wait', { event_type: 'pathology_report' }, 'pathology_report'],
     ['pathway_link', { mode: 'blocking' }, 'blocking'],
+    ['treatment', { title: 'Lumbale spinale fusie' }, 'Lumbale spinale fusie'],
   ]
 
   it.each(cases)('summarises %s from config', (semantics, config, expected) => {

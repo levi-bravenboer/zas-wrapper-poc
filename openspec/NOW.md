@@ -28,16 +28,17 @@ Three parts, executed strictly in order:
   frozen catalogue + predicate set. BLOCKED until Parts A + B
   complete.
 
-Cross-Part dependencies (locked after Round-1 design decisions):
-- A7 `mdo` blocked on B3 `event` (`contributed` endpoint).
-- A8 `informed_consent` blocked on B1 re-evaluation tick scheduler.
-- A3, A6, B2 are DROPPED / DEFERRED — no implementation work.
+Scope split (locked): **this PR = template + builder-config only**
+(classes, schemas, migrations, publish gates, pure evaluators).
+Runtime hooks (nested-enrollment spawn, event store + endpoint,
+tick scheduler, notification sends) move to the follow-up
+**"pathway-nested-runtime" PR** — its § tasks are marked "Deferred"
+inline in `tasks.md`.
 
-Execution order (locked): **A4 → A5 → B1 → A8 → B3 → A7 → Part C**.
-Rationale: ship the block kinds with no predicate dependency first
-(A4, A5) so the typed envelope + mapper plumbing is exercised end-to-end
-before predicates need it. Then predicates land in the order their
-consumers come (B1 unblocks A8; B3 unblocks A7).
+- A3, A6, B2 are DROPPED / DEFERRED — no implementation work.
+- Within this PR's template scope there are NO cross-Part blockers.
+
+Execution order this PR: **A4 ✓ → A5 ✓ → B1 → A8 → B3 → A7 → Part C**.
 
 Full task list + status snapshot live in
 `openspec/changes/pathway-completion/tasks.md`. Update that file

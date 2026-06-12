@@ -32,7 +32,8 @@ class EndPathwayBlock(BaseBlock):
     DESCRIPTION: ClassVar[str] = (
         "Terminal block. First reachable end completes the enrollment."
     )
-    ICON: ClassVar[str] = "stop"
+    # `square` — lucide has no plain "stop"; square reads as the stop glyph.
+    ICON: ClassVar[str] = "square"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)
     CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(
         properties={

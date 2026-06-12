@@ -15,8 +15,14 @@ MessageChannel = Literal["email", "sms", "push", "in_app"]
 class MessageBlock(BaseBlock):
     KIND: ClassVar[str] = "message"
     TYPE_CODE: ClassVar[str] = "message"
+    # Catalogue-expansion § A3: this kind doubles as the urology-flow
+    # "notification" primitive — fire-and-forget message/notification
+    # over a chosen channel. No separate notification kind exists.
     LABEL: ClassVar[str] = "Bericht"
-    DESCRIPTION: ClassVar[str] = "Sends a message to the patient via a chosen channel."
+    DESCRIPTION: ClassVar[str] = (
+        "Sends a one-shot message/notification to the patient via a "
+        "chosen channel (email, sms, push, in-app)."
+    )
     ICON: ClassVar[str] = "mail"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_PATIENT,)
     CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(

@@ -49,11 +49,11 @@ throughout to match existing convention (`pathway_link`,
 | A1 | `start` | `StartBlock` | `system` | ✓ shipped |
 | A2 | `end_pathway` | `EndPathwayBlock` | `system` | ✓ shipped |
 | A3 | `notification` | — | — | **DROPPED** — `MessageBlock` (slot #1) already exposes channel + subject + body + CTA. Urology-spec "notification" rebrands as a label for `message` |
-| A4 | `treatment` | `TreatmentBlock` | `caregiver` | pending. Eigen kind. CONFIG: `title`, `location`, `duration_minutes`, `treatment_notes`. RESULT: `{performed_at, notes, complications}` |
-| A5 | `subpath` | — | — | **DROPPED** — bestaande `PathwayLinkBlock` (slot #1) dekt subpath. Werkt al in builder. Open punt: business logic (`input_logic` + `timing_policy` + completion semantics binnen genest pathway) moet uitgewerkt — zie A5 sectie |
-| A6 | `bridge` | — | — | **DEFERRED out of PoC** — cross-pathway handoff niet nodig voor demo. Parkeer in `backlog.md` als BL-NNN. MVP heroverweegt |
-| A7 | `mdo` | `MdoBlock` | `caregiver` | pending. CONFIG: `topic`, `expected_attendees_note` (free-text). RUNTIME: leading caregiver (= enrollment.assigned_caregiver_id by default; overridable) completes block; extra contributions logged as events but not gated. **Geen `aggregator_n_of_m` afhankelijkheid meer** |
-| A8 | `informed_consent` | `InformedConsentBlock` | `patient` | pending (needs B3). RESULT: `{consented: bool, expired: bool, signed_at: datetime}`. Expiry transitions to `state=completed` met `expired=true` — geen nieuwe terminal state |
+| A4 | `treatment` | `TreatmentBlock` | `caregiver` | ✓ shipped (template). CONFIG: `title`, `location`, `duration_minutes`, `treatment_notes`. RESULT: `{performed_at, notes, complications}` |
+| A5 | `subpath` | — | — | ✓ template shipped — bestaande `PathwayLinkBlock` (slot #1) dekt subpath; label → "Subpath", decision_output-reject getest, timing advisory gedocumenteerd. Runtime completion (nested enrollment) → volgende PR |
+| A6 | `bridge` | — | — | **DEFERRED out of PoC** — cross-pathway handoff niet nodig voor demo. Geparkeerd als **BL-072** `[mvp]` |
+| A7 | `mdo` | `MdoBlock` | `caregiver` | pending (template this PR). CONFIG: `topic`, `expected_attendees_note` (free-text). RUNTIME (volgende PR): leading caregiver completes; extra contributions via `contributed` events. **Geen `aggregator_n_of_m` afhankelijkheid** |
+| A8 | `informed_consent` | `InformedConsentBlock` | `patient` | pending (template this PR). RESULT: `{consented, expired, signed_at, responses}`. Expiry → `state=completed` met `expired=true` — geen nieuwe terminal state. Runtime sends/ticks → volgende PR |
 
 Per-kind decisions (cardinality, columns, validators, runtime
 semantic, lane-kind invariant) live in the **Decisions log** section
@@ -383,10 +383,18 @@ palette does NOT surface a "bridge" tile for PoC.
   optionally usable for "patient signed via mobile" event-style
   webhooks at MVP.
 
-(Pending. Each section follows the same shape: wire kind,
-cardinality, per-kind columns, lane, input logic / timing policy
-constraints, runtime semantic, validator behaviour, fixture
-updates.)
+## Scope split — this PR vs "pathway-nested-runtime" PR
+
+Decided mid-implementation: **this PR ships template + builder-config
+surface only** (typed classes, schemas, migrations, publish gates,
+pure evaluators). The follow-up **"pathway-nested-runtime" PR** ships
+the runtime hooks: nested-enrollment spawn + completion cascade
+(A5.2/A5.5), the `record_event` endpoint + event store (B3.3/B3.4 +
+A7.5), the re-evaluation tick scheduler (B1.4), and the
+notification/reminder/expiry sends (A8.5). Rationale: the builder
+dialog (Part C) needs every kind's authoring surface frozen, not the
+runtime; and the runtime work shares one new aggregate (nested
+enrollment + events + ticks) that deserves its own spec + review.
 
 ### B1–B3 — to be filled in as they land
 

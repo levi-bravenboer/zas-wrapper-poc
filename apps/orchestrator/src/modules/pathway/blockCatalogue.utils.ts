@@ -4,10 +4,16 @@ import {
   Clock,
   Flag,
   GitBranch,
+  GitMerge,
   Hourglass,
   Link2,
   ListChecks,
   Mail,
+  Play,
+  Signature,
+  Square,
+  Stethoscope,
+  Users,
   Workflow,
   type LucideIcon,
 } from 'lucide-react'
@@ -24,10 +30,16 @@ const LUCIDE_BY_NAME: Record<string, LucideIcon> = {
   clock: Clock,
   flag: Flag,
   'git-branch': GitBranch,
+  'git-merge': GitMerge,
   hourglass: Hourglass,
   'link-2': Link2,
   'list-checks': ListChecks,
   mail: Mail,
+  play: Play,
+  signature: Signature,
+  square: Square,
+  stethoscope: Stethoscope,
+  users: Users,
   workflow: Workflow,
 }
 
@@ -55,6 +67,8 @@ export function blockSemanticsSummary(
   switch (semantics) {
     case 'appointment':
       return 'kind' in data ? data.kind : undefined
+    case 'treatment':
+      return 'title' in data ? data.title : undefined
     case 'task':
       return 'assignee' in data ? data.assignee : undefined
     case 'message':

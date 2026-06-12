@@ -204,7 +204,7 @@
       "noOtherBlocks": "Geen andere blokken beschikbaar."
     },
     "pathwayLink": {
-      "headerLabel": "Pad-koppeling",
+      "headerLabel": "Subpath",
       "target": "Doel-zorgpad",
       "targetPlaceholder": "Kies een zorgpad",
       "noPublishedPathways": "Geen gepubliceerde zorgpaden beschikbaar.",
@@ -214,8 +214,8 @@
         "blocking": "Blokkerend",
         "fire_and_forget": "Vuren en vergeten"
       },
-      "emptyAria": "Geneste padkoppeling, nog geen doel",
-      "emptyTitle": "Pad-koppeling · geen doel",
+      "emptyAria": "Genest subpath, nog geen doel",
+      "emptyTitle": "Subpath · geen doel",
       "emptyHint": "Kies een doel-zorgpad in het rechterpaneel.",
       "summaryLoading": "Samenvatting laden…",
       "summaryError": "Kon samenvatting niet laden.",

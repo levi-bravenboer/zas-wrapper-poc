@@ -1,8 +1,12 @@
 # Tasks — pathway-completion
 
 Worked top-down. Parts execute strictly in order: **A → B → C**.
-Within a Part, sections execute in §-order unless an explicit
-cross-Part dependency is noted (A7 needs B2; A8 needs B3).
+Within a Part, sections execute in §-order. Scope split: **this PR**
+ships template + builder-config (classes, schemas, migrations,
+publish gates, pure evaluators); the follow-up
+**"pathway-nested-runtime" PR** ships runtime hooks (nested
+enrollment spawn, event store + endpoint, tick scheduler,
+notification sends). Per-§ split is marked inline.
 
 Each `§` lands as its own commit. Tests + `/verify` gate every
 commit. Mark a task `[x]` only after `/verify` is green.
@@ -59,10 +63,9 @@ palette re-labels the `message` tile as "Notification / Bericht".
 
 - [x] A3.1 Decide: own kind vs. extension of `MessageBlock`. →
   DROP, re-label.
-- [ ] A3.2 Builder palette i18n: ensure the `message` tile reads
-  "Notification" / "Bericht" in the catalogue projection's `label`
-  surface (no schema change). Lands as part of Part C if it's
-  not already.
+- [x] A3.2 Palette label: `MessageBlock.LABEL = "Bericht"` already
+  IS the NL notification term; DESCRIPTION clarified to
+  "message/notification". No schema change.
 
 ### § A4 `treatment`
 
@@ -126,13 +129,8 @@ Decisions log entry for A5.
 Decision: out of PoC. Park in `backlog.md` as `[mvp]`.
 
 - [x] A6.1 Decide: PoC scope vs defer. → DEFER to MVP.
-- [ ] A6.2 Add `BL-NNN` entry to `openspec/backlog.md`:
-  "Cross-pathway handoff (`bridge` block) — terminal kind that
-  closes current enrollment + opens a new one for the patient on
-  a target pathway. Source: urology demo flow
-  (`pathway-model-redesign/example-flow-urology.md`). Touches
-  enrollment-lifecycle + identity carry-over. Re-evaluate at MVP."
-  Tier: `[mvp]`.
+- [x] A6.2 Backlog entry added: **BL-072** in `openspec/backlog.md`
+  (cross-pathway handoff `bridge` block, tier `[mvp]`).
 
 ### § A7 `mdo`
 
@@ -252,13 +250,8 @@ Decision: no PoC consumer (MDO no longer needs it; other PoC flows
 use `all_of`). Parked in `backlog.md` as `[mvp]`.
 
 - [x] B2.1 Decide: ship vs defer. → DEFER to MVP.
-- [ ] B2.2 Add `BL-NNN` entry to `openspec/backlog.md`:
-  "`aggregator_n_of_m(count, total)` predicate — partial-completion
-  aggregator for `InputLogic.rules`. Originally scoped for MDO
-  attendees; MDO redesign (A7 in `pathway-completion`) replaced
-  the gate with leading-caregiver-completes. Future MVP flows
-  needing 'N of M upstream gates' will promote this back."
-  Tier: `[mvp]`.
+- [x] B2.2 Backlog entry added: **BL-073** in `openspec/backlog.md`
+  (`aggregator_n_of_m` predicate, tier `[mvp]`).
 
 ### § B3 `event(after_block, event_type)`
 
@@ -294,13 +287,14 @@ complete.
 
 ### § C1 HTML prototypes
 
-- [ ] C1.1 `prototypes/builder-dialog/v1.html` — canvas with phases
+- [x] C1.1 `prototypes/builder-dialog/v1.html` — canvas with phases
   × lanes grid, palette at bottom, click-to-open block dialog,
-  hover-X delete affordance, derived edges drawn between blocks.
-  Mock data for the Rugrevalidatie pathway.
-- [ ] C1.2 Iterate vN.html with the user until the dialog flow +
-  the layout pass feel right. Each iteration creates a new
-  `vN.html`; earlier versions stay as history.
+  hover-X delete affordance. Mock data for the Rugrevalidatie
+  pathway. User feedback: concept approved; final styling must
+  match the current builder look.
+- [ ] C1.2 Iterate vN.html with the user if needed. Each iteration
+  creates a new `vN.html`; earlier versions stay as history.
+  (Optional — concept already approved on v1.)
 
 ### § C2 Frontend scaffolding
 
@@ -391,25 +385,26 @@ complete.
 
 ## Status snapshot
 
-| Part | Sections | Done / Decided | Pending implementation |
-| --- | --- | --- | --- |
-| A | A1-A8 | A1 ✓, A2 ✓, A3 DROPPED, A4 ✓, A6 DEFERRED, A5/A7/A8 designs locked | A5, A7 (needs B3), A8 (needs B1) |
-| B | B1-B3 | B2 DEFERRED, B1/B3 designs locked | B1, B3 |
-| C | C1-C8 | designs locked | C1-C8 (blocked on A + B) |
+| Part | Sections | Done / Decided | Pending (this PR) | Deferred (next PR) |
+| --- | --- | --- | --- | --- |
+| A | A1-A8 | A1 ✓, A2 ✓, A3 ✓ (drop+relabel), A4 ✓, A5 ✓ (template), A6 ✓ (defer, BL-072) | A7 template, A8 template | A5.2/A5.5, A7.5, A8.5 runtime |
+| B | B1-B3 | B2 ✓ (defer, BL-073) | B1 template+evaluator, B3 template+gate | B1.4 tick, B3.3/B3.4 endpoint+store |
+| C | C1-C8 | designs locked, v1.html prototype done (C1.1) | C1.2-C8 (after A + B template work) | — |
 
-## Cross-Part dependencies (after Round-1 decisions)
+## Cross-Part dependencies
 
-- A7 `mdo` depends on **B3** `event` (`contributed` endpoint).
-- A8 `informed_consent` depends on **B1** re-evaluation tick
-  scheduler (reused for reminder + expiry ticks).
-- A1, A2 already shipped; A3 (DROP), A6 (DEFER), B2 (DEFER) skip
-  implementation entirely.
+**Within this PR (template scope) there are NO cross-Part
+dependencies** — every § ships classes, schemas, migrations,
+publish gates, and pure evaluators independently.
 
-**Execution order (locked):**
-**A4 → A5 → B1 → A8 → B3 → A7 → Part C.**
+The runtime-level dependencies (A7.5 needs B3.3 endpoint; A8.5
+needs B1.4 tick scheduler) move with their tasks to the follow-up
+"pathway-nested-runtime" PR.
 
-Rationale: ship block kinds with no predicate dependency first (A4,
-A5) so the typed envelope + mapper plumbing gets exercised end-to-end
-before predicates need it. Then predicates land in the order their
-consumers come (B1 before A8; B3 before A7). Part C builder UX is
-last, on top of a frozen catalogue.
+**Execution order this PR (locked):**
+**A4 ✓ → A5 ✓ → B1 → A8 → B3 → A7 → Part C.**
+
+Rationale: block kinds with no predicate dependency first so the
+typed envelope + mapper plumbing gets exercised end-to-end. Then
+predicates in consumer order. Part C builder UX last, on top of a
+frozen catalogue.
