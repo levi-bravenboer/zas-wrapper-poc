@@ -37,13 +37,9 @@ APPOINTMENT_PARTICIPANT_ROLE_VALUES = ("lead", "support", "observer")
 
 
 def upgrade() -> None:
-    sa.Enum(*APPOINTMENT_KIND_VALUES, name="appointment_kind").create(op.get_bind())
-    sa.Enum(*APPOINTMENT_STATUS_VALUES, name="appointment_status").create(op.get_bind())
-    sa.Enum(*APPOINTMENT_MODALITY_VALUES, name="appointment_modality").create(op.get_bind())
-    sa.Enum(
-        *APPOINTMENT_PARTICIPANT_ROLE_VALUES, name="appointment_participant_role"
-    ).create(op.get_bind())
-
+    # Enum types are created by the `alembic_postgresql_enum` plugin (wired in
+    # env.py) when the tables below reference them — explicit CREATE TYPE here
+    # would collide inside the same transaction.
     op.create_table(
         "appointments",
         sa.Column("patient_id", sa.UUID(), nullable=False),
