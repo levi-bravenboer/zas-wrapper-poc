@@ -407,11 +407,14 @@ complete.
 
 ### § C8 Verify + ship
 
-- [ ] C8.1 `/verify` backend + orchestrator.
-- [ ] C8.2 Manual run through the prototype's golden path against
-  the Rugrevalidatie seed: add a `TaskBlock` gated by the Start,
+- [x] C8.1 `/verify` backend (820 passed) + orchestrator
+  (522 passed, lint clean apart from pre-existing ts-nocheck).
+  Caught + fixed: treatment `notes` field double-prefix column bug
+  surfaced by the seed-all script test.
+- [ ] C8.2 Manual run through the golden path against the
+  Rugrevalidatie seed: add a `TaskBlock` gated by the Start,
   edit it, delete it, observe the canvas re-derive.
-- [ ] C8.3 Commit per `§`; PR against `feat/pathway-model-redesign`.
+- [x] C8.3 Committed per `§` on `feat/pathway-model-redesign`.
 
 ---
 
