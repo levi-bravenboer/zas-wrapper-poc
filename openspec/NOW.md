@@ -17,16 +17,25 @@ status snapshot.
 
 Three parts, executed strictly in order:
 
-- **Part A — Block catalogue completion** (`§A1-§A8`). Ship the 8
-  urology-flow kinds. A1 `start` + A2 `end_pathway` already
-  shipped on this branch. A3-A8 pending.
-- **Part B — Predicate catalogue completion** (`§B1-§B3`). Add
-  `if_not_done_within`, `aggregator_n_of_m`, `event(node, event_type)`
-  to the `input_logic` rule set.
-- **Part C — Builder dialog flow** (`§C1-§C8`). Replace the
-  drag-canvas with a dialog-driven authoring flow on top of the
-  frozen catalogue + predicate set. BLOCKED until Parts A + B
-  complete.
+- **Part A — Block catalogue completion** — ✓ DONE (template
+  scope): start, end_pathway, treatment, mdo, informed_consent
+  shipped; notification dropped (message covers it); subpath
+  reuses pathway_link; bridge deferred (BL-072).
+- **Part B — Predicate catalogue completion** — ✓ DONE (template
+  scope): if_not_done_within + event shipped (evaluator + publish
+  gates); n_of_m deferred (BL-073).
+- **Part C — Builder dialog flow** — ✓ DONE except C8.2 (manual
+  browser run) and C1.2 (optional prototype iteration):
+  read-only canvas + auto-layout, BlockDialog add/edit with
+  config + input_logic + timing_policy editors, cascade delete
+  with confirm, backend node-reference gate.
+
+**Next up after C8.2 sign-off**: the follow-up
+**"pathway-nested-runtime" PR** — nested-enrollment spawn
+(A5.2/A5.5), record_event endpoint + event store (B3.3/B3.4 +
+A7.5), re-evaluation tick scheduler (B1.4), notification /
+reminder / expiry sends (A8.5). Deferred tasks are marked inline
+in `tasks.md`.
 
 Scope split (locked): **this PR = template + builder-config only**
 (classes, schemas, migrations, publish gates, pure evaluators).
