@@ -11,36 +11,43 @@
 | v7 | superseded | Admin-table style (real orchestrator vibe). |
 | v8 | superseded | v7 + 3-state master/detail collapse. Surface-agnostic `<PatientDetailView>` architecture. Pre-reframe (patient list with sort tabs + Afspraken tab). |
 | v9 | superseded | Reframe-final master/detail. Click row → expand patient detail right. |
-| **v10** | **LOCKED** | "Taken klein + alles open". Narrow 280px task rail left + scroll-stack of OPEN task cards right. Each appointment card = patient identity + appointment block + Metingen/Lab tabs. Scroll-spy syncs rail with viewport. Default view = see everything. |
+| v10 | superseded | Narrow rail + scroll-stack of ALL tasks open. Scroll-spy. Too noisy — user wants single-task focus. |
+| **v11** | **LOCKED** | Narrow 280px rail (always visible) + right pane shows ONE task at a time. URL drives selection. Empty state when nothing selected. Single-card focus replaces stack. |
 
-## v10 = accepted wireframe
+## v11 = accepted wireframe
 
-Open `v10.html`. Two-pane layout that ALWAYS shows both panes (no master/detail collapse):
+Open `v11.html`. Two-pane layout, both panes always visible:
 
-- **LEFT** — narrow `280px` rail (`<TaskRail>`). One row per task: kind tile + `family, given` + relative due copy. Rail is grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`).
-- **RIGHT** — wide scrollable column (`<TaskStack>`). EVERY task renders as a card upfront. No click required to "open" anything.
-  - For `source = "appointment"`, the card body = patient identity (avatar + name + INSZ pill + DOB + org + Zorgteam) + the appointment block (kind tile + title + time + modality + location + participants strip) + two patient tabs (`Metingen` + `Labresultaten`, both `<EmptyState>` v1).
-  - Per-card actions: `Open patiënt` (deep link to `/_auth/patients/$id`) + kebab (`Bewerken` / `Verwijderen` / `Geschiedenis`).
-- **Scroll-spy** — rail row highlights the card currently dominant in the right viewport. Clicking a rail row smooth-scrolls to its card and flashes a focus ring.
+- **LEFT** — narrow `280px` rail (`<TaskRail>`). Always visible. Rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`). Each row = kind tile + `family, given` + relative due copy. Active row has a 3px left accent and tinted background.
+- **RIGHT** — single-task viewport (`<TaskDetail>`). Renders exactly ONE state:
+  - **Nothing selected** (URL `/_auth/tasks`): `<EmptyState>` with `Selecteer een taak` headline + `Kies links een taak om de patiënt en de afspraak te bekijken.` hint.
+  - **One selected** (URL `/_auth/tasks/$taskId`): that task's full card — patient identity (avatar + name + INSZ pill + DOB + org + Zorgteam) + appointment block (kind tile + title + time + modality + location + participants strip) + Metingen/Labresultaten tabs (both empty v1).
+- Per-card actions: `Open patiënt` (deep link to `/_auth/patients/$id`) + kebab (`Bewerken` / `Verwijderen` / `Geschiedenis`).
 
-### What v10 reframes vs v9
+### What v11 reframes vs v10
 
-- **No click-to-expand.** All tasks render open by default. The user direction was: *"takenlijst kleiner en dan rechts doen we al de taken open (voor appointment gewoon de patient)"*.
-- **No master/detail state machine.** Drops D15 three-state collapse. Drops the floating reopen button. Drops `<MasterDetailLayout>` for this surface (the layout primitive is still available for other surfaces).
-- **Rail = narrow chip list** (280px), not a 320px-or-full master.
-- **Right = card stack**, not a single detail mount. Each appointment becomes a self-contained card.
-- **The task IS the patient context for appointments** — patient identity is the card header. There is no separate "open patient" mode you need to reach.
-- **Mobile fallback (`<md`)**: rail hidden, stack full-width (same scroll-stack on a phone, just without the side rail). Out of scope for this prototype.
+- **One task at a time** on the right. No scroll-stack. No scroll-spy.
+- **URL drives selection** (state 1 ↔ state 2). Selection is shareable.
+- **Empty state on first load.** Caregiver lands on `/_auth/tasks` → sees the rail + a centered "Selecteer een taak" empty state on the right.
+- **Rail still narrow 280px** and always visible (no collapse, no hide).
 
-### What stays from v9
+### What stays from v10
 
 - Sidebar nav = `Taken` (lucide `inbox`).
+- Narrow `280px` task rail, grouped by due bucket.
 - TaskItem envelope shape (no top-level `patient`; payload carries it).
 - Window hardcoded ≤3 days (D-WINDOW).
 - Fixed sort `due_at asc` (D-NOSORT).
 - Two patient tabs only (`Metingen` + `Labresultaten`) per D10.
 - Deterministic-tint avatars (D7) by `patient.id`.
-- Single source-agnostic empty-state copy (D-EMPTY).
+- Single source-agnostic empty-state copy (D-EMPTY) on rail; separate "selection" empty state on right pane.
+
+### Implications for the React build (when promoting)
+
+- Drop `<MasterDetailLayout>` from `/_auth/tasks` route — replace with a plain two-column flex layout (the layout primitive stays available for other surfaces).
+- Route shape: parent `/_auth/tasks` renders rail + `<Outlet>`; child `/_auth/tasks/$taskId/index.tsx` renders the selected task card; child `/_auth/tasks/index.tsx` renders the selection-empty state.
+- URL param is `$taskId` (not `$patientId`) — selection is per-task, not per-patient. Same patient can have two tasks → two distinct selectable rows + URLs.
+- Patient-detail components from `<PatientDetailView>` (D16) are reused as the upper section of the right card; the appointment block is a new piece (lives in `modules/tasks/`).
 
 ### What v9 reframes vs v8
 
