@@ -65,7 +65,7 @@ function mountSidebar(role: SessionUser['role'] | null): { queryClient: QueryCli
 describe('AppSidebar — role-gated Beheer group', () => {
   it('hides the Beheer group for caregivers', async () => {
     mountSidebar('caregiver')
-    expect(await screen.findByRole('link', { name: 'Mijn patiënten' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Taken' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Beheer/i })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Gebruikers' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Organisaties' })).toBeNull()

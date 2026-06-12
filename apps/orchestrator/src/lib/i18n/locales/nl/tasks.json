@@ -1,0 +1,22 @@
+{
+  "title": "Taken",
+  "subtitle": "Wat je vandaag en de komende dagen op te pakken hebt",
+  "empty": {
+    "title": "Geen taken",
+    "body": "Nieuwe taken verschijnen automatisch"
+  },
+  "error": {
+    "title": "Taken kunnen niet worden geladen",
+    "body": "Probeer de pagina te vernieuwen"
+  },
+  "due": {
+    "today": "vandaag {{time}}",
+    "tomorrow": "morgen {{time}}",
+    "in_days_one": "over {{count}} dag",
+    "in_days_other": "over {{count}} dagen"
+  },
+  "selection": {
+    "title": "Selecteer een taak",
+    "body": "Kies een taak links om de patiëntdetails te zien"
+  }
+}

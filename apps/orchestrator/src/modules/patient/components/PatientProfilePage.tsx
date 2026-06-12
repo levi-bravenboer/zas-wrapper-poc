@@ -80,7 +80,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
 
   const deleteAction = useEntityDelete({
     entityName: fullName,
-    listPath: { to: '/patients' },
+    listPath: { to: '/tasks' },
     mutate: () => softDeletePatient(patientId),
     successMessage: t('delete.toast.success'),
     errorMessage: t('delete.toast.error'),
@@ -101,7 +101,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
   }
 
   if (!patient) {
-    return <EntityNotFound backTo={{ to: '/patients' }} />
+    return <EntityNotFound backTo={{ to: '/tasks' }} />
   }
 
   const insz = pickInsz(patient.identifiers ?? [])
@@ -152,7 +152,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
       <EntityDetailPage
         title={fullName}
         subtitle={subtitle}
-        back={{ to: '/patients' }}
+        back={{ to: '/tasks' }}
         actions={actions}
         body={
           <EntityDetailTabs
