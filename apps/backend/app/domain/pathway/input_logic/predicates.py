@@ -42,6 +42,7 @@ class PredicateKind(str, Enum):
     WAIT_AFTER = "wait_after"
     DECISION_OUTPUT = "decision_output"
     IF_NOT_DONE_WITHIN = "if_not_done_within"
+    EVENT = "event"
 
 
 # ---- Per-predicate typed args ---------------------------------------------
@@ -120,6 +121,23 @@ class IfNotDoneWithinArgs(_ArgsBase):
     offset_iso: str
 
 
+class EventArgs(_ArgsBase):
+    """In-execution event: the referenced block fired a typed event.
+
+    `event_type` must be declared in the referenced block kind's
+    class-level `EVENTS` tuple (enforced at publish time — no kind is
+    silently usable as an event source). True once the event has been
+    recorded for the referenced execution; the receive endpoint +
+    event store land in the "pathway-nested-runtime" PR
+    (pathway-completion § B3.3/B3.4) — until then this predicate
+    evaluates to `False` at runtime.
+    """
+
+    predicate: Literal[PredicateKind.EVENT] = PredicateKind.EVENT
+    after_block: UUID
+    event_type: str
+
+
 PredicateArgs = Annotated[
     Union[
         IfDoneArgs,
@@ -129,6 +147,7 @@ PredicateArgs = Annotated[
         WaitAfterArgs,
         DecisionOutputArgs,
         IfNotDoneWithinArgs,
+        EventArgs,
     ],
     Field(discriminator="predicate"),
 ]
@@ -175,6 +194,7 @@ class InputLogic(BaseModel):
 __all__ = [
     "Aggregator",
     "DecisionOutputArgs",
+    "EventArgs",
     "HasDataArgs",
     "IfDoneArgs",
     "IfNotDoneWithinArgs",

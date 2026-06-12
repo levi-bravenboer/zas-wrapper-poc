@@ -259,13 +259,17 @@ use `all_of`). Parked in `backlog.md` as `[mvp]`.
 
 **This PR — template + publish gate:**
 
-- [ ] B3.1 `PredicateKind.EVENT` enum entry.
-- [ ] B3.2 `EventArgs(_ArgsBase)` with `after_block`, `event_type`.
-- [ ] B3.5 Publish gate: `event_type` must be in
-  `type(node).EVENTS`. Plus standard `after_block` ref check.
-- [ ] B3.6a Tests: publish-time `event_type not in EVENTS`
-  rejected; `after_block` ref check.
-- [ ] B3.7 `/verify`; commit.
+- [x] B3.1 `PredicateKind.EVENT` enum entry.
+- [x] B3.2 `EventArgs(_ArgsBase)` with `after_block`, `event_type`.
+- [x] B3.5 Publish gate: `validate_event_rules` — `event_type` must
+  be in `type(producer).EVENTS` + same-version ref check. Wired
+  into publish gate as `BlockConfigError`.
+- [x] B3.6a Tests: declared event_type passes; undeclared
+  rejected; unknown ref rejected. Evaluator branch tests:
+  matches `produced["events"]` mirror shape (the contract the
+  §B3.4 event store will hydrate); false without match / missing
+  block; round-trip serialisation.
+- [x] B3.7 `/verify`; commit.
 
 **Deferred to follow-up "pathway-nested-runtime" PR:**
 

@@ -16,6 +16,7 @@ from app.domain.pathway.blocks.resolver import BLOCK_CLASSES
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic.predicates import (
     DecisionOutputArgs,
+    EventArgs,
     IfNotDoneWithinArgs,
     PredicateKind,
 )
@@ -337,6 +338,48 @@ def validate_if_not_done_within_rules(
                 ) from exc
 
 
+class EventRuleError(ValueError):
+    """An `event` rule is malformed at publish time.
+
+    Pathway-completion § B3.5: `after_block` must reference a block in
+    the same version and `event_type` must be declared in the
+    referenced kind's class-level `EVENTS` tuple — no kind is silently
+    usable as an event source.
+    """
+
+    def __init__(self, *, target_block: BaseBlock, reason: str) -> None:
+        super().__init__(f"event rule on '{target_block.name}': {reason}")
+        self.target_block = target_block
+        self.reason = reason
+
+
+def validate_event_rules(blocks_by_id: dict[str, BaseBlock]) -> None:
+    """Reject malformed `event` rules (§ B3.5)."""
+    for block in blocks_by_id.values():
+        for rule in block.input_logic.rules:
+            args = rule.args
+            if args.predicate is not PredicateKind.EVENT:
+                continue
+            assert isinstance(args, EventArgs)
+            producer = blocks_by_id.get(str(args.after_block))
+            if producer is None:
+                raise EventRuleError(
+                    target_block=block,
+                    reason=(
+                        f"after_block {args.after_block} not in pathway version"
+                    ),
+                )
+            declared = type(producer).EVENTS
+            if args.event_type not in declared:
+                raise EventRuleError(
+                    target_block=block,
+                    reason=(
+                        f"event_type {args.event_type!r} not declared on "
+                        f"{type(producer).__name__}; have {list(declared)!r}"
+                    ),
+                )
+
+
 def validate_publish_block(block: BaseBlock) -> None:
     """Re-validate `block` against its subclass in Pydantic v2 strict mode.
 
@@ -441,6 +484,7 @@ __all__ = [
     "DeferredFieldAttrUnknownError",
     "EndPathwayBlockMissingError",
     "EndPathwayBlockShapeError",
+    "EventRuleError",
     "IfNotDoneWithinRuleError",
     "InformedConsentShapeError",
     "LaneKindNotAllowedError",
@@ -451,6 +495,7 @@ __all__ = [
     "validate_decision_output_references",
     "validate_deferred_field_attrs",
     "validate_end_pathway_block_invariants",
+    "validate_event_rules",
     "validate_if_not_done_within_rules",
     "validate_informed_consent_invariants",
     "validate_lane_kind",

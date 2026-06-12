@@ -475,3 +475,93 @@ def test_informed_consent_rejects_out_of_range_reminder_max() -> None:
 
     with pytest.raises(ValidationError):
         InformedConsentBlock(name="Toestemming", reminder_max=11)
+
+
+# ---- event rule publish gate (pathway-completion § B3.5) -----------------
+
+
+def test_event_rule_with_declared_event_type_passes() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+    from app.domain.pathway.blocks.validators import validate_event_rules
+
+    producer_id = uuid4()
+    # AppointmentBlock declares EVENTS = ("rescheduled", "patient_no_show")
+    producer = AppointmentBlock(name="Scan", title="Scan")
+    downstream = AppointmentBlock(
+        name="Herplanning follow-up",
+        title="Herplanning follow-up",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=producer_id,
+                    args=EventArgs(
+                        after_block=producer_id, event_type="rescheduled"
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(producer_id): producer,
+        str(uuid4()): downstream,
+    }
+    validate_event_rules(blocks)
+
+
+def test_event_rule_with_undeclared_event_type_rejected() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+    from app.domain.pathway.blocks.validators import (
+        EventRuleError,
+        validate_event_rules,
+    )
+
+    producer_id = uuid4()
+    producer = AppointmentBlock(name="Scan", title="Scan")
+    downstream = AppointmentBlock(
+        name="Follow-up",
+        title="Follow-up",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=producer_id,
+                    args=EventArgs(
+                        after_block=producer_id,
+                        event_type="measurement_out_of_bounds",
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(producer_id): producer,
+        str(uuid4()): downstream,
+    }
+    with pytest.raises(EventRuleError) as exc_info:
+        validate_event_rules(blocks)
+    assert "not declared on AppointmentBlock" in exc_info.value.reason
+
+
+def test_event_rule_with_unknown_reference_rejected() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+    from app.domain.pathway.blocks.validators import (
+        EventRuleError,
+        validate_event_rules,
+    )
+
+    ghost_id = uuid4()
+    downstream = AppointmentBlock(
+        name="Follow-up",
+        title="Follow-up",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=ghost_id,
+                    args=EventArgs(after_block=ghost_id, event_type="x"),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): downstream}
+    with pytest.raises(EventRuleError) as exc_info:
+        validate_event_rules(blocks)
+    assert "not in pathway version" in exc_info.value.reason

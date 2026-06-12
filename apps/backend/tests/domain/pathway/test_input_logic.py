@@ -425,3 +425,69 @@ def test_if_not_done_within_round_trips_via_model_dump() -> None:
     rebuilt = InputLogic.model_validate(dumped)
     assert rebuilt == logic
     assert dumped["rules"][0]["args"]["predicate"] == "if_not_done_within"
+
+
+# ---- EVENT (pathway-completion § B3) --------------------------------------
+
+
+def test_event_rule_matches_recorded_event() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+
+    upstream = uuid4()
+    rule = InputLogicRule(
+        node=upstream,
+        args=EventArgs(after_block=upstream, event_type="rescheduled"),
+    )
+    view = BlockExecutionView(
+        block_id=upstream,
+        done=True,
+        produced={"events": ["rescheduled"]},
+    )
+    assert evaluate_rule(rule, _ctx(view)) is True
+
+
+def test_event_rule_false_without_matching_event() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+
+    upstream = uuid4()
+    rule = InputLogicRule(
+        node=upstream,
+        args=EventArgs(after_block=upstream, event_type="rescheduled"),
+    )
+    no_events = BlockExecutionView(block_id=upstream, done=True, produced={})
+    other_event = BlockExecutionView(
+        block_id=upstream,
+        done=True,
+        produced={"events": ["patient_no_show"]},
+    )
+    assert evaluate_rule(rule, _ctx(no_events)) is False
+    assert evaluate_rule(rule, _ctx(other_event)) is False
+
+
+def test_event_rule_false_when_block_missing() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+
+    upstream = uuid4()
+    rule = InputLogicRule(
+        node=upstream,
+        args=EventArgs(after_block=upstream, event_type="rescheduled"),
+    )
+    assert evaluate_rule(rule, _ctx()) is False
+
+
+def test_event_args_round_trip() -> None:
+    from app.domain.pathway.input_logic import EventArgs
+
+    upstream = uuid4()
+    logic = InputLogic(
+        rules=[
+            InputLogicRule(
+                node=upstream,
+                args=EventArgs(after_block=upstream, event_type="contributed"),
+            ),
+        ],
+    )
+    dumped = logic.model_dump(mode="json")
+    rebuilt = InputLogic.model_validate(dumped)
+    assert rebuilt == logic
+    assert dumped["rules"][0]["args"]["predicate"] == "event"

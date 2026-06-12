@@ -14,6 +14,7 @@ runtime configuration knob.
 from app.domain.pathway.input_logic.predicates import (
     Aggregator,
     DecisionOutputArgs,
+    EventArgs,
     HasDataArgs,
     IfDoneArgs,
     IfNotDoneWithinArgs,
@@ -30,6 +31,7 @@ from app.domain.pathway.input_logic.predicates import (
 __all__ = [
     "Aggregator",
     "DecisionOutputArgs",
+    "EventArgs",
     "HasDataArgs",
     "IfDoneArgs",
     "IfNotDoneWithinArgs",

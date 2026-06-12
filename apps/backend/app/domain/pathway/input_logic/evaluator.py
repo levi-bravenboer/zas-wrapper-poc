@@ -19,6 +19,7 @@ from uuid import UUID
 
 from app.domain.pathway.input_logic.predicates import (
     DecisionOutputArgs,
+    EventArgs,
     HasDataArgs,
     IfDoneArgs,
     IfNotDoneWithinArgs,
@@ -177,6 +178,19 @@ def evaluate_rule(rule: InputLogicRule, ctx: PredicateContext) -> bool:
             except InvalidIsoDurationError:
                 return False
             return ctx.now >= view.sla_anchor_at + window
+
+        case PredicateKind.EVENT:
+            assert isinstance(args, EventArgs)
+            view = ctx.blocks.get(args.after_block)
+            # Event records land with the "pathway-nested-runtime" PR
+            # (§ B3.4 event store). Until the context carries received
+            # events, the predicate matches only events mirrored into
+            # the producer's `produced["events"]` list — the shape the
+            # event store will hydrate.
+            if view is None:
+                return False
+            received = view.produced.get("events")
+            return isinstance(received, list) and args.event_type in received
 
 
 def evaluate(logic: InputLogic, ctx: PredicateContext) -> bool:
