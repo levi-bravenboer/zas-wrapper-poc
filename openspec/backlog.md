@@ -489,3 +489,9 @@ Note: Terminal block kind that closes the current enrollment AND opens a new enr
 - Source: Urology demo flow (`openspec/changes/pathway-model-redesign/example-flow-urology.md`); deferred from `pathway-completion` § B2
 
 Note: Partial-completion aggregator on `InputLogic.aggregator` ("block eligible when ≥ N of M rules resolve true"). Originally scoped for MDO attendees; the MDO redesign in `pathway-completion` § A7 replaced the gate with leading-caregiver-completes, so no PoC consumer remains. Future MVP flows needing "N-of-M upstream gates" (e.g. partial team consensus, fallback paths) will promote this back. Small predicate — `NOfMArgs(count, total)` + evaluator branch + publish gate `1 <= count <= total`.
+
+### BL-074 — Split `pathway_block` into class-table inheritance
+- Tier: [mvp]
+- Source: Esthetic / scale concern raised during `pathway-completion` § A4 (treatment block); slot #1 `pathway-model-foundations` D2 chose single-table inheritance for ship speed
+
+Note: Today every block kind dumps its per-kind columns onto one wide `pathway_block` table (prefixed `appointment_*`, `treatment_*`, `task_*`, …). With 12 kinds × 4–6 columns each the table grows to ~60 nullable columns. Functionally fine on postgres, but ugly, hides per-kind constraints behind CHECKs, and complicates per-kind indexes. MVP refactor splits into a thin `pathway_block` envelope (`id`, `kind`, `name`, `lane_id`, `phase_id`, `input_logic`, `timing_policy`, audit) + one `pathway_block_<kind>` child table per concrete kind, joined on `id`. Mapper becomes a join + dispatch instead of column-prefix dispatch. Touch points: slot #1 mapper, every shipped kind's ORM block, alembic upgrade with backfill, all per-kind seed scripts, every test that hand-builds a `PathwayBlock` row. Do NOT attempt during PoC — refactor cost ≈ 1–2 days and resets the §A* + §B* implementation pipeline.

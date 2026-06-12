@@ -33,7 +33,11 @@ Cross-Part dependencies (locked after Round-1 design decisions):
 - A8 `informed_consent` blocked on B1 re-evaluation tick scheduler.
 - A3, A6, B2 are DROPPED / DEFERRED — no implementation work.
 
-Suggested execution order: **B1 → A8 → B3 → A7 → A4 → A5 → Part C**.
+Execution order (locked): **A4 → A5 → B1 → A8 → B3 → A7 → Part C**.
+Rationale: ship the block kinds with no predicate dependency first
+(A4, A5) so the typed envelope + mapper plumbing is exercised end-to-end
+before predicates need it. Then predicates land in the order their
+consumers come (B1 unblocks A8; B3 unblocks A7).
 
 Full task list + status snapshot live in
 `openspec/changes/pathway-completion/tasks.md`. Update that file

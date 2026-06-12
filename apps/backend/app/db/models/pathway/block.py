@@ -101,6 +101,12 @@ class PathwayBlock(TenantOwnedEntity):
     appointment_attendees_patient: Mapped[bool | None] = mapped_column(sa.Boolean, nullable=True)
     appointment_notes: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
+    # Catalogue-expansion § A4: TreatmentBlock per-kind columns
+    treatment_title: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    treatment_location: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    treatment_duration_minutes: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    treatment_notes: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
     task_title: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     task_assignee: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
     task_due_offset_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)

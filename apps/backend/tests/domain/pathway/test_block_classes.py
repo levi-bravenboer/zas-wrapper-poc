@@ -21,6 +21,7 @@ from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.resolver import BLOCK_CLASSES, resolve_block_kind
 from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.treatment.typed import TreatmentBlock, TreatmentResult
 from app.domain.pathway.blocks.wait.typed import WaitBlock
 from app.domain.pathway.lanes import (
     LANE_KIND_CAREGIVER,
@@ -62,6 +63,43 @@ def test_appointment_block_instantiates_with_minimal_fields() -> None:
     assert block.KIND == "appointment"
     assert block.title == "Intake afspraak"
     assert LANE_KIND_CAREGIVER in AppointmentBlock.allowed_lane_kinds
+
+
+def test_treatment_block_instantiates_with_minimal_fields() -> None:
+    block = TreatmentBlock(name="Operatie", title="Lumbale spinale fusie")
+    assert block.KIND == "treatment"
+    assert block.TYPE_CODE == "treatment"
+    assert block.title == "Lumbale spinale fusie"
+    assert TreatmentBlock.allowed_lane_kinds == (LANE_KIND_CAREGIVER,)
+    assert TreatmentBlock.RESULT_TYPE is TreatmentResult
+
+
+def test_treatment_block_optional_fields_default_none() -> None:
+    block = TreatmentBlock(name="Operatie", title="Operatie")
+    assert block.location is None
+    assert block.duration_minutes is None
+    assert block.treatment_notes is None
+
+
+def test_treatment_block_rejects_missing_title() -> None:
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        TreatmentBlock(name="Operatie")  # type: ignore[call-arg]
+
+
+def test_treatment_result_round_trip() -> None:
+    from datetime import UTC, datetime
+
+    result = TreatmentResult(
+        performed_at=datetime(2026, 6, 12, 10, 30, tzinfo=UTC),
+        notes="ongecompliceerd",
+        complications=None,
+    )
+    payload = result.model_dump(mode="json")
+    assert payload["notes"] == "ongecompliceerd"
+    parsed = TreatmentResult.model_validate(payload)
+    assert parsed.performed_at == result.performed_at
 
 
 def test_task_block_requires_assignee() -> None:

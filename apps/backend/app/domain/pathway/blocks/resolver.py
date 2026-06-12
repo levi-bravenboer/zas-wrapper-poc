@@ -20,12 +20,14 @@ from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.treatment.typed import TreatmentBlock
 from app.domain.pathway.blocks.wait.typed import WaitBlock
 
 
 BLOCK_CLASSES: tuple[type[BaseBlock], ...] = (
     StartBlock,
     AppointmentBlock,
+    TreatmentBlock,
     TaskBlock,
     DecisionBlock,
     MessageBlock,

@@ -33,6 +33,7 @@ from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.treatment.typed import TreatmentBlock
 from app.domain.pathway.blocks.wait.typed import WaitBlock
 
 
@@ -62,6 +63,10 @@ class StartBlockOut(StartBlock, _BlockEnvelopeFields):
 
 class AppointmentBlockOut(AppointmentBlock, _BlockEnvelopeFields):
     kind: Literal["appointment"] = "appointment"
+
+
+class TreatmentBlockOut(TreatmentBlock, _BlockEnvelopeFields):
+    kind: Literal["treatment"] = "treatment"
 
 
 class TaskBlockOut(TaskBlock, _BlockEnvelopeFields):
@@ -104,6 +109,7 @@ PathwayTypedBlockOut = Annotated[
     Union[
         StartBlockOut,
         AppointmentBlockOut,
+        TreatmentBlockOut,
         TaskBlockOut,
         DecisionBlockOut,
         MessageBlockOut,
@@ -121,6 +127,7 @@ PathwayTypedBlockOut = Annotated[
 _OUT_BY_KIND: dict[str, type[BaseModel]] = {
     "start": StartBlockOut,
     "appointment": AppointmentBlockOut,
+    "treatment": TreatmentBlockOut,
     "task": TaskBlockOut,
     "decision": DecisionBlockOut,
     "message": MessageBlockOut,
@@ -152,6 +159,10 @@ class StartBlockIn(StartBlock, _BlockEnvelopeFields):
 
 class AppointmentBlockIn(AppointmentBlock, _BlockEnvelopeFields):
     kind: Literal["appointment"] = "appointment"
+
+
+class TreatmentBlockIn(TreatmentBlock, _BlockEnvelopeFields):
+    kind: Literal["treatment"] = "treatment"
 
 
 class TaskBlockIn(TaskBlock, _BlockEnvelopeFields):
@@ -194,6 +205,7 @@ PathwayTypedBlockIn = Annotated[
     Union[
         StartBlockIn,
         AppointmentBlockIn,
+        TreatmentBlockIn,
         TaskBlockIn,
         DecisionBlockIn,
         MessageBlockIn,
@@ -231,6 +243,8 @@ __all__ = [
     "StartBlockOut",
     "TaskBlockIn",
     "TaskBlockOut",
+    "TreatmentBlockIn",
+    "TreatmentBlockOut",
     "WaitBlockIn",
     "WaitBlockOut",
     "out_class_for_kind",

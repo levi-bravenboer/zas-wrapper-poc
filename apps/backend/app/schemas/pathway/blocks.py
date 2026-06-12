@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 BlockSemanticsLiteral = Literal[
     "start",
     "appointment",
+    "treatment",
     "task",
     "message",
     "form",

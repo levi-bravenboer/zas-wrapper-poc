@@ -35,6 +35,7 @@ _EXPECTED_SEMANTICS: frozenset[str] = frozenset(
     {
         "start",
         "appointment",
+        "treatment",
         "task",
         "message",
         "form",
@@ -52,6 +53,7 @@ _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
     {
         "start",
         "appointment",
+        "treatment",
         "task",
         "message",
         "form",

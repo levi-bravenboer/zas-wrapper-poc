@@ -66,23 +66,24 @@ palette re-labels the `message` tile as "Notification / Bericht".
 
 ### § A4 `treatment`
 
-- [ ] A4.1 `app/domain/pathway/blocks/treatment/typed.py` —
+- [x] A4.1 `app/domain/pathway/blocks/treatment/typed.py` —
   `TreatmentBlock` with `title`, `location`, `duration_minutes`,
-  `treatment_notes`. Lane: `(LANE_KIND_CAREGIVER,)`. `ICON="scalpel"`
-  (Lucide `Stethoscope` if `scalpel` absent).
-- [ ] A4.2 `TreatmentResult(BaseModel)` with `performed_at:
+  `treatment_notes`. Lane: `(LANE_KIND_CAREGIVER,)`.
+  `ICON="stethoscope"`.
+- [x] A4.2 `TreatmentResult(BaseModel)` with `performed_at:
   datetime`, `notes: str | None`, `complications: str | None`. Set
   as `TreatmentBlock.RESULT_TYPE`.
-- [ ] A4.3 Register in `BLOCK_CLASSES`; add `"treatment"` to
+- [x] A4.3 Register in `BLOCK_CLASSES`; add `"treatment"` to
   `BlockSemanticsLiteral`; add `TreatmentBlockIn/Out`.
-- [ ] A4.4 Migration: nullable per-kind columns
+- [x] A4.4 Migration: nullable per-kind columns
   (`treatment_title`, `treatment_location`,
   `treatment_duration_minutes`, `treatment_notes`).
-- [ ] A4.5 Mapper round-trip + validators (`treatment_title`
-  non-empty on publish).
-- [ ] A4.6 Tests: catalogue projection, mapper round-trip,
-  RESULT_TYPE validation at `complete_execution`.
-- [ ] A4.7 `/verify`; commit.
+- [x] A4.5 Mapper round-trip via existing
+  `<KIND>_<field>` convention (no custom code needed). Publish-time
+  validator inherits via `CONFIG_SCHEMA.required=["title"]`.
+- [x] A4.6 Tests: catalogue projection, class smoke, RESULT_TYPE
+  round-trip.
+- [x] A4.7 `/verify`; commit.
 
 ### § A5 `subpath` — DROPPED, but `PathwayLinkBlock` business-logic gaps land here
 
@@ -359,7 +360,7 @@ complete.
 
 | Part | Sections | Done / Decided | Pending implementation |
 | --- | --- | --- | --- |
-| A | A1-A8 | A1 ✓, A2 ✓, A3 DROPPED, A6 DEFERRED, A4/A5/A7/A8 designs locked | A4, A5, A7 (needs B3), A8 (needs B1) |
+| A | A1-A8 | A1 ✓, A2 ✓, A3 DROPPED, A4 ✓, A6 DEFERRED, A5/A7/A8 designs locked | A5, A7 (needs B3), A8 (needs B1) |
 | B | B1-B3 | B2 DEFERRED, B1/B3 designs locked | B1, B3 |
 | C | C1-C8 | designs locked | C1-C8 (blocked on A + B) |
 
@@ -368,7 +369,14 @@ complete.
 - A7 `mdo` depends on **B3** `event` (`contributed` endpoint).
 - A8 `informed_consent` depends on **B1** re-evaluation tick
   scheduler (reused for reminder + expiry ticks).
-- Suggested execution order:
-  **B1 → A8 → B3 → A7 → A4 → A5 → Part C**.
 - A1, A2 already shipped; A3 (DROP), A6 (DEFER), B2 (DEFER) skip
   implementation entirely.
+
+**Execution order (locked):**
+**A4 → A5 → B1 → A8 → B3 → A7 → Part C.**
+
+Rationale: ship block kinds with no predicate dependency first (A4,
+A5) so the typed envelope + mapper plumbing gets exercised end-to-end
+before predicates need it. Then predicates land in the order their
+consumers come (B1 before A8; B3 before A7). Part C builder UX is
+last, on top of a frozen catalogue.

@@ -119,6 +119,7 @@ async def test_list_block_types(
     assert codes == {
         "start",
         "appointment",
+        "treatment",
         "task",
         "message",
         "form",
@@ -134,6 +135,7 @@ async def test_list_block_types(
             "start",
             "end_pathway",
             "appointment",
+            "treatment",
             "task",
             "message",
             "form",
