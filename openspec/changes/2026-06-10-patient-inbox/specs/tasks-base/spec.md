@@ -185,26 +185,67 @@ No per-row kebab. No checkbox. No inline action.
 - **WHEN** the task list renders any number of rows (including zero)
 - **THEN** the page MUST NOT render a count header, a numbered pager strip, or a `"Meer laden"` button
 
-### Requirement: Row click opens the patient detail in split-pane (or full-page on mobile)
+### Requirement: `/_auth/tasks` is a two-column flex — 280px rail + right pane per task
 
-`<TaskRow>` SHALL navigate on click to `/_auth/tasks/p/$patientId` where `$patientId === taskItem.payload.patient.id` on viewports ≥ `md`. The route `/_auth/tasks/p/$patientId` SHALL render a 3-state master/detail layout per design.md D15: task list on the left (compacts to 320px rail), `<PatientDetailView>` on the right.
+The `/_auth/tasks` parent route SHALL render a plain two-column flex layout with NO master/detail collapse and NO state machine:
 
-Below the `md` breakpoint per design.md D17, the row click SHALL navigate to `/_auth/patients/$patientId` (the standalone full-page detail) instead; the task list unmounts.
+- **Left column** (`<TaskList>` rail): fixed width `280px`, scrollable, contains the rail header (`Taken` h1 + `Komende 3 dagen` subtitle) and the task rows grouped by due bucket (`Vandaag` / `Morgen` / `Over N dagen`). Always visible at viewports ≥ `md`.
+- **Right column** (`<Outlet>`): scrollable, hosts one of two children:
+  - **`/_auth/tasks/` index** — `<EmptyState>` (icon `inbox`, title `"Selecteer een taak"`, body `"Kies links een taak om de patiënt en de afspraak te bekijken."`) centered in the right pane.
+  - **`/_auth/tasks/$taskId`** — `<EntityDetailPage>` chrome (eyebrow back-link → `/_auth/tasks`, `<PageHeader>` with `family, given` h1 + INSZ Badge + Geboren + org Badge + Bewerken/kebab actions). Body slot = `<AppointmentContextBlock task />` followed by `<EntityDetailTabs>` underline variant with `Metingen` + `Labresultaten` tabs (both render `<EmptyState>` v1 per D10).
 
-#### Scenario: Row click navigates to tasks-context patient route
+URL drives task selection. `$taskId` (NOT `$patientId`) — same patient with two tasks → two distinct selectable URLs. Selection is shareable. No session-local UI state.
 
-- **WHEN** a caregiver clicks a `<TaskRow>` whose `taskItem.payload.patient.id === "abc-123"` on a viewport ≥ `md`
-- **THEN** the orchestrator MUST navigate to `/_auth/tasks/p/abc-123`
+`<TaskRow>` SHALL navigate on click to `/_auth/tasks/$taskId` where `$taskId === taskItem.id`. The active rail row SHALL render a 3px primary-coloured left accent and a tinted background while its URL is active.
 
-#### Scenario: Split-pane on desktop
+Mobile (`<md`) layout is OUT OF SCOPE v1 — the orchestrator is desktop-first; mobile work lands as a follow-up change.
 
-- **WHEN** a caregiver loads `/_auth/tasks/p/abc-123` directly on a viewport ≥ `md`
-- **THEN** the page MUST render the task list as a 320px compact rail on the left and `<PatientDetailView patient={abc-123}>` on the right
+#### Scenario: Row click sets the task URL
 
-#### Scenario: Mobile fallback to standalone detail
+- **WHEN** a caregiver clicks a `<TaskRow>` whose `taskItem.id === "abc-123"` on a viewport ≥ `md`
+- **THEN** the orchestrator MUST navigate to `/_auth/tasks/abc-123` and the right pane MUST mount the task detail card for that task
 
-- **WHEN** a caregiver clicks a row on a viewport < `md`
-- **THEN** the orchestrator MUST navigate to `/_auth/patients/abc-123` (standalone); the task list MUST NOT render
+#### Scenario: Deep link to a task URL opens the detail
+
+- **WHEN** a caregiver loads `/_auth/tasks/abc-123` directly
+- **THEN** the page MUST render the rail (left) AND the `<EntityDetailPage>` chrome (right) for that task, including the `<AppointmentContextBlock>` above the tabs
+
+#### Scenario: Index route renders selection-empty state
+
+- **WHEN** a caregiver loads `/_auth/tasks` with no `$taskId` selected
+- **THEN** the right pane MUST render `<EmptyState>` with title `"Selecteer een taak"` and body `"Kies links een taak om de patiënt en de afspraak te bekijken."`
+
+#### Scenario: Active rail row reflects the URL
+
+- **WHEN** the URL is `/_auth/tasks/abc-123` and the rail includes the matching row
+- **THEN** that row MUST carry the `data-active="true"` state (3px primary left accent + tinted background); all other rows MUST NOT
+
+#### Scenario: Same patient with two tasks shows two distinct rows
+
+- **WHEN** `GET /tasks` returns two `TaskItem`s with the same `payload.patient.id` but different `id`
+- **THEN** the rail MUST render two separate rows, each addressing its own `/_auth/tasks/$taskId` URL
+
+### Requirement: Task detail right pane renders `<AppointmentContextBlock>` above the clinical tabs
+
+For `source = "appointment"` items, the right pane SHALL render a `<AppointmentContextBlock>` widget in the `<EntityDetailPage>` body slot, immediately above the `<EntityDetailTabs>` strip. Anatomy:
+
+- `<KindTile size="lg">` matching the task's `kind`.
+- Task title (`task.title`, text-[15px] medium).
+- `<Badge variant="soft">` carrying the kind label (resolved via `t('appointment:kind.<value>')`).
+- Meta line (xs muted): `<clock-3>` + relative due copy + `<map-pin|video>` + modality label + (when present) location text + `<user-round>` + `Lead {participant.name}`.
+- Trailing `Open afspraak` ghost button (deep link to underlying appointment — no-op v1; reserved for future).
+
+The block SHALL NOT render its own card chrome. It uses a flat `color-mix(primary-soft, background)` background to nudge the eye without competing with the tab strip.
+
+#### Scenario: Block renders above the tabs
+
+- **WHEN** a caregiver opens `/_auth/tasks/abc-123` for an appointment-source item
+- **THEN** the `<EntityDetailPage>` body MUST render `<AppointmentContextBlock>` BEFORE the `<EntityDetailTabs>` strip in DOM order
+
+#### Scenario: Block shows lead participant when present
+
+- **WHEN** the task's `payload.participants` contains a row with `role = "lead"`
+- **THEN** the meta line MUST include the `<user-round>` icon + `"Lead "` + `participant.user_display_name`
 
 ### Requirement: Empty state copy is single, source-agnostic
 

@@ -9,7 +9,7 @@
 - The route's `<FilterableListPage>` + `<DataTable<PatientRead>>` composition is deleted.
 - The sidebar `"Mijn patiënten"` nav item is removed; a new `"Taken"` nav item points to `/_auth/tasks` (specified by `tasks-base`).
 - Direct caregiver-facing access to "browse all patients" is intentionally NOT replaced in this change. If a stakeholder asks for a patient-directory browser at MVP, file a follow-up.
-- The patient detail route `/_auth/patients/$patientId` is RETAINED as a standalone full-page detail surface (per design.md D16/D17). Tasks-context patient detail mounts the same `<PatientDetailView>` at `/_auth/tasks/p/$patientId`.
+- The patient detail route `/_auth/patients/$patientId` is RETAINED as a standalone full-page detail surface (per design.md D-PATIENTS-ROUTE). Tasks-context detail lives at `/_auth/tasks/$taskId` and consumes the same `<EntityDetailPage>` + `<EntityDetailTabs>` primitives, plus an `<AppointmentContextBlock>` above the tab strip.
 - The backend `GET /patients` list endpoint (with its `ListQuery` envelope and FHIR-aligned filters) is RETAINED — admin tooling, patient pickers, and care-team flows still consume it. Only the orchestrator's user-facing list route is dropped.
 
 ## MODIFIED Requirements

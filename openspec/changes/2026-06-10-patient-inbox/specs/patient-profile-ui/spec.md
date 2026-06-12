@@ -2,15 +2,17 @@
 
 ### Requirement: Patient detail route renders header + adjacent care-team card + clinical tab strip
 
-The orchestrator SHALL render at `/_auth/patients/$patientId` a `<PatientProfilePage>` containing:
+The orchestrator SHALL render at `/_auth/patients/$patientId` a `<PatientProfilePage>` built on the existing `<EntityDetailPage>` chrome:
 
-1. A sticky header (`<PatientDetailHeader>`) showing patient name, INSZ pill, date of birth, primary organisation chip, and a kebab actions slot.
-2. A header-adjacent `<CareTeamSlot patientId={...} />` card. On viewports ≥ `md` it renders to the right of the header; below `md` it stacks underneath the header. The card SHALL NOT live inside the tab strip.
-3. A shadcn `Tabs` component with exactly two tabs in this order — `Metingen` (id `measurements`), `Labresultaten` (id `lab_results`). The default active tab SHALL be `measurements`. NO Afspraken tab ships in this change — appointment-as-task surfacing lives entirely in `/_auth/tasks` (per `tasks-base`).
+1. `<PageHeader>` (via `<EntityDetailPage>`) showing the back-link eyebrow, an h1 of `family_name, given_name`, and a subtitle row with `<Badge variant="default">INSZ: <mono /></Badge>` + a muted `Geboren …` span + `<Badge variant="soft">{organisation.name}</Badge>`. Actions slot = `<Button>Bewerken</Button>` + a kebab.
+2. A header-adjacent `<CareTeamSlot patientId={...} />` card. On viewports ≥ `md` it renders to the right of the header; below `md` it stacks underneath. The card SHALL NOT live inside the tab strip.
+3. `<EntityDetailTabs>` (underline variant) with exactly two tabs in this order — `Metingen` (id `measurements`), `Labresultaten` (id `lab_results`). Default active tab = `measurements`. NO Afspraken tab ships — appointment surfacing lives in `/_auth/tasks` (per `tasks-base`).
+
+The same `<EntityDetailPage>` + `<EntityDetailTabs>` primitives are also consumed by `/_auth/tasks/$taskId` (the tasks-context detail route), guaranteeing visual parity between the two surfaces. No bespoke `<PatientDetailView>` or `<PatientDetailHeader>` primitive ships in this change.
 
 The route SHALL be guarded by the existing `Role.ADMIN | Role.CAREGIVER` requirement and SHALL honour the `require_patient_access` predicate established by `patients-base` + `practitioner-role-split`. A caregiver outside the visibility predicate hitting this route SHALL receive a `404 Not Found` from the backend `GET /patients/{id}` call, surfaced as a "Patiënt niet gevonden" empty-state in the page.
 
-The prior `Overzicht`, `Zorgteam`, and `Geschiedenis` tabs from the `patient-profile-ui` revision SHALL NOT appear in the tab strip. Their content moves as follows: demographics + identifiers are already in the sticky header; care-team content moves into the header-adjacent `<CareTeamSlot>` card; audit history moves behind a new kebab entry (see the kebab-history requirement below).
+The prior `Overzicht`, `Zorgteam`, and `Geschiedenis` tabs from the `patient-profile-ui` revision SHALL NOT appear in the tab strip. Their content moves as follows: demographics + identifiers are absorbed into the `<PageHeader>` subtitle row (INSZ Badge + Geboren + org Badge); care-team content moves into the header-adjacent `<CareTeamSlot>` card; audit history moves behind a new kebab entry (see the kebab-history requirement below).
 
 #### Scenario: Tabs render in clinical order
 
@@ -25,7 +27,7 @@ The prior `Overzicht`, `Zorgteam`, and `Geschiedenis` tabs from the `patient-pro
 #### Scenario: CareTeamSlot renders adjacent to header, not inside a tab
 
 - **WHEN** the page renders on a viewport ≥ `md`
-- **THEN** `<CareTeamSlot>` MUST render as a header-adjacent card to the right of `<PatientDetailHeader>` and MUST NOT appear inside any tab body; the CareTeamSlot's import path (`apps/orchestrator/src/modules/patient/components/CareTeamSlot.tsx`) and prop signature (`{ patientId: string }`) MUST be unchanged from the prior revision
+- **THEN** `<CareTeamSlot>` MUST render as a header-adjacent card to the right of the `<PageHeader>` and MUST NOT appear inside any tab body; the CareTeamSlot's import path (`apps/orchestrator/src/modules/patient/components/CareTeamSlot.tsx`) and prop signature (`{ patientId: string }`) MUST be unchanged from the prior revision
 
 #### Scenario: Outside-visibility caregiver sees not-found
 
@@ -35,7 +37,7 @@ The prior `Overzicht`, `Zorgteam`, and `Geschiedenis` tabs from the `patient-pro
 #### Scenario: Sticky header populates from the GET /patients/{id} response
 
 - **WHEN** the page mounts
-- **THEN** `<PatientDetailHeader>` MUST render `family_name, given_name`, the INSZ identifier value (if any), `birth_date`, and the resolved primary organisation name from the `GET /organisations` cache
+- **THEN** the `<PageHeader>` MUST render `family_name, given_name` as the h1, the INSZ identifier value (if any) inside a `<Badge variant="default">`, the formatted `birth_date`, and the resolved primary organisation name inside a `<Badge variant="soft">` — all sourced from the `GET /patients/{id}` response + the `GET /organisations` cache
 
 ## ADDED Requirements
 
@@ -77,27 +79,13 @@ The page kebab on `<PatientProfilePage>` SHALL expose a `Geschiedenis` entry tha
 - **WHEN** the caregiver activates the `Geschiedenis` kebab entry
 - **THEN** a shadcn `<Dialog>` MUST open containing `<PatientHistoryPanel>` and MUST close on dismiss without navigating away
 
-### Requirement: PatientDetailHeader is a surface-agnostic primitive
-
-The orchestrator SHALL export `<PatientDetailHeader>` from `apps/orchestrator/src/modules/patient/components/PatientDetailHeader.tsx` with props `{ patient: PatientRead; actions?: ReactNode }`. The component MUST NOT import from `@tanstack/react-router`, MUST NOT read URL state directly, and MUST NOT depend on orchestrator-shell-specific layout. The `actions` slot lets the host (orchestrator route today; smart/embed surface later) inject its own kebab / button cluster. This stability lets a future `smart` or `embed` surface re-mount the same header with its own host wrapper.
-
-#### Scenario: Header is router-independent
-
-- **WHEN** the header component is rendered in a test without any router provider, with a `patient` prop and no `actions`
-- **THEN** the render MUST succeed and the demographics fields MUST be present in the DOM
-
-#### Scenario: Actions slot is host-injected
-
-- **WHEN** the header is rendered with `actions={<button>Test</button>}`
-- **THEN** the rendered DOM MUST contain a `Test` button inside the header layout
-
 ## REMOVED Requirements
 
 ### Requirement: Demographics + identifiers panel surfaces FHIR-shaped fields
 
-**Reason**: Demographics + identifiers are surfaced by `<PatientDetailHeader>` for v1. The dedicated `Overzicht` tab is dropped. The INSZ pinning + INSZ pill styling carry over to the header.
+**Reason**: Demographics + identifiers are absorbed into the `<PageHeader>` subtitle row (INSZ Badge + Geboren + org Badge) per the modified detail-route requirement above. The dedicated `Overzicht` tab is dropped.
 
-**Migration**: Sticky header now renders patient name + INSZ pill + DOB + primary organisation chip per the modified detail-route requirement above. Pre-existing readers of `<PatientDemographicsPanel>` / `<PatientIdentifiersPanel>` outside the profile page (none expected; verified in prereq task 0.4) inline the header's fields directly.
+**Migration**: `<PageHeader>` now renders `family_name, given_name` + INSZ Badge + Geboren + org Badge. Pre-existing readers of `<PatientDemographicsPanel>` / `<PatientIdentifiersPanel>` outside the profile page (none expected; verified in prereq task 0.4) inline the header's fields directly.
 
 ### Requirement: History tab summarises audit metadata in three lines max
 

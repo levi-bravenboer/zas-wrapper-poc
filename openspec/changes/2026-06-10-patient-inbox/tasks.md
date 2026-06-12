@@ -9,7 +9,7 @@
 
 ## 1. Prototype (HTML, before any React or backend)
 
-- [x] 1.1 Built inbox prototype iterations under `prototypes/inbox/v*.html`. **Accepted: `v8.html`** per `prototypes/inbox/README.md`. v8 locks: admin-page chrome, 3-state master/detail layout (D15), surface-agnostic `<PatientDetailView>` mount pattern (D16). Subsequent design decisions (D-FLAT, D-NOSORT, D10 two-tabs) supersede the prototype's pager strip, sort tabs, and three-tab patient detail — the React build follows design.md, not the prototype, where they conflict. Prototype directory keeps the name `prototypes/inbox/` (archival artifact, not a concept reference)
+- [x] 1.1 Built inbox prototype iterations v1-v12 under `prototypes/inbox/v*.html`. **Accepted: `v12.html`** per `prototypes/inbox/README.md`. v12 locks: two-column flex (280px task rail + `<EntityDetailPage>` right pane), `<AppointmentContextBlock>` above the tabs, two clinical tabs (Metingen + Labresultaten), URL-driven task selection. Earlier iterations are superseded (v8 master/detail; v10 scroll-stack; v11 single card with bespoke chrome). Prototype directory keeps the name `prototypes/inbox/` (archival artifact, not a concept reference)
 - [ ] 1.2 Confirm with the user that any future visual tweak lands as `vN+1.html` — never edit a prior version
 
 ## 2. Backend: `appointment-base` capability (data layer only — NO HTTP routes v1)
@@ -87,7 +87,7 @@ Per D-AGG — server-side aggregator over source domains. v1 source set: `appoin
 
 Per design.md "Component reuse audit". Only ONE genuinely reusable primitive ships. Tested in isolation, no domain coupling.
 
-- [ ] 5.1 Build `<MasterDetailLayout>` at `apps/orchestrator/src/components/layout/MasterDetailLayout.tsx`. Props: `{ master: ReactNode; detail: ReactNode | null; masterCollapsed: boolean; onMasterCollapsedChange: (v: boolean) => void }`. Implements the 3-state CSS (full / compact 320px / hidden) with 250ms ease width transition. Renders the floating "panel-left-open" reopen button when master is hidden. **Mobile fallback per D17:** below `md` breakpoint the layout SHALL render master full-width and skip the detail column entirely (route swap handles detail display). NO content opinions — pure layout primitive. Tests: state transitions, reopen-button visibility, prop-driven width, mobile fallback
+- [x] 5.1 `<MasterDetailLayout>` at `apps/orchestrator/src/components/layout/MasterDetailLayout.tsx` was built earlier in this change and remains available for future surfaces. **NOT consumed by `/_auth/tasks` v12** — the tasks surface is a plain two-column flex per D-LAYOUT-V12. Keep the primitive for organisation browser / care-team browser; do not wire it into the tasks route
 - [ ] 5.2 Lift `<Avatar>` from `components/ui/avatar.tsx` — add optional `tintBy?: string` prop. When set, derives a deterministic background colour from `hash(tintBy) % 8` against a curated ZAS-teal palette with WCAG AA white-text contrast. Default behaviour unchanged. Tests: same `tintBy` → same colour-class; missing `tintBy` → default; palette accessibility
 - [ ] 5.3 Confirm `components/states/EmptyState.tsx` already renders icon-in-circle + headline + body. NO new `<TabEmptyState>` wrapper needed — use `<EmptyState>` directly with `icon` + `title` + `body` props
 
@@ -115,7 +115,7 @@ Lives under `apps/orchestrator/src/modules/tasks/` (new dir, after task 6.2 dele
   - **Secondary** (muted): `INSZ · <t('appointment:kind.<value>') via cross-ns lookup> · dueLabel(item)`
   - **Trailing**: `<KindTile kind={item.payload.kind} size="sm" />`
   - **Chevron** at right
-  - **Click**: `navigate({ to: '/_auth/tasks/p/$patientId', params: { patientId: item.payload.patient.id } })`. Below `md`, navigate to `/_auth/patients/$patientId` standalone — `useMediaQuery` reads viewport
+  - **Click**: `navigate({ to: '/_auth/tasks/$taskId', params: { taskId: item.id } })`. Selection is per-task, not per-patient — same patient with two tasks → two distinct URLs
   - No per-row kebab. No checkbox. No inline action
 - [ ] 8.3 Create `modules/tasks/TaskList.tsx`:
   - PageHeader with title `t('tasks:title')` ("Taken") + sub `t('tasks:subtitle')` (optional)
@@ -124,19 +124,20 @@ Lives under `apps/orchestrator/src/modules/tasks/` (new dir, after task 6.2 dele
   - NO filter row, NO sort tabs, NO counter, NO pager, NO "Meer laden" button (per D-FLAT + D-NOSORT)
 - [ ] 8.4 Realtime topic registration on `<TaskList>` is a SEAM ONLY (commented placeholder). No-op for v1
 
-## 9. Frontend: patient module — detail components
+## 9. Frontend: appointment context block + patient actions
 
-- [ ] 9.1 Build `<PatientDetailHeader>` at `modules/patient/components/PatientDetailHeader.tsx`. Props `{ patient: PatientRead; actions?: ReactNode }`. Avatar + h2 name + INSZ default Badge + DOB + org soft Badge + actions slot. Surface-agnostic — no router import
-- [ ] 9.2 Build `<PatientDetailView>` at `modules/patient/components/PatientDetailView.tsx`. Props per D16: `{ patient; defaultTab?; actions?; onClose?; onEdit?; onDelete? }`. Composes `<PatientDetailHeader>` + `<CareTeamSlot patientId={patient.id} />` + `<EntityDetailTabs>` underline Tabs with TWO tabs `Metingen` / `Labresultaten` (no Afspraken) + two tab bodies (both render `<EmptyState>`). Surface-agnostic — MUST NOT import from `@tanstack/react-router` or any tasks module. Verified by `eslint-no-router-imports` test
-- [ ] 9.3 Build `<PatientKebab>` at `modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside
-- [ ] 9.4 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx`, `PatientsColumns.tsx` after confirming task 0.4 found no external consumers
+Per D-CTX-BLOCK. No bespoke `<PatientDetailView>` or `<PatientDetailHeader>` ships — both routes consume `<EntityDetailPage>` + `<EntityDetailTabs>` directly.
 
-## 10. Frontend: routes (new dirs, created after task 6 deletion)
+- [ ] 9.1 Build `<AppointmentContextBlock>` at `modules/tasks/components/AppointmentContextBlock.tsx`. Props `{ task: TaskItem }`. Composes `<KindTile size="lg">` + title (text-[15px] medium) + `<Badge variant="soft">{t('appointment:kind.<value>')}</Badge>` + meta line (clock + relative due + map-pin/video + modality + location + user-round + Lead {name}) + `Open afspraak` ghost button (no-op v1). Surface-agnostic — no router import. Subtle `color-mix(primary-soft, background)` background; flat (no card)
+- [ ] 9.2 Build `<PatientKebab>` at `modules/patient/components/PatientKebab.tsx`. `Bewerken` opens existing `EditPatientDialog`; `Verwijderen` uses existing `useEntityDelete`; `Geschiedenis` opens new `<Dialog>` with `<PatientHistoryPanel>` inside. Reused by the task detail route and the standalone patient route
+- [ ] 9.3 Delete `modules/patient/components/PatientDemographicsPanel.tsx`, `PatientIdentifiersPanel.tsx` after confirming task 0.4 found no external consumers (already deleted in earlier section by 10.6/PatientsColumns sweep)
 
-- [ ] 10.1 Create `routes/_auth/tasks/route.tsx` (parent layout) — renders `<MasterDetailLayout master={<TaskList />} detail={<Outlet />} masterCollapsed={hasPatientIdParam} onMasterCollapsedChange={setLocalCollapsed}>`. Local `masterHidden` state owned here (not URL). No `validateSearch` for `?sort=` (single fixed sort)
-- [ ] 10.2 Create `routes/_auth/tasks/index.tsx` (child index) — empty-state right pane ("Selecteer een taak") via shared `<EmptyState>`. Master is full-width
-- [ ] 10.3 Create `routes/_auth/tasks/p/$patientId/index.tsx` (child detail) — fetches patient via existing `usePatient`. Renders `<PatientDetailView patient={...} actions={<PatientKebab patient={...} />} onClose={() => navigate({ to: '/_auth/tasks' })} />`. Master collapses to 320px rail
-- [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — now mounts new `<PatientDetailView>` inside `<EntityDetailPage back={{ to: '/_auth/tasks' }}>` chrome. Used by admin/users links, care-team links, mobile fallback (per D17)
+## 10. Frontend: routes (new dirs, created after section 6 deletion)
+
+- [ ] 10.1 Create `routes/_auth/tasks/route.tsx` (parent layout) — plain two-column flex per D-LAYOUT-V12: rail (280px `<TaskList>`) + `<Outlet />`. NO `<MasterDetailLayout>`. NO `validateSearch` for `?sort=` (single fixed sort). Active rail row reflects URL via `useLocation().pathname` match against `/_auth/tasks/$taskId`
+- [ ] 10.2 Create `routes/_auth/tasks/index.tsx` (child index) — selection `<EmptyState>` (icon `inbox`, title `t('tasks:selection.title')`, body `t('tasks:selection.body')`). Centered in right pane
+- [ ] 10.3 Create `routes/_auth/tasks/$taskId/index.tsx` (child detail) — fetches the task via `useQuery` keyed `['tasks', taskId]` against `GET /tasks/appointment/{taskId}`, then fetches patient via existing `usePatient(task.payload.patient.id)`. Renders `<EntityDetailPage>` with `back = { to: '/_auth/tasks' }`, `title = family, given`, `subtitle = INSZ Badge + Geboren + org Badge`, `actions = Bewerken Button + PatientKebab`, `body = <AppointmentContextBlock task /> + <EntityDetailTabs>` (Metingen + Lab, both `<EmptyState>`)
+- [ ] 10.4 Modify `routes/_auth/patients/$patientId/index.tsx` (standalone) — keep existing `<PatientProfilePage>` shell, collapse its tab strip to TWO clinical tabs (Metingen + Lab) per D10, move `<CareTeamSlot>` to the header-adjacent card, move `<PatientHistoryPanel>` behind kebab `Geschiedenis` dialog. `back = { to: '/_auth/tasks' }`. Used by admin/users links + care-team links + any non-task-context entry
 - [ ] 10.5 DELETE `routes/_auth/patients/index.tsx` (per D24). Verify with task 0.4 that no internal callers depend on this URL
 - [ ] 10.6 Update sidebar (`components/layout/navItems.ts` or `AppSidebar.tsx`) — REMOVE `"Mijn patiënten"` entry. The old placeholder `"Taken"` was already removed when `routes/_auth/tasks.tsx` was deleted (task 6.1) — ADD single `"Taken"` entry pointing to `/_auth/tasks` with lucide `inbox` icon (icon-name only). Ensure exactly one nav item with that label exists post-change
 
@@ -151,29 +152,28 @@ Lives under `apps/orchestrator/src/modules/tasks/` (new dir, after task 6.2 dele
 ## 12. Frontend tests
 
 Reusable primitives:
-- [ ] 12.1 `MasterDetailLayout.test.tsx`: state 1 renders master only; state 2 (detail prop set) renders 320px master + detail; `masterCollapsed=true` hides master and shows floating reopen button; mobile fallback (<md) renders master full-width + skips detail
-- [ ] 12.2 `Avatar.test.tsx`: same `tintBy` → same colour-class twice; missing `tintBy` → default tint; never renders `<img>`
+- [x] 12.1 `MasterDetailLayout.test.tsx` shipped earlier — not consumed by tasks route v12. Tests still live in the repo for non-task surfaces. No new assertions needed
+- [x] 12.2 `Avatar.test.tsx` shipped earlier — `tintBy` deterministic / default / no `<img>` already covered
 
 Tasks module:
-- [ ] 12.3 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon
-- [ ] 12.4 `useTasksQuery.test.ts`: single-page `useQuery` integration; key matches `tasksListKeyPrefix`; no `?sort=` param sent
-- [ ] 12.5 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy for `vandaag X uur` / `morgen X uur` / `over N dagen`
-- [ ] 12.6 `TaskRow.test.tsx`: `<Avatar tintBy={item.payload.patient.id}>`, `family, given` as primary, secondary line includes INSZ + kind label (via cross-ns lookup) + dueLabel; trailing slot renders `<KindTile>`; click on viewport ≥md navigates to `/_auth/tasks/p/$patientId`; click on <md navigates to `/_auth/patients/$patientId`
-- [ ] 12.7 `TaskList.test.tsx`: empty list renders `<EmptyState>` with fixed copy ("Geen taken" / "Nieuwe taken verschijnen automatisch") — same for caregiver + admin role mocks; populated list renders one `<TaskRow>` per `TaskItem`; no counter, no pager, no `"Meer laden"` button anywhere in the DOM
+- [x] 12.3 `KindTile.test.tsx`: each `AppointmentKind` maps to expected tint class + icon (already shipped)
+- [x] 12.4 `useTasksQuery.test.ts`: single-page `useQuery` integration; key matches `tasksListKeyPrefix` (already shipped)
+- [x] 12.5 `dueLabel.test.ts`: relative-time helper returns expected Dutch copy (already shipped)
+- [x] 12.6 `TaskRow.test.tsx`: avatar tint + identity + secondary line + KindTile trailing + navigation (already shipped — updated to navigate to `/_auth/tasks/$taskId`)
+- [ ] 12.7 `TaskList.test.tsx`: empty list renders `<EmptyState>` with fixed copy ("Geen taken" / "Nieuwe taken verschijnen automatisch"); populated list renders one `<TaskRow>` per `TaskItem`; rows grouped by due bucket headers; no counter, no pager, no `"Meer laden"` button anywhere in the DOM
 
-Patient module:
-- [ ] 12.8 `PatientDetailHeader.test.tsx`: renders all demographics fields; takes an `actions` slot; surface-agnostic (no router import)
-- [ ] 12.9 `PatientDetailView.test.tsx`: composes header + `<CareTeamSlot>` + clinical Tabs with TWO triggers (`Metingen`, `Labresultaten`) only; default tab `Metingen`; both tabs render `<EmptyState>`; tabs switch; surface-agnostic (no router import); `onClose` / `onEdit` / `onDelete` invoked; NO `Afspraken` trigger anywhere
+Appointment context block:
+- [ ] 12.8 `AppointmentContextBlock.test.tsx`: renders KindTile + title + soft kind Badge + meta line with clock-3 + relative due + modality icon + (when present) location + lead participant; `Open afspraak` button present; surface-agnostic (no router import)
 
 Routes:
-- [ ] 12.10 `routes/_auth/tasks/route.test.tsx`: URL `/_auth/tasks` → master full-width, empty-state on right; URL `/_auth/tasks/p/$id` → master 320px + `<PatientDetailView>` loaded; master-hidden toggle is local (URL unchanged); browser back from detail → state 1
-- [ ] 12.11 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<PatientDetailView>` inside `<EntityDetailPage>` chrome; `back` link points to `/_auth/tasks`
-- [ ] 12.12 Sidebar nav test: single `"Taken"` item present, points to `/_auth/tasks`; `"Mijn patiënten"` item ABSENT; no duplicate `"Taken"` from the placeholder
+- [ ] 12.9 `routes/_auth/tasks/route.test.tsx`: URL `/_auth/tasks` → rail (280px) + selection `<EmptyState>` in right pane; URL `/_auth/tasks/$taskId` → rail + `<EntityDetailPage>` with `<AppointmentContextBlock>` above the tabs; active rail row reflects URL; rail row click updates URL; browser back from detail returns to index
+- [ ] 12.10 `routes/_auth/patients/$patientId.test.tsx` (standalone): renders `<EntityDetailPage>` chrome with TWO clinical tabs (Metingen + Lab) + `<CareTeamSlot>` adjacent + kebab Geschiedenis dialog; `back` link points to `/_auth/tasks`
+- [ ] 12.11 Sidebar nav test: single `"Taken"` item present, points to `/_auth/tasks`; `"Mijn patiënten"` item ABSENT; no duplicate `"Taken"` from the placeholder
 
 ## 13. Verification
 
 - [ ] 13.1 `moon run backend:lint` + `moon run backend:typecheck` + `moon run backend:test`
 - [ ] 13.2 `moon run orchestrator:lint` + `moon run orchestrator:typecheck` + `moon run orchestrator:test`
-- [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Taken"` item visible (no `"Mijn patiënten"`, exactly one `"Taken"`). Open `/_auth/tasks` → state 1 (task list full, no seed → empty-state copy `"Geen taken"`). Click an item (once data exists) → navigate to `/_auth/tasks/p/$id` → state 2 (compact rail + `<PatientDetailView>`). Patient detail shows TWO tabs (Metingen + Labresultaten), both empty-state. Kebab `Geschiedenis` dialog opens. Toggle master hidden → state 3 (detail full-width + floating reopen). Reopen → state 2. Close detail → state 1. Browser back/forward preserves URL state. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail (no master column)
-- [ ] 13.4 Manual smoke (mobile <md): viewport ~375px wide. Open `/_auth/tasks` → list full-width, no detail pane. Click item → full-page nav to `/_auth/patients/$id` rendering standalone detail. Browser back → tasks list. No master-hidden toggle visible
-- [ ] 13.5 Manual smoke (when appointments exist): create an appointment via `POST /appointments` (e.g. via API call or test fixture) with `starts_at = now() + 1 day`, caller as `lead` participant → row appears in `/_auth/tasks`. Create one with `starts_at = now() + 5 days` → does NOT appear. Create one without caller as participant → does NOT appear. Append `?within=7d` to URL — no effect on results (param silently ignored)
+- [ ] 13.3 Manual smoke (desktop ≥md): sidebar `"Taken"` item visible (no `"Mijn patiënten"`, exactly one `"Taken"`). Open `/_auth/tasks` → rail (280px, grouped by due bucket) + right pane `<EmptyState>` "Selecteer een taak". Click a rail row → URL = `/_auth/tasks/$taskId`, right pane = `<EntityDetailPage>` with `<AppointmentContextBlock>` above the Metingen + Lab tabs. Active rail row carries the 3px accent + tinted bg. Same patient appearing in two rows → two distinct selectable URLs. Browser back from a task detail returns to index. Deep link `/_auth/tasks/$taskId` opens directly. Direct deep-link `/_auth/patients/$id` opens the standalone full-page detail
+- [ ] 13.4 Mobile (<md): out of scope v1. No assertion
+- [ ] 13.5 Manual smoke (when appointments exist): create an appointment via the validator + ORM with `starts_at = now() + 1 day`, caller as `lead` participant → row appears in `/_auth/tasks`. Create one with `starts_at = now() + 5 days` → does NOT appear. Create one without caller as participant → does NOT appear. Append `?within=7d` to URL — no effect on results (param silently ignored)
