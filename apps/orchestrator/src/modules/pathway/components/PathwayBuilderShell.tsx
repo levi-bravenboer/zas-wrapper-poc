@@ -29,8 +29,8 @@ import { findSelectedBlock } from '../utils/selection'
 import { BuilderCanvasFrame } from './canvas/BuilderCanvasFrame'
 import { BuilderFlushProvider } from './canvas/BuilderFlushContext'
 import { DeletePathwayDialog } from './DeletePathwayDialog'
+import { BlockDialog, type BlockDraft } from './dialog/BlockDialog'
 import { BuilderDock } from './dock/BuilderDock'
-import { BuilderDrawer } from './drawer/BuilderDrawer'
 import { EdgeInspector } from './drawer/EdgeInspector'
 import { GeschiedenisDrawer } from './drawer/GeschiedenisDrawer'
 import { ReadOnlyBanner } from './shell/ReadOnlyBanner'
@@ -138,35 +138,69 @@ function Inner({
     [state.version],
   )
 
-  // Pathway-completion § C2: clicking a dock tile adds the block in the
-  // first phase on the kind's default lane; position is computed by the
-  // auto-layout pass (authored x/y are placeholders the layout ignores).
-  // § C2.3 swaps this direct-add for the BlockDialog add-mode flow.
+  // Pathway-completion § C2.3: clicking a dock tile opens the block
+  // dialog in add mode. The block only exists once the author submits.
+  const [pendingAddType, setPendingAddType] = useState<PathwayBlockType | null>(null)
+
   const onAddBlock = useCallback(
     (blockType: PathwayBlockType) => {
-      const preferredCode = defaultLaneKindCode(blockType)
-      const defaultLane = lanes.find((l) => l.lane_kind_code === preferredCode)
-      if (!defaultLane) {
-        toast.error(t('canvas.invalidLaneDrop'))
-        return
-      }
       const firstPhase = sortByOrd(phases)[0]
       if (!firstPhase) {
         toast.error(t('canvas.needPhaseFirst'))
         return
       }
+      const preferredCode = defaultLaneKindCode(blockType)
+      if (!lanes.some((l) => l.lane_kind_code === preferredCode)) {
+        toast.error(t('canvas.invalidLaneDrop'))
+        return
+      }
+      setPendingAddType(blockType)
+    },
+    [lanes, phases, t],
+  )
+
+  const onSubmitAdd = useCallback(
+    (draft: BlockDraft) => {
+      if (!pendingAddType) return
+      const base = createBlock({
+        blockType: pendingAddType,
+        phaseId: draft.phaseId,
+        laneId: draft.laneId,
+        // Placeholder coordinates — the § C3 auto-layout pass owns
+        // placement; authored x/y are ignored by the canvas.
+        x: 70,
+        y: LANE_ROW_HEIGHT / 2 - 32,
+      })
       dispatch({
         type: 'add-block',
-        block: createBlock({
-          blockType,
-          phaseId: firstPhase.id,
-          laneId: defaultLane.id,
-          x: 70,
-          y: LANE_ROW_HEIGHT / 2 - 32,
-        }),
+        block: {
+          ...base,
+          ...draft.config,
+          name: draft.name || pendingAddType.label,
+          input_logic: draft.inputLogic,
+        } as typeof base,
       })
+      setPendingAddType(null)
     },
-    [lanes, phases, dispatch, t],
+    [pendingAddType, dispatch],
+  )
+
+  const onSubmitEdit = useCallback(
+    (blockId: string, draft: BlockDraft) => {
+      dispatch({
+        type: 'patch-block',
+        blockId,
+        patch: {
+          ...draft.config,
+          name: draft.name,
+          phase_id: draft.phaseId,
+          lane_id: draft.laneId,
+          input_logic: draft.inputLogic,
+        } as Record<string, unknown>,
+      })
+      dispatch({ type: 'select', selection: { kind: 'none' } })
+    },
+    [dispatch],
   )
 
   const onJumpToPhase = useCallback((_phaseId: string) => {
@@ -191,7 +225,6 @@ function Inner({
   const selectedBlock = findSelectedBlock(state.selection, blocks)
   const selectedBlockType =
     catalogue.find((c) => selectedBlock && c.type === legacyBlockType(selectedBlock)) ?? null
-  const selectedBlockLane = lanes.find((l) => l.id === selectedBlock?.lane_id) ?? null
   const selectedBlockBranches = selectedBlock
     ? branches.filter((b) => b.block_id === selectedBlock.id)
     : []
@@ -262,34 +295,40 @@ function Inner({
             dispatch={dispatch}
           />
           <BuilderDock catalogue={catalogue} onAddBlock={onAddBlock} />
-          {selectedBlock && (
-            <BuilderDrawer
-              block={selectedBlock}
+          {pendingAddType && (
+            <BlockDialog
+              open
+              mode="add"
+              blockType={pendingAddType}
+              block={null}
+              phases={phases}
+              lanes={lanes}
+              blocks={blocks}
+              branches={[]}
+              currentPathwayId={pathway.id}
+              onSubmit={onSubmitAdd}
+              onClose={() => setPendingAddType(null)}
+            />
+          )}
+          {selectedBlock && selectedBlockType && (
+            <BlockDialog
+              // Remount per block so the draft re-initialises.
+              key={selectedBlock.id}
+              open
+              mode="edit"
               blockType={selectedBlockType}
-              lane={selectedBlockLane}
+              block={selectedBlock}
+              phases={phases}
+              lanes={lanes}
               blocks={blocks}
               branches={selectedBlockBranches}
               currentPathwayId={pathway.id}
-              onPatchConfig={(config) =>
-                dispatch({
-                  type: 'patch-block',
-                  blockId: selectedBlock.id,
-                  // Slot #2 §6: typed fields live on the block
-                  // envelope directly; spread the per-kind config
-                  // bag back over the block so inspectors keep
-                  // editing their familiar shape.
-                  patch: config as Record<string, unknown>,
-                })
-              }
-              onRename={(label) =>
-                dispatch({
-                  type: 'patch-block',
-                  blockId: selectedBlock.id,
-                  patch: { name: label || '' },
-                })
-              }
+              onSubmit={(draft) => onSubmitEdit(selectedBlock.id, draft)}
+              onDelete={() => {
+                dispatch({ type: 'delete-block', blockId: selectedBlock.id })
+                dispatch({ type: 'select', selection: { kind: 'none' } })
+              }}
               onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
-              onDelete={() => dispatch({ type: 'delete-block', blockId: selectedBlock.id })}
             />
           )}
           {selectedEdge && (

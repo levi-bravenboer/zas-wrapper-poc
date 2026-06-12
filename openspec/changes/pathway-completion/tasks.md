@@ -306,17 +306,24 @@ complete.
 
 ### § C2 Frontend scaffolding
 
-- [ ] C2.1 New `apps/orchestrator/src/modules/pathway/builder/`
-  package: `BuilderCanvas.tsx`, `BlockDialog.tsx`,
-  `BlockPalette.tsx`, `useBuilderLayout.ts`.
-- [ ] C2.2 Strip the drag-and-drop wiring from the existing canvas
-  (react-flow interactivity off; nodes + edges rendered read-only).
-- [ ] C2.3 Palette click → `BlockDialog` in "add" mode with the
-  right catalogue entry preselected.
-- [ ] C2.4 Block click → `BlockDialog` in "edit" mode, hydrated
-  from the existing typed envelope.
+- [x] C2.1 Components land in the existing `pathway/components/`
+  tree (no new `builder/` package — follows current layout):
+  `dialog/BlockDialog.tsx`, `dialog/InputLogicEditor.tsx`,
+  `drawer/InspectorSwitch.tsx` (extracted + extended),
+  `layout/computeBlockLayout.ts`.
+- [x] C2.2 Drag-and-drop stripped: `nodesDraggable/Connectable`
+  off, drop/connect/move handlers removed, dock is click-only,
+  `useDragContext` + `dragGhost` deleted. Canvas renders the
+  computed layout + hides empty lanes.
+- [x] C2.3 Dock click → `BlockDialog` "add" mode (draft-based;
+  block exists only after "Voeg toe").
+- [x] C2.4 Block click → `BlockDialog` "edit" mode, hydrated from
+  the typed envelope; "Opslaan" applies the whole draft (name,
+  phase, lane, config, input_logic) in one patch.
+  `BuilderDrawer` (sidebar inspector) deleted.
 - [ ] C2.5 Hover X icon → `ConfirmDeleteDialog` listing dependent
   blocks → on confirm dispatch the cascade-cleanup reducer action.
+  (Lands with § C5.)
 
 ### § C3 Layout engine
 
@@ -337,22 +344,30 @@ complete.
 
 ### § C4 Dialog
 
-- [ ] C4.1 `BlockDialog` shell with `add` / `edit` modes, "Voeg
-  toe" / "Opslaan" submit, cancel.
-- [ ] C4.2 Phase picker (select over `version.phases`, ordered by
+- [x] C4.1 `BlockDialog` shell with `add` / `edit` modes, "Voeg
+  toe" / "Opslaan" submit, cancel, delete (edit mode).
+- [x] C4.2 Phase picker (select over `version.phases`, sorted by
   `ord`).
-- [ ] C4.3 Lane picker: only when
-  `allowed_lane_kind_codes.length > 1`. Single-kind blocks render
-  a read-only line.
-- [ ] C4.4 Per-kind CONFIG_SCHEMA form (reuse existing SchemaForm).
-- [ ] C4.5 `input_logic` editor — typed rule composer over the
-  already-placed blocks in this version. Reuses the predicate
-  shapes from Part B.
-- [ ] C4.6 `timing_policy` editor — tagged-union form, hidden for
-  kinds whose validator forbids it (e.g. `StartBlock`,
-  `EndPathwayBlock`).
+- [x] C4.3 Lane picker: select only when the kind allows >1 lane
+  kind; single-kind blocks render a read-only line. Picker
+  consumes the FULL lane list (canvas hiding is render-only).
+- [x] C4.4 Per-kind config form via extracted `InspectorSwitch` —
+  reuses all existing inspectors + new Treatment / Mdo /
+  InformedConsent inspectors; `start` / `end_pathway` render a
+  "no settings" note.
+- [x] C4.5 `input_logic` editor (`InputLogicEditor`) — typed rule
+  composer over already-placed blocks: if_done / decision_output /
+  if_not_done_within / event + aggregator (all_of / any_of).
+  Non-composer rules (wait_after markers) render read-only.
+  Hidden for `start` (input_logic forbidden).
+- [ ] C4.6 `timing_policy` editor — deferred: no TimingPolicy
+  inspector exists yet (slot #4 / nested-runtime PR re-introduces
+  timing authoring). Kinds that forbid timing already reject at
+  publish.
 - [ ] C4.7 Validation: surface backend 422 inline against the
   matching `field` path; keep the dialog open on error.
+  (Draft-side Zod parse gating is in; backend-422 inline mapping
+  pending.)
 
 ### § C5 Cascade-delete
 
