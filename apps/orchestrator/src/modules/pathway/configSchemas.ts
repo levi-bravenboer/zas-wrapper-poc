@@ -105,9 +105,20 @@ const EndPathwayConfig = z.object({
   name: z.string().optional(),
 })
 
+// catalogue-expansion § A4: TreatmentBlock — uitgevoerde ingreep met
+// klinische uitkomst. RESULT_TYPE = TreatmentResult; this schema covers
+// only the template-side authoring surface.
+const TreatmentConfig = z.object({
+  title: z.string().min(1).max(255).optional(),
+  location: z.string().max(255).optional(),
+  duration_minutes: z.number().int().min(0).optional(),
+  treatment_notes: z.string().max(2000).optional(),
+})
+
 export const CONFIG_SCHEMAS = {
   start: StartConfig,
   appointment: AppointmentConfig,
+  treatment: TreatmentConfig,
   task: TaskConfig,
   message: MessageConfig,
   form: FormConfig,

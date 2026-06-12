@@ -173,6 +173,7 @@ describe('AnyBlockConfig — type coverage smoke', () => {
     const sample: Record<BlockSemantics, AnyBlockConfig> = {
       start: { name: 'Start' },
       appointment: { kind: 'consult' },
+      treatment: { title: 'Lumbale spinale fusie' },
       task: { assignee: 'caregiver' },
       message: { channel: 'email' },
       form: { questions: [] },
@@ -191,6 +192,6 @@ describe('AnyBlockConfig — type coverage smoke', () => {
       },
       end_pathway: { name: 'End' },
     }
-    expect(Object.keys(sample)).toHaveLength(11)
+    expect(Object.keys(sample)).toHaveLength(12)
   })
 })

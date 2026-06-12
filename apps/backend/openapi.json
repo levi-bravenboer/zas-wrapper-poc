@@ -3250,6 +3250,9 @@
                       "$ref": "#/components/schemas/AppointmentBlockOut"
                     },
                     {
+                      "$ref": "#/components/schemas/TreatmentBlockOut"
+                    },
+                    {
                       "$ref": "#/components/schemas/TaskBlockOut"
                     },
                     {
@@ -3282,6 +3285,7 @@
                     "mapping": {
                       "start": "#/components/schemas/StartBlockOut",
                       "appointment": "#/components/schemas/AppointmentBlockOut",
+                      "treatment": "#/components/schemas/TreatmentBlockOut",
                       "task": "#/components/schemas/TaskBlockOut",
                       "decision": "#/components/schemas/DecisionBlockOut",
                       "message": "#/components/schemas/MessageBlockOut",
@@ -7723,6 +7727,7 @@
             "enum": [
               "start",
               "appointment",
+              "treatment",
               "task",
               "message",
               "form",
@@ -8924,6 +8929,9 @@
                   "$ref": "#/components/schemas/AppointmentBlockOut"
                 },
                 {
+                  "$ref": "#/components/schemas/TreatmentBlockOut"
+                },
+                {
                   "$ref": "#/components/schemas/TaskBlockOut"
                 },
                 {
@@ -8964,6 +8972,7 @@
                   "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
                   "start": "#/components/schemas/StartBlockOut",
                   "task": "#/components/schemas/TaskBlockOut",
+                  "treatment": "#/components/schemas/TreatmentBlockOut",
                   "wait": "#/components/schemas/WaitBlockOut"
                 }
               }
@@ -10501,6 +10510,155 @@
           "assignee"
         ],
         "title": "TaskBlockOut"
+      },
+      "TreatmentBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "treatment_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Treatment Notes"
+          },
+          "kind": {
+            "type": "string",
+            "const": "treatment",
+            "title": "Kind",
+            "default": "treatment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "title"
+        ],
+        "title": "TreatmentBlockOut"
       },
       "UserCreate": {
         "properties": {

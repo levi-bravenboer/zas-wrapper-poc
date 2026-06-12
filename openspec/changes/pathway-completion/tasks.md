@@ -85,33 +85,41 @@ palette re-labels the `message` tile as "Notification / Bericht".
   round-trip.
 - [x] A4.7 `/verify`; commit.
 
-### § A5 `subpath` — DROPPED, but `PathwayLinkBlock` business-logic gaps land here
+### § A5 `subpath` — DROPPED, reuse `PathwayLinkBlock`
 
 Decision: re-use `PathwayLinkBlock`. Sub-tasks close the
 `input_logic` / completion / timing gaps documented in the
 Decisions log entry for A5.
 
+**This PR — template + builder-config only:**
+
 - [x] A5.1 Decide own kind vs reuse. → REUSE pathway_link.
-- [ ] A5.2 Completion signal: parent `PathwayLinkBlock`
-  execution flips `pending|eligible|active → completed` when the
-  nested enrollment's `state` becomes `completed`. Implement via
-  `EnrollmentService.complete_execution` hook on nested
-  enrollment finalisation.
-- [ ] A5.3 Publish validator: reject
-  `decision_output(pathway_link_block, …)` rules — `if_done` is
-  the only allowed predicate against a `PathwayLinkBlock`.
-- [ ] A5.4 `timing_policy`: ALLOWED on `PathwayLinkBlock` but
-  treated as advisory hint for the parent scheduler. Document in
-  the class docstring; no validator change.
-- [ ] A5.5 `fire_and_forget` mode: confirm parent block completes
-  on `eligible` transition (no nested enrollment wait). Add
-  integration test if missing.
-- [ ] A5.6 Tests: blocking-mode completion fires on nested
-  finalisation; decision_output reference rejected; `fire_and_forget`
-  bypass.
-- [ ] A5.7 Builder palette i18n: tile reads
-  "Subpath / Sub-flow" (label only, no schema change).
-- [ ] A5.8 `/verify`; commit.
+- [x] A5.3 Publish validator: reject
+  `decision_output(pathway_link_block, …)` rules. **Already
+  covered** by existing `validate_decision_output_references`
+  which rejects "producer is a {type}, not a DecisionBlock"
+  — explicit confirmation test lands here.
+- [x] A5.4 `timing_policy`: ALLOWED on `PathwayLinkBlock` but
+  treated as advisory hint. Documented in class docstring; no
+  validator change.
+- [x] A5.7 Builder palette i18n: tile reads
+  "Subpath" (`LABEL` ClassVar override; ICON → `git-merge`).
+- [x] A5.6a Tests: decision_output reference against pathway_link
+  rejected; decision_output against actual DecisionBlock accepted.
+- [x] A5.8 `/verify` backend + orchestrator; commit.
+
+**Deferred to follow-up "pathway-nested-runtime" PR:**
+
+- [ ] A5.2 Completion signal — parent `PathwayLinkBlock`
+  execution flips on nested enrollment finalisation. Needs new
+  `pathway_enrollment.parent_block_execution_id` column +
+  `EnrollmentService.create_nested_enrollment` +
+  cascade-up complete hook.
+- [ ] A5.5 `fire_and_forget` mode runtime — parent completes on
+  `eligible`, nested enrollment spawned async. Needs the same
+  nested-spawn machinery as A5.2.
+- [ ] A5.6b Integration tests: blocking completes on nested
+  finalisation; fire_and_forget bypass.
 
 ### § A6 `bridge` — DEFERRED out of PoC
 
@@ -126,10 +134,9 @@ Decision: out of PoC. Park in `backlog.md` as `[mvp]`.
   enrollment-lifecycle + identity carry-over. Re-evaluate at MVP."
   Tier: `[mvp]`.
 
-### § A7 `mdo` — depends on § B3 (event)
+### § A7 `mdo`
 
-(B3 event plumbing is needed for the `contributed` event endpoint;
-B2 n_of_m dependency was removed — see Decisions log.)
+**This PR — template only:**
 
 - [ ] A7.1 `app/domain/pathway/blocks/mdo/typed.py` — `MdoBlock`
   with `topic: str`, `expected_attendees_note: str | None`. Lane:
@@ -141,57 +148,72 @@ B2 n_of_m dependency was removed — see Decisions log.)
   `BlockSemanticsLiteral`; add `MdoBlockIn/Out`.
 - [ ] A7.4 Migration: `mdo_topic` (TEXT) +
   `mdo_expected_attendees_note` (TEXT, nullable) on `pathway_block`.
+- [ ] A7.6 Publish validator: `topic` non-empty (already covered by
+  CONFIG_SCHEMA `required=["topic"]`); lane = caregiver (covered by
+  `allowed_lane_kinds`); confirmation tests land here.
+- [ ] A7.7a Tests: class shape, catalogue projection, mapper
+  round-trip, topic-empty rejection, lane-kind rejection.
+- [ ] A7.8 `/verify`; commit.
+
+**Deferred to follow-up "pathway-nested-runtime" PR:**
+
 - [ ] A7.5 Wire `contributed` event handler:
   `record_event(execution_id, "contributed", payload={caregiver_id})`
   appends to `result_json.contributors` (de-duped) without firing
-  state transitions.
-- [ ] A7.6 Publish validator: `topic` non-empty.
-- [ ] A7.7 Tests: contribution events accumulate; leading
-  caregiver completes; topic-empty rejection; non-caregiver lane
-  rejection.
-- [ ] A7.8 `/verify`; commit.
+  state transitions. Depends on B3 record_event endpoint (also
+  deferred).
+- [ ] A7.7b Integration tests: contribution events accumulate;
+  leading caregiver completes.
 
-### § A8 `informed_consent` — depends on § B1 (re-eval tick)
+### § A8 `informed_consent`
 
-(B1 `if_not_done_within` ships the re-evaluation tick scheduler
-that the reminder + expiry ticks reuse. B3 dependency was removed
-— see Decisions log.)
+**This PR — template only:**
 
 - [ ] A8.1 `app/domain/pathway/blocks/informed_consent/typed.py` —
   `InformedConsentBlock` with `questions: list[FormQuestion]`,
-  `reminder_offset_iso: str = "P3D"`, `reminder_max: int = 3`,
+  `channels: list[Literal["email","sms","push","in_app"]]`
+  (default `["email", "push"]`, minLength 1),
+  `reminder_offset_iso: str = "P3D"`,
+  `reminder_max: int = 3` (range [0, 10]),
   `expires_at_iso: str | None = None`. Lane:
   `(LANE_KIND_PATIENT,)`. `ICON="signature"`.
 - [ ] A8.2 `InformedConsentResult(BaseModel)` with
   `consented: bool`, `expired: bool`, `signed_at: datetime | None`,
   `responses: dict[str, Any] | None`. `consented` + `expired`
-  mutually exclusive. Set as `RESULT_TYPE`.
+  mutually exclusive (model_validator). Set as `RESULT_TYPE`.
 - [ ] A8.3 Register in `BLOCK_CLASSES`; add `"informed_consent"`
   to `BlockSemanticsLiteral`; add `InformedConsentBlockIn/Out`.
 - [ ] A8.4 Migration: nullable per-kind columns
   (`informed_consent_questions`,
+  `informed_consent_channels`,
   `informed_consent_reminder_offset_iso`,
   `informed_consent_reminder_max`,
   `informed_consent_expires_at_iso`).
+- [ ] A8.6 Publish validator: `questions` non-empty;
+  `channels` non-empty; `reminder_max` ∈ [0, 10];
+  `expires_at_iso` parseable as ISO 8601 duration when set; lane
+  MUST be `patient`.
+- [ ] A8.7a Tests: class shape, catalogue projection, mapper
+  round-trip, validator branches, RESULT_TYPE mutual-exclusion
+  rejection.
+- [ ] A8.8 `/verify`; commit.
+
+**Deferred to follow-up "pathway-nested-runtime" PR:**
+
 - [ ] A8.5 Runtime:
   (a) On `eligible`, fire a `MessageBlock`-equivalent notification
-      (email + push) to the patient.
-  (b) Reminder scheduler tick (reuses §B1 plumbing): every
-      `reminder_offset_iso`, re-send notification + increment
-      `reminders_sent` until cap.
+      across each channel to the patient.
+  (b) Reminder scheduler tick: every `reminder_offset_iso`,
+      re-send notification + increment `reminders_sent` until
+      cap.
   (c) Expiry tick: when `expires_at_iso` elapses and state is
       still `eligible|active`, engine auto-completes with
       `result={consented: false, expired: true, signed_at: null,
-      responses: null}`. **No new terminal state.**
-- [ ] A8.6 Publish validator: `questions` non-empty; `reminder_max`
-  ∈ [0, 10]; `expires_at_iso` parseable as ISO 8601 duration when
-  set; lane MUST be `patient` (enforced by `allowed_lane_kinds`,
-  re-checked at publish).
-- [ ] A8.7 Tests: catalogue projection, validator branches,
-  completion on consent (consented=true), expiry transition
-  (consented=false, expired=true), reminder cap respected,
-  notification send on eligible.
-- [ ] A8.8 `/verify`; commit.
+      responses: null}`.
+- [ ] A8.7b Integration tests: completion on consent
+  (consented=true), expiry transition (consented=false,
+  expired=true), reminder cap respected, notification send on
+  eligible.
 
 ---
 
@@ -201,17 +223,15 @@ Three additions to the `input_logic` rule set.
 
 ### § B1 `if_not_done_within(after_block, offset_iso)`
 
+**This PR — template + evaluator (pure function):**
+
 - [ ] B1.1 `PredicateKind.IF_NOT_DONE_WITHIN` enum entry.
 - [ ] B1.2 `IfNotDoneWithinArgs(_ArgsBase)` Pydantic model with
   `after_block: UUID`, `offset_iso: str` (ISO 8601 duration).
-- [ ] B1.3 Evaluator branch in `input_logic/evaluator.py`. Returns
-  `True` when the referenced block's execution is NOT in
+- [ ] B1.3 Evaluator branch in `input_logic/evaluator.py`.
+  Returns `True` when the referenced block's execution is NOT in
   `state in {completed, skipped}` AND now ≥
   `block.eligible_at + parse_iso_duration(offset_iso)`.
-- [ ] B1.4 Engine: schedules a re-evaluation tick at the SLA
-  deadline so the block becomes `eligible` automatically when the
-  predicate flips. **This tick scheduler is also reused by §A8
-  reminder + expiry ticks** — implement once, share.
 - [ ] B1.5 Publish gate: `after_block` must reference a real
   block in the same version; `offset_iso` parses as ISO 8601
   duration (reuse the existing parser from `TimingPolicy`).
@@ -219,6 +239,12 @@ Three additions to the `input_logic` rule set.
   pending → true; expired + already completed → false;
   cross-block ref rejection; invalid ISO string rejection.
 - [ ] B1.7 `/verify`; commit.
+
+**Deferred to follow-up "pathway-nested-runtime" PR:**
+
+- [ ] B1.4 Engine: schedules a re-evaluation tick at the SLA
+  deadline so the block becomes `eligible` automatically when the
+  predicate flips. Also reused by §A8 reminder + expiry ticks.
 
 ### § B2 `aggregator_n_of_m(count, total)` — DEFERRED out of PoC
 
@@ -236,20 +262,27 @@ use `all_of`). Parked in `backlog.md` as `[mvp]`.
 
 ### § B3 `event(after_block, event_type)`
 
+**This PR — template + publish gate:**
+
 - [ ] B3.1 `PredicateKind.EVENT` enum entry.
 - [ ] B3.2 `EventArgs(_ArgsBase)` with `after_block`, `event_type`.
+- [ ] B3.5 Publish gate: `event_type` must be in
+  `type(node).EVENTS`. Plus standard `after_block` ref check.
+- [ ] B3.6a Tests: publish-time `event_type not in EVENTS`
+  rejected; `after_block` ref check.
+- [ ] B3.7 `/verify`; commit.
+
+**Deferred to follow-up "pathway-nested-runtime" PR:**
+
 - [ ] B3.3 `EnrollmentService.record_event(execution_id,
   event_type, payload)` + POST `/enrollments/{id}/events` endpoint.
-  Auth: **caregiver-in-care-team only** for PoC (reuse existing
-  Keto care-team scoping). Patient + external systems 401/403 —
-  promoted at MVP.
+  Auth: caregiver-in-care-team only for PoC (reuse Keto
+  care-team scoping).
 - [ ] B3.4 Evaluator: rule true once the matching event has been
-  recorded for the referenced execution.
-- [ ] B3.5 Publish gate: `event_type` must be in
-  `type(node).EVENTS`.
-- [ ] B3.6 Tests: unknown event_type rejected; known event_type +
-  matching record promotes downstream block.
-- [ ] B3.7 `/verify`; commit.
+  recorded for the referenced execution. Needs an event store
+  (table or in-memory + outbox). Out of template scope.
+- [ ] B3.6b Integration tests: known event_type + matching record
+  promotes downstream block.
 
 ---
 

@@ -4,6 +4,26 @@ Internal-source block: links to another pathway version inside the same
 product. The conditional-required rule (`version_pin='specific'` =>
 `pinned_version_id` non-null) is enforced by `model_validator` instead of
 the JSON Schema `if/then` the legacy `BlockTypeEntry` used.
+
+Business-logic semantics (catalogue-expansion § A5):
+
+- **`mode='blocking'`** — parent block stays `active` until the nested
+  enrollment's `state` flips to `completed`. The completion signal is
+  wired in `EnrollmentService.complete_execution`'s nested-finalisation
+  hook (see § A5.2). Downstream blocks gated on this block via
+  `if_done(pathway_link)` only fire after the nested run finishes.
+- **`mode='fire_and_forget'`** — parent block completes the moment it
+  becomes `eligible`. The nested enrollment is created in the
+  background; the parent pathway does NOT wait. Downstream `if_done`
+  rules fire immediately.
+- **`timing_policy`** — ALLOWED but ADVISORY. The runtime treats any
+  attached `TimingPolicy` as a hint for the parent scheduler (expected
+  sub-flow duration); actual scheduling follows the nested enrollment's
+  own timing.
+- **`decision_output` references against a `PathwayLinkBlock`** —
+  REJECTED at publish time (§ A5.3). Sub-pathways do not have authored
+  decision outputs; only `if_done(pathway_link)` is a valid upstream
+  reference.
 """
 
 from __future__ import annotations
@@ -27,9 +47,15 @@ _BLOCKING_MODES: tuple[str, ...] = ("blocking", "fire_and_forget")
 class PathwayLinkBlock(BaseBlock):
     KIND: ClassVar[str] = "pathway_link"
     TYPE_CODE: ClassVar[str] = "pathway_link"
-    LABEL: ClassVar[str] = "Pad-koppeling"
-    DESCRIPTION: ClassVar[str] = "Embeds another pathway by reference; canvas renders an inline preview."
-    ICON: ClassVar[str] = "link-2"
+    # Catalogue-expansion § A5: label re-aligns with the urology demo
+    # vocabulary ("subpath" / "sub-flow"). Wire kind stays
+    # `pathway_link` for back-compat.
+    LABEL: ClassVar[str] = "Subpath"
+    DESCRIPTION: ClassVar[str] = (
+        "Embeds another pathway by reference (sub-flow); canvas renders "
+        "an inline preview."
+    )
+    ICON: ClassVar[str] = "git-merge"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)
     SOURCE: ClassVar[BlockSourceLiteral] = "internal"
     PROVIDER: ClassVar[str | None] = "pathway"

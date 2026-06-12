@@ -15,9 +15,12 @@ from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
+from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
+from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.validators import (
+    DecisionOutputReferenceError,
     DeferredFieldAttrUnknownError,
     EndPathwayBlockMissingError,
     EndPathwayBlockShapeError,
@@ -25,12 +28,14 @@ from app.domain.pathway.blocks.validators import (
     StartBlockCardinalityError,
     StartBlockShapeError,
     validate_all_block_classes,
+    validate_decision_output_references,
     validate_deferred_field_attrs,
     validate_end_pathway_block_invariants,
     validate_lane_kind,
     validate_start_block_invariants,
 )
 from app.domain.pathway.input_logic import (
+    DecisionOutputArgs,
     IfDoneArgs,
     InputLogic,
     InputLogicRule,
@@ -207,3 +212,74 @@ def test_end_invariants_allow_input_logic() -> None:
     )
     blocks: dict[str, BaseBlock] = {str(uuid4()): end}
     validate_end_pathway_block_invariants(blocks)
+
+
+# ---- PathwayLinkBlock business-logic gaps (catalogue-expansion § A5) ----
+
+
+def test_decision_output_reference_against_pathway_link_rejected() -> None:
+    """§ A5.3 — decision_output rules MUST NOT target a PathwayLinkBlock.
+
+    Sub-pathways do not have authored decision outputs; only
+    `if_done(pathway_link)` is a valid upstream reference. The
+    existing `validate_decision_output_references` enforces this
+    via the "producer is a {type}, not a DecisionBlock" branch.
+    """
+    link_id_uuid = uuid4()
+    link_block = PathwayLinkBlock(
+        name="Biopsy subpath",
+        target_pathway_id=link_id_uuid,
+        mode="blocking",
+    )
+    downstream = AppointmentBlock(
+        name="Pathology review",
+        title="Pathology review",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=link_id_uuid,
+                    args=DecisionOutputArgs(
+                        after_block=link_id_uuid,
+                        output_key="completed",
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(link_id_uuid): link_block,
+        str(uuid4()): downstream,
+    }
+    with pytest.raises(DecisionOutputReferenceError) as exc_info:
+        validate_decision_output_references(blocks)
+    assert "PathwayLinkBlock" in exc_info.value.reason
+    assert "DecisionBlock" in exc_info.value.reason
+
+
+def test_decision_output_reference_against_decision_block_accepted() -> None:
+    decision_id_uuid = uuid4()
+    decision = DecisionBlock(
+        name="Voortgangsmeting",
+        question="Verloopt het herstel?",
+        outputs=("goed", "onvoldoende"),
+    )
+    downstream = AppointmentBlock(
+        name="Extra controle",
+        title="Extra controle",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=decision_id_uuid,
+                    args=DecisionOutputArgs(
+                        after_block=decision_id_uuid,
+                        output_key="onvoldoende",
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(decision_id_uuid): decision,
+        str(uuid4()): downstream,
+    }
+    validate_decision_output_references(blocks)
