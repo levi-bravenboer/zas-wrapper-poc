@@ -159,13 +159,21 @@ class AppointmentTaskRepository:
         if not patient_ids:
             return {}
         result = await self._session.execute(
-            select(PatientIdentifier.patient_id, PatientIdentifier.value).where(
+            select(PatientIdentifier.patient_id, PatientIdentifier.value)
+            .where(
                 PatientIdentifier.patient_id.in_(patient_ids),
                 PatientIdentifier.system == INSZ_SYSTEM,
                 PatientIdentifier.deleted_at.is_(None),
             )
+            # Deterministic pick when a patient has multiple active INSZ rows
+            # (partial unique covers (system, value), not (patient, system)):
+            # oldest row wins.
+            .order_by(PatientIdentifier.created_at, PatientIdentifier.id)
         )
-        return {patient_id: value for patient_id, value in result.tuples().all()}
+        insz: dict[UUID, str] = {}
+        for patient_id, value in result.tuples().all():
+            insz.setdefault(patient_id, value)
+        return insz
 
     async def participant_rows(
         self, appointment_ids: Sequence[UUID]
