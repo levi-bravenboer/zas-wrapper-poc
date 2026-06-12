@@ -7,30 +7,53 @@ const timeFormatter = new Intl.DateTimeFormat('nl-BE', {
   minute: '2-digit',
 })
 
+const dayFormatter = new Intl.DateTimeFormat('nl-BE', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+})
+
 function localDateOnly(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function deltaDays(dueAtIso: string, now: Date): number {
+  const due = new Date(dueAtIso)
+  return Math.round(
+    (localDateOnly(due).getTime() - localDateOnly(now).getTime()) / ONE_DAY_MS,
+  )
 }
 
 /**
  * Localised "due-at" copy for a task row.
  *
- * Today  → "vandaag {time}"
+ * Today → "vandaag {time}"
  * Tomorrow → "morgen {time}"
- * 2-3 days out → "over {n} dagen"
- *
- * v1 task list window is ≤3 days, so we don't render past-due copy here.
+ * Further out → "over {n} dagen"
  */
 export function dueLabel(t: TFunction, dueAtIso: string, now: Date = new Date()): string {
   const due = new Date(dueAtIso)
-  const todayMidnight = localDateOnly(now)
-  const dueMidnight = localDateOnly(due)
-  const deltaDays = Math.round((dueMidnight.getTime() - todayMidnight.getTime()) / ONE_DAY_MS)
+  const delta = deltaDays(dueAtIso, now)
 
-  if (deltaDays <= 0) {
+  if (delta <= 0) {
     return t('tasks:due.today', { time: timeFormatter.format(due) })
   }
-  if (deltaDays === 1) {
+  if (delta === 1) {
     return t('tasks:due.tomorrow', { time: timeFormatter.format(due) })
   }
-  return t('tasks:due.in_days', { count: deltaDays })
+  return t('tasks:due.in_days', { count: delta })
+}
+
+/**
+ * Calendar-day group label for the rail (D-FLAT day grouping):
+ * `Vandaag` / `Morgen` / formatted day (`za 14 jun`).
+ *
+ * Returns a stable string per calendar day so consecutive tasks on the same
+ * day group under one header.
+ */
+export function dayGroupLabel(t: TFunction, dueAtIso: string, now: Date = new Date()): string {
+  const delta = deltaDays(dueAtIso, now)
+  if (delta <= 0) return t('tasks:group.today')
+  if (delta === 1) return t('tasks:group.tomorrow')
+  return dayFormatter.format(new Date(dueAtIso))
 }

@@ -72,6 +72,14 @@ describe('AppSidebar — role-gated Beheer group', () => {
     expect(screen.queryByRole('link', { name: 'Affiliaties' })).toBeNull()
   })
 
+  it('shows exactly one Taken entry pointing to /tasks and no Mijn patiënten', async () => {
+    mountSidebar('caregiver')
+    const takenLinks = await screen.findAllByRole('link', { name: 'Taken' })
+    expect(takenLinks).toHaveLength(1)
+    expect(takenLinks[0]).toHaveAttribute('href', expect.stringContaining('/tasks'))
+    expect(screen.queryByRole('link', { name: 'Mijn patiënten' })).toBeNull()
+  })
+
   it('renders the Beheer group expanded for admins with three child entries', async () => {
     mountSidebar('admin')
     const toggle = await screen.findByRole('button', { name: /Beheer/i })

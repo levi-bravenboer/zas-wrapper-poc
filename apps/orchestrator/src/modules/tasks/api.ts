@@ -9,7 +9,12 @@ export const TASKS_PATH = '/tasks'
 export const tasksListKeyPrefix = ['tasks', TASKS_PATH] as const
 
 export async function fetchTasks(): Promise<TaskItem[]> {
-  const { data, response } = await api.GET('/tasks', {})
+  // page_size=100 (ListQuery max) — one request renders the whole 30-day
+  // window per D-FLAT; if a tenant ever exceeds the cap the list silently
+  // truncates and a follow-up adds paging.
+  const { data, response } = await api.GET('/tasks', {
+    params: { query: { page_size: 100 } },
+  })
   if (!response.ok || !data) {
     throw apiError('Tasks fetch failed', response.status)
   }
@@ -24,12 +29,11 @@ export function useTasksQuery(): UseQueryResult<TaskItem[], Error> {
 }
 
 /**
- * Resolve a `TaskItem` by its synthetic id (`source:source_id` pair).
+ * Resolve a `TaskItem` by its id (the source row's UUID PK).
  *
  * Per the tasks-base aggregator: v1 source is always `appointment` and the
- * route is `GET /tasks/appointment/{source_id}`. We split the synthetic id
- * here so route components stay decoupled from the source axis — they pass
- * the `$taskId` URL param directly.
+ * route is `GET /tasks/appointment/{source_id}`. The source axis is pinned
+ * here so route components pass the `$taskId` URL param directly.
  */
 export async function fetchTaskById(taskId: string): Promise<TaskItem> {
   // v1 source set is exactly `appointment`. `taskId` equals the underlying

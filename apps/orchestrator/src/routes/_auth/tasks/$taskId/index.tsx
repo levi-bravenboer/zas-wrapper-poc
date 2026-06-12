@@ -4,11 +4,19 @@ import { Activity, FlaskConical } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { EntityDetailPage, EntityDetailSkeleton, EntityDetailTabs, EntityErrorCard, EntityNotFound } from '@/components/entity'
+import {
+  EntityDetailPage,
+  EntityDetailSkeleton,
+  EntityDetailTabs,
+  EntityErrorCard,
+  EntityNotFound,
+} from '@/components/entity'
 import { EmptyState } from '@/components/states/EmptyState'
 import { Badge } from '@/components/ui/badge'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { usePatient } from '@/modules/patient/hooks'
+import { PatientKebab } from '@/modules/patient/components/PatientKebab'
 import { AppointmentContextBlock, useTaskQuery } from '@/modules/tasks'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
@@ -18,34 +26,43 @@ export const Route = createFileRoute('/_auth/tasks/$taskId/')({
 function TaskDetailRoute(): ReactElement {
   const { t, i18n } = useTranslation(['patient-profile', 'tasks'])
   const { taskId } = Route.useParams()
-  const query = useTaskQuery(taskId)
+  const taskQuery = useTaskQuery(taskId)
+  // Full patient row (identifiers, birth_date, audit fields) for the header
+  // subtitle + the kebab dialogs; the TaskItem payload only carries the thin
+  // inline summary.
+  const patientQuery = usePatient(taskQuery.data?.payload.patient.id ?? null)
 
-  if (query.isLoading) return <EntityDetailSkeleton />
-
-  if (query.error) {
-    if (isApiError(query.error) && query.error.status === 404) {
-      return <EntityNotFound backTo={{ to: '/tasks' }} />
-    }
-    return <EntityErrorCard onRetry={() => void query.refetch()} />
+  if (taskQuery.isLoading || (taskQuery.data && patientQuery.isLoading)) {
+    return <EntityDetailSkeleton />
   }
 
-  const task = query.data
+  if (taskQuery.error) {
+    if (isApiError(taskQuery.error) && taskQuery.error.status === 404) {
+      return <EntityNotFound backTo={{ to: '/tasks' }} />
+    }
+    return <EntityErrorCard onRetry={() => void taskQuery.refetch()} />
+  }
+
+  const task = taskQuery.data
   if (!task) return <EntityNotFound backTo={{ to: '/tasks' }} />
 
-  const patient = task.payload.patient
-  const fullName = `${patient.family_name}, ${patient.given_name}`
+  const inline = task.payload.patient
+  const patient = patientQuery.data
+  const fullName = `${inline.family_name}, ${inline.given_name}`
 
   const subtitle = (
     <div className="flex flex-wrap items-center gap-2">
-      {patient.insz ? (
+      {inline.insz ? (
         <Badge variant="default">
-          {t('header.insz')}: <span className="ml-1 font-mono">{patient.insz}</span>
+          {t('header.insz')}: <span className="ml-1 font-mono">{inline.insz}</span>
         </Badge>
       ) : (
         <Badge variant="soft">{t('header.noInsz')}</Badge>
       )}
       <span className="text-sm text-muted-foreground">
-        {t('header.born', { date: formatDateOrDash(null, i18n.language) })}
+        {t('header.born', {
+          date: formatDateOrDash(patient?.birth_date ?? null, i18n.language),
+        })}
       </span>
     </div>
   )
@@ -55,6 +72,7 @@ function TaskDetailRoute(): ReactElement {
       title={fullName}
       subtitle={subtitle}
       back={{ to: '/tasks' }}
+      actions={patient ? <PatientKebab patient={patient} /> : undefined}
       body={
         <>
           <AppointmentContextBlock task={task} />
@@ -62,31 +80,23 @@ function TaskDetailRoute(): ReactElement {
             tabs={[
               {
                 value: 'measurements',
-                label: t('tasks:tabs.measurements', { defaultValue: 'Metingen' }),
+                label: t('tasks:tabs.measurements'),
                 content: (
                   <EmptyState
                     icon={Activity}
-                    title={t('tasks:tabs.empty.measurements.title', {
-                      defaultValue: 'Nog geen metingen gekoppeld',
-                    })}
-                    body={t('tasks:tabs.empty.measurements.body', {
-                      defaultValue: 'Wordt geleverd door de monitoring-koppeling.',
-                    })}
+                    title={t('tasks:tabs.empty.measurements.title')}
+                    body={t('tasks:tabs.empty.measurements.body')}
                   />
                 ),
               },
               {
                 value: 'lab_results',
-                label: t('tasks:tabs.lab_results', { defaultValue: 'Labresultaten' }),
+                label: t('tasks:tabs.lab_results'),
                 content: (
                   <EmptyState
                     icon={FlaskConical}
-                    title={t('tasks:tabs.empty.lab_results.title', {
-                      defaultValue: 'Nog geen labresultaten gekoppeld',
-                    })}
-                    body={t('tasks:tabs.empty.lab_results.body', {
-                      defaultValue: 'Wordt geleverd door de HiX-koppeling.',
-                    })}
+                    title={t('tasks:tabs.empty.lab_results.title')}
+                    body={t('tasks:tabs.empty.lab_results.body')}
                   />
                 ),
               },

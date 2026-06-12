@@ -1,6 +1,6 @@
 {
   "title": "Taken",
-  "subtitle": "Wat je vandaag en de komende dagen op te pakken hebt",
+  "subtitle": "Aankomende taken",
   "empty": {
     "title": "Geen taken",
     "body": "Nieuwe taken verschijnen automatisch"
@@ -15,9 +15,13 @@
     "in_days_one": "over {{count}} dag",
     "in_days_other": "over {{count}} dagen"
   },
+  "group": {
+    "today": "Vandaag",
+    "tomorrow": "Morgen"
+  },
   "selection": {
     "title": "Selecteer een taak",
-    "body": "Kies een taak links om de patiëntdetails te zien"
+    "body": "Kies links een taak om de patiënt en de afspraak te bekijken."
   },
   "context": {
     "lead": "Lead {{name}}",

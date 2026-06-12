@@ -84,7 +84,7 @@ async def test_envelope_shape_for_appointment_source(
 # ── window ───────────────────────────────────────────────────────────────
 
 
-async def test_appointment_beyond_3d_window_excluded(
+async def test_appointment_beyond_30d_window_excluded(
     async_client: AsyncClient,
     db_session: AsyncSession,
     seeded_zas_users: list[User],
@@ -92,7 +92,7 @@ async def test_appointment_beyond_3d_window_excluded(
 ) -> None:
     caregiver = _caregiver(seeded_zas_users)
     patient = seeded_zas_patients[0]
-    far = datetime.now(UTC) + timedelta(days=5)
+    far = datetime.now(UTC) + timedelta(days=35)
     await make_appointment(
         db_session,
         tenant_id=caregiver.tenant_id,
@@ -108,6 +108,32 @@ async def test_appointment_beyond_3d_window_excluded(
     response = await async_client.get("/tasks")
     assert response.status_code == 200
     assert response.json()["total"] == 0
+
+
+async def test_appointment_within_30d_window_included(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+    seeded_zas_patients: list[Patient],
+) -> None:
+    caregiver = _caregiver(seeded_zas_users)
+    patient = seeded_zas_patients[0]
+    mid_window = datetime.now(UTC) + timedelta(days=5)
+    await make_appointment(
+        db_session,
+        tenant_id=caregiver.tenant_id,
+        patient=patient,
+        actor=caregiver,
+        participants=[(caregiver, AppointmentParticipantRole.LEAD)],
+        starts_at=mid_window,
+        ends_at=mid_window + timedelta(hours=1),
+    )
+    await db_session.commit()
+
+    await _login(async_client, CAREGIVER_EMAIL)
+    response = await async_client.get("/tasks")
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
 
 
 async def test_appointment_non_booked_status_excluded(
@@ -166,7 +192,7 @@ async def test_within_query_param_silently_ignored(
 ) -> None:
     caregiver = _caregiver(seeded_zas_users)
     patient = seeded_zas_patients[0]
-    far = datetime.now(UTC) + timedelta(days=7)
+    far = datetime.now(UTC) + timedelta(days=40)
     await make_appointment(
         db_session,
         tenant_id=caregiver.tenant_id,
@@ -179,8 +205,8 @@ async def test_within_query_param_silently_ignored(
     await db_session.commit()
 
     await _login(async_client, CAREGIVER_EMAIL)
-    response = await async_client.get("/tasks", params={"within": "30d"})
-    # Param ignored — 3d window still applies, far appointment stays excluded.
+    response = await async_client.get("/tasks", params={"within": "90d"})
+    # Param ignored — 30d window still applies, far appointment stays excluded.
     assert response.status_code == 200
     assert response.json()["total"] == 0
 

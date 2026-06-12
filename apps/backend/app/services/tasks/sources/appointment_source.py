@@ -2,7 +2,7 @@
 #
 # Per design.md:
 # - D-AGG: aggregator is a projection over source rows; no `tasks` table.
-# - D-WINDOW: v1 surfaces `status='booked' AND starts_at IN [now, now+3d]`.
+# - D-WINDOW: v1 surfaces `status='booked' AND starts_at IN [now, now+30d]`.
 # - D-PART: visibility is participant-driven — caller must have an active
 #   `appointment_participants` row (any role) for the appointment to surface.
 #   Admins use the same predicate as caregivers; no tenant-wide bypass.
@@ -36,7 +36,7 @@ from app.schemas.patient.patient import PatientInlineSummary
 from app.schemas.task.task_item import AppointmentPayload, TaskItem
 
 SOURCE_NAME: Final[str] = "appointment"
-WINDOW_DAYS: Final[int] = 3
+WINDOW_DAYS: Final[int] = 30
 
 
 def _now() -> datetime:
@@ -166,7 +166,7 @@ def _project(
 
 
 class AppointmentSource:
-    """v1 source — appointments booked in the next 3 days the caller participates in."""
+    """v1 source — appointments booked in the next 30 days the caller participates in."""
 
     name: Final[str] = SOURCE_NAME
 
