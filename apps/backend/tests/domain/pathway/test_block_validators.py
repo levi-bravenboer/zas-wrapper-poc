@@ -24,6 +24,7 @@ from app.domain.pathway.blocks.validators import (
     DeferredFieldAttrUnknownError,
     EndPathwayBlockMissingError,
     EndPathwayBlockShapeError,
+    IfNotDoneWithinRuleError,
     LaneKindNotAllowedError,
     StartBlockCardinalityError,
     StartBlockShapeError,
@@ -31,12 +32,14 @@ from app.domain.pathway.blocks.validators import (
     validate_decision_output_references,
     validate_deferred_field_attrs,
     validate_end_pathway_block_invariants,
+    validate_if_not_done_within_rules,
     validate_lane_kind,
     validate_start_block_invariants,
 )
 from app.domain.pathway.input_logic import (
     DecisionOutputArgs,
     IfDoneArgs,
+    IfNotDoneWithinArgs,
     InputLogic,
     InputLogicRule,
 )
@@ -283,3 +286,78 @@ def test_decision_output_reference_against_decision_block_accepted() -> None:
         str(uuid4()): downstream,
     }
     validate_decision_output_references(blocks)
+
+
+# ---- if_not_done_within publish gate (pathway-completion § B1.5) --------
+
+
+def test_if_not_done_within_valid_rule_passes() -> None:
+    upstream_id = uuid4()
+    upstream = AppointmentBlock(name="Pathologie", title="Pathologie")
+    downstream = AppointmentBlock(
+        name="Escalatie",
+        title="Escalatie",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=upstream_id,
+                    args=IfNotDoneWithinArgs(
+                        after_block=upstream_id, offset_iso="P14D"
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(upstream_id): upstream,
+        str(uuid4()): downstream,
+    }
+    validate_if_not_done_within_rules(blocks)
+
+
+def test_if_not_done_within_unknown_reference_rejected() -> None:
+    ghost_id = uuid4()
+    downstream = AppointmentBlock(
+        name="Escalatie",
+        title="Escalatie",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=ghost_id,
+                    args=IfNotDoneWithinArgs(
+                        after_block=ghost_id, offset_iso="P14D"
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {str(uuid4()): downstream}
+    with pytest.raises(IfNotDoneWithinRuleError) as exc_info:
+        validate_if_not_done_within_rules(blocks)
+    assert "not in pathway version" in exc_info.value.reason
+
+
+def test_if_not_done_within_invalid_iso_rejected() -> None:
+    upstream_id = uuid4()
+    upstream = AppointmentBlock(name="Pathologie", title="Pathologie")
+    downstream = AppointmentBlock(
+        name="Escalatie",
+        title="Escalatie",
+        input_logic=InputLogic(
+            rules=[
+                InputLogicRule(
+                    node=upstream_id,
+                    args=IfNotDoneWithinArgs(
+                        after_block=upstream_id, offset_iso="veertien dagen"
+                    ),
+                ),
+            ],
+        ),
+    )
+    blocks: dict[str, BaseBlock] = {
+        str(upstream_id): upstream,
+        str(uuid4()): downstream,
+    }
+    with pytest.raises(IfNotDoneWithinRuleError) as exc_info:
+        validate_if_not_done_within_rules(blocks)
+    assert "offset_iso invalid" in exc_info.value.reason

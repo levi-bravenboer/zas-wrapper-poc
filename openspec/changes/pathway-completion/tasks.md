@@ -223,20 +223,26 @@ Three additions to the `input_logic` rule set.
 
 **This PR — template + evaluator (pure function):**
 
-- [ ] B1.1 `PredicateKind.IF_NOT_DONE_WITHIN` enum entry.
-- [ ] B1.2 `IfNotDoneWithinArgs(_ArgsBase)` Pydantic model with
+- [x] B1.1 `PredicateKind.IF_NOT_DONE_WITHIN` enum entry.
+- [x] B1.2 `IfNotDoneWithinArgs(_ArgsBase)` Pydantic model with
   `after_block: UUID`, `offset_iso: str` (ISO 8601 duration).
-- [ ] B1.3 Evaluator branch in `input_logic/evaluator.py`.
-  Returns `True` when the referenced block's execution is NOT in
-  `state in {completed, skipped}` AND now ≥
-  `block.eligible_at + parse_iso_duration(offset_iso)`.
-- [ ] B1.5 Publish gate: `after_block` must reference a real
-  block in the same version; `offset_iso` parses as ISO 8601
-  duration (reuse the existing parser from `TimingPolicy`).
-- [ ] B1.6 Tests: not-yet-expired → false; expired + still
-  pending → true; expired + already completed → false;
-  cross-block ref rejection; invalid ISO string rejection.
-- [ ] B1.7 `/verify`; commit.
+- [x] B1.3 Evaluator branch in `input_logic/evaluator.py`.
+  `BlockExecutionView` grew `terminal` + `sla_anchor_at`;
+  `PredicateContext` grew `now`. True when NOT terminal AND
+  `now >= sla_anchor_at + parse_iso_duration_timedelta(offset_iso)`.
+  New `parse_iso_duration_timedelta` in `runtime/scheduling.py`
+  supports sub-day windows (`PT4H`). Engine `_build_context` maps
+  `scheduled_at` → `sla_anchor_at` and threads `now` through
+  `evaluate_eligibility` / `complete`.
+- [x] B1.5 Publish gate: `validate_if_not_done_within_rules` —
+  same-version reference + parseable ISO duration; wired into
+  `PathwayVersionService` publish gate as `BlockConfigError`.
+- [x] B1.6 Tests: not-yet-expired → false; expired + still
+  pending → true; expired + completed/skipped → false; missing
+  clock/anchor → false; sub-day window; invalid ISO → false at
+  eval, rejected at publish; cross-block ref rejection;
+  round-trip serialisation.
+- [x] B1.7 `/verify`; commit.
 
 **Deferred to follow-up "pathway-nested-runtime" PR:**
 

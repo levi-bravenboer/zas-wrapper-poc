@@ -407,14 +407,13 @@ class EnrollmentService:
         templates: dict[UUID, BaseBlock],
     ) -> None:
         executions = await self._load_executions(enrollment_id)
+        now = datetime.now(UTC)
         # Catalogue-expansion § 1: `StartBlock` executions skip the
         # `pending`/`eligible` states and land directly at `completed`
         # so the eligibility pass below sees them as `done` and fires
         # downstream `if_done(start)` rules in the same loop.
-        RuntimeEngine.auto_fire_starts(
-            executions, templates, now=datetime.now(UTC)
-        )
-        RuntimeEngine.evaluate_eligibility(executions, templates)
+        RuntimeEngine.auto_fire_starts(executions, templates, now=now)
+        RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
         await self._save_executions(enrollment_id, executions)
 
     async def _load_executions(

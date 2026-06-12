@@ -49,6 +49,30 @@ def parse_iso_duration_days(value: str) -> int:
     return parts["years"] * 365 + parts["months"] * 30 + parts["weeks"] * 7 + parts["days"]
 
 
+def parse_iso_duration_timedelta(value: str) -> timedelta:
+    """Return the full `timedelta` encoded in `value`, time components included.
+
+    Unlike `parse_iso_duration_days` this accepts the `T` section
+    (`PT4H`, `PT30M`) — the `if_not_done_within` SLA predicate
+    (pathway-completion § B1) needs sub-day windows. Months / years
+    keep the same 30 / 365-day approximation as the days parser.
+    """
+    match = _ISO_DURATION.fullmatch(value)
+    if not match:
+        raise InvalidIsoDurationError(f"not an ISO 8601 duration: {value!r}")
+    parts: dict[str, int] = {
+        key: int(group_value) if group_value is not None else 0
+        for key, group_value in match.groupdict().items()
+    }
+    days = parts["years"] * 365 + parts["months"] * 30 + parts["weeks"] * 7 + parts["days"]
+    return timedelta(
+        days=days,
+        hours=parts["hours"],
+        minutes=parts["minutes"],
+        seconds=parts["seconds"],
+    )
+
+
 def schedule_from_anchor(
     anchor: date,
     policy: dict[str, Any] | None,
@@ -85,5 +109,6 @@ def schedule_from_anchor(
 __all__ = [
     "InvalidIsoDurationError",
     "parse_iso_duration_days",
+    "parse_iso_duration_timedelta",
     "schedule_from_anchor",
 ]

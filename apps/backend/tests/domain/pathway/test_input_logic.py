@@ -10,6 +10,7 @@ from app.domain.pathway.input_logic import (
     DecisionOutputArgs,
     HasDataArgs,
     IfDoneArgs,
+    IfNotDoneWithinArgs,
     InputLogic,
     InputLogicRule,
     PredicateKind,
@@ -282,3 +283,145 @@ def test_input_logic_round_trips_via_model_dump() -> None:
     rebuilt = InputLogic.model_validate(dumped)
     assert rebuilt == logic
     assert dumped["rules"][0]["args"]["predicate"] == PredicateKind.DECISION_OUTPUT.value
+
+
+# ---- IF_NOT_DONE_WITHIN (pathway-completion § B1) -------------------------
+
+
+def _sla_ctx(view: BlockExecutionView, *, now) -> PredicateContext:
+    return PredicateContext(blocks={view.block_id: view}, markers={}, now=now)
+
+
+def test_if_not_done_within_false_before_window_expires() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    anchor = datetime(2026, 6, 1, tzinfo=UTC)
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
+    )
+    view = BlockExecutionView(
+        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
+    )
+    not_yet = datetime(2026, 6, 10, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(view, now=not_yet)) is False
+
+
+def test_if_not_done_within_true_when_expired_and_still_pending() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    anchor = datetime(2026, 6, 1, tzinfo=UTC)
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
+    )
+    view = BlockExecutionView(
+        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
+    )
+    expired = datetime(2026, 6, 16, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(view, now=expired)) is True
+
+
+def test_if_not_done_within_false_when_already_completed() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    anchor = datetime(2026, 6, 1, tzinfo=UTC)
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
+    )
+    view = BlockExecutionView(
+        block_id=upstream, done=True, terminal=True, sla_anchor_at=anchor
+    )
+    expired = datetime(2026, 6, 16, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(view, now=expired)) is False
+
+
+def test_if_not_done_within_false_when_skipped() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    anchor = datetime(2026, 6, 1, tzinfo=UTC)
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
+    )
+    # skipped → terminal=True but done=False
+    view = BlockExecutionView(
+        block_id=upstream, done=False, terminal=True, sla_anchor_at=anchor
+    )
+    expired = datetime(2026, 6, 16, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(view, now=expired)) is False
+
+
+def test_if_not_done_within_false_without_clock_or_anchor() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
+    )
+    anchor = datetime(2026, 6, 1, tzinfo=UTC)
+    no_anchor = BlockExecutionView(
+        block_id=upstream, done=False, terminal=False, sla_anchor_at=None
+    )
+    with_anchor = BlockExecutionView(
+        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
+    )
+    now = datetime(2026, 6, 16, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(no_anchor, now=now)) is False
+    assert evaluate_rule(rule, _sla_ctx(with_anchor, now=None)) is False
+
+
+def test_if_not_done_within_supports_sub_day_windows() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    anchor = datetime(2026, 6, 1, 8, 0, tzinfo=UTC)
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="PT4H"),
+    )
+    view = BlockExecutionView(
+        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
+    )
+    before = datetime(2026, 6, 1, 11, 0, tzinfo=UTC)
+    after = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(view, now=before)) is False
+    assert evaluate_rule(rule, _sla_ctx(view, now=after)) is True
+
+
+def test_if_not_done_within_invalid_iso_evaluates_false() -> None:
+    from datetime import UTC, datetime
+
+    upstream = uuid4()
+    anchor = datetime(2026, 6, 1, tzinfo=UTC)
+    rule = InputLogicRule(
+        node=upstream,
+        args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="14 days"),
+    )
+    view = BlockExecutionView(
+        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
+    )
+    now = datetime(2026, 6, 16, tzinfo=UTC)
+    assert evaluate_rule(rule, _sla_ctx(view, now=now)) is False
+
+
+def test_if_not_done_within_round_trips_via_model_dump() -> None:
+    upstream = uuid4()
+    logic = InputLogic(
+        rules=[
+            InputLogicRule(
+                node=upstream,
+                args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P3D"),
+            ),
+        ],
+    )
+    dumped = logic.model_dump(mode="json")
+    rebuilt = InputLogic.model_validate(dumped)
+    assert rebuilt == logic
+    assert dumped["rules"][0]["args"]["predicate"] == "if_not_done_within"

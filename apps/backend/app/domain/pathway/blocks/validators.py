@@ -15,7 +15,12 @@ from app.domain.pathway.blocks.resolver import BLOCK_CLASSES
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic.predicates import (
     DecisionOutputArgs,
+    IfNotDoneWithinArgs,
     PredicateKind,
+)
+from app.domain.pathway.runtime.scheduling import (
+    InvalidIsoDurationError,
+    parse_iso_duration_timedelta,
 )
 
 
@@ -232,6 +237,53 @@ def validate_decision_output_references(
                 )
 
 
+class IfNotDoneWithinRuleError(ValueError):
+    """An `if_not_done_within` rule is malformed at publish time.
+
+    Pathway-completion § B1.5: `after_block` must reference a block
+    in the same version and `offset_iso` must parse as an ISO 8601
+    duration. Surfaces from the publish gate as `BlockConfigError`.
+    """
+
+    def __init__(self, *, target_block: BaseBlock, reason: str) -> None:
+        super().__init__(
+            f"if_not_done_within on '{target_block.name}': {reason}"
+        )
+        self.target_block = target_block
+        self.reason = reason
+
+
+def validate_if_not_done_within_rules(
+    blocks_by_id: dict[str, BaseBlock],
+) -> None:
+    """Reject malformed `if_not_done_within` rules (§ B1.5).
+
+    Walks every block's `input_logic`; for each rule whose predicate
+    is `if_not_done_within`, asserts the referenced `after_block`
+    lives in the same version and the `offset_iso` parses.
+    """
+    for block in blocks_by_id.values():
+        for rule in block.input_logic.rules:
+            args = rule.args
+            if args.predicate is not PredicateKind.IF_NOT_DONE_WITHIN:
+                continue
+            assert isinstance(args, IfNotDoneWithinArgs)
+            if str(args.after_block) not in blocks_by_id:
+                raise IfNotDoneWithinRuleError(
+                    target_block=block,
+                    reason=(
+                        f"after_block {args.after_block} not in pathway version"
+                    ),
+                )
+            try:
+                parse_iso_duration_timedelta(args.offset_iso)
+            except InvalidIsoDurationError as exc:
+                raise IfNotDoneWithinRuleError(
+                    target_block=block,
+                    reason=f"offset_iso invalid: {exc}",
+                ) from exc
+
+
 def validate_publish_block(block: BaseBlock) -> None:
     """Re-validate `block` against its subclass in Pydantic v2 strict mode.
 
@@ -336,6 +388,7 @@ __all__ = [
     "DeferredFieldAttrUnknownError",
     "EndPathwayBlockMissingError",
     "EndPathwayBlockShapeError",
+    "IfNotDoneWithinRuleError",
     "LaneKindNotAllowedError",
     "StartBlockCardinalityError",
     "StartBlockShapeError",
@@ -344,6 +397,7 @@ __all__ = [
     "validate_decision_output_references",
     "validate_deferred_field_attrs",
     "validate_end_pathway_block_invariants",
+    "validate_if_not_done_within_rules",
     "validate_lane_kind",
     "validate_publish_block",
     "validate_start_block_invariants",

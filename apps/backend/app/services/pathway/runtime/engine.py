@@ -81,13 +81,19 @@ class RuntimeEngine:
     def evaluate_eligibility(
         executions: dict[UUID, BlockExecution],
         templates: dict[UUID, BaseBlock],
+        *,
+        now: datetime | None = None,
     ) -> list[UUID]:
         """Walk every `pending` execution and flip eligible ones.
+
+        `now` feeds time-anchored predicates (`if_not_done_within`);
+        callers that don't pass it keep the pre-§B1 behaviour (those
+        predicates evaluate to False until a clocked pass runs).
 
         Returns the ids that transitioned to `eligible` so the caller
         can ship realtime hints without a full diff.
         """
-        ctx = _build_context(executions, templates)
+        ctx = _build_context(executions, templates, now=now)
         promoted: list[UUID] = []
         for exec_id, execution in executions.items():
             if execution.state != "pending":
@@ -130,7 +136,7 @@ class RuntimeEngine:
         if isinstance(template, DecisionBlock):
             _apply_decision_fanout(execution, template, executions, templates)
 
-        return RuntimeEngine.evaluate_eligibility(executions, templates)
+        return RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
 
     @staticmethod
     def skip(execution: BlockExecution, *, reason: str | None = None) -> None:
@@ -142,6 +148,8 @@ class RuntimeEngine:
 def _build_context(
     executions: dict[UUID, BlockExecution],
     templates: dict[UUID, BaseBlock],
+    *,
+    now: datetime | None = None,
 ) -> PredicateContext:
     block_views: dict[UUID, BlockExecutionView] = {}
     for execution in executions.values():
@@ -156,10 +164,15 @@ def _build_context(
             done=execution.state == "completed",
             produced=produced,
             decision_output=execution.decision_output,
+            terminal=execution.is_terminal(),
+            # §B1 SLA anchor: `scheduled_at` stands in for the
+            # eligibility moment until a dedicated `eligible_at`
+            # runtime column lands (pathway-nested-runtime PR).
+            sla_anchor_at=execution.scheduled_at,
         )
     # markers are out of scope for slot #3 — runtime marker resolution
     # lands with the scheduler layer (downstream).
-    return PredicateContext(blocks=block_views, markers={})
+    return PredicateContext(blocks=block_views, markers={}, now=now)
 
 
 def _input_logic_satisfied(

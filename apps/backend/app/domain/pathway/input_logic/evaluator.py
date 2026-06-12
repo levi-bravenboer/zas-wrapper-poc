@@ -13,6 +13,7 @@ unit-testable against a hand-built context without runtime infra.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -20,12 +21,17 @@ from app.domain.pathway.input_logic.predicates import (
     DecisionOutputArgs,
     HasDataArgs,
     IfDoneArgs,
+    IfNotDoneWithinArgs,
     InputLogic,
     InputLogicRule,
     PredicateKind,
     ValueEqualsArgs,
     ValueGtArgs,
     WaitAfterArgs,
+)
+from app.domain.pathway.runtime.scheduling import (
+    InvalidIsoDurationError,
+    parse_iso_duration_timedelta,
 )
 
 
@@ -38,12 +44,19 @@ class BlockExecutionView:
     time (e.g. `{"location": "Room 12", "scheduled_at": <iso>}`).
     `decision_output` is set when the producer is a `DecisionBlock`
     that fired a typed output; the value is the `output_key` it picked.
+    `terminal` is "this execution can no longer progress" (`completed`
+    / `skipped`) — `if_not_done_within` keys off it.
+    `sla_anchor_at` is the moment the SLA window starts counting for
+    `if_not_done_within` (the engine maps `scheduled_at` until a
+    dedicated `eligible_at` runtime column lands).
     """
 
     block_id: UUID
     done: bool
     produced: dict[str, Any] = field(default_factory=dict)
     decision_output: str | None = None
+    terminal: bool = False
+    sla_anchor_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -59,12 +72,16 @@ class PredicateContext:
     """Resolved upstream state at one evaluation tick.
 
     `blocks` maps block id → execution snapshot. `markers` maps marker
-    id → reach state for `wait_after` rules. The runtime engine
-    constructs this per enrollment + per tick; tests build it inline.
+    id → reach state for `wait_after` rules. `now` is the evaluation
+    instant for time-anchored predicates (`if_not_done_within`);
+    `None` makes those predicates evaluate to `False` (no clock, no
+    SLA judgement). The runtime engine constructs this per enrollment
+    + per tick; tests build it inline.
     """
 
     blocks: dict[UUID, BlockExecutionView] = field(default_factory=dict)
     markers: dict[UUID, MarkerView] = field(default_factory=dict)
+    now: datetime | None = None
 
 
 def _walk_field_path(produced: dict[str, Any], path: str) -> tuple[bool, Any]:
@@ -143,6 +160,23 @@ def evaluate_rule(rule: InputLogicRule, ctx: PredicateContext) -> bool:
                 and view.done
                 and view.decision_output == args.output_key
             )
+
+        case PredicateKind.IF_NOT_DONE_WITHIN:
+            assert isinstance(args, IfNotDoneWithinArgs)
+            view = ctx.blocks.get(args.after_block)
+            # SLA judgement needs the referenced execution, a clock,
+            # and an anchor. Any of them missing → False (the publish
+            # gate proves the reference + duration are valid; missing
+            # runtime data just means "not yet judgeable").
+            if view is None or ctx.now is None or view.sla_anchor_at is None:
+                return False
+            if view.terminal:
+                return False
+            try:
+                window = parse_iso_duration_timedelta(args.offset_iso)
+            except InvalidIsoDurationError:
+                return False
+            return ctx.now >= view.sla_anchor_at + window
 
 
 def evaluate(logic: InputLogic, ctx: PredicateContext) -> bool:

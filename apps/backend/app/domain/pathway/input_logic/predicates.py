@@ -41,6 +41,7 @@ class PredicateKind(str, Enum):
     VALUE_GT = "value_gt"
     WAIT_AFTER = "wait_after"
     DECISION_OUTPUT = "decision_output"
+    IF_NOT_DONE_WITHIN = "if_not_done_within"
 
 
 # ---- Per-predicate typed args ---------------------------------------------
@@ -101,6 +102,24 @@ class DecisionOutputArgs(_ArgsBase):
     output_key: str
 
 
+class IfNotDoneWithinArgs(_ArgsBase):
+    """SLA / timeout: the referenced block is STILL not done after a window.
+
+    True when the referenced block's execution is NOT in a terminal
+    state (`completed` / `skipped`) AND `now >= sla_anchor + offset_iso`.
+    The anchor is the referenced block's eligibility moment
+    (`scheduled_at` until a dedicated `eligible_at` runtime column
+    lands). `offset_iso` is an ISO 8601 duration (`"P14D"`, `"PT4H"`)
+    — one duration grammar across the model, matching `TimingPolicy`.
+    """
+
+    predicate: Literal[PredicateKind.IF_NOT_DONE_WITHIN] = (
+        PredicateKind.IF_NOT_DONE_WITHIN
+    )
+    after_block: UUID
+    offset_iso: str
+
+
 PredicateArgs = Annotated[
     Union[
         IfDoneArgs,
@@ -109,6 +128,7 @@ PredicateArgs = Annotated[
         ValueGtArgs,
         WaitAfterArgs,
         DecisionOutputArgs,
+        IfNotDoneWithinArgs,
     ],
     Field(discriminator="predicate"),
 ]
@@ -157,6 +177,7 @@ __all__ = [
     "DecisionOutputArgs",
     "HasDataArgs",
     "IfDoneArgs",
+    "IfNotDoneWithinArgs",
     "InputLogic",
     "InputLogicRule",
     "PredicateArgs",
