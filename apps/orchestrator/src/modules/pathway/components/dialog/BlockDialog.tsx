@@ -36,6 +36,7 @@ import { isLaneAllowed } from '../../utils/laneRules'
 import { InspectorSwitch } from '../drawer/InspectorSwitch'
 
 import { InputLogicEditor } from './InputLogicEditor'
+import { TimingPolicyEditor, type TimingPolicyValue } from './TimingPolicyEditor'
 
 type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
 
@@ -45,6 +46,7 @@ export type BlockDraft = {
   laneId: string
   config: BlockConfig
   inputLogic: InputLogicShape
+  timingPolicy: TimingPolicyValue
 }
 
 type Props = {
@@ -80,6 +82,7 @@ function initialDraft(
       laneId: block.lane_id,
       config: legacyBlockConfig(block),
       inputLogic: block.input_logic ?? EMPTY_LOGIC,
+      timingPolicy: block.timing_policy ?? null,
     }
   }
   return {
@@ -88,14 +91,15 @@ function initialDraft(
     laneId: allowedLanes[0]?.id ?? '',
     config: defaultConfig(blockType.semantics) as BlockConfig,
     inputLogic: EMPTY_LOGIC,
+    timingPolicy: null,
   }
 }
 
 // Pathway-completion § C4: THE authoring surface. Title + phase picker +
 // lane picker (multi-kind only) + per-kind config + input_logic rule
-// composer. Submit applies the whole draft in one dispatch; cancel
-// leaves the version untouched. timing_policy authoring lands with the
-// TimingPolicy inspector (slot #4 / nested-runtime PR).
+// composer + timing_policy editor (hidden where the publish gate
+// forbids timing). Submit applies the whole draft in one dispatch;
+// cancel leaves the version untouched.
 export function BlockDialog({
   open,
   mode,
@@ -126,6 +130,13 @@ export function BlockDialog({
 
   // input_logic is forbidden on `start` (fires at enrollment t=0).
   const logicAllowed = blockType.semantics !== 'start'
+
+  // timing_policy is forbidden where the publish gate rejects it:
+  // start / end_pathway fire on lifecycle moments; informed_consent
+  // owns its timing via the reminder/expiry fields.
+  const timingAllowed = !['start', 'end_pathway', 'informed_consent'].includes(
+    blockType.semantics,
+  )
 
   const upstreamBlocks = useMemo(
     () => blocks.filter((b) => b.id !== block?.id),
@@ -299,6 +310,18 @@ export function BlockDialog({
                 value={draft.inputLogic}
                 upstreamBlocks={upstreamBlocks}
                 onChange={(inputLogic) => setDraft({ ...draft, inputLogic })}
+              />
+            </section>
+          )}
+
+          {timingAllowed && (
+            <section className="space-y-2 rounded-md border bg-muted/20 p-3">
+              <h3 className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('blockDialog.timingHeader', { defaultValue: 'Timing' })}
+              </h3>
+              <TimingPolicyEditor
+                value={draft.timingPolicy}
+                onChange={(timingPolicy) => setDraft({ ...draft, timingPolicy })}
               />
             </section>
           )}

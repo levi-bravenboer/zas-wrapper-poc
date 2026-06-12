@@ -100,9 +100,22 @@ export function useAutosavePathway({
           lastErroredVersion.current = null
           dispatch({ type: 'reset', version: next.version })
         },
-        onError: () => {
+        onError: (error) => {
           lastErroredVersion.current = v
-          toast.error(t('save.error'))
+          // § C4.7: name the offending field when the backend 422
+          // carries `details.field` — re-open the block via click to
+          // fix it (saves are debounced/optimistic, so the dialog has
+          // already closed by the time the PUT resolves).
+          const apiError = (error ?? {}) as { field?: string; reason?: string }
+          if (apiError.field && apiError.reason) {
+            toast.error(t('save.fieldError', {
+              defaultValue: 'Opslaan mislukt — {{field}}: {{reason}}',
+              field: apiError.field,
+              reason: apiError.reason,
+            }))
+          } else {
+            toast.error(t('save.error'))
+          }
         },
       })
     },

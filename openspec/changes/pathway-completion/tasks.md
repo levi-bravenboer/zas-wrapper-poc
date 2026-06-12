@@ -361,14 +361,18 @@ complete.
   if_not_done_within / event + aggregator (all_of / any_of).
   Non-composer rules (wait_after markers) render read-only.
   Hidden for `start` (input_logic forbidden).
-- [ ] C4.6 `timing_policy` editor — deferred: no TimingPolicy
-  inspector exists yet (slot #4 / nested-runtime PR re-introduces
-  timing authoring). Kinds that forbid timing already reject at
-  publish.
-- [ ] C4.7 Validation: surface backend 422 inline against the
-  matching `field` path; keep the dialog open on error.
-  (Draft-side Zod parse gating is in; backend-422 inline mapping
-  pending.)
+- [x] C4.6 `timing_policy` editor (`TimingPolicyEditor`) —
+  tagged-union form (geen / fixed_duration / wait_after /
+  due_within / at_enrollment_picked_date + ISO veld). Hidden for
+  `start` / `end_pathway` / `informed_consent` (publish gate
+  forbids timing there).
+- [x] C4.7 Validation: draft-side Zod parse gates submit;
+  `replacePathway` parses 422 `details.{field, reason}` and the
+  autosave failure toast names the offending field path. Full
+  in-dialog inline mapping deliberately NOT built — saves are
+  debounced + optimistic (dialog closes before the PUT resolves);
+  synchronous submit-saves is a UX decision parked for the
+  nested-runtime PR.
 
 ### § C5 Cascade-delete
 

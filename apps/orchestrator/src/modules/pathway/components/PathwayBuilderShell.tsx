@@ -181,6 +181,7 @@ function Inner({
           ...draft.config,
           name: draft.name || pendingAddType.label,
           input_logic: draft.inputLogic,
+          timing_policy: draft.timingPolicy,
         } as typeof base,
       })
       setPendingAddType(null)
@@ -199,6 +200,7 @@ function Inner({
           phase_id: draft.phaseId,
           lane_id: draft.laneId,
           input_logic: draft.inputLogic,
+          timing_policy: draft.timingPolicy,
         } as Record<string, unknown>,
       })
       dispatch({ type: 'select', selection: { kind: 'none' } })

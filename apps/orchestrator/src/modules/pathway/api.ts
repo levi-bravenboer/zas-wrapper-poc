@@ -17,7 +17,15 @@ import type {
   PathwayWithVersion,
 } from './types'
 
-type PathwayApiError = Error & { status: number; code?: string }
+export type PathwayApiError = Error & {
+  status: number
+  code?: string
+  // Pathway-completion § C4.7: 422 publish/save gates return
+  // `details: {field, reason}` — surfaced so save errors can name the
+  // offending block field instead of a generic toast.
+  field?: string
+  reason?: string
+}
 
 function pathwayError(message: string, status: number, code?: string): PathwayApiError {
   const err = new Error(message) as PathwayApiError
@@ -32,8 +40,15 @@ function errorFromResponse(
   body: unknown,
 ): PathwayApiError {
   if (body && typeof body === 'object' && 'code' in body) {
-    const b = body as { code?: string; message?: string }
-    return pathwayError(b.message ?? fallbackMessage, status, b.code)
+    const b = body as {
+      code?: string
+      message?: string
+      details?: { field?: string; reason?: string }
+    }
+    const err = pathwayError(b.message ?? fallbackMessage, status, b.code)
+    if (b.details?.field) err.field = b.details.field
+    if (b.details?.reason) err.reason = b.details.reason
+    return err
   }
   return pathwayError(fallbackMessage, status)
 }
@@ -73,7 +88,7 @@ export async function replacePathway(
     body: input,
   })
   if (!result.data) {
-    throw pathwayError('Failed to update pathway', result.response.status)
+    throw errorFromResponse('Failed to update pathway', result.response.status, result.error)
   }
   return result.data as never
 }

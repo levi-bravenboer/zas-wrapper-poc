@@ -49,11 +49,11 @@ throughout to match existing convention (`pathway_link`,
 | A1 | `start` | `StartBlock` | `system` | ✓ shipped |
 | A2 | `end_pathway` | `EndPathwayBlock` | `system` | ✓ shipped |
 | A3 | `notification` | — | — | **DROPPED** — `MessageBlock` (slot #1) already exposes channel + subject + body + CTA. Urology-spec "notification" rebrands as a label for `message` |
-| A4 | `treatment` | `TreatmentBlock` | `caregiver` | ✓ shipped (template). CONFIG: `title`, `location`, `duration_minutes`, `treatment_notes`. RESULT: `{performed_at, notes, complications}` |
+| A4 | `treatment` | `TreatmentBlock` | `caregiver` | ✓ shipped (template). CONFIG: `title`, `location`, `duration_minutes`, `notes`. RESULT: `{performed_at, notes, complications}` |
 | A5 | `subpath` | — | — | ✓ template shipped — bestaande `PathwayLinkBlock` (slot #1) dekt subpath; label → "Subpath", decision_output-reject getest, timing advisory gedocumenteerd. Runtime completion (nested enrollment) → volgende PR |
 | A6 | `bridge` | — | — | **DEFERRED out of PoC** — cross-pathway handoff niet nodig voor demo. Geparkeerd als **BL-072** `[mvp]` |
-| A7 | `mdo` | `MdoBlock` | `caregiver` | pending (template this PR). CONFIG: `topic`, `expected_attendees_note` (free-text). RUNTIME (volgende PR): leading caregiver completes; extra contributions via `contributed` events. **Geen `aggregator_n_of_m` afhankelijkheid** |
-| A8 | `informed_consent` | `InformedConsentBlock` | `patient` | pending (template this PR). RESULT: `{consented, expired, signed_at, responses}`. Expiry → `state=completed` met `expired=true` — geen nieuwe terminal state. Runtime sends/ticks → volgende PR |
+| A7 | `mdo` | `MdoBlock` | `caregiver` | ✓ shipped (template). CONFIG: `topic`, `expected_attendees_note` (free-text). RUNTIME (volgende PR): leading caregiver completes; extra contributions via `contributed` events. **Geen `aggregator_n_of_m` afhankelijkheid** |
+| A8 | `informed_consent` | `InformedConsentBlock` | `patient` | ✓ shipped (template). RESULT: `{consented, expired, signed_at, responses}`. Expiry → `state=completed` met `expired=true` — geen nieuwe terminal state. Runtime sends/ticks → volgende PR |
 
 Per-kind decisions (cardinality, columns, validators, runtime
 semantic, lane-kind invariant) live in the **Decisions log** section
@@ -229,8 +229,11 @@ stays compositional.
 - Per-kind columns (`treatment_*` prefix on `pathway_block`):
   `treatment_title` (TEXT, required), `treatment_location` (TEXT,
   nullable), `treatment_duration_minutes` (INT, nullable).
-- `treatment_notes` is authored at template level as a description
-  / SOP free-text field (TEXT, nullable).
+- `notes` is authored at template level as a description / SOP
+  free-text field; persisted as the `treatment_notes` column via the
+  `<KIND>_<field>` mapper convention (field renamed from
+  `treatment_notes` to avoid the double-prefix column
+  `treatment_treatment_notes`).
 - Input logic: ALLOWED. Timing policy: ALLOWED
   (`FixedDurationPolicy` typically).
 - Result schema (returned at completion):
@@ -241,7 +244,7 @@ stays compositional.
 - Validator: `treatment_title` non-empty on publish.
 - Distinguishes from `AppointmentBlock` by carrying the typed
   result (appointment has no `RESULT_TYPE`) and by surfacing
-  `treatment_notes` as a SOP authoring field on the dialog.
+  `notes` as a SOP authoring field on the dialog.
 
 ### A5 `subpath` — DROPPED + open business-logic items
 
@@ -396,13 +399,80 @@ dialog (Part C) needs every kind's authoring surface frozen, not the
 runtime; and the runtime work shares one new aggregate (nested
 enrollment + events + ticks) that deserves its own spec + review.
 
-### B1–B3 — to be filled in as they land
+### B1 `if_not_done_within` — landed (template + evaluator)
 
-(Pending. Each section captures the final predicate args shape,
-evaluator behaviour, publish-gate checks, runtime hooks.)
+- Args: `IfNotDoneWithinArgs(after_block: UUID, offset_iso: str)` —
+  ISO 8601 duration, one grammar with `TimingPolicy`. New
+  `parse_iso_duration_timedelta` (sub-day support, `PT4H`) sits next
+  to the days-only parser in `runtime/scheduling.py`.
+- Evaluator: true when the referenced execution is NOT terminal
+  (`completed` / `skipped`) AND `now >= sla_anchor + offset`.
+  `BlockExecutionView` grew `terminal` + `sla_anchor_at`;
+  `PredicateContext` grew `now`. The SLA anchor maps from
+  `scheduled_at` until a dedicated `eligible_at` runtime column
+  lands (nested-runtime PR). Missing clock / anchor / execution →
+  `False` (publish gate owns validity; missing runtime data means
+  "not yet judgeable").
+- Publish gate: `validate_if_not_done_within_rules` — same-version
+  reference + parseable duration.
+- Deferred: the engine tick that re-evaluates at the SLA deadline
+  (B1.4, nested-runtime PR).
 
-### C — to be filled in as the builder ships
+### B2 `aggregator_n_of_m` — DEFERRED (BL-073)
 
-(Pending. Captures the auto-layout constants, the dialog state
-machine, the cascade-cleanup walk, and any per-kind dialog
-specialisations.)
+No PoC consumer after the A7 MDO redesign. See backlog entry.
+
+### B3 `event` — landed (template + gate)
+
+- Args: `EventArgs(after_block: UUID, event_type: str)`.
+- Publish gate: `validate_event_rules` — same-version reference +
+  `event_type ∈ type(producer).EVENTS`. No kind is silently usable
+  as an event source; today only `MdoBlock` declares
+  `("contributed",)` and `AppointmentBlock`
+  `("rescheduled", "patient_no_show")`.
+- Evaluator: matches the `produced["events"]` list mirror — the
+  contract the §B3.4 event store will hydrate. Until that store
+  lands (nested-runtime PR) the predicate is authorable but
+  evaluates `False` at runtime.
+- Deferred: `record_event` endpoint + event store (B3.3/B3.4).
+
+### C — landed (dialog-driven builder)
+
+- **Auto-layout** (`layout/computeBlockLayout.ts`): per
+  (phase, lane) cell, Kahn topological pass over rule-level `node`
+  references → column index; per-column row stacking (decision
+  fan-out stacks vertically); cross-cell upstreams don't shift
+  columns (sequencing across cells is conveyed by derived edges);
+  cycle remainder lands in one trailing column — a block is never
+  dropped. Constants: 48px column gutter, 24px row gutter,
+  32/28px cell padding; block dims reuse `BLOCK_WIDTH/HEIGHT`.
+  Authored `x`/`y` stay on the wire but are ignored on render.
+- **Read-only canvas**: `nodesDraggable/Connectable` off; drop /
+  connect / node-drag handlers, `useDragContext`, and `dragGhost`
+  deleted. Empty lanes hidden on render only (`visibleLanes`);
+  the dialog lane picker keeps the full list.
+- **Dialog state machine**: one `BlockDialog`, `add` | `edit` prop.
+  Draft-based — local state holds {name, phase, lane, config,
+  inputLogic, timingPolicy}; submit applies everything in ONE
+  dispatch (`add-block` with overlay / `patch-block` with the full
+  draft); cancel discards. Edit remounts per block id.
+- **Sections**: identity (name + phase picker + lane picker when
+  >1 allowed kind), per-kind config (`InspectorSwitch`, reusing
+  every existing inspector + new Treatment / Mdo /
+  InformedConsent), `input_logic` rule composer (if_done /
+  decision_output / if_not_done_within / event + all_of / any_of;
+  marker rules render read-only; hidden for `start`),
+  `timing_policy` tagged-union editor (hidden for `start` /
+  `end_pathway` / `informed_consent`).
+- **Cascade delete**: every `delete-block` cascades
+  (`cascadeDeleteBlock`): strips dependent `input_logic.rules`,
+  drops the block's branches, drops touching derived edges.
+  Confirm dialog (`ConfirmDeleteBlockDialog`) enumerates
+  dependents; reachable via hover-X on the node AND the edit
+  dialog's delete button.
+- **422 surfacing**: `replacePathway` parses `details.{field,
+  reason}`; autosave failure toasts the offending field path.
+  Full in-dialog inline mapping deliberately NOT built: saves are
+  debounced + optimistic (dialog closes before the PUT resolves);
+  switching to synchronous submit-saves is a UX decision parked
+  for the nested-runtime PR.
