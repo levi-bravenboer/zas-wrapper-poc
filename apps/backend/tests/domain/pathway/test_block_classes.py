@@ -78,7 +78,7 @@ def test_treatment_block_optional_fields_default_none() -> None:
     block = TreatmentBlock(name="Operatie", title="Operatie")
     assert block.location is None
     assert block.duration_minutes is None
-    assert block.treatment_notes is None
+    assert block.notes is None
 
 
 def test_treatment_block_rejects_missing_title() -> None:

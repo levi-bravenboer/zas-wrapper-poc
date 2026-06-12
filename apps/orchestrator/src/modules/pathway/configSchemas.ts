@@ -112,7 +112,7 @@ const TreatmentConfig = z.object({
   title: z.string().min(1).max(255).optional(),
   location: z.string().max(255).optional(),
   duration_minutes: z.number().int().min(0).optional(),
-  treatment_notes: z.string().max(2000).optional(),
+  notes: z.string().max(2000).optional(),
 })
 
 // pathway-completion § A8: InformedConsentBlock — two-actor consent

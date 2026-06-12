@@ -13,8 +13,8 @@ type Props = {
   onChange: (next: ConfigForSemantics<'treatment'>) => void
 }
 
-// Pathway-completion § A4: executed clinical procedure. `treatment_notes`
-// is the SOP / preparation guidance shown to the caregiver.
+// Pathway-completion § A4: executed clinical procedure. `notes` is the
+// SOP / preparation guidance shown to the caregiver.
 export function TreatmentInspector({ config, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
@@ -68,8 +68,8 @@ export function TreatmentInspector({ config, onChange }: Props): ReactElement {
       >
         <Textarea
           id="treatment-notes"
-          value={config.treatment_notes ?? ''}
-          onChange={(e) => onChange({ ...config, treatment_notes: e.target.value || undefined })}
+          value={config.notes ?? ''}
+          onChange={(e) => onChange({ ...config, notes: e.target.value || undefined })}
           placeholder={t('inspector.treatment.notesPlaceholder', {
             defaultValue: 'Voorbereiding, instructies, nazorg…',
           })}

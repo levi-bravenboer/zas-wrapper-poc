@@ -8,7 +8,7 @@ distinct from `AppointmentBlock` along two axes:
    clinical outcome at completion (`performed_at`, free-text `notes`,
    optional `complications` summary). `AppointmentBlock` has no
    `RESULT_TYPE` and treats completion as an opaque event.
-2. It surfaces a `treatment_notes` SOP authoring field on the template
+2. It surfaces a `notes` SOP authoring field on the template
    (e.g. "Pre-medication: …; Post-op: …") that the dialog renders for
    caregivers preparing the procedure.
 
@@ -55,8 +55,9 @@ class TreatmentBlock(BaseBlock):
     - `location`: optional — where it happens.
     - `duration_minutes`: optional — planned duration; the runtime
       tags `BlockExecution.scheduled_at` via `timing_policy`.
-    - `treatment_notes`: optional SOP / preparation guidance shown to
-      the caregiver. Free-text up to 2000 chars.
+    - `notes`: optional SOP / preparation guidance shown to the
+      caregiver. Persisted as the `treatment_notes` column via the
+      `<KIND>_<field>` mapper convention. Free-text up to 2000 chars.
     """
 
     KIND: ClassVar[str] = "treatment"
@@ -76,18 +77,18 @@ class TreatmentBlock(BaseBlock):
             "title": {"type": "string", "minLength": 1, "maxLength": 255},
             "location": {"type": "string", "maxLength": 255},
             "duration_minutes": {"type": "integer", "minimum": 0},
-            "treatment_notes": {"type": "string", "maxLength": 2000},
+            "notes": {"type": "string", "maxLength": 2000},
         },
         required=["title"],
     )
     UI_SCHEMA: ClassVar[dict[str, Any]] = {
-        "order": ["title", "location", "duration_minutes", "treatment_notes"],
+        "order": ["title", "location", "duration_minutes", "notes"],
     }
 
     title: str
     location: str | None = None
     duration_minutes: int | None = None
-    treatment_notes: str | None = None
+    notes: str | None = None
 
 
 __all__ = ["TreatmentBlock", "TreatmentResult"]
