@@ -2,7 +2,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { type ReactElement } from 'react'
 
-import { TaskList } from '@/modules/tasks/TaskList'
+import { TaskList } from '@/modules/tasks/components/TaskList'
 
 export const Route = createFileRoute('/_auth/tasks')({
   component: TasksLayoutRoute,

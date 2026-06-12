@@ -17,7 +17,7 @@ import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 import { PatientKebab } from '@/modules/patient/components/PatientKebab'
 import { usePatient } from '@/modules/patient/hooks'
-import { useTaskQuery } from '@/modules/tasks/api'
+import { useTaskQuery } from '@/modules/tasks/hooks'
 import { AppointmentContextBlock } from '@/modules/tasks/components/AppointmentContextBlock'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({

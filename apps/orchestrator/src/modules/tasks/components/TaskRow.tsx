@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/style/cn'
 
-import { KindTile } from './components/KindTile'
-import { dueLabel } from './dueLabel'
-import type { TaskItem } from './types'
+import { dueLabel } from '../dueLabel'
+import type { TaskItem } from '../types'
+import { KindTile } from './KindTile'
 
 export type TaskRowProps = {
   item: TaskItem

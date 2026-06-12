@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useEntityDelete } from '@/hooks/entity'
-import { tasksListKeyPrefix } from '@/modules/tasks/api'
+import { tasksListKeyPrefix } from '@/modules/tasks/keys'
 
 import { patientsListKeyPrefix, softDeletePatient } from '../api'
 import type { PatientRow } from '../types'

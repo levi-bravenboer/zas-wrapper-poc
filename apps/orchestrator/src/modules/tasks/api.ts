@@ -1,12 +1,7 @@
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
-
 import { api } from '@/lib/api/client'
 import { apiError } from '@/lib/api/errors'
 
 import type { TaskItem } from './types'
-
-export const TASKS_PATH = '/tasks'
-export const tasksListKeyPrefix = ['tasks', TASKS_PATH] as const
 
 export async function fetchTasks(): Promise<TaskItem[]> {
   // page_size=100 (ListQuery max) — one request renders the whole 30-day
@@ -23,13 +18,6 @@ export async function fetchTasks(): Promise<TaskItem[]> {
     console.warn(`tasks list truncated: showing ${data.items.length} of ${data.total} items`)
   }
   return data.items
-}
-
-export function useTasksQuery(): UseQueryResult<TaskItem[], Error> {
-  return useQuery({
-    queryKey: tasksListKeyPrefix,
-    queryFn: fetchTasks,
-  })
 }
 
 /**
@@ -49,15 +37,4 @@ export async function fetchTaskById(taskId: string): Promise<TaskItem> {
     throw apiError('Task fetch failed', response.status)
   }
   return data
-}
-
-export function taskQueryKey(taskId: string): readonly unknown[] {
-  return [...tasksListKeyPrefix, taskId] as const
-}
-
-export function useTaskQuery(taskId: string): UseQueryResult<TaskItem, Error> {
-  return useQuery({
-    queryKey: taskQueryKey(taskId),
-    queryFn: () => fetchTaskById(taskId),
-  })
 }
