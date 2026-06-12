@@ -59,8 +59,15 @@ const FormConfig = z.object({
   questions: z.array(FormQuestion).default([]),
 })
 
+export const DECISION_MODES = ['xor', 'and'] as const
+
+// Slot #2 §5: a DecisionBlock declares `question` + typed `outputs`
+// (the keys downstream `decision_output` rules point at) + firing
+// `mode`. The legacy `criterion` field is retired.
 const DecisionConfig = z.object({
-  criterion: z.string().optional(),
+  question: z.string().min(1).max(500).optional(),
+  outputs: z.array(z.string().min(1).max(64)).default([]),
+  mode: z.enum(DECISION_MODES).optional(),
 })
 
 const MilestoneConfig = z.object({

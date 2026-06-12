@@ -76,7 +76,7 @@ export function blockSemanticsSummary(
     case 'form':
       return 'questions' in data && data.questions ? `${data.questions.length}` : undefined
     case 'decision':
-      return 'criterion' in data ? data.criterion : undefined
+      return 'question' in data ? data.question : undefined
     case 'milestone':
       return 'note' in data ? data.note : undefined
     case 'wait':

@@ -116,9 +116,14 @@ describe('parseBlockConfig — valid configs round-trip', () => {
     expect(parsed.context_mapping).toEqual({})
   })
 
-  it('parses a decision config', () => {
-    const parsed = parseBlockConfig(fakeBlock({ criterion: 'pijnscore >= 4' }), 'decision')
-    expect(parsed.criterion).toBe('pijnscore >= 4')
+  it('parses a decision config with outputs + mode', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({ question: 'Herstel volgens plan?', outputs: ['goed', 'onvoldoende'], mode: 'xor' }),
+      'decision',
+    )
+    expect(parsed.question).toBe('Herstel volgens plan?')
+    expect(parsed.outputs).toEqual(['goed', 'onvoldoende'])
+    expect(parsed.mode).toBe('xor')
   })
 
   it('parses a milestone config', () => {
@@ -177,7 +182,7 @@ describe('AnyBlockConfig — type coverage smoke', () => {
       task: { assignee: 'caregiver' },
       message: { channel: 'email' },
       form: { questions: [] },
-      decision: { criterion: 'x' },
+      decision: { question: 'x', outputs: ['ja', 'nee'] },
       milestone: { note: 'm' },
       wait: { event_type: 'lab_result' },
       pathway_link: {

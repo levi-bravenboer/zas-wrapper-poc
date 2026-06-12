@@ -51,7 +51,7 @@ describe('blockSemanticsSummary', () => {
       },
       '2',
     ],
-    ['decision', { criterion: 'risk_score' }, 'risk_score'],
+    ['decision', { question: 'Risico hoog?' }, 'Risico hoog?'],
     ['milestone', { note: 'baseline' }, 'baseline'],
     ['wait', { event_type: 'pathology_report' }, 'pathology_report'],
     ['pathway_link', { mode: 'blocking' }, 'blocking'],
