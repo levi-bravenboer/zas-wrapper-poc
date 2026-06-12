@@ -10,12 +10,14 @@
     "body": "Probeer de pagina te vernieuwen"
   },
   "due": {
+    "overdue": "verlopen {{time}}",
     "today": "vandaag {{time}}",
     "tomorrow": "morgen {{time}}",
     "in_days_one": "over {{count}} dag",
     "in_days_other": "over {{count}} dagen"
   },
   "group": {
+    "overdue": "Verlopen",
     "today": "Vandaag",
     "tomorrow": "Morgen"
   },

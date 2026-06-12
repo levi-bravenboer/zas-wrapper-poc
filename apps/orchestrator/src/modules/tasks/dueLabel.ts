@@ -25,6 +25,7 @@ function deltaDays(dueAtIso: string, now: Date): number {
 /**
  * Localised "due-at" copy for a task row.
  *
+ * Past day → "verlopen"
  * Today → "vandaag {time}"
  * Tomorrow → "morgen {time}"
  * Further out → "over {n} dagen"
@@ -33,7 +34,10 @@ export function dueLabel(t: TFunction, dueAtIso: string, now: Date = new Date())
   const due = new Date(dueAtIso)
   const delta = deltaDays(dueAtIso, now)
 
-  if (delta <= 0) {
+  if (delta < 0) {
+    return t('tasks:due.overdue', { time: timeFormatter.format(due) })
+  }
+  if (delta === 0) {
     return t('tasks:due.today', { time: timeFormatter.format(due) })
   }
   if (delta === 1) {
@@ -51,7 +55,8 @@ export function dueLabel(t: TFunction, dueAtIso: string, now: Date = new Date())
  */
 export function dayGroupLabel(t: TFunction, dueAtIso: string, now: Date = new Date()): string {
   const delta = deltaDays(dueAtIso, now)
-  if (delta <= 0) return t('tasks:group.today')
+  if (delta < 0) return t('tasks:group.overdue')
+  if (delta === 0) return t('tasks:group.today')
   if (delta === 1) return t('tasks:group.tomorrow')
   return dayFormatter.format(new Date(dueAtIso))
 }
