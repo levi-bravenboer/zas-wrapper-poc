@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 
 import { sortByOrd } from '@/lib/utils/ordinal'
 
-import { LANE_ROW_HEIGHT } from '../canvasLayout'
 import { useAutosavePathway } from '../hooks/useAutosavePathway'
 import { useBuilderKeyboard } from '../hooks/useBuilderKeyboard'
 import type { ReadOnlyVariant } from '../hooks/useResolvedVersion'
@@ -32,7 +31,6 @@ import { DeletePathwayDialog } from './DeletePathwayDialog'
 import { BlockDialog, type BlockDraft } from './dialog/BlockDialog'
 import { ConfirmDeleteBlockDialog } from './dialog/ConfirmDeleteBlockDialog'
 import { BuilderDock } from './dock/BuilderDock'
-import { EdgeInspector } from './drawer/EdgeInspector'
 import { GeschiedenisDrawer } from './drawer/GeschiedenisDrawer'
 import { ReadOnlyBanner } from './shell/ReadOnlyBanner'
 import { BuilderSubbar } from './subbar/BuilderSubbar'
@@ -169,10 +167,11 @@ function Inner({
         blockType: pendingAddType,
         phaseId: draft.phaseId,
         laneId: draft.laneId,
-        // Placeholder coordinates — the § C3 auto-layout pass owns
-        // placement; authored x/y are ignored by the canvas.
-        x: 70,
-        y: LANE_ROW_HEIGHT / 2 - 32,
+        // Sentinel (0, 0) = "no manual position yet" — the § C3
+        // auto-layout pass owns placement until the author drags
+        // the block to a new spot.
+        x: 0,
+        y: 0,
       })
       dispatch({
         type: 'add-block',
@@ -184,6 +183,10 @@ function Inner({
           timing_policy: draft.timingPolicy,
         } as typeof base,
       })
+      // add-block auto-selects the new block, which would immediately
+      // pop the edit dialog — clear the selection so the author lands
+      // back on the canvas after "Voeg toe".
+      dispatch({ type: 'select', selection: { kind: 'none' } })
       setPendingAddType(null)
     },
     [pendingAddType, dispatch],
@@ -233,20 +236,6 @@ function Inner({
   const selectedBlockBranches = selectedBlock
     ? branches.filter((b) => b.block_id === selectedBlock.id)
     : []
-  const selectedEdge = (() => {
-    const sel = state.selection
-    if (sel.kind !== 'edge') return null
-    // `DerivedEdge` has no row id (slot #2 §3 — edges are computed
-    // from `input_logic`); reuse the synthetic id `useFlowEdges`
-    // composes from the producer / consumer / predicate triple.
-    return (
-      edges.find(
-        (e) =>
-          `${e.source_block_id ?? 'marker'}->${e.target_block_id}:${e.predicate}` === sel.edgeId,
-      ) ?? null
-    )
-  })()
-
   return (
     <div
       data-slot="pathway-builder-shell"
@@ -352,12 +341,6 @@ function Inner({
                 />
               )
             })()}
-          {selectedEdge && (
-            <EdgeInspector
-              edge={selectedEdge}
-              onClose={() => dispatch({ type: 'select', selection: { kind: 'none' } })}
-            />
-          )}
         </BuilderFlushProvider>
       </main>
       <GeschiedenisDrawer open={historyOpen} onOpenChange={setHistoryOpen} pathwayId={pathway.id} />

@@ -11,8 +11,6 @@ import {
   type PathwayBlockType,
   type PathwayTimingValue,
 } from '../../types'
-import type { BuilderSelection } from '../../useBuilderState'
-
 import type { SmoothstepEdgeData } from './edges/SmoothstepEdge'
 
 type Params = {
@@ -20,7 +18,6 @@ type Params = {
   blocks: PathwayBlock[]
   blockTypes: PathwayBlockType[]
   timingValues: PathwayTimingValue[]
-  selection: BuilderSelection
 }
 
 // Chain slot #2 §3.3 — edges arrive as `DerivedEdge` projections
@@ -32,7 +29,6 @@ export function useFlowEdges({
   edges,
   blocks,
   blockTypes,
-  selection,
 }: Params): Edge<SmoothstepEdgeData>[] {
   const typesByCode = useMemo(() => new Map(blockTypes.map((t) => [t.type, t])), [blockTypes])
   const blocksById = useMemo(() => indexById(blocks), [blocks])
@@ -58,9 +54,10 @@ export function useFlowEdges({
             variant: shape.variant,
             label: null,
           },
-          selected: selection.kind === 'edge' && selection.edgeId === id,
+          selected: false,
+          selectable: false,
         }
       }),
-    [edges, typesByCode, blocksById, selection],
+    [edges, typesByCode, blocksById],
   )
 }

@@ -301,9 +301,6 @@
     "zoomOut": "Uitzoomen",
     "label": "Overzicht"
   },
-  "entry": {
-    "badge": "START"
-  },
   "blockType": {
     "appointment": "Afspraak",
     "decision": "Beslissing",
@@ -349,7 +346,7 @@
   "canvas": {
     "label": "Zorgpad-canvas",
     "emptyTitle": "Begin met een blok",
-    "emptyBody": "Sleep een blok uit het palet hieronder of klik om er één toe te voegen.",
+    "emptyBody": "Klik op een blok in het palet hieronder om er één toe te voegen.",
     "emptyNoScaffoldTitle": "Voeg een fase toe",
     "emptyNoScaffold": "Klik op + Fase bovenin om je zorgpad op te bouwen.",
     "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst.",

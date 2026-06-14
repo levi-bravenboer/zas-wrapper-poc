@@ -5,7 +5,6 @@ export const EDGE_HOVER_STROKE_BUMP = 1.25
 export const EDGE_INTERACTION_WIDTH = 20
 
 export const HANDLE_SIZE = 11
-export const HANDLE_BORDER_WIDTH = 1.5
 export const HANDLE_OFFSET = -Math.round(HANDLE_SIZE / 2)
 export const BRANCH_HANDLE_OFFSET_PCT = 22
 

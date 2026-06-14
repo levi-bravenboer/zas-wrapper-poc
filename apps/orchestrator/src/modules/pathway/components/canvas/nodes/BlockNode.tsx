@@ -48,7 +48,6 @@ export type BlockNodeData = {
   blockType: PathwayBlockType | null
   lane: PathwayLane | null
   duration: PathwayTimingValue | null
-  isEntry: boolean
   /** Pathway-completion § C2.5: hover-X delete affordance → confirm dialog. */
   onRequestDelete?: (blockId: string) => void
 }
@@ -129,21 +128,6 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
           )}
         </span>
       </div>
-      {data.isEntry && (
-        <span
-          role="status"
-          aria-label={t('entry.badge')}
-          className="absolute -top-px -left-px z-[5] px-[7px] py-[3px] text-[9px] font-bold uppercase tracking-[0.09em] text-white"
-          style={{
-            background: 'var(--color-primary)',
-            borderTopLeftRadius: 6,
-            borderBottomRightRadius: 6,
-          }}
-        >
-          {t('entry.badge')}
-        </span>
-      )}
-
       <BlockNodeHandles isBranch={isBranch} />
     </div>
   )

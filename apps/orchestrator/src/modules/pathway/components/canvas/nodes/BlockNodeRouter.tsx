@@ -6,6 +6,7 @@ import { LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
 import { NestedPathwayBlockNode } from './internal/nestedPathway'
 import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathwayBlockNode'
+import { StartBlockNode, type StartFlowNode } from './StartBlockNode'
 
 /**
  * xyflow node-type dispatcher.
@@ -28,6 +29,9 @@ function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
   // Slot #2 §6 retired the legacy `type` envelope field; dispatch
   // solely on the typed `kind` discriminator.
   const kind = props.data.block.kind
+  if (kind === 'start') {
+    return <StartBlockNode {...(props as NodeProps<StartFlowNode>)} />
+  }
   if (kind === 'external_program') {
     // reason: variance erasure between two heterogeneous xyflow node-data
     // shapes that share the same xyflow type key. `LusciiProgramBlockNodeData`

@@ -13,10 +13,12 @@ type CanvasHandlers = {
   onPaneClick: () => void
 }
 
-// Pathway-completion § C2.2: the canvas is read-only. Block positions
-// come from the auto-layout pass (`computeBlockLayout`), edges derive
-// from `input_logic` server-side. The only canvas interactions left are
-// selection (open dialog / inspector) and keyboard remove.
+// Pathway-completion § C2.2: blocks may be re-aligned within their
+// (phase, lane) cell — the drag stop handler lives in
+// `BuilderCanvasFrame`. Selection routes to the dialog; keyboard
+// remove cascades through `delete-block`. Edges are derived from
+// `input_logic` server-side and are not selectable, deletable, or
+// draggable.
 export function useCanvasHandlers({ dispatch }: Options): CanvasHandlers {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -30,17 +32,10 @@ export function useCanvasHandlers({ dispatch }: Options): CanvasHandlers {
     [dispatch],
   )
 
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
-      for (const c of changes) {
-        if (c.type === 'select' && c.selected) {
-          dispatch({ type: 'select', selection: { kind: 'edge', edgeId: c.id } })
-        }
-        if (c.type === 'remove') dispatch({ type: 'delete-edge', edgeId: c.id })
-      }
-    },
-    [dispatch],
-  )
+  // Edges are derived from `input_logic` server-side. They are not
+  // selectable, not deletable, not draggable — no-op handler so
+  // xyflow has somewhere to call into without throwing.
+  const onEdgesChange = useCallback((_changes: EdgeChange[]) => {}, [])
 
   const onPaneClick = useCallback(() => {
     dispatch({ type: 'select', selection: { kind: 'none' } })

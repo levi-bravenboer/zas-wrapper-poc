@@ -10,6 +10,12 @@ export type BlockDimensions = { width: number; height: number }
 
 const NATIVE_DIMENSIONS: BlockDimensions = { width: BLOCK_WIDTH, height: BLOCK_HEIGHT }
 
+// Start blocks render as a circle (no subtitle, no entry handle). The
+// smaller footprint keeps the visual marker compact at the head of a
+// pathway — the layout pass keeps the next column at BLOCK_WIDTH +
+// gutter away, so downstream blocks line up unchanged.
+const START_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
+
 // ---- Luscii Program size computer ----------------------------------------
 // Auto-scales the Luscii block based on the resolved program's layout density
 // (phases × lanes). Range 360×200 → 540×300. See
@@ -102,6 +108,7 @@ export function getBlockDimensions(
   block: PathwayBlock,
   blockType: PathwayBlockType | null,
 ): BlockDimensions {
+  if (block.kind === 'start') return START_DIMENSIONS
   if (
     blockType?.source === 'external' &&
     blockType.provider === LUSCII_PROVIDER &&

@@ -95,11 +95,13 @@ function initialDraft(
   }
 }
 
-// Pathway-completion § C4: THE authoring surface. Title + phase picker +
-// lane picker (multi-kind only) + per-kind config + input_logic rule
-// composer + timing_policy editor (hidden where the publish gate
-// forbids timing). Submit applies the whole draft in one dispatch;
-// cancel leaves the version untouched.
+// Pathway-completion § C4: THE authoring surface. Title + phase picker
+// + per-kind config + input_logic rule composer + timing_policy editor
+// (hidden where the publish gate forbids timing). The lane is derived
+// from the kind's allowed lane kinds — no picker (user decision,
+// 2026-06-12); the first allowed lane wins for multi-kind blocks.
+// Submit applies the whole draft in one dispatch; cancel leaves the
+// version untouched.
 export function BlockDialog({
   open,
   mode,
@@ -206,70 +208,32 @@ export function BlockDialog({
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="block-dialog-phase"
-                  className="mb-1 block text-[12px] font-medium text-foreground"
-                >
-                  {t('blockDialog.phase', { defaultValue: 'Fase' })}
-                </label>
-                <Select
-                  value={draft.phaseId}
-                  onValueChange={(phaseId) => setDraft({ ...draft, phaseId })}
-                >
-                  <SelectTrigger id="block-dialog-phase">
-                    <SelectValue
-                      placeholder={t('blockDialog.phasePlaceholder', {
-                        defaultValue: 'Kies fase',
-                      })}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortByOrd(phases).map((phase) => (
-                      <SelectItem key={phase.id} value={phase.id}>
-                        {phase.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label
-                  htmlFor="block-dialog-lane"
-                  className="mb-1 block text-[12px] font-medium text-foreground"
-                >
-                  {t('blockDialog.lane', { defaultValue: 'Lane' })}
-                </label>
-                {allowedLanes.length > 1 ? (
-                  <Select
-                    value={draft.laneId}
-                    onValueChange={(laneId) => setDraft({ ...draft, laneId })}
-                  >
-                    <SelectTrigger id="block-dialog-lane">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allowedLanes.map((lane) => (
-                        <SelectItem key={lane.id} value={lane.id}>
-                          {t(`lane.${lane.lane_kind_code}`, { defaultValue: lane.label })}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p
-                    id="block-dialog-lane"
-                    className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-[13px] text-muted-foreground"
-                  >
-                    {allowedLanes[0]
-                      ? t(`lane.${allowedLanes[0].lane_kind_code}`, {
-                          defaultValue: allowedLanes[0].label,
-                        })
-                      : t('blockDialog.noLane', { defaultValue: 'Geen geschikte lane' })}
-                  </p>
-                )}
-              </div>
+            <div>
+              <label
+                htmlFor="block-dialog-phase"
+                className="mb-1 block text-[12px] font-medium text-foreground"
+              >
+                {t('blockDialog.phase', { defaultValue: 'Fase' })}
+              </label>
+              <Select
+                value={draft.phaseId}
+                onValueChange={(phaseId) => setDraft({ ...draft, phaseId })}
+              >
+                <SelectTrigger id="block-dialog-phase">
+                  <SelectValue
+                    placeholder={t('blockDialog.phasePlaceholder', {
+                      defaultValue: 'Kies fase',
+                    })}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortByOrd(phases).map((phase) => (
+                    <SelectItem key={phase.id} value={phase.id}>
+                      {phase.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </section>
 
@@ -331,7 +295,7 @@ export function BlockDialog({
           className="flex-row items-center border-t px-5 py-3"
           style={{ borderColor: 'var(--hairline)' }}
         >
-          {mode === 'edit' && onDelete && (
+          {mode === 'edit' && onDelete && blockType.semantics !== 'start' && (
             <Button
               type="button"
               variant="ghost"

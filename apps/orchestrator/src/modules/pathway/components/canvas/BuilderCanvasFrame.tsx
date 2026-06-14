@@ -1,4 +1,4 @@
-import { applyNodeChanges, Background, BackgroundVariant, ReactFlow, ViewportPortal, type NodeChange } from '@xyflow/react'
+import { applyNodeChanges, Background, BackgroundVariant, ReactFlow, ViewportPortal, type NodeChange, type Node } from '@xyflow/react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -51,10 +51,13 @@ type Props = {
 const NODE_TYPES = { block: BlockNodeRouter } as const
 const EDGE_TYPES = { smoothstep: SmoothstepEdge } as const
 
-// Pathway-completion § C2.2: the canvas is a read-only render of the
-// derived layout. No block dragging, no edge dragging, no drop targets —
-// authoring happens in the block dialog; placement comes from
-// `computeBlockLayout`; edges derive from `input_logic` server-side.
+// Pathway-completion § C2.2: the canvas renders the derived layout.
+// Blocks may be re-aligned within their (phase, lane) cell — xyflow
+// clamps each node to a per-node `extent` so the author can never
+// drag a block out of its lane or phase. Edges derive from
+// `input_logic` server-side and never change on drag. Authoring
+// (kind, config, input_logic, timing_policy) still happens in the
+// block dialog; auto-layout owns placement until the author drags.
 export function BuilderCanvasFrame({
   phases,
   lanes,
@@ -100,7 +103,6 @@ export function BuilderCanvasFrame({
     lanes: lanesOnCanvas,
     blockTypes,
     timingValues,
-    edges,
     geometry,
     layout,
     selection,
@@ -114,7 +116,7 @@ export function BuilderCanvasFrame({
     setNodes(derivedNodes)
   }
 
-  const flowEdges = useFlowEdges({ edges, blocks, blockTypes, timingValues, selection })
+  const flowEdges = useFlowEdges({ edges, blocks, blockTypes, timingValues })
 
   const { onNodesChange: dispatchNodesChange, onEdgesChange, onPaneClick } = useCanvasHandlers({
     dispatch,
@@ -132,6 +134,23 @@ export function BuilderCanvasFrame({
       dispatchNodesChange(changes)
     },
     [dispatchNodesChange],
+  )
+
+  // Re-align within the (phase, lane) cell. xyflow clamps drag via
+  // the per-node `extent` set in useFlowNodes; the final position is
+  // persisted relative to the cell origin so authored x/y survives
+  // the round-trip (and lane / phase resize stays consistent).
+  const onNodeDragStop = useCallback(
+    (_event: unknown, node: Node<BlockFlowNode['data']>) => {
+      const block = node.data.block
+      const phaseLeft = geometry.phaseX(block.phase_id)
+      const laneTop = geometry.laneY(block.lane_id)
+      const x = Math.round(node.position.x - phaseLeft)
+      const y = Math.round(node.position.y - laneTop)
+      if (x === block.x && y === block.y) return
+      dispatch({ type: 'move-block', blockId: block.id, x, y })
+    },
+    [dispatch, geometry],
   )
 
   const scaffoldPresent = !!phases.length && !!lanes.length
@@ -157,9 +176,10 @@ export function BuilderCanvasFrame({
         zoomOnScroll={scaffoldPresent}
         zoomOnPinch={scaffoldPresent}
         zoomOnDoubleClick={scaffoldPresent}
-        nodesDraggable={false}
+        nodesDraggable={true}
         nodesConnectable={false}
         selectNodesOnDrag={false}
+        onNodeDragStop={onNodeDragStop}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={inkAlpha(0.06)} />

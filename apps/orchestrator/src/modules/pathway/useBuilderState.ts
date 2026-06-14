@@ -11,10 +11,7 @@ import type {
   PathwayVersionDefinition,
 } from './types'
 
-export type BuilderSelection =
-  | { kind: 'none' }
-  | { kind: 'block'; blockId: string }
-  | { kind: 'edge'; edgeId: string }
+export type BuilderSelection = { kind: 'none' } | { kind: 'block'; blockId: string }
 
 type EditableSnapshot = {
   blocks: PathwayBlock[]
@@ -36,9 +33,6 @@ export type BuilderAction =
   | { type: 'patch-block'; blockId: string; patch: Partial<PathwayBlock> }
   | { type: 'add-block'; block: PathwayBlock }
   | { type: 'delete-block'; blockId: string }
-  | { type: 'add-edge'; edge: PathwayEdge }
-  | { type: 'patch-edge'; edgeId: string; patch: Partial<PathwayEdge> }
-  | { type: 'delete-edge'; edgeId: string }
   | { type: 'add-phase'; phase: PathwayPhase }
   | { type: 'reorder-phase'; phaseId: string; toIndex: number }
   | { type: 'resize-phase'; phaseId: string; width: number }
@@ -121,17 +115,6 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         history,
         selection: { kind: 'none' },
       }
-    }
-    case 'add-edge':
-    case 'patch-edge':
-    case 'delete-edge': {
-      // Edge reducers retired in chain slot #2 §3 — edges are
-      // computed from `block.input_logic` on read. The slot #7 rule
-      // inspector will dispatch `patch-block` against the target
-      // block's `input_logic` instead. Until that lands, these
-      // actions are accepted as no-ops so callsites compile while
-      // we migrate inspectors kind-by-kind.
-      return state
     }
     case 'add-phase': {
       const history = pushHistory(state)
@@ -277,17 +260,6 @@ function preserveSelection(
 ): BuilderSelection {
   if (current.kind === 'block') {
     return (next.blocks ?? []).some((b) => b.id === current.blockId) ? current : { kind: 'none' }
-  }
-  if (current.kind === 'edge') {
-    // `DerivedEdge` has no row id (slot #2 §3). Match the synthetic
-    // id `useFlowEdges` composes from the producer / consumer /
-    // predicate triple.
-    return (next.edges ?? []).some(
-      (e) =>
-        `${e.source_block_id ?? 'marker'}->${e.target_block_id}:${e.predicate}` === current.edgeId,
-    )
-      ? current
-      : { kind: 'none' }
   }
   return current
 }
