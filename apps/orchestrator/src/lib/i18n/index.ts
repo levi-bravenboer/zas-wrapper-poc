@@ -13,7 +13,6 @@ import nav from './locales/nl/nav.json'
 import organisationsAdminUi from './locales/nl/organisations-admin-ui.json'
 import pathway from './locales/nl/pathway.json'
 import patientProfile from './locales/nl/patient-profile.json'
-import patients from './locales/nl/patients.json'
 import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
@@ -47,7 +46,6 @@ void i18next.use(initReactI18next).init({
     'organisations-admin-ui',
     'pathway',
     'patient-profile',
-    'patients',
     'practitioner-roles-admin-ui',
     'shell',
     'smart',
@@ -69,7 +67,6 @@ void i18next.use(initReactI18next).init({
       'organisations-admin-ui': organisationsAdminUi,
       pathway,
       'patient-profile': patientProfile,
-      patients,
       'practitioner-roles-admin-ui': practitionerRolesAdminUi,
       shell,
       smart,
