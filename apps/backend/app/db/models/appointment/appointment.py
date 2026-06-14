@@ -50,6 +50,7 @@ class Appointment(TenantOwnedEntity):
         sa.CheckConstraint("ends_at > starts_at", name="ck_appointments_ends_after_starts"),
         sa.Index(
             "ix_appointments_patient_booked_starts_at",
+            "tenant_id",
             "patient_id",
             "starts_at",
             postgresql_where=sa.text("status = 'booked' AND deleted_at IS NULL"),

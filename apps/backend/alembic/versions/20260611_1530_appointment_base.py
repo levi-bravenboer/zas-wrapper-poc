@@ -125,7 +125,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_appointments_patient_booked_starts_at",
         "appointments",
-        ["patient_id", "starts_at"],
+        ["tenant_id", "patient_id", "starts_at"],
         unique=False,
         postgresql_where=sa.text("status = 'booked' AND deleted_at IS NULL"),
     )
