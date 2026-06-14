@@ -52,7 +52,9 @@ The backend SHALL include a pure module `app/services/luscii/archetype.py` imple
 4. Else if `value` is a non-empty string AND `unit` is empty AND `response_ids` is empty → `free_text`.
 5. Otherwise → `unknown`.
 
-The `ORDINAL_UNITS` allowlist SHALL include at minimum the Luscii catalogue strings observed today: `Punten`, `punten`, `Punkte`, `Points`, `points`, `Score`, `score`, `NYHA klasse`, `NYHA`, `Sterren`, `sterren`, `Klachten`, `klachten`. New unit strings observed in later catalogue scans MAY be added to the allowlist in subsequent changes.
+The `ORDINAL_UNITS` allowlist SHALL include at minimum the Luscii catalogue strings observed today: `Punten`, `punten`, `Punkte`, `Points`, `points`, `Score`, `score`, `NYHA klasse`, `NYHA`, `Sterren`, `sterren`. `Klachten`/`klachten` is intentionally OMITTED because observed catalogue usage is more often a chip-stream questionnaire (`categorical` via `response_ids`) than a numeric score. New unit strings observed in later catalogue scans MAY be added to the allowlist in subsequent changes.
+
+NYHA klasse values arrive as roman numerals (`"II"`, `"III"`, …) which the numeric parser does not recognise; until a `_parse_roman()` follow-up lands (see D-NYHA-DEFER in design.md), NYHA values fall through rule 2 (numeric parse fails) AND rule 3 (numeric parse fails) AND rule 4 (`unit` is non-empty, blocking `free_text`) and SHALL classify as `unknown`. The allowlist keeps `NYHA klasse`/`NYHA` so the roman-numeral follow-up is a one-classifier-edit change.
 
 The classifier SHALL NOT inspect the value to derive any clinical interpretation. It SHALL NOT compute thresholds, ranges, severity, urgency, or any value-derived signal. The classifier is structural metadata only.
 
@@ -70,6 +72,11 @@ The classifier SHALL NOT inspect the value to derive any clinical interpretation
 
 - **WHEN** the input is `value=" 82,5 "`, `response_ids=[]`, `unit="kg"`
 - **THEN** the classifier MUST return `numeric` (whitespace stripped, comma parsed as decimal)
+
+#### Scenario: Roman-numeral NYHA value falls through to `unknown` in v1
+
+- **WHEN** the input is `value="II"`, `response_ids=[]`, `unit="NYHA klasse"`
+- **THEN** the classifier MUST return `unknown` (the roman-numeral parser is deferred per D-NYHA-DEFER)
 
 ---
 

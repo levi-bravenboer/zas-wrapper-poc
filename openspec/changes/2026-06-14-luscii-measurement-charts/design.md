@@ -229,6 +229,64 @@ The `apps/orchestrator/AGENTS.md` shadcn primitive list is intentionally closed;
 
 **Bundle cost:** ≈110 KB gzipped (Recharts + shadcn wrapper). Acceptable for a default-tab content panel.
 
+### D-DEMO-FOCUS — v1 polish targets weight + blood pressure
+
+The wire-side machinery (5 archetypes, series projection, discriminated points) ships in full so any catalogue item Luscii returns renders without a runtime crash. **Demo polish + smoke-test coverage focuses on `Gewicht` and `Bloeddrukmeting`** — the two clinically-canonical items every Luscii patient on a `Hartfalen Monitor`-style programme produces. Other instrument types (NYHA klasse, Klachten dagboek, Welbevinden score, free-text questionnaires) render correctly but receive less iteration in v1; follow-up changes refine their visuals based on real-data observation.
+
+**Practical consequences:**
+
+- Backend tests cover every archetype (correctness invariants), but the end-to-end smoke targets weight + BP.
+- The HTML prototype keeps the 4 archetype examples (so reviewers see the full range) but the locked-version visual decisions are biased toward numeric line charts.
+- NYHA klasse and similar roman-numeral ordinal items are NOT special-cased in v1 (see D-NYHA-DEFER). They land as `unknown` until a real demo needs them.
+
+### D-NYHA-DEFER — Roman-numeral ordinals fall through to `unknown` in v1
+
+`NYHA klasse` values arrive as `"I"`, `"II"`, `"III"`, `"IV"`. The classifier's `parse_numeric` step does not recognise roman numerals, so even though `NYHA klasse` is in `ORDINAL_UNITS`, an NYHA value lands at rule 5 (`unknown`) — no `response_ids`, no numeric parse, no `free_text` (because `unit` is present).
+
+**v1 acceptance:** NYHA values render as a dated `<UnknownLog>` list. Readable, not pretty.
+
+**Why defer:** roman-numeral parsing is one helper but classifier complexity grows quickly (locale variants, lowercase, dotted forms, ranges like `II-III`). The cost is non-trivial for a corner case that the weight+BP demo does not exercise (D-DEMO-FOCUS). A follow-up change can add `_parse_roman()` once an actual NYHA demo patient is in scope.
+
+**ORDINAL_UNITS amendment:** drop `Klachten` from the initial allowlist — observed catalogue usage is more often a chip-stream questionnaire (categorical) than a numeric score. Keep `Punten/Punkte/Points/points/Score/score/Sterren/sterren/NYHA klasse/NYHA` so the allowlist is ready when roman parsing lands.
+
+### D-PALETTE — ZAS teal + 4 derived accents for multi-series charts
+
+Multi-series charts use a 5-slot palette declared as CSS variables in `apps/orchestrator/src/styles/tokens.css`:
+
+```css
+:root {
+  --chart-series-1: #266b5e; /* ZAS teal — primary */
+  --chart-series-2: #c7705a; /* coral — sys/dia second line */
+  --chart-series-3: #d4a13a; /* amber */
+  --chart-series-4: #4a5b6c; /* slate */
+  --chart-series-5: #7a5cb0; /* violet */
+}
+```
+
+Chart components reference the CSS vars by index (`var(--chart-series-1)`, ...). Light theme only at PoC — when dark mode lands the same indices get dark-theme overrides.
+
+**Why CSS vars, not Tailwind classes:** chart engines apply colours via the SVG `stroke`/`fill` attribute, not via Tailwind classes. CSS vars compose cleanly with both the theme system and `color-mix()` for soft backgrounds.
+
+**Cap:** charts requesting a 6th series should never happen in real data (Luscii instruments rarely emit more than 3-4 items per measurement). If it ever does, the FE falls back to D-MULTI-SERIES's "stack as separate charts" split rule.
+
+### D-SPARSE — Dots-only for series with 1 or 2 points
+
+Numeric/ordinal series with fewer than 3 points render points-only — no connecting line. The card header still shows the last-value badge. 
+
+- 1 point: a single dot at its timestamp on the x-axis.
+- 2 points: two dots, no connecting line (a two-point line reads as a trend that doesn't exist).
+- ≥ 3 points: standard line (+ dots at each point for hover targets).
+
+**Why:** a connecting line between 1 or 2 points implies a trajectory the data does not support. Dots-only is honest. The sparkline rule already hides at < 2 points; the in-card chart shares the same threshold-driven behaviour but renders dots when ≥ 1.
+
+### D-FREETEXT-TRUNCATE — Truncate to ~140 chars with `meer tonen` toggle
+
+`<FreeTextLog>` truncates each entry's `text` at 140 characters. If the source text is longer, the truncated render appends an ellipsis and shows a `meer tonen` ↔ `minder tonen` toggle that expands/collapses just that entry. The card body height stays scannable for patients with verbose questionnaire answers.
+
+Truncation respects word boundaries (truncate at the last whitespace before the 140-character mark; fall back to hard truncation only if no whitespace exists in the first 140 chars).
+
+i18n keys: `patient-profile:charts.free_text.show_more` / `patient-profile:charts.free_text.show_less`.
+
 ### D-PROTOTYPE — HTML prototypes first, lock the visual
 
 Per the project's design-phase rule and the patient-inbox precedent (12 HTML iterations before locking v12), measurement-charts ships with `prototypes/charts/v1.html` ... `vN.html`. Each iteration is a new `vN.html`; never edit a prior version.
