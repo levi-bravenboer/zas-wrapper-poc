@@ -1,15 +1,15 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { I18nextProvider } from 'react-i18next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { i18n } from '@/lib/i18n'
+import { renderWithProviders } from '@/test/renderWithProviders'
 import type { LusciiPatientData } from '@/modules/patient/types'
 
 import { MeasurementCharts } from '../MeasurementCharts'
 
-const { useLusciiDataMock } = vi.hoisted(() => ({
+const { useLusciiDataMock, refetchMock } = vi.hoisted(() => ({
   useLusciiDataMock: vi.fn(),
+  refetchMock: vi.fn(),
 }))
 
 vi.mock('@/modules/patient/hooks', () => ({
@@ -18,16 +18,12 @@ vi.mock('@/modules/patient/hooks', () => ({
   useUnlinkLuscii: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
 }))
 
-function renderWithI18n(): void {
-  render(
-    <I18nextProvider i18n={i18n}>
-      <MeasurementCharts patientId="pat-1" />
-    </I18nextProvider>,
-  )
+function renderPanel(): void {
+  renderWithProviders(<MeasurementCharts patientId="pat-1" />)
 }
 
 function stub<T>(data: T) {
-  return { data, isLoading: false, error: null, isError: false, refetch: vi.fn() }
+  return { data, isLoading: false, error: null, isError: false, refetch: refetchMock }
 }
 
 const EMPTY_LINKED: LusciiPatientData = {
@@ -41,9 +37,39 @@ const EMPTY_LINKED: LusciiPatientData = {
   series: [],
 }
 
+const LOADED: LusciiPatientData = {
+  ...EMPTY_LINKED,
+  series: [
+    {
+      series_id: 'abc123def456',
+      instrument_id: 'inst-w',
+      instrument_name: 'Gewicht',
+      item_id: 'item-w',
+      label: 'Gewicht',
+      archetype: 'numeric',
+      unit: 'kg',
+      points: [
+        {
+          observed_at: '2026-06-10T08:00:00Z',
+          archetype: 'numeric',
+          value: 80,
+          program_id: 'prog-1',
+        },
+        {
+          observed_at: '2026-06-13T08:00:00Z',
+          archetype: 'numeric',
+          value: 81,
+          program_id: 'prog-1',
+        },
+      ],
+    },
+  ],
+}
+
 describe('MeasurementCharts', () => {
   beforeEach(() => {
     useLusciiDataMock.mockReset()
+    refetchMock.mockReset()
   })
 
   it('renders skeletons while the query is loading', () => {
@@ -52,41 +78,63 @@ describe('MeasurementCharts', () => {
       isLoading: true,
       error: null,
       isError: false,
-      refetch: vi.fn(),
+      refetch: refetchMock,
     })
-    renderWithI18n()
-    // Skeleton primitive carries `data-slot="skeleton"`; assert the panel
-    // does NOT render any of the loaded-state copy.
+    renderPanel()
+    // No loaded-state copy until data lands.
     expect(screen.queryByText(/geen metingen/i)).toBeNull()
     expect(screen.queryByRole('button', { name: /tonen/i })).toBeNull()
   })
 
-  it('renders the empty-state with the widen CTA when a linked patient has no series in the window', () => {
+  it('renders the empty-state with the widen CTA when a linked patient has no series in the window', async () => {
     useLusciiDataMock.mockReturnValue(stub(EMPTY_LINKED))
-    renderWithI18n()
-    expect(screen.getByText(/geen metingen in deze periode/i)).toBeInTheDocument()
+    renderPanel()
+    expect(await screen.findByText(/geen metingen in deze periode/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /bekijk 90 dagen/i })).toBeInTheDocument()
+  })
+
+  it('renders an instrument card per loaded series', async () => {
+    useLusciiDataMock.mockReturnValue(stub(LOADED))
+    renderPanel()
+    expect(await screen.findByText('Gewicht')).toBeInTheDocument()
+    // Header carries the last-value badge text.
+    expect(screen.getByText(/81 kg/i)).toBeInTheDocument()
+  })
+
+  it('keeps the chrome and offers a retry on a panel-scoped error (D-STATES)', async () => {
+    useLusciiDataMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('boom'),
+      isError: true,
+      refetch: refetchMock,
+    })
+    renderPanel()
+    // WindowSelector stays visible — error must NOT wipe the chrome.
+    expect(await screen.findByRole('button', { name: '30 dagen' })).toBeInTheDocument()
+    expect(screen.getByText(/luscii-gegevens konden niet/i)).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: /opnieuw proberen/i }))
+    expect(refetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('window selector calls the hook with the picked days value', async () => {
     useLusciiDataMock.mockReturnValue(stub(EMPTY_LINKED))
-    renderWithI18n()
-    await userEvent.setup().click(screen.getByRole('button', { name: '90 dagen' }))
-    // Last call must reflect the new days option.
+    renderPanel()
+    const ninetyDays = await screen.findByRole('button', { name: '90 dagen' })
+    await userEvent.setup().click(ninetyDays)
     const last = useLusciiDataMock.mock.calls.at(-1)
     expect(last?.[1]).toEqual({ days: 90 })
   })
 
-  it('shows the programme name when present and the fallback when null', () => {
+  it('shows the programme name when present and the fallback when null', async () => {
     useLusciiDataMock.mockReturnValue(stub({ ...EMPTY_LINKED, program: null }))
-    renderWithI18n()
-    expect(screen.getByText(/geen programma/i)).toBeInTheDocument()
+    renderPanel()
+    expect(await screen.findByText(/geen programma/i)).toBeInTheDocument()
   })
 
-  it('renders the planned-actions disclosure trigger with the count', () => {
+  it('renders the planned-actions disclosure trigger with the count', async () => {
     const data: LusciiPatientData = {
       ...EMPTY_LINKED,
-      // The disclosure trigger reads `.length`; pass minimal but typed stubs.
       planned_actions: [
         { id: 'pa-1', not_before: null, expires_at: null, completed_at: null, created_at: null, self_planned: null, measurement: null },
         { id: 'pa-2', not_before: null, expires_at: null, completed_at: null, created_at: null, self_planned: null, measurement: null },
@@ -96,7 +144,9 @@ describe('MeasurementCharts', () => {
       ],
     }
     useLusciiDataMock.mockReturnValue(stub(data))
-    renderWithI18n()
-    expect(screen.getByRole('button', { name: /geplande acties \(3\) tonen/i })).toBeInTheDocument()
+    renderPanel()
+    expect(
+      await screen.findByRole('button', { name: /geplande acties \(3\) tonen/i }),
+    ).toBeInTheDocument()
   })
 })

@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react'
+import { Inbox, AlertCircle } from 'lucide-react'
 import { type ReactElement, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -48,18 +48,21 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
     )
   }
 
-  // The unconfigured + not-linked + error states stay rendered by the
-  // existing `<LusciiPanel>` so we keep the link UX exactly where it was.
-  if (isNotConfigured || data?.state === 'not_linked' || dataQuery.isError) {
+  // Unconfigured + not-linked stay rendered by the existing `<LusciiPanel>`
+  // so the link UX stays where it was.
+  if (isNotConfigured || data?.state === 'not_linked') {
     return <LusciiPanel patientId={patientId} />
   }
 
-  if (!data) return <LusciiPanel patientId={patientId} />
-
-  const series = data.series ?? []
+  // Generic fetch errors stay PANEL-SCOPED per D-STATES — the rest of the
+  // patient profile keeps rendering. The window selector stays visible so
+  // the caregiver can retry with a different range without leaving the tab.
+  const programmeName = data?.program?.name ?? t('charts.programme.fallback')
+  const showError = dataQuery.isError && !isNotConfigured
+  const series = data?.series ?? []
   const groups = groupByInstrument(series)
   const plannedCount =
-    (data.planned_actions?.length ?? 0) + (data.unmatched_measurements?.length ?? 0)
+    (data?.planned_actions?.length ?? 0) + (data?.unmatched_measurements?.length ?? 0)
 
   return (
     <div className="flex flex-col gap-4">
@@ -68,14 +71,23 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
           <span className="text-xs uppercase tracking-wider text-foreground-muted">
             {t('charts.programme.label')}
           </span>
-          <span className="font-medium">
-            {data.program?.name ?? t('charts.programme.fallback')}
-          </span>
+          <span className="font-medium">{programmeName}</span>
         </div>
         <WindowSelector active={days} onChange={setDays} />
       </header>
 
-      {groups.length === 0 ? (
+      {showError ? (
+        <EmptyState
+          icon={AlertCircle}
+          title={t('charts.error.title')}
+          body={t('charts.error.body')}
+          action={
+            <Button variant="outline" onClick={() => void dataQuery.refetch()}>
+              {t('charts.error.retry')}
+            </Button>
+          }
+        />
+      ) : groups.length === 0 ? (
         <EmptyState
           icon={Inbox}
           title={t('charts.empty.title')}
