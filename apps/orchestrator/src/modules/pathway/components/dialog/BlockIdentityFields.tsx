@@ -2,16 +2,11 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { sortByOrd } from '@/lib/utils/ordinal'
 
 import type { PathwayPhase } from '../../types'
+
+import { OptionsSelect } from './OptionsSelect'
 
 type Props = {
   name: string
@@ -61,22 +56,13 @@ export function BlockIdentityFields({
         >
           {t('blockDialog.phase', { defaultValue: 'Fase' })}
         </label>
-        <Select value={phaseId} onValueChange={onChangePhase}>
-          <SelectTrigger id="block-dialog-phase">
-            <SelectValue
-              placeholder={t('blockDialog.phasePlaceholder', {
-                defaultValue: 'Kies fase',
-              })}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {sortByOrd(phases).map((phase) => (
-              <SelectItem key={phase.id} value={phase.id}>
-                {phase.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <OptionsSelect
+          triggerId="block-dialog-phase"
+          value={phaseId}
+          options={sortByOrd(phases).map((phase) => ({ value: phase.id, label: phase.label }))}
+          onChange={onChangePhase}
+          placeholder={t('blockDialog.phasePlaceholder', { defaultValue: 'Kies fase' })}
+        />
       </div>
     </section>
   )

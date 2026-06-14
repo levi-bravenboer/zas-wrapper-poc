@@ -4,15 +4,10 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 import type { PathwayBlock } from '../../types'
+
+import { OptionsSelect } from './OptionsSelect'
 
 // Typed rule composer over the already-placed blocks
 // (pathway-completion § C4.5). `input_logic` is the single authored
@@ -33,35 +28,39 @@ type PredicateMeta = {
    *  `output_key` for decision_output). `null` when the predicate
    *  carries no extra (if_done). */
   extraField: 'output_key' | 'offset_iso' | 'event_type' | null
-  /** Default value when the predicate is first picked. */
-  extraDefault: string
-  /** i18n key segment for the placeholder. */
-  placeholderKey: 'output' | 'iso' | 'event' | null
+  /** i18n key for the placeholder, or `null` when no translation is
+   *  needed (raw fallback only). */
+  placeholderI18nKey: string | null
+  /** Placeholder text used directly (and as i18n default when a key
+   *  is provided). */
+  placeholderDefault: string
 }
 
 const PREDICATE_META = {
-  if_done: { extraField: null, extraDefault: '', placeholderKey: null },
+  if_done: { extraField: null, placeholderI18nKey: null, placeholderDefault: '' },
   decision_output: {
     extraField: 'output_key',
-    extraDefault: '',
-    placeholderKey: 'output',
+    placeholderI18nKey: 'inputLogic.extraPlaceholder.output',
+    placeholderDefault: 'output (bv. goed)',
   },
   if_not_done_within: {
     extraField: 'offset_iso',
-    extraDefault: 'P14D',
-    placeholderKey: 'iso',
+    placeholderI18nKey: null,
+    placeholderDefault: 'P14D',
   },
-  event: { extraField: 'event_type', extraDefault: '', placeholderKey: 'event' },
+  event: {
+    extraField: 'event_type',
+    placeholderI18nKey: 'inputLogic.extraPlaceholder.event',
+    placeholderDefault: 'event type',
+  },
 } as const satisfies Record<string, PredicateMeta>
 
 type ComposerPredicate = keyof typeof PREDICATE_META
 
 const COMPOSER_PREDICATES = Object.keys(PREDICATE_META) as ComposerPredicate[]
 
-const COMPOSER_PREDICATE_SET = new Set<string>(COMPOSER_PREDICATES)
-
 function isComposerPredicate(value: string): value is ComposerPredicate {
-  return COMPOSER_PREDICATE_SET.has(value)
+  return value in PREDICATE_META
 }
 
 function predicateOf(rule: RuleShape): string {
@@ -108,16 +107,24 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
     if (!first) return
     onChange({
       ...value,
-      rules: [
-        ...rules,
-        { node: first.id, args: buildArgs('if_done', first.id, PREDICATE_META.if_done.extraDefault) },
-      ],
+      rules: [...rules, { node: first.id, args: buildArgs('if_done', first.id, '') }],
     })
   }
 
   function removeRule(index: number) {
     onChange({ ...value, rules: rules.filter((_, i) => i !== index) })
   }
+
+  const aggregatorOptions = [
+    {
+      value: 'all_of',
+      label: t('inputLogic.aggregator.all_of', { defaultValue: 'alle regels (EN)' }),
+    },
+    {
+      value: 'any_of',
+      label: t('inputLogic.aggregator.any_of', { defaultValue: 'minstens één (OF)' }),
+    },
+  ]
 
   return (
     <div className="flex flex-col gap-2">
@@ -128,24 +135,14 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
           })}
         </p>
         {rules.length > 1 && (
-          <Select
+          <OptionsSelect
             value={value.aggregator ?? 'all_of'}
-            onValueChange={(aggregator) =>
+            options={aggregatorOptions}
+            onChange={(aggregator) =>
               onChange({ ...value, aggregator: aggregator as InputLogicShape['aggregator'] })
             }
-          >
-            <SelectTrigger className="h-7 w-auto text-[11px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all_of">
-                {t('inputLogic.aggregator.all_of', { defaultValue: 'alle regels (EN)' })}
-              </SelectItem>
-              <SelectItem value="any_of">
-                {t('inputLogic.aggregator.any_of', { defaultValue: 'minstens één (OF)' })}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            triggerClassName="h-7 w-auto text-[11px]"
+          />
         )}
       </div>
 
@@ -195,6 +192,23 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
   )
 }
 
+type RemoveButtonProps = { onClick: () => void }
+
+function RemoveRuleButton({ onClick }: RemoveButtonProps): ReactElement {
+  const { t } = useTranslation('pathway')
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
+      onClick={onClick}
+    >
+      <Trash2 className="size-3.5" />
+    </Button>
+  )
+}
+
 type ReadOnlyRuleProps = {
   predicate: string
   upstream: PathwayBlock | undefined
@@ -211,21 +225,12 @@ function ReadOnlyRule({
   afterBlock,
   onRemove,
 }: ReadOnlyRuleProps): ReactElement {
-  const { t } = useTranslation('pathway')
   return (
     <div className="flex items-center justify-between rounded-md border bg-muted/40 px-2.5 py-1.5 text-[12px] text-muted-foreground">
       <span>
         {predicate} · {upstream?.name ?? afterBlock}
       </span>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
-        onClick={onRemove}
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
+      <RemoveRuleButton onClick={onRemove} />
     </div>
   )
 }
@@ -249,48 +254,34 @@ function EditableRule({
 }: EditableRuleProps): ReactElement {
   const { t } = useTranslation('pathway')
   const meta = PREDICATE_META[predicate]
-  const placeholderKey = meta.placeholderKey
-  const placeholder =
-    placeholderKey === 'output'
-      ? t('inputLogic.extraPlaceholder.output', { defaultValue: 'output (bv. goed)' })
-      : placeholderKey === 'iso'
-        ? 'P14D'
-        : placeholderKey === 'event'
-          ? t('inputLogic.extraPlaceholder.event', { defaultValue: 'event type' })
-          : ''
+  const placeholder = meta.placeholderI18nKey
+    ? t(meta.placeholderI18nKey, { defaultValue: meta.placeholderDefault })
+    : meta.placeholderDefault
+
+  const predicateOptions = COMPOSER_PREDICATES.map((p) => ({
+    value: p,
+    label: t(`inputLogic.predicate.${p}`, { defaultValue: p }),
+  }))
+  const upstreamOptions = upstreamBlocks.map((b) => ({
+    value: b.id,
+    label: b.name || b.id.slice(0, 8),
+  }))
 
   return (
     <div className="flex items-center gap-1.5 rounded-md border px-2 py-1.5">
-      <Select
+      <OptionsSelect
         value={predicate}
-        onValueChange={(p) => onChange(p as ComposerPredicate, afterBlock, extra)}
-      >
-        <SelectTrigger className="h-8 w-[150px] text-[12px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {COMPOSER_PREDICATES.map((p) => (
-            <SelectItem key={p} value={p}>
-              {t(`inputLogic.predicate.${p}`, { defaultValue: p })}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
+        options={predicateOptions}
+        onChange={(p) => onChange(p as ComposerPredicate, afterBlock, extra)}
+        triggerClassName="h-8 w-[150px] text-[12px]"
+      />
+      <OptionsSelect
         value={afterBlock}
-        onValueChange={(blockId) => onChange(predicate, blockId, extra)}
-      >
-        <SelectTrigger className="h-8 flex-1 text-[12px]">
-          <SelectValue placeholder={t('inputLogic.pickBlock', { defaultValue: 'Kies blok' })} />
-        </SelectTrigger>
-        <SelectContent>
-          {upstreamBlocks.map((b) => (
-            <SelectItem key={b.id} value={b.id}>
-              {b.name || b.id.slice(0, 8)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        options={upstreamOptions}
+        onChange={(blockId) => onChange(predicate, blockId, extra)}
+        placeholder={t('inputLogic.pickBlock', { defaultValue: 'Kies blok' })}
+        triggerClassName="h-8 flex-1 text-[12px]"
+      />
       {meta.extraField && (
         <Input
           aria-label={t(`inputLogic.extra.${predicate}`, { defaultValue: 'detail' })}
@@ -300,15 +291,7 @@ function EditableRule({
           className="h-8 w-[130px] text-[12px]"
         />
       )}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
-        onClick={onRemove}
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
+      <RemoveRuleButton onClick={onRemove} />
     </div>
   )
 }

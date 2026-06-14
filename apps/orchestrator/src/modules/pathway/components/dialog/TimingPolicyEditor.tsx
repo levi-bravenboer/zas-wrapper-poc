@@ -2,15 +2,10 @@ import type { ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 import type { TimingPolicyValue } from '../../types'
+
+import { OptionsSelect } from './OptionsSelect'
 
 // Pathway-completion § C4.6: tagged-union timing_policy editor.
 // Variants mirror `app/domain/pathway/timing.py`; the dialog hides
@@ -101,26 +96,20 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
   const meta = POLICY_META[kind]
   const iso = isoOf(value)
 
+  const kindOptions = POLICY_KINDS.map((option) => ({
+    value: option,
+    label: t(`timingPolicy.kind.${option}`, { defaultValue: POLICY_META[option].labelFallback }),
+  }))
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <Select
+        <OptionsSelect
           value={kind}
-          onValueChange={(next) => onChange(buildPolicy(next as PolicyKind, iso))}
-        >
-          <SelectTrigger className="h-8 flex-1 text-[12px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {POLICY_KINDS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {t(`timingPolicy.kind.${option}`, {
-                  defaultValue: POLICY_META[option].labelFallback,
-                })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={kindOptions}
+          onChange={(next) => onChange(buildPolicy(next as PolicyKind, iso))}
+          triggerClassName="h-8 flex-1 text-[12px]"
+        />
         {meta.isoField && (
           <Input
             aria-label={t('timingPolicy.isoLabel', { defaultValue: 'ISO 8601 duur' })}
