@@ -65,11 +65,19 @@ function mountSidebar(role: SessionUser['role'] | null): { queryClient: QueryCli
 describe('AppSidebar — role-gated Beheer group', () => {
   it('hides the Beheer group for caregivers', async () => {
     mountSidebar('caregiver')
-    expect(await screen.findByRole('link', { name: 'Mijn patiënten' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Taken' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Beheer/i })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Gebruikers' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Organisaties' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Affiliaties' })).toBeNull()
+  })
+
+  it('shows exactly one Taken entry pointing to /tasks and no Mijn patiënten', async () => {
+    mountSidebar('caregiver')
+    const takenLinks = await screen.findAllByRole('link', { name: 'Taken' })
+    expect(takenLinks).toHaveLength(1)
+    expect(takenLinks[0]).toHaveAttribute('href', expect.stringContaining('/tasks'))
+    expect(screen.queryByRole('link', { name: 'Mijn patiënten' })).toBeNull()
   })
 
   it('renders the Beheer group expanded for admins with three child entries', async () => {

@@ -1,5 +1,6 @@
 from app.schemas.patient.patient import (
     PatientCreate,
+    PatientInlineSummary,
     PatientRead,
     PatientUpdate,
 )
@@ -12,6 +13,7 @@ __all__ = [
     "PatientCreate",
     "PatientIdentifierCreate",
     "PatientIdentifierRead",
+    "PatientInlineSummary",
     "PatientRead",
     "PatientUpdate",
 ]

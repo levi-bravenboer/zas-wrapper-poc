@@ -765,6 +765,40 @@ export interface paths {
         patch: operations["update_practitioner_role"];
         trace?: never;
     };
+    "/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tasks */
+        get: operations["list_tasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{source}/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Task */
+        get: operations["get_task"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pathways/blocks": {
         parameters: {
             query?: never;
@@ -1142,6 +1176,77 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /**
+         * AppointmentKind
+         * @enum {string}
+         */
+        AppointmentKind: "consultation" | "lab" | "imaging" | "procedure" | "other";
+        /**
+         * AppointmentModality
+         * @enum {string}
+         */
+        AppointmentModality: "online" | "on_site";
+        /**
+         * AppointmentParticipantInlineSummary
+         * @description Inline projection of one `appointment_participants` row.
+         *
+         *     Used inside `AppointmentPayload.participants` on the `TaskItem` envelope.
+         *     `user_display_name` is resolved via the same users projection used elsewhere
+         *     in the codebase (e.g. care-team participant reads).
+         */
+        AppointmentParticipantInlineSummary: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            role: components["schemas"]["AppointmentParticipantRole"];
+            /** User Display Name */
+            user_display_name: string;
+        };
+        /**
+         * AppointmentParticipantRole
+         * @enum {string}
+         */
+        AppointmentParticipantRole: "lead" | "support" | "observer";
+        /**
+         * AppointmentPayload
+         * @description Discriminated payload for `source = "appointment"`.
+         *
+         *     Carries the source row's data needed by the frontend without forcing
+         *     a follow-up `/appointments` fetch (which is also unavailable v1 — the
+         *     appointment domain ships without HTTP routes).
+         */
+        AppointmentPayload: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            patient: components["schemas"]["PatientInlineSummary"];
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            kind: components["schemas"]["AppointmentKind"];
+            modality: components["schemas"]["AppointmentModality"];
+            /** Location Text */
+            location_text?: string | null;
+            status: components["schemas"]["AppointmentStatus"];
+            /** Participants */
+            participants: components["schemas"]["AppointmentParticipantInlineSummary"][];
+        };
+        /**
+         * AppointmentStatus
+         * @enum {string}
+         */
+        AppointmentStatus: "proposed" | "pending" | "booked" | "arrived" | "fulfilled" | "cancelled" | "noshow" | "entered_in_error" | "checked_in" | "waitlist";
         /** AssignRoleRequest */
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
@@ -1824,6 +1929,19 @@ export interface components {
         Page_PractitionerRoleRead_: {
             /** Items */
             items: components["schemas"]["PractitionerRoleRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** Page[TaskItem] */
+        Page_TaskItem_: {
+            /** Items */
+            items: components["schemas"]["TaskItem"][];
             /** Page */
             page: number;
             /** Page Size */
@@ -2727,6 +2845,37 @@ export interface components {
             /** Use */
             use?: string | null;
         };
+        /**
+         * PatientInlineSummary
+         * @description Thin patient projection used as a JOIN-resolved inline summary.
+         *
+         *     Lives in the patient domain so any caller that needs a "patient
+         *     headline" projection (today: `tasks-base` aggregator; tomorrow:
+         *     notification feeds, alerts, anywhere a patient name + INSZ + org is
+         *     needed without a full `PatientRead`) shares one shape.
+         *
+         *     `insz` is the value of the patient's INSZ identifier row from
+         *     `patient_identifiers`, NULL when missing. Resolved by the caller via
+         *     JOIN at projection time — the model itself does not load it.
+         */
+        PatientInlineSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
+            /** Insz */
+            insz?: string | null;
+            /**
+             * Primary Organisation Id
+             * Format: uuid
+             */
+            primary_organisation_id: string;
+        };
         /** PatientRead */
         PatientRead: {
             /**
@@ -3125,6 +3274,43 @@ export interface components {
             display: string;
             /** Source */
             source: string;
+        };
+        /**
+         * TaskItem
+         * @description Unified envelope returned by `GET /tasks` and `GET /tasks/{source}/{source_id}`.
+         *
+         *     Sortable by `due_at` (which v1 always maps to `appointment.starts_at`).
+         *     `priority` is reserved for future sources; v1 appointment source
+         *     always emits `null`.
+         */
+        TaskItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source
+             * @constant
+             */
+            source: "appointment";
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Title */
+            title: string;
+            /** Kind */
+            kind?: string | null;
+            /** Priority */
+            priority?: ("low" | "normal" | "high" | "urgent") | null;
+            payload: components["schemas"]["AppointmentPayload"];
         };
         /**
          * UserCreate
@@ -5158,6 +5344,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PractitionerRoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks: {
+        parameters: {
+            query?: {
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_TaskItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskItem"];
                 };
             };
             /** @description Validation Error */

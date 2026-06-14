@@ -1,0 +1,13 @@
+{
+  "kind": {
+    "consultation": "Consultatie",
+    "lab": "Lab",
+    "imaging": "Beeldvorming",
+    "procedure": "Procedure",
+    "other": "Overig"
+  },
+  "modality": {
+    "online": "Online",
+    "on_site": "Ter plaatse"
+  }
+}

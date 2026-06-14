@@ -1,6 +1,7 @@
 import i18next from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
+import appointment from './locales/nl/appointment.json'
 import auth from './locales/nl/auth.json'
 import careTeamsUi from './locales/nl/care-teams-ui.json'
 import caregiverShell from './locales/nl/caregiver-shell.json'
@@ -12,10 +13,10 @@ import nav from './locales/nl/nav.json'
 import organisationsAdminUi from './locales/nl/organisations-admin-ui.json'
 import pathway from './locales/nl/pathway.json'
 import patientProfile from './locales/nl/patient-profile.json'
-import patients from './locales/nl/patients.json'
 import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
+import tasks from './locales/nl/tasks.json'
 import usersAdminUi from './locales/nl/users-admin-ui.json'
 import users from './locales/nl/users.json'
 
@@ -34,6 +35,7 @@ void i18next.use(initReactI18next).init({
   defaultNS: 'common',
   ns: [
     'common',
+    'appointment',
     'auth',
     'care-teams-ui',
     'caregiver-shell',
@@ -44,16 +46,17 @@ void i18next.use(initReactI18next).init({
     'organisations-admin-ui',
     'pathway',
     'patient-profile',
-    'patients',
     'practitioner-roles-admin-ui',
     'shell',
     'smart',
+    'tasks',
     'users',
     'users-admin-ui',
   ],
   resources: {
     nl: {
       common,
+      appointment,
       auth,
       'care-teams-ui': careTeamsUi,
       'caregiver-shell': caregiverShell,
@@ -64,10 +67,10 @@ void i18next.use(initReactI18next).init({
       'organisations-admin-ui': organisationsAdminUi,
       pathway,
       'patient-profile': patientProfile,
-      patients,
       'practitioner-roles-admin-ui': practitionerRolesAdminUi,
       shell,
       smart,
+      tasks,
       users,
       'users-admin-ui': usersAdminUi,
     },

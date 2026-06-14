@@ -1,8 +1,4 @@
 {
-  "page": {
-    "title": "Patiëntprofiel",
-    "subtitle": "Demografie, identificatoren en geschiedenis"
-  },
   "header": {
     "insz": "INSZ",
     "noInsz": "Geen INSZ",
@@ -11,41 +7,24 @@
     "actions": "Acties"
   },
   "tabs": {
-    "overview": "Overzicht",
-    "careTeam": "Zorgteam",
-    "history": "Geschiedenis",
-    "luscii": "Luscii"
+    "measurements": "Metingen",
+    "lab_results": "Labresultaten",
+    "empty": {
+      "lab_results": {
+        "title": "Nog geen labresultaten gekoppeld",
+        "body": "Wordt geleverd door de HiX-koppeling."
+      }
+    }
   },
-  "demographics": {
-    "title": "Demografie",
-    "name": "Naam",
-    "birthDate": "Geboortedatum",
-    "gender": "Geslacht",
-    "primaryOrg": "Primaire organisatie",
-    "empty": "—"
+  "kebab": {
+    "history": "Geschiedenis",
+    "historyDialogTitle": "Geschiedenis"
   },
   "gender": {
     "male": "Man",
     "female": "Vrouw",
     "other": "Anders",
     "unknown": "Onbekend"
-  },
-  "identifiers": {
-    "title": "Identificatoren",
-    "empty": "Geen identificatoren",
-    "insz": "INSZ",
-    "system": "Systeem",
-    "value": "Waarde",
-    "use": "Gebruik"
-  },
-  "careTeam": {
-    "title": "Zorgteam",
-    "soon": "Komt binnenkort — wordt geleverd door care-teams-ui",
-    "current": "Huidige zorgteams",
-    "empty": "Nog geen zorgteam toegewezen",
-    "participants": "{{count}} deelnemer",
-    "participants_plural": "{{count}} deelnemers",
-    "loadFailed": "Zorgteams konden niet worden geladen"
   },
   "history": {
     "title": "Geschiedenis",

@@ -10,5 +10,8 @@
   },
   "toasts": {
     "genericError": "Er ging iets mis. Probeer het opnieuw."
+  },
+  "masterDetail": {
+    "openMaster": "Lijst tonen"
   }
 }
