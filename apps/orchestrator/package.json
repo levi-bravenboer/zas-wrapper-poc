@@ -118,6 +118,10 @@
       "core-js",
       "msw",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "esbuild@<0.28.1": ">=0.28.1",
+      "shell-quote@<1.8.4": ">=1.8.4"
+    }
   }
 }

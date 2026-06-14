@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE — inbox v11</title>
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.0.3/index.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.0.3/index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-background: oklch(1 0 0);
+        --color-surface-1: oklch(0.985 0.003 175);
+        --color-surface-2: oklch(0.97 0.01 175);
+        --color-foreground: oklch(0.21 0.04 265);
+        --color-foreground-muted: oklch(0.5 0.02 265);
+        --color-muted: var(--color-surface-2);
+        --color-primary: oklch(0.46 0.07 175);
+        --color-primary-hover: oklch(0.4 0.07 175);
+        --color-primary-pressed: oklch(0.34 0.06 175);
+        --color-primary-foreground: oklch(1 0 0);
+        --color-primary-soft: oklch(0.93 0.04 175);
+        --color-accent-mint: oklch(0.78 0.08 175);
+        --color-destructive: oklch(0.6 0.22 30);
+        --color-warning: oklch(0.75 0.18 65);
+        --color-success: oklch(0.55 0.1 175);
+        --color-border: oklch(0.91 0.005 265);
+        --color-border-strong: oklch(0.82 0.01 265);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+        --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.06);
+        --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --tracking-tight: -0.011em;
+      }
+      :root {
+        --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+        --bg-canvas: linear-gradient(180deg, #fafbfa 0%, #f3f6f4 100%);
+        --hairline: oklch(0.91 0.005 265);
+      }
+      body {
+        font-family: var(--font-sans);
+        color: var(--color-foreground);
+        background: var(--bg-canvas);
+        letter-spacing: var(--tracking-tight);
+        font-size: 14px;
+      }
+    </style>
+
+    <style>
+      .gradient-active { background-image: var(--gradient-active); }
+
+      .side { background: var(--color-background); border-right: 1px solid var(--hairline); }
+      .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 14px; color: var(--color-foreground); }
+      .nav-item:hover { background: var(--color-surface-2); }
+      .nav-item[aria-current="page"] { background-image: var(--gradient-active); color: #fff; box-shadow: var(--shadow-sm); }
+      .nav-item[aria-current="page"] i { color: #fff; }
+      .nav-group-h { font-size: 12px; color: var(--color-foreground-muted); padding: 14px 10px 6px; display: flex; align-items: center; justify-content: space-between; }
+
+      .av { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 600; color: #fff; }
+      .av[data-tint="0"] { background: oklch(0.55 0.13 175); }
+      .av[data-tint="1"] { background: oklch(0.55 0.13 160); }
+      .av[data-tint="2"] { background: oklch(0.55 0.13 230); }
+      .av[data-tint="3"] { background: oklch(0.55 0.13 260); }
+      .av[data-tint="4"] { background: oklch(0.55 0.13 290); }
+      .av[data-tint="5"] { background: oklch(0.55 0.13 330); }
+      .av[data-tint="6"] { background: oklch(0.55 0.13 25); }
+      .av[data-tint="7"] { background: oklch(0.55 0.13 65); }
+
+      .btn-primary { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--radius-sm); background: var(--color-primary-pressed); color: #fff; font-size: 13px; font-weight: 500; }
+      .btn-primary:hover { background: var(--color-primary); }
+      .btn-ghost { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: var(--radius-sm); font-size: 13px; color: var(--color-foreground); }
+      .btn-ghost:hover { background: var(--color-surface-2); }
+
+      .badge-soft { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 9999px; background: var(--color-primary-soft); color: var(--color-primary-pressed); font-size: 12px; font-weight: 500; }
+      .badge-solid { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: var(--color-primary); color: #fff; font-size: 11px; font-weight: 500; }
+      .badge-muted { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: var(--color-surface-2); color: var(--color-foreground-muted); font-size: 11px; }
+
+      /* LEFT: narrow task rail */
+      .rail-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; transition: background-color .12s;
+        border-bottom: 1px solid var(--hairline);
+        cursor: pointer; width: 100%; text-align: left;
+        background: transparent;
+        position: relative;
+      }
+      .rail-row:hover { background: var(--color-surface-1); }
+      .rail-row[data-active="true"] { background: color-mix(in srgb, var(--color-primary-soft) 55%, white); }
+      .rail-row[data-active="true"]::before {
+        content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+        width: 3px; border-radius: 0 2px 2px 0;
+        background: var(--color-primary);
+      }
+
+      .kind-tile { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border-radius: 6px; flex-shrink: 0; }
+      .kind-tile[data-kind="consultation"] { background: color-mix(in srgb, var(--color-primary) 10%, white); color: var(--color-primary); }
+      .kind-tile[data-kind="lab"]          { background: color-mix(in srgb, var(--color-warning) 14%, white); color: #92400e; }
+      .kind-tile[data-kind="imaging"]      { background: color-mix(in srgb, var(--color-accent-mint) 18%, white); color: var(--color-primary-pressed); }
+      .kind-tile[data-kind="procedure"]    { background: color-mix(in srgb, var(--color-destructive) 10%, white); color: var(--color-destructive); }
+      .kind-tile[data-kind="other"]        { background: var(--color-surface-2); color: var(--color-foreground-muted); }
+      .kind-tile.lg { height: 36px; width: 36px; }
+
+      /* RIGHT: stacked open task cards */
+      .task-card {
+        background: var(--color-background);
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        scroll-margin-top: 24px;
+        overflow: hidden;
+        transition: box-shadow .15s ease, border-color .15s ease;
+      }
+      .task-card:hover { box-shadow: var(--shadow-md); }
+      .task-card.is-focused {
+        border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-soft) 70%, transparent), var(--shadow-md);
+      }
+
+      .task-card-header {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 16px;
+        background: var(--color-surface-1);
+        border-bottom: 1px solid var(--hairline);
+        font-size: 12px; color: var(--color-foreground-muted);
+      }
+
+      .meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--color-foreground-muted); }
+      .meta-line .sep { opacity: .35; }
+    </style>
+  </head>
+
+  <body class="min-h-screen">
+    <!--
+      v11 — iteration on v10 per user direction:
+        "wireframe god, but the right side always only show one task,
+         if nothing selected it shows that nothing is selected"
+
+      Reframe vs v10:
+        - Right pane shows EXACTLY ONE task at a time (or an empty state).
+        - No scroll-stack. No scroll-spy. URL drives selection.
+        - State 1 (nothing selected, URL = /_auth/tasks) → right pane renders
+            <EmptyState> "Selecteer een taak".
+        - State 2 (rail clicked, URL = /_auth/tasks/$taskId) → right pane renders
+            that ONE task's card, full-height, centered max-width.
+        - Rail stays 280px wide at all times. No collapse, no hide.
+        - For source=appointment, the card body shows patient identity (avatar +
+            name + INSZ + DOB + org + Zorgteam) + appointment block + Metingen/Lab
+            tabs (both empty v1).
+
+      Same i18n + auth + tenant + visibility predicates; only the right-pane behaviour
+      changes from "stack all" → "one selected or empty".
+    -->
+
+    <div class="flex h-screen overflow-hidden">
+
+      <!-- SIDEBAR -->
+      <aside class="side hidden lg:flex w-60 shrink-0 flex-col">
+        <div class="px-3 pt-4 pb-3 flex items-center gap-2">
+          <span aria-hidden="true" class="grid size-7 shrink-0 place-items-center rounded-md gradient-active text-[12px] font-semibold text-white shadow-sm">Z</span>
+          <span class="truncate text-[14px] font-semibold">ZAS Orchestrator</span>
+        </div>
+
+        <nav class="flex-1 px-2 py-1">
+          <a class="nav-item"><i data-lucide="layout-dashboard" class="size-4"></i><span>Overzicht</span></a>
+          <a class="nav-item" aria-current="page"><i data-lucide="inbox" class="size-4"></i><span>Taken</span></a>
+          <a class="nav-item"><i data-lucide="git-branch" class="size-4"></i><span>Zorgpaden</span></a>
+
+          <div class="nav-group-h">
+            <span>Beheer</span>
+            <i data-lucide="chevron-down" class="size-3.5"></i>
+          </div>
+          <a class="nav-item"><i data-lucide="users" class="size-4"></i><span>Gebruikers</span></a>
+          <a class="nav-item"><i data-lucide="building-2" class="size-4"></i><span>Organisaties</span></a>
+          <a class="nav-item"><i data-lucide="user-cog" class="size-4"></i><span>Affiliaties</span></a>
+        </nav>
+
+        <div class="px-3 pb-4 pt-2 border-t" style="border-color: var(--hairline);">
+          <button class="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[--color-surface-2]">
+            <div class="av size-8 rounded-full text-[12px]" data-tint="0">DJ</div>
+            <div class="flex-1 min-w-0 leading-tight text-left">
+              <div class="truncate text-[13px] font-medium">Dr. Janssen</div>
+              <div class="truncate text-[12px] text-[--color-foreground-muted]">caregiver</div>
+            </div>
+            <i data-lucide="chevrons-up-down" class="size-3.5 opacity-60"></i>
+          </button>
+          <button class="mt-2 w-full nav-item" style="font-size:13px;"><i data-lucide="settings" class="size-4"></i><span>Instellingen</span></button>
+        </div>
+      </aside>
+
+      <main class="flex-1 flex min-h-0">
+
+        <!-- LEFT: narrow task rail -->
+        <section class="side w-[280px] shrink-0 flex flex-col">
+          <div class="px-4 pt-5 pb-3 text-[14px] text-[--color-foreground-muted] flex items-center gap-1.5">
+            <a href="#" class="hover:text-[--color-foreground]">Home</a>
+            <i data-lucide="chevron-right" class="size-3 opacity-50"></i>
+            <span class="text-[--color-foreground]">Taken</span>
+          </div>
+
+          <header class="px-4 pt-1 pb-3">
+            <h1 class="text-[18px] leading-tight font-semibold tracking-tight">Taken</h1>
+            <p class="mt-0.5 text-[12px] text-[--color-foreground-muted]">Komende 3 dagen</p>
+          </header>
+
+          <ul id="taskRail" role="list" class="flex-1 overflow-y-auto border-t" style="border-color: var(--hairline);"></ul>
+        </section>
+
+        <!-- RIGHT: single task card OR empty state -->
+        <section id="rightPane" class="flex-1 min-w-0 overflow-y-auto">
+          <div id="rightInner" class="mx-auto max-w-[820px] px-8 py-6 h-full"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // -------- Mock domain data --------
+      const PATIENTS = {
+        'p-7b9d': { id: 'p-7b9d', given: 'Anke',  family: 'Janssens',     insz: '85.03.12-072.47', dob: '12 mrt 1985', org: 'ZAS Antwerpen / Cardiologie',           team: 'Cardio Team A',     lead: 'Dr. Janssen' },
+        'p-24aa': { id: 'p-24aa', given: 'Jan',   family: 'Kowalski',     insz: '78.09.04-189.13', dob: '4 sep 1978',  org: 'ZAS Antwerpen / Klinisch Lab',          team: 'Lab Team',          lead: 'Dr. Mertens' },
+        'p-90c1': { id: 'p-90c1', given: 'Marc',  family: 'De Vries',     insz: '62.11.27-301.05', dob: '27 nov 1962', org: 'ZAS Antwerpen / Radiologie',            team: 'Radiologie Team',   lead: 'Dr. Peeters' },
+        'p-f3e0': { id: 'p-f3e0', given: 'Lisa',  family: 'Bakker',       insz: '91.05.22-455.61', dob: '22 mei 1991', org: 'ZAS Antwerpen / Orthopedie',            team: 'Orthopedie Team B', lead: 'Dr. Hendriks' },
+        'p-a187': { id: 'p-a187', given: 'Eva',   family: 'Van der Berg', insz: '88.07.30-664.18', dob: '30 jul 1988', org: 'ZAS Antwerpen / Interne geneeskunde',   team: 'Interne Team A',    lead: 'Dr. Janssen' },
+        'p-c4d6': { id: 'p-c4d6', given: 'Sven',  family: 'Hendriks',     insz: '95.12.05-902.34', dob: '5 dec 1995',  org: 'ZAS Antwerpen / Cardiologie',           team: 'Cardio Team A',     lead: 'Dr. Janssen' },
+      };
+
+      const TASKS = [
+        { id: 'a-001', source: 'appointment', kind: 'procedure',    title: 'Kleine ingreep — knie',          due_label: 'vandaag 15:45', due_group: 'Vandaag',     payload: { patientId: 'p-f3e0', modality: 'on_site', location: 'OK 4',                  participants: [{ role: 'lead', name: 'Dr. Hendriks' }, { role: 'support', name: 'Verp. Smets' }] } },
+        { id: 'a-002', source: 'appointment', kind: 'consultation', title: 'Controle bloeddruk — opvolging', due_label: 'vandaag 16:30', due_group: 'Vandaag',     payload: { patientId: 'p-7b9d', modality: 'on_site', location: 'Polikliniek 1, kamer 4', participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+        { id: 'a-003', source: 'appointment', kind: 'lab',          title: 'Bloedafname nuchter',            due_label: 'morgen 08:15',  due_group: 'Morgen',      payload: { patientId: 'p-24aa', modality: 'on_site', location: 'Lab balie 2',            participants: [{ role: 'lead', name: 'Dr. Mertens' }] } },
+        { id: 'a-004', source: 'appointment', kind: 'consultation', title: 'Opvolggesprek',                  due_label: 'morgen 11:00',  due_group: 'Morgen',      payload: { patientId: 'p-a187', modality: 'online',  location: null,                     participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+        { id: 'a-005', source: 'appointment', kind: 'consultation', title: 'Controle na operatie',           due_label: 'morgen 14:00',  due_group: 'Morgen',      payload: { patientId: 'p-7b9d', modality: 'on_site', location: 'Polikliniek 3, kamer 12', participants: [{ role: 'lead', name: 'Dr. Janssen' }, { role: 'observer', name: 'Stagiair Devos' }] } },
+        { id: 'a-006', source: 'appointment', kind: 'imaging',      title: 'MRI lumbale wervelkolom',        due_label: 'over 2 dagen',  due_group: 'Over 2 dagen', payload: { patientId: 'p-90c1', modality: 'on_site', location: 'MRI 1',                  participants: [{ role: 'lead', name: 'Dr. Peeters' }] } },
+        { id: 'a-007', source: 'appointment', kind: 'other',        title: 'Holter terugbrengen',            due_label: 'over 2 dagen',  due_group: 'Over 2 dagen', payload: { patientId: 'p-c4d6', modality: 'on_site', location: 'Onthaal',                participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+        { id: 'a-008', source: 'appointment', kind: 'imaging',      title: 'Bekkenscan — vervolg',           due_label: 'over 3 dagen',  due_group: 'Over 3 dagen', payload: { patientId: 'p-a187', modality: 'on_site', location: 'CT 2',                   participants: [{ role: 'lead', name: 'Dr. Janssen' }] } },
+      ];
+
+      const KIND_ICON  = { consultation: 'stethoscope', lab: 'flask-conical', imaging: 'scan', procedure: 'syringe', other: 'calendar' };
+      const KIND_LABEL = { consultation: 'Consultatie', lab: 'Labafname', imaging: 'Beeldvorming', procedure: 'Ingreep', other: 'Overig' };
+      const MODALITY_LABEL = { online: 'Online', on_site: 'Op locatie' };
+      const ROLE_LABEL = { lead: 'Lead', support: 'Ondersteuning', observer: 'Observant' };
+
+      // -------- Helpers --------
+      function initials(g, f) { return (g[0] || '').toUpperCase() + (f[0] || '').toUpperCase(); }
+      function tintIndex(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h % 8; }
+      function el(tag, opts = {}) {
+        const n = document.createElement(tag);
+        if (opts.cls) n.className = opts.cls;
+        if (opts.text != null) n.textContent = opts.text;
+        if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) n.setAttribute(k, v);
+        if (opts.style) n.setAttribute('style', opts.style);
+        return n;
+      }
+      function icon(name, cls) { const i = document.createElement('i'); i.setAttribute('data-lucide', name); if (cls) i.className = cls; return i; }
+      function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+      // -------- Rail row (narrow chip) --------
+      function buildRailRow(task) {
+        const patient = PATIENTS[task.payload.patientId];
+        const li = el('li');
+        const a = el('button', { cls: 'rail-row', attrs: { 'data-task-id': task.id, 'data-patient-id': patient.id, type: 'button' } });
+
+        const tile = el('span', { cls: 'kind-tile', attrs: { 'data-kind': task.kind, 'aria-hidden': 'true' } });
+        tile.appendChild(icon(KIND_ICON[task.kind], 'size-4'));
+
+        const idCol = el('div', { cls: 'flex-1 min-w-0' });
+        idCol.appendChild(el('div', { cls: 'text-[13px] font-medium truncate', text: patient.family + ', ' + patient.given }));
+        idCol.appendChild(el('div', { cls: 'mt-0.5 text-[11px] text-[--color-foreground-muted] tabular-nums truncate', text: task.due_label }));
+
+        a.appendChild(tile);
+        a.appendChild(idCol);
+        li.appendChild(a);
+        return li;
+      }
+
+      // -------- Task card (opens patient context inline) --------
+      function buildTaskCard(task) {
+        const patient = PATIENTS[task.payload.patientId];
+        const card = el('article', { cls: 'task-card', attrs: { id: 'card-' + task.id, 'data-task-id': task.id } });
+
+        // Header strip: due group + kind label + status pill
+        const head = el('div', { cls: 'task-card-header' });
+        head.appendChild(el('span', { cls: 'badge-soft', text: task.due_label }));
+        head.appendChild(el('span', { cls: 'opacity-60', text: KIND_LABEL[task.kind] }));
+        head.appendChild(el('div', { cls: 'flex-1' }));
+        head.appendChild(el('span', { cls: 'badge-muted', text: 'Gepland' }));
+
+        // Body: patient identity row + appointment block + tabs
+        const body = el('div', { cls: 'px-6 pt-5 pb-5' });
+
+        // Identity row
+        const idRow = el('div', { cls: 'flex items-start gap-3' });
+        idRow.appendChild(el('div', {
+          cls: 'av size-11 rounded-full text-[14px] shrink-0',
+          text: initials(patient.given, patient.family),
+          attrs: { 'data-tint': String(tintIndex(patient.id)) },
+        }));
+        const idCol = el('div', { cls: 'flex-1 min-w-0' });
+        const nameRow = el('div', { cls: 'flex items-center gap-2 flex-wrap' });
+        nameRow.appendChild(el('h3', { cls: 'text-[17px] font-semibold tracking-tight', text: patient.family + ', ' + patient.given }));
+        const inszPill = el('span', { cls: 'badge-solid' });
+        inszPill.appendChild(el('span', { cls: 'opacity-90', text: 'INSZ' }));
+        inszPill.appendChild(el('span', { cls: 'font-mono tabular-nums', text: patient.insz }));
+        nameRow.appendChild(inszPill);
+        idCol.appendChild(nameRow);
+        const sub = el('div', { cls: 'mt-1 meta-line' });
+        sub.appendChild(el('span', { text: 'Geboren ' + patient.dob }));
+        sub.appendChild(el('span', { cls: 'sep', text: '·' }));
+        sub.appendChild(el('span', { cls: 'badge-soft', text: patient.org }));
+        sub.appendChild(el('span', { cls: 'sep', text: '·' }));
+        sub.appendChild(el('span', { text: 'Zorgteam ' + patient.team + ' · lead ' + patient.lead }));
+        idCol.appendChild(sub);
+        idRow.appendChild(idCol);
+
+        const actions = el('div', { cls: 'shrink-0 flex items-center gap-2' });
+        const open = el('button', { cls: 'btn-ghost' });
+        open.appendChild(icon('arrow-up-right', 'size-3.5'));
+        open.appendChild(document.createTextNode('Open patiënt'));
+        actions.appendChild(open);
+        const kebab = el('button', { cls: 'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-[--color-surface-2]', attrs: { 'aria-label': 'Acties' } });
+        kebab.appendChild(icon('more-horizontal', 'size-4 text-[--color-foreground-muted]'));
+        actions.appendChild(kebab);
+        idRow.appendChild(actions);
+        body.appendChild(idRow);
+
+        // Appointment block — kind tile + title + meta + participants
+        const apptRow = el('div', { cls: 'mt-5 flex items-start gap-3 rounded-md border p-4', style: 'border-color: var(--hairline); background: var(--color-surface-1);' });
+        const tile = el('span', { cls: 'kind-tile lg', attrs: { 'data-kind': task.kind, 'aria-hidden': 'true' } });
+        tile.appendChild(icon(KIND_ICON[task.kind], 'size-5'));
+        apptRow.appendChild(tile);
+        const apptCol = el('div', { cls: 'flex-1 min-w-0' });
+        apptCol.appendChild(el('div', { cls: 'text-[15px] font-medium', text: task.title }));
+        const apptMeta = el('div', { cls: 'mt-1 meta-line' });
+        apptMeta.appendChild(el('span', { cls: 'tabular-nums', text: task.due_label }));
+        apptMeta.appendChild(el('span', { cls: 'sep', text: '·' }));
+        apptMeta.appendChild(icon(task.payload.modality === 'online' ? 'video' : 'map-pin', 'size-3.5'));
+        apptMeta.appendChild(el('span', { text: MODALITY_LABEL[task.payload.modality] }));
+        if (task.payload.location) {
+          apptMeta.appendChild(el('span', { cls: 'sep', text: '·' }));
+          apptMeta.appendChild(el('span', { text: task.payload.location }));
+        }
+        apptCol.appendChild(apptMeta);
+        const partStrip = el('div', { cls: 'mt-2 flex flex-wrap items-center gap-1.5' });
+        const lead = task.payload.participants.find((p) => p.role === 'lead');
+        if (lead) partStrip.appendChild(el('span', { cls: 'badge-soft', text: 'Lead ' + lead.name }));
+        task.payload.participants.filter((p) => p.role !== 'lead').slice(0, 2).forEach((p) => {
+          partStrip.appendChild(el('span', { cls: 'badge-muted', text: ROLE_LABEL[p.role] + ' · ' + p.name }));
+        });
+        const extra = task.payload.participants.filter((p) => p.role !== 'lead').length - 2;
+        if (extra > 0) partStrip.appendChild(el('span', { cls: 'badge-muted', text: '+' + extra }));
+        apptCol.appendChild(partStrip);
+        apptRow.appendChild(apptCol);
+        body.appendChild(apptRow);
+
+        // Patient clinical tabs (Metingen + Lab) — empty v1
+        const tabsWrap = el('div', { cls: 'mt-4 border-t pt-4', style: 'border-color: var(--hairline);' });
+        const tabsList = el('div', { cls: 'inline-flex gap-5 border-b', style: 'border-color: var(--hairline);' });
+        const TABS = [{ id: 'measurements', label: 'Metingen' }, { id: 'lab_results', label: 'Labresultaten' }];
+        const ACTIVE_CLS = 'pb-2 text-[13px] font-medium border-b-2 border-[--color-primary] text-[--color-foreground] -mb-px';
+        const INACTIVE_CLS = 'pb-2 text-[13px] font-medium text-[--color-foreground-muted]';
+        TABS.forEach((tab, i) => {
+          const b = el('button', { cls: i === 0 ? ACTIVE_CLS : INACTIVE_CLS, attrs: { 'data-tab': tab.id } });
+          b.appendChild(document.createTextNode(tab.label));
+          tabsList.appendChild(b);
+        });
+        tabsWrap.appendChild(tabsList);
+        const tabBody = el('div', { cls: 'mt-4' });
+        tabBody.appendChild(emptyState('activity', 'Nog geen metingen gekoppeld', 'Wordt geleverd door de monitoring-koppeling.'));
+        tabsWrap.appendChild(tabBody);
+        tabsList.querySelectorAll('button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            tabsList.querySelectorAll('button').forEach((b) => b.className = INACTIVE_CLS);
+            btn.className = ACTIVE_CLS;
+            clear(tabBody);
+            if (btn.dataset.tab === 'measurements') tabBody.appendChild(emptyState('activity', 'Nog geen metingen gekoppeld', 'Wordt geleverd door de monitoring-koppeling.'));
+            else tabBody.appendChild(emptyState('flask-conical', 'Nog geen labresultaten gekoppeld', 'Wordt geleverd door de HiX-koppeling.'));
+            window.lucide && window.lucide.createIcons();
+          });
+        });
+        body.appendChild(tabsWrap);
+
+        card.appendChild(head);
+        card.appendChild(body);
+        return card;
+      }
+
+      function emptyState(iconName, headline, hint) {
+        const wrap = el('div', { cls: 'flex flex-col items-center text-center py-10' });
+        const c = el('div', { cls: 'mx-auto size-11 rounded-full flex items-center justify-center mb-3', style: 'background: var(--color-primary-soft); color: var(--color-primary);' });
+        c.appendChild(icon(iconName, 'size-4'));
+        wrap.appendChild(c);
+        wrap.appendChild(el('div', { cls: 'text-[13px] font-medium', text: headline }));
+        wrap.appendChild(el('div', { cls: 'text-[12px] text-[--color-foreground-muted] mt-1 max-w-[280px]', text: hint }));
+        return wrap;
+      }
+
+      // -------- Render --------
+      let selectedTaskId = null;
+
+      function renderRail() {
+        const rail = document.getElementById('taskRail');
+        clear(rail);
+        let currentGroup = null;
+        TASKS.forEach((task) => {
+          if (task.due_group !== currentGroup) {
+            currentGroup = task.due_group;
+            const hdr = el('li', { cls: 'px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-[--color-foreground-muted]', text: currentGroup });
+            rail.appendChild(hdr);
+          }
+          const row = buildRailRow(task);
+          if (task.id === selectedTaskId) row.querySelector('button').setAttribute('data-active', 'true');
+          rail.appendChild(row);
+        });
+
+        rail.querySelectorAll('button[data-task-id]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedTaskId = btn.dataset.taskId;
+            renderRail();
+            renderRight();
+          });
+        });
+      }
+
+      function renderRight() {
+        const host = document.getElementById('rightInner');
+        clear(host);
+        if (selectedTaskId == null) {
+          host.appendChild(renderEmptySelection());
+        } else {
+          const task = TASKS.find((t) => t.id === selectedTaskId);
+          if (task) host.appendChild(buildTaskCard(task));
+        }
+        window.lucide && window.lucide.createIcons();
+      }
+
+      function renderEmptySelection() {
+        const wrap = el('div', { cls: 'h-full flex items-center justify-center' });
+        const inner = el('div', { cls: 'flex flex-col items-center text-center max-w-sm' });
+        const c = el('div', { cls: 'size-16 rounded-full flex items-center justify-center mb-4', style: 'background: var(--color-primary-soft); color: var(--color-primary);' });
+        c.appendChild(icon('inbox', 'size-7'));
+        inner.appendChild(c);
+        inner.appendChild(el('div', { cls: 'text-[16px] font-semibold tracking-tight', text: 'Selecteer een taak' }));
+        inner.appendChild(el('div', { cls: 'mt-1 text-[13px] text-[--color-foreground-muted]', text: 'Kies links een taak om de patiënt en de afspraak te bekijken.' }));
+        wrap.appendChild(inner);
+        return wrap;
+      }
+
+      renderRail();
+      renderRight();
+      window.lucide && window.lucide.createIcons();
+    </script>
+  </body>
+</html>

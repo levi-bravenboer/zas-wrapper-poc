@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { MoreHorizontal } from 'lucide-react'
-import { useMemo, useState, type ReactElement } from 'react'
+import { Activity, FlaskConical } from 'lucide-react'
+import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -10,29 +10,18 @@ import {
   EntityErrorCard,
   EntityNotFound,
 } from '@/components/entity'
+import { EmptyState } from '@/components/states/EmptyState'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useEntityDelete } from '@/hooks/entity'
 import { api } from '@/lib/api/client'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 
-import { softDeletePatient } from '../api'
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
 
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
-import { EditPatientDialog } from './EditPatientDialog'
-import { PatientDemographicsPanel } from './PatientDemographicsPanel'
-import { PatientHistoryPanel } from './PatientHistoryPanel'
-import { PatientIdentifiersPanel } from './PatientIdentifiersPanel'
+import { PatientKebab } from './PatientKebab'
 
 const ORG_CACHE_STALE_MS = 5 * 60_000
 
@@ -59,9 +48,15 @@ export interface PatientProfilePageProps {
   patientId: string
 }
 
+/**
+ * Standalone patient detail per design.md D-PATIENTS-ROUTE: `<EntityDetailPage>`
+ * chrome with two clinical tabs (Metingen + Labresultaten, both `<EmptyState>`
+ * v1), `<CareTeamSlot>` as a header-adjacent card, and audit history behind
+ * the kebab → `Geschiedenis` dialog. Serves admin/users links, care-team
+ * links, and any non-task-context entry.
+ */
 export function PatientProfilePage({ patientId }: PatientProfilePageProps): ReactElement {
   const { t, i18n } = useTranslation('patient-profile')
-  const [editOpen, setEditOpen] = useState(false)
 
   const patientQuery = usePatient(patientId)
   const organisationsQuery = useQuery({
@@ -78,14 +73,6 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
   const patient = patientQuery.data
   const fullName = patient ? `${patient.family_name}, ${patient.given_name}` : ''
 
-  const deleteAction = useEntityDelete({
-    entityName: fullName,
-    listPath: { to: '/patients' },
-    mutate: () => softDeletePatient(patientId),
-    successMessage: t('delete.toast.success'),
-    errorMessage: t('delete.toast.error'),
-  })
-
   if (patientQuery.isLoading) {
     return <EntityDetailSkeleton />
   }
@@ -101,7 +88,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
   }
 
   if (!patient) {
-    return <EntityNotFound backTo={{ to: '/patients' }} />
+    return <EntityNotFound backTo={{ to: '/tasks' }} />
   }
 
   const insz = pickInsz(patient.identifiers ?? [])
@@ -123,66 +110,43 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
     </div>
   )
 
-  const actions = (
-    <div className="flex items-center gap-2">
-      <Button onClick={() => setEditOpen(true)}>{t('edit.trigger')}</Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={t('header.actions')}>
-            <MoreHorizontal className="size-4" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-            {t('edit.trigger')}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => deleteAction.open()}
-            className="text-destructive focus:text-destructive"
-          >
-            {t('delete.trigger')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-
   return (
-    <>
-      <EntityDetailPage
-        title={fullName}
-        subtitle={subtitle}
-        back={{ to: '/patients' }}
-        actions={actions}
-        body={
+    <EntityDetailPage
+      title={fullName}
+      subtitle={subtitle}
+      back={{ to: '/tasks' }}
+      actions={<PatientKebab patient={patient} />}
+      body={
+        <>
+          <CareTeamSlot patientId={patient.id} />
           <EntityDetailTabs
             tabs={[
               {
-                value: 'overview',
-                label: t('tabs.overview'),
+                value: 'measurements',
+                label: t('tabs.measurements'),
                 content: (
-                  <div className="flex flex-col gap-3">
-                    <PatientDemographicsPanel patient={patient} organisation={organisation} />
-                    <PatientIdentifiersPanel patient={patient} />
-                  </div>
+                  <EmptyState
+                    icon={Activity}
+                    title={t('tabs.empty.measurements.title')}
+                    body={t('tabs.empty.measurements.body')}
+                  />
                 ),
               },
               {
-                value: 'careTeam',
-                label: t('tabs.careTeam'),
-                content: <CareTeamSlot patientId={patient.id} />,
-              },
-              {
-                value: 'history',
-                label: t('tabs.history'),
-                content: <PatientHistoryPanel patient={patient} />,
+                value: 'lab_results',
+                label: t('tabs.lab_results'),
+                content: (
+                  <EmptyState
+                    icon={FlaskConical}
+                    title={t('tabs.empty.lab_results.title')}
+                    body={t('tabs.empty.lab_results.body')}
+                  />
+                ),
               },
             ]}
           />
-        }
-      />
-      <EditPatientDialog patient={patient} open={editOpen} onOpenChange={setEditOpen} />
-      {deleteAction.dialog}
-    </>
+        </>
+      }
+    />
   )
 }
