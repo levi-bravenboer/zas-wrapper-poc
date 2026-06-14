@@ -61,7 +61,7 @@ export function InstrumentCard({
             <div className="min-w-0">
               <h3 className="text-sm font-medium text-foreground">{headerLabel}</h3>
               {latest ? (
-                <Badge variant="soft" className="mt-1 font-mono">
+                <Badge variant="soft" className="mt-1">
                   <span className="sr-only">{t('charts.last_value')}: </span>
                   {latest}
                 </Badge>

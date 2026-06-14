@@ -115,28 +115,30 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
         </section>
       )}
 
-      <Card>
-        <button
-          type="button"
-          onClick={() => setPlannedOpen((prev) => !prev)}
-          aria-expanded={plannedOpen}
-          className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-2"
-        >
-          <span className="text-sm font-medium">
-            {plannedOpen
-              ? t('charts.planned_actions.toggle_hide', { count: plannedCount })
-              : t('charts.planned_actions.toggle_show', { count: plannedCount })}
-          </span>
-          <span aria-hidden className="text-xs text-foreground-muted">
-            {plannedOpen ? '▾' : '▸'}
-          </span>
-        </button>
-        {plannedOpen ? (
-          <CardContent className="border-t border-border px-4 py-4">
-            <LusciiPanel patientId={patientId} />
-          </CardContent>
-        ) : null}
-      </Card>
+      {!showError && plannedCount > 0 ? (
+        <Card>
+          <button
+            type="button"
+            onClick={() => setPlannedOpen((prev) => !prev)}
+            aria-expanded={plannedOpen}
+            className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-2"
+          >
+            <span className="text-sm font-medium">
+              {plannedOpen
+                ? t('charts.planned_actions.toggle_hide', { count: plannedCount })
+                : t('charts.planned_actions.toggle_show', { count: plannedCount })}
+            </span>
+            <span aria-hidden className="text-xs text-foreground-muted">
+              {plannedOpen ? '▾' : '▸'}
+            </span>
+          </button>
+          {plannedOpen ? (
+            <CardContent className="border-t border-border px-4 py-4">
+              <LusciiPanel patientId={patientId} />
+            </CardContent>
+          ) : null}
+        </Card>
+      ) : null}
     </div>
   )
 }
