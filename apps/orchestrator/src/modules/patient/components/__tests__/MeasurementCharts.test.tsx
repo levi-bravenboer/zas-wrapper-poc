@@ -96,9 +96,11 @@ describe('MeasurementCharts', () => {
   it('renders an instrument card per loaded series', async () => {
     useLusciiDataMock.mockReturnValue(stub(LOADED))
     renderPanel()
-    expect(await screen.findByText('Gewicht')).toBeInTheDocument()
-    // Header carries the last-value badge text.
-    expect(screen.getByText(/81 kg/i)).toBeInTheDocument()
+    // "Gewicht" + "81 kg" each appear in BOTH the overview table AND the
+    // instrument card header — assert both copies render.
+    const gewichtMatches = await screen.findAllByText('Gewicht')
+    expect(gewichtMatches.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText(/81 kg/i).length).toBeGreaterThanOrEqual(2)
   })
 
   it('keeps the chrome and offers a retry on a panel-scoped error (D-STATES)', async () => {

@@ -122,6 +122,14 @@
       "fallback": "Geen programma",
       "transition_label": "Programmawissel"
     },
+    "overview": {
+      "aria_label": "Overzicht van laatste metingen",
+      "column": {
+        "item": "Meting",
+        "value": "Laatste waarde",
+        "time": "Tijdstip"
+      }
+    },
     "window": {
       "label": "Venster",
       "7d": "7 dagen",

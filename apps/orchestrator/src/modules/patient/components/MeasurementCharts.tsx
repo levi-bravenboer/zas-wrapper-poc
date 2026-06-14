@@ -11,6 +11,7 @@ import { cn } from '@/lib/style/cn'
 import { useLusciiData, type LusciiWindowDays } from '../hooks'
 
 import { InstrumentCard } from './charts/InstrumentCard'
+import { LatestValuesTable } from './charts/LatestValuesTable'
 import type { LusciiMeasurementSeries } from './charts/types'
 import { LusciiPanel } from './LusciiPanel'
 
@@ -103,16 +104,19 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
             : {})}
         />
       ) : (
-        <section className="flex flex-col gap-3">
-          {groups.map((group) => (
-            <InstrumentCard
-              key={group.instrument_id}
-              instrumentId={group.instrument_id}
-              instrumentName={group.instrument_name}
-              series={group.series}
-            />
-          ))}
-        </section>
+        <>
+          <LatestValuesTable series={series} />
+          <section className="flex flex-col gap-3">
+            {groups.map((group) => (
+              <InstrumentCard
+                key={group.instrument_id}
+                instrumentId={group.instrument_id}
+                instrumentName={group.instrument_name}
+                series={group.series}
+              />
+            ))}
+          </section>
+        </>
       )}
 
       {!showError && plannedCount > 0 ? (
