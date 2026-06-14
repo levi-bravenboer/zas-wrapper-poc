@@ -92,8 +92,9 @@ def project_series(
             group.points.append(point)
             # Track the freshest value so the series face (archetype, label,
             # unit, instrument_name) reflects what the patient most recently
-            # submitted.
-            if observed_at >= group.last_observed_at:
+            # submitted. Strict `>` keeps the FIRST value at a tied timestamp
+            # — deterministic across runs.
+            if observed_at > group.last_observed_at:
                 group.last_observed_at = observed_at
                 group.last_value = value
                 if measurement.instrument_name:
@@ -137,12 +138,14 @@ def _build_point(
     if archetype == "numeric":
         parsed = parse_numeric(value.value)
         if parsed is None:
+            # PHI hygiene: NEVER log the raw measurement value — it may carry
+            # clinical information. The id pair is enough to locate the
+            # offending row via the upstream catalogue.
             logger.warning(
                 "luscii.series.numeric_parse_failed",
                 extra={
                     "item_id": value.item_id,
                     "instrument_id": value.instrument_id,
-                    "raw": value.value,
                 },
             )
             return None
@@ -155,7 +158,6 @@ def _build_point(
                 extra={
                     "item_id": value.item_id,
                     "instrument_id": value.instrument_id,
-                    "raw": value.value,
                 },
             )
             return None
