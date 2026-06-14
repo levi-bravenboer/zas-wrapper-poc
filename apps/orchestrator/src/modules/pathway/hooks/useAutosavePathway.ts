@@ -27,6 +27,20 @@ type AutosaveHandlers = {
   onRename: (name: string) => void
 }
 
+// Backend block CONFIG_SCHEMAs are strict — `null` is not a valid
+// value for unset per-kind columns (the JSON Schema declares
+// `{"type": "string"}` etc., not `["string", "null"]`). The GET
+// response, however, serialises unset nullable columns as explicit
+// `null`. Strip those before PUT so the round-trip stays clean.
+function stripNullEntries(config: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(config)) {
+    if (value === null) continue
+    out[key] = value
+  }
+  return out
+}
+
 function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
   return {
     name: pathway.name,
@@ -55,7 +69,7 @@ function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
       label: b.name,
       duration_value_id: b.duration_value_id ?? null,
       config: {
-        ...legacyBlockConfig(b),
+        ...stripNullEntries(legacyBlockConfig(b)),
         name: b.name,
         input_logic: b.input_logic,
         timing_policy: b.timing_policy,

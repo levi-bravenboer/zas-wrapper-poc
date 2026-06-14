@@ -127,8 +127,51 @@ describe('parseBlockConfig — valid configs round-trip', () => {
   })
 
   it('parses a milestone config', () => {
-    const parsed = parseBlockConfig(fakeBlock({ note: 'Start herstelfase' }), 'milestone')
-    expect(parsed.note).toBe('Start herstelfase')
+    const parsed = parseBlockConfig(fakeBlock({ label: 'Start herstelfase' }), 'milestone')
+    expect(parsed.label).toBe('Start herstelfase')
+  })
+})
+
+describe('parseBlockConfig — accepts null for nullable BE fields', () => {
+  // Backend serialises unset nullable columns as explicit `null`. The
+  // zod schemas must accept those without dropping the inspector.
+  it('task accepts null on every optional field', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({
+        title: 'Bel patiënt',
+        assignee: 'caregiver',
+        due_offset_days: null,
+        requires_completion: null,
+        notes: null,
+      }),
+      'task',
+    )
+    expect(parsed.title).toBe('Bel patiënt')
+    expect(parsed.requires_completion).toBeNull()
+  })
+
+  it('appointment accepts null on mode/location/duration/attendees/notes', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({
+        title: 'Intake',
+        mode: null,
+        location: null,
+        duration_minutes: null,
+        attendees_patient: null,
+        notes: null,
+      }),
+      'appointment',
+    )
+    expect(parsed.title).toBe('Intake')
+    expect(parsed.mode).toBeNull()
+  })
+
+  it('milestone accepts null on description/icon', () => {
+    const parsed = parseBlockConfig(
+      fakeBlock({ label: 'Operatie', description: null, icon: null }),
+      'milestone',
+    )
+    expect(parsed.label).toBe('Operatie')
   })
 })
 
@@ -177,13 +220,13 @@ describe('AnyBlockConfig — type coverage smoke', () => {
   it('compiles when assembling a record over all semantics', () => {
     const sample: Record<BlockSemantics, AnyBlockConfig> = {
       start: { name: 'Start' },
-      appointment: { kind: 'consult' },
+      appointment: { title: 'Consult' },
       treatment: { title: 'Lumbale spinale fusie' },
-      task: { assignee: 'caregiver' },
+      task: { title: 'Bel patiënt', assignee: 'caregiver' },
       message: { channel: 'email' },
       form: { questions: [] },
       decision: { question: 'x', outputs: ['ja', 'nee'] },
-      milestone: { note: 'm' },
+      milestone: { label: 'm' },
       wait: { event_type: 'lab_result' },
       pathway_link: {
         target_pathway_id: '11111111-1111-4111-8111-111111111111',
