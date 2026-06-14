@@ -149,9 +149,7 @@ class AppointmentValidator:
         if not spec.participants:
             raise InvalidLeadCountError()
 
-        lead_count = sum(
-            1 for p in spec.participants if p.role is AppointmentParticipantRole.LEAD
-        )
+        lead_count = sum(1 for p in spec.participants if p.role is AppointmentParticipantRole.LEAD)
         if lead_count != 1:
             raise InvalidLeadCountError()
 

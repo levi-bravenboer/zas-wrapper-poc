@@ -91,8 +91,8 @@ class AppointmentSource:
         }
 
         participants: dict[UUID, list[AppointmentParticipantInlineSummary]] = {}
-        for appointment_id, user_id, role, display_name in (
-            await self._repository.participant_rows(appointment_ids)
+        for appointment_id, user_id, role, display_name in await self._repository.participant_rows(
+            appointment_ids
         ):
             participants.setdefault(appointment_id, []).append(
                 AppointmentParticipantInlineSummary(

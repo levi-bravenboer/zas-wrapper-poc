@@ -14,9 +14,7 @@ def test_no_appointments_routes_in_app() -> None:
         for path in (getattr(route, "path", "") for route in app.routes)
         if path.startswith("/appointments")
     ]
-    assert appointment_paths == [], (
-        f"Expected no /appointments routes; found: {appointment_paths}"
-    )
+    assert appointment_paths == [], f"Expected no /appointments routes; found: {appointment_paths}"
 
 
 def test_no_appointments_in_openapi() -> None:

@@ -161,8 +161,6 @@ describe('LoginForm multi-role', () => {
 
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: /Beheerder/i }))
-    await waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith({ to: safeRedirect('/tasks') }),
-    )
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: safeRedirect('/tasks') }))
   })
 })

@@ -119,9 +119,7 @@ def test_ends_equal_to_starts_rejected() -> None:
 def test_ends_before_starts_rejected() -> None:
     now = datetime.now(UTC)
     with pytest.raises(EndsBeforeStartsError):
-        AppointmentValidator.validate(
-            _spec(starts_at=now, ends_at=now - timedelta(minutes=1))
-        )
+        AppointmentValidator.validate(_spec(starts_at=now, ends_at=now - timedelta(minutes=1)))
 
 
 def test_past_starts_at_accepted() -> None:

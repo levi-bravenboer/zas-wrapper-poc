@@ -93,9 +93,7 @@ class AppointmentTaskRepository:
             window_end=window_end,
             patient_id=patient_id,
         )
-        result = await self._session.execute(
-            select(func.count()).select_from(base.subquery())
-        )
+        result = await self._session.execute(select(func.count()).select_from(base.subquery()))
         return result.scalar_one()
 
     async def list_window(

@@ -86,6 +86,4 @@ class AppointmentParticipant(Entity):
         nullable=False,
     )
 
-    appointment: Mapped[Appointment] = relationship(
-        "Appointment", back_populates="participants"
-    )
+    appointment: Mapped[Appointment] = relationship("Appointment", back_populates="participants")

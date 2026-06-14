@@ -45,9 +45,9 @@ def upgrade() -> None:
     sa.Enum(*APPOINTMENT_KIND_VALUES, name="appointment_kind").create(op.get_bind())
     sa.Enum(*APPOINTMENT_STATUS_VALUES, name="appointment_status").create(op.get_bind())
     sa.Enum(*APPOINTMENT_MODALITY_VALUES, name="appointment_modality").create(op.get_bind())
-    sa.Enum(
-        *APPOINTMENT_PARTICIPANT_ROLE_VALUES, name="appointment_participant_role"
-    ).create(op.get_bind())
+    sa.Enum(*APPOINTMENT_PARTICIPANT_ROLE_VALUES, name="appointment_participant_role").create(
+        op.get_bind()
+    )
 
     op.create_table(
         "appointments",
@@ -57,9 +57,7 @@ def upgrade() -> None:
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column(
             "kind",
-            postgresql.ENUM(
-                *APPOINTMENT_KIND_VALUES, name="appointment_kind", create_type=False
-            ),
+            postgresql.ENUM(*APPOINTMENT_KIND_VALUES, name="appointment_kind", create_type=False),
             nullable=False,
         ),
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
@@ -100,9 +98,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
-        sa.CheckConstraint(
-            "ends_at > starts_at", name="ck_appointments_ends_after_starts"
-        ),
+        sa.CheckConstraint("ends_at > starts_at", name="ck_appointments_ends_after_starts"),
         sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["deleted_by"], ["users.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["patient_id"], ["patients.id"], ondelete="RESTRICT"),
@@ -158,9 +154,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["appointment_id"], ["appointments.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["appointment_id"], ["appointments.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
@@ -243,9 +237,9 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_appointments_patient_id"), table_name="appointments")
     op.drop_table("appointments")
 
-    sa.Enum(
-        *APPOINTMENT_PARTICIPANT_ROLE_VALUES, name="appointment_participant_role"
-    ).drop(op.get_bind())
+    sa.Enum(*APPOINTMENT_PARTICIPANT_ROLE_VALUES, name="appointment_participant_role").drop(
+        op.get_bind()
+    )
     sa.Enum(*APPOINTMENT_MODALITY_VALUES, name="appointment_modality").drop(op.get_bind())
     sa.Enum(*APPOINTMENT_STATUS_VALUES, name="appointment_status").drop(op.get_bind())
     sa.Enum(*APPOINTMENT_KIND_VALUES, name="appointment_kind").drop(op.get_bind())

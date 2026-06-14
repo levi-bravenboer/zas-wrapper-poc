@@ -19,11 +19,7 @@ def test_no_task_orm_class() -> None:
 
 
 async def test_no_tasks_table_in_db(db_session: AsyncSession) -> None:
-    rows = (
-        await db_session.execute(
-            text("SELECT to_regclass('public.tasks')")
-        )
-    ).scalar_one()
+    rows = (await db_session.execute(text("SELECT to_regclass('public.tasks')"))).scalar_one()
     assert rows is None
 
 
