@@ -13,47 +13,81 @@ import {
 import type { TimingPolicyValue } from '../../types'
 
 // Pathway-completion § C4.6: tagged-union timing_policy editor.
-// Variants mirror `app/domain/pathway/timing.py`; the dialog hides this
-// section entirely for kinds whose validator forbids timing
-// (start / end_pathway / informed_consent).
+// Variants mirror `app/domain/pathway/timing.py`; the dialog hides
+// this section entirely for kinds whose validator forbids timing
+// (start / end_pathway / informed_consent). Per-kind metadata
+// (which iso field the kind carries, its default value, the
+// fallback label) lives in `POLICY_META` so adding a kind = one
+// table entry.
 
-const POLICY_KINDS = [
-  'none',
-  'fixed_duration',
-  'wait_after',
-  'due_within',
-  'at_enrollment_picked_date',
-] as const
+type PolicyMeta = {
+  /** Object key on the policy carrying its iso-8601 duration. `null`
+   *  when the kind has no extra payload (e.g. `at_enrollment_picked_date`). */
+  isoField: 'duration_iso' | 'offset_iso' | 'window_iso' | null
+  /** Initial iso value the editor seeds when this kind is first picked. */
+  defaultIso: string | null
+  /** Placeholder when no iso is set yet. */
+  placeholder: string
+  /** Untranslated label fallback when the i18n key is missing. */
+  labelFallback: string
+}
 
-type PolicyKindOption = (typeof POLICY_KINDS)[number]
+const POLICY_META = {
+  none: {
+    isoField: null,
+    defaultIso: null,
+    placeholder: '',
+    labelFallback: 'Geen timing',
+  },
+  fixed_duration: {
+    isoField: 'duration_iso',
+    defaultIso: 'P1D',
+    placeholder: 'P1D',
+    labelFallback: 'Vaste duur',
+  },
+  wait_after: {
+    isoField: 'offset_iso',
+    defaultIso: 'PT0S',
+    placeholder: 'PT0S',
+    labelFallback: 'Wacht na startmoment',
+  },
+  due_within: {
+    isoField: 'window_iso',
+    defaultIso: 'P7D',
+    placeholder: 'P1D',
+    labelFallback: 'Af te ronden binnen',
+  },
+  at_enrollment_picked_date: {
+    isoField: null,
+    defaultIso: null,
+    placeholder: '',
+    labelFallback: 'Datum gekozen bij inschrijving',
+  },
+} as const satisfies Record<string, PolicyMeta>
 
-function kindOf(value: TimingPolicyValue): PolicyKindOption {
+type PolicyKind = keyof typeof POLICY_META
+
+const POLICY_KINDS = Object.keys(POLICY_META) as PolicyKind[]
+
+function kindOf(value: TimingPolicyValue): PolicyKind {
   if (!value) return 'none'
-  return value.kind as PolicyKindOption
+  return value.kind as PolicyKind
 }
 
 function isoOf(value: TimingPolicyValue): string {
   if (!value) return ''
-  const v = value as Record<string, unknown>
-  if (typeof v.duration_iso === 'string') return v.duration_iso
-  if (typeof v.offset_iso === 'string') return v.offset_iso
-  if (typeof v.window_iso === 'string') return v.window_iso
-  return ''
+  const field = POLICY_META[kindOf(value)].isoField
+  if (!field) return ''
+  const raw = (value as Record<string, unknown>)[field]
+  return typeof raw === 'string' ? raw : ''
 }
 
-function buildPolicy(kind: PolicyKindOption, iso: string): TimingPolicyValue {
-  switch (kind) {
-    case 'none':
-      return null
-    case 'fixed_duration':
-      return { kind: 'fixed_duration', duration_iso: iso || 'P1D' } as NonNullable<TimingPolicyValue>
-    case 'wait_after':
-      return { kind: 'wait_after', offset_iso: iso || 'PT0S' } as NonNullable<TimingPolicyValue>
-    case 'due_within':
-      return { kind: 'due_within', window_iso: iso || 'P7D' } as NonNullable<TimingPolicyValue>
-    case 'at_enrollment_picked_date':
-      return { kind: 'at_enrollment_picked_date' } as NonNullable<TimingPolicyValue>
-  }
+function buildPolicy(kind: PolicyKind, iso: string): TimingPolicyValue {
+  if (kind === 'none') return null
+  const meta = POLICY_META[kind]
+  const next: Record<string, unknown> = { kind }
+  if (meta.isoField) next[meta.isoField] = iso || meta.defaultIso || ''
+  return next as NonNullable<TimingPolicyValue>
 }
 
 type Props = {
@@ -64,15 +98,15 @@ type Props = {
 export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const kind = kindOf(value)
+  const meta = POLICY_META[kind]
   const iso = isoOf(value)
-  const needsIso = kind === 'fixed_duration' || kind === 'wait_after' || kind === 'due_within'
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Select
           value={kind}
-          onValueChange={(next) => onChange(buildPolicy(next as PolicyKindOption, iso))}
+          onValueChange={(next) => onChange(buildPolicy(next as PolicyKind, iso))}
         >
           <SelectTrigger className="h-8 flex-1 text-[12px]">
             <SelectValue />
@@ -81,26 +115,17 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
             {POLICY_KINDS.map((option) => (
               <SelectItem key={option} value={option}>
                 {t(`timingPolicy.kind.${option}`, {
-                  defaultValue:
-                    option === 'none'
-                      ? 'Geen timing'
-                      : option === 'fixed_duration'
-                        ? 'Vaste duur'
-                        : option === 'wait_after'
-                          ? 'Wacht na startmoment'
-                          : option === 'due_within'
-                            ? 'Af te ronden binnen'
-                            : 'Datum gekozen bij inschrijving',
+                  defaultValue: POLICY_META[option].labelFallback,
                 })}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {needsIso && (
+        {meta.isoField && (
           <Input
             aria-label={t('timingPolicy.isoLabel', { defaultValue: 'ISO 8601 duur' })}
             value={iso}
-            placeholder={kind === 'wait_after' ? 'PT0S' : 'P1D'}
+            placeholder={meta.placeholder}
             onChange={(e) => onChange(buildPolicy(kind, e.target.value))}
             className="h-8 w-[120px] text-[12px]"
           />

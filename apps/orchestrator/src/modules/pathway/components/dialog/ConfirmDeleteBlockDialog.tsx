@@ -3,17 +3,12 @@ import type { ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
 
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { legacyBlockType, type PathwayBlock, type PathwayBlockType } from '../../types'
+
+import { DialogHero } from './DialogHero'
 
 type Props = {
   open: boolean
@@ -41,22 +36,12 @@ export function ConfirmDeleteBlockDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-[440px]">
-        <DialogHeader>
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10 text-destructive">
-              <TriangleAlert className="size-4" />
-            </span>
-            <div>
-              <DialogTitle className="text-[15px]">
-                {t('deleteBlock.title', { defaultValue: 'Blok verwijderen?' })}
-              </DialogTitle>
-              <DialogDescription className="text-[12px]">
-                {block.name ||
-                  t('deleteBlock.unnamed', { defaultValue: '(naamloos blok)' })}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+        <DialogHero
+          tone="destructive"
+          icon={<TriangleAlert className="size-4" />}
+          title={t('deleteBlock.title', { defaultValue: 'Blok verwijderen?' })}
+          description={block.name || t('deleteBlock.unnamed', { defaultValue: '(naamloos blok)' })}
+        />
 
         {dependents.length > 0 ? (
           <div className="space-y-2">

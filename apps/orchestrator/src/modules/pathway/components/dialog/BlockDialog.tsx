@@ -2,13 +2,7 @@ import { type ReactElement, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 import { BlockTypeIcon } from '../../blockCatalogue'
 import { defaultConfig } from '../../configSchemas'
@@ -27,6 +21,7 @@ import { InspectorSwitch } from '../drawer/InspectorSwitch'
 
 import { BlockDialogFooter } from './BlockDialogFooter'
 import { BlockIdentityFields } from './BlockIdentityFields'
+import { DialogHero } from './DialogHero'
 import { DialogSection } from './DialogSection'
 import { InputLogicEditor } from './InputLogicEditor'
 import { TimingPolicyEditor } from './TimingPolicyEditor'
@@ -150,19 +145,11 @@ export function BlockDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[560px]">
-        <DialogHeader className="border-b px-5 py-4" style={{ borderColor: 'var(--hairline)' }}>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <BlockTypeIcon icon={blockType.icon} className="size-5" strokeWidth={1.7} />
-            </span>
-            <div className="min-w-0">
-              <DialogTitle className="text-[15px]">{title}</DialogTitle>
-              {typeDescription && (
-                <DialogDescription className="text-[12px]">{typeDescription}</DialogDescription>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
+        <DialogHero
+          icon={<BlockTypeIcon icon={blockType.icon} className="size-5" strokeWidth={1.7} />}
+          title={title}
+          description={typeDescription || undefined}
+        />
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
           <BlockIdentityFields

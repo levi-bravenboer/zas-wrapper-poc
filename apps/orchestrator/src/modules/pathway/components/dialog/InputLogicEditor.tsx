@@ -25,14 +25,68 @@ import type { PathwayBlock } from '../../types'
 type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
 type RuleShape = InputLogicShape['rules'][number]
 
-const COMPOSER_PREDICATES = [
-  'if_done',
-  'decision_output',
-  'if_not_done_within',
-  'event',
-] as const
+// Single source of truth for which composer predicates exist + the
+// per-predicate "extra" argument field they carry. Adding a predicate
+// is one entry.
+type PredicateMeta = {
+  /** Object key on `rule.args` that holds the extra value (e.g.
+   *  `output_key` for decision_output). `null` when the predicate
+   *  carries no extra (if_done). */
+  extraField: 'output_key' | 'offset_iso' | 'event_type' | null
+  /** Default value when the predicate is first picked. */
+  extraDefault: string
+  /** i18n key segment for the placeholder. */
+  placeholderKey: 'output' | 'iso' | 'event' | null
+}
 
-type ComposerPredicate = (typeof COMPOSER_PREDICATES)[number]
+const PREDICATE_META = {
+  if_done: { extraField: null, extraDefault: '', placeholderKey: null },
+  decision_output: {
+    extraField: 'output_key',
+    extraDefault: '',
+    placeholderKey: 'output',
+  },
+  if_not_done_within: {
+    extraField: 'offset_iso',
+    extraDefault: 'P14D',
+    placeholderKey: 'iso',
+  },
+  event: { extraField: 'event_type', extraDefault: '', placeholderKey: 'event' },
+} as const satisfies Record<string, PredicateMeta>
+
+type ComposerPredicate = keyof typeof PREDICATE_META
+
+const COMPOSER_PREDICATES = Object.keys(PREDICATE_META) as ComposerPredicate[]
+
+const COMPOSER_PREDICATE_SET = new Set<string>(COMPOSER_PREDICATES)
+
+function isComposerPredicate(value: string): value is ComposerPredicate {
+  return COMPOSER_PREDICATE_SET.has(value)
+}
+
+function predicateOf(rule: RuleShape): string {
+  return (rule.args as { predicate?: string }).predicate ?? 'if_done'
+}
+
+function buildArgs(
+  predicate: ComposerPredicate,
+  afterBlock: string,
+  extra: string,
+): RuleShape['args'] {
+  const meta = PREDICATE_META[predicate]
+  const base = { predicate, after_block: afterBlock } as Record<string, unknown>
+  if (meta.extraField) base[meta.extraField] = extra
+  return base as RuleShape['args']
+}
+
+function extraOf(rule: RuleShape): string {
+  const predicate = predicateOf(rule)
+  if (!isComposerPredicate(predicate)) return ''
+  const field = PREDICATE_META[predicate].extraField
+  if (!field) return ''
+  const value = (rule.args as Record<string, unknown>)[field]
+  return typeof value === 'string' ? value : ''
+}
 
 type Props = {
   value: InputLogicShape
@@ -41,55 +95,12 @@ type Props = {
   onChange: (next: InputLogicShape) => void
 }
 
-function predicateOf(rule: RuleShape): string {
-  return (rule.args as { predicate?: string }).predicate ?? 'if_done'
-}
-
-function buildArgs(predicate: ComposerPredicate, afterBlock: string, extra?: string): RuleShape['args'] {
-  switch (predicate) {
-    case 'if_done':
-      return { predicate: 'if_done', after_block: afterBlock } as RuleShape['args']
-    case 'decision_output':
-      return {
-        predicate: 'decision_output',
-        after_block: afterBlock,
-        output_key: extra ?? '',
-      } as RuleShape['args']
-    case 'if_not_done_within':
-      return {
-        predicate: 'if_not_done_within',
-        after_block: afterBlock,
-        offset_iso: extra ?? 'P14D',
-      } as RuleShape['args']
-    case 'event':
-      return {
-        predicate: 'event',
-        after_block: afterBlock,
-        event_type: extra ?? '',
-      } as RuleShape['args']
-  }
-}
-
-function extraOf(rule: RuleShape): string {
-  const args = rule.args as Record<string, unknown>
-  if (typeof args.output_key === 'string') return args.output_key
-  if (typeof args.offset_iso === 'string' && predicateOf(rule) === 'if_not_done_within')
-    return args.offset_iso
-  if (typeof args.event_type === 'string') return args.event_type
-  return ''
-}
-
 export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const rules = value.rules ?? []
 
-  function setRule(index: number, predicate: ComposerPredicate, afterBlock: string, extra?: string) {
-    const next = rules.map((rule, i) =>
-      i === index
-        ? { node: afterBlock, args: buildArgs(predicate, afterBlock, extra) }
-        : rule,
-    )
-    onChange({ ...value, rules: next })
+  function patchRule(index: number, next: RuleShape) {
+    onChange({ ...value, rules: rules.map((rule, i) => (i === index ? next : rule)) })
   }
 
   function addRule() {
@@ -97,7 +108,10 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
     if (!first) return
     onChange({
       ...value,
-      rules: [...rules, { node: first.id, args: buildArgs('if_done', first.id) }],
+      rules: [
+        ...rules,
+        { node: first.id, args: buildArgs('if_done', first.id, PREDICATE_META.if_done.extraDefault) },
+      ],
     })
   }
 
@@ -137,98 +151,32 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
 
       {rules.map((rule, index) => {
         const predicate = predicateOf(rule)
-        const composerPredicate = (
-          COMPOSER_PREDICATES as readonly string[]
-        ).includes(predicate)
-          ? (predicate as ComposerPredicate)
-          : null
-        const afterBlock = rule.node
-        const upstream = upstreamBlocks.find((b) => b.id === afterBlock)
-        // Rules authored outside the composer (e.g. wait_after markers)
-        // render read-only so we never mangle their args.
-        if (!composerPredicate) {
+        if (!isComposerPredicate(predicate)) {
           return (
-            <div
+            <ReadOnlyRule
               key={index}
-              className="flex items-center justify-between rounded-md border bg-muted/40 px-2.5 py-1.5 text-[12px] text-muted-foreground"
-            >
-              <span>
-                {predicate} · {upstream?.name ?? afterBlock}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
-                onClick={() => removeRule(index)}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </div>
+              predicate={predicate}
+              upstream={upstreamBlocks.find((b) => b.id === rule.node)}
+              afterBlock={rule.node}
+              onRemove={() => removeRule(index)}
+            />
           )
         }
-        const extra = extraOf(rule)
         return (
-          <div key={index} className="flex items-center gap-1.5 rounded-md border px-2 py-1.5">
-            <Select
-              value={composerPredicate}
-              onValueChange={(p) => setRule(index, p as ComposerPredicate, afterBlock, extra)}
-            >
-              <SelectTrigger className="h-8 w-[150px] text-[12px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {COMPOSER_PREDICATES.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {t(`inputLogic.predicate.${p}`, { defaultValue: p })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={afterBlock}
-              onValueChange={(blockId) => setRule(index, composerPredicate, blockId, extra)}
-            >
-              <SelectTrigger className="h-8 flex-1 text-[12px]">
-                <SelectValue
-                  placeholder={t('inputLogic.pickBlock', { defaultValue: 'Kies blok' })}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {upstreamBlocks.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.name || b.id.slice(0, 8)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {composerPredicate !== 'if_done' && (
-              <Input
-                aria-label={t(`inputLogic.extra.${composerPredicate}`, {
-                  defaultValue: 'detail',
-                })}
-                value={extra}
-                placeholder={
-                  composerPredicate === 'decision_output'
-                    ? t('inputLogic.extraPlaceholder.output', { defaultValue: 'output (bv. goed)' })
-                    : composerPredicate === 'if_not_done_within'
-                      ? 'P14D'
-                      : t('inputLogic.extraPlaceholder.event', { defaultValue: 'event type' })
-                }
-                onChange={(e) => setRule(index, composerPredicate, afterBlock, e.target.value)}
-                className="h-8 w-[130px] text-[12px]"
-              />
-            )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
-              onClick={() => removeRule(index)}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
-          </div>
+          <EditableRule
+            key={index}
+            predicate={predicate}
+            afterBlock={rule.node}
+            extra={extraOf(rule)}
+            upstreamBlocks={upstreamBlocks}
+            onChange={(nextPredicate, nextAfter, nextExtra) =>
+              patchRule(index, {
+                node: nextAfter,
+                args: buildArgs(nextPredicate, nextAfter, nextExtra),
+              })
+            }
+            onRemove={() => removeRule(index)}
+          />
         )
       })}
 
@@ -242,6 +190,124 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
       >
         <Plus className="size-3.5" />
         {t('inputLogic.addRule', { defaultValue: 'Voeg regel toe' })}
+      </Button>
+    </div>
+  )
+}
+
+type ReadOnlyRuleProps = {
+  predicate: string
+  upstream: PathwayBlock | undefined
+  afterBlock: string
+  onRemove: () => void
+}
+
+// Rules authored outside the composer (e.g. `wait_after` markers
+// surfaced by the timing inspector) render read-only so we never
+// mangle their args.
+function ReadOnlyRule({
+  predicate,
+  upstream,
+  afterBlock,
+  onRemove,
+}: ReadOnlyRuleProps): ReactElement {
+  const { t } = useTranslation('pathway')
+  return (
+    <div className="flex items-center justify-between rounded-md border bg-muted/40 px-2.5 py-1.5 text-[12px] text-muted-foreground">
+      <span>
+        {predicate} · {upstream?.name ?? afterBlock}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
+        onClick={onRemove}
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+    </div>
+  )
+}
+
+type EditableRuleProps = {
+  predicate: ComposerPredicate
+  afterBlock: string
+  extra: string
+  upstreamBlocks: PathwayBlock[]
+  onChange: (predicate: ComposerPredicate, afterBlock: string, extra: string) => void
+  onRemove: () => void
+}
+
+function EditableRule({
+  predicate,
+  afterBlock,
+  extra,
+  upstreamBlocks,
+  onChange,
+  onRemove,
+}: EditableRuleProps): ReactElement {
+  const { t } = useTranslation('pathway')
+  const meta = PREDICATE_META[predicate]
+  const placeholderKey = meta.placeholderKey
+  const placeholder =
+    placeholderKey === 'output'
+      ? t('inputLogic.extraPlaceholder.output', { defaultValue: 'output (bv. goed)' })
+      : placeholderKey === 'iso'
+        ? 'P14D'
+        : placeholderKey === 'event'
+          ? t('inputLogic.extraPlaceholder.event', { defaultValue: 'event type' })
+          : ''
+
+  return (
+    <div className="flex items-center gap-1.5 rounded-md border px-2 py-1.5">
+      <Select
+        value={predicate}
+        onValueChange={(p) => onChange(p as ComposerPredicate, afterBlock, extra)}
+      >
+        <SelectTrigger className="h-8 w-[150px] text-[12px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {COMPOSER_PREDICATES.map((p) => (
+            <SelectItem key={p} value={p}>
+              {t(`inputLogic.predicate.${p}`, { defaultValue: p })}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={afterBlock}
+        onValueChange={(blockId) => onChange(predicate, blockId, extra)}
+      >
+        <SelectTrigger className="h-8 flex-1 text-[12px]">
+          <SelectValue placeholder={t('inputLogic.pickBlock', { defaultValue: 'Kies blok' })} />
+        </SelectTrigger>
+        <SelectContent>
+          {upstreamBlocks.map((b) => (
+            <SelectItem key={b.id} value={b.id}>
+              {b.name || b.id.slice(0, 8)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {meta.extraField && (
+        <Input
+          aria-label={t(`inputLogic.extra.${predicate}`, { defaultValue: 'detail' })}
+          value={extra}
+          placeholder={placeholder}
+          onChange={(e) => onChange(predicate, afterBlock, e.target.value)}
+          className="h-8 w-[130px] text-[12px]"
+        />
+      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
+        onClick={onRemove}
+      >
+        <Trash2 className="size-3.5" />
       </Button>
     </div>
   )
