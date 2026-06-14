@@ -18,11 +18,7 @@ const TONE_CLASS: Record<Tone, string> = {
   destructive: 'bg-destructive/10 text-destructive',
 }
 
-// Shared dialog header: small coloured icon square + title +
-// description. Used by `BlockDialog` (primary tone) and
-// `ConfirmDeleteBlockDialog` (destructive tone). Centralises the
-// layout + tone classes so adding another dialog doesn't re-derive
-// the visual language each time.
+// Shared dialog header (used by BlockDialog + ConfirmDeleteBlockDialog).
 export function DialogHero({
   icon,
   title,

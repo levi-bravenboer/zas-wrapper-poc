@@ -18,9 +18,7 @@ type Props = {
   onChangePhase: (phaseId: string) => void
 }
 
-// Identity inputs that sit at the top of `BlockDialog`. Name field
-// hides for kinds whose canvas shape conveys identity (end_pathway —
-// the circle is enough). Phase picker always renders.
+// Identity inputs (name + phase) for BlockDialog.
 export function BlockIdentityFields({
   name,
   phaseId,

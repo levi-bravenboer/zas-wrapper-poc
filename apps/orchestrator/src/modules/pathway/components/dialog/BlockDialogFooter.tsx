@@ -16,8 +16,7 @@ type Props = {
   onDelete?: (() => void) | undefined
 }
 
-// Footer for `BlockDialog`. Delete button only renders in edit mode
-// when the kind is deletable (see `getBlockEditingFeatures`).
+// Footer for BlockDialog (see `getBlockEditingFeatures.deletable`).
 export function BlockDialogFooter({
   mode,
   canSubmit,

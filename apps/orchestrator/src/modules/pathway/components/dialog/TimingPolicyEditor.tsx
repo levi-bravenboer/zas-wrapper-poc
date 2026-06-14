@@ -7,23 +7,16 @@ import type { TimingPolicyValue } from '../../types'
 
 import { OptionsSelect } from './OptionsSelect'
 
-// Pathway-completion § C4.6: tagged-union timing_policy editor.
-// Variants mirror `app/domain/pathway/timing.py`; the dialog hides
-// this section entirely for kinds whose validator forbids timing
-// (start / end_pathway / informed_consent). Per-kind metadata
-// (which iso field the kind carries, its default value, the
-// fallback label) lives in `POLICY_META` so adding a kind = one
-// table entry.
+// Pathway-completion § C4.6: tagged-union `timing_policy` editor.
+// Variants mirror `app/domain/pathway/timing.py`. Adding a kind = one
+// `POLICY_META` entry.
 
 type PolicyMeta = {
   /** Object key on the policy carrying its iso-8601 duration. `null`
    *  when the kind has no extra payload (e.g. `at_enrollment_picked_date`). */
   isoField: 'duration_iso' | 'offset_iso' | 'window_iso' | null
-  /** Initial iso value the editor seeds when this kind is first picked. */
   defaultIso: string | null
-  /** Placeholder when no iso is set yet. */
   placeholder: string
-  /** Untranslated label fallback when the i18n key is missing. */
   labelFallback: string
 }
 

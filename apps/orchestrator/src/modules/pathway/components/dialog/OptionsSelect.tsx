@@ -25,10 +25,8 @@ type Props = {
   triggerClassName?: string
 }
 
-// Thin wrapper around the shadcn `Select` parts used across the
-// dialog dir (phase picker, predicate picker, node picker, aggregator
-// picker, timing-kind picker). One signature instead of five 15-line
-// JSX blobs.
+// Shadcn `Select` wrapper — one signature for every picker in the
+// dialog dir.
 export function OptionsSelect({
   value,
   options,

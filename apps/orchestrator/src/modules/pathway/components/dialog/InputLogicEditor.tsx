@@ -9,30 +9,20 @@ import type { PathwayBlock } from '../../types'
 
 import { OptionsSelect } from './OptionsSelect'
 
-// Typed rule composer over the already-placed blocks
-// (pathway-completion § C4.5). `input_logic` is the single authored
-// connector surface — the canvas derives its edges from these rules.
-//
-// PoC composer scope: the block-referencing predicates an author wires
-// by hand. `wait_after` (time markers) and the data predicates keep
-// their authoring story in the marker/timing inspectors.
+// Pathway-completion § C4.5: composer for block-referencing
+// `input_logic` predicates. `wait_after` / data predicates keep their
+// own inspectors and surface here read-only.
 
 type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
 type RuleShape = InputLogicShape['rules'][number]
 
-// Single source of truth for which composer predicates exist + the
-// per-predicate "extra" argument field they carry. Adding a predicate
-// is one entry.
+// Adding a predicate = one entry.
 type PredicateMeta = {
   /** Object key on `rule.args` that holds the extra value (e.g.
    *  `output_key` for decision_output). `null` when the predicate
    *  carries no extra (if_done). */
   extraField: 'output_key' | 'offset_iso' | 'event_type' | null
-  /** i18n key for the placeholder, or `null` when no translation is
-   *  needed (raw fallback only). */
   placeholderI18nKey: string | null
-  /** Placeholder text used directly (and as i18n default when a key
-   *  is provided). */
   placeholderDefault: string
 }
 

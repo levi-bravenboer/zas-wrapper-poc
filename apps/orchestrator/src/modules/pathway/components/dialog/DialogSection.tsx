@@ -5,10 +5,7 @@ type Props = {
   children: ReactNode
 }
 
-// Shared shell for the bordered, header-stamped sections inside
-// `BlockDialog` (config / input_logic / timing_policy). One place
-// owns the border colour, padding, and header type-scale — every
-// section stays visually identical.
+// Bordered, header-stamped section used by BlockDialog.
 export function DialogSection({ header, children }: Props): ReactElement {
   return (
     <section className="space-y-2 rounded-md border bg-muted/20 p-3">

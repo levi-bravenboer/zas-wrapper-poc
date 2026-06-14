@@ -51,13 +51,9 @@ type Props = {
   onClose: () => void
 }
 
-// Pathway-completion § C4: THE authoring surface. Title + phase
-// picker + per-kind config + input_logic rule composer +
-// timing_policy editor. Per-kind rules (which sections show, whether
-// the block is deletable, whether it carries a name) live in
-// `getBlockEditingFeatures`. State + parsed-config + canSubmit live
-// in `useBlockDraft`. Submit applies the whole draft in one
-// dispatch; cancel leaves the version untouched.
+// Pathway-completion § C4: per-block authoring surface. Per-kind
+// rules live in `getBlockEditingFeatures`; draft state in
+// `useBlockDraft`.
 export function BlockDialog({
   open,
   mode,
@@ -87,8 +83,7 @@ export function BlockDialog({
   const upstreamBlocks = blocks.filter((b) => b.id !== block?.id)
   const title = t(TITLE_KEY[mode].key, { defaultValue: TITLE_KEY[mode].fallback, type: typeLabel })
 
-  // Sections render in this order; visibility flips off via
-  // `features.*`. Adding a new authoring surface = adding one entry.
+  // Adding a section = one entry.
   const sections: Array<{ id: string; visible: boolean; header: string; body: ReactNode }> = [
     {
       id: 'config',
