@@ -80,9 +80,10 @@ class FieldChange(BaseModel):                       # changes: dict[str, FieldCh
 class AuditContext(BaseModel, extra="allow"):       # context
     ip: IPvAnyAddress | None = None
     user_agent: str | None = None
-    request_id: UUID | None = None
     reason: str | None = None                        # break-glass / override justification
 ```
+
+`request_id` is NOT in `AuditContext` — it is a first-class indexed column (D6, Q4) for log correlation.
 
 `FieldChange` replaces the positional `[old, new]` list (easy to mis-order) with named fields. `AuditContext` types the known keys (real `IPvAnyAddress`, not str) while `extra="allow"` keeps per-feed flexibility.
 
@@ -94,12 +95,13 @@ class AuditContext(BaseModel, extra="allow"):       # context
 | `created_at` | `timestamptz` | `server_default=now()`; event time |
 | `actor_type` | `ActorType` | `anonymous` for unauthenticated / login-failure |
 | `actor_id` | `UUID` NULL | denormalised, **no FK**; null for system/service/anonymous |
-| `actor_label` | `text` NULL | identity captured at event time (email) — legible after rename/delete |
+| `actor_label` | `text` NULL | actor **display name** captured at event time (Q3) — legible after rename/delete |
 | `tenant_id` | `UUID` NULL | denormalised, indexed, **no FK**; null pre-tenant |
 | `action` | `AuditAction` | verb enum (D3) |
 | `result` | `AuditResult` | default `success` (D4) |
 | `resource_type` | `text` NULL | noun, registry-validated (D3/D10) |
 | `resource_id` | `UUID` NULL | affected row PK |
+| `request_id` | `UUID` NULL | first-class, indexed — log correlation (Q4) |
 | `changes` | `jsonb` NULL | `dict[str, FieldChange]` |
 | `context` | `jsonb` NULL | `AuditContext` |
 
@@ -111,6 +113,7 @@ No `updated_at` / `deleted_at` (immutable). No FKs on `tenant_id` / `actor_id` �
 (actor_id, created_at desc)                      -- everything Y did
 (tenant_id, created_at desc)                      -- tenant timeline
 (action, result, created_at desc)                -- "all failed logins last 24h"
+(request_id)                                      -- log correlation (Q4)
 ```
 
 ### D7 — Three feeds, one record
@@ -161,6 +164,7 @@ async def emit(
     result: AuditResult = AuditResult.success,
     resource_type: str | None = None,
     resource_id: UUID | None = None,
+    request_id: UUID | None = None,
     changes: dict[str, FieldChange] | None = None,
     context: AuditContext | None = None,
     actor: Actor | None = None,            # default: session.info[SESSION_ACTOR_KEY]
@@ -243,9 +247,9 @@ MODIFY
   Patient / User models      # __audited__ = True
 ```
 
-## Open questions
+## Resolved questions
 
-- **Q1 — Starter opt-in set.** Confirm `User` + `Patient` for v1, or wider (`Appointment`, `Pathway`, `Organisation`, `CareTeam`)?
-- **Q2 — Successful-login durability.** `emit` (transaction-bound) or `emit_committed` like failures? (Leaning `emit_committed` for a complete auth trail.)
-- **Q3 — `actor_label` source.** Email, display name, or both? Whatever the resolved `Actor` exposes — confirm the field.
-- **Q4 — `request_id` promotion.** Keep in `context`, or promote to a first-class indexed `UUID` column for log correlation? (Leaning keep-in-context unless correlation is frequent.)
+- **Q1 — Starter opt-in set.** RESOLVED: `User` + `Patient` for v1 (D14). Expand per-model later.
+- **Q2 — Successful-login durability.** RESOLVED: `emit_committed` for BOTH login success and failure (complete auth trail surviving any request outcome — D12).
+- **Q3 — `actor_label` source.** RESOLVED: actor **display name** (D6/D10).
+- **Q4 — `request_id`.** RESOLVED: promoted to a first-class indexed `UUID` column (D6); removed from `AuditContext` (D5).
