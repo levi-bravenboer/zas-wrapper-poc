@@ -122,11 +122,12 @@ def _build_payload() -> PathwayDefinitionReplace:
         ],
         blocks=[
             # Catalogue-expansion § 1: every published pathway needs a
-            # StartBlock on a `system` lane. Auto-fires at enrollment.
+            # StartBlock on the `caregiver` lane. Auto-fires at
+            # enrollment.
             PathwayBlockIn(
                 id=BLOCK_START_ID,
                 phase_id=PHASE_PRE_OP_ID,
-                lane_id=LANE_SYSTEM_ID,
+                lane_id=LANE_CAREGIVER_ID,
                 kind="start",
                 label="Start",
                 config={"name": "Start"},

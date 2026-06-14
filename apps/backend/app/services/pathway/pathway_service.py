@@ -254,20 +254,58 @@ class PathwayService:
             ("caregiver", "Zorgteam", False),
             ("system", "Systeem", False),
         ]
-        session.add_all(
-            [
-                PathwayLane(
+        lane_rows = [
+            PathwayLane(
+                id=uuid4(),
+                pathway_version_id=version.id,
+                pathway_lane_kind_id=lane_kinds[code].id,
+                label=label,
+                ord=(idx + 1) * 10,
+                is_default=is_default,
+            )
+            for idx, (code, label, is_default) in enumerate(default_lane_codes)
+            if code in lane_kinds
+        ]
+        session.add_all(lane_rows)
+        # Scaffold a Pre-op phase + StartBlock on the caregiver lane so a
+        # fresh pathway opens with the required §A1 entry block already
+        # placed. Authors never need to "add Start manually"; the canvas
+        # opens with a working starting point.
+        caregiver_kind = lane_kinds.get("caregiver")
+        caregiver_lane = (
+            next(
+                (lane for lane in lane_rows if lane.pathway_lane_kind_id == caregiver_kind.id),
+                None,
+            )
+            if caregiver_kind is not None
+            else None
+        )
+        if caregiver_lane is not None:
+            scaffold_phase = PathwayPhase(
+                id=uuid4(),
+                pathway_version_id=version.id,
+                template_id="pre-op",
+                label="Pre-op",
+                ord=10,
+            )
+            session.add(scaffold_phase)
+            # Flush so the phase + lane rows exist before the block row
+            # references them via foreign keys.
+            await session.flush()
+            session.add(
+                PathwayBlock(
                     id=uuid4(),
                     pathway_version_id=version.id,
-                    pathway_lane_kind_id=lane_kinds[code].id,
-                    label=label,
-                    ord=(idx + 1) * 10,
-                    is_default=is_default,
+                    phase_id=scaffold_phase.id,
+                    lane_id=caregiver_lane.id,
+                    kind="start",
+                    label="Start",
+                    input_logic={"rules": [], "aggregator": "all_of", "n_of_m": None},
+                    timing_policy=None,
+                    x=0,
+                    y=0,
                 )
-                for idx, (code, label, is_default) in enumerate(default_lane_codes)
-                if code in lane_kinds
-            ]
-        )
+            )
         await session.flush()
         definition = await self._build_version_definition(version)
         return PathwayWithVersionResponse(
@@ -817,7 +855,7 @@ def _resolve_or_materialize_lane(
 
 
 _BLOCK_ENVELOPE_KEYS: frozenset[str] = frozenset(
-    {"lane_kind", "input_logic", "timing_policy"}
+    {"name", "lane_kind", "input_logic", "timing_policy"}
 )
 
 

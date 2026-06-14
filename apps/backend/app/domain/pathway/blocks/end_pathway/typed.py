@@ -35,15 +35,10 @@ class EndPathwayBlock(BaseBlock):
     # `square` — lucide has no plain "stop"; square reads as the stop glyph.
     ICON: ClassVar[str] = "square"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)
-    CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(
-        properties={
-            "name": {"type": "string", "minLength": 1, "maxLength": 255},
-        },
-        required=["name"],
-    )
-    UI_SCHEMA: ClassVar[dict[str, Any]] = {
-        "order": ["name"],
-    }
+    # `name` is an envelope field (lives on BaseBlock); the per-kind
+    # config surface is empty.
+    CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(properties={})
+    UI_SCHEMA: ClassVar[dict[str, Any]] = {"order": []}
 
 
 __all__ = ["EndPathwayBlock"]

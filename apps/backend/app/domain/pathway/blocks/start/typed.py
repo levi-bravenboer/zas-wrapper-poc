@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 
 from app.domain.pathway._helpers import object_schema
 from app.domain.pathway.blocks.base import BaseBlock
-from app.domain.pathway.lanes import LANE_KIND_SYSTEM
+from app.domain.pathway.lanes import LANE_KIND_CAREGIVER
 
 
 class StartBlock(BaseBlock):
@@ -35,16 +35,11 @@ class StartBlock(BaseBlock):
         "blocks gated by `if_done(start)` become eligible immediately."
     )
     ICON: ClassVar[str] = "play"
-    allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)
-    CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(
-        properties={
-            "name": {"type": "string", "minLength": 1, "maxLength": 255},
-        },
-        required=["name"],
-    )
-    UI_SCHEMA: ClassVar[dict[str, Any]] = {
-        "order": ["name"],
-    }
+    allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_CAREGIVER,)
+    # `name` is an envelope field (lives on BaseBlock); the per-kind
+    # config surface is empty.
+    CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(properties={})
+    UI_SCHEMA: ClassVar[dict[str, Any]] = {"order": []}
 
 
 __all__ = ["StartBlock"]

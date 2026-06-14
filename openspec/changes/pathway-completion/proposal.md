@@ -166,7 +166,10 @@ without re-deriving.
 - Cardinality: exactly one per pathway version (publish-time
   validator rejects 0 or >1).
 - Per-kind columns: none. `BaseBlock.name` is the only stored field.
-- Lane: `system`.
+- Lane: `caregiver` (single allowed kind; 2026-06-14 narrow from
+  the original `system` placement — the caregiver who enrolls the
+  patient is the implicit actor on the entry block, and the
+  canvas renders the Start as a circle on the caregiver row).
 - Input logic: forbidden — must be the empty aggregate.
 - Timing policy: forbidden — must be `None`.
 - Runtime: at enrollment create, every `StartBlock` execution skips

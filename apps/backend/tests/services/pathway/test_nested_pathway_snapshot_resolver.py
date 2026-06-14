@@ -61,6 +61,16 @@ def _lane() -> PathwayLaneIn:
     )
 
 
+def _caregiver_lane() -> PathwayLaneIn:
+    return PathwayLaneIn(
+        id=uuid.uuid4(),
+        lane_kind_code="caregiver",
+        label="Caregiver",
+        ord=1,
+        is_default=False,
+    )
+
+
 def _start_block(*, phase_id, lane_id) -> PathwayBlockIn:
     """Catalogue-expansion § 1 fixture: minimal valid StartBlock."""
     return PathwayBlockIn(
@@ -135,8 +145,9 @@ async def _seed_concept_pathway(db_session: AsyncSession, *, name: str) -> Pathw
     db_session.add(version)
     await db_session.flush()
     # Catalogue-expansion § 1: every publishable pathway needs a
-    # StartBlock on a `system` lane. Seed the minimal phase + system
-    # lane + start so the publish gate accepts the concept.
+    # StartBlock on a `caregiver` lane (and an EndPathwayBlock on a
+    # `system` lane). Seed both lanes so the publish gate accepts the
+    # concept.
     phase = PathwayPhase(
         id=uuid.uuid4(),
         pathway_version_id=version.id,
@@ -146,39 +157,52 @@ async def _seed_concept_pathway(db_session: AsyncSession, *, name: str) -> Pathw
         width_px=200,
     )
     db_session.add(phase)
-    system_kind_id = (
-        await db_session.execute(
-            select(PathwayLaneKind.id).where(PathwayLaneKind.code == "system")
-        )
-    ).scalar_one()
-    lane = PathwayLane(
+    lane_kind_ids = {
+        code: row_id
+        for code, row_id in (
+            await db_session.execute(
+                select(PathwayLaneKind.code, PathwayLaneKind.id).where(
+                    PathwayLaneKind.code.in_(["caregiver", "system"])
+                )
+            )
+        ).all()
+    }
+    caregiver_lane = PathwayLane(
         id=uuid.uuid4(),
         pathway_version_id=version.id,
-        pathway_lane_kind_id=system_kind_id,
-        label="System",
+        pathway_lane_kind_id=lane_kind_ids["caregiver"],
+        label="Caregiver",
         ord=10,
         is_default=True,
     )
-    db_session.add(lane)
+    system_lane = PathwayLane(
+        id=uuid.uuid4(),
+        pathway_version_id=version.id,
+        pathway_lane_kind_id=lane_kind_ids["system"],
+        label="System",
+        ord=20,
+        is_default=False,
+    )
+    db_session.add_all([caregiver_lane, system_lane])
     await db_session.flush()
     db_session.add(
         PathwayBlock(
             id=uuid.uuid4(),
             pathway_version_id=version.id,
             phase_id=phase.id,
-            lane_id=lane.id,
+            lane_id=caregiver_lane.id,
             label="Start",
             kind="start",
         )
     )
     # Catalogue-expansion § 2: every publishable pathway also needs at
-    # least one EndPathwayBlock. Drop one on the same system lane.
+    # least one EndPathwayBlock on a system lane.
     db_session.add(
         PathwayBlock(
             id=uuid.uuid4(),
             pathway_version_id=version.id,
             phase_id=phase.id,
-            lane_id=lane.id,
+            lane_id=system_lane.id,
             label="End",
             kind="end_pathway",
         )
@@ -233,6 +257,7 @@ async def test_specific_pin_snapshots_configured_version(
     service = _service(db_session)
     phase = _phase()
     lane = _lane()
+    caregiver_lane = _caregiver_lane()
     block = _pathway_link(
         phase_id=phase.id,
         lane_id=lane.id,
@@ -245,8 +270,8 @@ async def test_specific_pin_snapshots_configured_version(
         parent.tenant_id,
         _payload(
             phases=[phase],
-            lanes=[lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
+            lanes=[lane, caregiver_lane],
+            blocks=[_start_block(phase_id=phase.id, lane_id=caregiver_lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
         ),
     )
     await db_session.commit()
@@ -276,6 +301,7 @@ async def test_latest_published_pin_snapshots_latest(
     service = _service(db_session)
     phase = _phase()
     lane = _lane()
+    caregiver_lane = _caregiver_lane()
     block = _pathway_link(
         phase_id=phase.id,
         lane_id=lane.id,
@@ -287,8 +313,8 @@ async def test_latest_published_pin_snapshots_latest(
         parent.tenant_id,
         _payload(
             phases=[phase],
-            lanes=[lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
+            lanes=[lane, caregiver_lane],
+            blocks=[_start_block(phase_id=phase.id, lane_id=caregiver_lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
         ),
     )
     await db_session.commit()
@@ -316,6 +342,7 @@ async def test_latest_published_pin_publish_fails_without_target_publish(
     service = _service(db_session)
     phase = _phase()
     lane = _lane()
+    caregiver_lane = _caregiver_lane()
     block = _pathway_link(
         phase_id=phase.id,
         lane_id=lane.id,
@@ -327,8 +354,8 @@ async def test_latest_published_pin_publish_fails_without_target_publish(
         parent.tenant_id,
         _payload(
             phases=[phase],
-            lanes=[lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
+            lanes=[lane, caregiver_lane],
+            blocks=[_start_block(phase_id=phase.id, lane_id=caregiver_lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
         ),
     )
     await db_session.commit()

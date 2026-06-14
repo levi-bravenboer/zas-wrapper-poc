@@ -62,11 +62,12 @@ def _replace_payload(name: str, lane_kinds: dict[str, PathwayLaneKind]) -> dict:
         ],
         "blocks": [
             # Catalogue-expansion § 1: every published pathway needs a
-            # StartBlock on a `system` lane (publish-time invariant).
+            # StartBlock on the `caregiver` lane (publish-time
+            # invariant after the lane-kind narrow).
             {
                 "id": start_block_id,
                 "phase_id": phase_id,
-                "lane_id": system_lane_id,
+                "lane_id": caregiver_lane_id,
                 "kind": "start",
                 "label": "Start",
                 "config": {"name": "Start"},
@@ -232,7 +233,16 @@ async def test_create_pathway_returns_definition(
     assert body["pathway"]["patient_goal"] == "Walk pain-free with my grandkids."
     assert body["version"]["status"] == "concept"
     assert body["version"]["kind"] == "initial"
-    assert body["version"]["blocks"] == []
+    # §A1 scaffold: fresh pathway opens with a Start block on the
+    # caregiver lane already placed.
+    assert len(body["version"]["blocks"]) == 1
+    scaffolded = body["version"]["blocks"][0]
+    assert scaffolded["kind"] == "start"
+    caregiver_lane = next(
+        lane for lane in body["version"]["lanes"] if lane["lane_kind_code"] == "caregiver"
+    )
+    assert scaffolded["lane_id"] == caregiver_lane["id"]
+    assert body["version"]["phases"][0]["template_id"] == "pre-op"
 
 
 async def test_list_pathways_includes_created(
@@ -405,7 +415,7 @@ async def test_replace_disallowed_lane_returns_422(
     created = await _create(async_client)
 
     payload = _replace_payload("Bad lane", lane_kinds)
-    # _replace_payload now seeds [StartBlock(system), Appointment(caregiver)];
+    # _replace_payload seeds [StartBlock(caregiver), Appointment(caregiver), End(system)];
     # mutate the appointment block to a message kind that requires patient lane.
     payload["blocks"][1]["kind"] = "message"
     payload["blocks"][1]["config"] = {
