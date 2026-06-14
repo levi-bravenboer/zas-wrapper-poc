@@ -107,7 +107,7 @@ export function LineChart({ series }: LineChartProps): ReactElement | null {
               activeDot={{ r: 5 }}
               connectNulls={false}
               isAnimationActive={false}
-              {...(dotsOnly ? ({ strokeOpacity: 0 } as { strokeOpacity: number }) : {})}
+              strokeOpacity={dotsOnly ? 0 : 1}
             />
           )
         })}

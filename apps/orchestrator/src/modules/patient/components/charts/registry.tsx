@@ -20,6 +20,14 @@ import { UnknownLog } from './UnknownLog'
  * instrument grouping (sys + dia on one chart) happens in the
  * `<InstrumentCard>` BEFORE this dispatch — the registry handles ONE series
  * at a time.
+ *
+ * Reason for the per-case casts below: the OpenAPI-generated
+ * `LusciiMeasurementSeries` is a union that openapi-typescript does NOT
+ * emit with a literal `points` discriminator — the `points` array stays the
+ * full union after narrowing `series.archetype`. The project-local
+ * `NumericSeries`/`OrdinalSeries`/etc. variants (`types.ts`) re-bind the
+ * `points` array shape per archetype; each renderer wants the narrower
+ * shape, and the switch-on-`archetype` makes the cast sound.
  */
 export function renderChartForSeries(series: LusciiMeasurementSeries): ReactElement {
   switch (series.archetype) {
