@@ -45,7 +45,9 @@ export type KindTileProps = {
 }
 
 export function KindTile({ kind, size = 'md', className }: KindTileProps): ReactElement {
-  const variant = KIND_VARIANTS[kind]
+  // Fall back to `other` if the backend ships a kind the frontend doesn't
+  // know yet (deploy skew between backend and orchestrator typegen).
+  const variant = KIND_VARIANTS[kind] ?? KIND_VARIANTS.other
   const Icon = variant.icon
   return (
     <div
