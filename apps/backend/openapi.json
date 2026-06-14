@@ -4841,6 +4841,82 @@
         "title": "LusciiAlertThreshold",
         "description": "A clinician-facing alert threshold defined by Luscii. Read-only here."
       },
+      "LusciiCategoricalPoint": {
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "archetype": {
+            "type": "string",
+            "const": "categorical",
+            "title": "Archetype",
+            "default": "categorical"
+          },
+          "responses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Responses"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observed_at"
+        ],
+        "title": "LusciiCategoricalPoint",
+        "description": "A single measurement point projected from a multiple-choice item."
+      },
+      "LusciiFreeTextPoint": {
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "archetype": {
+            "type": "string",
+            "const": "free_text",
+            "title": "Archetype",
+            "default": "free_text"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observed_at",
+          "text"
+        ],
+        "title": "LusciiFreeTextPoint",
+        "description": "A single measurement point projected from a free-text answer."
+      },
       "LusciiInstrument": {
         "properties": {
           "code": {
@@ -5131,6 +5207,108 @@
         "title": "LusciiLinkResult",
         "description": "Echo of the linked Luscii patient for eyeball verification in the UI."
       },
+      "LusciiMeasurementSeries": {
+        "properties": {
+          "series_id": {
+            "type": "string",
+            "title": "Series Id"
+          },
+          "instrument_id": {
+            "type": "string",
+            "title": "Instrument Id"
+          },
+          "instrument_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Name"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "archetype": {
+            "type": "string",
+            "enum": [
+              "numeric",
+              "ordinal",
+              "categorical",
+              "free_text",
+              "unknown"
+            ],
+            "title": "Archetype"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "points": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/LusciiNumericPoint"
+                },
+                {
+                  "$ref": "#/components/schemas/LusciiOrdinalPoint"
+                },
+                {
+                  "$ref": "#/components/schemas/LusciiCategoricalPoint"
+                },
+                {
+                  "$ref": "#/components/schemas/LusciiFreeTextPoint"
+                },
+                {
+                  "$ref": "#/components/schemas/LusciiUnknownPoint"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "archetype",
+                "mapping": {
+                  "categorical": "#/components/schemas/LusciiCategoricalPoint",
+                  "free_text": "#/components/schemas/LusciiFreeTextPoint",
+                  "numeric": "#/components/schemas/LusciiNumericPoint",
+                  "ordinal": "#/components/schemas/LusciiOrdinalPoint",
+                  "unknown": "#/components/schemas/LusciiUnknownPoint"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "series_id",
+          "instrument_id",
+          "item_id",
+          "archetype"
+        ],
+        "title": "LusciiMeasurementSeries",
+        "description": "A time-projected series of one instrument-item across the window.\n\n`unit` is present only when `archetype` is `numeric` or `ordinal`;\ncategorical / free_text / unknown series carry no unit. Points are\nsorted ascending by `observed_at` at projection time and the list is\nnever empty (series with zero points are not emitted)."
+      },
       "LusciiMeasurementValueView": {
         "properties": {
           "label": {
@@ -5172,11 +5350,45 @@
             },
             "type": "array",
             "title": "Response Texts"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "instrument_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Id"
+          },
+          "archetype": {
+            "type": "string",
+            "enum": [
+              "numeric",
+              "ordinal",
+              "categorical",
+              "free_text",
+              "unknown"
+            ],
+            "title": "Archetype",
+            "default": "unknown"
           }
         },
         "type": "object",
         "title": "LusciiMeasurementValueView",
-        "description": "One decoded `measurement.details` item. `label`/`unit` come from the\nLuscii item localisation (nl preferred); `response_texts` resolve the\nmultiple-choice `response_ids`. Unknown items keep `label=None` with the\nraw `value`."
+        "description": "One decoded `measurement.details` item. `label`/`unit` come from the\nLuscii item localisation (nl preferred); `response_texts` resolve the\nmultiple-choice `response_ids`. Unknown items keep `label=None` with the\nraw `value`.\n\n`item_id`/`instrument_id` are passed through from the Luscii source row;\nthey let clients group values across measurements into a time-series.\n`archetype` is set by the pure `classify_archetype` classifier \u2014 never\n`null`, defaults to `\"unknown\"` when classification fails."
       },
       "LusciiMeasurementView": {
         "properties": {
@@ -5190,6 +5402,17 @@
               }
             ],
             "title": "Measurement Id"
+          },
+          "instrument_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Id"
           },
           "instrument_name": {
             "anyOf": [
@@ -5236,6 +5459,80 @@
         },
         "type": "object",
         "title": "LusciiMeasurementView"
+      },
+      "LusciiNumericPoint": {
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "archetype": {
+            "type": "string",
+            "const": "numeric",
+            "title": "Archetype",
+            "default": "numeric"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observed_at",
+          "value"
+        ],
+        "title": "LusciiNumericPoint",
+        "description": "A single measurement point projected as a numeric value."
+      },
+      "LusciiOrdinalPoint": {
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "archetype": {
+            "type": "string",
+            "const": "ordinal",
+            "title": "Archetype",
+            "default": "ordinal"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observed_at",
+          "value"
+        ],
+        "title": "LusciiOrdinalPoint",
+        "description": "A single measurement point projected as an ordinal (allowlisted unit)."
       },
       "LusciiPatientData": {
         "properties": {
@@ -5296,6 +5593,13 @@
             },
             "type": "array",
             "title": "Unmatched Measurements"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementSeries"
+            },
+            "type": "array",
+            "title": "Series"
           }
         },
         "type": "object",
@@ -5643,6 +5947,49 @@
         },
         "type": "object",
         "title": "LusciiProtocolView"
+      },
+      "LusciiUnknownPoint": {
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "archetype": {
+            "type": "string",
+            "const": "unknown",
+            "title": "Archetype",
+            "default": "unknown"
+          },
+          "raw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observed_at"
+        ],
+        "title": "LusciiUnknownPoint",
+        "description": "Fallback point for values the classifier cannot categorise."
       },
       "MobileHealthResponse": {
         "properties": {

@@ -49,12 +49,14 @@ from app.schemas.luscii.patient_data import (
     LusciiProgramView,
     LusciiProtocolView,
 )
+from app.services.luscii.archetype import classify_archetype
 from app.services.luscii.errors import (
     LusciiIdAlreadyLinkedError,
     LusciiLinkPatientNotFoundError,
     LusciiNotConfiguredError,
     LusciiUnavailableError,
 )
+from app.services.luscii.series import project_series
 
 logger = logging.getLogger(__name__)
 
@@ -164,29 +166,44 @@ class LusciiPatientDataService:
 
         own_measurements = [m for m in measurements if m.patient_id == link_value]
         decoder = await self._build_decoder(own_measurements)
-        by_planned_action: dict[str, LusciiMeasurement] = {
-            m.planned_action_id: m for m in own_measurements if m.planned_action_id
+        # Decode each measurement once; keep the (raw, view) pair so the
+        # planned-action join can still key on raw.planned_action_id while
+        # both the planned-actions block and the series projection consume
+        # the same decoded views.
+        decoded_pairs: list[tuple[LusciiMeasurement, LusciiMeasurementView]] = [
+            (raw, decoder.decode(raw)) for raw in own_measurements
+        ]
+        by_planned_action: dict[str, LusciiMeasurementView] = {
+            raw.planned_action_id: view
+            for raw, view in decoded_pairs
+            if raw.planned_action_id
         }
-        matched_ids = set()
+        matched_ids: set[str] = set()
         action_views: list[LusciiPlannedActionView] = []
         for action in planned_actions:
-            measurement = by_planned_action.get(action.id)
-            if measurement is not None:
+            measurement_view = by_planned_action.get(action.id)
+            if measurement_view is not None:
                 matched_ids.add(action.id)
-            action_views.append(_action_view(action, decoder, measurement))
+            action_views.append(_action_view_from_decoded(action, measurement_view))
         unmatched = [
-            decoder.decode(m)
-            for m in own_measurements
-            if m.planned_action_id is None or m.planned_action_id not in matched_ids
+            view
+            for raw, view in decoded_pairs
+            if raw.planned_action_id is None or raw.planned_action_id not in matched_ids
         ]
+        program = _program_view(details)
+        series = project_series(
+            [view for _raw, view in decoded_pairs],
+            program_id=program.id if program else None,
+        )
         return LusciiPatientData(
             state="linked",
             luscii_patient_id=UUID(link_value),
             window_days=days,
-            program=_program_view(details),
+            program=program,
             protocol=_protocol_view(details),
             planned_actions=action_views,
             unmatched_measurements=unmatched,
+            series=series,
         )
 
     async def _build_decoder(self, measurements: list[LusciiMeasurement]) -> _MeasurementDecoder:
@@ -265,10 +282,9 @@ def _protocol_view(details: LusciiPatientDetails) -> LusciiProtocolView | None:
     return LusciiProtocolView(id=details.protocol.id, name=details.protocol.name)
 
 
-def _action_view(
+def _action_view_from_decoded(
     action: LusciiPlannedAction,
-    decoder: _MeasurementDecoder,
-    measurement: LusciiMeasurement | None,
+    measurement_view: LusciiMeasurementView | None,
 ) -> LusciiPlannedActionView:
     return LusciiPlannedActionView(
         id=action.id,
@@ -277,7 +293,7 @@ def _action_view(
         completed_at=action.completed_at,
         created_at=action.created_at,
         self_planned=action.self_planned,
-        measurement=decoder.decode(measurement) if measurement is not None else None,
+        measurement=measurement_view,
     )
 
 
@@ -324,10 +340,11 @@ class _MeasurementDecoder:
     def decode(self, measurement: LusciiMeasurement) -> LusciiMeasurementView:
         return LusciiMeasurementView(
             measurement_id=measurement.measurement_id,
+            instrument_id=measurement.instrument_id,
             instrument_name=self._instrument_name(measurement),
             created_at=measurement.created_at,
             processed_at=measurement.processed_at,
-            values=self._decode_details(measurement.details),
+            values=self._decode_details(measurement.details, measurement.instrument_id),
         )
 
     def _instrument_name(self, measurement: LusciiMeasurement) -> str | None:
@@ -337,10 +354,16 @@ class _MeasurementDecoder:
             self._instruments.get((measurement.instrument_id, measurement.instrument_version), {})
         )
 
-    def _decode_details(self, details: str) -> list[LusciiMeasurementValueView]:
-        return [self._decode_item(item) for item in _parse_details(details)]
+    def _decode_details(
+        self, details: str, instrument_id: str | None
+    ) -> list[LusciiMeasurementValueView]:
+        return [self._decode_item(item, instrument_id) for item in _parse_details(details)]
 
-    def _decode_item(self, item: LusciiMeasurementDetailItem) -> LusciiMeasurementValueView:
+    def _decode_item(
+        self,
+        item: LusciiMeasurementDetailItem,
+        instrument_id: str | None,
+    ) -> LusciiMeasurementValueView:
         loc: tuple[str | None, str | None] | None = None
         if item.item_id is not None and item.item_version is not None:
             loc = _pick_locale(self._items.get((item.item_id, item.item_version), {}))
@@ -349,12 +372,17 @@ class _MeasurementDecoder:
             text = _pick_locale(self._responses.get(response_id, {}))
             if text:
                 texts.append(text)
-        if loc is not None:
-            title, unit = loc
-            return LusciiMeasurementValueView(
-                label=title, value=item.value, unit=unit, response_texts=texts
-            )
-        return LusciiMeasurementValueView(value=item.value, response_texts=texts)
+        title, unit = loc if loc is not None else (None, None)
+        archetype = classify_archetype(item.value, item.response_ids, unit)
+        return LusciiMeasurementValueView(
+            label=title,
+            value=item.value,
+            unit=unit,
+            response_texts=texts,
+            item_id=item.item_id,
+            instrument_id=instrument_id,
+            archetype=archetype,
+        )
 
 
 def _parse_details(details: str) -> list[LusciiMeasurementDetailItem]:
