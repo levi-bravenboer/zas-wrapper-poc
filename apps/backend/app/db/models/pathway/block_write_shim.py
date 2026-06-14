@@ -85,15 +85,25 @@ def block_row_clone_kwargs(
     phase_id: UUID,
     lane_id: UUID,
     duration_value_id: UUID | None,
+    block_id_map: dict[UUID, UUID] | None = None,
 ) -> dict[str, Any]:
     """Build clone kwargs for the fork-from-publish path.
 
     Round-trips via `to_domain` / `from_domain` so the typed payload
     stays consistent while identity / placement remap to the new
-    target version.
+    target version. `block_id_map` (source-row-id → target-row-id)
+    rewrites every `input_logic.rules[].node` (and matching
+    `args.after_block`) so cloned connectivity points at the cloned
+    block ids — without it, cloned `input_logic` stays bound to the
+    source version's row ids and the canvas renders disconnected.
     """
     domain_block = to_domain(source)
     typed_kwargs = from_domain(domain_block)
+
+    if block_id_map is not None and isinstance(typed_kwargs.get("input_logic"), dict):
+        typed_kwargs["input_logic"] = _remap_input_logic_nodes(
+            typed_kwargs["input_logic"], block_id_map
+        )
 
     return {
         "id": new_id,
@@ -105,6 +115,44 @@ def block_row_clone_kwargs(
         "y": source.y,
         **typed_kwargs,
     }
+
+
+def _remap_input_logic_nodes(
+    input_logic: dict[str, Any], block_id_map: dict[UUID, UUID]
+) -> dict[str, Any]:
+    """Rewrite `node` + `args.after_block` UUIDs in every rule."""
+    rules_in = input_logic.get("rules") or []
+    rules_out: list[dict[str, Any]] = []
+    for rule in rules_in:
+        if not isinstance(rule, dict):
+            rules_out.append(rule)
+            continue
+        new_rule = dict(rule)
+        node = new_rule.get("node")
+        mapped = _try_remap(node, block_id_map)
+        if mapped is not None:
+            new_rule["node"] = mapped
+        args = new_rule.get("args")
+        if isinstance(args, dict):
+            new_args = dict(args)
+            after = new_args.get("after_block")
+            mapped_after = _try_remap(after, block_id_map)
+            if mapped_after is not None:
+                new_args["after_block"] = mapped_after
+            new_rule["args"] = new_args
+        rules_out.append(new_rule)
+    return {**input_logic, "rules": rules_out}
+
+
+def _try_remap(value: Any, block_id_map: dict[UUID, UUID]) -> str | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        as_uuid = UUID(value)
+    except ValueError:
+        return None
+    mapped = block_id_map.get(as_uuid)
+    return str(mapped) if mapped is not None else None
 
 
 __all__ = [

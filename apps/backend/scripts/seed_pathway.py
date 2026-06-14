@@ -77,6 +77,36 @@ BRANCH_SLECHT_ID: UUID = UUID("00000000-0000-4000-8000-000000000402")
 # materialises edge rows.
 
 
+def _gate_if_done(upstream: UUID) -> dict[str, object]:
+    """`input_logic` aggregate that fires when `upstream` is `done`."""
+    return {
+        "rules": [
+            {
+                "node": str(upstream),
+                "args": {"predicate": "if_done", "after_block": str(upstream)},
+            }
+        ],
+        "aggregator": "all_of",
+    }
+
+
+def _gate_decision_output(decision: UUID, output_key: str) -> dict[str, object]:
+    """`input_logic` aggregate gated on a DecisionBlock output key."""
+    return {
+        "rules": [
+            {
+                "node": str(decision),
+                "args": {
+                    "predicate": "decision_output",
+                    "after_block": str(decision),
+                    "output_key": output_key,
+                },
+            }
+        ],
+        "aggregator": "all_of",
+    }
+
+
 def _build_payload() -> PathwayDefinitionReplace:
     return PathwayDefinitionReplace(
         name=PATHWAY_NAME,
@@ -120,6 +150,9 @@ def _build_payload() -> PathwayDefinitionReplace:
                 ord=40,
             ),
         ],
+        # Sentinel (x=0, y=0) on every block — the canvas auto-layout
+        # pass (§C3) reads `input_logic.rules` and decides column /
+        # row placement. Authors can drag later to override.
         blocks=[
             # Catalogue-expansion § 1: every published pathway needs a
             # StartBlock on the `caregiver` lane. Auto-fires at
@@ -131,7 +164,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 kind="start",
                 label="Start",
                 config={"name": "Start"},
-                x=-240,
+                x=0,
                 y=0,
             ),
             PathwayBlockIn(
@@ -144,6 +177,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "title": "Intake gesprek",
                     "location": "ZAS Antwerpen, polikliniek",
                     "duration_minutes": 30,
+                    "input_logic": _gate_if_done(BLOCK_START_ID),
                 },
                 x=0,
                 y=0,
@@ -161,8 +195,9 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "title": "Lumbale spinale fusie",
                     "location": "OK 3, campus Zuid",
                     "duration_minutes": 120,
+                    "input_logic": _gate_if_done(BLOCK_INTAKE_ID),
                 },
-                x=240,
+                x=0,
                 y=0,
             ),
             PathwayBlockIn(
@@ -175,8 +210,9 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "event_type": "external_data",
                     "timeout_days": 42,
                     "on_timeout": "continue",
+                    "input_logic": _gate_if_done(BLOCK_OPERATIE_ID),
                 },
-                x=480,
+                x=0,
                 y=0,
             ),
             PathwayBlockIn(
@@ -193,8 +229,9 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "question": "Verloopt het herstel volgens plan?",
                     "outputs": ["goed", "onvoldoende"],
                     "mode": "xor",
+                    "input_logic": _gate_if_done(BLOCK_HERSTEL_ID),
                 },
-                x=720,
+                x=0,
                 y=0,
             ),
             PathwayBlockIn(
@@ -203,9 +240,12 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_id=LANE_SYSTEM_ID,
                 kind="milestone",
                 label="Ontslag",
-                config={"label": "Ontslag"},
-                x=960,
-                y=-80,
+                config={
+                    "label": "Ontslag",
+                    "input_logic": _gate_decision_output(BLOCK_VOORTGANG_ID, "goed"),
+                },
+                x=0,
+                y=0,
             ),
             PathwayBlockIn(
                 id=BLOCK_CONTROLE_ID,
@@ -213,9 +253,13 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_id=LANE_CAREGIVER_ID,
                 kind="appointment",
                 label="Extra controle",
-                config={"title": "Extra controle", "duration_minutes": 20},
-                x=960,
-                y=80,
+                config={
+                    "title": "Extra controle",
+                    "duration_minutes": 20,
+                    "input_logic": _gate_decision_output(BLOCK_VOORTGANG_ID, "onvoldoende"),
+                },
+                x=0,
+                y=0,
             ),
             # Catalogue-expansion § 2: every published pathway needs at
             # least one EndPathwayBlock on a `system` lane. Completing
@@ -226,8 +270,8 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_id=LANE_SYSTEM_ID,
                 kind="end_pathway",
                 label="Einde",
-                config={"name": "Einde"},
-                x=1200,
+                config={"name": "Einde", "input_logic": _gate_if_done(BLOCK_ONTSLAG_ID)},
+                x=0,
                 y=0,
             ),
         ],

@@ -454,6 +454,7 @@ class PathwayVersionService:
                             if b.duration_value_id is not None
                             else None
                         ),
+                        block_id_map=block_id_map,
                     )
                 )
                 for b in src.blocks
