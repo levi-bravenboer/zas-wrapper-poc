@@ -12,17 +12,24 @@ import type { TaskItem } from '../types'
 import { TaskRow } from './TaskRow'
 
 type DayGroup = {
+  key: string
   label: string
   items: TaskItem[]
+}
+
+function calendarDayKey(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function groupByDay(t: ReturnType<typeof useTranslation>['t'], items: TaskItem[]): DayGroup[] {
   const groups: DayGroup[] = []
   for (const item of items) {
+    const key = calendarDayKey(item.due_at)
     const label = dayGroupLabel(t, item.due_at)
     const last = groups[groups.length - 1]
-    if (last && last.label === label) last.items.push(item)
-    else groups.push({ label, items: [item] })
+    if (last && last.key === key) last.items.push(item)
+    else groups.push({ key, label, items: [item] })
   }
   return groups
 }
@@ -52,7 +59,7 @@ function TaskListBody({ selectedTaskId }: { selectedTaskId: string | undefined }
   return (
     <>
       {groups.map((group) => (
-        <section key={group.label}>
+        <section key={group.key}>
           <h2 className="sticky top-0 z-10 bg-background/95 px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-foreground-muted backdrop-blur-sm">
             {group.label}
           </h2>
