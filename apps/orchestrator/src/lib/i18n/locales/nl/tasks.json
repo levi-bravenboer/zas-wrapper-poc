@@ -27,7 +27,8 @@
   },
   "context": {
     "lead": "Lead {{name}}",
-    "open_appointment": "Open afspraak"
+    "open_appointment": "Open afspraak",
+    "open_appointment_unavailable": "Komt later — het afsprakenscherm is nog niet beschikbaar"
   },
   "tabs": {
     "measurements": "Metingen",

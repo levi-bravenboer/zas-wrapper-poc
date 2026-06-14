@@ -62,7 +62,14 @@ export function AppointmentContextBlock({ task }: AppointmentContextBlockProps):
         </div>
       </div>
 
-      <Button variant="ghost" size="sm" className="shrink-0" disabled>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="shrink-0"
+        aria-disabled
+        title={t('tasks:context.open_appointment_unavailable')}
+        onClick={(event) => event.preventDefault()}
+      >
         <ExternalLink aria-hidden className="size-3.5" />
         {t('tasks:context.open_appointment')}
       </Button>
