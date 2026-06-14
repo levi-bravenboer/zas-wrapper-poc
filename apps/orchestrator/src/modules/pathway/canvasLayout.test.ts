@@ -101,15 +101,15 @@ describe('buildCanvasGeometry fit-grow', () => {
   it('grows phase width to contain a block that overflows the declared column', () => {
     const blocks = [{ phase_id: 'p1', lane_id: 'l1', x: 70, y: 0, width: 540, height: 100 }]
     const geometry = buildCanvasGeometry(phases, lanes, blocks)
-    // 70 + 540 + 16 padding = 626 > declared 380
-    expect(geometry.phaseW('p1')).toBe(626)
+    // 70 + 540 + 28 padding = 638 > declared 380
+    expect(geometry.phaseW('p1')).toBe(638)
   })
 
   it('grows lane height to contain a tall block', () => {
     const blocks = [{ phase_id: 'p1', lane_id: 'l1', x: 0, y: 30, width: 240, height: 400 }]
     const geometry = buildCanvasGeometry(phases, lanes, blocks)
-    // 30 + 400 + 16 padding = 446 > declared LANE_ROW_HEIGHT (320)
-    expect(geometry.laneH('l1')).toBe(446)
+    // 30 + 400 + 28 padding = 458 > declared LANE_ROW_HEIGHT (320)
+    expect(geometry.laneH('l1')).toBe(458)
   })
 
   it('keeps declared dimensions when blocks fit comfortably', () => {
@@ -126,9 +126,9 @@ describe('buildCanvasGeometry fit-grow', () => {
       { phase_id: 'p1', lane_id: 'l1', x: 50, y: 50, width: 360, height: 200 },
     ]
     const geometry = buildCanvasGeometry(phases, lanes, blocks)
-    // widest: 200 + 540 + 16 = 756
-    expect(geometry.phaseW('p1')).toBe(756)
-    // tallest: 100 + 300 + 16 = 416
-    expect(geometry.laneH('l1')).toBe(416)
+    // widest: 200 + 540 + 28 = 768
+    expect(geometry.phaseW('p1')).toBe(768)
+    // tallest: 100 + 300 + 28 = 428
+    expect(geometry.laneH('l1')).toBe(428)
   })
 })

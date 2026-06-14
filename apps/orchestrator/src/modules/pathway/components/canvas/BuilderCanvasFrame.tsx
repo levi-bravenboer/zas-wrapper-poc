@@ -82,7 +82,11 @@ export function BuilderCanvasFrame({
     const byCode = new Map(blockTypes.map((bt) => [bt.type, bt]))
     return blocks.map((b) => {
       const dims = getBlockDimensions(b, byCode.get(legacyBlockType(b)) ?? null)
-      const pos = layout.get(b.id) ?? { x: 0, y: 0 }
+      // Match the position used by `useFlowNodes`: a manual drag wins
+      // over auto-layout, so the phase column / lane row must grow to
+      // contain the authored position too.
+      const hasManualPosition = b.x !== 0 || b.y !== 0
+      const pos = hasManualPosition ? { x: b.x, y: b.y } : (layout.get(b.id) ?? { x: 0, y: 0 })
       return {
         phase_id: b.phase_id,
         lane_id: b.lane_id,

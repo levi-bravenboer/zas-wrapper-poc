@@ -6,7 +6,7 @@
 export const LAYOUT_COLUMN_GUTTER = 48
 
 /** Vertical gap between stacked branch rows inside one column. */
-export const LAYOUT_ROW_GUTTER = 24
+export const LAYOUT_ROW_GUTTER = 32
 
 /** Left padding from the cell (phase column) edge to the first column. */
 export const LAYOUT_CELL_X_PAD = 32

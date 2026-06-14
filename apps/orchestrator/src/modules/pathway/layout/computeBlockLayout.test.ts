@@ -63,15 +63,29 @@ describe('computeBlockLayout', () => {
     expect(layout.get('branch-no')).toEqual({ x: colX(1), y: rowY(1) })
   })
 
-  it('ignores upstream references that live in another cell', () => {
-    // `care-task` waits on `sys-start`, but they sit in different lanes —
-    // cross-cell sequencing is drawn by edges, not intra-cell columns.
+  it('aligns columns across lanes within the same phase', () => {
+    // Cross-lane deps WITHIN one phase shift the column so parallel
+    // work sits side-by-side: `care-task` (in the caregiver lane)
+    // waits on `sys-start` (in the system lane), so it lands one
+    // column to the right.
     const layout = computeBlockLayout([
       stubBlock('sys-start', { lane: LANE_SYS }),
       stubBlock('care-task', { lane: LANE_CARE, after: ['sys-start'] }),
     ])
     expect(layout.get('sys-start')).toEqual({ x: colX(0), y: rowY(0) })
-    expect(layout.get('care-task')).toEqual({ x: colX(0), y: rowY(0) })
+    expect(layout.get('care-task')).toEqual({ x: colX(1), y: rowY(0) })
+  })
+
+  it('ignores upstream references that live in another phase', () => {
+    // Cross-phase deps DO NOT shift columns — sequencing across
+    // phases is drawn by derived edges; the receiving phase's first
+    // column always starts at col 0.
+    const layout = computeBlockLayout([
+      stubBlock('upstream', { phase: 'p1' }),
+      stubBlock('downstream', { phase: 'p2', after: ['upstream'] }),
+    ])
+    expect(layout.get('upstream')).toEqual({ x: colX(0), y: rowY(0) })
+    expect(layout.get('downstream')).toEqual({ x: colX(0), y: rowY(0) })
   })
 
   it('joins fan-in at max(upstream column) + 1', () => {

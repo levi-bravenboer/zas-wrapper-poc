@@ -65,7 +65,7 @@ export type CanvasGeometry = {
 
 /** Extra breathing room kept between a block's far edge and the cell border
  * when auto-growing a phase column or lane row to contain its contents. */
-export const CELL_FIT_PADDING = 16
+export const CELL_FIT_PADDING = 28
 
 export type BlockFitInput = Pick<PathwayBlock, 'phase_id' | 'lane_id' | 'x' | 'y'> & {
   width: number
