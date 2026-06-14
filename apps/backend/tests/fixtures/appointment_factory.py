@@ -20,6 +20,7 @@ from app.core.enums.appointment import (
     AppointmentParticipantRole,
     AppointmentStatus,
 )
+from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.appointment import Appointment, AppointmentParticipant
 from app.db.models.patient import Patient
 from app.db.models.user import User
@@ -79,31 +80,40 @@ async def make_appointment(
     )
     AppointmentValidator.validate(spec)
 
-    appointment = Appointment(
-        id=uuid4(),
-        tenant_id=tenant_id,
-        created_by=actor.id,
-        updated_by=actor.id,
-        patient_id=patient.id,
-        title=title,
-        kind=kind,
-        starts_at=starts_at,
-        ends_at=ends_at,
-        modality=modality,
-        location_text=location_text,
-        status=status,
-    )
-    session.add(appointment)
-    await session.flush()
-
-    for user, role in participants:
-        session.add(
-            AppointmentParticipant(
-                tenant_id=tenant_id,
-                appointment_id=appointment.id,
-                user_id=user.id,
-                role=role,
-            )
+    # Wire the audit slot so the `before_flush` hook fills `tenant_id` /
+    # `created_by` / `updated_by` on the `TenantOwnedEntity` Appointment row.
+    # `AppointmentParticipant` inherits `Entity` (D4b) — its denormalised
+    # `tenant_id` stays explicit because the hook does not touch it.
+    prior_actor = session.info.get(SESSION_ACTOR_KEY)
+    session.info[SESSION_ACTOR_KEY] = actor
+    try:
+        appointment = Appointment(
+            id=uuid4(),
+            patient_id=patient.id,
+            title=title,
+            kind=kind,
+            starts_at=starts_at,
+            ends_at=ends_at,
+            modality=modality,
+            location_text=location_text,
+            status=status,
         )
-    await session.flush()
+        session.add(appointment)
+        await session.flush()
+
+        for user, role in participants:
+            session.add(
+                AppointmentParticipant(
+                    tenant_id=tenant_id,
+                    appointment_id=appointment.id,
+                    user_id=user.id,
+                    role=role,
+                )
+            )
+        await session.flush()
+    finally:
+        if prior_actor is None:
+            session.info.pop(SESSION_ACTOR_KEY, None)
+        else:
+            session.info[SESSION_ACTOR_KEY] = prior_actor
     return appointment
