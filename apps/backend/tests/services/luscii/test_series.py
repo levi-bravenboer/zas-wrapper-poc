@@ -265,7 +265,8 @@ def test_unknown_archetype_keeps_raw_value() -> None:
 
 def test_series_archetype_takes_most_recent_point() -> None:
     # An older measurement classified as numeric, a newer one as categorical
-    # for the same item-id. The series face follows the freshest point.
+    # for the same item-id. The series face follows the freshest point AND
+    # the older point survives as its own archetype variant.
     series = project_series(
         [
             _measurement(
@@ -286,6 +287,7 @@ def test_series_archetype_takes_most_recent_point() -> None:
         ]
     )
     assert len(series) == 1
+    assert len(series[0].points) == 2, "older numeric point must survive series-archetype switch"
     assert series[0].archetype == "categorical"
     assert series[0].unit is None  # categorical scrubs unit
 

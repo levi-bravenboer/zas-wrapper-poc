@@ -430,7 +430,11 @@ async def test_luscii_data_merges_actions_and_measurements(
     assert weight["archetype"] == "numeric"
     assert weight["unit"] == "kg"
     assert weight["instrument_name"] == "Gewicht meting"
-    assert len(weight["points"]) >= 1
+    # m-1 contributes one weight value; m-2 has empty details. Lock to the
+    # exact count so a future fixture/projection regression surfaces.
+    assert len(weight["points"]) == 1
+    weight_observed = [p["observed_at"] for p in weight["points"]]
+    assert weight_observed == sorted(weight_observed), "points within a series MUST be sorted ASC"
     for point in weight["points"]:
         assert point["archetype"] == "numeric"
         assert isinstance(point["value"], (int, float))
@@ -440,6 +444,14 @@ async def test_luscii_data_merges_actions_and_measurements(
     assert mc["unit"] is None
     assert mc["points"][0]["archetype"] == "categorical"
     assert mc["points"][0]["responses"] == ["Ja"]
+    # Series sort is DESC by most-recent point timestamp (D-LAYOUT).
+    most_recent = [s["points"][-1]["observed_at"] for s in series]
+    assert most_recent == sorted(most_recent, reverse=True), "series MUST be sorted DESC by most-recent point"
+    # Every point in the response carries the current programme id (D-PROGRAM).
+    expected_program_id = body["program"]["id"]
+    for s in series:
+        for point in s["points"]:
+            assert point.get("program_id") == expected_program_id
     # series_id is a 12-char hex hash (no need to recompute; stability is
     # covered by the unit test on compute_series_id).
     assert all(len(s["series_id"]) == 12 for s in series)
