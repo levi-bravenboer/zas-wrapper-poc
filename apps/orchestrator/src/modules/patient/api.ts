@@ -83,9 +83,15 @@ async function lusciiError(message: string, response: Response): Promise<never> 
   throw apiError(body?.message ?? message, response.status, body?.code, body?.details)
 }
 
-export async function fetchLusciiData(patientId: string): Promise<LusciiPatientData> {
+export async function fetchLusciiData(
+  patientId: string,
+  options?: { days?: number },
+): Promise<LusciiPatientData> {
   const { data, response } = await api.GET('/patients/{patient_id}/luscii-data', {
-    params: { path: { patient_id: patientId } },
+    params: {
+      path: { patient_id: patientId },
+      query: options?.days ? { days: options.days } : {},
+    },
   })
   if (!response.ok || !data) {
     return lusciiError('Luscii data fetch failed', response)
