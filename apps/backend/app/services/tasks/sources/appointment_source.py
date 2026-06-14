@@ -148,4 +148,4 @@ class AppointmentSource:
         if row is None:
             return None
         items = await self._assemble([row])
-        return items[0]
+        return items[0] if items else None
