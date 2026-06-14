@@ -36,6 +36,9 @@ function makeTask(overrides: Partial<TaskItem> = {}): TaskItem {
       participants: [{ user_id: 'u-1', role: 'lead', user_display_name: 'Dr. Janssen' }],
     },
     ...overrides,
+    // reason: spread of `Partial<TaskItem>` widens literal-typed enum fields
+    // (`kind`, `modality`, `status`) so TS cannot prove the merge yields a
+    // full `TaskItem`. Test-only fixture; field-by-field copy would be noise.
   } as TaskItem
 }
 

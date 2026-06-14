@@ -63,6 +63,10 @@ function makeTask(id: string, daysFromNow: number, family = 'Janssens'): TaskIte
       status: 'booked',
       participants: [],
     },
+    // reason: TS widens the `'consultation'` / `'online'` / `'booked'`
+    // string literals to `string` in the object-literal context, so the
+    // merged shape does not narrow back to the OpenAPI enum unions on
+    // `TaskItem.kind` / `payload.modality` / `payload.status`.
   } as TaskItem
 }
 
