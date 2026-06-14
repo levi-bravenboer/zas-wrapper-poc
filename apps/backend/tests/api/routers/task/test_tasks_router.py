@@ -136,6 +136,58 @@ async def test_appointment_within_30d_window_included(
     assert response.json()["total"] == 1
 
 
+async def test_appointment_just_inside_30d_boundary_included(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+    seeded_zas_patients: list[Patient],
+) -> None:
+    caregiver = _caregiver(seeded_zas_users)
+    patient = seeded_zas_patients[0]
+    inside = datetime.now(UTC) + timedelta(days=29, hours=23)
+    await make_appointment(
+        db_session,
+        tenant_id=caregiver.tenant_id,
+        patient=patient,
+        actor=caregiver,
+        participants=[(caregiver, AppointmentParticipantRole.LEAD)],
+        starts_at=inside,
+        ends_at=inside + timedelta(hours=1),
+    )
+    await db_session.commit()
+
+    await _login(async_client, CAREGIVER_EMAIL)
+    response = await async_client.get("/tasks")
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+
+
+async def test_appointment_just_past_30d_boundary_excluded(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+    seeded_zas_patients: list[Patient],
+) -> None:
+    caregiver = _caregiver(seeded_zas_users)
+    patient = seeded_zas_patients[0]
+    outside = datetime.now(UTC) + timedelta(days=30, minutes=1)
+    await make_appointment(
+        db_session,
+        tenant_id=caregiver.tenant_id,
+        patient=patient,
+        actor=caregiver,
+        participants=[(caregiver, AppointmentParticipantRole.LEAD)],
+        starts_at=outside,
+        ends_at=outside + timedelta(hours=1),
+    )
+    await db_session.commit()
+
+    await _login(async_client, CAREGIVER_EMAIL)
+    response = await async_client.get("/tasks")
+    assert response.status_code == 200
+    assert response.json()["total"] == 0
+
+
 async def test_appointment_non_booked_status_excluded(
     async_client: AsyncClient,
     db_session: AsyncSession,
