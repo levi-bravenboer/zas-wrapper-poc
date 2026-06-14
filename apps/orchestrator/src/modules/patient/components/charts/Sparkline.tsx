@@ -50,7 +50,6 @@ export function Sparkline({
     <svg
       viewBox={`0 0 ${w} ${h}`}
       preserveAspectRatio="none"
-      role="img"
       aria-hidden
       data-testid="sparkline"
       className={cn('h-7 w-28 shrink-0', className)}

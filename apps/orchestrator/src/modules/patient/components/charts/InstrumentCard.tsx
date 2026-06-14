@@ -1,6 +1,8 @@
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { type ReactElement, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { cn } from '@/lib/style/cn'
 
@@ -29,7 +31,7 @@ export interface InstrumentCardProps {
  * (D-MULTI-SERIES).
  */
 export function InstrumentCard({
-  instrumentId: _instrumentId,
+  instrumentId,
   instrumentName,
   series,
 }: InstrumentCardProps): ReactElement {
@@ -38,12 +40,13 @@ export function InstrumentCard({
 
   const latest = pickLatest(series)
   const sparkPoints = collectSparkPoints(series)
-  const allNumeric = series.every((s) => s.archetype === 'numeric')
+  const allNumeric = series.length > 0 && series.every((s) => s.archetype === 'numeric')
 
   const headerLabel = instrumentName ?? t('charts.unknown_instrument')
+  const ChevronIcon = expanded ? ChevronDown : ChevronRight
 
   return (
-    <Card data-instrument-id={_instrumentId} className="overflow-hidden">
+    <Card data-instrument-id={instrumentId} className="overflow-hidden">
       <CardHeader className="p-0">
         <button
           type="button"
@@ -58,23 +61,24 @@ export function InstrumentCard({
             <div className="min-w-0">
               <h3 className="text-sm font-medium text-foreground">{headerLabel}</h3>
               {latest ? (
-                <p className="text-xs text-foreground-muted">
+                <Badge variant="soft" className="mt-1 font-mono">
                   <span className="sr-only">{t('charts.last_value')}: </span>
                   {latest}
-                </p>
+                </Badge>
               ) : null}
             </div>
             <Sparkline points={sparkPoints} className="ml-auto" />
           </div>
-          <span aria-hidden className="text-xs text-foreground-muted">
-            {expanded ? '▾' : '▸'}
-          </span>
+          <ChevronIcon aria-hidden className="size-4 shrink-0 text-foreground-muted" />
         </button>
       </CardHeader>
 
       {expanded ? (
         <CardContent className="border-t border-border px-4 py-4">
-          {allNumeric && series.length >= 1 ? (
+          {allNumeric ? (
+            // reason: `allNumeric` guard ensures every series.archetype is
+            // 'numeric', but TS can't narrow an array-wide invariant from a
+            // .every() predicate without per-element refinement.
             <LineChart series={series as NumericSeries[]} />
           ) : (
             <div className="flex flex-col gap-4">
