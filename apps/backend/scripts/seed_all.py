@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.settings import get_settings
 from app.services.access.identity.kratos_client import KratosClient
+from app.services.luscii.catalogue_snapshot import import_catalogue_snapshots_if_empty
 from scripts._db import run_script
 from scripts.import_identities_kratos import import_identities
 from scripts.seed_care_teams import seed_care_teams
@@ -79,6 +80,11 @@ async def _import_kratos_identities(session: AsyncSession) -> None:
 async def _seed(session: AsyncSession) -> None:
     for step in SEED_STEPS:
         await step(session)
+    # Luscii label catalogue from the committed snapshots — vendor reference
+    # data, independent of the tenant steps above. Imports only into empty
+    # tables (boot re-runs stay cheap, a fresher manual sync is never
+    # clobbered); skips with a warning when snapshots are absent.
+    await import_catalogue_snapshots_if_empty(session)
     await _import_kratos_identities(session)
 
 

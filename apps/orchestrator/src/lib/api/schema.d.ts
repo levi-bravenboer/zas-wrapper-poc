@@ -329,6 +329,41 @@ export interface paths {
         patch: operations["update_patient"];
         trace?: never;
     };
+    "/patients/{patient_id}/luscii-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link Patient Luscii */
+        put: operations["link_patient_luscii"];
+        post?: never;
+        /** Unlink Patient Luscii */
+        delete: operations["unlink_patient_luscii"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/luscii-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Patient Luscii Data */
+        get: operations["get_patient_luscii_data"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patient_id}/access-grants": {
         parameters: {
             query?: never;
@@ -1583,6 +1618,96 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** LusciiLinkRequest */
+        LusciiLinkRequest: {
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+        };
+        /**
+         * LusciiLinkResult
+         * @description Echo of the linked Luscii patient for eyeball verification in the UI.
+         */
+        LusciiLinkResult: {
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+            /** Program Name */
+            program_name?: string | null;
+            /** Protocol Name */
+            protocol_name?: string | null;
+        };
+        /**
+         * LusciiMeasurementValueView
+         * @description One decoded `measurement.details` item. `label`/`unit` come from the
+         *     Luscii item localisation (nl preferred); `response_texts` resolve the
+         *     multiple-choice `response_ids`. Unknown items keep `label=None` with the
+         *     raw `value`.
+         */
+        LusciiMeasurementValueView: {
+            /** Label */
+            label?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Response Texts */
+            response_texts?: string[];
+        };
+        /** LusciiMeasurementView */
+        LusciiMeasurementView: {
+            /** Measurement Id */
+            measurement_id?: string | null;
+            /** Instrument Name */
+            instrument_name?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Processed At */
+            processed_at?: string | null;
+            /** Values */
+            values?: components["schemas"]["LusciiMeasurementValueView"][];
+        };
+        /**
+         * LusciiPatientData
+         * @description `GET /patients/{id}/luscii-data` response.
+         */
+        LusciiPatientData: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "linked" | "not_linked";
+            /** Luscii Patient Id */
+            luscii_patient_id?: string | null;
+            /** Window Days */
+            window_days: number;
+            program?: components["schemas"]["LusciiProgramView"] | null;
+            protocol?: components["schemas"]["LusciiProtocolView"] | null;
+            /** Planned Actions */
+            planned_actions?: components["schemas"]["LusciiPlannedActionView"][];
+            /** Unmatched Measurements */
+            unmatched_measurements?: components["schemas"]["LusciiMeasurementView"][];
+        };
+        /** LusciiPlannedActionView */
+        LusciiPlannedActionView: {
+            /** Id */
+            id: string;
+            /** Not Before */
+            not_before?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Self Planned */
+            self_planned?: boolean | null;
+            measurement?: components["schemas"]["LusciiMeasurementView"] | null;
+        };
         /**
          * LusciiProgramData
          * @description Full Luscii program payload, stored as JSONB in `luscii_program.data`.
@@ -1654,6 +1779,15 @@ export interface components {
              */
             enrolled_count_org_wide: number;
         };
+        /** LusciiProgramView */
+        LusciiProgramView: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+        };
         /**
          * LusciiProtocol
          * @description A Luscii protocol — variant of a program with its own cadence.
@@ -1674,6 +1808,13 @@ export interface components {
              * @default false
              */
             is_default: boolean;
+        };
+        /** LusciiProtocolView */
+        LusciiProtocolView: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
         };
         /**
          * MobileHealthResponse
@@ -4014,6 +4155,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_patient_luscii: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LusciiLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiLinkResult"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unlink_patient_luscii: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_patient_luscii_data: {
+        parameters: {
+            query?: {
+                /** @description Lookback window */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiPatientData"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

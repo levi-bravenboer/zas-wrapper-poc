@@ -25,3 +25,8 @@ INSZ_SYSTEM = "urn:oid:2.16.840.1.113883.2.8.4.1.1"
 # not branch on whether the URI exists yet).
 HIX_MRN_SYSTEM = "urn:zas:hix:mrn"  # MVP — placeholder URI, finalise with HiX
 HIX_FHIR_PATIENT_SYSTEM = "urn:zas:hix:fhir:Patient"  # MVP — placeholder URI
+
+# Luscii patient UUID (luscii-patient-enrichment). Unlike other systems this
+# one is unique ACROSS patients (partial unique index) and writable only via
+# the dedicated link endpoints — POST /patients and PATCH reject it.
+LUSCII_PATIENT_SYSTEM = "urn:zas:luscii:patient"

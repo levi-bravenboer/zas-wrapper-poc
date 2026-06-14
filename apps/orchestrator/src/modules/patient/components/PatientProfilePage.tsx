@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Activity, FlaskConical } from 'lucide-react'
+import { FlaskConical } from 'lucide-react'
 import { useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -21,6 +21,7 @@ import type { OrganisationOption, PatientIdentifierRow } from '../types'
 
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
+import { LusciiPanel } from './LusciiPanel'
 import { PatientKebab } from './PatientKebab'
 
 const ORG_CACHE_STALE_MS = 5 * 60_000
@@ -124,13 +125,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
               {
                 value: 'measurements',
                 label: t('tabs.measurements'),
-                content: (
-                  <EmptyState
-                    icon={Activity}
-                    title={t('tabs.empty.measurements.title')}
-                    body={t('tabs.empty.measurements.body')}
-                  />
-                ),
+                content: <LusciiPanel patientId={patient.id} />,
               },
               {
                 value: 'lab_results',

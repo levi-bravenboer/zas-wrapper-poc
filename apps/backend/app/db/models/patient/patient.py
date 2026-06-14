@@ -95,4 +95,10 @@ class Patient(TenantOwnedEntity):
         back_populates="patient",
         cascade="all, delete-orphan",
         lazy="selectin",
+        # Soft-deleted identifier rows (e.g. replaced Luscii links) must not
+        # surface in API payloads; they stay queryable via direct selects.
+        primaryjoin=(
+            "and_(Patient.id == PatientIdentifier.patient_id, "
+            "PatientIdentifier.deleted_at.is_(None))"
+        ),
     )

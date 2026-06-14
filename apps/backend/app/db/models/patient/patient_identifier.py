@@ -36,6 +36,15 @@ class PatientIdentifier(AuditableEntity):
             postgresql_where=sa.text("deleted_at IS NULL"),
         ),
         sa.Index("ix_patient_identifiers_system_value", "system", "value"),
+        # Luscii patient UUIDs are unique ACROSS patients (one Luscii patient
+        # maps to at most one of ours); other systems stay per-patient-unique
+        # only. Scoped by system so e.g. shared-MRN edge cases keep working.
+        sa.Index(
+            "uq_patient_identifiers_luscii_value",
+            "value",
+            unique=True,
+            postgresql_where=sa.text("system = 'urn:zas:luscii:patient' AND deleted_at IS NULL"),
+        ),
     )
 
     patient_id: Mapped[UUID] = mapped_column(

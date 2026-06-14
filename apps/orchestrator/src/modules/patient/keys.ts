@@ -4,4 +4,5 @@ export const patientKeys = {
   all: [PATIENT_KEYS_SCOPE] as const,
   detail: (patientId: string) => [PATIENT_KEYS_SCOPE, 'detail', patientId] as const,
   careTeams: (patientId: string) => [PATIENT_KEYS_SCOPE, 'care-teams', patientId] as const,
+  lusciiData: (patientId: string) => [PATIENT_KEYS_SCOPE, 'luscii-data', patientId] as const,
 }

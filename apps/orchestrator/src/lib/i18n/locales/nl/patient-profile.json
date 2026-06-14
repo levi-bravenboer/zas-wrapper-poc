@@ -10,10 +10,6 @@
     "measurements": "Metingen",
     "lab_results": "Labresultaten",
     "empty": {
-      "measurements": {
-        "title": "Nog geen metingen gekoppeld",
-        "body": "Wordt geleverd door de monitoring-koppeling."
-      },
       "lab_results": {
         "title": "Nog geen labresultaten gekoppeld",
         "body": "Wordt geleverd door de HiX-koppeling."
@@ -87,5 +83,37 @@
     "waiting": "Toegang wordt geactiveerd…",
     "error": "Aanvraag mislukt, probeer opnieuw",
     "auditNote": "Elke noodtoegang wordt gelogd en is zichtbaar voor de beheerder. Toegang vervalt automatisch."
+  },
+  "luscii": {
+    "title": "Luscii monitoring",
+    "notConfigured": "Luscii-koppeling is niet geconfigureerd in deze omgeving.",
+    "error": "Luscii-gegevens konden niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "unlink": "Ontkoppelen",
+    "noProgram": "Geen programma",
+    "window": "Laatste {{days}} dagen",
+    "link": {
+      "empty": "Deze patiënt is nog niet gekoppeld aan een Luscii-patiënt. Voer het Luscii patiënt-ID (UUID) in om te koppelen.",
+      "placeholder": "Luscii patiënt-ID (UUID)",
+      "inputLabel": "Luscii patiënt-ID",
+      "submit": "Koppelen",
+      "submitting": "Koppelen…",
+      "errorNotFound": "Luscii-patiënt niet gevonden of niet toegankelijk met onze token.",
+      "errorAlreadyLinked": "Dit Luscii-ID is al gekoppeld aan een andere patiënt.",
+      "errorInvalid": "Ongeldig Luscii patiënt-ID.",
+      "errorUpstream": "Koppelen is niet gelukt: Luscii is niet bereikbaar."
+    },
+    "plannedActions": {
+      "title": "Geplande acties",
+      "empty": "Geen geplande acties in deze periode.",
+      "completed": "Voltooid",
+      "open": "Open",
+      "dueBy": "Uiterlijk {{date}}"
+    },
+    "measurements": {
+      "title": "Overige metingen",
+      "unknownInstrument": "Onbekend instrument",
+      "noValues": "Geen waarden"
+    }
   }
 }

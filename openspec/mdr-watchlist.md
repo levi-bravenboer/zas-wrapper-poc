@@ -37,3 +37,9 @@ Stop. Add an entry. Propose a non-MDR alternative. Get a decision before proceed
 - **Why wanted:** caregivers act under one or more org-scoped roles; visibility predicate keys off open roles to gate `GET /patients`. Roles are routing/affiliation metadata.
 - **Non-MDR alternative:** already chosen — `qualification` is free text (not a registry credential we validate); `code` is a closed administrative enum; clinical reasoning stays out of this table. Widening to free `CodeableConcept` queued as BL-062.
 - **Decision:** chosen — landed as-is. Re-verify if `code` ever drives clinical authority (e.g. prescribing rights) or if `qualification` becomes a validated credential.
+
+### 2026-06-10 — Luscii measurement display in patient view (source: luscii-patient-enrichment)
+- **Trigger:** rendering Luscii measurement data (values, planned actions, programme/protocol) inside the Orchestrator patient view — adjacent to "interpreting Luscii measurements ourselves".
+- **Why wanted:** caregivers need to see a linked patient's Luscii monitoring data without switching tools (BL-008, promoted to PoC).
+- **Non-MDR alternative:** display-only passthrough. We decode `measurement.details` using Luscii's own item labels, units, and answer-text localisations and render them verbatim. No thresholds, no alerts, no scores, no trends, no colour-coding by value, no derived clinical signal — alerting stays in Luscii. The invariant is a named requirement ("Luscii data is display-only") in the `luscii-patient-data` spec; any future computed field must add a watchlist entry first.
+- **Decision:** chosen — display-only passthrough, confirmed by product owner 2026-06-10. Re-verify on any change that computes anything from measurement values.

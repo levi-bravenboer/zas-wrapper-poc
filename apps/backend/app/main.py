@@ -122,6 +122,8 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             with suppress(asyncio.CancelledError):
                 await task
         await app.state.ory_http.aclose()
+        if app.state.luscii_client is not None:
+            await app.state.luscii_client.aclose()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -148,7 +150,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.hix_client = hix_client
     app.state.luscii_client = luscii_client
     app.state.readiness.register("hix", hix_client.ping)
-    app.state.readiness.register("luscii", luscii_client.ping)
+    # Luscii is token-presence-driven: unconfigured ⇒ no client, no readiness
+    # entry (an absent check must not fail /readyz on token-less environments).
+    if luscii_client is not None:
+        app.state.readiness.register("luscii", luscii_client.ping)
 
     ory_http = httpx.AsyncClient(timeout=5.0)
     app.state.ory_http = ory_http

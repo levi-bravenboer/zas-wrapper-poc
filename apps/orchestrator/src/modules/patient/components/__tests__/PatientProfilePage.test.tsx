@@ -17,14 +17,23 @@ import { i18n } from '@/lib/i18n'
 
 import { PatientProfilePage } from '../PatientProfilePage'
 
-const { getMock, usePatientMock, usePatientCareTeamsMock, useUpdatePatientMock } = vi.hoisted(
-  () => ({
-    getMock: vi.fn(),
-    usePatientMock: vi.fn(),
-    usePatientCareTeamsMock: vi.fn(),
-    useUpdatePatientMock: vi.fn(),
-  }),
-)
+const {
+  getMock,
+  usePatientMock,
+  usePatientCareTeamsMock,
+  useUpdatePatientMock,
+  useLusciiDataMock,
+  useLinkLusciiMock,
+  useUnlinkLusciiMock,
+} = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  usePatientMock: vi.fn(),
+  usePatientCareTeamsMock: vi.fn(),
+  useUpdatePatientMock: vi.fn(),
+  useLusciiDataMock: vi.fn(),
+  useLinkLusciiMock: vi.fn(),
+  useUnlinkLusciiMock: vi.fn(),
+}))
 
 vi.mock('@/lib/api/client', () => ({
   api: { GET: getMock },
@@ -34,6 +43,9 @@ vi.mock('../../hooks', () => ({
   usePatient: usePatientMock,
   usePatientCareTeams: usePatientCareTeamsMock,
   useUpdatePatient: useUpdatePatientMock,
+  useLusciiData: useLusciiDataMock,
+  useLinkLuscii: useLinkLusciiMock,
+  useUnlinkLuscii: useUnlinkLusciiMock,
 }))
 
 const PATIENT = {
@@ -103,6 +115,9 @@ describe('PatientProfilePage', () => {
     useUpdatePatientMock.mockReset()
     usePatientCareTeamsMock.mockReturnValue(stubQuery([]))
     useUpdatePatientMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
+    useLusciiDataMock.mockReturnValue(stubQuery(null))
+    useLinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
+    useUnlinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
     getMock.mockResolvedValue({
       data: { items: [{ id: 'org-1', name: 'ZAS Mechelen' }] },
       response: new Response(null, { status: 200 }),

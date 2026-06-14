@@ -1116,6 +1116,200 @@
         }
       }
     },
+    "/patients/{patient_id}/luscii-link": {
+      "put": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Link Patient Luscii",
+        "operationId": "link_patient_luscii",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LusciiLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LusciiLinkResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Unlink Patient Luscii",
+        "operationId": "unlink_patient_luscii",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/luscii-data": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Get Patient Luscii Data",
+        "operationId": "get_patient_luscii_data",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "Lookback window",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "Lookback window"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LusciiPatientData"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/patients/{patient_id}/access-grants": {
       "post": {
         "tags": [
@@ -4885,6 +5079,315 @@
         "title": "LusciiLayoutPhase",
         "description": "A horizontal phase column inside the program's mini-canvas."
       },
+      "LusciiLinkRequest": {
+        "properties": {
+          "luscii_patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Luscii Patient Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "luscii_patient_id"
+        ],
+        "title": "LusciiLinkRequest"
+      },
+      "LusciiLinkResult": {
+        "properties": {
+          "luscii_patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Luscii Patient Id"
+          },
+          "program_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Name"
+          },
+          "protocol_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "luscii_patient_id"
+        ],
+        "title": "LusciiLinkResult",
+        "description": "Echo of the linked Luscii patient for eyeball verification in the UI."
+      },
+      "LusciiMeasurementValueView": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "response_texts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Response Texts"
+          }
+        },
+        "type": "object",
+        "title": "LusciiMeasurementValueView",
+        "description": "One decoded `measurement.details` item. `label`/`unit` come from the\nLuscii item localisation (nl preferred); `response_texts` resolve the\nmultiple-choice `response_ids`. Unknown items keep `label=None` with the\nraw `value`."
+      },
+      "LusciiMeasurementView": {
+        "properties": {
+          "measurement_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measurement Id"
+          },
+          "instrument_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Name"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "processed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed At"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementValueView"
+            },
+            "type": "array",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "title": "LusciiMeasurementView"
+      },
+      "LusciiPatientData": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "linked",
+              "not_linked"
+            ],
+            "title": "State"
+          },
+          "luscii_patient_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Luscii Patient Id"
+          },
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days"
+          },
+          "program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiProgramView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiProtocolView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "planned_actions": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiPlannedActionView"
+            },
+            "type": "array",
+            "title": "Planned Actions"
+          },
+          "unmatched_measurements": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementView"
+            },
+            "type": "array",
+            "title": "Unmatched Measurements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "window_days"
+        ],
+        "title": "LusciiPatientData",
+        "description": "`GET /patients/{id}/luscii-data` response."
+      },
+      "LusciiPlannedActionView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "self_planned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Planned"
+          },
+          "measurement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiMeasurementView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "LusciiPlannedActionView"
+      },
       "LusciiProgramData": {
         "properties": {
           "id": {
@@ -5030,6 +5533,45 @@
         "title": "LusciiProgramSummary",
         "description": "Lightweight program row for the inspector picker."
       },
+      "LusciiProgramView": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          }
+        },
+        "type": "object",
+        "title": "LusciiProgramView"
+      },
       "LusciiProtocol": {
         "properties": {
           "id": {
@@ -5073,6 +5615,34 @@
         ],
         "title": "LusciiProtocol",
         "description": "A Luscii protocol \u2014 variant of a program with its own cadence."
+      },
+      "LusciiProtocolView": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "title": "LusciiProtocolView"
       },
       "MobileHealthResponse": {
         "properties": {

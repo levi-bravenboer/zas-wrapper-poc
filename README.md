@@ -47,12 +47,12 @@ zas-wrapper/
 └──────────────┘          └──────────────────┘           └──────────┘
         │                          │
         │                          ├── HiX adapter (stub at PoC, FHIR at MVP)
-        │                          └── Luscii adapter (stub at PoC)
+        │                          └── Luscii adapter (live; token-presence-driven)
         │
         └── SMART-on-FHIR launch (returns at MVP via hix-smart-launch)
 ```
 
-Adapters are Protocol-bound from day one. PoC keeps stubs; MVP swaps live clients behind the same seam. See [`apps/backend/AGENTS.md`](./apps/backend/AGENTS.md) for the layer rules.
+Adapters are Protocol-bound from day one. HiX is a stub at PoC; the Luscii adapter is a live client that activates only when `BACKEND_LUSCII_API_TOKEN` is set. See [`apps/backend/AGENTS.md`](./apps/backend/AGENTS.md) for the layer rules.
 
 ## Prerequisites
 
@@ -108,7 +108,8 @@ cp apps/orchestrator/.env.example apps/orchestrator/.env
 | `BACKEND_SESSION_COOKIE_NAME` | Cookie name | `BACKEND_SESSION` |
 | `BACKEND_CORS_ORIGINS` | JSON list of allowed origins | `["http://localhost:5173"]` |
 | `BACKEND_HIX_MODE` | `stub` / `live` (live lands at MVP) | `stub` |
-| `BACKEND_LUSCII_MODE` | `stub` / `live` | `stub` |
+| `BACKEND_LUSCII_API_URL` | Luscii public API base URL | `https://vitalsapi.luscii.com` |
+| `BACKEND_LUSCII_API_TOKEN` | Luscii bearer token (secret). Set ⇒ live patient-data fetches; unset ⇒ Luscii endpoints answer 503 `not_configured` and the rest of the app runs normally. | unset |
 | `BACKEND_LOG_LEVEL` | Native log level | `INFO` |
 | `BACKEND_PUBLIC_URL` | OpenAPI `servers` URL | unset |
 
@@ -120,6 +121,12 @@ cp apps/orchestrator/.env.example apps/orchestrator/.env
 | `VITE_API_MODE` | `mock` (MSW) or `live` | `mock` |
 
 Secrets MUST NOT be committed. `.env` files are gitignored.
+
+### Luscii integration (optional)
+
+The stack runs fine without any Luscii setup — the patient profile's Luscii panel just shows "not configured". To go live, add `BACKEND_LUSCII_API_TOKEN=<bearer token>` to `apps/backend/.env` (compose feeds this file into `zas_backend` via `env_file`, so one gitignored file serves both the container and host-side scripts) and recreate the backend (`docker compose up -d backend` or `moon run :up`).
+
+The measurement-label catalogue needs no manual step: every backend boot (so any `moon run :up`) runs `seed_all`, which imports the committed snapshots from `apps/backend/data/luscii_catalogue/` whenever the catalogue tables are empty (no token needed). The live `moon run backend:luscii-sync` (~30-45 min, token required) is only needed when you want a fresher catalogue than the committed snapshots — follow it with `backend:luscii-export` to update the snapshots in version control. `moon run backend:luscii-import` forces a re-import, e.g. after pulling newer snapshots.
 
 ## Ports
 
@@ -157,6 +164,8 @@ Database:
 moon run backend:psql                        # interactive psql against zas_db
 moon run backend:migrate                     # alembic upgrade head
 moon run backend:make-migration "<message>"  # alembic revision --autogenerate
+moon run backend:seed                        # demo tenant, users, patients
+moon run backend:luscii-import               # Luscii label catalogue from committed snapshots
 ```
 
 Lint / format / typecheck:
