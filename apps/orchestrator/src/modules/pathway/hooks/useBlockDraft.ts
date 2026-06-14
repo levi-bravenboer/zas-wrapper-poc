@@ -6,6 +6,7 @@ import { CONFIG_SCHEMAS, defaultConfig } from '../configSchemas'
 import {
   legacyBlockConfig,
   type BlockConfig,
+  type BlockDialogMode,
   type PathwayBlock,
   type PathwayBlockType,
   type PathwayLane,
@@ -32,7 +33,7 @@ export type BlockDraft = {
 const EMPTY_LOGIC: InputLogicShape = { rules: [], aggregator: 'all_of' }
 
 function initialDraft(
-  mode: 'add' | 'edit',
+  mode: BlockDialogMode,
   blockType: PathwayBlockType,
   block: PathwayBlock | null,
   phases: PathwayPhase[],
@@ -59,7 +60,7 @@ function initialDraft(
 }
 
 type Options = {
-  mode: 'add' | 'edit'
+  mode: BlockDialogMode
   blockType: PathwayBlockType
   block: PathwayBlock | null
   phases: PathwayPhase[]

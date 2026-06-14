@@ -32,6 +32,10 @@ export type PathwayBlockKind = PathwayBlock['kind']
 // reach into a component file for a wire-shape type.
 export type TimingPolicyValue = PathwayBlock['timing_policy'] | null
 
+// `add` opens an empty draft; `edit` hydrates from an existing block.
+// Used by `BlockDialog`, `BlockDialogFooter`, and `useBlockDraft`.
+export type BlockDialogMode = 'add' | 'edit'
+
 // Legacy `pathway_block.type` discriminator code, derived from the
 // typed `kind` discriminator. Matches the backend resolver's
 // `_LEGACY_TYPE_ALIASES` mapping in reverse — the only kind whose

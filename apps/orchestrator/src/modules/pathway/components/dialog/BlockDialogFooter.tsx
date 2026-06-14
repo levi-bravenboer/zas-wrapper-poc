@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { DialogFooter } from '@/components/ui/dialog'
 
+import type { BlockDialogMode } from '../../types'
+
 type Props = {
-  mode: 'add' | 'edit'
+  mode: BlockDialogMode
   canSubmit: boolean
   showDelete: boolean
   onSubmit: () => void
