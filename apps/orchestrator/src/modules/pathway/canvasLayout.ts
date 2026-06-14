@@ -2,7 +2,9 @@ import type { PathwayBlock, PathwayLane, PathwayPhase } from './types'
 
 export const CANVAS_LEFT_PAD = 96
 export const PHASE_COL_WIDTH = 380
-export const PHASE_COL_MIN_WIDTH = 240
+// Min must keep a native 240px block fully inside its phase (no
+// half-overlap into the neighbour). 240 + 2 × 32 cell-pad = 304.
+export const PHASE_COL_MIN_WIDTH = 304
 export const PHASE_HEADER_HEIGHT = 36
 export const LANE_TOP_PAD = PHASE_HEADER_HEIGHT + 12
 // Bumped from 180 → 320 to accommodate variable-size external-provider
@@ -11,7 +13,9 @@ export const LANE_TOP_PAD = PHASE_HEADER_HEIGHT + 12
 // blocks are unaffected functionally; lanes simply carry more vertical
 // breathing room. Author-resizable lane heights still apply on top.
 export const LANE_ROW_HEIGHT = 320
-export const LANE_ROW_MIN_HEIGHT = 110
+// Min must keep a native 64px block fully inside its lane.
+// 64 + 2 × 28 cell-pad = 120.
+export const LANE_ROW_MIN_HEIGHT = 120
 export const LANE_INSET = 58
 export const BLOCK_WIDTH = 240
 export const BLOCK_HEIGHT = 64

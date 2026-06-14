@@ -2,11 +2,23 @@ import { applyNodeChanges, Background, BackgroundVariant, ReactFlow, ViewportPor
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { buildCanvasGeometry, type CanvasGeometry, type BlockFitInput } from '../../canvasLayout'
+import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
+  buildCanvasGeometry,
+  type CanvasGeometry,
+  type BlockFitInput,
+} from '../../canvasLayout'
 import { CANVAS_VIEWPORT } from '../../constants/canvas'
 import { inkAlpha } from '../../constants/theme'
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers'
 import { computeBlockLayout, visibleLanes } from '../../layout/computeBlockLayout'
+import {
+  LAYOUT_CELL_X_PAD,
+  LAYOUT_CELL_Y_PAD,
+  LAYOUT_COLUMN_GUTTER,
+  LAYOUT_ROW_GUTTER,
+} from '../../layout/constants'
 import {
   legacyBlockType,
   type PathwayBlock,
@@ -141,20 +153,44 @@ export function BuilderCanvasFrame({
   )
 
   // Re-align within the (phase, lane) cell. xyflow clamps drag via
-  // the per-node `extent` set in useFlowNodes; the final position is
-  // persisted relative to the cell origin so authored x/y survives
-  // the round-trip (and lane / phase resize stays consistent).
+  // the per-node `extent` set in useFlowNodes; on drop we snap to the
+  // closest (col, row) grid slot inside the cell and bump the row if
+  // another block already occupies that slot — so manual drags never
+  // overlap each other (auto-layout already lays out without
+  // overlap). The snapped position is persisted relative to the cell
+  // origin so authored x/y survives the round-trip.
   const onNodeDragStop = useCallback(
     (_event: unknown, node: Node<BlockFlowNode['data']>) => {
       const block = node.data.block
       const phaseLeft = geometry.phaseX(block.phase_id)
       const laneTop = geometry.laneY(block.lane_id)
-      const x = Math.round(node.position.x - phaseLeft)
-      const y = Math.round(node.position.y - laneTop)
+      const cellX = node.position.x - phaseLeft
+      const cellY = node.position.y - laneTop
+      const colStep = BLOCK_WIDTH + LAYOUT_COLUMN_GUTTER
+      const rowStep = BLOCK_HEIGHT + LAYOUT_ROW_GUTTER
+      const dropCol = Math.max(0, Math.round((cellX - LAYOUT_CELL_X_PAD) / colStep))
+      const dropRow = Math.max(0, Math.round((cellY - LAYOUT_CELL_Y_PAD) / rowStep))
+      // Build occupancy map from the *effective* (col, row) of every
+      // other block in this (phase, lane) cell — same rule
+      // `useFlowNodes` uses to pick the rendered position.
+      const occupied = new Set<string>()
+      for (const other of blocks) {
+        if (other.id === block.id) continue
+        if (other.phase_id !== block.phase_id || other.lane_id !== block.lane_id) continue
+        const hasManual = other.x !== 0 || other.y !== 0
+        const pos = hasManual ? { x: other.x, y: other.y } : layout.get(other.id) ?? { x: 0, y: 0 }
+        const c = Math.max(0, Math.round((pos.x - LAYOUT_CELL_X_PAD) / colStep))
+        const r = Math.max(0, Math.round((pos.y - LAYOUT_CELL_Y_PAD) / rowStep))
+        occupied.add(`${c}::${r}`)
+      }
+      let finalRow = dropRow
+      while (occupied.has(`${dropCol}::${finalRow}`)) finalRow += 1
+      const x = LAYOUT_CELL_X_PAD + dropCol * colStep
+      const y = LAYOUT_CELL_Y_PAD + finalRow * rowStep
       if (x === block.x && y === block.y) return
       dispatch({ type: 'move-block', blockId: block.id, x, y })
     },
-    [dispatch, geometry],
+    [blocks, dispatch, geometry, layout],
   )
 
   const scaffoldPresent = !!phases.length && !!lanes.length
