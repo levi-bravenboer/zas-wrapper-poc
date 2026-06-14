@@ -21,6 +21,10 @@ from app.db.base import TenantOwnedEntity
 class User(TenantOwnedEntity):
     __tablename__ = "users"
     __realtime_resource__: ClassVar[str | None] = "users"
+    __audited__: ClassVar[bool] = True
+    __audit_exclude__: ClassVar[frozenset[str]] = frozenset(
+        {"password_hash", "created_by", "updated_by", "deleted_by"}
+    )
     __table_args__ = (
         # Email uniqueness scoped to (tenant, lower(email), role) so a
         # caregiver and a patient in the same tenant may share an email.

@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, Request, Response
 
+from app.core.enums.audit import AuditAction, AuditResult
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.repositories.user.deps import UserRepoDep
@@ -33,6 +34,8 @@ from app.services.access.identity.login_service import (
     authenticate_password,
 )
 from app.services.access.identity.role_binding import bind_session_role, get_bound_user_id
+from app.services.audit.context import AuditContext
+from app.services.audit.emit import emit_committed
 
 # PoC is single-tenant (`zas`). Multi-tenant resolution lands at MVP.
 from scripts.seed_tenant import ZAS_TENANT_ID
@@ -48,6 +51,36 @@ def _client_ip(request: Request) -> str | None:
 
 def _user_agent(request: Request) -> str | None:
     return request.headers.get("user-agent")
+
+
+def _audit_context(request: Request, *, reason: str | None = None) -> AuditContext:
+    # model_validate (not kwargs) so the `str` client IP is coerced to a real
+    # IP type by pydantic without tripping the typed constructor signature.
+    return AuditContext.model_validate(
+        {
+            "ip": _client_ip(request),
+            "user_agent": _user_agent(request),
+            "reason": reason,
+        }
+    )
+
+
+async def _emit_login_audit(
+    request: Request,
+    *,
+    result: AuditResult,
+    actor: SessionUser | None,
+    reason: str | None = None,
+) -> None:
+    # Independently committed (D-AUTH-COMMIT) so the trail survives a failed
+    # login that returns 401 and rolls the request session back.
+    await emit_committed(
+        request.app.state.session_factory,
+        action=AuditAction.LOGIN,
+        result=result,
+        actor=actor,
+        context=_audit_context(request, reason=reason),
+    )
 
 
 def _set_session_cookie(
@@ -105,6 +138,9 @@ async def login_password(
                 reason=exc.audit_reason,
             )
         )
+        await _emit_login_audit(
+            request, result=AuditResult.FAILURE, actor=None, reason=exc.audit_reason
+        )
         raise
 
     _set_session_cookie(response, settings=settings, session_token=result.session_token)
@@ -121,6 +157,11 @@ async def login_password(
                 user_id=result.roster[0].id,
             )
         )
+        await _emit_login_audit(
+            request,
+            result=AuditResult.SUCCESS,
+            actor=SessionUser.model_validate(result.roster[0]),
+        )
         return RoleSelectionRequiredResponse(
             available_roles=sorted({u.role for u in result.roster})
         )
@@ -134,7 +175,9 @@ async def login_password(
             user_id=result.user.id,
         )
     )
-    return SessionUser.model_validate(result.user)
+    session_user = SessionUser.model_validate(result.user)
+    await _emit_login_audit(request, result=AuditResult.SUCCESS, actor=session_user)
+    return session_user
 
 
 @router.get(

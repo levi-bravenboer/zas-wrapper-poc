@@ -55,6 +55,14 @@ class Entity(Base):
     __abstract__ = True
     __realtime_resource__: ClassVar[str | None] = None
 
+    # Audit opt-in (app/db/audit.py). `__audited__ = True` makes the
+    # `before_flush` hook emit `AuditEvent` rows for this model's
+    # create/update/delete. Off by default — PHI tables opt in deliberately.
+    # `__audit_exclude__` drops columns from the recorded `changes` diff
+    # (on top of the always-excluded `updated_at`).
+    __audited__: ClassVar[bool] = False
+    __audit_exclude__: ClassVar[frozenset[str]] = frozenset()
+
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True),
