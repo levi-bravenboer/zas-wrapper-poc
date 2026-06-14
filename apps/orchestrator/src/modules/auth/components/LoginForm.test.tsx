@@ -70,12 +70,12 @@ describe('LoginForm', () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: '/' }))
   })
 
-  it('honours ?redirect=/patients/abc', async () => {
-    currentRedirect = '/patients/abc'
+  it('honours ?redirect=/tasks/abc', async () => {
+    currentRedirect = '/tasks/abc'
     server.use(http.post(`${baseUrl}/auth/login/password`, () => HttpResponse.json(STUB_USER)))
     renderForm()
     await fillAndSubmit()
-    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: '/patients/abc' }))
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith({ to: '/tasks/abc' }))
   })
 
   it('drops //evil.com redirect to /', async () => {
@@ -126,9 +126,9 @@ describe('safeRedirect', () => {
     ['', '/'],
     ['evil.com', '/'],
     ['//evil.com', '/'],
-    ['/patients\\foo', '/'],
+    ['/tasks\\foo', '/'],
     ['/login', '/'],
-    ['/patients/abc', '/patients/abc'],
+    ['/tasks/abc', '/tasks/abc'],
   ])('safeRedirect(%j) → %j', (input, expected) => {
     expect(safeRedirect(input as string | undefined)).toBe(expected)
   })
@@ -152,7 +152,7 @@ describe('LoginForm multi-role', () => {
         HttpResponse.json({ ...STUB_USER, id: 'u9', role: 'admin' }, { status: 200 }),
       ),
     )
-    currentRedirect = '/patients'
+    currentRedirect = '/tasks'
     renderForm()
     await fillAndSubmit('hoofdarts@zas.local')
 
@@ -162,7 +162,7 @@ describe('LoginForm multi-role', () => {
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: /Beheerder/i }))
     await waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith({ to: safeRedirect('/patients') }),
+      expect(navigateMock).toHaveBeenCalledWith({ to: safeRedirect('/tasks') }),
     )
   })
 })
