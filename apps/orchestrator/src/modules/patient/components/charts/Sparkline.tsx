@@ -52,6 +52,7 @@ export function Sparkline({
       preserveAspectRatio="none"
       role="img"
       aria-hidden
+      data-testid="sparkline"
       className={cn('h-7 w-28 shrink-0', className)}
     >
       <path
