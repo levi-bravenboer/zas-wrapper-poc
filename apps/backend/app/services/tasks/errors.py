@@ -13,3 +13,9 @@ class TaskNotFoundError(AppError):
     code = "not-found.task.not_found"
     status_code = 404
     message = "Task not found."
+
+
+class InvalidTaskQueryError(AppError):
+    code = "invalid.task.invalid_query"
+    status_code = 422
+    message = "Invalid `/tasks` query parameters."

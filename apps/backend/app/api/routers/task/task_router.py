@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import Annotated, NoReturn
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.api.deps import ListQueryParamsDep
 from app.core.enums.user import Role
@@ -26,6 +26,7 @@ from app.schemas.auth.auth import SessionUser
 from app.schemas.task.task_item import TaskItem
 from app.services.access.identity.deps import require_role
 from app.services.tasks.deps import TasksAggregatorDep
+from app.services.tasks.errors import InvalidTaskQueryError
 
 router = APIRouter(tags=["tasks"])
 
@@ -33,7 +34,7 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 
 
 def _raise_422(detail: str) -> NoReturn:
-    raise HTTPException(status_code=422, detail=detail)
+    raise InvalidTaskQueryError(message=detail)
 
 
 def _resolve_patient_id_filter(
