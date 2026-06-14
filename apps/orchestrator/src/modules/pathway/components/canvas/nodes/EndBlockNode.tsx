@@ -1,5 +1,4 @@
 import { Position, type Node, type NodeProps } from '@xyflow/react'
-import { X } from 'lucide-react'
 import { memo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -16,9 +15,11 @@ export const EndBlockNode = memo(EndBlockNodeImpl)
 
 // Pathway-completion §A2: `end_pathway` is a terminal marker —
 // cardinality ≥ 1 per version, lane=system, no per-kind config, no
-// timing. The canvas renders it as a compact circular node (mirrors
-// the §A1 Start treatment) with only the target handle. The first
-// reachable end completes the enrollment.
+// timing, no author-visible name (the canvas shape conveys it
+// fully). The canvas renders it as a compact circular node (mirrors
+// the §A1 Start treatment) with only the target handle. No hover-X
+// — the publish gate requires at least one terminal so deletion
+// would risk leaving the version unpublishable.
 function EndBlockNodeImpl({ data, selected }: NodeProps<EndFlowNode>): ReactElement {
   const { t } = useTranslation('pathway')
   const accent = data.lane ? laneAccent(data.lane) : 'var(--color-primary)'
@@ -43,19 +44,6 @@ function EndBlockNodeImpl({ data, selected }: NodeProps<EndFlowNode>): ReactElem
         } as React.CSSProperties
       }
     >
-      {data.onRequestDelete && (
-        <button
-          type="button"
-          aria-label={t('deleteBlock.title', { defaultValue: 'Blok verwijderen?' })}
-          onClick={(e) => {
-            e.stopPropagation()
-            data.onRequestDelete?.(data.block.id)
-          }}
-          className="absolute -right-1.5 -top-1.5 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm hover:opacity-90 group-hover:flex"
-        >
-          <X className="size-3" />
-        </button>
-      )}
       <BlockTypeIcon
         icon={data.blockType?.icon ?? 'square'}
         className="size-6"

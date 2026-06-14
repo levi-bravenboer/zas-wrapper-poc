@@ -194,20 +194,22 @@ export function BlockDialog({
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
           <section className="space-y-3">
-            <div>
-              <label
-                htmlFor="block-dialog-name"
-                className="mb-1 block text-[12px] font-medium text-foreground"
-              >
-                {t('blockDialog.name', { defaultValue: 'Naam' })}
-              </label>
-              <Input
-                id="block-dialog-name"
-                value={draft.name}
-                placeholder={typeLabel}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              />
-            </div>
+            {blockType.semantics !== 'end_pathway' && (
+              <div>
+                <label
+                  htmlFor="block-dialog-name"
+                  className="mb-1 block text-[12px] font-medium text-foreground"
+                >
+                  {t('blockDialog.name', { defaultValue: 'Naam' })}
+                </label>
+                <Input
+                  id="block-dialog-name"
+                  value={draft.name}
+                  placeholder={typeLabel}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                />
+              </div>
+            )}
             <div>
               <label
                 htmlFor="block-dialog-phase"
@@ -295,7 +297,10 @@ export function BlockDialog({
           className="flex-row items-center border-t px-5 py-3"
           style={{ borderColor: 'var(--hairline)' }}
         >
-          {mode === 'edit' && onDelete && blockType.semantics !== 'start' && (
+          {mode === 'edit' &&
+            onDelete &&
+            blockType.semantics !== 'start' &&
+            blockType.semantics !== 'end_pathway' && (
             <Button
               type="button"
               variant="ghost"
