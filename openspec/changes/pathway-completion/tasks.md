@@ -349,9 +349,10 @@ complete.
   toe" / "Opslaan" submit, cancel, delete (edit mode).
 - [x] C4.2 Phase picker (select over `version.phases`, sorted by
   `ord`).
-- [x] C4.3 Lane picker: select only when the kind allows >1 lane
-  kind; single-kind blocks render a read-only line. Picker
-  consumes the FULL lane list (canvas hiding is render-only).
+- [x] C4.3 Lane: NO field in the dialog (user decision
+  2026-06-12) — the lane is derived from the kind's
+  `allowed_lane_kinds`; first allowed lane wins for multi-kind
+  blocks. Edit mode keeps the block's existing lane.
 - [x] C4.4 Per-kind config form via extracted `InspectorSwitch` —
   reuses all existing inspectors + new Treatment / Mdo /
   InformedConsent inspectors; `start` / `end_pathway` render a
@@ -415,9 +416,20 @@ complete.
   (522 passed, lint clean apart from pre-existing ts-nocheck).
   Caught + fixed: treatment `notes` field double-prefix column bug
   surfaced by the seed-all script test.
-- [ ] C8.2 Manual run through the golden path against the
-  Rugrevalidatie seed: add a `TaskBlock` gated by the Start,
-  edit it, delete it, observe the canvas re-derive.
+- [x] C8.2 Manual run through the golden path against the
+  Rugrevalidatie seed: add a `TaskBlock` gated by the Start, edit
+  it, delete it, observe the canvas re-derive. Smoke run
+  2026-06-14: add → autosave PUT 200, edit → save PUT 200, delete
+  → cascade confirm → PUT 200, canvas re-derives via Kahn pass.
+  Round 1 surfaced two blockers in the dirty configSchemas work
+  (Zod parse rejected `null` on optional per-kind fields, and the
+  autosave payload echoed those `null`s back to a strict BE
+  CONFIG_SCHEMA). Fixed in this commit: `.nullable().optional()`
+  added across Appointment/Task/Milestone/Form/Treatment/Message/
+  Decision/Wait/PathwayLink/ExternalProgram/Start/EndPathway/
+  Mdo/InformedConsent configs; `stripNullEntries` added to
+  `useAutosavePathway.buildPayload` so the PUT never echoes
+  `null` per-kind columns; round-trip tests added.
 - [x] C8.3 Committed per `§` on `feat/pathway-model-redesign`.
 
 ---
