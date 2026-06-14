@@ -117,7 +117,9 @@ class AppointmentTaskRepository:
             patient_id=patient_id,
         )
         result = await self._session.execute(
-            base.order_by(Appointment.starts_at.asc()).offset(offset).limit(limit)
+            base.order_by(Appointment.starts_at.asc(), Appointment.id.asc())
+            .offset(offset)
+            .limit(limit)
         )
         return result.scalars().all()
 
