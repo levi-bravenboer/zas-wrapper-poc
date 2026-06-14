@@ -12,8 +12,6 @@ import {
 
 import type { TimingPolicyValue } from '../../types'
 
-export type { TimingPolicyValue }
-
 // Pathway-completion § C4.6: tagged-union timing_policy editor.
 // Variants mirror `app/domain/pathway/timing.py`; the dialog hides this
 // section entirely for kinds whose validator forbids timing
