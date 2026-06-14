@@ -10,15 +10,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import type { PathwayBlock } from '../../types'
+import type { TimingPolicyValue } from '../../types'
+
+export type { TimingPolicyValue }
 
 // Pathway-completion § C4.6: tagged-union timing_policy editor.
 // Variants mirror `app/domain/pathway/timing.py`; the dialog hides this
 // section entirely for kinds whose validator forbids timing
 // (start / end_pathway / informed_consent).
-
-type TimingPolicyShape = NonNullable<PathwayBlock['timing_policy']>
-export type TimingPolicyValue = TimingPolicyShape | null
 
 const POLICY_KINDS = [
   'none',
@@ -49,13 +48,13 @@ function buildPolicy(kind: PolicyKindOption, iso: string): TimingPolicyValue {
     case 'none':
       return null
     case 'fixed_duration':
-      return { kind: 'fixed_duration', duration_iso: iso || 'P1D' } as TimingPolicyShape
+      return { kind: 'fixed_duration', duration_iso: iso || 'P1D' } as NonNullable<TimingPolicyValue>
     case 'wait_after':
-      return { kind: 'wait_after', offset_iso: iso || 'PT0S' } as TimingPolicyShape
+      return { kind: 'wait_after', offset_iso: iso || 'PT0S' } as NonNullable<TimingPolicyValue>
     case 'due_within':
-      return { kind: 'due_within', window_iso: iso || 'P7D' } as TimingPolicyShape
+      return { kind: 'due_within', window_iso: iso || 'P7D' } as NonNullable<TimingPolicyValue>
     case 'at_enrollment_picked_date':
-      return { kind: 'at_enrollment_picked_date' } as TimingPolicyShape
+      return { kind: 'at_enrollment_picked_date' } as NonNullable<TimingPolicyValue>
   }
 }
 

@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react'
 import { sortByOrd } from '@/lib/utils/ordinal'
 
 import { CONFIG_SCHEMAS, defaultConfig } from '../configSchemas'
-import type { TimingPolicyValue } from '../components/dialog/TimingPolicyEditor'
 import {
   legacyBlockConfig,
   type BlockConfig,
@@ -11,6 +10,7 @@ import {
   type PathwayBlockType,
   type PathwayLane,
   type PathwayPhase,
+  type TimingPolicyValue,
 } from '../types'
 import { isLaneAllowed } from '../utils/laneRules'
 
@@ -45,7 +45,7 @@ function initialDraft(
       laneId: block.lane_id,
       config: legacyBlockConfig(block),
       inputLogic: block.input_logic ?? EMPTY_LOGIC,
-      timingPolicy: (block.timing_policy ?? null) as TimingPolicyValue,
+      timingPolicy: block.timing_policy ?? null,
     }
   }
   return {

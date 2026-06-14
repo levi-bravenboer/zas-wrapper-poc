@@ -26,6 +26,12 @@ export type PathwayTimingValue = components['schemas']['PathwayTimingValueOut']
 export type PathwayBlock = NonNullable<PathwayVersionDefinition['blocks']>[number]
 export type PathwayBlockKind = PathwayBlock['kind']
 
+// `timing_policy` is a discriminated union (see `TimingPolicyEditor`)
+// — null when the kind forbids timing or the author hasn't picked one
+// yet. Lifted into `types.ts` so consumers (hooks, dialog, util) don't
+// reach into a component file for a wire-shape type.
+export type TimingPolicyValue = PathwayBlock['timing_policy'] | null
+
 // Legacy `pathway_block.type` discriminator code, derived from the
 // typed `kind` discriminator. Matches the backend resolver's
 // `_LEGACY_TYPE_ALIASES` mapping in reverse — the only kind whose
