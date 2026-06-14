@@ -27,11 +27,8 @@ type AutosaveHandlers = {
   onRename: (name: string) => void
 }
 
-// Backend block CONFIG_SCHEMAs are strict — `null` is not a valid
-// value for unset per-kind columns (the JSON Schema declares
-// `{"type": "string"}` etc., not `["string", "null"]`). The GET
-// response, however, serialises unset nullable columns as explicit
-// `null`. Strip those before PUT so the round-trip stays clean.
+// BE schemas don't accept `null` for unset per-kind columns; GET
+// returns explicit nulls. Strip them before PUT.
 function stripNullEntries(config: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(config)) {

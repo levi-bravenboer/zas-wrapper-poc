@@ -6,11 +6,8 @@ import { MarkerCircleBlockNode, type MarkerFlowNode } from './MarkerCircleBlockN
 
 export type StartFlowNode = MarkerFlowNode
 
-// Pathway-completion §A1: `start` is a marker block — exactly one
-// per pathway, lane=caregiver, no input_logic, no timing_policy. The
-// canvas reflects that with a compact circular node: just the play
-// icon, source handle on the right, no hover-X (the cardinality
-// invariant requires exactly one per version).
+// Pathway-completion §A1: pathway entry marker. Exactly one per
+// version (locked, non-deletable).
 export function StartBlockNode(props: NodeProps<StartFlowNode>): ReactElement {
   const { t } = useTranslation('pathway')
   return (

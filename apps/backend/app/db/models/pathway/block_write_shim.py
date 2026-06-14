@@ -89,13 +89,10 @@ def block_row_clone_kwargs(
 ) -> dict[str, Any]:
     """Build clone kwargs for the fork-from-publish path.
 
-    Round-trips via `to_domain` / `from_domain` so the typed payload
-    stays consistent while identity / placement remap to the new
-    target version. `block_id_map` (source-row-id → target-row-id)
-    rewrites every `input_logic.rules[].node` (and matching
-    `args.after_block`) so cloned connectivity points at the cloned
-    block ids — without it, cloned `input_logic` stays bound to the
-    source version's row ids and the canvas renders disconnected.
+    `block_id_map` (source-row-id → target-row-id) rewrites every
+    `input_logic.rules[].node` and `args.after_block` so cloned
+    connectivity points at the cloned block ids — without it,
+    cloned `input_logic` stays bound to the source version's ids.
     """
     domain_block = to_domain(source)
     typed_kwargs = from_domain(domain_block)

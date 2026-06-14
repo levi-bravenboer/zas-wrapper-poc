@@ -6,11 +6,8 @@ import { MarkerCircleBlockNode, type MarkerFlowNode } from './MarkerCircleBlockN
 
 export type EndFlowNode = MarkerFlowNode
 
-// Pathway-completion §A2: `end_pathway` is a terminal marker —
-// cardinality ≥ 1 per version, lane=system, no per-kind config, no
-// timing, no author-visible name (the canvas shape conveys it
-// fully). Mirrors the §A1 Start treatment with a heavier border so
-// the terminal reads visually distinct from the head.
+// Pathway-completion §A2: terminal marker. Locked (≥ 1 required);
+// heavier border than Start to read as the tail.
 export function EndBlockNode(props: NodeProps<EndFlowNode>): ReactElement {
   const { t } = useTranslation('pathway')
   return (

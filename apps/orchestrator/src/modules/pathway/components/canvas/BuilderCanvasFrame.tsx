@@ -55,21 +55,13 @@ type Props = {
   onRequestDeleteBlock: (blockId: string) => void
 }
 
-// One xyflow node type, ever. The router dispatches on `data.block.type`
-// (bare vs dotted) to the per-provider component. Future providers register
-// inside `BlockNodeRouter`, not here — see
-// `openspec/changes/external-block-integrations/design.md` §"One xyflow
-// node type, dispatcher inside".
+// Single xyflow node type; per-kind / per-provider routing lives
+// inside `BlockNodeRouter`.
 const NODE_TYPES = { block: BlockNodeRouter } as const
 const EDGE_TYPES = { smoothstep: SmoothstepEdge } as const
 
-// Pathway-completion § C2.2: the canvas renders the derived layout.
-// Blocks may be re-aligned within their (phase, lane) cell — xyflow
-// clamps each node to a per-node `extent` so the author can never
-// drag a block out of its lane or phase. Edges derive from
-// `input_logic` server-side and never change on drag. Authoring
-// (kind, config, input_logic, timing_policy) still happens in the
-// block dialog; auto-layout owns placement until the author drags.
+// Pathway-completion §C2.2: blocks drag within their (phase, lane)
+// cell via per-node `extent` clamping; edges stay derived.
 export function BuilderCanvasFrame({
   phases,
   lanes,
@@ -83,20 +75,16 @@ export function BuilderCanvasFrame({
 }: Props): ReactElement {
   const { t } = useTranslation('pathway')
 
-  // § C3: computed positions per (phase, lane) cell. Authored x/y ignored.
   const layout = useMemo(() => computeBlockLayout(blocks), [blocks])
-
-  // § C3.3: hide lanes without blocks — canvas render only; the block
-  // dialog's lane picker keeps consuming the full lane list.
+  // Hide empty lanes on canvas render; dialog picker still sees all.
   const lanesOnCanvas = useMemo(() => visibleLanes(lanes, blocks), [lanes, blocks])
 
   const fitInputs = useMemo<BlockFitInput[]>(() => {
     const byCode = new Map(blockTypes.map((bt) => [bt.type, bt]))
     return blocks.map((b) => {
       const dims = getBlockDimensions(b, byCode.get(legacyBlockType(b)) ?? null)
-      // Match the position used by `useFlowNodes`: a manual drag wins
-      // over auto-layout, so the phase column / lane row must grow to
-      // contain the authored position too.
+      // Use the rendered position (manual drag wins) so phase / lane
+      // grow to fit it.
       const hasManualPosition = b.x !== 0 || b.y !== 0
       const pos = hasManualPosition ? { x: b.x, y: b.y } : (layout.get(b.id) ?? { x: 0, y: 0 })
       return {
@@ -152,13 +140,8 @@ export function BuilderCanvasFrame({
     [dispatchNodesChange],
   )
 
-  // Re-align within the (phase, lane) cell. xyflow clamps drag via
-  // the per-node `extent` set in useFlowNodes; on drop we snap to the
-  // closest (col, row) grid slot inside the cell and bump the row if
-  // another block already occupies that slot — so manual drags never
-  // overlap each other (auto-layout already lays out without
-  // overlap). The snapped position is persisted relative to the cell
-  // origin so authored x/y survives the round-trip.
+  // Snap drop to the (col, row) grid; bump the row if the slot is
+  // already taken so manual drags never overlap.
   const onNodeDragStop = useCallback(
     (_event: unknown, node: Node<BlockFlowNode['data']>) => {
       const block = node.data.block
@@ -170,9 +153,6 @@ export function BuilderCanvasFrame({
       const rowStep = BLOCK_HEIGHT + LAYOUT_ROW_GUTTER
       const dropCol = Math.max(0, Math.round((cellX - LAYOUT_CELL_X_PAD) / colStep))
       const dropRow = Math.max(0, Math.round((cellY - LAYOUT_CELL_Y_PAD) / rowStep))
-      // Build occupancy map from the *effective* (col, row) of every
-      // other block in this (phase, lane) cell — same rule
-      // `useFlowNodes` uses to pick the rendered position.
       const occupied = new Set<string>()
       for (const other of blocks) {
         if (other.id === block.id) continue

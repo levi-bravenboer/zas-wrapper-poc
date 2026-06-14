@@ -78,10 +78,6 @@ type Result = {
   inspectorBlock: PathwayBlock
 }
 
-// Owns the BlockDialog's draft state + the parsed-config + canSubmit
-// derivations + the synthetic `inspectorBlock` envelope that
-// `InspectorSwitch` reads. Component body shrinks to pure JSX once
-// this hook owns the state machine.
 export function useBlockDraft({ mode, blockType, block, phases, lanes }: Options): Result {
   const [draft, setDraft] = useState<BlockDraft>(() =>
     initialDraft(

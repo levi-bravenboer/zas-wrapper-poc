@@ -13,12 +13,8 @@ type CanvasHandlers = {
   onPaneClick: () => void
 }
 
-// Pathway-completion § C2.2: blocks may be re-aligned within their
-// (phase, lane) cell — the drag stop handler lives in
-// `BuilderCanvasFrame`. Selection routes to the dialog; keyboard
-// remove cascades through `delete-block`. Edges are derived from
-// `input_logic` server-side and are not selectable, deletable, or
-// draggable.
+// Selection routes to the dialog; keyboard remove cascades through
+// `delete-block`. Edges are derived from `input_logic` and inert.
 export function useCanvasHandlers({ dispatch }: Options): CanvasHandlers {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -32,9 +28,7 @@ export function useCanvasHandlers({ dispatch }: Options): CanvasHandlers {
     [dispatch],
   )
 
-  // Edges are derived from `input_logic` server-side. They are not
-  // selectable, not deletable, not draggable — no-op handler so
-  // xyflow has somewhere to call into without throwing.
+  // Edges are derived — no-op so xyflow has a handler to call.
   const onEdgesChange = useCallback((_changes: EdgeChange[]) => {}, [])
 
   const onPaneClick = useCallback(() => {

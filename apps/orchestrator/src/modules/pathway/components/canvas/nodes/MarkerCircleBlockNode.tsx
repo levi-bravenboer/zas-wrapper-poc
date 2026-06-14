@@ -25,13 +25,9 @@ type Props = NodeProps<MarkerFlowNode> & {
   emphasis?: 'soft' | 'strong'
 }
 
-// Pathway-completion §A1 / §A2: shared shell for marker blocks
-// (Start, EndPathway). The shape — circular, no subtitle, single
-// handle, no hover-X — is identical across markers; only the handle
-// direction, fallback icon, and aria copy change. h-16 w-16 = 64px,
+// Shared marker-block shell (Start + EndPathway). h-16 w-16 = 64px,
 // must stay in lockstep with START_DIMENSIONS / END_DIMENSIONS in
-// blockDimensions.ts so the rendered circle matches the xyflow node
-// bounding box.
+// blockDimensions.ts.
 export const MarkerCircleBlockNode = memo(MarkerCircleBlockNodeImpl)
 
 function MarkerCircleBlockNodeImpl({

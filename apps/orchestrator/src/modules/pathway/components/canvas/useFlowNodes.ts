@@ -22,8 +22,7 @@ type Params = {
   blockTypes: PathwayBlockType[]
   timingValues: PathwayTimingValue[]
   geometry: CanvasGeometry
-  // Pathway-completion § C3: computed per-cell positions from the
-  // auto-layout pass. Authored block.x / block.y override these.
+  /** §C3 auto-layout output; manual block.x/y overrides. */
   layout: Map<string, BlockPosition>
   selection: BuilderSelection
   // § C2.5: hover-X delete affordance → confirm dialog in the shell.
@@ -49,9 +48,7 @@ export function useFlowNodes({
       blocks.map((block) => {
         const blockType = typesByCode.get(legacyBlockType(block)) ?? null
         const dimensions = getBlockDimensions(block, blockType)
-        // Sentinel (0, 0) = auto-layout owns this block; any other
-        // value = author placed it explicitly and the round-trip
-        // must keep that position stable.
+        // (0, 0) sentinel = auto-layout owns the position.
         const hasManualPosition = block.x !== 0 || block.y !== 0
         const cellPos = hasManualPosition
           ? { x: block.x, y: block.y }
@@ -67,9 +64,7 @@ export function useFlowNodes({
             x: phaseLeft + cellPos.x,
             y: laneTop + cellPos.y,
           },
-          // Per-node drag extent: clamp the block inside its
-          // (phase, lane) cell so the author can re-align without
-          // ever escaping the lane or phase.
+          // Clamp drag to (phase, lane) cell.
           extent: [
             [phaseLeft, laneTop],
             [

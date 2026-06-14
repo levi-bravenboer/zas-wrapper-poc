@@ -1,22 +1,8 @@
-// Pure auto-layout pass for the dialog-driven builder
-// (pathway-completion § C3). Block (x, y) is computed from the
-// `input_logic` graph — the author never positions anything by hand.
-//
-// Per phase (across lanes):
-//   1. Build a DAG: edge A → B when B's `input_logic.rules` reference A
-//      AND A lives in the SAME phase. Cross-lane deps inside one phase
-//      DO count — parallel work in different lanes that depends on the
-//      same upstream block lines up in the same column (side-by-side).
-//   2. Kahn pass → column index per block within the phase.
-//      Blocks with no in-phase upstream anchor at column 0. Cross-phase
-//      references convey via derived edges, not via column shifts.
-//   3. Row index per (phase, lane) cell: stable by array (creation)
-//      order so branch fan-outs stack vertically inside their lane.
-//
-// Cycle safety: `input_logic` graphs are DAGs by construction, but
-// autosave drafts can briefly hold cycles. Any block left unplaced by
-// the Kahn pass lands in one trailing column, stacked, so the canvas
-// never drops a block.
+// Pathway-completion §C3: auto-layout from `input_logic`. Per phase,
+// Kahn pass across lanes assigns columns (parallel work in different
+// lanes shares a column when they hit the same upstream). Rows stack
+// per (phase, lane). Cycles fall to a trailing column — never drop a
+// block.
 
 import {
   LAYOUT_CELL_X_PAD,

@@ -267,10 +267,8 @@ class PathwayService:
             if code in lane_kinds
         ]
         session.add_all(lane_rows)
-        # Scaffold a Pre-op phase + StartBlock on the caregiver lane so a
-        # fresh pathway opens with the required §A1 entry block already
-        # placed. Authors never need to "add Start manually"; the canvas
-        # opens with a working starting point.
+        # Scaffold a Pre-op phase + §A1 StartBlock on the caregiver
+        # lane so fresh pathways open ready to author.
         caregiver_kind = lane_kinds.get("caregiver")
         caregiver_lane = (
             next(
@@ -289,8 +287,7 @@ class PathwayService:
                 ord=10,
             )
             session.add(scaffold_phase)
-            # Flush so the phase + lane rows exist before the block row
-            # references them via foreign keys.
+            # Flush so phase / lane FKs exist before adding the block.
             await session.flush()
             session.add(
                 PathwayBlock(

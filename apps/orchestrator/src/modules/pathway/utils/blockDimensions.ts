@@ -10,14 +10,8 @@ export type BlockDimensions = { width: number; height: number }
 
 const NATIVE_DIMENSIONS: BlockDimensions = { width: BLOCK_WIDTH, height: BLOCK_HEIGHT }
 
-// Start blocks render as a circle (no subtitle, no entry handle). The
-// smaller footprint keeps the visual marker compact at the head of a
-// pathway — the layout pass keeps the next column at BLOCK_WIDTH +
-// gutter away, so downstream blocks line up unchanged.
+// Marker blocks (Start / EndPathway) render as 64×64 circles.
 const START_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
-
-// EndPathway blocks mirror Start: a compact circular marker for the
-// pathway's terminal node(s).
 const END_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
 
 // ---- Luscii Program size computer ----------------------------------------

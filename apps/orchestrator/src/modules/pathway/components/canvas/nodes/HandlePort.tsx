@@ -5,11 +5,8 @@ type Props = HandleProps & {
   ariaLabel: string
 }
 
-// Pathway-completion §C: the canvas is read-only — users can never
-// draw an edge by hand. xyflow still needs the Handle in the DOM so
-// it can compute derived-edge endpoints, but the visible circle is
-// hidden. `pointer-events: none` keeps stray drag handles from
-// catching mouse events too.
+// Invisible handle — xyflow needs it in the DOM for edge endpoints
+// (edges are derived from `input_logic`, never drawn by hand).
 export function HandlePort({ ariaLabel, style, ...rest }: Props): ReactElement {
   return (
     <Handle
