@@ -1518,6 +1518,46 @@ export interface components {
             rule: string;
         };
         /**
+         * LusciiCategoricalPoint
+         * @description A single measurement point projected from a multiple-choice item.
+         */
+        LusciiCategoricalPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "categorical";
+            /** Responses */
+            responses?: string[];
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiFreeTextPoint
+         * @description A single measurement point projected from a free-text answer.
+         */
+        LusciiFreeTextPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "free_text";
+            /** Text */
+            text: string;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
          * LusciiInstrument
          * @description A measurement / questionnaire instrument inside the program.
          */
@@ -1642,11 +1682,46 @@ export interface components {
             protocol_name?: string | null;
         };
         /**
+         * LusciiMeasurementSeries
+         * @description A time-projected series of one instrument-item across the window.
+         *
+         *     `unit` is present only when `archetype` is `numeric` or `ordinal`;
+         *     categorical / free_text / unknown series carry no unit. Points are
+         *     sorted ascending by `observed_at` at projection time and the list is
+         *     never empty (series with zero points are not emitted).
+         */
+        LusciiMeasurementSeries: {
+            /** Series Id */
+            series_id: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Instrument Name */
+            instrument_name?: string | null;
+            /** Item Id */
+            item_id: string;
+            /** Label */
+            label?: string | null;
+            /**
+             * Archetype
+             * @enum {string}
+             */
+            archetype: "numeric" | "ordinal" | "categorical" | "free_text" | "unknown";
+            /** Unit */
+            unit?: string | null;
+            /** Points */
+            points?: (components["schemas"]["LusciiNumericPoint"] | components["schemas"]["LusciiOrdinalPoint"] | components["schemas"]["LusciiCategoricalPoint"] | components["schemas"]["LusciiFreeTextPoint"] | components["schemas"]["LusciiUnknownPoint"])[];
+        };
+        /**
          * LusciiMeasurementValueView
          * @description One decoded `measurement.details` item. `label`/`unit` come from the
          *     Luscii item localisation (nl preferred); `response_texts` resolve the
          *     multiple-choice `response_ids`. Unknown items keep `label=None` with the
          *     raw `value`.
+         *
+         *     `item_id`/`instrument_id` are passed through from the Luscii source row;
+         *     they let clients group values across measurements into a time-series.
+         *     `archetype` is set by the pure `classify_archetype` classifier — never
+         *     `null`, defaults to `"unknown"` when classification fails.
          */
         LusciiMeasurementValueView: {
             /** Label */
@@ -1657,11 +1732,23 @@ export interface components {
             unit?: string | null;
             /** Response Texts */
             response_texts?: string[];
+            /** Item Id */
+            item_id?: string | null;
+            /** Instrument Id */
+            instrument_id?: string | null;
+            /**
+             * Archetype
+             * @default unknown
+             * @enum {string}
+             */
+            archetype: "numeric" | "ordinal" | "categorical" | "free_text" | "unknown";
         };
         /** LusciiMeasurementView */
         LusciiMeasurementView: {
             /** Measurement Id */
             measurement_id?: string | null;
+            /** Instrument Id */
+            instrument_id?: string | null;
             /** Instrument Name */
             instrument_name?: string | null;
             /** Created At */
@@ -1670,6 +1757,46 @@ export interface components {
             processed_at?: string | null;
             /** Values */
             values?: components["schemas"]["LusciiMeasurementValueView"][];
+        };
+        /**
+         * LusciiNumericPoint
+         * @description A single measurement point projected as a numeric value.
+         */
+        LusciiNumericPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "numeric";
+            /** Value */
+            value: number;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiOrdinalPoint
+         * @description A single measurement point projected as an ordinal (allowlisted unit).
+         */
+        LusciiOrdinalPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "ordinal";
+            /** Value */
+            value: number;
+            /** Program Id */
+            program_id?: string | null;
         };
         /**
          * LusciiPatientData
@@ -1691,6 +1818,8 @@ export interface components {
             planned_actions?: components["schemas"]["LusciiPlannedActionView"][];
             /** Unmatched Measurements */
             unmatched_measurements?: components["schemas"]["LusciiMeasurementView"][];
+            /** Series */
+            series?: components["schemas"]["LusciiMeasurementSeries"][];
         };
         /** LusciiPlannedActionView */
         LusciiPlannedActionView: {
@@ -1815,6 +1944,26 @@ export interface components {
             id?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /**
+         * LusciiUnknownPoint
+         * @description Fallback point for values the classifier cannot categorise.
+         */
+        LusciiUnknownPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "unknown";
+            /** Raw */
+            raw?: string | null;
+            /** Program Id */
+            program_id?: string | null;
         };
         /**
          * MobileHealthResponse

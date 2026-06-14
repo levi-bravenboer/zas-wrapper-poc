@@ -42,8 +42,20 @@ const LINKED_DATA: LusciiPatientData = {
         created_at: '2026-06-01T09:00:00Z',
         processed_at: null,
         values: [
-          { label: 'Gewicht', value: '82', unit: 'kg', response_texts: [] },
-          { label: 'Voelt u zich goed?', value: null, unit: null, response_texts: ['Ja'] },
+          {
+            label: 'Gewicht',
+            value: '82',
+            unit: 'kg',
+            response_texts: [],
+            archetype: 'numeric',
+          },
+          {
+            label: 'Voelt u zich goed?',
+            value: null,
+            unit: null,
+            response_texts: ['Ja'],
+            archetype: 'categorical',
+          },
         ],
       },
     },
@@ -63,7 +75,15 @@ const LINKED_DATA: LusciiPatientData = {
       instrument_name: null,
       created_at: '2026-06-03T10:00:00Z',
       processed_at: null,
-      values: [{ label: null, value: 'raw-only', unit: null, response_texts: [] }],
+      values: [
+        {
+          label: null,
+          value: 'raw-only',
+          unit: null,
+          response_texts: [],
+          archetype: 'free_text',
+        },
+      ],
     },
   ],
 }
