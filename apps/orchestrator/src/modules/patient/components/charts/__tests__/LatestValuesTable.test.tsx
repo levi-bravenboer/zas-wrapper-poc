@@ -67,9 +67,10 @@ describe('LatestValuesTable', () => {
   it('sorts rows by most-recent observed_at DESC', () => {
     renderWithI18n(<LatestValuesTable series={[SYS, WEIGHT, QUEST]} />)
     const rows = screen.getAllByRole('row')
-    expect(rows[0]?.textContent).toContain('Gewicht') // 2026-06-14 newest
-    expect(rows[1]?.textContent).toContain('Systolisch') // 2026-06-13
-    expect(rows[2]?.textContent).toContain('Klachten') // 2026-06-12
+    // rows[0] is the header row, data rows follow.
+    expect(rows[1]?.textContent).toContain('Gewicht') // 2026-06-14 newest
+    expect(rows[2]?.textContent).toContain('Systolisch') // 2026-06-13
+    expect(rows[3]?.textContent).toContain('Klachten') // 2026-06-12
   })
 
   it('renders nothing for an empty series array', () => {

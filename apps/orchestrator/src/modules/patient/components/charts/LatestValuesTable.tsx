@@ -2,6 +2,7 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/style/cn'
 
 import { shortDateTime } from './dateLabel'
 import type {
@@ -15,6 +16,13 @@ import type {
 } from './types'
 
 const FREE_TEXT_CAP = 60
+
+interface OverviewRow {
+  key: string
+  label: string
+  value: string
+  observed_at: string
+}
 
 export interface LatestValuesTableProps {
   series: LusciiMeasurementSeries[]
@@ -33,8 +41,8 @@ export interface LatestValuesTableProps {
 export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElement | null {
   const { t } = useTranslation('patient-profile')
 
-  const rows = series
-    .map((s) => {
+  const rows: OverviewRow[] = series
+    .map((s): OverviewRow | null => {
       const last = s.points?.at(-1)
       if (!last) return null
       return {
@@ -44,7 +52,7 @@ export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElem
         observed_at: last.observed_at,
       }
     })
-    .filter((row): row is { key: string; label: string; value: string; observed_at: string } => row !== null)
+    .filter((row): row is OverviewRow => row !== null)
     .toSorted((a, b) => (a.observed_at < b.observed_at ? 1 : a.observed_at > b.observed_at ? -1 : 0))
 
   if (rows.length === 0) return null
@@ -57,14 +65,16 @@ export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElem
         className="grid grid-cols-[1fr_1fr_auto] text-sm"
       >
         <div role="rowgroup" className="contents text-xs uppercase tracking-wider text-foreground-muted">
-          <div role="columnheader" className="border-b border-border px-4 py-2">
-            {t('charts.overview.column.item')}
-          </div>
-          <div role="columnheader" className="border-b border-border px-4 py-2">
-            {t('charts.overview.column.value')}
-          </div>
-          <div role="columnheader" className="border-b border-border px-4 py-2 text-right">
-            {t('charts.overview.column.time')}
+          <div role="row" className="contents">
+            <div role="columnheader" className="border-b border-border px-4 py-2">
+              {t('charts.overview.column.item')}
+            </div>
+            <div role="columnheader" className="border-b border-border px-4 py-2">
+              {t('charts.overview.column.value')}
+            </div>
+            <div role="columnheader" className="border-b border-border px-4 py-2 text-right">
+              {t('charts.overview.column.time')}
+            </div>
           </div>
         </div>
         <div role="rowgroup" className="contents">
@@ -100,7 +110,7 @@ export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElem
 }
 
 function cellClass(isLast: boolean, extra: string): string {
-  return `px-4 py-2 ${isLast ? '' : 'border-b border-border'} ${extra}`
+  return cn('px-4 py-2', !isLast && 'border-b border-border', extra)
 }
 
 function formatLatest(series: LusciiMeasurementSeries, point: LusciiMeasurementPoint): string {
