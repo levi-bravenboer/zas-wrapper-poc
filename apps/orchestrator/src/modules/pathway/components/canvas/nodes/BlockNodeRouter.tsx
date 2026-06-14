@@ -6,6 +6,7 @@ import { LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
 import { NestedPathwayBlockNode } from './internal/nestedPathway'
 import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathwayBlockNode'
+import { EndBlockNode, type EndFlowNode } from './EndBlockNode'
 import { StartBlockNode, type StartFlowNode } from './StartBlockNode'
 
 /**
@@ -31,6 +32,9 @@ function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
   const kind = props.data.block.kind
   if (kind === 'start') {
     return <StartBlockNode {...(props as NodeProps<StartFlowNode>)} />
+  }
+  if (kind === 'end_pathway') {
+    return <EndBlockNode {...(props as NodeProps<EndFlowNode>)} />
   }
   if (kind === 'external_program') {
     // reason: variance erasure between two heterogeneous xyflow node-data

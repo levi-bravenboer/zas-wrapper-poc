@@ -16,6 +16,10 @@ const NATIVE_DIMENSIONS: BlockDimensions = { width: BLOCK_WIDTH, height: BLOCK_H
 // gutter away, so downstream blocks line up unchanged.
 const START_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
 
+// EndPathway blocks mirror Start: a compact circular marker for the
+// pathway's terminal node(s).
+const END_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
+
 // ---- Luscii Program size computer ----------------------------------------
 // Auto-scales the Luscii block based on the resolved program's layout density
 // (phases × lanes). Range 360×200 → 540×300. See
@@ -109,6 +113,7 @@ export function getBlockDimensions(
   blockType: PathwayBlockType | null,
 ): BlockDimensions {
   if (block.kind === 'start') return START_DIMENSIONS
+  if (block.kind === 'end_pathway') return END_DIMENSIONS
   if (
     blockType?.source === 'external' &&
     blockType.provider === LUSCII_PROVIDER &&
