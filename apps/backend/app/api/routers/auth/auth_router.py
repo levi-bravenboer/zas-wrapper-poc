@@ -73,14 +73,19 @@ async def _emit_login_audit(
     reason: str | None = None,
 ) -> None:
     # Independently committed (D-AUTH-COMMIT) so the trail survives a failed
-    # login that returns 401 and rolls the request session back.
-    await emit_committed(
-        request.app.state.session_factory,
-        action=AuditAction.LOGIN,
-        result=result,
-        actor=actor,
-        context=_audit_context(request, reason=reason),
-    )
+    # login that returns 401 and rolls the request session back. Best-effort:
+    # an audit-store hiccup must not turn a 401 into a 500 or fail a login
+    # whose credentials already verified.
+    try:
+        await emit_committed(
+            request.app.state.session_factory,
+            action=AuditAction.LOGIN,
+            result=result,
+            actor=actor,
+            context=_audit_context(request, reason=reason),
+        )
+    except Exception:
+        logger.exception("failed to write login audit event")
 
 
 def _set_session_cookie(

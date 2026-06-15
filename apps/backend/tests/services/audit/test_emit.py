@@ -86,12 +86,13 @@ async def test_emit_committed_persists_independently(db_engine: AsyncEngine) -> 
             select(AuditEvent).where(AuditEvent.request_id == rid)
         )
         event = result.scalars().one()
-    assert event.action == AuditAction.LOGIN
-    assert event.result == AuditResult.FAILURE
-    assert event.actor_type == ActorType.ANONYMOUS
-    assert event.context == {"reason": "bad_password"}
-
-    # cleanup (no autouse wipe in this test package)
-    async with factory() as session:
-        await session.delete(event)
-        await session.commit()
+    try:
+        assert event.action == AuditAction.LOGIN
+        assert event.result == AuditResult.FAILURE
+        assert event.actor_type == ActorType.ANONYMOUS
+        assert event.context == {"reason": "bad_password"}
+    finally:
+        # cleanup (no autouse wipe in this test package)
+        async with factory() as session:
+            await session.delete(event)
+            await session.commit()

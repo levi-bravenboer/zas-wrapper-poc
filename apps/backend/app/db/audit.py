@@ -22,6 +22,7 @@ Entry points wire the actor slot:
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any, Final
 from uuid import UUID, uuid4
 
@@ -29,12 +30,17 @@ from sqlalchemy import event, inspect as sa_inspect
 from sqlalchemy.orm import Session
 
 from app.core.enums.audit import ActorType, AuditAction, AuditResult
-from app.db.base import AuditableEntity, Entity, TenantOwnedEntity
+from app.db.base import AuditableEntity, Base, Entity, TenantOwnedEntity
 from app.services.audit.serialize import json_safe
 
 SESSION_ACTOR_KEY: Final[str] = "actor"
 
 _ALWAYS_EXCLUDED: Final[frozenset[str]] = frozenset({"updated_at"})
+
+
+@lru_cache(maxsize=1)
+def _any_audited_models() -> bool:
+    return any(getattr(m.class_, "__audited__", False) for m in Base.registry.mappers)
 
 _HOOKS_INSTALLED = False
 
@@ -86,6 +92,9 @@ def _stamp(session: Session, actor: Any) -> None:
 
 
 def _capture(session: Session, actor: Any) -> None:
+    if not _any_audited_models():
+        return
+
     from app.db.models.audit.audit_event import AuditEvent
 
     actor_type = ActorType.USER if actor is not None else ActorType.SYSTEM
