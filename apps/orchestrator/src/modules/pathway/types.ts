@@ -16,7 +16,6 @@ export type PathwayPhaseTemplate = components['schemas']['PathwayPhaseTemplate']
 export type PathwayEdgeTimingKind = components['schemas']['PathwayEdgeTimingKind']
 export type PathwayEdgeOffsetDirection = components['schemas']['PathwayEdgeOffsetDirection']
 export type BlockSemantics = PathwayBlockType['semantics']
-export type EdgeTimingKindCode = PathwayEdgeTimingKind['kind']
 export type PathwayTimingValue = components['schemas']['PathwayTimingValueOut']
 // `PathwayVersionDefinition.blocks` carries the typed discriminated
 // union from `pathway-model-foundations` §4.1. Each member exposes the
@@ -24,7 +23,6 @@ export type PathwayTimingValue = components['schemas']['PathwayTimingValueOut']
 // existing builder UI keeps reading them while migrating onto the typed
 // per-kind fields.
 export type PathwayBlock = NonNullable<PathwayVersionDefinition['blocks']>[number]
-export type PathwayBlockKind = PathwayBlock['kind']
 
 // `timing_policy` discriminated union; `null` when the kind forbids
 // timing or no policy is picked yet.
@@ -39,13 +37,6 @@ export type BlockDialogMode = 'add' | 'edit'
 // on the wire).
 export function legacyBlockType(block: PathwayBlock): string {
   return block.kind === 'external_program' ? 'luscii.program' : block.kind
-}
-
-// Read the display label off the typed envelope. Slot #2 §6 stored
-// `BaseBlock.name` directly on the wire — the slot-#1 `label`
-// compat field is retired.
-export function blockLabel(block: PathwayBlock): string {
-  return block.name
 }
 
 // Per-kind config bag synthesised from the typed envelope so existing

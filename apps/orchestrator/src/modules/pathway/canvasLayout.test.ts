@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BLOCK_DEFAULT_X,
-  BLOCK_DEFAULT_Y,
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
   LANE_INSET,
@@ -11,6 +10,10 @@ import {
   buildCanvasGeometry,
   laneInset,
 } from './canvasLayout'
+
+// Native default y for a 64-tall block in a 320-tall lane.
+// Inlined here (was `BLOCK_DEFAULT_Y` export, now dead-code-trimmed).
+const NATIVE_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT / 2
 import type { PathwayLane, PathwayPhase } from './types'
 
 const phases = [
@@ -41,9 +44,9 @@ const lanes = [
 
 describe('laneInset', () => {
   it('returns the historic 26 for a native 64-tall block in a 180-tall lane', () => {
-    // Pre-refactor: BLOCK_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT/2 = 58 - 32 = 26.
+    // Pre-refactor: NATIVE_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT/2 = 58 - 32 = 26.
     // The new function must preserve this for the native case.
-    expect(laneInset(BLOCK_HEIGHT, LANE_ROW_HEIGHT)).toBe(BLOCK_DEFAULT_Y)
+    expect(laneInset(BLOCK_HEIGHT, LANE_ROW_HEIGHT)).toBe(NATIVE_DEFAULT_Y)
     expect(laneInset(64, 180)).toBe(26)
   })
 
@@ -76,7 +79,7 @@ describe('blockOrigin', () => {
   it('uses the native default y when block.y is falsy and no dimensions are passed', () => {
     const origin = blockOrigin({ phase_id: 'p1', lane_id: 'l1', x: 0, y: 0 }, geometry)
     expect(origin.x).toBe(geometry.phaseX('p1') + BLOCK_DEFAULT_X)
-    expect(origin.y).toBe(geometry.laneY('l1') + BLOCK_DEFAULT_Y)
+    expect(origin.y).toBe(geometry.laneY('l1') + NATIVE_DEFAULT_Y)
   })
 
   it('recomputes the default y for a custom (taller) block height when block.y is falsy', () => {
@@ -93,7 +96,7 @@ describe('blockOrigin', () => {
       width: BLOCK_WIDTH,
       height: BLOCK_HEIGHT,
     })
-    expect(origin.y).toBe(geometry.laneY('l1') + BLOCK_DEFAULT_Y)
+    expect(origin.y).toBe(geometry.laneY('l1') + NATIVE_DEFAULT_Y)
   })
 })
 
