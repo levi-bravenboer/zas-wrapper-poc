@@ -15,7 +15,7 @@ import {
 } from '../types'
 import { isLaneAllowed } from '../utils/laneRules'
 
-export type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
+type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
 
 type ParsedConfig =
   | { success: true; data: BlockConfig }

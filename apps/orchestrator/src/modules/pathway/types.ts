@@ -75,7 +75,6 @@ export type PathwayEdge = components['schemas']['DerivedEdge']
 export type DerivedEdge = components['schemas']['DerivedEdge']
 export type PathwayPhase = components['schemas']['PathwayPhaseOut']
 export type PathwayLane = components['schemas']['PathwayLaneOut']
-export type PathwayBlockBranch = components['schemas']['PathwayBlockBranchOut']
 export type PathwayTimeMarker = components['schemas']['PathwayTimeMarkerOut']
 export type PathwayBlockDeferredField = components['schemas']['PathwayBlockDeferredFieldOut']
 
