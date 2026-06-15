@@ -129,7 +129,7 @@ Decisions log entry for A5.
 Decision: out of PoC. Park in `backlog.md` as `[mvp]`.
 
 - [x] A6.1 Decide: PoC scope vs defer. → DEFER to MVP.
-- [x] A6.2 Backlog entry added: **BL-072** in `openspec/backlog.md`
+- [x] A6.2 Backlog entry added: **BL-082** in `openspec/backlog.md`
   (cross-pathway handoff `bridge` block, tier `[mvp]`).
 
 ### § A7 `mdo`
@@ -254,7 +254,7 @@ Decision: no PoC consumer (MDO no longer needs it; other PoC flows
 use `all_of`). Parked in `backlog.md` as `[mvp]`.
 
 - [x] B2.1 Decide: ship vs defer. → DEFER to MVP.
-- [x] B2.2 Backlog entry added: **BL-073** in `openspec/backlog.md`
+- [x] B2.2 Backlog entry added: **BL-083** in `openspec/backlog.md`
   (`aggregator_n_of_m` predicate, tier `[mvp]`).
 
 ### § B3 `event(after_block, event_type)`
@@ -438,8 +438,8 @@ complete.
 
 | Part | Sections | Done / Decided | Pending (this PR) | Deferred (next PR) |
 | --- | --- | --- | --- | --- |
-| A | A1-A8 | ALL template work ✓ (A1, A2, A3 drop, A4, A5, A6 defer BL-072, A7, A8) | — | A5.2/A5.5, A7.5, A8.5 runtime |
-| B | B1-B3 | B1 ✓, B2 ✓ (defer, BL-073), B3 ✓ | — | B1.4 tick, B3.3/B3.4 endpoint+store |
+| A | A1-A8 | ALL template work ✓ (A1, A2, A3 drop, A4, A5, A6 defer BL-082, A7, A8) | — | A5.2/A5.5, A7.5, A8.5 runtime |
+| B | B1-B3 | B1 ✓, B2 ✓ (defer, BL-083), B3 ✓ | — | B1.4 tick, B3.3/B3.4 endpoint+store |
 | C | C1-C8 | designs locked, v1.html prototype done (C1.1) | C2-C8 — **UNBLOCKED**, catalogue + predicates frozen | — |
 
 ## Cross-Part dependencies

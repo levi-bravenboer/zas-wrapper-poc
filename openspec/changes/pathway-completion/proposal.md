@@ -51,7 +51,7 @@ throughout to match existing convention (`pathway_link`,
 | A3 | `notification` | — | — | **DROPPED** — `MessageBlock` (slot #1) already exposes channel + subject + body + CTA. Urology-spec "notification" rebrands as a label for `message` |
 | A4 | `treatment` | `TreatmentBlock` | `caregiver` | ✓ shipped (template). CONFIG: `title`, `location`, `duration_minutes`, `notes`. RESULT: `{performed_at, notes, complications}` |
 | A5 | `subpath` | — | — | ✓ template shipped — bestaande `PathwayLinkBlock` (slot #1) dekt subpath; label → "Subpath", decision_output-reject getest, timing advisory gedocumenteerd. Runtime completion (nested enrollment) → volgende PR |
-| A6 | `bridge` | — | — | **DEFERRED out of PoC** — cross-pathway handoff niet nodig voor demo. Geparkeerd als **BL-072** `[mvp]` |
+| A6 | `bridge` | — | — | **DEFERRED out of PoC** — cross-pathway handoff niet nodig voor demo. Geparkeerd als **BL-082** `[mvp]` |
 | A7 | `mdo` | `MdoBlock` | `caregiver` | ✓ shipped (template). CONFIG: `topic`, `expected_attendees_note` (free-text). RUNTIME (volgende PR): leading caregiver completes; extra contributions via `contributed` events. **Geen `aggregator_n_of_m` afhankelijkheid** |
 | A8 | `informed_consent` | `InformedConsentBlock` | `patient` | ✓ shipped (template). RESULT: `{consented, expired, signed_at, responses}`. Expiry → `state=completed` met `expired=true` — geen nieuwe terminal state. Runtime sends/ticks → volgende PR |
 
@@ -421,7 +421,7 @@ enrollment + events + ticks) that deserves its own spec + review.
 - Deferred: the engine tick that re-evaluates at the SLA deadline
   (B1.4, nested-runtime PR).
 
-### B2 `aggregator_n_of_m` — DEFERRED (BL-073)
+### B2 `aggregator_n_of_m` — DEFERRED (BL-083)
 
 No PoC consumer after the A7 MDO redesign. See backlog entry.
 
