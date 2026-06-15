@@ -82,9 +82,7 @@ def test_ordinal_point_roundtrip() -> None:
 
 
 def test_categorical_point_roundtrip() -> None:
-    point = LusciiCategoricalPoint(
-        observed_at=_ts(), responses=["Vermoeidheid", "Kortademigheid"]
-    )
+    point = LusciiCategoricalPoint(observed_at=_ts(), responses=["Vermoeidheid", "Kortademigheid"])
     parsed = POINT_ADAPTER.validate_python(point.model_dump(mode="json"))
     assert isinstance(parsed, LusciiCategoricalPoint)
     assert parsed.responses == ["Vermoeidheid", "Kortademigheid"]

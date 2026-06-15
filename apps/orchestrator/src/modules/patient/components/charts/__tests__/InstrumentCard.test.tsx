@@ -53,9 +53,7 @@ describe('InstrumentCard', () => {
   })
 
   it('falls back to "Onbekend instrument" when instrument_name is null', () => {
-    renderWithI18n(
-      <InstrumentCard instrumentId="inst-bp" instrumentName={null} series={[SYS]} />,
-    )
+    renderWithI18n(<InstrumentCard instrumentId="inst-bp" instrumentName={null} series={[SYS]} />)
     expect(screen.getByText(/onbekend instrument/i)).toBeInTheDocument()
   })
 
@@ -71,11 +69,7 @@ describe('InstrumentCard', () => {
 
   it('renders a categorical series renderer when expanded', async () => {
     renderWithI18n(
-      <InstrumentCard
-        instrumentId="inst-q"
-        instrumentName="Klachten dagboek"
-        series={[QUEST]}
-      />,
+      <InstrumentCard instrumentId="inst-q" instrumentName="Klachten dagboek" series={[QUEST]} />,
     )
     await userEvent.setup().click(screen.getByRole('button'))
     expect(screen.getByTestId('chip-stream')).toBeInTheDocument()
@@ -87,11 +81,7 @@ describe('InstrumentCard', () => {
       points: [SYS.points[0]!],
     }
     renderWithI18n(
-      <InstrumentCard
-        instrumentId="inst-bp"
-        instrumentName="Bloeddruk"
-        series={[single]}
-      />,
+      <InstrumentCard instrumentId="inst-bp" instrumentName="Bloeddruk" series={[single]} />,
     )
     expect(screen.queryByTestId('sparkline')).toBeNull()
   })

@@ -446,7 +446,9 @@ async def test_luscii_data_merges_actions_and_measurements(
     assert mc["points"][0]["responses"] == ["Ja"]
     # Series sort is DESC by most-recent point timestamp (D-LAYOUT).
     most_recent = [s["points"][-1]["observed_at"] for s in series]
-    assert most_recent == sorted(most_recent, reverse=True), "series MUST be sorted DESC by most-recent point"
+    assert most_recent == sorted(most_recent, reverse=True), (
+        "series MUST be sorted DESC by most-recent point"
+    )
     # Every point in the response carries the current programme id (D-PROGRAM).
     expected_program_id = body["program"]["id"]
     for s in series:

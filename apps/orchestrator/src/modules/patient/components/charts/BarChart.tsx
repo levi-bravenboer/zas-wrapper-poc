@@ -1,11 +1,5 @@
 import { type ReactElement, useMemo } from 'react'
-import {
-  Bar,
-  CartesianGrid,
-  BarChart as RechartsBarChart,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { Bar, CartesianGrid, BarChart as RechartsBarChart, XAxis, YAxis } from 'recharts'
 
 import {
   ChartContainer,

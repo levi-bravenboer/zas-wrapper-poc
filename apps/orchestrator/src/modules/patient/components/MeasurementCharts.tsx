@@ -36,8 +36,7 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
 
   const dataQuery = useLusciiData(patientId, { days })
   const data = dataQuery.data
-  const isNotConfigured =
-    !!dataQuery.error && hasErrorCode(dataQuery.error, NOT_CONFIGURED_CODE)
+  const isNotConfigured = !!dataQuery.error && hasErrorCode(dataQuery.error, NOT_CONFIGURED_CODE)
 
   if (dataQuery.isLoading) {
     return (

@@ -130,32 +130,36 @@ def _build_snapshot(luscii_patient_id: str, seed: int) -> _Snapshot:
         # Blood pressure — sys + dia, drift around 120/80, daily.
         sys_value = rng.randint(115, 145)
         dia_value = rng.randint(70, 92)
-        measurements.append(_make_measurement(
-            luscii_patient_id,
-            instrument_id=INST_BP,
-            ts=ts,
-            details=[
-                {"item_id": ITEM_SYS, "item_version": ITEM_VERSION, "value": str(sys_value)},
-                {"item_id": ITEM_DIA, "item_version": ITEM_VERSION, "value": str(dia_value)},
-            ],
-            seq=day_offset * 10 + 1,
-        ))
+        measurements.append(
+            _make_measurement(
+                luscii_patient_id,
+                instrument_id=INST_BP,
+                ts=ts,
+                details=[
+                    {"item_id": ITEM_SYS, "item_version": ITEM_VERSION, "value": str(sys_value)},
+                    {"item_id": ITEM_DIA, "item_version": ITEM_VERSION, "value": str(dia_value)},
+                ],
+                seq=day_offset * 10 + 1,
+            )
+        )
 
         # Weight — daily, drift gently around 79kg.
         weight_value = round(79.0 + rng.uniform(-1.5, 1.5), 1)
-        measurements.append(_make_measurement(
-            luscii_patient_id,
-            instrument_id=INST_WEIGHT,
-            ts=ts.replace(hour=7, minute=30, second=0, microsecond=0),
-            details=[
-                {
-                    "item_id": ITEM_WEIGHT,
-                    "item_version": ITEM_VERSION,
-                    "value": f"{weight_value}".replace(".", ","),
-                }
-            ],
-            seq=day_offset * 10 + 2,
-        ))
+        measurements.append(
+            _make_measurement(
+                luscii_patient_id,
+                instrument_id=INST_WEIGHT,
+                ts=ts.replace(hour=7, minute=30, second=0, microsecond=0),
+                details=[
+                    {
+                        "item_id": ITEM_WEIGHT,
+                        "item_version": ITEM_VERSION,
+                        "value": f"{weight_value}".replace(".", ","),
+                    }
+                ],
+                seq=day_offset * 10 + 2,
+            )
+        )
 
         # Klachten — every 3rd day, multiple choice.
         if day_offset % 3 == 0:
@@ -163,51 +167,57 @@ def _build_snapshot(luscii_patient_id: str, seed: int) -> _Snapshot:
                 [RESP_VERMOEIDHEID, RESP_KORTADEMIGHEID, RESP_PIJN_BORST],
                 k=rng.randint(1, 2),
             )
-            measurements.append(_make_measurement(
-                luscii_patient_id,
-                instrument_id=INST_KLACHTEN,
-                ts=ts.replace(hour=20, minute=15, second=0, microsecond=0),
-                details=[
-                    {
-                        "item_id": ITEM_KLACHTEN,
-                        "item_version": ITEM_VERSION,
-                        "response_ids": picked,
-                    }
-                ],
-                seq=day_offset * 10 + 3,
-            ))
+            measurements.append(
+                _make_measurement(
+                    luscii_patient_id,
+                    instrument_id=INST_KLACHTEN,
+                    ts=ts.replace(hour=20, minute=15, second=0, microsecond=0),
+                    details=[
+                        {
+                            "item_id": ITEM_KLACHTEN,
+                            "item_version": ITEM_VERSION,
+                            "response_ids": picked,
+                        }
+                    ],
+                    seq=day_offset * 10 + 3,
+                )
+            )
 
         # Welbevinden — every 2nd day, 1-5 score.
         if day_offset % 2 == 0:
             score = rng.randint(2, 5)
-            measurements.append(_make_measurement(
-                luscii_patient_id,
-                instrument_id=INST_WELBEVINDEN,
-                ts=ts.replace(hour=20, minute=30, second=0, microsecond=0),
-                details=[
-                    {
-                        "item_id": ITEM_WELBEVINDEN,
-                        "item_version": ITEM_VERSION,
-                        "value": str(score),
-                    }
-                ],
-                seq=day_offset * 10 + 4,
-            ))
+            measurements.append(
+                _make_measurement(
+                    luscii_patient_id,
+                    instrument_id=INST_WELBEVINDEN,
+                    ts=ts.replace(hour=20, minute=30, second=0, microsecond=0),
+                    details=[
+                        {
+                            "item_id": ITEM_WELBEVINDEN,
+                            "item_version": ITEM_VERSION,
+                            "value": str(score),
+                        }
+                    ],
+                    seq=day_offset * 10 + 4,
+                )
+            )
 
         # A planned action every ~5 days (some completed, some open).
         if day_offset % 5 == 0:
-            planned_actions.append(LusciiPlannedAction(
-                id=f"pa-{luscii_patient_id[:8]}-{day_offset}",
-                program_action_id=None,
-                patient_id=luscii_patient_id,
-                self_planned=False,
-                not_before=ts.replace(hour=8, minute=0, second=0, microsecond=0),
-                expires_at=ts.replace(hour=22, minute=0, second=0, microsecond=0),
-                completed_at=ts.replace(hour=8, minute=12, second=0, microsecond=0)
-                if day_offset > 7
-                else None,
-                created_at=ts - timedelta(days=1),
-            ))
+            planned_actions.append(
+                LusciiPlannedAction(
+                    id=f"pa-{luscii_patient_id[:8]}-{day_offset}",
+                    program_action_id=None,
+                    patient_id=luscii_patient_id,
+                    self_planned=False,
+                    not_before=ts.replace(hour=8, minute=0, second=0, microsecond=0),
+                    expires_at=ts.replace(hour=22, minute=0, second=0, microsecond=0),
+                    completed_at=ts.replace(hour=8, minute=12, second=0, microsecond=0)
+                    if day_offset > 7
+                    else None,
+                    created_at=ts - timedelta(days=1),
+                )
+            )
 
     details = LusciiPatientDetails(
         id=luscii_patient_id,
@@ -281,9 +291,7 @@ class LusciiFixtureClient:
             raise LusciiPatientNotFoundError(luscii_patient_id, status_code=404)
         return list(_within_window(snap.planned_actions, start_date, end_date))
 
-    async def get_measurements(
-        self, start_date: date, end_date: date
-    ) -> list[LusciiMeasurement]:
+    async def get_measurements(self, start_date: date, end_date: date) -> list[LusciiMeasurement]:
         # Real Luscii returns org-wide; mimic by concatenating every fixture
         # patient's window.
         return [
@@ -319,9 +327,7 @@ class LusciiFixtureClient:
     ) -> list[LusciiItemResponseLocalisation]:
         del expected_total
         return [
-            LusciiItemResponseLocalisation(
-                item_response_id=rid, locale="nl", response_text=text
-            )
+            LusciiItemResponseLocalisation(item_response_id=rid, locale="nl", response_text=text)
             for rid, text in RESPONSE_LOCALISATIONS_NL
         ]
 

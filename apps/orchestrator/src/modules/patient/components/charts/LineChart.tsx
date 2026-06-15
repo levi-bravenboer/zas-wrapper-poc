@@ -1,11 +1,5 @@
 import { type ReactElement, useMemo } from 'react'
-import {
-  CartesianGrid,
-  Line,
-  LineChart as RechartsLineChart,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { CartesianGrid, Line, LineChart as RechartsLineChart, XAxis, YAxis } from 'recharts'
 
 import {
   ChartContainer,
@@ -49,10 +43,7 @@ interface ChartRow {
  * render dots-only without a connecting line per D-SPARSE.
  */
 export function LineChart({ series }: LineChartProps): ReactElement | null {
-  const { config, rows, totalPoints, unit } = useMemo(
-    () => buildChartData(series),
-    [series],
-  )
+  const { config, rows, totalPoints, unit } = useMemo(() => buildChartData(series), [series])
 
   if (rows.length === 0) return null
 

@@ -138,11 +138,34 @@ describe('MeasurementCharts', () => {
     const data: LusciiPatientData = {
       ...EMPTY_LINKED,
       planned_actions: [
-        { id: 'pa-1', not_before: null, expires_at: null, completed_at: null, created_at: null, self_planned: null, measurement: null },
-        { id: 'pa-2', not_before: null, expires_at: null, completed_at: null, created_at: null, self_planned: null, measurement: null },
+        {
+          id: 'pa-1',
+          not_before: null,
+          expires_at: null,
+          completed_at: null,
+          created_at: null,
+          self_planned: null,
+          measurement: null,
+        },
+        {
+          id: 'pa-2',
+          not_before: null,
+          expires_at: null,
+          completed_at: null,
+          created_at: null,
+          self_planned: null,
+          measurement: null,
+        },
       ],
       unmatched_measurements: [
-        { measurement_id: 'm-1', instrument_id: null, instrument_name: null, created_at: null, processed_at: null, values: [] },
+        {
+          measurement_id: 'm-1',
+          instrument_id: null,
+          instrument_name: null,
+          created_at: null,
+          processed_at: null,
+          values: [],
+        },
       ],
     }
     useLusciiDataMock.mockReturnValue(stub(data))

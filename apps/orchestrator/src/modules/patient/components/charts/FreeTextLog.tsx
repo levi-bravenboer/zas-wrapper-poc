@@ -23,7 +23,11 @@ export function FreeTextLog({ series }: FreeTextLogProps): ReactElement {
   return (
     <ol className="flex flex-col gap-3" data-testid="free-text-log">
       {ordered.map((point, index) => (
-        <FreeTextEntry key={`${point.observed_at}-${index}`} text={point.text} observedAt={point.observed_at} />
+        <FreeTextEntry
+          key={`${point.observed_at}-${index}`}
+          text={point.text}
+          observedAt={point.observed_at}
+        />
       ))}
     </ol>
   )
@@ -54,9 +58,7 @@ function FreeTextEntry({ text, observedAt }: FreeTextEntryProps): ReactElement {
             className="self-start text-xs text-primary hover:underline"
             onClick={() => setExpanded((prev) => !prev)}
           >
-            {expanded
-              ? t('charts.free_text.show_less')
-              : t('charts.free_text.show_more')}
+            {expanded ? t('charts.free_text.show_less') : t('charts.free_text.show_more')}
           </button>
         ) : null}
       </div>

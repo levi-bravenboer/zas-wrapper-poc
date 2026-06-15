@@ -29,9 +29,7 @@ const WEIGHT: LusciiMeasurementSeries = {
   label: 'Gewicht',
   archetype: 'numeric',
   unit: 'kg',
-  points: [
-    { observed_at: '2026-06-14T08:00:00Z', archetype: 'numeric', value: 79.2 },
-  ],
+  points: [{ observed_at: '2026-06-14T08:00:00Z', archetype: 'numeric', value: 79.2 }],
 }
 
 const QUEST: LusciiMeasurementSeries = {

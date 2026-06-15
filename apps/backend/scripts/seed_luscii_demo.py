@@ -78,9 +78,7 @@ async def _link_patient(session: AsyncSession, patient: Patient, luscii_id: str)
     )
     if existing is not None:
         if existing.value == luscii_id:
-            logger.info(
-                "patient %s already linked to luscii %s", patient.external_ref, luscii_id
-            )
+            logger.info("patient %s already linked to luscii %s", patient.external_ref, luscii_id)
             return
         # A previous run linked the patient to a different fixture id —
         # leave the existing link in place to keep the run idempotent.

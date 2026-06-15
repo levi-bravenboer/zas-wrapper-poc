@@ -50,4 +50,3 @@ export function renderChartForSeries(series: LusciiMeasurementSeries): ReactElem
     }
   }
 }
-

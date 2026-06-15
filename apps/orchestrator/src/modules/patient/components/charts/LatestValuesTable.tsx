@@ -53,7 +53,9 @@ export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElem
       }
     })
     .filter((row): row is OverviewRow => row !== null)
-    .toSorted((a, b) => (a.observed_at < b.observed_at ? 1 : a.observed_at > b.observed_at ? -1 : 0))
+    .toSorted((a, b) =>
+      a.observed_at < b.observed_at ? 1 : a.observed_at > b.observed_at ? -1 : 0,
+    )
 
   if (rows.length === 0) return null
 
@@ -64,7 +66,10 @@ export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElem
         aria-label={t('charts.overview.aria_label')}
         className="grid grid-cols-[1fr_1fr_auto] text-sm"
       >
-        <div role="rowgroup" className="contents text-xs uppercase tracking-wider text-foreground-muted">
+        <div
+          role="rowgroup"
+          className="contents text-xs uppercase tracking-wider text-foreground-muted"
+        >
           <div role="row" className="contents">
             <div role="columnheader" className="border-b border-border px-4 py-2">
               {t('charts.overview.column.item')}
@@ -86,10 +91,7 @@ export function LatestValuesTable({ series }: LatestValuesTableProps): ReactElem
               >
                 {row.label}
               </div>
-              <div
-                role="cell"
-                className={cellClass(index === rows.length - 1, 'text-foreground')}
-              >
+              <div role="cell" className={cellClass(index === rows.length - 1, 'text-foreground')}>
                 {row.value}
               </div>
               <div
@@ -146,9 +148,7 @@ function formatFreeText(point: LusciiFreeTextPoint): string {
   if (text.length <= FREE_TEXT_CAP) return text
   const slice = text.slice(0, FREE_TEXT_CAP)
   const lastSpace = slice.lastIndexOf(' ')
-  return lastSpace < 20
-    ? `${slice.trimEnd()}…`
-    : `${slice.slice(0, lastSpace).trimEnd()}…`
+  return lastSpace < 20 ? `${slice.trimEnd()}…` : `${slice.slice(0, lastSpace).trimEnd()}…`
 }
 
 function formatUnknown(point: LusciiUnknownPoint): string {

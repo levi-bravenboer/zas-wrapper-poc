@@ -174,9 +174,7 @@ class LusciiPatientDataService:
             (raw, decoder.decode(raw)) for raw in own_measurements
         ]
         by_planned_action: dict[str, LusciiMeasurementView] = {
-            raw.planned_action_id: view
-            for raw, view in decoded_pairs
-            if raw.planned_action_id
+            raw.planned_action_id: view for raw, view in decoded_pairs if raw.planned_action_id
         }
         matched_ids: set[str] = set()
         action_views: list[LusciiPlannedActionView] = []
