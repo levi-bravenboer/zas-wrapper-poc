@@ -21,7 +21,7 @@ import type { OrganisationOption, PatientIdentifierRow } from '../types'
 
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
-import { LusciiPanel } from './LusciiPanel'
+import { MeasurementCharts } from './MeasurementCharts'
 import { PatientKebab } from './PatientKebab'
 
 const ORG_CACHE_STALE_MS = 5 * 60_000
@@ -125,7 +125,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
               {
                 value: 'measurements',
                 label: t('tabs.measurements'),
-                content: <LusciiPanel patientId={patient.id} />,
+                content: <MeasurementCharts patientId={patient.id} />,
               },
               {
                 value: 'lab_results',

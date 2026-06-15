@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <title>Metingen — prototype v1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --primary: #266b5e; /* ZAS Antwerpen teal */
+        --primary-soft: #d8ece7;
+        --primary-fg: #ffffff;
+        --foreground: #14211f;
+        --foreground-muted: #6b7a78;
+        --background: #ffffff;
+        --background-muted: #f4f7f6;
+        --border: #e2e8e6;
+        --series-a: #266b5e; /* sys / weight */
+        --series-b: #c7705a; /* dia */
+      }
+      body {
+        font-family: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
+        color: var(--foreground);
+        background: var(--background);
+      }
+      .badge-default {
+        background: var(--primary);
+        color: var(--primary-fg);
+      }
+      .badge-soft {
+        background: var(--primary-soft);
+        color: var(--primary);
+      }
+      .chip {
+        border-radius: 9999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        border: 1px solid var(--border);
+        background: var(--background);
+        color: var(--foreground-muted);
+        cursor: pointer;
+        user-select: none;
+      }
+      .chip[data-active='true'] {
+        background: var(--primary);
+        color: var(--primary-fg);
+        border-color: var(--primary);
+      }
+      .instrument-card {
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        background: var(--background);
+      }
+      .instrument-card > header {
+        cursor: pointer;
+      }
+      .instrument-card[data-expanded='false'] .card-body {
+        display: none;
+      }
+      .planned-disclosure[data-expanded='false'] .disclosure-body {
+        display: none;
+      }
+      .legend-dot {
+        display: inline-block;
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 9999px;
+        margin-right: 0.4rem;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <main class="mx-auto max-w-5xl px-6 py-8">
+      <!-- Patient header (eyebrow + name + INSZ + birth + org) — taken straight from the locked patient-profile chrome (D10). -->
+      <div class="mb-6">
+        <a href="#" class="text-xs text-[color:var(--foreground-muted)] hover:underline">← Terug naar taken</a>
+        <h1 class="mt-1 text-2xl font-semibold">Janssens, Anke</h1>
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span class="badge-default rounded px-2 py-0.5 text-xs font-medium">
+            INSZ:&nbsp;<span class="font-mono tracking-tight">85.03.12-072.47</span>
+          </span>
+          <span class="text-[color:var(--foreground-muted)]">Geboren 12 maart 1985</span>
+          <span class="badge-soft rounded px-2 py-0.5 text-xs font-medium">ZAS Cadix</span>
+        </div>
+      </div>
+
+      <!-- Care-team adjacent card (placeholder — out of scope for this prototype). -->
+      <div class="mb-6 rounded-md border border-[color:var(--border)] bg-[color:var(--background-muted)] px-4 py-3 text-xs text-[color:var(--foreground-muted)]">
+        Zorgteam-kaart (header-adjacent) — niet gewijzigd door deze change.
+      </div>
+
+      <!-- Tabs strip (Metingen + Labresultaten) — Metingen active. -->
+      <div class="flex gap-6 border-b border-[color:var(--border)] mb-6 text-sm">
+        <button class="-mb-px border-b-2 border-[color:var(--primary)] pb-2 font-medium text-[color:var(--primary)]">Metingen</button>
+        <button class="pb-2 text-[color:var(--foreground-muted)]">Labresultaten</button>
+      </div>
+
+      <!-- ╭──────────────────────────────────────────────────────────────────╮ -->
+      <!-- │  <MeasurementCharts> panel — top strip                            │ -->
+      <!-- ╰──────────────────────────────────────────────────────────────────╯ -->
+      <section class="mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-xs uppercase tracking-wider text-[color:var(--foreground-muted)]">Programma</span>
+            <span class="text-sm font-medium">ZAS Hartfalen Monitor</span>
+          </div>
+          <div class="flex items-center gap-2" role="group" aria-label="Tijdvenster">
+            <span class="mr-1 text-xs text-[color:var(--foreground-muted)]">Venster</span>
+            <button class="chip" data-window="7">7 dagen</button>
+            <button class="chip" data-window="30" data-active="true">30 dagen</button>
+            <button class="chip" data-window="90">90 dagen</button>
+            <button class="chip" data-window="365">365 dagen</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ╭──────────────────────────────────────────────────────────────────╮ -->
+      <!-- │  Instrument cards (sorted by most-recent point DESC)              │ -->
+      <!-- ╰──────────────────────────────────────────────────────────────────╯ -->
+      <section class="flex flex-col gap-3">
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <!-- Card 1 — Bloeddrukmeting (multi-item numeric: sys + dia)         -->
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <article class="instrument-card" data-expanded="true">
+          <header class="flex items-center justify-between gap-4 px-4 py-3" onclick="toggleCard(this.parentElement)" tabindex="0">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div>
+                <h2 class="text-sm font-medium">Bloeddrukmeting</h2>
+                <p class="text-xs text-[color:var(--foreground-muted)]">
+                  Laatste meting · vandaag 08:24 · <span class="font-mono">128/82 mmHg</span>
+                </p>
+              </div>
+              <!-- Sparkline (sys series) -->
+              <svg viewBox="0 0 120 30" class="ml-auto h-7 w-28 shrink-0" preserveAspectRatio="none">
+                <polyline
+                  fill="none"
+                  stroke="var(--series-a)"
+                  stroke-width="1.5"
+                  points="0,18 8,15 16,17 24,16 32,14 40,16 48,13 56,15 64,12 72,14 80,11 88,13 96,10 104,12 112,9 120,11"
+                />
+              </svg>
+            </div>
+            <span class="text-xs text-[color:var(--foreground-muted)]" aria-hidden="true">▾</span>
+          </header>
+          <div class="card-body border-t border-[color:var(--border)] px-4 py-4">
+            <!-- Multi-line chart (sys + dia shared axis) -->
+            <div class="mb-3 flex items-center justify-between text-xs text-[color:var(--foreground-muted)]">
+              <div class="flex items-center gap-4">
+                <span><span class="legend-dot" style="background: var(--series-a)"></span>Systolisch</span>
+                <span><span class="legend-dot" style="background: var(--series-b)"></span>Diastolisch</span>
+              </div>
+              <span class="font-mono">mmHg</span>
+            </div>
+            <svg viewBox="0 0 720 220" class="w-full h-56" preserveAspectRatio="none">
+              <!-- y-axis grid -->
+              <g stroke="var(--border)" stroke-width="1">
+                <line x1="40" y1="20"  x2="720" y2="20"  />
+                <line x1="40" y1="60"  x2="720" y2="60"  />
+                <line x1="40" y1="100" x2="720" y2="100" />
+                <line x1="40" y1="140" x2="720" y2="140" />
+                <line x1="40" y1="180" x2="720" y2="180" />
+              </g>
+              <!-- y-axis labels (auto-scaled from observed range, NEVER clinical thresholds) -->
+              <g font-size="10" fill="var(--foreground-muted)" font-family="monospace">
+                <text x="6"  y="24">160</text>
+                <text x="6"  y="64">140</text>
+                <text x="6"  y="104">120</text>
+                <text x="6"  y="144">100</text>
+                <text x="6"  y="184">80</text>
+              </g>
+              <!-- x-axis labels -->
+              <g font-size="10" fill="var(--foreground-muted)" font-family="monospace">
+                <text x="40"  y="208">15 mei</text>
+                <text x="200" y="208">22 mei</text>
+                <text x="360" y="208">29 mei</text>
+                <text x="520" y="208">5 jun</text>
+                <text x="680" y="208">14 jun</text>
+              </g>
+              <!-- Systolic line (sys ≈ 120–145, observed range) -->
+              <polyline
+                fill="none"
+                stroke="var(--series-a)"
+                stroke-width="2"
+                points="40,80 64,72 88,84 112,76 136,68 160,74 184,70 208,82 232,68 256,72 280,76 304,64 328,68 352,72 376,60 400,68 424,64 448,72 472,68 496,60 520,72 544,64 568,68 592,72 616,60 640,68 664,72 688,64 712,68"
+              />
+              <!-- Diastolic line (dia ≈ 70–92) -->
+              <polyline
+                fill="none"
+                stroke="var(--series-b)"
+                stroke-width="2"
+                points="40,156 64,148 88,160 112,152 136,144 160,150 184,148 208,158 232,144 256,150 280,154 304,140 328,144 352,150 376,138 400,148 424,142 448,150 472,148 496,140 520,150 544,144 568,148 592,150 616,140 640,148 664,150 688,144 712,148"
+              />
+              <!-- Programme-transition band example (~5 jun) — anonymous fallback "Programmawissel" -->
+              <line x1="520" y1="20" x2="520" y2="195" stroke="var(--foreground-muted)" stroke-width="1" stroke-dasharray="3 3" />
+              <text x="525" y="32" font-size="10" fill="var(--foreground-muted)" font-family="monospace">Programmawissel</text>
+              <!-- axis lines -->
+              <line x1="40" y1="20" x2="40" y2="195" stroke="var(--border)" />
+              <line x1="40" y1="195" x2="720" y2="195" stroke="var(--border)" />
+            </svg>
+
+            <!-- Tabular tail (last 5 points) -->
+            <details class="mt-4 text-xs">
+              <summary class="cursor-pointer text-[color:var(--foreground-muted)]">Recente metingen (5)</summary>
+              <table class="mt-2 w-full border-collapse">
+                <thead>
+                  <tr class="text-left text-[color:var(--foreground-muted)]">
+                    <th class="border-b border-[color:var(--border)] py-1 pr-3">Tijdstip</th>
+                    <th class="border-b border-[color:var(--border)] py-1 pr-3">Systolisch</th>
+                    <th class="border-b border-[color:var(--border)] py-1 pr-3">Diastolisch</th>
+                  </tr>
+                </thead>
+                <tbody class="font-mono">
+                  <tr><td class="py-1 pr-3">14 jun 08:24</td><td>128</td><td>82</td></tr>
+                  <tr><td class="py-1 pr-3">13 jun 08:32</td><td>132</td><td>84</td></tr>
+                  <tr><td class="py-1 pr-3">12 jun 08:18</td><td>126</td><td>80</td></tr>
+                  <tr><td class="py-1 pr-3">11 jun 08:21</td><td>134</td><td>86</td></tr>
+                  <tr><td class="py-1 pr-3">10 jun 08:29</td><td>129</td><td>83</td></tr>
+                </tbody>
+              </table>
+            </details>
+          </div>
+        </article>
+
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <!-- Card 2 — Gewicht (single numeric)                                -->
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <article class="instrument-card" data-expanded="false">
+          <header class="flex items-center justify-between gap-4 px-4 py-3" onclick="toggleCard(this.parentElement)" tabindex="0">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div>
+                <h2 class="text-sm font-medium">Gewicht</h2>
+                <p class="text-xs text-[color:var(--foreground-muted)]">
+                  Laatste meting · vandaag 07:48 · <span class="font-mono">79,2 kg</span>
+                </p>
+              </div>
+              <svg viewBox="0 0 120 30" class="ml-auto h-7 w-28 shrink-0" preserveAspectRatio="none">
+                <polyline
+                  fill="none"
+                  stroke="var(--series-a)"
+                  stroke-width="1.5"
+                  points="0,12 8,14 16,13 24,15 32,16 40,15 48,17 56,15 64,16 72,14 80,15 88,13 96,14 104,12 112,11 120,10"
+                />
+              </svg>
+            </div>
+            <span class="text-xs text-[color:var(--foreground-muted)]" aria-hidden="true">▸</span>
+          </header>
+          <div class="card-body border-t border-[color:var(--border)] px-4 py-4">
+            <div class="mb-3 flex items-center justify-between text-xs text-[color:var(--foreground-muted)]">
+              <span><span class="legend-dot" style="background: var(--series-a)"></span>Gewicht</span>
+              <span class="font-mono">kg</span>
+            </div>
+            <svg viewBox="0 0 720 220" class="w-full h-56" preserveAspectRatio="none">
+              <g stroke="var(--border)" stroke-width="1">
+                <line x1="40" y1="20"  x2="720" y2="20"  />
+                <line x1="40" y1="60"  x2="720" y2="60"  />
+                <line x1="40" y1="100" x2="720" y2="100" />
+                <line x1="40" y1="140" x2="720" y2="140" />
+                <line x1="40" y1="180" x2="720" y2="180" />
+              </g>
+              <g font-size="10" fill="var(--foreground-muted)" font-family="monospace">
+                <text x="6" y="24">82</text>
+                <text x="6" y="64">81</text>
+                <text x="6" y="104">80</text>
+                <text x="6" y="144">79</text>
+                <text x="6" y="184">78</text>
+              </g>
+              <g font-size="10" fill="var(--foreground-muted)" font-family="monospace">
+                <text x="40"  y="208">15 mei</text>
+                <text x="200" y="208">22 mei</text>
+                <text x="360" y="208">29 mei</text>
+                <text x="520" y="208">5 jun</text>
+                <text x="680" y="208">14 jun</text>
+              </g>
+              <polyline
+                fill="none"
+                stroke="var(--series-a)"
+                stroke-width="2"
+                points="40,72 64,80 88,76 112,84 136,80 160,72 184,84 208,72 232,80 256,76 280,72 304,80 328,76 352,68 376,84 400,76 424,80 448,72 472,84 496,76 520,80 544,72 568,76 592,84 616,72 640,80 664,76 688,68 712,84"
+              />
+              <line x1="40" y1="20" x2="40" y2="195" stroke="var(--border)" />
+              <line x1="40" y1="195" x2="720" y2="195" stroke="var(--border)" />
+            </svg>
+          </div>
+        </article>
+
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <!-- Card 3 — Klachten dagboek (categorical / chip stream)            -->
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <article class="instrument-card" data-expanded="false">
+          <header class="flex items-center justify-between gap-4 px-4 py-3" onclick="toggleCard(this.parentElement)" tabindex="0">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div>
+                <h2 class="text-sm font-medium">Klachten dagboek</h2>
+                <p class="text-xs text-[color:var(--foreground-muted)]">
+                  Laatste antwoord · gisteren · Vermoeidheid, Kortademigheid
+                </p>
+              </div>
+              <span class="ml-auto text-[10px] uppercase tracking-wider text-[color:var(--foreground-muted)]">categorisch</span>
+            </div>
+            <span class="text-xs text-[color:var(--foreground-muted)]" aria-hidden="true">▸</span>
+          </header>
+          <div class="card-body border-t border-[color:var(--border)] px-4 py-4">
+            <ol class="flex flex-col gap-3 text-sm">
+              <li class="flex gap-3">
+                <time class="w-28 shrink-0 font-mono text-xs text-[color:var(--foreground-muted)]">13 jun 21:14</time>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Vermoeidheid</span>
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Kortademigheid</span>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <time class="w-28 shrink-0 font-mono text-xs text-[color:var(--foreground-muted)]">10 jun 20:48</time>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Vermoeidheid</span>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <time class="w-28 shrink-0 font-mono text-xs text-[color:var(--foreground-muted)]">6 jun 21:02</time>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Geen klachten</span>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <time class="w-28 shrink-0 font-mono text-xs text-[color:var(--foreground-muted)]">2 jun 20:51</time>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Pijn op de borst</span>
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Kortademigheid</span>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <time class="w-28 shrink-0 font-mono text-xs text-[color:var(--foreground-muted)]">28 mei 20:33</time>
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge-soft rounded px-2 py-0.5 text-xs">Vermoeidheid</span>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </article>
+
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <!-- Card 4 — Welbevinden (ordinal / score 1–5)                       -->
+        <!-- ────────────────────────────────────────────────────────────── -->
+        <article class="instrument-card" data-expanded="false">
+          <header class="flex items-center justify-between gap-4 px-4 py-3" onclick="toggleCard(this.parentElement)" tabindex="0">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div>
+                <h2 class="text-sm font-medium">Welbevinden vandaag</h2>
+                <p class="text-xs text-[color:var(--foreground-muted)]">
+                  Laatste score · gisteren · <span class="font-mono">3 / 5</span>
+                </p>
+              </div>
+              <!-- mini bars sparkline -->
+              <svg viewBox="0 0 120 30" class="ml-auto h-7 w-28 shrink-0">
+                <g fill="var(--series-a)">
+                  <rect x="2"  y="12" width="6" height="18" />
+                  <rect x="12" y="8"  width="6" height="22" />
+                  <rect x="22" y="14" width="6" height="16" />
+                  <rect x="32" y="6"  width="6" height="24" />
+                  <rect x="42" y="10" width="6" height="20" />
+                  <rect x="52" y="14" width="6" height="16" />
+                  <rect x="62" y="4"  width="6" height="26" />
+                  <rect x="72" y="10" width="6" height="20" />
+                  <rect x="82" y="6"  width="6" height="24" />
+                  <rect x="92" y="14" width="6" height="16" />
+                  <rect x="102" y="8" width="6" height="22" />
+                  <rect x="112" y="10" width="6" height="20" />
+                </g>
+              </svg>
+            </div>
+            <span class="text-xs text-[color:var(--foreground-muted)]" aria-hidden="true">▸</span>
+          </header>
+          <div class="card-body border-t border-[color:var(--border)] px-4 py-4">
+            <div class="mb-3 flex items-center justify-between text-xs text-[color:var(--foreground-muted)]">
+              <span><span class="legend-dot" style="background: var(--series-a)"></span>Welbevinden</span>
+              <span class="font-mono">Punten (1–5)</span>
+            </div>
+            <svg viewBox="0 0 720 220" class="w-full h-56" preserveAspectRatio="none">
+              <g stroke="var(--border)" stroke-width="1">
+                <line x1="40" y1="20"  x2="720" y2="20"  />
+                <line x1="40" y1="60"  x2="720" y2="60"  />
+                <line x1="40" y1="100" x2="720" y2="100" />
+                <line x1="40" y1="140" x2="720" y2="140" />
+                <line x1="40" y1="180" x2="720" y2="180" />
+              </g>
+              <g font-size="10" fill="var(--foreground-muted)" font-family="monospace">
+                <text x="6" y="24">5</text>
+                <text x="6" y="64">4</text>
+                <text x="6" y="104">3</text>
+                <text x="6" y="144">2</text>
+                <text x="6" y="184">1</text>
+              </g>
+              <!-- bars derived from observed range only (no normal-range overlay) -->
+              <g fill="var(--series-a)">
+                <rect x="50"  y="60"  width="20" height="135" />
+                <rect x="80"  y="100" width="20" height="95" />
+                <rect x="110" y="60"  width="20" height="135" />
+                <rect x="140" y="20"  width="20" height="175" />
+                <rect x="170" y="100" width="20" height="95" />
+                <rect x="200" y="60"  width="20" height="135" />
+                <rect x="230" y="140" width="20" height="55" />
+                <rect x="260" y="100" width="20" height="95" />
+                <rect x="290" y="60"  width="20" height="135" />
+                <rect x="320" y="20"  width="20" height="175" />
+                <rect x="350" y="100" width="20" height="95" />
+                <rect x="380" y="60"  width="20" height="135" />
+                <rect x="410" y="100" width="20" height="95" />
+                <rect x="440" y="60"  width="20" height="135" />
+                <rect x="470" y="20"  width="20" height="175" />
+                <rect x="500" y="100" width="20" height="95" />
+                <rect x="530" y="60"  width="20" height="135" />
+                <rect x="560" y="60"  width="20" height="135" />
+                <rect x="590" y="100" width="20" height="95" />
+                <rect x="620" y="20"  width="20" height="175" />
+                <rect x="650" y="60"  width="20" height="135" />
+                <rect x="680" y="100" width="20" height="95" />
+              </g>
+              <g font-size="10" fill="var(--foreground-muted)" font-family="monospace">
+                <text x="40"  y="208">15 mei</text>
+                <text x="200" y="208">22 mei</text>
+                <text x="360" y="208">29 mei</text>
+                <text x="520" y="208">5 jun</text>
+                <text x="680" y="208">14 jun</text>
+              </g>
+              <line x1="40" y1="20" x2="40" y2="195" stroke="var(--border)" />
+              <line x1="40" y1="195" x2="720" y2="195" stroke="var(--border)" />
+            </svg>
+          </div>
+        </article>
+      </section>
+
+      <!-- ╭──────────────────────────────────────────────────────────────────╮ -->
+      <!-- │  Planned actions disclosure (collapsed by default)               │ -->
+      <!-- ╰──────────────────────────────────────────────────────────────────╯ -->
+      <section class="mt-8">
+        <article class="planned-disclosure rounded-md border border-[color:var(--border)] bg-[color:var(--background)]" data-expanded="false">
+          <button
+            class="flex w-full items-center justify-between px-4 py-3 text-left"
+            onclick="toggleDisclosure(this.parentElement)"
+          >
+            <span class="text-sm font-medium">Geplande acties <span class="text-[color:var(--foreground-muted)]">(16)</span></span>
+            <span class="text-xs text-[color:var(--foreground-muted)]" aria-hidden="true">▸ tonen</span>
+          </button>
+          <div class="disclosure-body border-t border-[color:var(--border)] px-4 py-4">
+            <!-- This is where the existing <LusciiPanel> (programme/protocol header + planned-actions timeline + link/unlink UX) renders verbatim. -->
+            <div class="rounded-md border border-dashed border-[color:var(--border)] bg-[color:var(--background-muted)] p-4 text-xs text-[color:var(--foreground-muted)]">
+              <p class="font-medium text-[color:var(--foreground)]">Bestaande &lt;LusciiPanel&gt; gaat hier in.</p>
+              <p class="mt-1">Programma/protocol-header + geplande-acties timeline + koppel/ontkoppel UX — ongewijzigd ten opzichte van luscii-patient-enrichment (PR #45).</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <footer class="mt-12 text-xs text-[color:var(--foreground-muted)]">
+        Prototype v1 · 2026-06-14 · synthetische data ·
+        spec: <code class="font-mono">openspec/changes/2026-06-14-luscii-measurement-charts/</code>
+      </footer>
+    </main>
+
+    <script>
+      function toggleCard(card) {
+        const expanded = card.getAttribute('data-expanded') === 'true'
+        card.setAttribute('data-expanded', expanded ? 'false' : 'true')
+        const chev = card.querySelector('header > span[aria-hidden]')
+        if (chev) chev.textContent = expanded ? '▸' : '▾'
+      }
+      function toggleDisclosure(disc) {
+        const expanded = disc.getAttribute('data-expanded') === 'true'
+        disc.setAttribute('data-expanded', expanded ? 'false' : 'true')
+        const chev = disc.querySelector('button > span[aria-hidden]')
+        if (chev) chev.textContent = expanded ? '▸ tonen' : '▾ verbergen'
+      }
+      // Window selector — visual state only (a real backend re-fetch happens in React).
+      document.querySelectorAll('.chip[data-window]').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.chip[data-window]').forEach((c) => c.setAttribute('data-active', 'false'))
+          chip.setAttribute('data-active', 'true')
+        })
+      })
+    </script>
+  </body>
+</html>

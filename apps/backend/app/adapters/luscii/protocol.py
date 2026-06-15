@@ -60,3 +60,7 @@ class LusciiClient(Protocol):
     ) -> list[LusciiItemResponseLocalisation]:
         """`GET /v1/instrument-item-response-localisations`, paged to exhaustion."""
         ...
+
+    async def aclose(self) -> None:
+        """Release pooled resources (httpx client, fixture state)."""
+        ...

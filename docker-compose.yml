@@ -126,6 +126,12 @@ services:
       # always part of it); flip off per-shell for flag-off debugging:
       # BACKEND_AUTHZ_KETO_ENABLED=false docker compose up -d backend
       BACKEND_AUTHZ_KETO_ENABLED: ${BACKEND_AUTHZ_KETO_ENABLED:-true}
+      # Local-dev fixture mode: when no real Luscii token is configured,
+      # serve canned demo data via `LusciiFixtureClient` so the chart UI is
+      # immediately usable after `moon run :up` + `seed_all`. Set
+      # `BACKEND_LUSCII_FIXTURES=false` to fall back to the unconfigured
+      # state (useful when validating the not-configured panel).
+      BACKEND_LUSCII_FIXTURES: ${BACKEND_LUSCII_FIXTURES:-true}
     ports:
       - "18000:8000"
     develop:
