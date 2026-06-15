@@ -1,0 +1,41 @@
+{
+  "locale": "sv",
+  "instrument_localisations": [
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "1a196c53-397d-422f-859d-056d2a8a5575", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "2d85ff7e-3e4b-45f6-8d1b-e7e0829bd42b", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "50571c19-12b8-4599-ab7b-075f44a53ed8", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "5b022db0-2492-448d-b543-13b7c179473d", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "6cc38724-75a2-48d6-b843-c74c747c9079", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "99a8d44d-735c-498f-ba7a-2babed067f97", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "ce63e4ec-1c23-483d-ab5b-f362df24c06f", "name": "Steg", "unit": "Steg"},
+    {"instrument_id": "2da7d17b-9e3a-46c2-b963-ed68b9c5a031", "instrument_version": "d3cb1deb-1a40-48ee-b9aa-cd93e0489c63", "name": "Steg", "unit": "Steg"}
+  ],
+  "instrument_item_localisations": [
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "5d5ed3b2-8118-40e1-b075-bf70db26178b", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "912d76b1-9853-4adf-b5db-27fd08954b36", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "9b7233e3-7d36-4627-85d5-d5445e8b6c8c", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "a2c3483a-0f30-4e20-be16-5d7ee0865f0f", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "ab15f243-d391-4510-9fb8-5039cff73df1", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "e36b7a81-396a-404c-8c3d-e7e3fe963e4a", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "ea6ac476-6619-44fd-9b64-d50c6b600a3e", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "a9f18d82-d06b-47df-aba0-89ef364e77ee", "item_version": "fb2d417b-5b91-4b31-b222-f21909c3f35c", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "26403243-efdd-4043-a308-933e690426ee", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "53767589-ff95-4f0c-9db6-a1326f8973e9", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "7667bfec-0be7-42b2-8e38-536dc20af007", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "a816e512-fc49-406b-a07d-1260320b5d4e", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "b7677476-7afa-4261-af09-3be71d0529f6", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "b8233080-725f-47fa-917a-613ebe2e2f35", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "cd6927df-7fea-4283-894f-0e7fc7a1c21e", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "effd032f-acb4-4e21-812e-79421677461c", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "bc3918f6-4dc3-4ac4-8807-004fdd31280c", "item_version": "f5f6bd5d-748b-441d-821a-0e3593840452", "title": "Ange antalet steg", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "12b2fb2e-5986-4c71-a24f-8382ff26b218", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "1c84a269-8bb6-463c-b9de-fa387240a9ca", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "686a357d-c6ad-4c8f-909a-c50d0d37a70c", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "781577cb-f6a1-4238-aa80-150d801d69ce", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "7ac9d684-509a-4842-b5d2-9943e638af1f", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "acd337a5-3527-48cd-b774-d28799fa3034", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "af3ae437-a6eb-4050-9ac1-80285027d43f", "unit": "Steg"},
+    {"item_id": "e4eb4c0c-eff9-45da-9936-dbd7eb0bec35", "item_version": "c63ed8ef-0369-4a14-864d-439f30fa1c41", "unit": "Steg"}
+  ],
+  "item_response_localisations": []
+}

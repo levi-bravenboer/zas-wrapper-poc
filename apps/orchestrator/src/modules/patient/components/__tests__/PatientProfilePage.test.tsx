@@ -17,14 +17,23 @@ import { i18n } from '@/lib/i18n'
 
 import { PatientProfilePage } from '../PatientProfilePage'
 
-const { getMock, usePatientMock, usePatientCareTeamsMock, useUpdatePatientMock } = vi.hoisted(
-  () => ({
-    getMock: vi.fn(),
-    usePatientMock: vi.fn(),
-    usePatientCareTeamsMock: vi.fn(),
-    useUpdatePatientMock: vi.fn(),
-  }),
-)
+const {
+  getMock,
+  usePatientMock,
+  usePatientCareTeamsMock,
+  useUpdatePatientMock,
+  useLusciiDataMock,
+  useLinkLusciiMock,
+  useUnlinkLusciiMock,
+} = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  usePatientMock: vi.fn(),
+  usePatientCareTeamsMock: vi.fn(),
+  useUpdatePatientMock: vi.fn(),
+  useLusciiDataMock: vi.fn(),
+  useLinkLusciiMock: vi.fn(),
+  useUnlinkLusciiMock: vi.fn(),
+}))
 
 vi.mock('@/lib/api/client', () => ({
   api: { GET: getMock },
@@ -34,6 +43,9 @@ vi.mock('../../hooks', () => ({
   usePatient: usePatientMock,
   usePatientCareTeams: usePatientCareTeamsMock,
   useUpdatePatient: useUpdatePatientMock,
+  useLusciiData: useLusciiDataMock,
+  useLinkLuscii: useLinkLusciiMock,
+  useUnlinkLuscii: useUnlinkLusciiMock,
 }))
 
 const PATIENT = {
@@ -80,7 +92,7 @@ function renderPage(): void {
   })
   const listRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/patients',
+    path: '/tasks',
     component: () => <div data-testid="list">list</div>,
   })
   const indexRoute = createRoute({
@@ -103,21 +115,36 @@ describe('PatientProfilePage', () => {
     useUpdatePatientMock.mockReset()
     usePatientCareTeamsMock.mockReturnValue(stubQuery([]))
     useUpdatePatientMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
+    useLusciiDataMock.mockReturnValue(stubQuery(null))
+    useLinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
+    useUnlinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
     getMock.mockResolvedValue({
       data: { items: [{ id: 'org-1', name: 'ZAS Mechelen' }] },
       response: new Response(null, { status: 200 }),
     })
   })
 
-  it('renders sticky header with name + INSZ + tabs', async () => {
+  it('renders header with name + INSZ + the two clinical tabs', async () => {
     usePatientMock.mockReturnValue(stubQuery(PATIENT))
     renderPage()
 
     expect(await screen.findByRole('heading', { name: /Bos, Eva/ })).toBeTruthy()
     expect(screen.getAllByText(/80051203412/).length).toBeGreaterThan(0)
-    expect(screen.getByRole('tab', { name: /Overzicht/ })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /Zorgteam/ })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /Geschiedenis/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Metingen/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Labresultaten/ })).toBeTruthy()
+    // Legacy meta tabs are gone per D10
+    expect(screen.queryByRole('tab', { name: /Overzicht/ })).toBeNull()
+    expect(screen.queryByRole('tab', { name: /Zorgteam/ })).toBeNull()
+    expect(screen.queryByRole('tab', { name: /Geschiedenis/ })).toBeNull()
+    expect(screen.queryByRole('tab', { name: /Afspraken/ })).toBeNull()
+  })
+
+  it('back link points to /tasks', async () => {
+    usePatientMock.mockReturnValue(stubQuery(PATIENT))
+    renderPage()
+
+    const back = await screen.findByRole('link', { name: /Terug/i })
+    expect(back).toHaveAttribute('href', expect.stringContaining('/tasks'))
   })
 
   it('renders not-found state when patient is missing', async () => {

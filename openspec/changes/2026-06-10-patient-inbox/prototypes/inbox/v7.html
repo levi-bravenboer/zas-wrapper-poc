@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE — inbox v7</title>
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.0.3/index.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.0.3/index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-background: oklch(1 0 0);
+        --color-surface-1: oklch(0.985 0.003 175);
+        --color-surface-2: oklch(0.97 0.01 175);
+        --color-foreground: oklch(0.21 0.04 265);
+        --color-foreground-muted: oklch(0.5 0.02 265);
+        --color-muted: var(--color-surface-2);
+        --color-primary: oklch(0.46 0.07 175);
+        --color-primary-hover: oklch(0.4 0.07 175);
+        --color-primary-pressed: oklch(0.34 0.06 175);
+        --color-primary-foreground: oklch(1 0 0);
+        --color-primary-soft: oklch(0.93 0.04 175);
+        --color-accent-mint: oklch(0.78 0.08 175);
+        --color-destructive: oklch(0.6 0.22 30);
+        --color-warning: oklch(0.75 0.18 65);
+        --color-success: oklch(0.55 0.1 175);
+        --color-border: oklch(0.91 0.005 265);
+        --color-border-strong: oklch(0.82 0.01 265);
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+        --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --tracking-tight: -0.011em;
+      }
+      :root {
+        --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+        --bg-canvas: linear-gradient(180deg, #fafbfa 0%, #f3f6f4 100%);
+        --hairline: oklch(0.91 0.005 265);
+      }
+      body { font-family: var(--font-sans); color: var(--color-foreground); background: var(--bg-canvas); letter-spacing: var(--tracking-tight); font-size: 14px; }
+    </style>
+
+    <style>
+      .gradient-active { background-image: var(--gradient-active); }
+
+      .side { background: var(--color-background); border-right: 1px solid var(--hairline); }
+      .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 14px; color: var(--color-foreground); }
+      .nav-item:hover { background: var(--color-surface-2); }
+      .nav-item[aria-current="page"] { background-image: var(--gradient-active); color: #fff; box-shadow: var(--shadow-sm); }
+      .nav-item[aria-current="page"] i { color: #fff; }
+      .nav-group-h { font-size: 12px; color: var(--color-foreground-muted); padding: 14px 10px 6px; display: flex; align-items: center; justify-content: space-between; }
+
+      .av { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 600; }
+      .av-soft { background: var(--color-primary-soft); color: var(--color-primary-pressed); }
+
+      .pill-input {
+        display: inline-flex; align-items: center; gap: 8px;
+        height: 36px; padding: 0 14px; border-radius: 9999px;
+        background: var(--color-background); border: 1px solid var(--hairline);
+        font-size: 14px; color: var(--color-foreground);
+      }
+      .pill-input:hover { border-color: var(--color-border-strong); }
+
+      .badge-soft { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 9999px; background: var(--color-primary-soft); color: var(--color-primary-pressed); font-size: 12px; font-weight: 500; }
+      .badge-solid { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 9999px; background: var(--color-primary); color: #fff; font-size: 12px; font-weight: 500; }
+      .badge-muted { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 9999px; background: var(--color-surface-2); color: var(--color-foreground-muted); font-size: 11px; }
+
+      .btn-primary { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: var(--radius-sm); background: var(--color-primary-pressed); color: #fff; font-size: 14px; font-weight: 500; }
+      .btn-primary:hover { background: var(--color-primary); }
+      .btn-ghost { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: var(--radius-sm); font-size: 13px; color: var(--color-foreground); }
+      .btn-ghost:hover { background: var(--color-surface-2); }
+
+      .tabs-list { display: inline-flex; gap: 24px; border-bottom: 1px solid var(--hairline); }
+      .tab-trigger { padding: 10px 0 11px; font-size: 14px; font-weight: 500; color: var(--color-foreground-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+      .tab-trigger:hover { color: var(--color-foreground); }
+      .tab-trigger[data-state="active"] { color: var(--color-foreground); border-bottom-color: var(--color-primary); }
+      .tab-trigger .count { color: var(--color-foreground-muted); font-weight: 400; margin-left: 6px; }
+
+      .row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 24px; transition: background-color .12s;
+        border-bottom: 1px solid var(--hairline);
+        cursor: pointer; width: 100%; text-align: left;
+        background: transparent;
+      }
+      .row:hover { background: var(--color-surface-1); }
+      .row[data-selected="true"] { background: color-mix(in srgb, var(--color-primary-soft) 50%, white); }
+
+      .kind-tile { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border-radius: 6px; }
+      .kind-tile[data-kind="consultation"] { background: color-mix(in srgb, var(--color-primary) 10%, white); color: var(--color-primary); }
+      .kind-tile[data-kind="lab"]          { background: color-mix(in srgb, var(--color-warning) 14%, white); color: #92400e; }
+      .kind-tile[data-kind="imaging"]      { background: color-mix(in srgb, var(--color-accent-mint) 18%, white); color: var(--color-primary-pressed); }
+      .kind-tile[data-kind="procedure"]    { background: color-mix(in srgb, var(--color-destructive) 10%, white); color: var(--color-destructive); }
+      .kind-tile[data-kind="other"]        { background: var(--color-surface-2); color: var(--color-foreground-muted); }
+
+      .detail-pane { background: var(--color-background); border-left: 1px solid var(--hairline); }
+    </style>
+  </head>
+
+  <body class="min-h-screen">
+    <!--
+      v7 — mirror REAL orchestrator admin pages (Gebruikers / Organisaties / Affiliaties screenshots):
+        - Sidebar: solid white bg + clean nav. Brand block top, "Beheer" collapsible header, user pill bottom. Active = gradient-active green pill (matches "Organisaties" active in screenshot).
+        - Top crumb: "Home > Mijn patiënten" muted text.
+        - PageHeader: h1 ~28px bold tracking-tight + muted sub.
+        - Filter row: rounded-full pill inputs (search w/ leading icon, "Team ▾" / "Status ▾" dropdowns).
+        - Primary CTA right: solid dark green "+ Nieuwe patiënt".
+        - Sort = underline Tabs (Volgende afspraak / Nieuw vs oud) with count next to label — matches Tabs underline variant + admin column-header rhythm.
+        - Inbox rows: flat table-row vibe, no card chrome. Avatar circle initials (soft green) + name + INSZ/org muted + soft team badge + meta right + kebab.
+        - Pager bottom: "Per pagina [25 ▾] · 8 van 23 · Vorige 1/1 Volgende" (admin pattern).
+        - Right pane patient detail: flat, hairline left border, no shadow. Same crumb-style head + h2 ~22 + INSZ solid pill + DOB + soft org badge + Bewerken primary + kebab. Underline tabs Metingen / Labresultaten / Afspraken.
+    -->
+
+    <div class="flex h-screen overflow-hidden">
+
+      <!-- SIDEBAR (admin-style) -->
+      <aside class="side hidden lg:flex w-60 shrink-0 flex-col">
+        <div class="px-3 pt-4 pb-3 flex items-center gap-2">
+          <span aria-hidden="true" class="grid size-7 shrink-0 place-items-center rounded-md gradient-active text-[12px] font-semibold text-white shadow-sm">Z</span>
+          <span class="truncate text-[14px] font-semibold">ZAS Orchestrator</span>
+        </div>
+
+        <nav class="flex-1 px-2 py-1">
+          <a class="nav-item"><i data-lucide="layout-dashboard" class="size-4"></i><span>Overzicht</span></a>
+          <a class="nav-item" aria-current="page"><i data-lucide="heart-pulse" class="size-4"></i><span>Mijn patiënten</span></a>
+          <a class="nav-item"><i data-lucide="list-checks" class="size-4"></i><span>Taken</span></a>
+          <a class="nav-item"><i data-lucide="git-branch" class="size-4"></i><span>Zorgpaden</span></a>
+
+          <div class="nav-group-h">
+            <span>Beheer</span>
+            <i data-lucide="chevron-down" class="size-3.5"></i>
+          </div>
+          <a class="nav-item"><i data-lucide="users" class="size-4"></i><span>Gebruikers</span></a>
+          <a class="nav-item"><i data-lucide="building-2" class="size-4"></i><span>Organisaties</span></a>
+          <a class="nav-item"><i data-lucide="user-cog" class="size-4"></i><span>Affiliaties</span></a>
+        </nav>
+
+        <div class="px-3 pb-4 pt-2 border-t" style="border-color: var(--hairline);">
+          <button class="w-full flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[--color-surface-2]">
+            <div class="av av-soft size-8 rounded-full text-[12px]">DJ</div>
+            <div class="flex-1 min-w-0 leading-tight text-left">
+              <div class="truncate text-[13px] font-medium">Dr. Janssen</div>
+              <div class="truncate text-[12px] text-[--color-foreground-muted]">caregiver</div>
+            </div>
+            <i data-lucide="chevrons-up-down" class="size-3.5 opacity-60"></i>
+          </button>
+          <button class="mt-2 w-full nav-item" style="font-size:13px;"><i data-lucide="settings" class="size-4"></i><span>Instellingen</span></button>
+        </div>
+      </aside>
+
+      <main class="flex-1 flex min-h-0">
+
+        <!-- LEFT inbox -->
+        <section class="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div class="px-8 pt-6 text-[14px] text-[--color-foreground-muted] flex items-center gap-1.5">
+            <a href="#" class="hover:text-[--color-foreground]">Home</a>
+            <i data-lucide="chevron-right" class="size-3 opacity-50"></i>
+            <span class="text-[--color-foreground]">Mijn patiënten</span>
+          </div>
+
+          <header class="px-8 pt-4 pb-5">
+            <h1 class="text-[28px] leading-tight font-semibold tracking-tight">Mijn patiënten</h1>
+            <p class="mt-1 text-[14px] text-[--color-foreground-muted]">Wie heeft je aandacht nodig?</p>
+          </header>
+
+          <div class="px-8 pb-4 flex items-center gap-2 flex-wrap">
+            <label class="pill-input w-[260px]">
+              <i data-lucide="search" class="size-4 opacity-60"></i>
+              <input class="bg-transparent outline-none flex-1 placeholder:text-[--color-foreground-muted] text-[14px]" placeholder="Zoek patiënt…" />
+            </label>
+            <button class="pill-input">
+              <span>Team</span><i data-lucide="chevron-down" class="size-3.5 opacity-60"></i>
+            </button>
+            <button class="pill-input">
+              <span>Status</span><i data-lucide="chevron-down" class="size-3.5 opacity-60"></i>
+            </button>
+            <div class="flex-1"></div>
+            <button class="btn-primary">
+              <i data-lucide="plus" class="size-4"></i> Nieuwe patiënt
+            </button>
+          </div>
+
+          <div class="px-8">
+            <div class="tabs-list">
+              <button class="tab-trigger" data-sort="next_appointment" data-state="active">
+                Volgende afspraak<span class="count">8</span>
+              </button>
+              <button class="tab-trigger" data-sort="newly_added" data-state="inactive">
+                Nieuw vs oud<span class="count">8</span>
+              </button>
+            </div>
+          </div>
+
+          <ul id="patientList" role="list" class="flex-1 overflow-y-auto"></ul>
+
+          <div class="px-8 py-3 flex items-center gap-3 border-t" style="border-color: var(--hairline); background: var(--color-background);">
+            <div class="flex items-center gap-2 text-[13px] text-[--color-foreground-muted]">
+              <span>Per pagina</span>
+              <button class="pill-input" style="height:30px;padding:0 10px;font-size:13px;">25 <i data-lucide="chevron-down" class="size-3"></i></button>
+            </div>
+            <div class="flex-1"></div>
+            <span class="text-[13px] text-[--color-foreground-muted]"><span class="tabular-nums">8</span> van <span class="tabular-nums">23</span></span>
+            <button class="btn-ghost" disabled style="opacity:.5;">Vorige</button>
+            <span class="text-[13px] text-[--color-foreground-muted] tabular-nums">1 / 1</span>
+            <button class="btn-ghost">Volgende</button>
+          </div>
+        </section>
+
+        <!-- RIGHT detail -->
+        <section id="detailPane" class="detail-pane hidden xl:flex w-[460px] shrink-0 flex-col overflow-hidden"></section>
+      </main>
+    </div>
+
+    <script>
+      const PATIENTS = [
+        { id: '7b9d', given: 'Anke', family: 'Janssens', insz: '85.03.12-072.47', dob: '12 mrt 1985', org: 'ZAS Antwerpen / Cardiologie', created_days_ago: 3, next_appointment: { title: 'Controle na operatie', starts_at: '+2d 14:00', kind: 'consultation', modality: 'on_site', location: 'Polikliniek 3, kamer 12' }, team: 'Cardio Team A', lead: 'Dr. Janssen' },
+        { id: '24aa', given: 'Jan', family: 'Kowalski', insz: '78.09.04-189.13', dob: '4 sep 1978', org: 'ZAS Antwerpen / Klinisch Lab', created_days_ago: 0, next_appointment: { title: 'Bloedafname nuchter', starts_at: 'morgen 08:15', kind: 'lab', modality: 'on_site', location: 'Lab balie 2' }, team: 'Lab Team', lead: 'Dr. Mertens' },
+        { id: '90c1', given: 'Marc', family: 'De Vries', insz: '62.11.27-301.05', dob: '27 nov 1962', org: 'ZAS Antwerpen / Radiologie', created_days_ago: 14, next_appointment: { title: 'MRI lumbale wervelkolom', starts_at: 'Wo 18 jun 09:30', kind: 'imaging', modality: 'online', location: null }, team: 'Radiologie Team', lead: 'Dr. Peeters' },
+        { id: 'f3e0', given: 'Lisa', family: 'Bakker', insz: '91.05.22-455.61', dob: '22 mei 1991', org: 'ZAS Antwerpen / Orthopedie', created_days_ago: 1, next_appointment: { title: 'Kleine ingreep — knie', starts_at: 'vandaag 15:45', kind: 'procedure', modality: 'on_site', location: 'OK 4' }, team: 'Orthopedie Team B', lead: 'Dr. Hendriks' },
+        { id: '5b2f', given: 'Tom', family: 'Peeters', insz: '70.02.14-218.92', dob: '14 feb 1970', org: 'Huisartsenpraktijk De Linde', created_days_ago: 5, next_appointment: null, team: null, lead: null },
+        { id: 'a187', given: 'Eva', family: 'Van der Berg', insz: '88.07.30-664.18', dob: '30 jul 1988', org: 'ZAS Antwerpen / Interne geneeskunde', created_days_ago: 8, next_appointment: { title: 'Opvolggesprek', starts_at: 'Ma 16 jun 11:00', kind: 'consultation', modality: 'online', location: null }, team: 'Interne Team A', lead: 'Dr. Janssen' },
+        { id: 'c4d6', given: 'Sven', family: 'Hendriks', insz: '95.12.05-902.34', dob: '5 dec 1995', org: 'ZAS Antwerpen / Cardiologie', created_days_ago: 22, next_appointment: { title: 'Holter terugbrengen', starts_at: 'Za 21 jun 10:15', kind: 'other', modality: 'on_site', location: 'Onthaal' }, team: 'Cardio Team A', lead: 'Dr. Janssen' },
+        { id: 'e0b8', given: 'Sofie', family: 'Mertens', insz: '83.08.18-540.76', dob: '18 aug 1983', org: 'Huisartsenpraktijk De Linde', created_days_ago: 30, next_appointment: null, team: null, lead: null },
+      ];
+
+      const KIND_ICON = { consultation: 'stethoscope', lab: 'flask-conical', imaging: 'scan', procedure: 'syringe', other: 'calendar' };
+      const KIND_LABEL = { consultation: 'Consultatie', lab: 'Labafname', imaging: 'Beeldvorming', procedure: 'Ingreep', other: 'Overig' };
+      const MODALITY_LABEL = { online: 'Online', on_site: 'Op locatie' };
+      const STATUS_LBL = { booked: 'Gepland', fulfilled: 'Voltooid', cancelled: 'Geannuleerd', noshow: 'Niet verschenen' };
+
+      function initials(g, f) { return (g[0] || '').toUpperCase() + (f[0] || '').toUpperCase(); }
+      function newlyAddedCopy(d) { if (d === 0) return 'vandaag toegevoegd'; if (d === 1) return 'gisteren toegevoegd'; return 'toegevoegd ' + d + ' dagen geleden'; }
+
+      function el(tag, opts = {}) {
+        const n = document.createElement(tag);
+        if (opts.cls) n.className = opts.cls;
+        if (opts.text != null) n.textContent = opts.text;
+        if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) n.setAttribute(k, v);
+        if (opts.style) n.setAttribute('style', opts.style);
+        return n;
+      }
+      function icon(name, cls) { const i = document.createElement('i'); i.setAttribute('data-lucide', name); if (cls) i.className = cls; return i; }
+      function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+      function buildRow(p, sort, selectedId) {
+        const li = el('li');
+        const a = el('button', { cls: 'row', attrs: { 'data-patient-id': p.id, 'data-selected': selectedId === p.id ? 'true' : 'false', type: 'button' } });
+
+        const avatar = el('div', { cls: 'av av-soft size-9 rounded-full text-[12px] shrink-0', text: initials(p.given, p.family) });
+
+        const idCol = el('div', { cls: 'flex-1 min-w-0' });
+        idCol.appendChild(el('div', { cls: 'text-[14px] font-medium truncate', text: p.family + ', ' + p.given }));
+        const sub = el('div', { cls: 'mt-0.5 flex items-center gap-1.5 text-[12px] text-[--color-foreground-muted]' });
+        sub.appendChild(el('span', { cls: 'font-mono tabular-nums', text: p.insz }));
+        sub.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+        sub.appendChild(el('span', { cls: 'truncate', text: p.org }));
+        idCol.appendChild(sub);
+
+        const teamCol = el('div', { cls: 'shrink-0 hidden xl:flex w-[170px]' });
+        if (p.team) teamCol.appendChild(el('span', { cls: 'badge-soft', text: p.team }));
+        else teamCol.appendChild(el('span', { cls: 'badge-muted', text: 'Geen team' }));
+
+        const meta = el('div', { cls: 'shrink-0 flex items-center gap-3 max-w-[260px]' });
+        if (sort === 'next_appointment') {
+          if (p.next_appointment) {
+            const ap = p.next_appointment;
+            const tile = el('span', { cls: 'kind-tile', attrs: { 'data-kind': ap.kind } });
+            tile.appendChild(icon(KIND_ICON[ap.kind], 'size-4'));
+            const txt = el('div', { cls: 'flex flex-col items-end gap-[1px]' });
+            txt.appendChild(el('div', { cls: 'text-[13px] font-medium tabular-nums', text: ap.starts_at }));
+            txt.appendChild(el('div', { cls: 'text-[11px] text-[--color-foreground-muted]', text: KIND_LABEL[ap.kind] + ' · ' + MODALITY_LABEL[ap.modality] }));
+            meta.appendChild(tile);
+            meta.appendChild(txt);
+          } else {
+            meta.appendChild(el('span', { cls: 'badge-muted', text: 'Geen afspraak' }));
+          }
+        } else {
+          meta.appendChild(el('div', { cls: 'text-[12px] text-[--color-foreground-muted] tabular-nums', text: newlyAddedCopy(p.created_days_ago) }));
+        }
+
+        const kebab = el('span', { cls: 'shrink-0 inline-flex h-7 w-7 items-center justify-center rounded hover:bg-[--color-surface-2]', attrs: { 'aria-label': 'Acties' } });
+        kebab.appendChild(icon('more-horizontal', 'size-4 text-[--color-foreground-muted]'));
+
+        a.appendChild(avatar);
+        a.appendChild(idCol);
+        a.appendChild(teamCol);
+        a.appendChild(meta);
+        a.appendChild(kebab);
+        li.appendChild(a);
+        return li;
+      }
+
+      function reorder(sort) {
+        const copy = [...PATIENTS];
+        if (sort === 'next_appointment') {
+          copy.sort((a, b) => {
+            const aHas = !!a.next_appointment, bHas = !!b.next_appointment;
+            if (aHas && !bHas) return -1;
+            if (!aHas && bHas) return 1;
+            if (!aHas && !bHas) return 0;
+            return a.next_appointment.starts_at.localeCompare(b.next_appointment.starts_at);
+          });
+        } else copy.sort((a, b) => a.created_days_ago - b.created_days_ago);
+        return copy;
+      }
+
+      function renderEmptyDetail() {
+        const pane = document.getElementById('detailPane');
+        clear(pane);
+        const wrap = el('div', { cls: 'flex-1 grid place-items-center px-8 py-12 text-center' });
+        const inner = el('div', { cls: 'max-w-xs' });
+        const c = el('div', { cls: 'mx-auto size-14 rounded-full flex items-center justify-center mb-4', style: 'background: var(--color-primary-soft); color: var(--color-primary);' });
+        c.appendChild(icon('user-round', 'size-6'));
+        inner.appendChild(c);
+        inner.appendChild(el('div', { cls: 'text-[16px] font-semibold tracking-tight', text: 'Selecteer een patiënt' }));
+        inner.appendChild(el('div', { cls: 'mt-1 text-[13px] text-[--color-foreground-muted]', text: 'Klik een rij links om hier het patiëntdetail te tonen.' }));
+        wrap.appendChild(inner);
+        pane.appendChild(wrap);
+      }
+
+      function renderDetail(p) {
+        const pane = document.getElementById('detailPane');
+        clear(pane);
+
+        const crumb = el('div', { cls: 'px-7 pt-6 flex items-center gap-2 text-[13px] text-[--color-foreground-muted]' });
+        crumb.appendChild(el('span', { text: 'Patiënt' }));
+        crumb.appendChild(icon('chevron-right', 'size-3 opacity-50'));
+        crumb.appendChild(el('span', { cls: 'text-[--color-foreground]', text: p.family + ', ' + p.given }));
+        crumb.appendChild(el('div', { cls: 'flex-1' }));
+        const closeBtn = el('button', { cls: 'inline-flex h-7 w-7 items-center justify-center rounded hover:bg-[--color-surface-2]', attrs: { 'aria-label': 'Sluit' } });
+        closeBtn.appendChild(icon('x', 'size-4 text-[--color-foreground-muted]'));
+        closeBtn.addEventListener('click', () => { selectedId = null; renderList(); renderEmptyDetail(); window.lucide && window.lucide.createIcons(); });
+        crumb.appendChild(closeBtn);
+        pane.appendChild(crumb);
+
+        const header = el('div', { cls: 'px-7 pt-4 pb-5' });
+        const titleRow = el('div', { cls: 'flex items-start justify-between gap-4' });
+        const titleCol = el('div', { cls: 'min-w-0 flex-1 flex items-start gap-3' });
+        titleCol.appendChild(el('div', { cls: 'av av-soft size-11 rounded-full text-[14px] shrink-0', text: initials(p.given, p.family) }));
+        const titles = el('div', { cls: 'min-w-0' });
+        titles.appendChild(el('h2', { cls: 'text-[22px] font-semibold tracking-tight truncate', text: p.family + ', ' + p.given }));
+        const subTitle = el('div', { cls: 'mt-1 flex flex-wrap items-center gap-2 text-[13px] text-[--color-foreground-muted]' });
+        const inszPill = el('span', { cls: 'badge-solid' });
+        inszPill.appendChild(el('span', { cls: 'opacity-90', text: 'INSZ' }));
+        inszPill.appendChild(el('span', { cls: 'font-mono tabular-nums', text: p.insz }));
+        subTitle.appendChild(inszPill);
+        subTitle.appendChild(el('span', { text: 'Geboren ' + p.dob }));
+        subTitle.appendChild(el('span', { cls: 'badge-soft', text: p.org }));
+        titles.appendChild(subTitle);
+        titleCol.appendChild(titles);
+        titleRow.appendChild(titleCol);
+
+        const actions = el('div', { cls: 'shrink-0 flex items-center gap-2' });
+        const editBtn = el('button', { cls: 'btn-primary' });
+        editBtn.appendChild(icon('pencil', 'size-3.5'));
+        editBtn.appendChild(document.createTextNode('Bewerken'));
+        actions.appendChild(editBtn);
+        const kebab = el('button', { cls: 'inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-[--color-surface-2]', attrs: { 'aria-label': 'Acties' } });
+        kebab.appendChild(icon('more-horizontal', 'size-4 text-[--color-foreground-muted]'));
+        actions.appendChild(kebab);
+        titleRow.appendChild(actions);
+        header.appendChild(titleRow);
+
+        const teamLine = el('div', { cls: 'mt-3 flex items-center gap-2 text-[13px]' });
+        teamLine.appendChild(el('span', { cls: 'text-[--color-foreground-muted]', text: 'Zorgteam:' }));
+        if (p.team) {
+          teamLine.appendChild(el('span', { cls: 'badge-soft', text: p.team }));
+          teamLine.appendChild(el('span', { cls: 'text-[--color-foreground-muted]', text: 'Lead ' + p.lead }));
+        } else {
+          teamLine.appendChild(el('span', { cls: 'badge-muted', text: 'Geen team' }));
+        }
+        header.appendChild(teamLine);
+        pane.appendChild(header);
+
+        const tabsWrap = el('div', { cls: 'px-7' });
+        const tabsList = el('div', { cls: 'tabs-list' });
+        const TAB_DEFS = [
+          { id: 'measurements', label: 'Metingen' },
+          { id: 'lab_results', label: 'Labresultaten' },
+          { id: 'appointments', label: 'Afspraken', count: p.next_appointment ? 3 : 2 },
+        ];
+        TAB_DEFS.forEach((t, i) => {
+          const b = el('button', { cls: 'tab-trigger', attrs: { 'data-tab': t.id, 'data-state': i === 0 ? 'active' : 'inactive' } });
+          b.appendChild(document.createTextNode(t.label));
+          if (t.count != null) b.appendChild(el('span', { cls: 'count', text: t.count }));
+          tabsList.appendChild(b);
+        });
+        tabsWrap.appendChild(tabsList);
+        pane.appendChild(tabsWrap);
+
+        const body = el('div', { cls: 'flex-1 overflow-y-auto px-7 py-6' });
+        pane.appendChild(body);
+
+        tabsList.querySelectorAll('button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            tabsList.querySelectorAll('button').forEach((b) => b.dataset.state = 'inactive');
+            btn.dataset.state = 'active';
+            renderTabBody(body, btn.dataset.tab, p);
+            window.lucide && window.lucide.createIcons();
+          });
+        });
+        renderTabBody(body, 'measurements', p);
+
+        window.lucide && window.lucide.createIcons();
+      }
+
+      function renderTabBody(node, tab, p) {
+        clear(node);
+        if (tab === 'measurements') return node.appendChild(emptyState('activity', 'Nog geen metingen gekoppeld', 'Wordt geleverd door de monitoring-koppeling.'));
+        if (tab === 'lab_results') return node.appendChild(emptyState('flask-conical', 'Nog geen labresultaten gekoppeld', 'Wordt geleverd door de HiX-koppeling.'));
+        if (tab === 'appointments') return renderAppointments(node, p);
+      }
+
+      function renderAppointments(node, p) {
+        const upH = el('div', { cls: 'flex items-baseline justify-between gap-2 mb-2' });
+        upH.appendChild(el('h3', { cls: 'text-[13px] font-semibold tracking-tight', text: 'Aankomend' }));
+        upH.appendChild(el('span', { cls: 'text-[12px] text-[--color-foreground-muted] tabular-nums', text: p.next_appointment ? '1' : '0' }));
+        node.appendChild(upH);
+        if (p.next_appointment) node.appendChild(appointmentRow(p.next_appointment, p, false));
+        else node.appendChild(el('div', { cls: 'text-[13px] text-[--color-foreground-muted] italic py-3', text: 'Geen aankomende afspraken' }));
+
+        const histH = el('div', { cls: 'mt-6 flex items-baseline justify-between gap-2 mb-2' });
+        histH.appendChild(el('h3', { cls: 'text-[13px] font-semibold tracking-tight', text: 'Geschiedenis' }));
+        histH.appendChild(el('span', { cls: 'text-[12px] text-[--color-foreground-muted] tabular-nums', text: '2' }));
+        node.appendChild(histH);
+        node.appendChild(appointmentRow({ title: 'Eerste consult', starts_at: '12 mei 09:00', kind: 'consultation', modality: 'on_site', location: 'Polikliniek 3' }, p, true, 'fulfilled'));
+        node.appendChild(appointmentRow({ title: 'CT scan thorax', starts_at: '3 mei 14:30', kind: 'imaging', modality: 'on_site', location: 'CT 2' }, p, true, 'cancelled'));
+      }
+
+      function appointmentRow(ap, p, isHistory, status) {
+        const row = el('div', { cls: 'flex items-start gap-3 py-3 border-b', style: 'border-color: var(--hairline);' });
+        const tile = el('span', { cls: 'kind-tile', attrs: { 'data-kind': ap.kind } });
+        tile.appendChild(icon(KIND_ICON[ap.kind], 'size-4'));
+        row.appendChild(tile);
+        const body = el('div', { cls: 'flex-1 min-w-0' });
+        const l1 = el('div', { cls: 'flex items-center gap-2 min-w-0' });
+        l1.appendChild(el('span', { cls: 'text-[14px] font-medium truncate', text: ap.title }));
+        if (isHistory && status) l1.appendChild(el('span', { cls: 'badge-muted', text: STATUS_LBL[status] || status }));
+        body.appendChild(l1);
+        const l2 = el('div', { cls: 'mt-0.5 text-[12px] text-[--color-foreground-muted] flex items-center gap-1.5 flex-wrap tabular-nums' });
+        l2.appendChild(el('span', { text: ap.starts_at }));
+        l2.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+        l2.appendChild(el('span', { text: MODALITY_LABEL[ap.modality] }));
+        if (ap.location) {
+          l2.appendChild(el('span', { cls: 'opacity-40', text: '·' }));
+          l2.appendChild(el('span', { cls: 'truncate', text: ap.location }));
+        }
+        body.appendChild(l2);
+        row.appendChild(body);
+        return row;
+      }
+
+      function emptyState(iconName, headline, hint) {
+        const wrap = el('div', { cls: 'flex flex-col items-center text-center py-12' });
+        const c = el('div', { cls: 'mx-auto size-12 rounded-full flex items-center justify-center mb-3', style: 'background: var(--color-primary-soft); color: var(--color-primary);' });
+        c.appendChild(icon(iconName, 'size-5'));
+        wrap.appendChild(c);
+        wrap.appendChild(el('div', { cls: 'text-[14px] font-medium', text: headline }));
+        wrap.appendChild(el('div', { cls: 'text-[12px] text-[--color-foreground-muted] mt-1 max-w-[260px]', text: hint }));
+        return wrap;
+      }
+
+      let currentSort = 'next_appointment';
+      let selectedId = null;
+
+      function renderList() {
+        const list = document.getElementById('patientList');
+        clear(list);
+        reorder(currentSort).forEach((p) => list.appendChild(buildRow(p, currentSort, selectedId)));
+        document.querySelectorAll('.tab-trigger[data-sort]').forEach((b) => {
+          b.dataset.state = b.dataset.sort === currentSort ? 'active' : 'inactive';
+        });
+        list.querySelectorAll('button[data-patient-id]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            selectedId = btn.dataset.patientId;
+            const p = PATIENTS.find((x) => x.id === selectedId);
+            renderList();
+            renderDetail(p);
+          });
+        });
+        window.lucide && window.lucide.createIcons();
+      }
+
+      document.querySelectorAll('.tab-trigger[data-sort]').forEach((b) => {
+        b.addEventListener('click', () => { currentSort = b.dataset.sort; renderList(); });
+      });
+
+      renderList();
+      renderEmptyDetail();
+      window.lucide && window.lucide.createIcons();
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 # Dev stack for the zas-wrapper monorepo.
 # Host-side env defaults live in apps/backend/.env.example;
 # this file overrides them for the in-container backend.
-# Required: docker compose v2.22+ (uses develop.watch).
+# Required: docker compose v2.24+ (develop.watch + env_file required:false).
 
 name: zas
 
@@ -105,10 +105,17 @@ services:
     build:
       context: ./apps/backend
       dockerfile: Dockerfile
+    # The host-side .env (gitignored) feeds the container at runtime — so
+    # BACKEND_LUSCII_API_TOKEN lives in exactly one file and is never baked
+    # into the image. Luscii stays token-presence-driven: no file or no token
+    # ⇒ unconfigured (503 luscii_not_configured). `environment:` below wins
+    # over the file for everything compose must pin (DB host, CORS, Ory URLs).
+    env_file:
+      - path: ./apps/backend/.env
+        required: false
     environment:
       BACKEND_DATABASE_URL: postgresql+asyncpg://zas:zas@db:5432/zas
       BACKEND_HIX_MODE: stub
-      BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: INFO
       BACKEND_CORS_ORIGINS: '["http://localhost:5173","http://localhost:5174","http://localhost:5175"]'
       BACKEND_KRATOS_PUBLIC_URL: http://kratos:4433
@@ -119,6 +126,12 @@ services:
       # always part of it); flip off per-shell for flag-off debugging:
       # BACKEND_AUTHZ_KETO_ENABLED=false docker compose up -d backend
       BACKEND_AUTHZ_KETO_ENABLED: ${BACKEND_AUTHZ_KETO_ENABLED:-true}
+      # Local-dev fixture mode: when no real Luscii token is configured,
+      # serve canned demo data via `LusciiFixtureClient` so the chart UI is
+      # immediately usable after `moon run :up` + `seed_all`. Set
+      # `BACKEND_LUSCII_FIXTURES=false` to fall back to the unconfigured
+      # state (useful when validating the not-configured panel).
+      BACKEND_LUSCII_FIXTURES: ${BACKEND_LUSCII_FIXTURES:-true}
     ports:
       - "18000:8000"
     develop:

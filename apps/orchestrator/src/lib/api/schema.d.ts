@@ -4157,8 +4157,8 @@ export interface components {
             location?: string | null;
             /** Duration Minutes */
             duration_minutes?: number | null;
-            /** Treatment Notes */
-            treatment_notes?: string | null;
+            /** Notes */
+            notes?: string | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}

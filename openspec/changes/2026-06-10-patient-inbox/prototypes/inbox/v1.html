@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE — inbox v1</title>
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.0.3/index.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.0.3/index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-background: oklch(1 0 0);
+        --color-surface-1: oklch(0.985 0.003 175);
+        --color-surface-2: oklch(0.97 0.01 175);
+        --color-foreground: oklch(0.21 0.04 265);
+        --color-foreground-muted: oklch(0.5 0.02 265);
+        --color-muted-foreground: var(--color-foreground-muted);
+        --color-card: var(--color-background);
+        --color-card-foreground: var(--color-foreground);
+        --color-popover: var(--color-background);
+        --color-popover-foreground: var(--color-foreground);
+        --color-muted: var(--color-surface-2);
+        --color-primary: oklch(0.46 0.07 175);
+        --color-primary-hover: oklch(0.4 0.07 175);
+        --color-primary-pressed: oklch(0.34 0.06 175);
+        --color-primary-foreground: oklch(1 0 0);
+        --color-primary-soft: oklch(0.93 0.04 175);
+        --color-primary-subtle: oklch(0.97 0.01 175);
+        --color-accent-mint: oklch(0.78 0.08 175);
+        --color-destructive: oklch(0.6 0.22 30);
+        --color-destructive-foreground: oklch(1 0 0);
+        --color-warning: oklch(0.75 0.18 65);
+        --color-warning-foreground: oklch(0.21 0.04 265);
+        --color-success: oklch(0.55 0.1 175);
+        --color-success-foreground: oklch(1 0 0);
+        --color-border: oklch(0.91 0.005 265);
+        --color-border-strong: oklch(0.82 0.01 265);
+        --color-input: var(--color-border);
+        --color-ring: var(--color-primary);
+        --radius-xs: 0.25rem;
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --shadow-xs: 0 1px 0 oklch(0.21 0.04 265 / 0.04);
+        --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+        --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+        --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
+        --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --font-size-xs: 0.75rem;
+        --font-size-sm: 0.8125rem;
+        --font-size-base: 0.875rem;
+        --font-size-md: 1rem;
+        --font-size-lg: 1.125rem;
+        --font-size-xl: 1.25rem;
+        --font-size-2xl: 1.5rem;
+        --font-size-3xl: 1.875rem;
+        --leading-tight: 1.25;
+        --leading-snug: 1.4;
+        --leading-normal: 1.55;
+        --tracking-tight: -0.011em;
+      }
+
+      :root {
+        --gradient-aurora:
+          radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+          linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+        --gradient-active: linear-gradient(135deg, oklch(0.48 0.06 175) 0%, oklch(0.32 0.05 175) 100%);
+      }
+
+      body {
+        font-family: var(--font-sans);
+        color: var(--color-foreground);
+        background: var(--gradient-aurora);
+        letter-spacing: var(--tracking-tight);
+      }
+    </style>
+
+    <style>
+      .avatar-palette-0 { background: oklch(0.93 0.04 175); color: oklch(0.34 0.06 175); }
+      .avatar-palette-1 { background: oklch(0.78 0.08 175 / .35); color: oklch(0.34 0.06 175); }
+      .avatar-palette-2 { background: oklch(0.46 0.07 175); color: #fff; }
+      .avatar-palette-3 { background: oklch(0.4 0.07 175); color: #fff; }
+      .avatar-palette-4 { background: oklch(0.55 0.1 175); color: #fff; }
+      .avatar-palette-5 { background: oklch(0.97 0.01 175); color: oklch(0.46 0.07 175); border: 1px solid oklch(0.82 0.07 175); }
+      .avatar-palette-6 { background: oklch(0.34 0.06 175); color: #fff; }
+      .avatar-palette-7 { background: oklch(0.85 0.06 175); color: oklch(0.34 0.06 175); }
+    </style>
+  </head>
+
+  <body class="min-h-screen">
+    <!--
+      Mock data: 8 synthetic patients (Belgian-shaped names, fake INSZ).
+      No real PHI. Avatar = initials only, never <img>.
+      Sort strategies:
+        next_appointment (default): order by next_appointment.starts_at ASC NULLS LAST
+        newly_added:                order by created_at DESC
+    -->
+
+    <div class="flex h-screen overflow-hidden">
+      <aside class="hidden lg:flex w-60 shrink-0 flex-col border-r border-[--color-border] bg-[--color-surface-1]/80 backdrop-blur">
+        <div class="flex items-center gap-2 px-4 py-4 border-b border-[--color-border]">
+          <div class="size-7 rounded-md flex items-center justify-center font-mono text-xs font-semibold" style="background: var(--gradient-active); color:#fff;">Z</div>
+          <div class="text-[--font-size-sm] font-medium">ZAS Orchestrator</div>
+        </div>
+        <nav class="px-2 py-3 space-y-0.5 text-[--font-size-sm]">
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="layout-dashboard" class="size-4 opacity-70"></i> Dashboard</a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md font-medium text-[--color-primary-foreground]" style="background: var(--gradient-active);"><i data-lucide="users" class="size-4"></i> Patiënten</a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="git-branch" class="size-4 opacity-70"></i> Carepaths</a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="inbox" class="size-4 opacity-70"></i> Inbox</a>
+          <a class="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[--color-surface-2]"><i data-lucide="settings" class="size-4 opacity-70"></i> Instellingen</a>
+        </nav>
+        <div class="mt-auto px-3 py-3 border-t border-[--color-border]">
+          <div class="flex items-center gap-2">
+            <div class="size-8 rounded-full avatar-palette-2 flex items-center justify-center text-[--font-size-xs] font-semibold">DJ</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[--font-size-xs] font-medium truncate">Dr. Janssen</div>
+              <div class="text-[--font-size-xs] text-[--color-foreground-muted] truncate">Caregiver · ZAS Antwerpen</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="flex-1 overflow-y-auto">
+        <div class="sticky top-0 z-10 bg-[--color-background]/70 backdrop-blur border-b border-[--color-border]">
+          <div class="max-w-5xl mx-auto px-6 py-3 flex items-center gap-3">
+            <div class="text-[--font-size-sm] text-[--color-foreground-muted]">
+              ZAS Antwerpen <span class="mx-1.5 opacity-40">/</span><span class="text-[--color-foreground]">Patiënten</span>
+            </div>
+            <div class="ml-auto flex items-center gap-2 text-[--font-size-xs] font-mono text-[--color-foreground-muted]">
+              <i data-lucide="link" class="size-3"></i>
+              <span id="urlMock">/_auth/patients?sort=next_appointment</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="max-w-5xl mx-auto px-6 pt-8 pb-4">
+          <div class="flex items-end justify-between gap-4">
+            <div>
+              <h1 class="text-[--font-size-2xl] font-semibold tracking-tight">Patiënten</h1>
+              <p class="text-[--font-size-sm] text-[--color-foreground-muted] mt-1">Wie heeft je aandacht nodig?</p>
+            </div>
+
+            <div role="tablist" class="inline-flex rounded-lg p-1 bg-[--color-surface-2] border border-[--color-border] text-[--font-size-sm]">
+              <button data-sort="next_appointment" data-active="true" class="sort-btn px-3 py-1.5 rounded-md font-medium flex items-center gap-1.5 transition-colors data-[active=true]:bg-[--color-background] data-[active=true]:shadow-sm">
+                <i data-lucide="calendar-clock" class="size-3.5"></i> Volgende afspraak
+              </button>
+              <button data-sort="newly_added" class="sort-btn px-3 py-1.5 rounded-md font-medium flex items-center gap-1.5 transition-colors text-[--color-foreground-muted] data-[active=true]:text-[--color-foreground] data-[active=true]:bg-[--color-background] data-[active=true]:shadow-sm">
+                <i data-lucide="sparkles" class="size-3.5"></i> Nieuw vs oud
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="max-w-5xl mx-auto px-6 pb-12">
+          <div class="rounded-xl border border-[--color-border] bg-[--color-background] shadow-[--shadow-sm] overflow-hidden">
+            <ul id="patientList" role="list" class="divide-y divide-[--color-border]"></ul>
+
+            <div class="flex items-center justify-center py-4 border-t border-[--color-border] bg-[--color-surface-1]">
+              <button class="inline-flex items-center gap-1.5 text-[--font-size-sm] font-medium text-[--color-primary] hover:text-[--color-primary-hover]">
+                <i data-lucide="chevron-down" class="size-3.5"></i>
+                Meer laden
+                <span class="text-[--color-foreground-muted] font-normal">(8 van 23)</span>
+              </button>
+            </div>
+          </div>
+
+          <details class="mt-10 group">
+            <summary class="cursor-pointer text-[--font-size-sm] font-medium text-[--color-foreground-muted] hover:text-[--color-foreground] flex items-center gap-2">
+              <i data-lucide="layout" class="size-3.5"></i>
+              Reference — empty states (caregiver vs admin)
+              <i data-lucide="chevron-down" class="size-3.5 group-open:rotate-180 transition-transform"></i>
+            </summary>
+
+            <div class="mt-4 grid md:grid-cols-2 gap-4">
+              <div class="rounded-xl border border-[--color-border] bg-[--color-background] p-10 text-center">
+                <div class="mx-auto size-12 rounded-full bg-[--color-primary-soft] flex items-center justify-center mb-3">
+                  <i data-lucide="users" class="size-5 text-[--color-primary]"></i>
+                </div>
+                <div class="text-[--font-size-md] font-medium">Nog geen patiënten zichtbaar</div>
+                <div class="text-[--font-size-sm] text-[--color-foreground-muted] mt-1.5 max-w-xs mx-auto">Vraag een admin om je toe te voegen aan een zorgteam.</div>
+                <div class="mt-4 text-[--font-size-xs] font-mono text-[--color-foreground-muted]">rol: caregiver</div>
+              </div>
+
+              <div class="rounded-xl border border-[--color-border] bg-[--color-background] p-10 text-center">
+                <div class="mx-auto size-12 rounded-full bg-[--color-primary-soft] flex items-center justify-center mb-3">
+                  <i data-lucide="users-round-plus" class="size-5 text-[--color-primary]"></i>
+                </div>
+                <div class="text-[--font-size-md] font-medium">Nog geen patiënten</div>
+                <div class="text-[--font-size-sm] text-[--color-foreground-muted] mt-1.5 max-w-xs mx-auto">Maak er een aan via de admin-flow.</div>
+                <div class="mt-4 text-[--font-size-xs] font-mono text-[--color-foreground-muted]">rol: admin</div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const PATIENTS = [
+        { id: '7b9d', given: 'Anke', family: 'Janssens', insz: '85.03.12-072.47', dob: '12 mrt 1985', org: 'Zas Hospital / Cardiologie', created_days_ago: 3, next_appointment: { title: 'Controle na operatie', starts_at: '+2d 14:00', kind: 'consultation', modality: 'on_site' } },
+        { id: '24aa', given: 'Jan', family: 'Kowalski', insz: '78.09.04-189.13', dob: '4 sep 1978', org: 'Zas Hospital / Klinisch Lab', created_days_ago: 0, next_appointment: { title: 'Bloedafname nuchter', starts_at: 'morgen 08:15', kind: 'lab', modality: 'on_site' } },
+        { id: '90c1', given: 'Marc', family: 'De Vries', insz: '62.11.27-301.05', dob: '27 nov 1962', org: 'Zas Hospital / Radiologie', created_days_ago: 14, next_appointment: { title: 'MRI lumbale wervelkolom', starts_at: 'Wo 18 jun • 09:30', kind: 'imaging', modality: 'online' } },
+        { id: 'f3e0', given: 'Lisa', family: 'Bakker', insz: '91.05.22-455.61', dob: '22 mei 1991', org: 'Zas Hospital / Orthopedie', created_days_ago: 1, next_appointment: { title: 'Kleine ingreep — knie', starts_at: 'vandaag 15:45', kind: 'procedure', modality: 'on_site' } },
+        { id: '5b2f', given: 'Tom', family: 'Peeters', insz: '70.02.14-218.92', dob: '14 feb 1970', org: 'Huisartsenpraktijk De Linde', created_days_ago: 5, next_appointment: null },
+        { id: 'a187', given: 'Eva', family: 'Van der Berg', insz: '88.07.30-664.18', dob: '30 jul 1988', org: 'Zas Hospital / Interne geneeskunde', created_days_ago: 8, next_appointment: { title: 'Opvolggesprek', starts_at: 'Ma 16 jun • 11:00', kind: 'consultation', modality: 'online' } },
+        { id: 'c4d6', given: 'Sven', family: 'Hendriks', insz: '95.12.05-902.34', dob: '5 dec 1995', org: 'Zas Hospital / Cardiologie', created_days_ago: 22, next_appointment: { title: 'Holter terugbrengen', starts_at: 'Za 21 jun • 10:15', kind: 'other', modality: 'on_site' } },
+        { id: 'e0b8', given: 'Sofie', family: 'Mertens', insz: '83.08.18-540.76', dob: '18 aug 1983', org: 'Huisartsenpraktijk De Linde', created_days_ago: 30, next_appointment: null },
+      ];
+
+      const KIND_ICON = { consultation: 'stethoscope', lab: 'flask-conical', imaging: 'scan', procedure: 'syringe', other: 'calendar' };
+      const KIND_TINT = { consultation: 'text-[--color-primary]', lab: 'text-[--color-warning]', imaging: 'text-[--color-accent-mint]', procedure: 'text-[--color-destructive]', other: 'text-[--color-foreground-muted]' };
+      const MODALITY_ICON = { online: 'monitor', on_site: 'hospital' };
+      const MODALITY_LABEL = { online: 'Online', on_site: 'Op locatie' };
+
+      function avatarClass(id) {
+        let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0;
+        return 'avatar-palette-' + (Math.abs(h) % 8);
+      }
+      function initials(g, f) { return (g[0] || '').toUpperCase() + (f[0] || '').toUpperCase(); }
+      function newlyAddedCopy(d) {
+        if (d === 0) return 'vandaag toegevoegd';
+        if (d === 1) return 'gisteren toegevoegd';
+        return 'toegevoegd ' + d + ' dagen geleden';
+      }
+
+      function el(tag, opts = {}) {
+        const n = document.createElement(tag);
+        if (opts.cls) n.className = opts.cls;
+        if (opts.text != null) n.textContent = opts.text;
+        if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) n.setAttribute(k, v);
+        return n;
+      }
+      function icon(name, cls) {
+        const i = document.createElement('i');
+        i.setAttribute('data-lucide', name);
+        if (cls) i.className = cls;
+        return i;
+      }
+
+      function buildRow(p, sort) {
+        const li = el('li');
+        const a = el('a', { cls: 'group flex items-center gap-4 px-4 py-3 hover:bg-[--color-surface-1] transition-colors', attrs: { href: '#' } });
+
+        const avatar = el('div', { cls: 'size-10 rounded-full ' + avatarClass(p.id) + ' flex items-center justify-center font-mono text-[--font-size-sm] font-semibold shrink-0', text: initials(p.given, p.family) });
+
+        const id = el('div', { cls: 'flex-1 min-w-0' });
+        id.appendChild(el('div', { cls: 'text-[--font-size-sm] font-medium truncate', text: p.family + ', ' + p.given }));
+        const sub = el('div', { cls: 'text-[--font-size-xs] text-[--color-foreground-muted] truncate', text: p.insz + ' • ' + p.dob + ' • ' + p.org });
+        id.appendChild(sub);
+
+        const meta = el('div', { cls: 'shrink-0' });
+        if (sort === 'next_appointment') {
+          if (p.next_appointment) {
+            const ap = p.next_appointment;
+            const card = el('div', { cls: 'flex flex-col items-end gap-0.5 max-w-[260px]' });
+            const line1 = el('div', { cls: 'flex items-center gap-1.5 text-[--font-size-sm] font-medium' });
+            line1.appendChild(icon(KIND_ICON[ap.kind], 'size-3.5 ' + KIND_TINT[ap.kind]));
+            line1.appendChild(el('span', { cls: 'truncate', text: ap.title }));
+            card.appendChild(line1);
+            const line2 = el('div', { cls: 'flex items-center gap-1.5 text-[--font-size-xs] text-[--color-foreground-muted]' });
+            line2.appendChild(el('span', { text: ap.starts_at }));
+            line2.appendChild(el('span', { cls: 'opacity-50', text: '·' }));
+            line2.appendChild(icon(MODALITY_ICON[ap.modality], 'size-3'));
+            line2.appendChild(el('span', { text: MODALITY_LABEL[ap.modality] }));
+            card.appendChild(line2);
+            meta.appendChild(card);
+          } else {
+            meta.appendChild(el('div', { cls: 'text-[--font-size-xs] text-[--color-foreground-muted] italic', text: 'Geen geplande afspraak' }));
+          }
+        } else {
+          meta.appendChild(el('div', { cls: 'text-[--font-size-xs] text-[--color-foreground-muted]', text: newlyAddedCopy(p.created_days_ago) }));
+        }
+
+        const chev = icon('chevron-right', 'size-4 text-[--color-foreground-muted] group-hover:text-[--color-foreground] shrink-0');
+
+        a.appendChild(avatar);
+        a.appendChild(id);
+        a.appendChild(meta);
+        a.appendChild(chev);
+        li.appendChild(a);
+        return li;
+      }
+
+      function reorder(sort) {
+        const copy = [...PATIENTS];
+        if (sort === 'next_appointment') {
+          copy.sort((a, b) => {
+            const aHas = !!a.next_appointment, bHas = !!b.next_appointment;
+            if (aHas && !bHas) return -1;
+            if (!aHas && bHas) return 1;
+            if (!aHas && !bHas) return 0;
+            return a.next_appointment.starts_at.localeCompare(b.next_appointment.starts_at);
+          });
+        } else {
+          copy.sort((a, b) => a.created_days_ago - b.created_days_ago);
+        }
+        return copy;
+      }
+
+      function render(sort) {
+        const list = document.getElementById('patientList');
+        while (list.firstChild) list.removeChild(list.firstChild);
+        reorder(sort).forEach((p) => list.appendChild(buildRow(p, sort)));
+        document.getElementById('urlMock').textContent = sort === 'next_appointment' ? '/_auth/patients?sort=next_appointment' : '/_auth/patients?sort=newly_added';
+        document.querySelectorAll('.sort-btn').forEach((b) => { b.dataset.active = b.dataset.sort === sort ? 'true' : 'false'; });
+        window.lucide && window.lucide.createIcons();
+      }
+
+      document.querySelectorAll('.sort-btn').forEach((b) => {
+        b.addEventListener('click', () => render(b.dataset.sort));
+      });
+
+      render('next_appointment');
+      window.lucide && window.lucide.createIcons();
+    </script>
+  </body>
+</html>

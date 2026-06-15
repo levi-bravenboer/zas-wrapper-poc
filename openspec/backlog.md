@@ -73,7 +73,7 @@ Note: Backend is meant to host an MCP server for agentic tooling. Not in PoC sco
 - Tier: [mvp]
 - Source: RFP working doc — "Luscii Vitals viewer embedded in Orchestrator"
 
-Note: Caregivers need to view Luscii monitoring data from inside Orchestrator. Mechanism TBD: iframe? deep-link? SSO?
+Note: Caregivers need to view Luscii monitoring data from inside Orchestrator. Mechanism TBD: iframe? deep-link? SSO? **Promoted to `changes/luscii-patient-enrichment/` on 2026-06-10** — mechanism chosen: native render via the Luscii public API (live proxy, display-only, bearer token). Remaining MVP-tier follow-ups: response caching / sync-into-DB, builder programme-picker live migration, webhooks/alerts.
 
 ### BL-009 — Non-HiX patient enrollment
 - Tier: [mvp]
@@ -259,6 +259,7 @@ Note: F3 backend domain lands as its own `[poc]` change in its own worktree. Sha
 ### BL-037 — F4 patient domain
 - Tier: [poc]
 - Source: align-stack-with-poc-scope, scope narrowed 2026-05-13
+- Promoted: 2026-06-10 to `changes/2026-06-10-patient-inbox/` (inbox surface + appointment-base domain + master/detail split-pane + surface-agnostic `<PatientDetailView>`)
 
 Note: F4 backend domain + orchestrator patients-overview land as their own `[poc]` change in their own worktree. Shape is designed inside that change.
 
@@ -433,6 +434,7 @@ Note: `DashboardLanding` needs counts for **Open care teams** and **Recent assig
 ### BL-065 — Real Inbox surface
 - Tier: [poc]
 - Source: caregiver-shell change (sidebar inventory)
+- Promoted: 2026-06-10 to `changes/2026-06-10-patient-inbox/` (inbox-base capability + `/_auth/inbox` surface + polymorphic item dispatcher; v1 ships Appointment items)
 
 Note: `/inbox` route is reserved in the sidebar but unimplemented. PoC ships a placeholder; replace with an Inbox view (task list across patients) once the tasks surface is fleshed out.
 
@@ -476,21 +478,83 @@ Note: ZAS wants user lifecycle (create/update/role-assign/deactivate, individual
 
 Note: Representative/trusted-person relationships should come from CSAM mandate registration where possible, with self-service onboarding (invitation links, itsme/eID identification) and ZAS-assisted setup as fallback. In our model a mandate becomes a consent-backed grant (same shape as `external_grants`) whose source is the federal mandate registry instead of local administration. Requires the eHealth/itsme federation seam (`oidc-login-providers`).
 
+## Filed by patient-inbox (2026-06-10)
+
+### BL-072 — Frontend write actions on appointments
+- Tier: [mvp]
+- Source: patient-inbox change (frontend explicitly read-only in v1)
+
+Note: `appointment-base` ships full backend CRUD but the orchestrator surface is read-only at PoC — no create/edit/delete dialogs, no status-change actions. MVP adds caregiver-facing dialogs (new appointment, edit, cancel, mark fulfilled / no-show) using existing shadcn primitives. Pathway runtime (BL-038) also calls into `AppointmentService.create()` to materialise appointment blocks; both paths share the same backend.
+
+### BL-073 — Appointment participant edit endpoints
+- Tier: [mvp]
+- Source: patient-inbox change (participants frozen after create in v1)
+
+Note: v1 freezes `appointment_participants` rows after the appointment is created — changing attendees requires delete + recreate. MVP adds a `PATCH /appointments/{id}` participants field with replace-all semantics (parent diff, partial unique index dance on `lead`), or alternatively dedicated `POST/DELETE /appointments/{id}/participants/{user_id}` endpoints. Decision lands with the write-actions UI.
+
+### BL-074 — `Metingen` tab backend wiring
+- Tier: [mvp]
+- Source: patient-inbox change (clinical tab ships as empty-state)
+
+Note: Patient detail's `Metingen` tab renders `<EmptyState>` in PoC. MVP wires the monitoring-koppeling (Luscii Vitals embed + measurement aggregates) into the tab body. Depends on the Luscii API contract (BL-004).
+
+### BL-075 — `Labresultaten` tab backend wiring
+- Tier: [mvp]
+- Source: patient-inbox change (clinical tab ships as empty-state)
+
+Note: Patient detail's `Labresultaten` tab renders `<EmptyState>` in PoC. MVP wires the HiX-koppeling (`Observation` / `DiagnosticReport` reads via FHIR adapter) into the tab body. Depends on the HiX FHIR adapter (BL-001).
+
+### BL-076 — Realtime topic for appointments
+- Tier: [mvp]
+- Source: patient-inbox change (plain refetch v1)
+
+Note: `appointment-base` ships without a realtime topic — orchestrator uses TanStack `staleTime` refetch. MVP adds the realtime publisher when pathway runtime mutates appointments or the frontend write UI lands (BL-072), so two clinicians editing the same patient see updates without manual refresh. Mirrors the patient-base realtime contract.
+
+### BL-077 — Synthetic appointment seed
+- Tier: [poc]
+- Source: patient-inbox change (no seed v1 — sort renders trailing nulls)
+
+Note: v1 ships without a seed for `appointments`. The inbox default sort (`next_appointment_starts_at`) returns the same arbitrary order until appointment rows exist. Demo storytelling improves if a deterministic seed populates 1-3 upcoming appointments per seeded patient. Author `scripts/seed_appointments.py` mirroring `seed_patients.py` (PRNG-seeded, synthetic-only header). Cheap to land; demo-quality lift.
+
+### BL-078 — Patient-role mobile `/mobile/appointments` read route
+- Tier: [mvp]
+- Source: patient-inbox change (patient role explicitly forbidden on `/appointments` v1)
+
+Note: `appointment-base` rejects `Role.PATIENT` sessions on every `/appointments` route in PoC. MVP adds `/mobile/appointments` (or similar) for the digital-front-door patient app to read their own appointments. Reuses `AppointmentRepository` with a patient-self predicate (patient sees only own rows). Patient-visibility predicate distinct from caregiver patient-access predicate. Depends on F9/F10 mobile patient features (BL-014, BL-022).
+
+### BL-081 — Task write actions (create / complete / edit / delete)
+- Tier: [mvp]
+- Source: patient-inbox change (tasks-base ships read-only v1)
+
+Note: `tasks-base` v1 ships only `GET /tasks` (list) and `GET /tasks/{id}` (read). Tasks are populated by `seed_tasks.py` and (at MVP) by the pathway runtime. MVP adds caregiver-facing write actions: `POST /tasks` (manual task creation), `PATCH /tasks/{id}` (status transitions including complete + cancel, plus title/description/priority edits), `DELETE /tasks/{id}` (soft). Frontend: inbox row gains a kebab with `Markeer voltooid` / `Bewerken` / `Verwijderen`; standalone create dialog from the inbox PageHeader. Depends on the task write UX design and on a decision about who can complete others' tasks (lock to assignee? team-wide? admin override?).
+
+### BL-080 — Inbox 2nd surface kind (alerts / messages)
+- Tier: [product]
+- Source: patient-inbox change (single-domain inbox v1)
+
+Note: PoC inbox surfaces tasks only. If a future product surface genuinely needs to merge tasks with other attention sources (measurement alerts, system messages, lab-result notifications), it gets its own route (e.g. `/_auth/notifications`) with its own architecture — the current `/_auth/inbox` stays a task list. Filed to document the rejected polymorphic-inbox alternative if it ever resurfaces.
+
+### BL-079 — `appointments.pathway_block_instance_id` FK
+- Tier: [poc]
+- Source: patient-inbox change (column reserved, FK deferred per D18)
+
+Note: v1 alembic creates `appointments.pathway_block_instance_id` as a nullable UUID column without a FOREIGN KEY constraint. Pathway runtime change (BL-038) introduces the `pathway_block_instances` table and a follow-up migration adds `FOREIGN KEY ... ON DELETE SET NULL` between the two. Tracking here so the FK isn't forgotten when the runtime lands.
+
 ## Filed by pathway-completion (2026-06-12)
 
-### BL-072 — Cross-pathway handoff (`bridge` block)
+### BL-082 — Cross-pathway handoff (`bridge` block)
 - Tier: [mvp]
 - Source: Urology demo flow (`openspec/changes/pathway-model-redesign/example-flow-urology.md`); deferred from `pathway-completion` § A6
 
 Note: Terminal block kind that closes the current enrollment AND opens a new enrollment for the patient on a target pathway (e.g. "Cancer treatment" handoff). Touches enrollment lifecycle + identity carry-over to a new enrollment, neither of which is in PoC scope. Builder palette currently does NOT surface a "bridge" tile. Re-evaluate at MVP once enrollment-to-enrollment handoff semantics are designed.
 
-### BL-073 — `aggregator_n_of_m(count, total)` input_logic aggregator
+### BL-083 — `aggregator_n_of_m(count, total)` input_logic aggregator
 - Tier: [mvp]
 - Source: Urology demo flow (`openspec/changes/pathway-model-redesign/example-flow-urology.md`); deferred from `pathway-completion` § B2
 
 Note: Partial-completion aggregator on `InputLogic.aggregator` ("block eligible when ≥ N of M rules resolve true"). Originally scoped for MDO attendees; the MDO redesign in `pathway-completion` § A7 replaced the gate with leading-caregiver-completes, so no PoC consumer remains. Future MVP flows needing "N-of-M upstream gates" (e.g. partial team consensus, fallback paths) will promote this back. Small predicate — `NOfMArgs(count, total)` + evaluator branch + publish gate `1 <= count <= total`.
 
-### BL-074 — Split `pathway_block` into class-table inheritance
+### BL-084 — Split `pathway_block` into class-table inheritance
 - Tier: [mvp]
 - Source: Esthetic / scale concern raised during `pathway-completion` § A4 (treatment block); slot #1 `pathway-model-foundations` D2 chose single-table inheritance for ship speed
 

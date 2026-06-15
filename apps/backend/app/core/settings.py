@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Annotated, Literal
 
 from fastapi import Depends
-from pydantic import AnyHttpUrl, Field, SecretStr
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["dev", "test", "production"]
@@ -37,7 +37,25 @@ class Settings(BaseSettings):
 
     public_url: AnyHttpUrl | None = None
     hix_mode: AdapterMode = "stub"
-    luscii_mode: AdapterMode = "stub"
+    # Luscii is token-presence-driven, not mode-driven: token set ⇒ live
+    # client, unset ⇒ unconfigured (endpoints answer 503 luscii_not_configured).
+    luscii_api_url: AnyHttpUrl = AnyHttpUrl("https://vitalsapi.luscii.com")
+    luscii_api_token: SecretStr | None = None
+    # DEV-ONLY: serve a canned `LusciiFixtureClient` when no real token is
+    # configured. Lets `moon run :up` reach the chart UI without a token.
+    # MUST stay off in production — fixture data is synthetic.
+    luscii_fixtures: bool = False
+
+    @field_validator("luscii_api_token", mode="before")
+    @classmethod
+    def _empty_token_is_unconfigured(cls, v: object) -> object:
+        # Compose passes BACKEND_LUSCII_API_TOKEN through with an empty
+        # default; empty/whitespace must mean "unconfigured", never a client
+        # with a blank bearer token.
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
     database_url: str = DEFAULT_DATABASE_URL
 
     # Ory access plane. Localhost defaults serve host-run dev + tests;

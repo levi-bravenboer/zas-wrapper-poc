@@ -33,6 +33,17 @@
   --color-success: oklch(0.55 0.1 175); /* derived from #266b5e — teal-aligned success */
   --color-success-foreground: oklch(1 0 0);
 
+  /* Chart series palette — referenced by chart components as CSS vars
+     (luscii-measurement-charts D-PALETTE). Light-theme only at PoC;
+     dark-mode overrides land alongside the dark-mode tokens. Slot 1 mirrors
+     the ZAS primary; slots 2-5 are derived accents picked to read distinct
+     against both the white background and the primary-soft surface mix. */
+  --color-chart-1: var(--color-primary); /* teal — primary */
+  --color-chart-2: oklch(0.6 0.13 25); /* coral — second line (BP dia) */
+  --color-chart-3: oklch(0.72 0.13 80); /* amber */
+  --color-chart-4: oklch(0.5 0.04 250); /* slate */
+  --color-chart-5: oklch(0.5 0.13 305); /* violet */
+
   /* Borders */
   --color-border: oklch(0.91 0.005 265); /* #d0d5dd — neutral border */
   --color-border-strong: oklch(0.82 0.01 265); /* derived from #d0d5dd — stronger divider */

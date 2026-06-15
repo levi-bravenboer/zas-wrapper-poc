@@ -16,25 +16,27 @@ A surface is the runtime context a clinical view executes in. Three are defined 
 
 ## Ports + adapters
 
+> **Status:** the patient-inbox change shipped `tasks` as a direct orchestrator-only route at `/_auth/tasks` (D-LAYOUT-V12) and no module currently uses `defineFeature`. The code below is the framework's reference shape — illustrative, not derived from a live module.
+
 A page consumes a typed **port** and never sees raw FHIR or orchestrator DTOs. The port shape is defined once per feature; each surface supplies an **adapter** that satisfies it.
 
 ```ts
-// modules/tasks/ports.ts
-export type TasksPort = {
-  readonly list: () => Promise<readonly Task[]>
+// modules/<id>/ports.ts
+export type <Pascal>Port = {
+  readonly list: () => Promise<readonly <Item>[]>
   readonly complete: (id: string) => Promise<void>
 }
-export const tasksPort = createPort<TasksPort>('Tasks')
+export const <id>Port = createPort<<Pascal>Port>('<Pascal>')
 ```
 
 ```ts
-// modules/tasks/adapters/orchestrator.ts
-export function orchestratorTasksPort(deps: OrchestratorDeps): TasksPort {
+// modules/<id>/adapters/orchestrator.ts
+export function orchestrator<Pascal>Port(deps: OrchestratorDeps): <Pascal>Port {
   return { /* uses deps.api */ }
 }
 
-// modules/tasks/adapters/fhir.ts
-export function fhirTasksPort(deps: FhirDeps): TasksPort {
+// modules/<id>/adapters/fhir.ts
+export function fhir<Pascal>Port(deps: FhirDeps): <Pascal>Port {
   return { /* uses deps.client */ }
 }
 ```
@@ -66,7 +68,7 @@ Then re-export from `modules/index.ts` so the module's side-effect import runs a
 Each declared surface needs a 3-line route shim:
 
 ```ts
-// routes/<surface-dir>/<id>.tsx — e.g. routes/_auth/tasks.tsx, routes/s/tasks.tsx
+// routes/<surface-dir>/<id>.tsx — e.g. routes/_auth/<id>.tsx, routes/s/<id>.tsx
 export const Route = createFileRoute('/<surface-prefix>/<id>')({
   component: () => renderFeature(<id>Feature),
 })
@@ -88,7 +90,7 @@ The canonical opt-out list lives in `openspec/changes/multi-surface-feature-fram
 ## Writing tests
 
 - Unit-test ports + adapters in isolation under `platform/__tests__/` or `modules/<id>/__tests__/`.
-- Render-test shells with `shellTestUtils.tsx` (creates a `createMemoryHistory`-backed router with the target surface wired up).
+- Render-test shells with a `createMemoryHistory`-backed router (see `EmbedShell.test.tsx` / `SmartShell.test.tsx`).
 - For the embed surface specifically, `__tests__/host.test.ts` shows how to fake `window.parent.postMessage` and verify origin checks.
 
 ## Adding a new feature

@@ -1,0 +1,28 @@
+{
+  "locale": "en-US",
+  "instrument_localisations": [],
+  "instrument_item_localisations": [
+    {"item_id": "31b20574-9210-4e71-9a12-3d388dcb40a0", "item_version": "39b44075-c55a-422b-ac95-ff1552416edc", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "31b20574-9210-4e71-9a12-3d388dcb40a0", "item_version": "d4e4a889-56dc-44ca-8f4c-322ac81689a7", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "31b20574-9210-4e71-9a12-3d388dcb40a0", "item_version": "dd105d18-3d91-4271-a3d2-f621e6045649", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "31b20574-9210-4e71-9a12-3d388dcb40a0", "item_version": "fa798975-563b-4e94-b25c-581ad20eba3e", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "4ed039f2-238b-40cc-9776-09d69689c962", "item_version": "3eb339e5-c822-4d4b-be1a-afb3de3204e8", "title": "Resultat", "unit": "Grad"},
+    {"item_id": "4ed039f2-238b-40cc-9776-09d69689c962", "item_version": "f5fa3538-34f9-4658-bdfd-be2366a6f36f", "title": "Resultat", "unit": "Grad"},
+    {"item_id": "914f20fe-e0e5-418e-9591-12e884c7e8e6", "item_version": "0cefca05-e799-4fcd-9774-87d207834ad4", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "914f20fe-e0e5-418e-9591-12e884c7e8e6", "item_version": "3ab793ab-8049-4d20-a96a-5851929796d2", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "914f20fe-e0e5-418e-9591-12e884c7e8e6", "item_version": "60966779-0a96-4472-8fb4-53523f9e8097", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "914f20fe-e0e5-418e-9591-12e884c7e8e6", "item_version": "99ac4ed8-1a12-4cee-833a-d0e2433f7586", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "914f20fe-e0e5-418e-9591-12e884c7e8e6", "item_version": "9d01592e-3536-4182-b236-e978898dfc40", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "914f20fe-e0e5-418e-9591-12e884c7e8e6", "item_version": "e6c75f2d-1a2c-47c4-8789-e9a351639a16", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "91c031dc-bae8-419d-949e-84b4eeca06bd", "item_version": "0d40a977-c460-4f2e-97fa-f8cc4b33e24a", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "91c031dc-bae8-419d-949e-84b4eeca06bd", "item_version": "65ddc810-85c1-4238-a36d-eee4b86e928f", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "91c031dc-bae8-419d-949e-84b4eeca06bd", "item_version": "6bff36f6-c60a-4c49-89a8-710bcece2371", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "91c031dc-bae8-419d-949e-84b4eeca06bd", "item_version": "e893fc28-a25c-4061-90ba-7e4223c435f3", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "91c031dc-bae8-419d-949e-84b4eeca06bd", "item_version": "f57bd46b-844a-4233-9330-8422094b0102", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "f3a1ece3-8d0f-4d28-b4d5-d5a0898abb3d", "item_version": "1162d4a9-fdfa-477b-98b4-eeddd791e72b", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "f3a1ece3-8d0f-4d28-b4d5-d5a0898abb3d", "item_version": "df594856-cf92-46c6-955b-c9f242c65551", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "f3a1ece3-8d0f-4d28-b4d5-d5a0898abb3d", "item_version": "e75bd925-a871-48eb-8867-36693a55df2f", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"},
+    {"item_id": "f3a1ece3-8d0f-4d28-b4d5-d5a0898abb3d", "item_version": "e997a1af-4ad6-42f9-838f-4dbe84ee439c", "title": "Senden Sie Ihr Ergebnis", "unit": "IE"}
+  ],
+  "item_response_localisations": []
+}

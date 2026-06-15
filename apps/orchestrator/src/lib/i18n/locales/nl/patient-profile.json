@@ -1,8 +1,4 @@
 {
-  "page": {
-    "title": "Patiëntprofiel",
-    "subtitle": "Demografie, identificatoren en geschiedenis"
-  },
   "header": {
     "insz": "INSZ",
     "noInsz": "Geen INSZ",
@@ -11,40 +7,24 @@
     "actions": "Acties"
   },
   "tabs": {
-    "overview": "Overzicht",
-    "careTeam": "Zorgteam",
-    "history": "Geschiedenis"
+    "measurements": "Metingen",
+    "lab_results": "Labresultaten",
+    "empty": {
+      "lab_results": {
+        "title": "Nog geen labresultaten gekoppeld",
+        "body": "Wordt geleverd door de HiX-koppeling."
+      }
+    }
   },
-  "demographics": {
-    "title": "Demografie",
-    "name": "Naam",
-    "birthDate": "Geboortedatum",
-    "gender": "Geslacht",
-    "primaryOrg": "Primaire organisatie",
-    "empty": "—"
+  "kebab": {
+    "history": "Geschiedenis",
+    "historyDialogTitle": "Geschiedenis"
   },
   "gender": {
     "male": "Man",
     "female": "Vrouw",
     "other": "Anders",
     "unknown": "Onbekend"
-  },
-  "identifiers": {
-    "title": "Identificatoren",
-    "empty": "Geen identificatoren",
-    "insz": "INSZ",
-    "system": "Systeem",
-    "value": "Waarde",
-    "use": "Gebruik"
-  },
-  "careTeam": {
-    "title": "Zorgteam",
-    "soon": "Komt binnenkort — wordt geleverd door care-teams-ui",
-    "current": "Huidige zorgteams",
-    "empty": "Nog geen zorgteam toegewezen",
-    "participants": "{{count}} deelnemer",
-    "participants_plural": "{{count}} deelnemers",
-    "loadFailed": "Zorgteams konden niet worden geladen"
   },
   "history": {
     "title": "Geschiedenis",
@@ -103,5 +83,80 @@
     "waiting": "Toegang wordt geactiveerd…",
     "error": "Aanvraag mislukt, probeer opnieuw",
     "auditNote": "Elke noodtoegang wordt gelogd en is zichtbaar voor de beheerder. Toegang vervalt automatisch."
+  },
+  "luscii": {
+    "title": "Luscii monitoring",
+    "notConfigured": "Luscii-koppeling is niet geconfigureerd in deze omgeving.",
+    "error": "Luscii-gegevens konden niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "unlink": "Ontkoppelen",
+    "noProgram": "Geen programma",
+    "window": "Laatste {{days}} dagen",
+    "link": {
+      "empty": "Deze patiënt is nog niet gekoppeld aan een Luscii-patiënt. Voer het Luscii patiënt-ID (UUID) in om te koppelen.",
+      "placeholder": "Luscii patiënt-ID (UUID)",
+      "inputLabel": "Luscii patiënt-ID",
+      "submit": "Koppelen",
+      "submitting": "Koppelen…",
+      "errorNotFound": "Luscii-patiënt niet gevonden of niet toegankelijk met onze token.",
+      "errorAlreadyLinked": "Dit Luscii-ID is al gekoppeld aan een andere patiënt.",
+      "errorInvalid": "Ongeldig Luscii patiënt-ID.",
+      "errorUpstream": "Koppelen is niet gelukt: Luscii is niet bereikbaar."
+    },
+    "plannedActions": {
+      "title": "Geplande acties",
+      "empty": "Geen geplande acties in deze periode.",
+      "completed": "Voltooid",
+      "open": "Open",
+      "dueBy": "Uiterlijk {{date}}"
+    },
+    "measurements": {
+      "title": "Overige metingen",
+      "unknownInstrument": "Onbekend instrument",
+      "noValues": "Geen waarden"
+    }
+  },
+  "charts": {
+    "programme": {
+      "label": "Programma",
+      "fallback": "Geen programma",
+      "transition_label": "Programmawissel"
+    },
+    "overview": {
+      "aria_label": "Overzicht van laatste metingen",
+      "column": {
+        "item": "Meting",
+        "value": "Laatste waarde",
+        "time": "Tijdstip"
+      }
+    },
+    "window": {
+      "label": "Venster",
+      "7d": "7 dagen",
+      "30d": "30 dagen",
+      "90d": "90 dagen",
+      "365d": "365 dagen"
+    },
+    "empty": {
+      "title": "Geen metingen in deze periode",
+      "body": "Er zijn geen metingen geregistreerd binnen het geselecteerde tijdvenster.",
+      "widen_cta": "Bekijk 90 dagen"
+    },
+    "planned_actions": {
+      "toggle_show": "Geplande acties ({{count}}) tonen",
+      "toggle_hide": "Geplande acties ({{count}}) verbergen"
+    },
+    "unknown_instrument": "Onbekend instrument",
+    "unknown_format": "Onbekend formaat",
+    "last_value": "Laatste meting",
+    "error": {
+      "title": "Luscii-gegevens konden niet worden geladen",
+      "body": "Probeer opnieuw, of vernieuw de pagina.",
+      "retry": "Opnieuw proberen"
+    },
+    "free_text": {
+      "show_more": "meer tonen",
+      "show_less": "minder tonen"
+    }
   }
 }

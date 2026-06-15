@@ -1,9 +1,15 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query'
 
 import { api } from '@/lib/api/client'
-import { apiError } from '@/lib/api/errors'
+import { apiError, readErrorBody } from '@/lib/api/errors'
 
-import type { CareTeamRow, PatientRow, PatientUpdatePayload } from './types'
+import type {
+  CareTeamRow,
+  LusciiLinkResult,
+  LusciiPatientData,
+  PatientRow,
+  PatientUpdatePayload,
+} from './types'
 
 export const PATIENTS_PATH = '/patients'
 
@@ -70,4 +76,48 @@ export function useSoftDeletePatient(): UseMutationResult<void, Error, string> {
       void queryClient.invalidateQueries({ queryKey: patientsListKeyPrefix })
     },
   })
+}
+
+async function lusciiError(message: string, response: Response): Promise<never> {
+  const body = await readErrorBody(response)
+  throw apiError(body?.message ?? message, response.status, body?.code, body?.details)
+}
+
+export async function fetchLusciiData(
+  patientId: string,
+  options?: { days?: number },
+): Promise<LusciiPatientData> {
+  const { data, response } = await api.GET('/patients/{patient_id}/luscii-data', {
+    params: {
+      path: { patient_id: patientId },
+      query: options?.days ? { days: options.days } : {},
+    },
+  })
+  if (!response.ok || !data) {
+    return lusciiError('Luscii data fetch failed', response)
+  }
+  return data
+}
+
+export async function linkLuscii(
+  patientId: string,
+  lusciiPatientId: string,
+): Promise<LusciiLinkResult> {
+  const { data, response } = await api.PUT('/patients/{patient_id}/luscii-link', {
+    params: { path: { patient_id: patientId } },
+    body: { luscii_patient_id: lusciiPatientId },
+  })
+  if (!response.ok || !data) {
+    return lusciiError('Luscii link failed', response)
+  }
+  return data
+}
+
+export async function unlinkLuscii(patientId: string): Promise<void> {
+  const { response } = await api.DELETE('/patients/{patient_id}/luscii-link', {
+    params: { path: { patient_id: patientId } },
+  })
+  if (!response.ok) {
+    return lusciiError('Luscii unlink failed', response)
+  }
 }
