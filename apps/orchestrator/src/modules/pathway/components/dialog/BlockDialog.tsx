@@ -11,7 +11,6 @@ import {
   type BlockConfig,
   type BlockDialogMode,
   type PathwayBlock,
-  type PathwayBlockBranch,
   type PathwayBlockType,
   type PathwayLane,
   type PathwayPhase,
@@ -44,7 +43,6 @@ type Props = {
    * `blockType.allowed_lane_kind_codes` (first match wins; no picker). */
   lanes: PathwayLane[]
   blocks: PathwayBlock[]
-  branches: PathwayBlockBranch[]
   currentPathwayId: string
   onSubmit: (draft: BlockDraft) => void
   onDelete?: (() => void) | undefined
@@ -62,7 +60,6 @@ export function BlockDialog({
   phases,
   lanes,
   blocks,
-  branches,
   currentPathwayId,
   onSubmit,
   onDelete,
@@ -95,7 +92,6 @@ export function BlockDialog({
           block={inspectorBlock}
           data={parsed.data}
           blocks={blocks}
-          branches={branches}
           currentPathwayId={currentPathwayId}
           onPatchConfig={(config) => setDraft({ ...draft, config })}
         />

@@ -125,14 +125,13 @@ function Inner({
 
   useBuilderKeyboard({ flush, dispatch })
 
-  const { phases, lanes, blocks, edges, timingValues, branches } = useMemo(
+  const { phases, lanes, blocks, edges, timingValues } = useMemo(
     () => ({
       phases: state.version.phases ?? [],
       lanes: state.version.lanes ?? [],
       blocks: state.version.blocks ?? [],
       edges: state.version.edges ?? [],
       timingValues: state.version.timing_values ?? [],
-      branches: state.version.branches ?? [],
     }),
     [state.version],
   )
@@ -233,9 +232,6 @@ function Inner({
   const selectedBlock = findSelectedBlock(state.selection, blocks)
   const selectedBlockType =
     catalogue.find((c) => selectedBlock && c.type === legacyBlockType(selectedBlock)) ?? null
-  const selectedBlockBranches = selectedBlock
-    ? branches.filter((b) => b.block_id === selectedBlock.id)
-    : []
   return (
     <div
       data-slot="pathway-builder-shell"
@@ -299,7 +295,6 @@ function Inner({
               phases={phases}
               lanes={lanes}
               blocks={blocks}
-              branches={[]}
               currentPathwayId={pathway.id}
               onSubmit={onSubmitAdd}
               onClose={() => setPendingAddType(null)}
@@ -316,7 +311,6 @@ function Inner({
               phases={phases}
               lanes={lanes}
               blocks={blocks}
-              branches={selectedBlockBranches}
               currentPathwayId={pathway.id}
               onSubmit={(draft) => onSubmitEdit(selectedBlock.id, draft)}
               onDelete={() => setPendingDeleteId(selectedBlock.id)}

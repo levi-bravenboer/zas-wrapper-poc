@@ -14,13 +14,11 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 import { DECISION_MODES, type ConfigForSemantics } from '../../../configSchemas'
-import type { PathwayBlockBranch } from '../../../types'
 
 import { InspectorField } from './InspectorField'
 
 type Props = {
   config: ConfigForSemantics<'decision'>
-  branches: PathwayBlockBranch[]
   onChange: (next: ConfigForSemantics<'decision'>) => void
 }
 
@@ -29,7 +27,7 @@ type Props = {
 // `decision_output(decision_id, output_key)`) + firing `mode`. It does
 // NOT name downstream blocks — wiring lives on the downstream block's
 // input_logic.
-export function DecisionInspector({ config, branches, onChange }: Props): ReactElement {
+export function DecisionInspector({ config, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const outputs = config.outputs ?? []
   const [pendingOutput, setPendingOutput] = useState('')
@@ -147,20 +145,6 @@ export function DecisionInspector({ config, branches, onChange }: Props): ReactE
         </Select>
       </InspectorField>
 
-      {branches.length > 0 && (
-        <InspectorField label={t('inspector.decision.branches')}>
-          <ul className="flex flex-col gap-1">
-            {branches.map((b) => (
-              <li
-                key={b.id}
-                className="flex items-center justify-between rounded-md border border-input bg-muted/30 px-3 py-2 text-sm"
-              >
-                <span>{b.label}</span>
-              </li>
-            ))}
-          </ul>
-        </InspectorField>
-      )}
     </div>
   )
 }

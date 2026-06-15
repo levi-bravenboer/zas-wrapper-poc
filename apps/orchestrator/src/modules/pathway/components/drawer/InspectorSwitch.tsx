@@ -2,12 +2,7 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CONFIG_SCHEMAS, type ConfigForSemantics } from '../../configSchemas'
-import type {
-  BlockConfig,
-  PathwayBlock,
-  PathwayBlockBranch,
-  PathwayBlockType,
-} from '../../types'
+import type { BlockConfig, PathwayBlock, PathwayBlockType } from '../../types'
 
 import { AppointmentInspector } from './inspectors/AppointmentInspector'
 import { DecisionInspector } from './inspectors/DecisionInspector'
@@ -27,7 +22,6 @@ export type InspectorSwitchProps = {
   block: PathwayBlock
   data: ConfigForSemantics<PathwayBlockType['semantics']>
   blocks: PathwayBlock[]
-  branches: PathwayBlockBranch[]
   currentPathwayId: string
   onPatchConfig: (next: BlockConfig) => void
 }
@@ -40,7 +34,6 @@ export function InspectorSwitch({
   block,
   data,
   blocks,
-  branches,
   currentPathwayId,
   onPatchConfig,
 }: InspectorSwitchProps): ReactElement | null {
@@ -82,7 +75,6 @@ export function InspectorSwitch({
       return (
         <DecisionInspector
           config={data as ConfigForSemantics<'decision'>}
-          branches={branches}
           onChange={onPatchConfig}
         />
       )
