@@ -57,7 +57,11 @@ async def seed_luscii_demo(session: AsyncSession) -> None:
         logger.info("seed_luscii_demo: no patients found — run seed_patients first")
         return
 
-    for patient, (luscii_id, _seed) in zip(patients, FIXTURE_PATIENTS, strict=False):
+    # The patient query already limits to `len(FIXTURE_PATIENTS)`; strict=True
+    # surfaces a future fixture-vs-patient length drift instead of silently
+    # skipping the tail of either list.
+    pairs = list(zip(patients, FIXTURE_PATIENTS[: len(patients)], strict=True))
+    for patient, (luscii_id, _seed) in pairs:
         await _link_patient(session, patient, luscii_id)
 
     await _seed_localisations(session)

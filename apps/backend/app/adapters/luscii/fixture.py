@@ -1,3 +1,8 @@
+# POC ONLY — local-development Luscii client returning canned data so the
+# chart UI demos without a real bearer token. Replace with the real-token
+# `LusciiHttpClient` (already in production code path) at MVP. The factory
+# in `adapters/deps.py` engages this client only when no token is set AND
+# `BACKEND_LUSCII_FIXTURES=true`.
 """Local-development Luscii client returning canned data.
 
 Toggled by `BACKEND_LUSCII_FIXTURES=true` when no API token is configured.
@@ -241,10 +246,18 @@ def _make_measurement(
     )
 
 
-# Build all snapshots at import time so request handlers stay sync-fast.
-_SNAPSHOTS: Final[dict[str, _Snapshot]] = {
-    pid: _build_snapshot(pid, seed) for pid, seed in FIXTURE_PATIENTS
-}
+def _snapshots() -> dict[str, _Snapshot]:
+    """Build every fixture patient's snapshot relative to NOW.
+
+    Generated per-call so the 30-day window stays anchored to the current
+    request time — a backend that's been running for a week still surfaces
+    "today" measurements. Cost: ~5ms for 3 patients × ~120 rows each. The
+    rng seed per patient keeps the resulting series deterministic between
+    calls within the same second; the time anchor naturally shifts the
+    window as wall-clock advances.
+    """
+
+    return {pid: _build_snapshot(pid, seed) for pid, seed in FIXTURE_PATIENTS}
 
 
 class LusciiFixtureClient:
@@ -255,7 +268,7 @@ class LusciiFixtureClient:
         return None
 
     async def get_patient(self, luscii_patient_id: str) -> LusciiPatientDetails:
-        snap = _SNAPSHOTS.get(luscii_patient_id)
+        snap = _snapshots().get(luscii_patient_id)
         if snap is None:
             raise LusciiPatientNotFoundError(luscii_patient_id, status_code=404)
         return snap.details
@@ -263,7 +276,7 @@ class LusciiFixtureClient:
     async def get_planned_actions(
         self, luscii_patient_id: str, start_date: date, end_date: date
     ) -> list[LusciiPlannedAction]:
-        snap = _SNAPSHOTS.get(luscii_patient_id)
+        snap = _snapshots().get(luscii_patient_id)
         if snap is None:
             raise LusciiPatientNotFoundError(luscii_patient_id, status_code=404)
         return list(_within_window(snap.planned_actions, start_date, end_date))
@@ -275,14 +288,14 @@ class LusciiFixtureClient:
         # patient's window.
         return [
             m
-            for snap in _SNAPSHOTS.values()
+            for snap in _snapshots().values()
             for m in _within_window(snap.measurements, start_date, end_date)
         ]
 
     async def get_instrument_localisations(
         self, *, expected_total: int | None = None
     ) -> list[LusciiInstrumentLocalisation]:
-        del expected_total
+        del expected_total  # arg kept for Protocol parity, unused in fixture.
         return [
             LusciiInstrumentLocalisation(
                 instrument_id=iid, instrument_version=ver, locale="nl", name=name
@@ -326,8 +339,17 @@ def _within_window(
     end_dt = datetime.combine(end_date, datetime.max.time(), tzinfo=UTC)
     in_window: list = []
     for item in items:
-        ts = getattr(item, "processed_at", None) or getattr(item, "created_at", None) or getattr(
-            item, "not_before", None
+        ts = next(
+            (
+                candidate
+                for candidate in (
+                    getattr(item, "processed_at", None),
+                    getattr(item, "created_at", None),
+                    getattr(item, "not_before", None),
+                )
+                if candidate is not None
+            ),
+            None,
         )
         if ts is None or start_dt <= ts <= end_dt:
             in_window.append(item)
