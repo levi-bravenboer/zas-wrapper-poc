@@ -34,7 +34,6 @@ import { getBlockDimensions } from '../../utils/blockDimensions'
 import { BackgroundLayers } from './BackgroundLayers'
 import { SmoothstepEdge } from './edges/SmoothstepEdge'
 import { EmptyCanvasCTA } from './EmptyCanvasCTA'
-import { type LaneDropState } from './LaneRow'
 import { NavigatorPanel } from './NavigatorPanel'
 import { type BlockFlowNode } from './nodes/BlockNode'
 import { BlockNodeRouter } from './nodes/BlockNodeRouter'
@@ -126,12 +125,6 @@ export function BuilderCanvasFrame({
     dispatch,
   })
 
-  const laneDropStates = useMemo<Record<string, LaneDropState>>(() => {
-    const out: Record<string, LaneDropState> = {}
-    for (const lane of lanesOnCanvas) out[lane.id] = 'idle'
-    return out
-  }, [lanesOnCanvas])
-
   const onNodesChange = useCallback(
     (changes: NodeChange<BlockFlowNode>[]) => {
       setNodes((cur) => applyNodeChanges(changes, cur))
@@ -209,7 +202,6 @@ export function BuilderCanvasFrame({
             lanes={lanesOnCanvas}
             blocks={blocks}
             geometry={geometry}
-            laneDropStates={laneDropStates}
             onResizePhase={(phaseId, width) => dispatch({ type: 'resize-phase', phaseId, width })}
             onResizeLane={(laneId, height) => dispatch({ type: 'resize-lane', laneId, height })}
           />
