@@ -23,7 +23,7 @@ Entry points wire the actor slot:
 from __future__ import annotations
 
 from typing import Any, Final
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import event, inspect as sa_inspect
 from sqlalchemy.orm import Session
@@ -36,8 +36,19 @@ SESSION_ACTOR_KEY: Final[str] = "actor"
 
 _ALWAYS_EXCLUDED: Final[frozenset[str]] = frozenset({"updated_at"})
 
+_HOOKS_INSTALLED = False
+
 
 def install_audit_hooks() -> None:
+    # The listener attaches to the global `Session` class, so it must register
+    # exactly once per process — otherwise (e.g. multiple app constructions in
+    # tests) it stacks and emits duplicate AuditEvent rows. Stamping is
+    # idempotent, but capture is not.
+    global _HOOKS_INSTALLED
+    if _HOOKS_INSTALLED:
+        return
+    _HOOKS_INSTALLED = True
+
     @event.listens_for(Session, "before_flush")
     def _audit_before_flush(  # pragma: no cover - exercised via integration paths
         session: Session,
@@ -90,6 +101,11 @@ def _capture(session: Session, actor: Any) -> None:
         return actor_tenant_id
 
     def _new(obj: Entity, action: AuditAction, changes: dict[str, Any] | None) -> AuditEvent:
+        # `id` carries a client-side `default=uuid4` that SQLAlchemy only
+        # applies during the INSERT (after this hook). Materialise it now so a
+        # freshly-created row's `resource_id` is the same UUID it persists with.
+        if obj.id is None:
+            obj.id = uuid4()
         return AuditEvent(
             actor_type=actor_type,
             actor_id=actor_id,
