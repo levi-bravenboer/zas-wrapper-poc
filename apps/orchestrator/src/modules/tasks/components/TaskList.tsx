@@ -8,13 +8,13 @@ import { RowSkeleton } from '@/components/states/Skeleton'
 
 import { dayGroupLabel } from '../dueLabel'
 import { useTasksQuery } from '../hooks'
-import type { TaskItem } from '../types'
+import type { Task } from '../types'
 import { TaskRow } from './TaskRow'
 
 type DayGroup = {
   key: string
   label: string
-  items: TaskItem[]
+  items: Task[]
 }
 
 function calendarDayKey(iso: string): string {
@@ -22,11 +22,13 @@ function calendarDayKey(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function groupByDay(t: ReturnType<typeof useTranslation>['t'], items: TaskItem[]): DayGroup[] {
+function groupByDay(t: ReturnType<typeof useTranslation>['t'], items: Task[]): DayGroup[] {
   const groups: DayGroup[] = []
   for (const item of items) {
-    const key = calendarDayKey(item.due_at)
-    const label = dayGroupLabel(t, item.due_at)
+    const key = item.due_at ? calendarDayKey(item.due_at) : 'none'
+    const label = item.due_at
+      ? dayGroupLabel(t, item.due_at)
+      : t('tasks:group.none', { defaultValue: 'Geen datum' })
     const last = groups[groups.length - 1]
     if (last && last.key === key) last.items.push(item)
     else groups.push({ key, label, items: [item] })
