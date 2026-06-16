@@ -6,7 +6,6 @@ import { TaskList } from '@/modules/tasks/components/TaskList'
 
 export const Route = createFileRoute('/_auth/tasks')({
   component: TasksLayoutRoute,
-  staticData: { breadcrumb: 'Taken' },
 })
 
 /**

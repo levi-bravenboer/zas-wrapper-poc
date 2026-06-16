@@ -18,12 +18,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.settings import get_settings
 from app.services.access.identity.kratos_client import KratosClient
+from app.services.access.permissions.keto_client import KetoClient
+from app.services.access.sync.reconciler import reconcile_all
 from app.services.luscii.catalogue_snapshot import import_catalogue_snapshots_if_empty
 from scripts._db import run_script
 from scripts.import_identities_kratos import import_identities
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_access_entitlements import seed_access_entitlements
+from scripts.seed_appointments import seed_appointments
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
 from scripts.seed_luscii_demo import seed_luscii_demo
 from scripts.seed_patient_users import seed_patient_users
@@ -50,6 +53,10 @@ SEED_STEPS: list[SeedStep] = [
     seed_patients,
     seed_patient_users,
     seed_care_teams,
+    # demo appointments → caregiver tasks (caregiver is each appointment's
+    # `lead` participant, the link `/tasks` keys off). After care_teams so
+    # the same patients carry both a team and tasks.
+    seed_appointments,
     seed_lane_kinds,
     seed_rugrevalidatie,
     # access-entitlements demo data (campuses, specialisms, carepath links,
@@ -84,6 +91,25 @@ async def _import_kratos_identities(session: AsyncSession) -> None:
         )
 
 
+async def _reconcile_authz_tuples(session: AsyncSession) -> None:
+    """Converge Keto to the tuple set derived from the seeded rows.
+
+    Without this, `AUTHZ_KETO_ENABLED` deployments seed care-team / org
+    relations in Postgres but Keto stays empty, so caregivers get 404 on
+    every patient they can otherwise see. Skips with a warning when Keto is
+    unreachable — run `python -m scripts.reconcile_authz_tuples` once it is up.
+    """
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http:
+            await reconcile_all(session, KetoClient(get_settings(), http), log_drift=False)
+    except httpx.TransportError:
+        logger.warning(
+            "keto unreachable — authz reconcile skipped; "
+            "run `python -m scripts.reconcile_authz_tuples` once keto is up"
+        )
+
+
 async def _seed(session: AsyncSession) -> None:
     for step in SEED_STEPS:
         await step(session)
@@ -93,6 +119,9 @@ async def _seed(session: AsyncSession) -> None:
     # clobbered); skips with a warning when snapshots are absent.
     await import_catalogue_snapshots_if_empty(session)
     await _import_kratos_identities(session)
+    # Keto tuples last: derived from the rows seeded above, so the access
+    # plane matches Postgres for `AUTHZ_KETO_ENABLED` deployments.
+    await _reconcile_authz_tuples(session)
 
 
 def main() -> None:

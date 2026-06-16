@@ -29,17 +29,27 @@ from app.adapters.luscii.fixture import (
     RESPONSE_LOCALISATIONS_NL,
 )
 from app.core.identifiers import LUSCII_PATIENT_SYSTEM
+from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
     LusciiInstrumentLocalisationRow,
     LusciiItemResponseLocalisationRow,
 )
 from app.db.models.patient import Patient, PatientIdentifier
+from app.repositories.tenant import TenantRepository
+from app.repositories.user.user_repository import UserRepository
+from app.schemas.auth.auth import SessionUser
 from scripts._db import run_script
+from scripts.seed_tenant import ZAS_TENANT_SLUG
+from scripts.seed_users import ADMIN_EMAIL
 
 logger = logging.getLogger(__name__)
 
 FIXTURE_LOCALE = "nl"
+
+
+class _SeedUserMissingError(RuntimeError):
+    """Raised when `seed_luscii_demo` runs before the admin user exists."""
 
 
 async def seed_luscii_demo(session: AsyncSession) -> None:
@@ -57,15 +67,37 @@ async def seed_luscii_demo(session: AsyncSession) -> None:
         logger.info("seed_luscii_demo: no patients found — run seed_patients first")
         return
 
-    # The patient query already limits to `len(FIXTURE_PATIENTS)`; strict=True
-    # surfaces a future fixture-vs-patient length drift instead of silently
-    # skipping the tail of either list.
-    pairs = list(zip(patients, FIXTURE_PATIENTS[: len(patients)], strict=True))
-    for patient, (luscii_id, _seed) in pairs:
-        await _link_patient(session, patient, luscii_id)
+    # `PatientIdentifier` is auditable, so an actor must be set for the hook to
+    # stamp `created_by` — set it here instead of relying on a sibling seed
+    # step leaving one behind (which breaks a standalone run).
+    tenant = await TenantRepository(session).get_by_slug(ZAS_TENANT_SLUG)
+    admin = await UserRepository(session).get_by_email(tenant.id, ADMIN_EMAIL) if tenant else None
+    if admin is None:
+        raise _SeedUserMissingError("admin missing — run seed_users first")
 
-    await _seed_localisations(session)
-    await session.flush()
+    previous_actor = session.info.get(SESSION_ACTOR_KEY)
+    session.info[SESSION_ACTOR_KEY] = SessionUser(
+        id=admin.id,
+        email=admin.email,
+        display_name=admin.display_name,
+        tenant_id=admin.tenant_id,
+        role=admin.role,
+    )
+    try:
+        # The patient query already limits to `len(FIXTURE_PATIENTS)`; strict=True
+        # surfaces a future fixture-vs-patient length drift instead of silently
+        # skipping the tail of either list.
+        pairs = list(zip(patients, FIXTURE_PATIENTS[: len(patients)], strict=True))
+        for patient, (luscii_id, _seed) in pairs:
+            await _link_patient(session, patient, luscii_id)
+
+        await _seed_localisations(session)
+        await session.flush()
+    finally:
+        if previous_actor is None:
+            session.info.pop(SESSION_ACTOR_KEY, None)
+        else:
+            session.info[SESSION_ACTOR_KEY] = previous_actor
 
 
 async def _link_patient(session: AsyncSession, patient: Patient, luscii_id: str) -> None:

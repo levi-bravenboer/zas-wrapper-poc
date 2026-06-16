@@ -12235,6 +12235,11 @@
             ],
             "title": "Priority"
           },
+          "opened": {
+            "type": "boolean",
+            "title": "Opened",
+            "default": false
+          },
           "payload": {
             "$ref": "#/components/schemas/AppointmentPayload"
           }

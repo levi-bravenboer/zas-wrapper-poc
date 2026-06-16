@@ -26,12 +26,14 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
   const { t } = useTranslation(['tasks'])
   const patient = item.payload.patient
   const kind = item.payload.kind
+  const unread = !item.opened
 
   return (
     <Link
       to="/tasks/$taskId"
       params={{ taskId: item.id }}
       data-active={selected ? 'true' : undefined}
+      data-unread={unread ? 'true' : undefined}
       className={cn(
         'relative flex w-full items-center gap-2.5 border-b border-border/60 px-3 py-2.5 text-left transition-colors hover:bg-surface-1',
         selected &&
@@ -41,13 +43,25 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
       <KindTile kind={kind} size="sm" />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[13px] font-medium text-foreground">
+        <span
+          className={cn(
+            'truncate text-[13px] text-foreground',
+            unread ? 'font-semibold' : 'font-medium',
+          )}
+        >
           {patient.family_name}, {patient.given_name}
         </span>
         <span className="truncate text-[11px] tabular-nums text-foreground-muted">
           {dueLabel(t, item.due_at)}
         </span>
       </div>
+
+      {unread && (
+        <>
+          <span className="sr-only">{t('row.unread', { defaultValue: 'Ongelezen' })}</span>
+          <span aria-hidden className="size-2 shrink-0 rounded-full bg-primary" />
+        </>
+      )}
     </Link>
   )
 }

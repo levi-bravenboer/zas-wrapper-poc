@@ -37,7 +37,12 @@ function isoAt(daysFromNow: number, hour = 10): string {
   return d.toISOString()
 }
 
-function makeTask(id: string, daysFromNow: number, family = 'Janssens'): TaskItem {
+function makeTask(
+  id: string,
+  daysFromNow: number,
+  family = 'Janssens',
+  opened = false,
+): TaskItem {
   return {
     id,
     source: 'appointment',
@@ -46,6 +51,7 @@ function makeTask(id: string, daysFromNow: number, family = 'Janssens'): TaskIte
     title: 'Afspraak',
     kind: 'consultation',
     priority: null,
+    opened,
     payload: {
       id,
       patient: {

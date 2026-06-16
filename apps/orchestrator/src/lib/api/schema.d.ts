@@ -4583,6 +4583,11 @@ export interface components {
             kind?: string | null;
             /** Priority */
             priority?: ("low" | "normal" | "high" | "urgent") | null;
+            /**
+             * Opened
+             * @default false
+             */
+            opened: boolean;
             payload: components["schemas"]["AppointmentPayload"];
         };
         /** TreatmentBlockOut */
