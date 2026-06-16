@@ -32,6 +32,22 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
+    async def list_by_patient(
+        self,
+        patient_id: UUID,
+        tenant_id: UUID,
+    ) -> list[PathwayEnrollment]:
+        stmt = (
+            select(PathwayEnrollment)
+            .where(
+                PathwayEnrollment.patient_id == patient_id,
+                PathwayEnrollment.tenant_id == tenant_id,
+                PathwayEnrollment.deleted_at.is_(None),
+            )
+            .order_by(PathwayEnrollment.created_at.asc())
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
+
     async def list_executions(self, enrollment_id: UUID) -> list[PathwayBlockExecution]:
         stmt = (
             select(PathwayBlockExecution)

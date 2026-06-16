@@ -295,6 +295,36 @@ async def test_create_enrollment_happy_path(
     assert body["pathway_version_id"] == str(world["version_id"])
 
 
+async def test_list_enrollments_by_patient(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    response = await async_client.get(
+        "/enrollments",
+        params={"patient_id": str(world["patient_id"])},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["patient_id"] == str(world["patient_id"])
+    assert body[0]["pathway_id"] == str(world["pathway_id"])
+    assert body[0]["pathway_version_id"] == str(world["version_id"])
+    assert len(body[0]["executions"]) >= 1
+
+
 async def test_get_unknown_enrollment_returns_404(
     async_client: AsyncClient,
     seeded_zas_users: list[User],

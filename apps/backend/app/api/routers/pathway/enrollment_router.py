@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import select
 
 from app.core.enums.user import Role
@@ -159,6 +159,40 @@ async def create_enrollment(
     await require_carepath_access(pathway_id, session, settings, keto, current_user)
     enrollment = await service.create(payload, tenant_id=current_user.tenant_id)
     return await service.get_view(enrollment.id, tenant_id=current_user.tenant_id)
+
+
+@router.get(
+    "",
+    operation_id="list_enrollments_by_patient",
+    response_model=list[EnrollmentResponse],
+    responses=_ERRORS_404,
+)
+async def list_enrollments_by_patient(
+    patient_id: UUID = Query(...),  # noqa: B008
+    *,
+    service: EnrollmentServiceDep,
+    patient_service: PatientServiceDep,
+    care_team_service: CareTeamServiceDep,
+    session: SessionDep,
+    settings: SettingsDep,
+    keto: KetoClientDep,
+    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+) -> list[EnrollmentResponse]:
+    # AUTH-HARDEN (slot #3 §5): care-team `view` scope on the patient.
+    # Query-keyed, so the route resolves the patient relation inline
+    # (mirrors `create_enrollment`). No per-pathway carepath gate here —
+    # the list spans every pathway the patient is enrolled in.
+    await resolve_patient_with_relation(
+        patient_id,
+        patient_service,
+        care_team_service,
+        session,
+        settings,
+        keto,
+        current_user,
+        relation="view",
+    )
+    return await service.list_views_by_patient(patient_id, tenant_id=current_user.tenant_id)
 
 
 @router.get(

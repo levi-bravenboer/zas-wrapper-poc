@@ -75,6 +75,7 @@ class DeferredFieldValueOut(BaseModel):
 class EnrollmentResponse(BaseModel):
     id: UUID
     patient_id: UUID
+    pathway_id: UUID
     pathway_version_id: UUID
     anchor_date: date
     state: EnrollmentState

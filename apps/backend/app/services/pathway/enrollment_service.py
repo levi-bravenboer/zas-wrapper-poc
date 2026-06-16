@@ -192,11 +192,36 @@ class EnrollmentService:
         reach across into `service._repo` to assemble the view.
         """
         enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        return await self._build_view(enrollment)
+
+    async def list_views_by_patient(
+        self,
+        patient_id: UUID,
+        *,
+        tenant_id: UUID,
+    ) -> list[EnrollmentResponse]:
+        """Build the runtime view for every enrollment a patient has.
+
+        Care-team scope is enforced at the router seam; this method
+        assumes the caller is already authorised to view the patient.
+        """
+        enrollments = await self._repo.list_by_patient(patient_id, tenant_id)
+        return [await self._build_view(enrollment) for enrollment in enrollments]
+
+    async def _build_view(self, enrollment: PathwayEnrollment) -> EnrollmentResponse:
         executions = await self._repo.list_executions(enrollment.id)
         deferred = await self._repo.list_deferred_values(enrollment.id)
+        pathway_id = await self._repo._session.scalar(  # noqa: SLF001
+            select(PathwayVersion.pathway_id).where(
+                PathwayVersion.id == enrollment.pathway_version_id,
+            )
+        )
+        if pathway_id is None:
+            raise EnrollmentNotFoundError()
         return EnrollmentResponse(
             id=enrollment.id,
             patient_id=enrollment.patient_id,
+            pathway_id=pathway_id,
             pathway_version_id=enrollment.pathway_version_id,
             anchor_date=enrollment.anchor_date,
             state=enrollment.state,  # type: ignore[arg-type]

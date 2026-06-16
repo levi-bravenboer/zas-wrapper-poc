@@ -4166,14 +4166,14 @@
         "summary": "Create Enrollment",
         "operationId": "create_enrollment",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EnrollmentCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -4187,21 +4187,76 @@
             }
           },
           "404": {
-            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
-            }
+            },
+            "description": "Not Found"
           },
           "422": {
-            "description": "Unprocessable Content",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "List Enrollments By Patient",
+        "operationId": "list_enrollments_by_patient",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EnrollmentResponse"
+                  },
+                  "title": "Response List Enrollments By Patient"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6101,6 +6156,11 @@
             "format": "uuid",
             "title": "Patient Id"
           },
+          "pathway_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Id"
+          },
           "pathway_version_id": {
             "type": "string",
             "format": "uuid",
@@ -6140,6 +6200,7 @@
         "required": [
           "id",
           "patient_id",
+          "pathway_id",
           "pathway_version_id",
           "anchor_date",
           "state"
