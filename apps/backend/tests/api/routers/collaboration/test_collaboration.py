@@ -10,6 +10,7 @@ from app.db.models.user import User
 from app.repositories.task import TaskRepository
 from app.schemas.auth.auth import SessionUser
 from app.services.task.task_service import TaskService
+from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
 from tests.fixtures.appointment_factory import make_appointment
 
@@ -79,6 +80,36 @@ async def test_note_on_appointment_and_patient_aggregate(
     assert agg.status_code == 200, agg.text
     owners = {n["owner_type"] for n in agg.json()}
     assert {"appointment", "task"} <= owners
+
+
+async def test_care_team_caregiver_can_author_without_being_participant(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    seeded_zas_users: list[User],
+    seeded_zas_patients: list[Patient],
+) -> None:
+    # Caregiver is a care-team member of the patient but NOT an appointment
+    # participant — authorship is granted via the patient-access fallback in
+    # AppointmentAccessDep (resolve_patient_with_relation), not participation.
+    await seed_care_teams(db_session)
+    await db_session.commit()
+    admin = _user(seeded_zas_users, ADMIN_EMAIL)
+    patient = seeded_zas_patients[0]
+    appt = await make_appointment(
+        db_session,
+        tenant_id=admin.tenant_id,
+        patient=patient,
+        actor=admin,
+        participants=[(admin, AppointmentParticipantRole.LEAD)],
+    )
+    await db_session.commit()
+
+    await _login(async_client, CAREGIVER_EMAIL)
+    r = await async_client.post(f"/appointments/{appt.id}/notes", json={"body": "Via zorgteam"})
+    assert r.status_code == 201, r.text
+    assert r.json()["author_user_id"] == str(
+        _user(seeded_zas_users, CAREGIVER_EMAIL).id
+    )
 
 
 async def test_task_without_patient_rejects_note(
