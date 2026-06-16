@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from pathlib import PurePosixPath
 from typing import Final
 from uuid import UUID, uuid4
 
@@ -78,7 +79,10 @@ class AttachmentService:
     ) -> AttachmentUploadResponse:
         if size > MAX_SIZE_BYTES:
             raise AttachmentTooLargeError()
-        storage_key = f"{owner_type.value}/{owner_id}/{uuid4()}/{filename}"
+        # Strip any path components from the user-supplied filename so it cannot
+        # alter the key prefix; keep the original name on the metadata row.
+        safe_name = PurePosixPath(filename.replace("\\", "/")).name or "bestand"
+        storage_key = f"{owner_type.value}/{owner_id}/{uuid4()}/{safe_name}"
         att = await self._repo.add(
             owner_type=owner_type,
             owner_id=owner_id,
@@ -94,18 +98,37 @@ class AttachmentService:
             attachment=_to_read(att, uploader.display_name), upload_url=upload_url
         )
 
-    async def download_url(
-        self, *, attachment_id: UUID, tenant_id: UUID
-    ) -> AttachmentDownload:
+    async def _get_owned(
+        self, *, owner_type: OwnerType, owner_id: UUID, attachment_id: UUID, tenant_id: UUID
+    ) -> Attachment:
         att = await self._repo.get(attachment_id=attachment_id, tenant_id=tenant_id)
-        if att is None:
+        # Verify the attachment belongs to the route's owner — the route guards
+        # access to THAT owner, so an attachment of a different owner (even in
+        # the same tenant) must not be reachable. Mismatch hides as not-found.
+        if att is None or att.owner_type != owner_type or att.owner_id != owner_id:
             raise AttachmentNotFoundError()
+        return att
+
+    async def download_url(
+        self, *, owner_type: OwnerType, owner_id: UUID, attachment_id: UUID, tenant_id: UUID
+    ) -> AttachmentDownload:
+        att = await self._get_owned(
+            owner_type=owner_type, owner_id=owner_id, attachment_id=attachment_id, tenant_id=tenant_id
+        )
         return AttachmentDownload(url=self._storage.presign_get(att.storage_key))
 
-    async def delete(self, *, attachment_id: UUID, tenant_id: UUID, caller_id: UUID) -> None:
-        att = await self._repo.get(attachment_id=attachment_id, tenant_id=tenant_id)
-        if att is None:
-            raise AttachmentNotFoundError()
+    async def delete(
+        self,
+        *,
+        owner_type: OwnerType,
+        owner_id: UUID,
+        attachment_id: UUID,
+        tenant_id: UUID,
+        caller_id: UUID,
+    ) -> None:
+        att = await self._get_owned(
+            owner_type=owner_type, owner_id=owner_id, attachment_id=attachment_id, tenant_id=tenant_id
+        )
         if att.uploaded_by != caller_id:
             raise AttachmentForbiddenError()
         await self._repo.soft_delete(att)

@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, status
 
 from app.core.enums.collaboration import OwnerType
 from app.core.enums.user import Role
+from app.db.models.task import Task
 from app.schemas.auth.auth import SessionUser
 from app.schemas.collaboration.attachment import (
     AttachmentCreate,
@@ -121,8 +122,12 @@ async def appointment_attachment_url(
     service: AttachmentServiceDep,
     current_user: Annotated[SessionUser, _GUARD],
 ) -> AttachmentDownload:
-    del appointment
-    return await service.download_url(attachment_id=attachment_id, tenant_id=current_user.tenant_id)
+    return await service.download_url(
+        owner_type=OwnerType.APPOINTMENT,
+        owner_id=appointment.id,
+        attachment_id=attachment_id,
+        tenant_id=current_user.tenant_id,
+    )
 
 
 @appointment_collab_router.delete(
@@ -135,16 +140,19 @@ async def delete_appointment_attachment(
     service: AttachmentServiceDep,
     current_user: Annotated[SessionUser, _GUARD],
 ) -> None:
-    del appointment
     await service.delete(
-        attachment_id=attachment_id, tenant_id=current_user.tenant_id, caller_id=current_user.id
+        owner_type=OwnerType.APPOINTMENT,
+        owner_id=appointment.id,
+        attachment_id=attachment_id,
+        tenant_id=current_user.tenant_id,
+        caller_id=current_user.id,
     )
 
 
 # ── task ─────────────────────────────────────────────────────────────────
 
 
-def _task_patient_id(task) -> UUID:  # type: ignore[no-untyped-def]
+def _task_patient_id(task: Task) -> UUID:
     if task.patient_id is None:
         raise OwnerHasNoPatientError()
     return task.patient_id
@@ -221,8 +229,12 @@ async def task_attachment_url(
     service: AttachmentServiceDep,
     current_user: Annotated[SessionUser, _GUARD],
 ) -> AttachmentDownload:
-    del task
-    return await service.download_url(attachment_id=attachment_id, tenant_id=current_user.tenant_id)
+    return await service.download_url(
+        owner_type=OwnerType.TASK,
+        owner_id=task.id,
+        attachment_id=attachment_id,
+        tenant_id=current_user.tenant_id,
+    )
 
 
 @task_collab_router.delete(
@@ -234,9 +246,12 @@ async def delete_task_attachment(
     service: AttachmentServiceDep,
     current_user: Annotated[SessionUser, _GUARD],
 ) -> None:
-    del task
     await service.delete(
-        attachment_id=attachment_id, tenant_id=current_user.tenant_id, caller_id=current_user.id
+        owner_type=OwnerType.TASK,
+        owner_id=task.id,
+        attachment_id=attachment_id,
+        tenant_id=current_user.tenant_id,
+        caller_id=current_user.id,
     )
 
 
@@ -309,7 +324,12 @@ async def patient_attachment_url(
     attachment_id: UUID,
     service: AttachmentServiceDep,
 ) -> AttachmentDownload:
-    return await service.download_url(attachment_id=attachment_id, tenant_id=patient.tenant_id)
+    return await service.download_url(
+        owner_type=OwnerType.PATIENT,
+        owner_id=patient.id,
+        attachment_id=attachment_id,
+        tenant_id=patient.tenant_id,
+    )
 
 
 @patient_collab_router.delete(
@@ -321,7 +341,10 @@ async def delete_patient_attachment(
     service: AttachmentServiceDep,
     current_user: Annotated[SessionUser, _GUARD],
 ) -> None:
-    del patient
     await service.delete(
-        attachment_id=attachment_id, tenant_id=current_user.tenant_id, caller_id=current_user.id
+        owner_type=OwnerType.PATIENT,
+        owner_id=patient.id,
+        attachment_id=attachment_id,
+        tenant_id=current_user.tenant_id,
+        caller_id=current_user.id,
     )
