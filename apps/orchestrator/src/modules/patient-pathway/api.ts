@@ -1,6 +1,6 @@
 import { api } from '@/lib/api/client'
 
-import type { Enrollment, EnrollmentCreate } from './types'
+import type { BlockExecution, Enrollment, EnrollmentCreate } from './types'
 
 export type EnrollmentApiError = Error & {
   status: number
@@ -37,4 +37,47 @@ export async function createEnrollment(payload: EnrollmentCreate): Promise<Enrol
   if (body?.code) err.code = body.code
   if (body?.details?.missing) err.missing = body.details.missing
   throw err
+}
+
+async function startExecution(enrollmentId: string, executionId: string): Promise<void> {
+  const result = await api.POST('/enrollments/{enrollment_id}/executions/{execution_id}:start', {
+    params: { path: { enrollment_id: enrollmentId, execution_id: executionId } },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to start step', result.response.status)
+  }
+}
+
+async function completeExecution(
+  enrollmentId: string,
+  executionId: string,
+  result: Record<string, unknown> | null,
+): Promise<BlockExecution> {
+  const response = await api.POST(
+    '/enrollments/{enrollment_id}/executions/{execution_id}:complete',
+    {
+      params: { path: { enrollment_id: enrollmentId, execution_id: executionId } },
+      body: { result },
+    },
+  )
+  if (!response.data) {
+    throw enrollmentError('Failed to complete step', response.response.status)
+  }
+  return response.data
+}
+
+/**
+ * Drives a step from eligible/active to completed. The runtime requires an
+ * `active` state before completion (eligible → active → completed), so this
+ * starts the execution first when it has not been started yet.
+ */
+export async function completeStep(
+  enrollmentId: string,
+  execution: BlockExecution,
+  result: Record<string, unknown> | null,
+): Promise<BlockExecution> {
+  if (execution.state === 'eligible') {
+    await startExecution(enrollmentId, execution.id)
+  }
+  return completeExecution(enrollmentId, execution.id, result)
 }

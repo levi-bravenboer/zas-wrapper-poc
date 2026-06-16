@@ -44,6 +44,11 @@
     "scheduledFor": "Gepland op {{date}}",
     "completedOn": "Afgerond op {{date}}",
     "unknownBlock": "Onbekende stap",
+    "done": "Gedaan",
+    "doneToast": {
+      "success": "Stap afgerond",
+      "error": "Stap afronden mislukt"
+    },
     "stateBadge": {
       "active": "Bezig",
       "eligible": "Beschikbaar",

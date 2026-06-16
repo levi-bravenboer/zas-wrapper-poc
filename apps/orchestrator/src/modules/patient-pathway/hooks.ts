@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { createEnrollment, listPatientEnrollments } from './api'
+import { completeStep, createEnrollment, listPatientEnrollments } from './api'
 import { patientPathwayKeys } from './keys'
-import type { Enrollment, EnrollmentCreate } from './types'
+import type { BlockExecution, Enrollment, EnrollmentCreate } from './types'
 
 const ENROLLMENTS_STALE_MS = 30_000
 
@@ -22,6 +22,21 @@ export function useCreateEnrollment(patientId: string) {
   const qc = useQueryClient()
   return useMutation<Enrollment, Error, EnrollmentCreate>({
     mutationFn: (payload) => createEnrollment(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
+  })
+}
+
+export interface CompleteStepVariables {
+  enrollmentId: string
+  execution: BlockExecution
+  result?: Record<string, unknown> | null
+}
+
+export function useCompleteStep(patientId: string) {
+  const qc = useQueryClient()
+  return useMutation<BlockExecution, Error, CompleteStepVariables>({
+    mutationFn: ({ enrollmentId, execution, result }) =>
+      completeStep(enrollmentId, execution, result ?? null),
     onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
   })
 }

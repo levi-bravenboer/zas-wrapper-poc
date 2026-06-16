@@ -1,15 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 import { getPathwayVersion } from '@/modules/pathway/api'
 import type { PathwayBlock } from '@/modules/pathway/types'
 
+import { useCompleteStep } from '../hooks'
 import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
+
+// Block kinds whose actionable step is a single "Done" with no result body.
+// Richer contracts (appointment/treatment/mdo/decision) are not wired yet.
+const DONE_ONLY_KINDS = new Set(['task'])
 
 const STATE_BADGE_VARIANT: Record<string, 'default' | 'soft' | 'outline'> = {
   active: 'default',
@@ -20,11 +27,13 @@ const STATE_BADGE_VARIANT: Record<string, 'default' | 'soft' | 'outline'> = {
 }
 
 export interface EnrollmentCardProps {
+  patientId: string
   enrollment: Enrollment
 }
 
-export function EnrollmentCard({ enrollment }: EnrollmentCardProps): ReactElement {
+export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): ReactElement {
   const { t, i18n } = useTranslation('patient-pathway')
+  const completeStep = useCompleteStep(patientId)
 
   const versionQuery = useQuery({
     queryKey: ['pathway-version', enrollment.pathway_id, enrollment.pathway_version_id] as const,
@@ -47,6 +56,30 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps): ReactElemen
   const blockName = (execution: BlockExecution): string =>
     blockById.get(execution.block_template_id)?.name ?? t('step.unknownBlock')
 
+  const isDoneActionable = (execution: BlockExecution): boolean => {
+    const kind = blockById.get(execution.block_template_id)?.kind
+    return kind !== undefined && DONE_ONLY_KINDS.has(kind)
+  }
+
+  const handleDone = (execution: BlockExecution): void => {
+    completeStep.mutate(
+      { enrollmentId: enrollment.id, execution },
+      {
+        onSuccess: () => toast.success(t('step.doneToast.success')),
+        onError: () => toast.error(t('step.doneToast.error')),
+      },
+    )
+  }
+
+  const renderAction = (bucket: StepBucket, execution: BlockExecution): ReactElement | null => {
+    if (bucket !== 'next' || !isDoneActionable(execution)) return null
+    return (
+      <Button size="sm" disabled={completeStep.isPending} onClick={() => handleDone(execution)}>
+        {t('step.done')}
+      </Button>
+    )
+  }
+
   return (
     <Card className="flex flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
@@ -61,18 +94,21 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps): ReactElemen
         executions={buckets.next}
         blockName={blockName}
         language={i18n.language}
+        renderAction={renderAction}
       />
       <BucketSection
         bucket="upcoming"
         executions={buckets.upcoming}
         blockName={blockName}
         language={i18n.language}
+        renderAction={renderAction}
       />
       <BucketSection
         bucket="finished"
         executions={buckets.finished}
         blockName={blockName}
         language={i18n.language}
+        renderAction={renderAction}
       />
     </Card>
   )
@@ -83,6 +119,7 @@ interface BucketSectionProps {
   executions: BlockExecution[]
   blockName: (execution: BlockExecution) => string
   language: string
+  renderAction: (bucket: StepBucket, execution: BlockExecution) => ReactElement | null
 }
 
 function BucketSection({
@@ -90,6 +127,7 @@ function BucketSection({
   executions,
   blockName,
   language,
+  renderAction,
 }: BucketSectionProps): ReactElement {
   const { t } = useTranslation('patient-pathway')
   const emptyKey = {
@@ -114,6 +152,7 @@ function BucketSection({
               execution={execution}
               name={blockName(execution)}
               language={language}
+              action={renderAction(bucket, execution)}
             />
           ))}
         </ul>
@@ -127,9 +166,10 @@ interface StepRowProps {
   execution: BlockExecution
   name: string
   language: string
+  action: ReactElement | null
 }
 
-function StepRow({ bucket, execution, name, language }: StepRowProps): ReactElement {
+function StepRow({ bucket, execution, name, language, action }: StepRowProps): ReactElement {
   const muted = bucket === 'upcoming'
 
   return (
@@ -142,7 +182,10 @@ function StepRow({ bucket, execution, name, language }: StepRowProps): ReactElem
         <span className="text-sm font-medium">{name}</span>
         <StepMeta bucket={bucket} execution={execution} language={language} />
       </div>
-      <StateBadge state={execution.state} />
+      <div className="flex items-center gap-2">
+        {action}
+        <StateBadge state={execution.state} />
+      </div>
     </li>
   )
 }

@@ -47,7 +47,7 @@ export function PathwayTab({ patientId }: PathwayTabProps): ReactElement {
             </Button>
           </div>
           {active.map((enrollment) => (
-            <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
+            <EnrollmentCard key={enrollment.id} patientId={patientId} enrollment={enrollment} />
           ))}
         </>
       )}
