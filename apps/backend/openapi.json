@@ -7932,6 +7932,13 @@
             },
             "type": "array",
             "title": "Participants"
+          },
+          "clinical_dates": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollDescriptorClinicalDate"
+            },
+            "type": "array",
+            "title": "Clinical Dates"
           }
         },
         "type": "object",
@@ -7939,7 +7946,27 @@
           "pathway_version_id"
         ],
         "title": "EnrollDescriptor",
-        "description": "Enroll-phase form descriptor for a pathway version \u2014 the deferred\nfields a caregiver fills + the per-block participants to resolve\n(tasks 4.1/5.2/5.4)."
+        "description": "Enroll-phase form descriptor for a pathway version \u2014 the deferred\nfields a caregiver fills, the per-block participants to resolve, and the\nnamed clinical dates to set (tasks 4.1/5.2/5.4/5.5)."
+      },
+      "EnrollDescriptorClinicalDate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "block_template_id"
+        ],
+        "title": "EnrollDescriptorClinicalDate",
+        "description": "A named clinical date (e.g. `operation_date`) that `relative_to_date`\nblocks anchor to \u2014 collected at enrollment so their timers resolve (\u00a75.5).\n`block_template_id` is a representative referencing block (for the\ndeferred-value FK; resolution is by `name` across the enrollment)."
       },
       "EnrollDescriptorField": {
         "properties": {

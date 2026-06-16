@@ -42,6 +42,7 @@ from app.schemas.pathway.enrollment import (
     DeferredFieldValueOut,
     DeferredFieldValuePatch,
     EnrollDescriptor,
+    EnrollDescriptorClinicalDate,
     EnrollDescriptorField,
     EnrollDescriptorParticipant,
     EnrollmentCreate,
@@ -306,8 +307,14 @@ class EnrollmentService:
         children = await self._pathway_repo.fetch_children(pathway_version_id)
         fields: list[EnrollDescriptorField] = []
         participants: list[EnrollDescriptorParticipant] = []
+        clinical_dates: dict[str, UUID] = {}
         for row in children.blocks:
             template = block_row_to_domain(row)
+            policy = template.timing_policy
+            if policy is not None and getattr(policy, "kind", None) == "relative_to_date":
+                name = getattr(policy, "date_name", None)
+                if isinstance(name, str) and name and name not in clinical_dates:
+                    clinical_dates[name] = row.id
             for spec in template.DEFERRED_FIELDS:
                 fields.append(
                     EnrollDescriptorField(
@@ -330,7 +337,13 @@ class EnrollmentService:
                     )
                 )
         return EnrollDescriptor(
-            pathway_version_id=pathway_version_id, fields=fields, participants=participants
+            pathway_version_id=pathway_version_id,
+            fields=fields,
+            participants=participants,
+            clinical_dates=[
+                EnrollDescriptorClinicalDate(name=name, block_template_id=block_id)
+                for name, block_id in clinical_dates.items()
+            ],
         )
 
     async def get_view(

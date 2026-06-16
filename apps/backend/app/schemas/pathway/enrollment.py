@@ -116,14 +116,25 @@ class EnrollDescriptorParticipant(BaseModel):
     specialty: str | None = None
 
 
+class EnrollDescriptorClinicalDate(BaseModel):
+    """A named clinical date (e.g. `operation_date`) that `relative_to_date`
+    blocks anchor to — collected at enrollment so their timers resolve (§5.5).
+    `block_template_id` is a representative referencing block (for the
+    deferred-value FK; resolution is by `name` across the enrollment)."""
+
+    name: str
+    block_template_id: UUID
+
+
 class EnrollDescriptor(BaseModel):
     """Enroll-phase form descriptor for a pathway version — the deferred
-    fields a caregiver fills + the per-block participants to resolve
-    (tasks 4.1/5.2/5.4)."""
+    fields a caregiver fills, the per-block participants to resolve, and the
+    named clinical dates to set (tasks 4.1/5.2/5.4/5.5)."""
 
     pathway_version_id: UUID
     fields: list[EnrollDescriptorField] = Field(default_factory=list)
     participants: list[EnrollDescriptorParticipant] = Field(default_factory=list)
+    clinical_dates: list[EnrollDescriptorClinicalDate] = Field(default_factory=list)
 
 
 class RuntimeTick(BaseModel):
@@ -170,6 +181,7 @@ __all__ = [
     "DeferredFieldValuePatch",
     "EnrollmentCreate",
     "EnrollDescriptor",
+    "EnrollDescriptorClinicalDate",
     "EnrollDescriptorField",
     "EnrollDescriptorParticipant",
     "EnrollmentParticipantIn",

@@ -612,3 +612,38 @@ async def test_resolved_participant_becomes_appointment_lead(
     ).scalar_one()
     # The bound caregiver, not the completing admin actor.
     assert lead == caregiver.id
+
+
+# ---- descriptor surfaces named clinical dates (§5.5) ---------------------
+
+
+async def test_enroll_descriptor_lists_clinical_dates(
+    db_session: AsyncSession, runtime_world: dict[str, object]
+) -> None:
+    version = runtime_world["version"]
+    phase_id = runtime_world["block"].phase_id  # type: ignore[union-attr]
+    lane_id = runtime_world["block"].lane_id  # type: ignore[union-attr]
+
+    db_session.add(
+        PathwayBlock(
+            id=uuid.uuid4(),
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            phase_id=phase_id,
+            lane_id=lane_id,
+            label="Pre-op",
+            kind="appointment",
+            appointment_title="Pre-op",
+            appointment_mode="in_person",
+            timing_policy_kind="relative_to_date",
+            timing_date_name="operation_date",
+            timing_offset_iso="P2D",
+            timing_direction="before",
+        )
+    )
+    await db_session.commit()
+
+    descriptor = await _service(db_session).enroll_descriptor(
+        version.id,  # type: ignore[union-attr]
+        tenant_id=ZAS_TENANT_ID,
+    )
+    assert any(c.name == "operation_date" for c in descriptor.clinical_dates)
