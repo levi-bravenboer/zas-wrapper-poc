@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — enroll v2</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.8/index.css" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style type="text/tailwindcss">
+@theme {
+  --color-background: oklch(1 0 0);
+  --color-surface-1: oklch(0.985 0.003 175);
+  --color-surface-2: oklch(0.97 0.01 175);
+  --color-foreground: oklch(0.21 0.04 265);
+  --color-foreground-muted: oklch(0.5 0.02 265);
+  --color-primary: oklch(0.46 0.07 175);
+  --color-primary-hover: oklch(0.4 0.07 175);
+  --color-primary-pressed: oklch(0.34 0.06 175);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-primary-soft: oklch(0.93 0.04 175);
+  --color-primary-subtle: oklch(0.97 0.01 175);
+  --color-accent-mint: oklch(0.78 0.08 175);
+  --color-destructive: oklch(0.6 0.22 30);
+  --color-warning: oklch(0.75 0.18 65);
+  --color-warning-foreground: oklch(0.21 0.04 265);
+  --color-success: oklch(0.55 0.1 175);
+  --color-border: oklch(0.91 0.005 265);
+  --color-border-strong: oklch(0.82 0.01 265);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+}
+:root {
+  --gradient-aurora:
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+    linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+}
+body { font-family: var(--font-sans); background: var(--gradient-aurora); color: var(--color-foreground); }
+.tab-active { box-shadow: inset 0 -2px 0 var(--color-primary); }
+</style>
+</head>
+<body class="min-h-screen text-[0.875rem]">
+<!--
+  MOCK DATA (inline, no fetch):
+  patient: Jansen, Pieter — 68 jr — m
+  pathway chosen: Heupprothese-traject v2 (gepubliceerd)
+  steps: 1 Kies zorgpad ✓ · 2 Startdatum ✓ · 3 Rollen ● · 4 Inschrijfgegevens · 5 Controleren
+  roles: Hoofdbehandelaar(AV, in team) ✓ · Fysiotherapeut(MB, in team) ✓ · Casemanager (UNBOUND, vereist)
+  v2 change: stepper moved to TOP (horizontal), content full-width.
+-->
+
+<div class="flex min-h-screen">
+  <aside class="w-14 shrink-0 border-r border-[--color-border] bg-[--color-background]/70 backdrop-blur flex flex-col items-center py-3 gap-1">
+    <div class="w-9 h-9 rounded-lg bg-[--color-primary] text-[--color-primary-foreground] grid place-items-center font-semibold mb-3">Z</div>
+    <button class="w-9 h-9 rounded-md grid place-items-center text-[--color-foreground-muted] hover:bg-[--color-surface-2]"><i data-lucide="layout-dashboard" class="w-[18px] h-[18px]"></i></button>
+    <button class="w-9 h-9 rounded-md grid place-items-center bg-[--color-primary-soft] text-[--color-primary]"><i data-lucide="users" class="w-[18px] h-[18px]"></i></button>
+    <button class="w-9 h-9 rounded-md grid place-items-center text-[--color-foreground-muted] hover:bg-[--color-surface-2]"><i data-lucide="git-branch" class="w-[18px] h-[18px]"></i></button>
+    <button class="w-9 h-9 rounded-md grid place-items-center text-[--color-foreground-muted] hover:bg-[--color-surface-2]"><i data-lucide="check-square" class="w-[18px] h-[18px]"></i></button>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 shrink-0 border-b border-[--color-border] bg-[--color-background]/70 backdrop-blur flex items-center gap-3 px-5">
+      <nav class="flex items-center gap-1.5 text-[--color-foreground-muted] text-[0.8125rem]">
+        <span>Patiënten</span><i data-lucide="chevron-right" class="w-4 h-4"></i>
+        <span class="text-[--color-foreground] font-medium">Jansen, Pieter</span>
+      </nav>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2 px-2.5 h-8 rounded-md border border-[--color-border] text-[--color-foreground-muted] text-[0.8125rem]"><i data-lucide="search" class="w-4 h-4"></i> Zoeken…</div>
+        <div class="w-8 h-8 rounded-full bg-[--color-accent-mint] grid place-items-center text-[--color-primary-pressed] font-semibold text-xs">SV</div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-6 overflow-auto">
+      <div class="max-w-5xl mx-auto opacity-40 pointer-events-none select-none">
+        <div class="rounded-lg border border-[--color-border] bg-[--color-background] p-5 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-[--color-primary-soft] grid place-items-center text-[--color-primary] font-semibold">PJ</div>
+          <div>
+            <h1 class="text-[1.25rem] font-semibold leading-tight">Jansen, Pieter</h1>
+            <p class="text-[--color-foreground-muted] text-[0.8125rem]">68 jr · Man · BSN 1234.56.789 · Patiënt-ID PA-00421</p>
+          </div>
+          <span class="ml-auto text-xs px-2 py-1 rounded-full bg-[--color-surface-2] text-[--color-foreground-muted]">Actief</span>
+        </div>
+        <div class="mt-5 flex items-center gap-1 border-b border-[--color-border]">
+          <button class="px-3 h-9 text-[--color-foreground-muted]">Overzicht</button>
+          <button class="px-3 h-9 text-[--color-foreground-muted]">Metingen</button>
+          <button class="px-3 h-9 text-[--color-foreground-muted]">Documenten</button>
+          <button class="px-3 h-9 text-[--color-foreground] font-medium tab-active">Zorgpad</button>
+        </div>
+        <div class="mt-10 grid place-items-center text-center py-16">
+          <div class="w-12 h-12 rounded-xl bg-[--color-surface-2] grid place-items-center mb-3"><i data-lucide="git-branch" class="w-6 h-6 text-[--color-primary]"></i></div>
+          <h2 class="font-semibold text-[1rem]">Nog geen zorgpad</h2>
+          <p class="text-[--color-foreground-muted] max-w-sm mt-1">Deze patiënt is nog niet ingeschreven in een zorgpad.</p>
+          <button class="mt-4 h-9 px-4 rounded-md bg-[--color-primary] text-[--color-primary-foreground] font-medium flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Inschrijven in zorgpad</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== ENROLL WIZARD MODAL (stepper on top) ===== -->
+<div class="fixed inset-0 z-50 bg-[oklch(0.21_0.04_265_/_0.35)] grid place-items-center p-4">
+  <div class="w-full max-w-2xl rounded-lg bg-[--color-background] border border-[--color-border] shadow-[0_12px_32px_oklch(0.21_0.04_265_/_0.18)] overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-5 h-14 border-b border-[--color-border]">
+      <i data-lucide="git-branch" class="w-5 h-5 text-[--color-primary]"></i>
+      <div>
+        <h2 class="font-semibold leading-tight">Inschrijven in zorgpad</h2>
+        <p class="text-[0.75rem] text-[--color-foreground-muted]">Jansen, Pieter · 68 jr</p>
+      </div>
+      <button class="ml-auto w-8 h-8 rounded-md grid place-items-center text-[--color-foreground-muted] hover:bg-[--color-surface-2]"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <!-- HORIZONTAL STEPPER (top) -->
+    <div class="px-5 py-4 border-b border-[--color-border] bg-[--color-surface-1]">
+      <ol class="flex items-center">
+        <!-- 1 done -->
+        <li class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[--color-success] text-white grid place-items-center"><i data-lucide="check" class="w-4 h-4"></i></span>
+          <span class="text-[0.8125rem] font-medium text-[--color-foreground] hidden sm:inline">Zorgpad</span>
+        </li>
+        <li class="flex-1 h-px mx-2 bg-[--color-success]"></li>
+        <!-- 2 done -->
+        <li class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[--color-success] text-white grid place-items-center"><i data-lucide="check" class="w-4 h-4"></i></span>
+          <span class="text-[0.8125rem] font-medium text-[--color-foreground] hidden sm:inline">Startdatum</span>
+        </li>
+        <li class="flex-1 h-px mx-2 bg-[--color-primary]"></li>
+        <!-- 3 current -->
+        <li class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[--color-primary] text-white grid place-items-center text-[0.8125rem] font-semibold ring-4 ring-[--color-primary-soft]">3</span>
+          <span class="text-[0.8125rem] font-semibold text-[--color-primary] hidden sm:inline">Rollen</span>
+        </li>
+        <li class="flex-1 h-px mx-2 bg-[--color-border]"></li>
+        <!-- 4 -->
+        <li class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full border border-[--color-border-strong] text-[--color-foreground-muted] grid place-items-center text-[0.8125rem]">4</span>
+          <span class="text-[0.8125rem] text-[--color-foreground-muted] hidden sm:inline">Gegevens</span>
+        </li>
+        <li class="flex-1 h-px mx-2 bg-[--color-border]"></li>
+        <!-- 5 -->
+        <li class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full border border-[--color-border-strong] text-[--color-foreground-muted] grid place-items-center text-[0.8125rem]">5</span>
+          <span class="text-[0.8125rem] text-[--color-foreground-muted] hidden sm:inline">Controleren</span>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Step content: Rollen (full width) -->
+    <div class="p-5 min-h-[340px]">
+      <div class="flex items-baseline justify-between">
+        <div>
+          <h3 class="font-semibold text-[1rem]">Rollen toewijzen</h3>
+          <p class="text-[--color-foreground-muted] text-[0.8125rem] mt-0.5">Koppel elke rol aan een persoon uit het zorgteam. Eén keer per rol — hergebruikt in alle blokken.</p>
+        </div>
+        <span class="text-[0.75rem] text-[--color-foreground-muted] shrink-0">Heupprothese-traject <span class="ml-1 px-1.5 py-0.5 rounded bg-[--color-surface-2]">v2</span></span>
+      </div>
+
+      <div class="mt-4 space-y-2.5">
+        <div class="flex items-center gap-3 p-3 rounded-md border border-[--color-border]">
+          <div class="w-9 h-9 rounded-full bg-[--color-primary-soft] grid place-items-center text-[--color-primary] font-semibold text-xs">AV</div>
+          <div class="min-w-0">
+            <p class="font-medium">Hoofdbehandelaar <span class="text-[--color-foreground-muted] font-normal">· orthopeed</span></p>
+            <p class="text-[0.75rem] text-[--color-foreground-muted]">Dr. A. de Vries · in zorgteam</p>
+          </div>
+          <button class="ml-auto h-8 px-3 rounded-md border border-[--color-border] text-[--color-foreground-muted] text-[0.8125rem] flex items-center gap-1.5">Wijzigen <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div class="flex items-center gap-3 p-3 rounded-md border border-[--color-border]">
+          <div class="w-9 h-9 rounded-full bg-[--color-primary-soft] grid place-items-center text-[--color-primary] font-semibold text-xs">MB</div>
+          <div class="min-w-0">
+            <p class="font-medium">Fysiotherapeut</p>
+            <p class="text-[0.75rem] text-[--color-foreground-muted]">M. Bakker · in zorgteam</p>
+          </div>
+          <button class="ml-auto h-8 px-3 rounded-md border border-[--color-border] text-[--color-foreground-muted] text-[0.8125rem] flex items-center gap-1.5">Wijzigen <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div class="flex items-center gap-3 p-3 rounded-md border border-[--color-warning] bg-[oklch(0.75_0.18_65_/_0.08)]">
+          <div class="w-9 h-9 rounded-full border border-dashed border-[--color-warning] grid place-items-center text-[--color-warning-foreground]"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
+          <div class="min-w-0">
+            <p class="font-medium">Casemanager <span class="text-[--color-destructive] font-normal text-[0.75rem]">· vereist</span></p>
+            <p class="text-[0.75rem] text-[--color-foreground-muted]">Nog niemand gekoppeld — niet in zorgteam</p>
+          </div>
+          <button class="ml-auto h-8 px-3 rounded-md bg-[--color-primary] text-[--color-primary-foreground] text-[0.8125rem] flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Persoon kiezen</button>
+        </div>
+      </div>
+
+      <p class="mt-3 text-[0.75rem] text-[--color-foreground-muted] flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5"></i> Iemand kiezen die nog niet in het zorgteam zit, voegt die persoon toe aan het zorgteam.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center gap-3 px-5 h-16 border-t border-[--color-border] bg-[--color-surface-1]">
+      <p class="text-[0.8125rem] text-[--color-warning-foreground] flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4 text-[--color-warning]"></i> 1 vereiste rol nog niet toegewezen</p>
+      <div class="ml-auto flex items-center gap-2">
+        <button class="h-9 px-4 rounded-md border border-[--color-border] text-[--color-foreground] font-medium">Vorige</button>
+        <button disabled class="h-9 px-4 rounded-md bg-[--color-primary] text-[--color-primary-foreground] font-medium opacity-50 cursor-not-allowed flex items-center gap-2">Volgende <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
