@@ -3,12 +3,14 @@
     "title": "Notities",
     "empty": "Nog geen notities.",
     "placeholder": "Voeg een notitie toe…",
-    "add": "Toevoegen"
+    "add": "Toevoegen",
+    "hint": "⌘/Ctrl + Enter om te versturen"
   },
   "attachments": {
     "title": "Documenten",
     "empty": "Nog geen documenten.",
     "upload": "Document uploaden",
+    "download": "Downloaden",
     "delete": "Verwijderen"
   },
   "owner": {

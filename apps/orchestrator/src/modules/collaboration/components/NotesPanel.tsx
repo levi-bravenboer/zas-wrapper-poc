@@ -1,63 +1,104 @@
-import { useState, type ReactElement } from 'react'
+import { useState, type KeyboardEvent, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
+import { initials } from '@/lib/utils/initials'
 
 import { useAddNote, useNotes } from '../hooks'
-import type { OwnerType } from '../types'
+import type { Note, OwnerType } from '../types'
 
 export type NotesPanelProps = {
   ownerType: OwnerType
   ownerId: string
 }
 
-/** Append-only attributed notes feed for any owner entity. */
+function NotePost({ note }: { note: Note }): ReactElement {
+  return (
+    <li className="flex items-start gap-3">
+      <Avatar size="sm" tintBy={note.author_user_id} className="mt-0.5">
+        <AvatarFallback tinted>{initials(note.author_display_name)}</AvatarFallback>
+      </Avatar>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-medium text-foreground">{note.author_display_name}</span>
+          <span className="text-[11px] text-foreground-muted">
+            {formatDateTimeOrDash(note.created_at, 'nl')}
+          </span>
+        </div>
+        <p className="whitespace-pre-wrap rounded-lg bg-surface-1 px-3 py-2 text-sm text-foreground">
+          {note.body}
+        </p>
+      </div>
+    </li>
+  )
+}
+
+/** Attributed notes feed (posts) for any owner entity. */
 export function NotesPanel({ ownerType, ownerId }: NotesPanelProps): ReactElement {
   const { t } = useTranslation(['collaboration'])
   const notes = useNotes(ownerType, ownerId)
   const addNote = useAddNote(ownerType, ownerId)
   const [draft, setDraft] = useState('')
 
+  const items = notes.data ?? []
+
+  const submit = (): void => {
+    const body = draft.trim()
+    if (!body || addNote.isPending) return
+    addNote.mutate(body, { onSuccess: () => setDraft('') })
+  }
+
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      submit()
+    }
+  }
+
   return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-foreground">
-        {t('collaboration:notes.title', { defaultValue: 'Notities' })}
-      </h3>
-      <ul className="flex flex-col gap-2">
-        {(notes.data ?? []).map((note) => (
-          <li key={note.id} className="rounded-md border border-border/60 p-3">
-            <div className="mb-1 flex items-center justify-between text-xs text-foreground-muted">
-              <span className="font-medium text-foreground">{note.author_display_name}</span>
-              <span>{formatDateTimeOrDash(note.created_at, 'nl')}</span>
-            </div>
-            <p className="whitespace-pre-wrap text-sm text-foreground">{note.body}</p>
-          </li>
-        ))}
-        {notes.data?.length === 0 ? (
-          <li className="text-sm text-foreground-muted">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">
+          {t('collaboration:notes.title', { defaultValue: 'Notities' })}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {items.length === 0 ? (
+          <p className="text-sm text-foreground-muted">
             {t('collaboration:notes.empty', { defaultValue: 'Nog geen notities.' })}
-          </li>
-        ) : null}
-      </ul>
-      <div className="flex flex-col gap-2">
-        <Textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={2}
-          placeholder={t('collaboration:notes.placeholder', { defaultValue: 'Voeg een notitie toe…' })}
-        />
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            disabled={!draft.trim() || addNote.isPending}
-            onClick={() => addNote.mutate(draft.trim(), { onSuccess: () => setDraft('') })}
-          >
-            {t('collaboration:notes.add', { defaultValue: 'Toevoegen' })}
-          </Button>
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {items.map((note) => (
+              <NotePost key={note.id} note={note} />
+            ))}
+          </ul>
+        )}
+
+        <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={2}
+            placeholder={t('collaboration:notes.placeholder', {
+              defaultValue: 'Voeg een notitie toe…',
+            })}
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-foreground-muted">
+              {t('collaboration:notes.hint', { defaultValue: '⌘/Ctrl + Enter om te versturen' })}
+            </span>
+            <Button size="sm" disabled={!draft.trim() || addNote.isPending} onClick={submit}>
+              {t('collaboration:notes.add', { defaultValue: 'Toevoegen' })}
+            </Button>
+          </div>
         </div>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   )
 }
