@@ -54,8 +54,8 @@ AND fan (all start after the operate decision; `operation` requires `all_of`):
 | n1 | Appointment: lab test | `appointment` | urologist | enter sub-pathway | — | Appointment(kind=lab) | patient attended |
 | n2 | Task: review lab test | `task` | urologist | `if_done(n1)` | — | project task | urologist reviewed |
 | n3 | Send pre-op info | `message` | patient | enter | **X days before n6 (operation)** | mock: log send | sent |
-| n4 | Anesthesia questionnaire | (Luscii-internal) | patient/Luscii | enter | X days before n6 | inside Luscii | patient completed |
-| n5 | Luscii measurements | (Luscii-internal) | patient/Luscii | enter | — | inside Luscii (request params, escalate) | patient provided |
+| n4 | Anesthesia questionnaire | `external_program` (Luscii, read-gated) | patient/Luscii | enter | `operation_date − N days` | read `GET /v1/instrument-item-responses` | questionnaire answered |
+| n5 | Luscii measurements | `external_program` (Luscii, read-gated) | patient/Luscii | enter | — | read `GET /v1/measurements`; `GET /v1/alerts` → escalate out-of-bounds | measurements provided |
 | n6 | Treatment: Operation | `treatment` | urologist | `all_of(n2, n3, n4, n5)` | scheduled date (booked) | Appointment(kind=procedure) + book + perform; clinical result | operation done |
 
 Fan-out after `operation`:
@@ -76,17 +76,24 @@ Fan-out after `operation`:
 
 To make this pathway actually run across enrollment + builder + runtime:
 
-1. **Nested sub-pathway runtime** (`pathway_link`) — "operate (biopsy)" is a real nested enrollment. The parent must spawn a child enrollment/workflow, gate on its completion, and clean up on cancel. **In scope, not yet specced in runtime detail.**
+1. **Subpath inlining** — "operate (biopsy)" is a **subpath**: builder-time inlining that flattens into regular blocks in the **same** pathway/enrollment (no nested child workflow). The builder must expand it; **enrollment must scan the flattened block set** so any enroll value/role a subpath block introduces is prompted for. (The oncology **bridge** at the end is the separate-pathway `pathway_link` — a real handoff, distinct from subpath.)
 2. **Named clinical-date anchors set at enrollment (e.g. operation date)** — RESOLVED: the operation date is a **planned clinical date set at enrollment**, with **constraint-assisted suggestion**. Blocks constrain it two ways: (a) **blocking** prerequisites (`operation` `all_of(lab, anesthesia, measurements)` — must finish before), and (b) **min lead time** ("earliest N days from now / from block X"). The system computes the earliest feasible operation date to guide the caregiver. **Forward timing** then becomes simple: pre-op blocks (info, anesthesia) fire at `operation_date − N days`. If the date is rebooked, dependent timers recompute.
 3. **Timing keys off named anchors** — `timing_policy` gains an anchor reference: relative to node-completion (existing) **or** relative to a named clinical-date anchor (e.g. `operation_date − N days`). Anchors are enroll-set dates; `anchor_date` (day-0) is the default one.
-4. **Luscii enroll activity** — ensure-connection + enroll-in-program (thin), built on `app/adapters/luscii`. Needs Luscii's enroll/connection endpoints.
+4. **Luscii activities** — (a) **enroll**: `POST /v1/patients` with `programId`/`protocolId` (create connection + program); (b) **read-gating**: poll `GET /v1/instrument-item-responses` + `GET /v1/measurements` + `GET /v1/alerts` to complete the anesthesia/measurements blocks + escalate out-of-bounds. Built on the existing read adapter + a new enroll call.
 5. **Role-set authoring + binding** — urologist, casemanager, MDO lead bound at enroll from the care team.
 6. **Materialization mapping** — Appointment kinds (imaging/lab/consultation/procedure/other) per block; task projection via the `pathway` source.
 7. **Decision outputs feeding XOR** — `decision_output` predicate gates the two XOR branches; publish-validation that the referenced outputs exist.
 8. **Seed fixture** — author this whole pathway (blocks + roles + input_logic + timing + Luscii program ref) as a seed, since builder authoring of the new fields is a follow-up.
 
-## Open questions raised by this flow
+## Resolved
 
-- **(2)** "X days before operation" — how do we model forward/negative timing onto a downstream block's booked date?
-- Does the nested sub-pathway share the parent's bound roles + anchor, or rebind?
-- Pathology-reported gate (n10) — Luscii-internal/mock, or a real lab-result signal?
+- **Forward timing** ("X days before operation") → named clinical-date anchor `operation_date`, set at enroll with constraint-assisted "earliest feasible" suggestion; pre-op blocks = `operation_date − N` (D3a).
+- **Subpath "operate"** → builder-time **inlining** into the same pathway/enrollment (D15); enrollment scans the flattened block set for enroll values. Not a nested child workflow.
+- **Pathology-reported gate (n10)** → **mock**: caregiver marks "results in" to make the review task actionable (no lab/HiX integration in PoC).
+- **Anesthesia + measurements gates** → **real, read-gated from Luscii** (`/v1/instrument-item-responses`, `/v1/measurements`, `/v1/alerts`).
+
+## Still needed
+
+- Luscii enroll endpoint wiring (`POST /v1/patients`) + read-poll cadence (timer vs on-eval).
+- Constraint-assisted `operation_date` computation (min lead times + blocking prereqs).
+- "Share result with GP" actions (decision blocks) — mock for PoC.

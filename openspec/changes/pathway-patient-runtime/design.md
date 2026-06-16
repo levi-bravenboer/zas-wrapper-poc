@@ -20,7 +20,7 @@ The audit/event-logging system is being built separately (`feat/audit-event-logg
 - Building the audit/event-logging store (stub activity only).
 - Builder UI for authoring the per-block runtime overrides + roles (follow-up change).
 - A patient-facing portal — patient-lane blocks (form, message, informed_consent) are fake-log only; no patient channel.
-- (Revised — see D14) `pathway_link` nested enrollment is **in scope** (the bladder-cancer flow's "operate (biopsy)" is a real nested sub-pathway). `external_program` (Luscii) realness is being decided **per block** (mock / Luscii / build). A cross-pathway **bridge** is modelled as `end_pathway` + a fire-and-forget `pathway_link` (no separate bridge block).
+- (Revised — see D14/D15) A **subpath** (the flow's "operate (biopsy)") is **builder-time inlining**: it expands into regular blocks in the **same** pathway/enrollment — no nested child workflow. A cross-pathway **bridge** (handoff to the separate oncology pathway) is a different mechanism: `end_pathway` + a fire-and-forget `pathway_link` to another pathway. `external_program` (Luscii) is thin-real (enroll only).
 - Data-driven `decision.auto_resolve` (authored, not wired — caregiver picks).
 - Notifications/escalation beyond what an `if_not_done_within` timer triggers.
 
@@ -201,13 +201,29 @@ The sticky-note structure (Pre-requisites / Actions / Complete-if) maps to: `inp
 | Block (flow) | mock vs Luscii vs build | Notes |
 |---|---|---|
 | informed_consent | Luscii (inside program) | consent handled within a Luscii program, not a standalone block |
-| external_program: Luscii enroll | Luscii (real, thin) | on reach: ensure connection + enroll in Luscii program; nothing orchestrated after |
-| consent / anesthesia questionnaire / PROM / measurements | Luscii-internal (not a pathway block) | happen inside Luscii; pathway does not gate on them per-step |
-| Luscii measurements on patient detail | existing (already partly built) | MeasurementCharts; a read surface, not pathway runtime |
+| external_program: Luscii enroll | Luscii (real) | on reach: ensure connection + enroll via `POST /v1/patients` (`programId`/`protocolId`) |
+| anesthesia questionnaire | Luscii (real, read-gated) | completes when `GET /v1/instrument-item-responses` shows it answered |
+| measurements | Luscii (real, read-gated) | completes on `GET /v1/measurements`; escalation via `GET /v1/alerts` (out-of-bounds) |
+| consent / PROM | Luscii-internal | inside the program; not gated as pathway steps in PoC |
+| Luscii measurements on patient detail | existing (MeasurementCharts) | read surface, not pathway runtime |
 | message: pre-op / post-op info | mock (logged) | no real delivery in PoC |
 | appointment / task / treatment / mdo / decision | build | caregiver-facing, built here |
 
-**Luscii scope is deliberately thin.** The pathway has **one** Luscii (`external_program`) block: when it becomes eligible, an activity (1) ensures the patient has a Luscii **connection** (get-or-create), then (2) **enrolls the patient in the configured Luscii program**. After that the pathway does **not** call or gate on Luscii — questionnaires/measurements/consent run inside Luscii and are not tracked as pathway steps. The only other Luscii touchpoint is the **patient-detail measurement display** (already partly built via `MeasurementCharts`), which is a read surface, not pathway runtime. Built on the existing `app/adapters/luscii` client; the enroll/connection endpoints come from Luscii's API (to be provided). Downstream pathway gates that the Miro flow drew as "Luscii measurements done" become **mock/manual** (caregiver marks) for the PoC, since the pathway no longer observes Luscii per-step.
+**Luscii scope (moderate).** Confirmed against `luscii-public-api.json`:
+- **Enroll** — when a Luscii (`external_program`) block becomes eligible, an activity ensures a connection / enrolls the patient: `POST /v1/patients` carries demographics + identifiers + **`programId` / `protocolId`** (one call = create connection + program enrollment). Reuse an existing patient if found.
+- **Read-on-demand gating** — Luscii-backed gate blocks (anesthesia questionnaire, measurements) complete by **reading** Luscii: `GET /v1/instrument-item-responses` (questionnaire answered), `GET /v1/measurements` (provided), `GET /v1/alerts` (out-of-bounds → escalation). A Temporal activity polls on a timer (or on eligibility eval); webhooks (`/v1/webhooks-events`) are a later upgrade for push.
+- Patient-detail measurement display stays the existing `MeasurementCharts` read surface.
+
+Built on the existing read adapter (`get_measurements`, `get_planned_actions`, `get_item_response_localisations`) plus the `POST /v1/patients` enroll call (new).
+
+### D15 — Subpath is inlining, not nested enrollment
+
+A **subpath** block is a builder-authoring convenience: it appears as a single block on the canvas but **expands into its constituent blocks within the same pathway version**. At runtime there is **one** enrollment and **one** Temporal workflow over the flattened block set — no child workflow, no nested enrollment. Consequences:
+- The subpath's blocks are ordinary blocks: same `input_logic`, timing, roles, materialization as any other.
+- **Enrollment scans the fully-flattened block set** (including inlined subpath blocks) when building the enroll descriptor — so any enroll-phase value (deferred field or role) introduced by a subpath block is prompted for at enroll. "If a subpath has enroll values, the enroll flow makes you set them."
+- This is distinct from `pathway_link` to a **separate** pathway (the oncology **bridge**), which is a real cross-pathway handoff (fire-and-forget child enrollment) — not inlining.
+
+**Supersedes** the earlier "real nested enrollment" reading of the operate subpath and the moot "inherit-from-parent" question (there is no separate parent/child — it's one flattened pathway).
 
 ## Risks / Trade-offs
 
