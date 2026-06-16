@@ -16,8 +16,10 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums.appointment import AppointmentStatus
 from app.core.enums.task import TaskStatus
 from app.db.audit import SESSION_ACTOR_KEY
+from app.db.models.appointment import Appointment
 from app.db.models.task import Task
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
@@ -59,6 +61,23 @@ async def seed_tasks(session: AsyncSession) -> list[Task]:
     if admin is None or caregiver is None:
         raise _SeedUserMissingError("admin/caregiver missing — run seed_users first")
 
+    # Demo tasks are patient-care tasks: link them to a caregiver-accessible
+    # patient (the first booked appointment's subject) so notes/attachments —
+    # which are always about a patient — can be added against them.
+    appointment = (
+        await session.execute(
+            select(Appointment)
+            .where(
+                Appointment.tenant_id == tenant.id,
+                Appointment.status == AppointmentStatus.BOOKED,
+                Appointment.deleted_at.is_(None),
+            )
+            .order_by(Appointment.starts_at)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    demo_patient_id = appointment.patient_id if appointment is not None else None
+
     now = datetime.now(UTC)
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = SessionUser(
@@ -82,7 +101,11 @@ async def seed_tasks(session: AsyncSession) -> list[Task]:
                 )
             ).scalar_one_or_none()
             if existing is not None:
-                logger.info("task %r already present", tpl.title)
+                if existing.patient_id is None and demo_patient_id is not None:
+                    existing.patient_id = demo_patient_id
+                    logger.info("backfilled patient on task %r", tpl.title)
+                else:
+                    logger.info("task %r already present", tpl.title)
                 seeded.append(existing)
                 continue
             task = Task(
@@ -91,6 +114,7 @@ async def seed_tasks(session: AsyncSession) -> list[Task]:
                 description=tpl.description,
                 status=tpl.status,
                 due_at=now + tpl.due_in if tpl.due_in is not None else None,
+                patient_id=demo_patient_id,
             )
             session.add(task)
             await session.flush()
