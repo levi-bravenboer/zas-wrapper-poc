@@ -28,6 +28,9 @@ from app.db.base import TenantOwnedEntity
 class PathwayEnrollment(TenantOwnedEntity):
     __tablename__ = "pathway_enrollment"
     __realtime_resource__: ClassVar[str | None] = "pathway_enrollment"
+    # Runtime transitions (active/paused/completed/cancelled) are audited
+    # automatically via the before_flush hook (pathway-runtime §3.7).
+    __audited__: ClassVar[bool] = True
     __table_args__ = (
         sa.CheckConstraint(
             "state IN ('active', 'paused', 'completed', 'cancelled')",

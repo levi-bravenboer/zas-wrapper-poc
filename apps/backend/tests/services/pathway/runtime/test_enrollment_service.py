@@ -383,3 +383,42 @@ async def test_relative_to_date_timer_resolves_and_recomputes(
     view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
     pre_op_exec = next(e for e in view.executions if e.block_template_id == pre_op.id)
     assert pre_op_exec.scheduled_at == datetime(2026, 7, 30, tzinfo=UTC)
+
+
+# ---- audit trail on transitions (§3.7) -----------------------------------
+
+
+async def test_transitions_emit_audit_events(
+    db_session: AsyncSession, runtime_world: dict[str, object]
+) -> None:
+    from sqlalchemy import select as _select
+
+    from app.core.enums.audit import AuditAction
+    from app.db.models.audit.audit_event import AuditEvent
+
+    service = _service(db_session)
+    patient = runtime_world["patient"]
+    version = runtime_world["version"]
+
+    enrollment = await service.create(
+        EnrollmentCreate(
+            patient_id=patient.id,  # type: ignore[union-attr]
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            anchor_date=date(2026, 6, 10),
+        ),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+
+    rows = (
+        (
+            await db_session.execute(
+                _select(AuditEvent).where(AuditEvent.resource_id == enrollment.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert any(
+        e.resource_type == "PathwayEnrollment" and e.action == AuditAction.CREATED for e in rows
+    )

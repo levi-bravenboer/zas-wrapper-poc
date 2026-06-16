@@ -32,6 +32,9 @@ from app.db.base import TenantOwnedEntity
 class PathwayBlockExecution(TenantOwnedEntity):
     __tablename__ = "pathway_block_execution"
     __realtime_resource__: ClassVar[str | None] = "pathway_block_execution"
+    # Per-block state transitions are audited automatically via the
+    # before_flush hook (pathway-runtime §3.7).
+    __audited__: ClassVar[bool] = True
     __table_args__ = (
         sa.CheckConstraint(
             "state IN ('pending', 'eligible', 'active', 'completed', 'skipped', 'failed')",
