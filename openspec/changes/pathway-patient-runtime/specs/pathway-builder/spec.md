@@ -18,6 +18,16 @@ The builder SHALL let the author declare **named clinical dates** on a pathway (
 - **WHEN** the author configures a pre-op block
 - **THEN** they can set "≥ N days before operation_date", which the enroll-time earliest-feasible suggestion consumes
 
+### Requirement: Message block authors templates per channel + timing
+
+The `message` block inspector SHALL let the author pick a **message template per channel** (email / sms / mobile) and set its timing relative to a connected block (e.g. `operation_date − N days`). At runtime the send is **mocked** — it emits an audit/event-log entry only (no real delivery) — but the authoring experience SHALL be complete.
+
+#### Scenario: Author sets a pre-op message
+
+- **WHEN** the author configures a `message` block connected to the operation
+- **THEN** they pick a template per channel and a "N days before operation_date" timing
+- **AND** at runtime the block logs the send as an audit event without delivering
+
 ## REMOVED Requirements
 
 ### Requirement: Milestone and wait block inspectors

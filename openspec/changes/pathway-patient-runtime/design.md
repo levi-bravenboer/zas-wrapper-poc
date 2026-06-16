@@ -69,7 +69,7 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 | `mdo` | C | topic, expected_attendees_note | — | `{notes, closed_at}` | lead caregiver Closes + notes |
 | `decision` | C | question, outputs[], mode (xor/and), auto_resolve.field_path | — | picked `output_key` | caregiver picks branch (auto if field present); engine fans out |
 | `form` | P | title, intro, questions[], submit/confirmation labels | — | — (fake-log) | caregiver marks done (no patient portal) |
-| `message` | P | subject, body, cta_label, cta_target, channel | — | — (fake-log) | caregiver marks sent |
+| `message` | P (mock) | template per channel (email/sms/mobile), connected block + relative timing | — | logged only (audit/event) | auto on its timing — mock send |
 | `informed_consent` | P | questions[], channels[], reminder/expiry config | — | — (fake-log; real `{consented, expired, signed_at}` later) | caregiver records |
 | `external_program` | E | Luscii program ref | — | — (enroll only; no per-step data) | on reach: ensure Luscii connection + enroll in program (real, thin); no further orchestration |
 | `pathway_link` | S | target pathway, version pin, mode (blocking/fire_and_forget) | — | — (fake-log; child completion later) | caregiver advances; nested enrollment hooked |
@@ -161,7 +161,7 @@ A pathway cannot be enrolled until every block's required caregiver(s) are chose
 | `mdo` | topic, expected_attendees_note | kind fixed `other`; caregiver-only participants | lead role (+ caregiver participants) | role binding(s) | `{notes, closed_at}` |
 | `decision` | question | `outputs[]`, `mode` (xor/and), `auto_resolve.field_path` (authored, not wired) | role that picks | role binding | picked `output_key` |
 | `form` | title, intro, questions[], submit/confirmation labels | fake-log | — | — | — (answers later) |
-| `message` | subject, body, cta_label, cta_target | `channel`; fake-log | — | — | — (sent later) |
+| `message` | template per channel (email/sms/mobile) | connected block + relative timing (e.g. `operation_date − N`); mock send | — | — | logged only (audit/event) |
 | `informed_consent` | questions[] | `channels[]`, `reminder_offset_iso`, `reminder_max`, `expires_at_iso`; fake-log | — | — | — (`{consented, expired, signed_at}` later) |
 | `external_program` | program/type config | Luscii program ref; fake-log/external | — | — | — (program data later) |
 | `pathway_link` | target pathway, version pin | `mode` (blocking/fire_and_forget), nested render; fake-log | — | — | — (child completion later) |
