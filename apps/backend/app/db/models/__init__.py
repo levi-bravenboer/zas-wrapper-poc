@@ -13,6 +13,8 @@ from app.db.models.access import (
 )
 from app.db.models.appointment import (
     Appointment,
+    AppointmentAttachment,
+    AppointmentNote,
     AppointmentParticipant,
     AppointmentPatientAttendee,
 )

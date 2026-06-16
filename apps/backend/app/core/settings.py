@@ -72,6 +72,17 @@ class Settings(BaseSettings):
     realtime_keepalive_seconds: int = 15
     realtime_idle_timeout_seconds: int = 30 * 60
 
+    # S3-compatible object storage (MinIO locally, real AWS S3 in prod).
+    # `s3_endpoint_url` is the in-network endpoint used server-side;
+    # `s3_public_url` is the browser-reachable host presigned URLs are minted
+    # against (SigV4 signs the host). Both unset ⇒ real AWS S3 for the region.
+    s3_endpoint_url: str | None = None
+    s3_public_url: str | None = None
+    s3_bucket: str = "zas-attachments"
+    s3_region: str = "eu-west-1"
+    s3_access_key: str = "minioadmin"
+    s3_secret_key: str = "minioadmin"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -9,7 +9,7 @@ from __future__ import annotations
 import app.db.models  # noqa: F401  (register every model)
 from app.db.base import Entity
 
-_EXPECTED = {"User", "Patient", "Task"}
+_EXPECTED = {"User", "Patient", "Task", "AppointmentNote", "AppointmentAttachment"}
 
 
 def _all_subclasses(cls: type) -> set[type]:

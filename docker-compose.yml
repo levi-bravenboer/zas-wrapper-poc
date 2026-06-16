@@ -99,6 +99,40 @@ services:
         condition: service_completed_successfully
     networks: [zas_net]
 
+  minio:
+    image: minio/minio
+    container_name: zas_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    volumes:
+      - zas_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [zas_net]
+
+  # One-shot bucket creation (mirrors zas_ory_db_init). Idempotent:
+  # `mb --ignore-existing` is a no-op once the bucket exists.
+  minio-init:
+    image: minio/mc
+    container_name: zas_minio_init
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "mc alias set local http://minio:9000 minioadmin minioadmin;
+       mc mb --ignore-existing local/zas-attachments"
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    networks: [zas_net]
+
   backend:
     image: zas_backend:dev
     container_name: zas_backend
@@ -132,6 +166,15 @@ services:
       # `BACKEND_LUSCII_FIXTURES=false` to fall back to the unconfigured
       # state (useful when validating the not-configured panel).
       BACKEND_LUSCII_FIXTURES: ${BACKEND_LUSCII_FIXTURES:-true}
+      # S3-compatible object storage. The in-network endpoint reaches MinIO by
+      # service name; the public URL is the browser-reachable host presigned
+      # URLs are signed against (SigV4 binds the URL to its host).
+      BACKEND_S3_ENDPOINT_URL: http://minio:9000
+      BACKEND_S3_PUBLIC_URL: http://localhost:9000
+      BACKEND_S3_BUCKET: zas-attachments
+      BACKEND_S3_REGION: eu-west-1
+      BACKEND_S3_ACCESS_KEY: minioadmin
+      BACKEND_S3_SECRET_KEY: minioadmin
     ports:
       - "18000:8000"
     develop:
@@ -160,6 +203,9 @@ services:
         condition: service_started
       keto:
         condition: service_started
+      # the attachments bucket must exist before the backend mints presigned URLs
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -173,6 +219,8 @@ services:
 volumes:
   zas_pgdata:
     name: zas_pgdata
+  zas_minio_data:
+    name: zas_minio_data
 
 networks:
   zas_net:
