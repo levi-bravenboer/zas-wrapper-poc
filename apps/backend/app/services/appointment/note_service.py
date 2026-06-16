@@ -11,8 +11,8 @@ class AppointmentNoteService:
     def __init__(self, repo: AppointmentNoteRepository) -> None:
         self._repo = repo
 
-    async def list(self, appointment_id: UUID) -> list[AppointmentNoteRead]:
-        rows = await self._repo.list_for_appointment(appointment_id)
+    async def list(self, appointment_id: UUID, *, tenant_id: UUID) -> list[AppointmentNoteRead]:
+        rows = await self._repo.list_for_appointment(appointment_id, tenant_id=tenant_id)
         return [
             AppointmentNoteRead(
                 id=note.id,

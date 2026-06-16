@@ -29,8 +29,8 @@ class AppointmentAttachmentService:
         self._repo = repo
         self._storage = storage
 
-    async def list(self, appointment_id: UUID) -> list[AttachmentRead]:
-        rows = await self._repo.list_for_appointment(appointment_id)
+    async def list(self, appointment_id: UUID, *, tenant_id: UUID) -> list[AttachmentRead]:
+        rows = await self._repo.list_for_appointment(appointment_id, tenant_id=tenant_id)
         return [
             AttachmentRead(
                 id=att.id,

@@ -15,13 +15,14 @@ class AppointmentNoteRepository:
         self._session = session
 
     async def list_for_appointment(
-        self, appointment_id: UUID
+        self, appointment_id: UUID, *, tenant_id: UUID
     ) -> Sequence[tuple[AppointmentNote, str]]:
         result = await self._session.execute(
             select(AppointmentNote, User.display_name)
             .join(User, User.id == AppointmentNote.author_user_id)
             .where(
                 AppointmentNote.appointment_id == appointment_id,
+                AppointmentNote.tenant_id == tenant_id,
                 AppointmentNote.deleted_at.is_(None),
             )
             .order_by(AppointmentNote.created_at.asc(), AppointmentNote.id.asc())

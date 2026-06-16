@@ -15,13 +15,14 @@ class AppointmentAttachmentRepository:
         self._session = session
 
     async def list_for_appointment(
-        self, appointment_id: UUID
+        self, appointment_id: UUID, *, tenant_id: UUID
     ) -> Sequence[tuple[AppointmentAttachment, str]]:
         result = await self._session.execute(
             select(AppointmentAttachment, User.display_name)
             .join(User, User.id == AppointmentAttachment.uploaded_by)
             .where(
                 AppointmentAttachment.appointment_id == appointment_id,
+                AppointmentAttachment.tenant_id == tenant_id,
                 AppointmentAttachment.deleted_at.is_(None),
             )
             .order_by(

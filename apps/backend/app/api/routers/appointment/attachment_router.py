@@ -34,8 +34,9 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 async def list_appointment_attachments(
     appointment: AppointmentAccessDep,
     service: AttachmentServiceDep,
+    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
 ) -> list[AttachmentRead]:
-    return await service.list(appointment.id)
+    return await service.list(appointment.id, tenant_id=current_user.tenant_id)
 
 
 @router.post(
