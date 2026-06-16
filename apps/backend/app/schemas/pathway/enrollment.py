@@ -83,6 +83,20 @@ class EnrollmentResponse(BaseModel):
     deferred_values: list[DeferredFieldValueOut] = Field(default_factory=list)
 
 
+class RuntimeTick(BaseModel):
+    """Result of one runtime advance — drives the Temporal timer loop.
+
+    `next_wake_at` is the earliest future moment a time-gated auto block
+    becomes due (so the workflow sleeps until then); `None` means no
+    pending timer. `terminal` is `True` once the enrollment is no longer
+    `active`/`paused`.
+    """
+
+    state: EnrollmentState
+    next_wake_at: datetime | None = None
+    terminal: bool = False
+
+
 class ExecutionCompleteRequest(BaseModel):
     """Body for `POST /enrollments/{id}/executions/{exec_id}:complete`."""
 
@@ -115,4 +129,5 @@ __all__ = [
     "EnrollmentResponse",
     "EnrollmentState",
     "ExecutionCompleteRequest",
+    "RuntimeTick",
 ]

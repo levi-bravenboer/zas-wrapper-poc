@@ -37,6 +37,7 @@ from app.schemas.pathway.enrollment import (
     DeferredFieldValuePatch,
     EnrollmentCreate,
     EnrollmentResponse,
+    RuntimeTick,
 )
 from app.services.pathway.errors import (
     BlockExecutionNotFoundError,
@@ -193,6 +194,40 @@ class EnrollmentService:
             enrollment.state = "cancelled"
             await self._repo._session.flush()  # noqa: SLF001
         return await self._build_view(enrollment)
+
+    async def advance(
+        self,
+        enrollment_id: UUID,
+        *,
+        tenant_id: UUID,
+        now: datetime,
+    ) -> RuntimeTick:
+        """Re-run eligibility + auto-fire at `now`, persist, report next wake.
+
+        The Temporal `PathwayEnrollmentWorkflow` calls this on start and
+        whenever a durable timer fires: time-gated auto blocks
+        (`message`/`external_program`) fire as their schedule elapses,
+        and the workflow sleeps until the next pending `scheduled_at`.
+        Terminal (`completed`/`cancelled`) enrollments are a no-op tick.
+        """
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        if enrollment.state not in ("active", "paused"):
+            return RuntimeTick(state=enrollment.state, next_wake_at=None, terminal=True)  # type: ignore[arg-type]
+
+        children = await self._pathway_repo.fetch_children(enrollment.pathway_version_id)
+        templates: dict[UUID, BaseBlock] = {
+            row.id: block_row_to_domain(row) for row in children.blocks
+        }
+        await self._run_eligibility(enrollment, templates, now=now)
+
+        executions = await self._load_executions(enrollment_id)
+        next_wake_at = _next_auto_wake(executions, templates, now=now)
+        terminal = enrollment.state not in ("active", "paused")
+        return RuntimeTick(
+            state=enrollment.state,  # type: ignore[arg-type]
+            next_wake_at=next_wake_at,
+            terminal=terminal,
+        )
 
     async def get(self, enrollment_id: UUID, *, tenant_id: UUID) -> PathwayEnrollment:
         row = await self._repo.get(enrollment_id, tenant_id)
@@ -437,9 +472,11 @@ class EnrollmentService:
         self,
         enrollment: PathwayEnrollment,
         templates: dict[UUID, BaseBlock],
+        *,
+        now: datetime | None = None,
     ) -> None:
         executions = await self._load_executions(enrollment.id)
-        now = datetime.now(UTC)
+        now = now or datetime.now(UTC)
         # Catalogue-expansion § 1: `StartBlock` executions skip the
         # `pending`/`eligible` states and land directly at `completed`
         # so the eligibility pass below sees them as `done` and fires
@@ -467,6 +504,33 @@ class EnrollmentService:
                 continue
             _apply_domain(row, exec_domain)
         await self._repo._session.flush()  # noqa: SLF001
+
+
+_AUTO_FIRE_KINDS: frozenset[str] = frozenset({"message", "external_program"})
+
+
+def _next_auto_wake(
+    executions: dict[UUID, BlockExecution],
+    templates: dict[UUID, BaseBlock],
+    *,
+    now: datetime,
+) -> datetime | None:
+    """Earliest future `scheduled_at` of a still-eligible auto block.
+
+    These are the blocks `auto_fire_system` deferred because their
+    timing had not elapsed — the workflow sleeps until the soonest one
+    so it can fire on schedule.
+    """
+    candidates = [
+        execution.scheduled_at
+        for execution in executions.values()
+        if execution.state == "eligible"
+        and execution.scheduled_at is not None
+        and execution.scheduled_at > now
+        and (template := templates.get(execution.block_template_id)) is not None
+        and template.KIND in _AUTO_FIRE_KINDS
+    ]
+    return min(candidates) if candidates else None
 
 
 def _settle_auto_fire(

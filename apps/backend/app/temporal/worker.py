@@ -13,8 +13,9 @@ import asyncio
 from temporalio.worker import Worker
 
 from app.core.settings import get_settings
+from app.temporal.activities import advance_runtime, cancel_runtime, complete_step
 from app.temporal.client import get_temporal_client
-from app.temporal.workflows import HealthWorkflow
+from app.temporal.workflows import HealthWorkflow, PathwayEnrollmentWorkflow
 
 
 async def run_worker() -> None:
@@ -23,8 +24,8 @@ async def run_worker() -> None:
     worker = Worker(
         client,
         task_queue=settings.temporal_task_queue,
-        workflows=[HealthWorkflow],
-        activities=[],
+        workflows=[HealthWorkflow, PathwayEnrollmentWorkflow],
+        activities=[advance_runtime, complete_step, cancel_runtime],
     )
     await worker.run()
 
