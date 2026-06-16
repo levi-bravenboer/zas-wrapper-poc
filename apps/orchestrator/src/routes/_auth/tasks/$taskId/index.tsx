@@ -4,6 +4,8 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
+  DetailCard,
+  DetailRow,
   EntityDetailPage,
   EntityDetailSkeleton,
   EntityErrorCard,
@@ -13,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
-import { AttachmentsPanel, NotesPanel } from '@/modules/collaboration/components'
+import { CollaborationColumn } from '@/modules/collaboration/components'
 import { useSetTaskStatus, useTaskQuery } from '@/modules/tasks/hooks'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
@@ -73,25 +75,39 @@ function TaskDetailRoute(): ReactElement {
         </Button>
       }
       body={
-        <div className="flex flex-col gap-4 p-1">
-          {task.description ? (
-            <p className="whitespace-pre-wrap text-sm text-foreground">{task.description}</p>
-          ) : (
-            <p className="text-sm text-foreground-muted">
-              {t('tasks:detail.noDescription', { defaultValue: 'Geen omschrijving.' })}
-            </p>
-          )}
-          {task.patient_id ? (
-            <Link
-              to="/patients/$patientId"
-              params={{ patientId: task.patient_id }}
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              {t('tasks:detail.openPatient', { defaultValue: 'Open patiënt' })}
-            </Link>
-          ) : null}
-          <NotesPanel ownerType="task" ownerId={task.id} />
-          <AttachmentsPanel ownerType="task" ownerId={task.id} />
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(260px,320px)_1fr]">
+          <DetailCard title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}>
+            <DetailRow label={t('tasks:detail.description', { defaultValue: 'Omschrijving' })}>
+              {task.description ? (
+                <span className="whitespace-pre-wrap">{task.description}</span>
+              ) : (
+                <span className="text-foreground-muted">
+                  {t('tasks:detail.noDescription', { defaultValue: 'Geen omschrijving.' })}
+                </span>
+              )}
+            </DetailRow>
+            <DetailRow label={t('tasks:detail.deadline', { defaultValue: 'Deadline' })}>
+              {formatDateOrDash(task.due_at ?? null, i18n.language)}
+            </DetailRow>
+            <DetailRow label={t('tasks:detail.status', { defaultValue: 'Status' })}>
+              <Badge variant={done ? 'soft' : 'default'}>
+                {t(`tasks:status.${task.status}`, { defaultValue: task.status })}
+              </Badge>
+            </DetailRow>
+            {task.patient_id ? (
+              <DetailRow label={t('tasks:detail.patient', { defaultValue: 'Patiënt' })}>
+                <Link
+                  to="/patients/$patientId"
+                  params={{ patientId: task.patient_id }}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {t('tasks:detail.openPatient', { defaultValue: 'Open patiënt' })}
+                </Link>
+              </DetailRow>
+            ) : null}
+          </DetailCard>
+
+          <CollaborationColumn ownerType="task" ownerId={task.id} />
         </div>
       }
     />

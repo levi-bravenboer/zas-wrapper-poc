@@ -35,6 +35,7 @@ vi.mock('@/modules/tasks/hooks', () => ({
 vi.mock('@/modules/collaboration/components', () => ({
   NotesPanel: () => null,
   AttachmentsPanel: () => null,
+  CollaborationColumn: () => null,
 }))
 
 const TASK = {

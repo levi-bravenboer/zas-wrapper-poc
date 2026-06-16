@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react'
 
-import { AttachmentsPanel, NotesPanel } from '@/modules/collaboration/components'
+import { CollaborationColumn } from '@/modules/collaboration/components'
 
 /**
  * Patient-profile "Notities & documenten" tab. For a patient owner the
@@ -10,10 +10,5 @@ import { AttachmentsPanel, NotesPanel } from '@/modules/collaboration/components
  * documents), and also let staff add patient-owned items.
  */
 export function PatientCollaborationTab({ patientId }: { patientId: string }): ReactElement {
-  return (
-    <div className="flex flex-col gap-6">
-      <NotesPanel ownerType="patient" ownerId={patientId} />
-      <AttachmentsPanel ownerType="patient" ownerId={patientId} />
-    </div>
-  )
+  return <CollaborationColumn ownerType="patient" ownerId={patientId} />
 }
