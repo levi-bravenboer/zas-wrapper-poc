@@ -22,6 +22,7 @@ import type { OrganisationOption, PatientIdentifierRow } from '../types'
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
 import { MeasurementCharts } from './MeasurementCharts'
+import { PatientAppointmentsTab } from './PatientAppointmentsTab'
 import { PatientKebab } from './PatientKebab'
 
 const ORG_CACHE_STALE_MS = 5 * 60_000
@@ -137,6 +138,11 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
                     body={t('tabs.empty.lab_results.body')}
                   />
                 ),
+              },
+              {
+                value: 'appointments',
+                label: t('tabs.appointments.label', { defaultValue: 'Afspraken' }),
+                content: <PatientAppointmentsTab patientId={patient.id} />,
               },
             ]}
           />

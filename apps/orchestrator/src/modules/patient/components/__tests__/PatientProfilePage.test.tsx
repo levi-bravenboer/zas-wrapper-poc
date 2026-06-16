@@ -124,7 +124,7 @@ describe('PatientProfilePage', () => {
     })
   })
 
-  it('renders header with name + INSZ + the two clinical tabs', async () => {
+  it('renders header with name + INSZ + the clinical tabs', async () => {
     usePatientMock.mockReturnValue(stubQuery(PATIENT))
     renderPage()
 
@@ -132,11 +132,11 @@ describe('PatientProfilePage', () => {
     expect(screen.getAllByText(/80051203412/).length).toBeGreaterThan(0)
     expect(screen.getByRole('tab', { name: /Metingen/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Labresultaten/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Afspraken/ })).toBeTruthy()
     // Legacy meta tabs are gone per D10
     expect(screen.queryByRole('tab', { name: /Overzicht/ })).toBeNull()
     expect(screen.queryByRole('tab', { name: /Zorgteam/ })).toBeNull()
     expect(screen.queryByRole('tab', { name: /Geschiedenis/ })).toBeNull()
-    expect(screen.queryByRole('tab', { name: /Afspraken/ })).toBeNull()
   })
 
   it('back link points to /tasks', async () => {
