@@ -99,6 +99,8 @@ A new tab on the patient detail view, one section per active enrollment. Three s
 - **Next / actionable** — eligible with timing elapsed, or active: rendered per its D4 contract with the matching caregiver action (Done / Book / Perform / Close / Pick branch / Advance).
 - **Finished** — `completed`/`skipped`: shows the typed **result summary** (appointment performed_at, treatment notes/complications, decision branch picked, mdo notes) plus the caregiver + timestamp.
 
+**Editable values on the tab.** Beyond advancing steps, an authorized caregiver (with rights) or admin may **edit still-updatable values** on a running enrollment from the Zorgpad tab — clinical dates (e.g. `operation_date`), deferred values, role bindings — as long as they haven't been consumed (a completed block's result is locked; pending ones are editable). Editing a named clinical date (e.g. rebooking `operation_date`) **recomputes** the dependent Temporal timers (`operation_date − N`). The patient is data, never an editor.
+
 The tab is labelled **"Zorgpad"** (Dutch UI string) and shows the **full** pathway across all horizons — near-term and far-future steps alike. This contrasts with the `/tasks` inbox, which is a flat near-term work list **visually windowed to the next 30 days** (same window as the appointment source): the runtime materializes pathway tasks/appointments for future steps too, but the inbox only surfaces the next 30 days while the Zorgpad tab shows them all. Exact layout to be prototyped as HTML (`prototypes/` per repo convention).
 
 ### D8 — Decision resolution (PoC)
@@ -129,12 +131,12 @@ The runtime executes on **Temporal**, not the in-process engine. Pathways are da
 
 ### D11 — People assignment: roles authored at build, bound to people at enrollment
 
-A block that materializes work needs people. This is modelled as **roles**, not hard-coded users:
-- **Build**: a pathway declares a set of distinct **roles** it needs (each maps to a `role_in_care` / `practitioner_role`). Each materializing block references one of those roles. (Authoring the role set + per-block role is part of the builder; the data model lives here.)
-- **Enroll**: the caregiver **binds each role → an actual person**, picked from the patient's **care team** (and added to the team if not yet on it). Binding is **per-role, reused** across every block that references the role — enroll-phase values stored alongside the other deferred values.
-- **Runtime**: materialization uses the bound person — appointment/treatment/mdo → the role's person is the Appointment **`lead`** participant (optional support/observer from other bound roles); `task` → the role's person is the assignee.
+A block that materializes work needs people, modelled as a **care-team / role-type reference**, not hard-coded users:
+- **Build**: each materializing block (`appointment`, `treatment`, `mdo`, `task`) references a **care-team / role-type** (e.g. urology team, nursing, MDO panel) — the *category* of who does it. The same role-type may be referenced by many blocks.
+- **Enroll**: for each block (or each distinct role-type), the caregiver **chooses the actual caregiver(s)** from that care-team — **one or several** (MDO has multiple participants). People come from the patient's **care team** (added to it if not yet on it). Blocks sharing a role-type may default to the same pick with a per-block override where needed.
+- **Runtime**: materialization uses the chosen people — appointment/treatment/mdo → the picked caregiver(s) become the Appointment participants (one `lead` + optional support/observer); `task` → the picked caregiver is the assignee.
 
-A pathway cannot be enrolled until every required role is bound (same validation path as required deferred fields). Phase tags: the role *requirement* is build; the role→person *binding* is enroll; the resulting participant/assignee is runtime.
+A pathway cannot be enrolled until every block's required caregiver(s) are chosen (same validation path as required deferred fields). Phase tags: the role-type *reference* is build; the role-type→caregiver(s) *choice* is enroll; the resulting participant(s)/assignee is runtime.
 
 ### D10 — Timed steps auto-advance; care-team visibility
 
