@@ -58,6 +58,18 @@
 - [ ] 6.5 Lifecycle controls (cancel / pause / resume) per enrollment
 - [ ] 6.6 Edit still-updatable values on the tab (clinical dates, deferred values, caregiver choices); locked once consumed
 
+## 6b. Builder (author the bladder-cancer pathway)
+
+- [ ] 6b.1 Per-block care-role picker (shared FHIR `role_in_care`/`PractitionerRole` value set) in the inspectors
+- [ ] 6b.2 Named clinical-date declaration + per-block min-lead-time / forward-offset timing authoring
+- [ ] 6b.3 Remove `MilestoneInspector` + `WaitInspector` + palette entries
+- [ ] 6b.4 Verify subpath (nested-pathway-blocks) + Luscii program picker author the flow as drawn
+- [ ] 6b.5 Author the full bladder-cancer pathway in the builder end-to-end
+
+## 6c. Seed script
+
+- [ ] 6c.1 Seed script that authors the bladder-cancer pathway (blocks + roles + clinical dates + timing + Luscii program ref)
+
 ## 7. Integration + verification
 
 - [ ] 7.1 Seed a demo pathway + enroll a demo patient end-to-end through Temporal

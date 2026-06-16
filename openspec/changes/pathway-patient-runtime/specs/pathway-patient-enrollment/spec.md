@@ -27,7 +27,7 @@ A caregiver on the patient's care team SHALL enroll the patient into a **publish
 
 ### Requirement: Enrollment chooses caregivers for each block's care-team role
 
-Each materializing block (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-team / role-type** at build time (the category of who does it). At enrollment the caregiver SHALL **choose the actual caregiver(s)** for each block (or each distinct role-type) from the patient's **care team** — **one or several** (e.g. an `mdo` has multiple participants). If a chosen caregiver is not yet on the care team, choosing them SHALL also add them to the care team. Blocks sharing a role-type MAY default to the same choice with a per-block override. An enrollment SHALL NOT be created until every block's required caregiver(s) are chosen (same validation path as required deferred fields).
+Each materializing block (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-role code** (the shared FHIR-aligned `role_in_care`/`PractitionerRole` value set) at build time. At enrollment the caregiver SHALL **choose the actual caregiver(s)** for each block (or each distinct role-type) from the patient's **care team** — **one or several** (e.g. an `mdo` has multiple participants). If a chosen caregiver is not yet on the care team, choosing them SHALL also add them to the care team. Blocks sharing a role-type MAY default to the same choice with a per-block override. An enrollment SHALL NOT be created until every block's required caregiver(s) are chosen (same validation path as required deferred fields).
 
 #### Scenario: Caregivers chosen per block from the care team
 

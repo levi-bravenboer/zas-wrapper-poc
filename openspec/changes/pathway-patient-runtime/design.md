@@ -17,8 +17,9 @@ The audit/event-logging system is being built separately (`feat/audit-event-logg
 - Every runtime transition invokes a stub `emitAuditEvent` activity (hook for `feat/audit-event-logging`).
 
 **Non-Goals:**
-- Building the audit/event-logging store (stub activity only).
-- Builder UI for authoring the per-block runtime overrides + roles (follow-up change).
+- Building the audit/event-logging store (the merged `audit` system is wired via an activity).
+
+**In scope (revised — D16):** the **pathway builder must fully author** the bladder-cancer pathway — every new field (care-team role-types, named clinical dates + min-lead-time, subpath, per-block runtime contracts, timing incl. forward offsets, input_logic predicates). A **seed script** also authors the same pathway for convenience.
 - A patient-facing portal — patient-lane blocks (form, message, informed_consent) are fake-log only; no patient channel.
 - (Revised — see D14/D15) A **subpath** (the flow's "operate (biopsy)") is **builder-time inlining**: it expands into regular blocks in the **same** pathway/enrollment — no nested child workflow. A cross-pathway **bridge** (handoff to the separate oncology pathway) is a different mechanism: `end_pathway` + a fire-and-forget `pathway_link` to another pathway. `external_program` (Luscii) is thin-real (enroll only).
 - Data-driven `decision.auto_resolve` (authored, not wired — caregiver picks).
@@ -132,7 +133,7 @@ The runtime executes on **Temporal**, not the in-process engine. Pathways are da
 ### D11 — People assignment: roles authored at build, bound to people at enrollment
 
 A block that materializes work needs people, modelled as a **care-team / role-type reference**, not hard-coded users:
-- **Build**: each materializing block (`appointment`, `treatment`, `mdo`, `task`) references a **care-team / role-type** (e.g. urology team, nursing, MDO panel) — the *category* of who does it. The same role-type may be referenced by many blocks.
+- **Build**: each materializing block (`appointment`, `treatment`, `mdo`, `task`) references a **care-role code** drawn from **one shared, FHIR-aligned value set** — the existing `role_in_care` / `PractitionerRole` codes that `CareTeam.participant` already uses. No new role-type entity: builder ↔ care-team ↔ `Appointment.participant` all align on this single vocabulary. The same role code may be referenced by many blocks.
 - **Enroll**: for each block (or each distinct role-type), the caregiver **chooses the actual caregiver(s)** from that care-team — **one or several** (MDO has multiple participants). People come from the patient's **care team** (added to it if not yet on it). Blocks sharing a role-type may default to the same pick with a per-block override where needed.
 - **Runtime**: materialization uses the chosen people — appointment/treatment/mdo → the picked caregiver(s) become the Appointment participants (one `lead` + optional support/observer); `task` → the picked caregiver is the assignee.
 
@@ -218,7 +219,7 @@ The sticky-note structure (Pre-requisites / Actions / Complete-if) maps to: `inp
 
 ### D15 — Subpath is inlining, not nested enrollment
 
-A **subpath** block is a builder-authoring convenience: it appears as a single block on the canvas but **expands into its constituent blocks within the same pathway version**. At runtime there is **one** enrollment and **one** Temporal workflow over the flattened block set — no child workflow, no nested enrollment. Consequences:
+A **subpath** is **another pathway, inlined**: a subpath block references a separate (reusable) pathway and the builder/loader **expands it into the parent's block set**. The builder already renders this visually (the `nested-pathway-blocks` capability). At runtime there is **one** enrollment and **one** Temporal workflow over the **flattened** block set — no child workflow, no nested enrollment. Consequences:
 - The subpath's blocks are ordinary blocks: same `input_logic`, timing, roles, materialization as any other.
 - **Enrollment scans the fully-flattened block set** (including inlined subpath blocks) when building the enroll descriptor — so any enroll-phase value (deferred field or role) introduced by a subpath block is prompted for at enroll. "If a subpath has enroll values, the enroll flow makes you set them."
 - This is distinct from `pathway_link` to a **separate** pathway (the oncology **bridge**), which is a real cross-pathway handoff (fire-and-forget child enrollment) — not inlining.

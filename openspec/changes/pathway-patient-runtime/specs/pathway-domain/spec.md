@@ -58,7 +58,7 @@ Every non-system block SHALL declare a runtime contract: its **actor** (caregive
 
 ### Requirement: Materializing blocks reference a care-team role-type
 
-A block that materializes a work primitive (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-team / role-type** (the category of who does it; e.g. urology, MDO panel). The role-type reference is a **build-phase** declaration; choosing the actual caregiver(s) is **enroll-phase** (one or several per block — `mdo` takes multiple); the resulting participant(s)/assignee is **runtime**. The same role-type MAY be referenced by many blocks.
+A block that materializes a work primitive (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-role code** from the shared FHIR-aligned value set (`role_in_care` / `PractitionerRole`) that `CareTeam.participant` already uses — no new role-type entity. The role reference is a **build-phase** declaration; choosing the actual caregiver(s) is **enroll-phase** (one or several per block — `mdo` takes multiple); the resulting participant(s)/assignee is **runtime**. The same role-type MAY be referenced by many blocks.
 
 #### Scenario: Block references a care-team role-type
 
