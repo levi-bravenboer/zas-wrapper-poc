@@ -39,6 +39,16 @@ export async function createEnrollment(payload: EnrollmentCreate): Promise<Enrol
   throw err
 }
 
+export async function cancelEnrollment(enrollmentId: string): Promise<Enrollment> {
+  const result = await api.POST('/enrollments/{enrollment_id}:cancel', {
+    params: { path: { enrollment_id: enrollmentId } },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to cancel enrollment', result.response.status)
+  }
+  return result.data
+}
+
 async function startExecution(enrollmentId: string, executionId: string): Promise<void> {
   const result = await api.POST('/enrollments/{enrollment_id}/executions/{execution_id}:start', {
     params: { path: { enrollment_id: enrollmentId, execution_id: executionId } },

@@ -3,6 +3,17 @@ import { useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -10,7 +21,7 @@ import { formatDateOrDash } from '@/lib/utils/datetime'
 import { getPathwayVersion } from '@/modules/pathway/api'
 import type { PathwayBlock } from '@/modules/pathway/types'
 
-import { useCompleteStep } from '../hooks'
+import { useCancelEnrollment, useCompleteStep } from '../hooks'
 import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
@@ -37,6 +48,14 @@ export interface EnrollmentCardProps {
 export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): ReactElement {
   const { t, i18n } = useTranslation('patient-pathway')
   const completeStep = useCompleteStep(patientId)
+  const cancelEnrollmentMutation = useCancelEnrollment(patientId)
+
+  const handleCancel = (): void => {
+    cancelEnrollmentMutation.mutate(enrollment.id, {
+      onSuccess: () => toast.success(t('cancel.toast.success')),
+      onError: () => toast.error(t('cancel.toast.error')),
+    })
+  }
 
   const versionQuery = useQuery({
     queryKey: ['pathway-version', enrollment.pathway_id, enrollment.pathway_version_id] as const,
@@ -126,6 +145,28 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
         <span className="text-sm text-muted-foreground">
           {t('card.anchor')}: {formatDateOrDash(enrollment.anchor_date, i18n.language)}
         </span>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              disabled={cancelEnrollmentMutation.isPending}
+            >
+              {t('cancel.action')}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('cancel.title')}</AlertDialogTitle>
+              <AlertDialogDescription>{t('cancel.description')}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('cancel.dismiss')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCancel}>{t('cancel.confirm')}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <BucketSection

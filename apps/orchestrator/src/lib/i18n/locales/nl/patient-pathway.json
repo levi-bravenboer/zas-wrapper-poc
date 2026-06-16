@@ -22,6 +22,17 @@
     },
     "validationTitle": "Inschrijven geblokkeerd"
   },
+  "cancel": {
+    "action": "Annuleren",
+    "title": "Zorgpad annuleren?",
+    "description": "De inschrijving wordt gestopt. Deze actie kan niet ongedaan worden gemaakt.",
+    "dismiss": "Terug",
+    "confirm": "Zorgpad annuleren",
+    "toast": {
+      "success": "Zorgpad geannuleerd",
+      "error": "Annuleren mislukt"
+    }
+  },
   "card": {
     "anchor": "Ankerdatum",
     "state": {

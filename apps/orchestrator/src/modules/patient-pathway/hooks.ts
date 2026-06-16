@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { completeStep, createEnrollment, listPatientEnrollments } from './api'
+import { cancelEnrollment, completeStep, createEnrollment, listPatientEnrollments } from './api'
 import { patientPathwayKeys } from './keys'
 import type { BlockExecution, Enrollment, EnrollmentCreate } from './types'
 
@@ -30,6 +30,14 @@ export interface CompleteStepVariables {
   enrollmentId: string
   execution: BlockExecution
   result?: Record<string, unknown> | null
+}
+
+export function useCancelEnrollment(patientId: string) {
+  const qc = useQueryClient()
+  return useMutation<Enrollment, Error, string>({
+    mutationFn: (enrollmentId) => cancelEnrollment(enrollmentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
+  })
 }
 
 export function useCompleteStep(patientId: string) {
