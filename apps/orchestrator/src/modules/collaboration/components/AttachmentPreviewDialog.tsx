@@ -28,7 +28,7 @@ function PreviewBody({
       <img
         src={url}
         alt={attachment.filename}
-        className="mx-auto max-h-[70vh] w-auto rounded-md object-contain"
+        className="mx-auto block max-h-[70vh] max-w-full rounded-md object-contain"
       />
     )
   }
@@ -71,7 +71,7 @@ export function AttachmentPreviewDialog({
         if (!next) onClose()
       }}
     >
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-auto">
         <DialogHeader>
           <DialogTitle className="truncate pr-6">{attachment?.filename}</DialogTitle>
         </DialogHeader>
