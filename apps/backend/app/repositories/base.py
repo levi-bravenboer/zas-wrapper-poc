@@ -13,11 +13,15 @@ from sqlalchemy.orm import InstrumentedAttribute
 
 from app.core.errors import AppError
 from app.db.audit import SESSION_ACTOR_KEY
-from app.db.base import AuditableEntity, Entity, TenantOwnedEntity
+from app.db.base import AuditableEntity, Base, TenantOwnedEntity
 from app.schemas._list.list_query import ListQuery, Operator
 from app.schemas._list.page import Page
 
-T = TypeVar("T", bound=Entity)
+# Bound to `Base`, not `Entity`, so append-only models (e.g. AuditEvent) that
+# inherit `Base` directly — no soft-delete — can use the read/list machinery.
+# Entity-only access (deleted_at) is confined to the soft-delete helpers, which
+# append-only repositories override.
+T = TypeVar("T", bound=Base)
 
 
 class BaseRepository(Generic[T]):
@@ -45,10 +49,18 @@ class BaseRepository(Generic[T]):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    def _soft_delete_predicate(self) -> ColumnElement[bool] | None:
+        """Filter excluding soft-deleted rows. Override to return `None` for
+        append-only models that have no `deleted_at` column (e.g. AuditEvent).
+        """
+        return self.model.deleted_at.is_(None)  # type: ignore[attr-defined]
+
     async def list(self) -> list[T]:
-        result = await self._session.execute(
-            select(self.model).where(self.model.deleted_at.is_(None))
-        )
+        stmt = select(self.model)
+        predicate = self._soft_delete_predicate()
+        if predicate is not None:
+            stmt = stmt.where(predicate)
+        result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
     async def list_including_deleted(self) -> list[T]:
@@ -63,7 +75,7 @@ class BaseRepository(Generic[T]):
     async def soft_delete(self, entity: T) -> None:
         """Mark the row as logically deleted. Does NOT remove it from the table."""
 
-        entity.deleted_at = sa.func.now()  # type: ignore[assignment]
+        entity.deleted_at = sa.func.now()  # type: ignore[assignment, attr-defined]
         if isinstance(entity, AuditableEntity):
             actor = self._session.info.get(SESSION_ACTOR_KEY)
             if actor is not None:
@@ -218,7 +230,10 @@ class BaseListRepository(BaseRepository[T]):
         self._validate_allow_lists(query)
 
         total_col = sa.func.count().over().label("__total")
-        stmt = sa.select(self.model, total_col).where(self.model.deleted_at.is_(None))
+        stmt = sa.select(self.model, total_col)
+        soft_delete_pred = self._soft_delete_predicate()
+        if soft_delete_pred is not None:
+            stmt = stmt.where(soft_delete_pred)
 
         tenant_pred = self._tenant_predicate()
         if tenant_pred is not None:
@@ -274,11 +289,10 @@ class BaseListRepository(BaseRepository[T]):
         empty result → empty count. This branch only fires when `page` is
         past the last page (rare; clients normally clamp).
         """
-        stmt = (
-            sa.select(sa.func.count())
-            .select_from(self.model)
-            .where(self.model.deleted_at.is_(None))
-        )
+        stmt = sa.select(sa.func.count()).select_from(self.model)
+        soft_delete_pred = self._soft_delete_predicate()
+        if soft_delete_pred is not None:
+            stmt = stmt.where(soft_delete_pred)
         tenant_pred = self._tenant_predicate()
         if tenant_pred is not None:
             stmt = stmt.where(tenant_pred)
