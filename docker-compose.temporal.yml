@@ -1,0 +1,17 @@
+# Isolated Temporal dev server for the pathway runtime — NOT part of the
+# shared stack (docker-compose.yml). Run separately:
+#   docker compose -f docker-compose.temporal.yml up -d
+# In-memory dev server (no external DB). gRPC :7233, Web UI :8233.
+services:
+  temporal:
+    image: temporalio/temporal:latest
+    container_name: zas_temporal_dev
+    command: ["server", "start-dev", "--ip", "0.0.0.0", "--namespace", "default"]
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     realtime_keepalive_seconds: int = 15
     realtime_idle_timeout_seconds: int = 30 * 60
 
+    # Temporal (pathway runtime). Localhost default targets the isolated
+    # dev server (docker-compose.temporal.yml); deploy overrides the host.
+    temporal_address: str = "localhost:7233"
+    temporal_namespace: str = "default"
+    temporal_task_queue: str = "pathway-runtime"
+
 
 @lru_cache
 def get_settings() -> Settings:
