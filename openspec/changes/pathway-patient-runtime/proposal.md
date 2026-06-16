@@ -5,7 +5,7 @@ The pathway model, builder, and runtime aggregate (enrollment + block executions
 ## What Changes
 
 - **Per-block runtime contract** — each block kind gets an explicit, phase-tagged contract: what is set in the **builder** (template config), what is set at **enrollment** (deferred fields), and what is produced at **runtime** (execution result). Fields across phases can connect (a build choice marks a field deferred-to-enroll; an enroll value seeds a runtime default; a build-time `decision.outputs` feeds a runtime branch pick).
-- **Temporal runtime** — the runtime runs on **Temporal**: one generic `PathwayEnrollmentWorkflow` per enrollment interprets the pinned pathway data; durable timers handle block timing/escalation; signals drive caregiver actions; activities perform all I/O (materialization, projection, audit emit). Temporal holds authoritative state; the Postgres executions become a read projection. Replaces the in-process engine.
+- **Temporal runtime** — the runtime runs on **Temporal**: one generic `PathwayEnrollmentWorkflow` per enrollment interprets the pinned pathway data; durable timers handle block timing/escalation; synchronous Updates drive caregiver actions (signals for cancel/pause/resume); activities perform all I/O (materialization, projection, audit emit). Temporal holds authoritative state; the Postgres executions become a read projection. Replaces the in-process engine.
 - **Materialized work primitives** — when a block becomes actionable the runtime materializes the matching primitive (distinct entities): `appointment`/`treatment`/`mdo` → real `Appointment` rows (calendar + appointment source); `task` + fake-log blocks → a new `pathway` task source projection. Completing the primitive advances the block.
 - **Uniform "fake-log" runtime** — every block is advanceable in the PoC. A caregiver advances a block from the patient tab; the execution transitions state. Blocks with real logic (task, appointment, treatment, mdo, decision) capture a typed result; blocks without a real integration (form, message, informed_consent, external_program, pathway_link) just transition. Every transition emits an audit event via an activity — a hook for the forthcoming audit/event-logging system (`feat/audit-event-logging`); no event log is built here.
 - **Timing on blocks, not a block** — relative delays ("N days after dependency", "N days before target") are modelled as each block's `timing_policy`, driving when an execution becomes eligible.
@@ -22,8 +22,10 @@ The pathway model, builder, and runtime aggregate (enrollment + block executions
 - `patient-pathway-tab`: the Pathway tab on the patient detail view — next vs finished steps and per-block caregiver actions.
 
 ### Modified Capabilities
-- `pathway-domain`: remove `milestone` and `wait` block kinds; `task.assignee` caregiver-only; add the build/enroll/runtime field-phase classification and per-block runtime-contract metadata.
+- `pathway-domain`: remove `milestone` and `wait` block kinds; `task.assignee` caregiver-only; add the build/enroll/runtime field-phase classification, per-block runtime-contract metadata, pathway role-set, and publish-time predicate connection-validation.
 - `patient-profile-ui`: register the new Pathway tab in the patient detail tab set.
+
+> Note: the `/tasks` aggregator and the `Appointment` entity (with `appointments.pathway_block_instance_id`) originate in the in-flight `2026-06-10-patient-inbox` change and are **not yet archived** as standalone capabilities. This change adds a `pathway` task source and creates Appointments through those surfaces — specified here under `pathway-runtime-execution` / `patient-pathway-tab`. Once `tasks-base` / `appointment-base` are archived, the source addition + pathway-linked Appointments should be folded back as formal deltas on them.
 
 ## Impact
 

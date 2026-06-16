@@ -4,24 +4,25 @@ The pathway domain (typed block hierarchy), the runtime aggregate (`PathwayEnrol
 
 What is missing is the **caregiver-facing path**: enrolling a patient, advancing their blocks, and viewing progress — plus a **defined runtime contract per block kind** so each block behaves predictably. This design fills that gap for the PoC.
 
-The audit/event-logging system is being built separately (`feat/audit-event-logging`); this change only marks where runtime events should be emitted.
+The audit/event-logging system is being built separately (`feat/audit-event-logging`); this change emits audit events through a stub `emitAuditEvent` activity (a hook), not a built event store. The existing in-process engine logic is **re-homed into a Temporal workflow** (D9).
 
 ## Goals / Non-Goals
 
 **Goals:**
-- A caregiver can enroll a patient into a published pathway version, supplying enroll-phase values.
+- A caregiver can enroll a patient into a published pathway version — binding roles to people, setting an anchor date, supplying enroll-phase values.
 - Every block kind has a phase-tagged contract: build (template) / enroll (deferred) / runtime (produced).
-- Every block is advanceable in the PoC via a uniform "fake-log" runtime; blocks with real logic capture a typed result.
-- A Pathway tab on the patient detail view shows next steps and finished steps with per-block caregiver actions.
-- A list-by-patient read endpoint backs the tab.
-- Each runtime state transition has an audit-emit hook placeholder.
+- The runtime runs on **Temporal**: one interpreter workflow per enrollment; **durable timers auto-advance** timed steps (incl. `if_not_done_within` escalation).
+- Blocks **materialize work primitives** — Appointments (`appointment`/`treatment`/`mdo`) and a `pathway` task source (`task` + fake-log) — that surface in the calendar + `/tasks` inbox.
+- A **Zorgpad** tab on the patient detail view shows the full pathway (upcoming / actionable / finished); a list-by-patient endpoint backs it.
+- Every runtime transition invokes a stub `emitAuditEvent` activity (hook for `feat/audit-event-logging`).
 
 **Non-Goals:**
-- Building the audit/event-logging system (hook comments only).
-- Builder UI for authoring the per-block runtime overrides (follow-up change).
+- Building the audit/event-logging store (stub activity only).
+- Builder UI for authoring the per-block runtime overrides + roles (follow-up change).
 - A patient-facing portal — patient-lane blocks (form, message, informed_consent) are fake-log only; no patient channel.
 - Real external integrations for `external_program` (Luscii) and nested enrollment for `pathway_link` — fake-log now, hooked for later.
-- Automatic time-driven advancement (no scheduler/tick); timing only drives eligibility ordering, caregiver advances.
+- Data-driven `decision.auto_resolve` (authored, not wired — caregiver picks).
+- Notifications/escalation beyond what an `if_not_done_within` timer triggers.
 
 ## Decisions
 
@@ -38,7 +39,7 @@ Connections: a build choice can flip a field to enroll-deferred; an enroll value
 
 ### D2 — Uniform fake-log runtime + audit hook
 
-Every block advances through `pending → eligible → active → completed` (with `skipped` / `failed`). A caregiver advances a block from the tab; the engine transitions state. Blocks with real logic write a typed `result_json`; blocks without an integration just transition. At each transition the code carries `# TODO(audit): emit runtime event {enrollment, execution, block_kind, action, actor, payload, at}` for `feat/audit-event-logging`.
+Every block advances through `pending → eligible → active → completed` (with `skipped` / `failed`). The **Temporal workflow** (D9) owns transitions: a caregiver advances a block via a Temporal Update, or a durable timer auto-advances a timed step. Blocks with real logic write a typed `result_json`; blocks without an integration just transition. Each transition invokes an `emitAuditEvent` activity carrying `{enrollment, execution, block_kind, action, actor, payload, at}` — a **stub hook** for `feat/audit-event-logging` (no event store built here).
 
 **Why:** makes the whole pathway demoable now without per-block integrations, and gives a single, consistent advance mechanism.
 
