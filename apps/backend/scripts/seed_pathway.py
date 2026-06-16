@@ -64,9 +64,7 @@ LANE_EXTERNAL_ID: UUID = UUID("00000000-0000-4000-8000-000000000204")
 BLOCK_START_ID: UUID = UUID("00000000-0000-4000-8000-000000000300")
 BLOCK_INTAKE_ID: UUID = UUID("00000000-0000-4000-8000-000000000301")
 BLOCK_OPERATIE_ID: UUID = UUID("00000000-0000-4000-8000-000000000302")
-BLOCK_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000303")
 BLOCK_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000304")
-BLOCK_ONTSLAG_ID: UUID = UUID("00000000-0000-4000-8000-000000000305")
 BLOCK_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000306")
 BLOCK_END_ID: UUID = UUID("00000000-0000-4000-8000-000000000307")
 
@@ -200,21 +198,10 @@ def _build_payload() -> PathwayDefinitionReplace:
                 x=0,
                 y=0,
             ),
-            PathwayBlockIn(
-                id=BLOCK_HERSTEL_ID,
-                phase_id=PHASE_RECOVERY_ID,
-                lane_id=LANE_SYSTEM_ID,
-                kind="wait",
-                label="Thuisrevalidatie periode",
-                config={
-                    "event_type": "external_data",
-                    "timeout_days": 42,
-                    "on_timeout": "continue",
-                    "input_logic": _gate_if_done(BLOCK_OPERATIE_ID),
-                },
-                x=0,
-                y=0,
-            ),
+            # Catalogue prune: the former `wait` recovery block + `milestone`
+            # discharge marker were removed. The recovery delay is now a
+            # relative timing concern on the decision (omitted here for the
+            # demo seed); the decision gates straight off the operation.
             PathwayBlockIn(
                 id=BLOCK_VOORTGANG_ID,
                 phase_id=PHASE_FOLLOW_UP_ID,
@@ -229,20 +216,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "question": "Verloopt het herstel volgens plan?",
                     "outputs": ["goed", "onvoldoende"],
                     "mode": "xor",
-                    "input_logic": _gate_if_done(BLOCK_HERSTEL_ID),
-                },
-                x=0,
-                y=0,
-            ),
-            PathwayBlockIn(
-                id=BLOCK_ONTSLAG_ID,
-                phase_id=PHASE_FOLLOW_UP_ID,
-                lane_id=LANE_SYSTEM_ID,
-                kind="milestone",
-                label="Ontslag",
-                config={
-                    "label": "Ontslag",
-                    "input_logic": _gate_decision_output(BLOCK_VOORTGANG_ID, "goed"),
+                    "input_logic": _gate_if_done(BLOCK_OPERATIE_ID),
                 },
                 x=0,
                 y=0,
@@ -270,7 +244,10 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_id=LANE_SYSTEM_ID,
                 kind="end_pathway",
                 label="Einde",
-                config={"name": "Einde", "input_logic": _gate_if_done(BLOCK_ONTSLAG_ID)},
+                config={
+                    "name": "Einde",
+                    "input_logic": _gate_decision_output(BLOCK_VOORTGANG_ID, "goed"),
+                },
                 x=0,
                 y=0,
             ),

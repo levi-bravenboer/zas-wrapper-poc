@@ -190,4 +190,5 @@ def test_from_domain_includes_discriminator() -> None:
     block = TaskBlock(name="Taak", title="Bloed prikken", assignee="caregiver")
     kwargs = from_domain(block)
     assert kwargs["kind"] == "task"
-    assert kwargs["name"] == "Taak"
+    # Base field `name` maps to the `label` column (_BASE_FIELD_TO_COLUMN).
+    assert kwargs["label"] == "Taak"
