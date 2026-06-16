@@ -93,6 +93,9 @@ class PathwayBlock(TenantOwnedEntity):
     timing_offset_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     timing_window_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     timing_duration_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
+    # `relative_to_date` timing (D3a): named clinical date + before/after.
+    timing_date_name: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    timing_direction: Mapped[str | None] = mapped_column(sa.String(8), nullable=True)
 
     # --- Per-kind nullable columns (single-table inheritance, mapper-dispatched) ---
     # Prefixed by kind to avoid collisions with each other and with the

@@ -177,6 +177,13 @@ def _timing_policy_from_row(row: PathwayBlock) -> dict[str, Any] | None:
         }
     if kind == "at_enrollment_picked_date":
         return {"kind": kind}
+    if kind == "relative_to_date":
+        return {
+            "kind": kind,
+            "date_name": getattr(row, "timing_date_name", None) or "",
+            "offset_iso": getattr(row, "timing_offset_iso", None) or "PT0S",
+            "direction": getattr(row, "timing_direction", None) or "before",
+        }
     raise ValueError(f"unknown timing_policy_kind: {kind!r}")
 
 
@@ -203,6 +210,8 @@ def _timing_policy_to_columns(policy: Any) -> dict[str, Any]:
         "timing_offset_iso": None,
         "timing_window_iso": None,
         "timing_duration_iso": None,
+        "timing_date_name": None,
+        "timing_direction": None,
     }
     if kind == "fixed_duration":
         columns["timing_duration_iso"] = policy.get("duration_iso")
@@ -212,6 +221,10 @@ def _timing_policy_to_columns(policy: Any) -> dict[str, Any]:
         columns["timing_window_iso"] = policy.get("window_iso")
     elif kind == "at_enrollment_picked_date":
         pass
+    elif kind == "relative_to_date":
+        columns["timing_date_name"] = policy.get("date_name")
+        columns["timing_offset_iso"] = policy.get("offset_iso", "PT0S")
+        columns["timing_direction"] = policy.get("direction", "before")
     else:
         raise ValueError(f"unknown timing_policy_kind: {kind!r}")
     return columns

@@ -1341,7 +1341,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
@@ -1693,7 +1693,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Question */
             question: string;
@@ -1861,7 +1861,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -2098,7 +2098,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Provider
@@ -2179,7 +2179,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
@@ -2355,7 +2355,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Questions */
             questions?: components["schemas"]["FormQuestion"][];
@@ -2941,7 +2941,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Topic */
             topic: string;
@@ -2994,7 +2994,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Channel
@@ -3642,7 +3642,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Target Pathway Id
@@ -4367,6 +4367,33 @@ export interface components {
             };
         };
         /**
+         * RelativeToDatePolicy
+         * @description Block fires relative to a **named clinical date** set at enrollment
+         *     (e.g. `operation_date`), with an ISO 8601 offset applied `before`
+         *     (e.g. `operation_date − P3D`) or `after`. Editing the named date at
+         *     runtime recomputes the dependent timer (parent design D3a).
+         */
+        RelativeToDatePolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "relative_to_date";
+            /** Date Name */
+            date_name: string;
+            /**
+             * Offset Iso
+             * @default PT0S
+             */
+            offset_iso: string;
+            /**
+             * Direction
+             * @default before
+             * @enum {string}
+             */
+            direction: "before" | "after";
+        };
+        /**
          * Role
          * @enum {string}
          */
@@ -4532,7 +4559,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -4581,7 +4608,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
@@ -4685,7 +4712,7 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
             participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
@@ -8037,6 +8064,8 @@ export const predicateKindValues: ReadonlyArray<FlattenedDeepRequired<components
 export const providerDescriptorKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderDescriptor"]["kind"]> = ["password", "oidc"];
 export const readinessResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["status"]> = ["ready", "not_ready"];
 export const readinessResponseChecksValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["checks"][string]> = ["ok", "fail"];
+export const relativeToDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["kind"]> = ["relative_to_date"];
+export const relativeToDatePolicyDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["direction"]> = ["before", "after"];
 export const roleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Role"]> = ["admin", "caregiver", "patient"];
 export const roleInCareValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RoleInCare"]> = ["primary", "consulting", "observer"];
 export const shieldingAudienceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ShieldingAudience"]> = ["representative", "external_professional", "patient_other_role"];

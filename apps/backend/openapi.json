@@ -4801,6 +4801,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -4809,6 +4812,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -5677,6 +5681,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -5685,6 +5692,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -5997,6 +6005,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -6005,6 +6016,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -6436,6 +6448,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -6444,6 +6459,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -6648,6 +6664,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -6656,6 +6675,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -7036,6 +7056,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -7044,6 +7067,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -8511,6 +8535,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -8519,6 +8546,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -8648,6 +8676,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -8656,6 +8687,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -10158,6 +10190,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -10166,6 +10201,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -11952,6 +11988,41 @@
         ],
         "title": "ReadinessResponse"
       },
+      "RelativeToDatePolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "relative_to_date",
+            "title": "Kind",
+            "default": "relative_to_date"
+          },
+          "date_name": {
+            "type": "string",
+            "title": "Date Name"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso",
+            "default": "PT0S"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "before",
+              "after"
+            ],
+            "title": "Direction",
+            "default": "before"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "date_name"
+        ],
+        "title": "RelativeToDatePolicy",
+        "description": "Block fires relative to a **named clinical date** set at enrollment\n(e.g. `operation_date`), with an ISO 8601 offset applied `before`\n(e.g. `operation_date \u2212 P3D`) or `after`. Editing the named date at\nruntime recomputes the dependent timer (parent design D3a)."
+      },
       "Role": {
         "type": "string",
         "enum": [
@@ -12299,6 +12370,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -12307,6 +12381,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -12420,6 +12495,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -12428,6 +12506,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
@@ -12660,6 +12739,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RelativeToDatePolicy"
                   }
                 ],
                 "discriminator": {
@@ -12668,6 +12750,7 @@
                     "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
                     "due_within": "#/components/schemas/DueWithinPolicy",
                     "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "relative_to_date": "#/components/schemas/RelativeToDatePolicy",
                     "wait_after": "#/components/schemas/WaitAfterPolicy"
                   }
                 }
