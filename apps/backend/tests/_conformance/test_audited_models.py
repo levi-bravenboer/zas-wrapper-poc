@@ -26,8 +26,6 @@ def _all_subclasses(cls: type) -> set[type]:
 
 def test_audited_starter_set() -> None:
     audited = {
-        cls.__name__
-        for cls in _all_subclasses(Entity)
-        if cls.__dict__.get("__audited__", False)
+        cls.__name__ for cls in _all_subclasses(Entity) if cls.__dict__.get("__audited__", False)
     }
     assert audited == _EXPECTED

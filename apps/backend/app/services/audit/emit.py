@@ -23,7 +23,9 @@ from app.services.audit.registry import is_known_resource
 from app.services.audit.serialize import json_safe
 
 
-def _actor_fields(actor: SessionUser | None) -> tuple[ActorType, UUID | None, str | None, UUID | None]:
+def _actor_fields(
+    actor: SessionUser | None,
+) -> tuple[ActorType, UUID | None, str | None, UUID | None]:
     if actor is None:
         return ActorType.ANONYMOUS, None, None, None
     return ActorType.USER, actor.id, actor.display_name, actor.tenant_id
@@ -33,8 +35,7 @@ def _changes_payload(changes: dict[str, FieldChange] | None) -> dict[str, Any] |
     if not changes:
         return None
     return {
-        key: {"old": json_safe(fc.old), "new": json_safe(fc.new)}
-        for key, fc in changes.items()
+        key: {"old": json_safe(fc.old), "new": json_safe(fc.new)} for key, fc in changes.items()
     }
 
 

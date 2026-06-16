@@ -63,9 +63,7 @@ async def test_emit_committed_persists_independently(db_engine: AsyncEngine) -> 
     )
 
     async with factory() as session:
-        result = await session.execute(
-            select(AuditEvent).where(AuditEvent.request_id == rid)
-        )
+        result = await session.execute(select(AuditEvent).where(AuditEvent.request_id == rid))
         event = result.scalars().one()
     try:
         assert event.action == AuditAction.LOGIN

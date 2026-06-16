@@ -79,9 +79,7 @@ def _stamp(session: Session, actor: Any) -> None:
                 obj.updated_by = actor_id
 
     for obj in session.dirty:
-        if isinstance(obj, AuditableEntity) and session.is_modified(
-            obj, include_collections=False
-        ):
+        if isinstance(obj, AuditableEntity) and session.is_modified(obj, include_collections=False):
             obj.updated_by = actor_id
 
 

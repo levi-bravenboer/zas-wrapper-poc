@@ -26,9 +26,7 @@ async def _login(client: AsyncClient, email: str) -> None:
     assert response.status_code == 200, response.text
 
 
-async def test_requires_admin_role(
-    async_client: AsyncClient, seeded_zas_users: list[User]
-) -> None:
+async def test_requires_admin_role(async_client: AsyncClient, seeded_zas_users: list[User]) -> None:
     del seeded_zas_users
     await _login(async_client, CAREGIVER_EMAIL)
 
