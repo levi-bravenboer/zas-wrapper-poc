@@ -319,3 +319,67 @@ async def test_reachable_end_block_auto_completes_enrollment(
     assert view.state == "completed"
     end_exec = next(e for e in view.executions if e.block_template_id == end_block.id)
     assert end_exec.state == "completed"
+
+
+# ---- relative_to_date clinical-date timers (§6.6) -------------------------
+
+
+async def test_relative_to_date_timer_resolves_and_recomputes(
+    db_session: AsyncSession, runtime_world: dict[str, object]
+) -> None:
+    version = runtime_world["version"]
+    phase_id = runtime_world["block"].phase_id  # type: ignore[union-attr]
+    lane_id = runtime_world["block"].lane_id  # type: ignore[union-attr]
+    patient = runtime_world["patient"]
+
+    pre_op = PathwayBlock(
+        id=uuid.uuid4(),
+        pathway_version_id=version.id,  # type: ignore[union-attr]
+        phase_id=phase_id,
+        lane_id=lane_id,
+        label="Pre-op gesprek",
+        kind="appointment",
+        appointment_title="Pre-op",
+        appointment_mode="in_person",
+        timing_policy_kind="relative_to_date",
+        timing_date_name="operation_date",
+        timing_offset_iso="P2D",
+        timing_direction="before",
+    )
+    db_session.add(pre_op)
+    await db_session.commit()
+
+    service = _service(db_session)
+    enrollment = await service.create(
+        EnrollmentCreate(
+            patient_id=patient.id,  # type: ignore[union-attr]
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            anchor_date=date(2026, 6, 10),
+            deferred_values=[
+                DeferredFieldValueIn(
+                    block_template_id=pre_op.id,
+                    attr="operation_date",
+                    value_json="2026-07-01",
+                )
+            ],
+        ),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    pre_op_exec = next(e for e in view.executions if e.block_template_id == pre_op.id)
+    assert pre_op_exec.scheduled_at == datetime(2026, 6, 29, tzinfo=UTC)
+
+    # Move the operation 1 month later → pre-op timer recomputes.
+    await service.patch_deferred_value(
+        enrollment.id,
+        "operation_date",
+        DeferredFieldValuePatch(block_template_id=pre_op.id, value_json="2026-08-01"),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    pre_op_exec = next(e for e in view.executions if e.block_template_id == pre_op.id)
+    assert pre_op_exec.scheduled_at == datetime(2026, 7, 30, tzinfo=UTC)

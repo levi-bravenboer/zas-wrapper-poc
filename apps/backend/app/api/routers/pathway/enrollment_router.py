@@ -45,6 +45,7 @@ from app.services.pathway.errors import (
 from app.services.pathway.runtime_dispatch import (
     cancel_via_workflow,
     complete_via_workflow,
+    notify_via_workflow,
     pause_via_workflow,
     resume_via_workflow,
     start_enrollment_workflow,
@@ -361,11 +362,13 @@ async def complete_block_execution(
     dependencies=[_REQUIRE_ENROLLMENT_EDIT],
 )
 async def patch_deferred_value(
+    request: Request,
     enrollment_id: UUID,
     attr: str,
     payload: DeferredFieldValuePatch,
     current_user: CurrentUserDep,
     service: EnrollmentServiceDep,
+    settings: SettingsDep,
 ) -> DeferredFieldValueOut:
     row = await service.patch_deferred_value(
         enrollment_id,
@@ -373,6 +376,10 @@ async def patch_deferred_value(
         payload,
         tenant_id=current_user.tenant_id,
     )
+    if settings.pathway_runtime_engine == "temporal":
+        # Recomputed timers (e.g. moved clinical date) — wake the workflow so
+        # it re-evaluates its next durable timer against the new schedule.
+        await notify_via_workflow(request.app, enrollment_id=enrollment_id)
     return DeferredFieldValueOut.model_validate(row)
 
 

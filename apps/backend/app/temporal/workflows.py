@@ -59,9 +59,7 @@ class PathwayEnrollmentWorkflow:
         while not self._terminal and not self._cancel_requested:
             if self._paused:
                 # Halt timers — park until resumed or cancelled.
-                await workflow.wait_condition(
-                    lambda: not self._paused or self._cancel_requested
-                )
+                await workflow.wait_condition(lambda: not self._paused or self._cancel_requested)
                 if self._cancel_requested:
                     break
                 tick = await self._advance()
@@ -145,6 +143,12 @@ class PathwayEnrollmentWorkflow:
     @workflow.signal
     def resume(self) -> None:
         self._paused = False
+        self._wake = True
+
+    @workflow.signal
+    def notify(self) -> None:
+        # External state changed (e.g. a clinical date was edited) — re-advance
+        # so the timer loop recomputes the next wake against the new schedule.
         self._wake = True
 
 

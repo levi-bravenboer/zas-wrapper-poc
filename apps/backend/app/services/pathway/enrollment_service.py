@@ -8,7 +8,7 @@ aggregate back to the runtime engine for the initial eligibility pass.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import select
@@ -28,7 +28,10 @@ from app.domain.pathway.runtime.execution import (
     BlockExecution,
     InvalidTransitionError,
 )
-from app.domain.pathway.runtime.scheduling import schedule_from_anchor
+from app.domain.pathway.runtime.scheduling import (
+    resolve_relative_to_date,
+    schedule_from_anchor,
+)
 from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.schemas.pathway.enrollment import (
@@ -155,6 +158,8 @@ class EnrollmentService:
                 and timing_policy.get("kind") == "at_enrollment_picked_date"
             ):
                 scheduled_at = _picked_scheduled_at(template, template_id, supplied)
+            elif timing_policy is not None and timing_policy.get("kind") == "relative_to_date":
+                scheduled_at = _relative_scheduled_at(timing_policy, _dates_by_name(supplied))
             session.add(
                 PathwayBlockExecution(
                     id=uuid4(),
@@ -491,8 +496,35 @@ class EnrollmentService:
         templates: dict[UUID, BaseBlock] = {
             block_row.id: block_row_to_domain(block_row) for block_row in children.blocks
         }
-        await self._run_eligibility(enrollment, templates)
+        # patient-pathway-tab §6.6: a (re)supplied named clinical date moves
+        # the runtime timers of every block anchored to it (`relative_to_date`).
+        await self._recompute_relative_timers(enrollment_id, templates)
+        await self._run_eligibility(enrollment, templates, now=now)
         return row
+
+    async def _recompute_relative_timers(
+        self,
+        enrollment_id: UUID,
+        templates: dict[UUID, BaseBlock],
+    ) -> None:
+        deferred = await self._repo.list_deferred_values(enrollment_id)
+        dates_by_name: dict[str, object] = {d.attr: d.value_json for d in deferred}
+        rows = {r.block_template_id: r for r in await self._repo.list_executions(enrollment_id)}
+        for template_id, template in templates.items():
+            policy = (
+                template.timing_policy.model_dump(mode="json")
+                if template.timing_policy is not None
+                else None
+            )
+            if policy is None or policy.get("kind") != "relative_to_date":
+                continue
+            execution = rows.get(template_id)
+            # Consumed values are locked (§6.6): only timers for not-yet-started
+            # blocks move when the clinical date changes.
+            if execution is None or execution.state not in ("pending", "eligible"):
+                continue
+            execution.scheduled_at = _relative_scheduled_at(policy, dates_by_name)
+        await self._repo._session.flush()  # noqa: SLF001
 
     # ---- internals ---------------------------------------------------------
 
@@ -638,6 +670,41 @@ def _settle_auto_fire(
             return end_fired
         RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
     return end_fired
+
+
+def _dates_by_name(supplied: dict[tuple[UUID, str], object]) -> dict[str, object]:
+    """Flatten supplied deferred values to `{attr: value}` for clinical-date
+    lookup. A named clinical date is unique by `attr` within an enrollment."""
+    return {attr: value for (_template_id, attr), value in supplied.items()}
+
+
+def _parse_clinical_date(raw: object) -> date | datetime | None:
+    if isinstance(raw, datetime | date):
+        return raw
+    if isinstance(raw, str):
+        try:
+            return datetime.fromisoformat(raw)
+        except ValueError:
+            try:
+                return date.fromisoformat(raw)
+            except ValueError:
+                return None
+    return None
+
+
+def _relative_scheduled_at(
+    policy: dict[str, object],
+    dates_by_name: dict[str, object],
+) -> datetime | None:
+    """Resolve a `relative_to_date` block's `scheduled_at` from the named
+    clinical date, or `None` when that date has not been supplied yet."""
+    date_name = policy.get("date_name")
+    if not isinstance(date_name, str):
+        return None
+    parsed = _parse_clinical_date(dates_by_name.get(date_name))
+    if parsed is None:
+        return None
+    return resolve_relative_to_date(policy, parsed)
 
 
 def _picked_scheduled_at(
