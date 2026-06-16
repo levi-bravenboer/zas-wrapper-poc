@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, Request, Response
 
+from app.api._request import client_ip, user_agent
 from app.core.enums.audit import AuditAction, AuditResult
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
@@ -45,21 +46,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"])
 
 
-def _client_ip(request: Request) -> str | None:
-    return request.client.host if request.client else None
-
-
-def _user_agent(request: Request) -> str | None:
-    return request.headers.get("user-agent")
-
-
 def _audit_context(request: Request, *, reason: str | None = None) -> AuditContext:
     # model_validate (not kwargs) so the `str` client IP is coerced to a real
     # IP type by pydantic without tripping the typed constructor signature.
     return AuditContext.model_validate(
         {
-            "ip": _client_ip(request),
-            "user_agent": _user_agent(request),
+            "ip": client_ip(request),
+            "user_agent": user_agent(request),
             "reason": reason,
         }
     )
@@ -137,8 +130,8 @@ async def login_password(
                 event="auth.login.failure",
                 provider_key="password",
                 surface="caregiver",
-                client_ip=_client_ip(request),
-                user_agent=_user_agent(request),
+                client_ip=client_ip(request),
+                user_agent=user_agent(request),
                 user_id=exc.audit_user_id,
                 reason=exc.audit_reason,
             )
@@ -157,8 +150,8 @@ async def login_password(
                 event="auth.login.success",
                 provider_key="password",
                 surface="caregiver",
-                client_ip=_client_ip(request),
-                user_agent=_user_agent(request),
+                client_ip=client_ip(request),
+                user_agent=user_agent(request),
                 user_id=result.roster[0].id,
             )
         )
@@ -175,8 +168,8 @@ async def login_password(
             event="auth.login.success",
             provider_key="password",
             surface="caregiver",
-            client_ip=_client_ip(request),
-            user_agent=_user_agent(request),
+            client_ip=client_ip(request),
+            user_agent=user_agent(request),
             user_id=result.user.id,
         )
     )
@@ -306,8 +299,8 @@ async def logout_user(
             AuthEvent(
                 event="auth.logout",
                 provider_key="session",
-                client_ip=_client_ip(request),
-                user_agent=_user_agent(request),
+                client_ip=client_ip(request),
+                user_agent=user_agent(request),
                 user_id=current_user.id,
             )
         )
