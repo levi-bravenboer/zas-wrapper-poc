@@ -624,6 +624,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Audit Events */
+        get: operations["list_audit_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patient_id}/care-teams": {
         parameters: {
             query?: never;
@@ -1278,6 +1295,11 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /**
+         * ActorType
+         * @enum {string}
+         */
+        ActorType: "user" | "system" | "anonymous";
         /** AppointmentBlockOut */
         AppointmentBlockOut: {
             /**
@@ -1433,6 +1455,52 @@ export interface components {
              */
             kind: "at_enrollment_picked_date";
         };
+        /**
+         * AuditAction
+         * @enum {string}
+         */
+        AuditAction: "created" | "updated" | "deleted" | "login";
+        /** AuditEventRead */
+        AuditEventRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            actor_type: components["schemas"]["ActorType"];
+            /** Actor Id */
+            actor_id: string | null;
+            /** Actor Label */
+            actor_label: string | null;
+            /** Tenant Id */
+            tenant_id: string | null;
+            action: components["schemas"]["AuditAction"];
+            result: components["schemas"]["AuditResult"];
+            /** Resource Type */
+            resource_type: string | null;
+            /** Resource Id */
+            resource_id: string | null;
+            /** Request Id */
+            request_id: string | null;
+            /** Changes */
+            changes: {
+                [key: string]: components["schemas"]["FieldChange"];
+            } | null;
+            /** Context */
+            context: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AuditResult
+         * @enum {string}
+         */
+        AuditResult: "success" | "failure";
         /** BlockExecutionResponse */
         BlockExecutionResponse: {
             /**
@@ -2046,6 +2114,14 @@ export interface components {
             kind: "external_program";
         };
         /**
+         * FieldChange
+         * @description One column's before/after. Named fields beat a positional `[old, new]`.
+         */
+        FieldChange: {
+            old?: components["schemas"]["JsonValue"] | null;
+            new?: components["schemas"]["JsonValue"] | null;
+        };
+        /**
          * FixedDurationPolicy
          * @description Block has a fixed ISO 8601 duration.
          */
@@ -2349,6 +2425,7 @@ export interface components {
          * @enum {string}
          */
         ItemCategory: "questionnaire_answers" | "diary" | "attachments" | "parameters" | "documents";
+        JsonValue: unknown;
         /** LoginRequest */
         LoginRequest: {
             /** Email */
@@ -3079,6 +3156,19 @@ export interface components {
             /** Name */
             name?: string | null;
             type?: components["schemas"]["OrganisationType"] | null;
+        };
+        /** Page[AuditEventRead] */
+        Page_AuditEventRead_: {
+            /** Items */
+            items: components["schemas"]["AuditEventRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /** Page[PatientRead] */
         Page_PatientRead_: {
@@ -6377,6 +6467,46 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_audit_events: {
+        parameters: {
+            query?: {
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AuditEventRead_"];
+                };
             };
             /** @description Validation Error */
             422: {
