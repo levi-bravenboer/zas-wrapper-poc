@@ -1,5 +1,10 @@
 # Tasks — generic-notes-and-attachments
 
+> **Progress** — implemented + committed on `feat/split-appointments-and-tasks`:
+> - DONE §1-3 generic domain (OwnerType + polymorphic `notes`/`attachments`, patient-keyed) + authz-free services reusing S3 + migration (dropped appointment-specific, created generic). §4-5 per-entity routes (appointment/task/patient notes+attachments + patient aggregate; own access guard each; task-without-patient → 422) + removed appointment-specific collab. §6 reusable `<NotesPanel>`/`<AttachmentsPanel>` + generic api/hooks in `modules/collaboration`; appointment/task/patient details consume them; patient profile "Notities & documenten" tab (aggregate). §7 backend full suite 1004 pass; orchestrator typecheck/lint clean + tests pass (one pre-existing `-users` parallel-MSW flake — passes isolated).
+> - SKIPPED (optional): demo notes/attachments seed.
+> - NOTE: patient aggregate uses flat panels (already split notes vs documents); per-owner grouping/badges deferred. No live browser verification (shared stack runs main's code).
+
 **Ordering**: build generic backend → migrate (drop appointment-specific, create generic) → per-entity routes → remove old appointment collab → frontend panels → consumers → verify.
 
 ## 1. Generic domain (backend)
