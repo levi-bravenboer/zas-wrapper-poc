@@ -1,5 +1,10 @@
 # Tasks — split-appointments-and-tasks
 
+> **Progress (handoff)** — committed on `feat/split-appointments-and-tasks`:
+> - DONE: §1 appointment read API + attendees, §2 real Task domain + cutover (task_read_state dropped), §3 MinIO + S3 storage, §4 notes, §5 attachments, §6 openapi/types regen, §7 rail primitives, §9 Taken rewrite. Backend full suite 1007 pass; orchestrator typecheck/lint clean + task tests pass.
+> - REMAINING: §8 Afspraken view (rail list + custom detail with notes feed + attachment presigned upload/download UI + "Open patiënt" + sidebar nav item), §10 patient-profile Afspraken tab, §11 seed `seed_tasks` demo + final verify.
+> - NOTE: verify backend via `cd apps/backend && uv run python -m pytest` (moon test-host runs from the wrong cwd in a worktree). Frontend types: regen from the file — `pnpm exec openapi-typescript ../backend/openapi.json -o src/lib/api/schema.d.ts` (live stack serves main's branch). No browser verification in this worktree (shared docker stack runs main's code).
+
 **Ordering rule**: never leave the app broken. Appointments get their own read surface *before* `/tasks` stops serving them; infra lands *before* the code that needs it; shared UI primitives *before* the views; regen types *between* backend and frontend.
 
 ## 1. Appointment read surface + patient attendees (additive — nothing removed yet)
