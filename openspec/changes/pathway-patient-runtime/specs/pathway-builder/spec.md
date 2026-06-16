@@ -1,13 +1,13 @@
 ## ADDED Requirements
 
-### Requirement: Block inspector authors a care-role reference
+### Requirement: Block inspector authors a FHIR participant (role + specialty)
 
-The per-block configuration editor SHALL let the author pick a **care-role code** for each materializing block (`appointment`/`treatment`/`mdo`/`task`) from the shared FHIR-aligned value set (`role_in_care` / `PractitionerRole`). This role is what enrollment binds to actual caregiver(s).
+The per-block configuration editor SHALL let the author declare the FHIR `action.participant` for each materializing block (`appointment`/`treatment`/`mdo`/`task`): a **role code** (`CareTeam.participant.role` / `PractitionerRole.code`) and an **optional specialty** (`PractitionerRole.specialty` / `Specialism`). This is what enrollment resolves to an actual `Practitioner`.
 
-#### Scenario: Author picks a role on an MDO block
+#### Scenario: Author sets role + specialty on an MDO block
 
 - **WHEN** the author opens the `mdo` block inspector
-- **THEN** they can select a care-role code; the saved block carries that role reference for enrollment to resolve
+- **THEN** they can select a role code and optional specialty; the saved block carries that participant spec for enrollment to resolve
 
 ### Requirement: Builder authors named clinical dates and timing constraints
 

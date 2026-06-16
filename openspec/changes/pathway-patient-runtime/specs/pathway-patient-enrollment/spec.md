@@ -25,15 +25,15 @@ A caregiver on the patient's care team SHALL enroll the patient into a **publish
 - **WHEN** the caregiver reaches that field at enroll
 - **THEN** it is pre-filled with the earliest feasible date and the caregiver may push it later (not earlier than feasible)
 
-### Requirement: Enrollment chooses caregivers for each block's care-team role
+### Requirement: Enrollment resolves each block's participant to a Practitioner
 
-Each materializing block (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-role code** (the shared FHIR-aligned `role_in_care`/`PractitionerRole` value set) at build time. At enrollment the caregiver SHALL **choose the actual caregiver(s)** for each block (or each distinct role-type) from the patient's **care team** — **one or several** (e.g. an `mdo` has multiple participants). If a chosen caregiver is not yet on the care team, choosing them SHALL also add them to the care team. Blocks sharing a role-type MAY default to the same choice with a per-block override. An enrollment SHALL NOT be created until every block's required caregiver(s) are chosen (same validation path as required deferred fields).
+Each materializing block declares a FHIR `action.participant` (role code + optional specialty). At enrollment the caregiver SHALL **resolve each block's participant to an actual `Practitioner`** by filtering the patient's **`CareTeam`** members / practitioners matching that role + specialty — **one or several** (e.g. an `mdo` has multiple participants). A resolved practitioner SHALL be recorded as a **`CareTeam.participant`** (added to the team if not already on it). Blocks sharing the same participant spec MAY default to the same resolution with a per-block override. An enrollment SHALL NOT be created until every block's required participant(s) are resolved (same validation path as required deferred fields).
 
-#### Scenario: Caregivers chosen per block from the care team
+#### Scenario: Participants resolved per block from the care team filtered by role + specialty
 
-- **WHEN** a caregiver enrolls a patient in a pathway whose blocks reference role-types (e.g. urology, MDO panel)
-- **THEN** the enroll form asks for the caregiver(s) for each block, offering the patient's care-team members
-- **AND** each block uses its chosen caregiver(s) at runtime (Appointment participants / task assignee)
+- **WHEN** a caregiver enrolls a patient in a pathway whose blocks require participants (e.g. role=physician, specialty=urology)
+- **THEN** the enroll form offers care-team members / practitioners matching that role + specialty for each block
+- **AND** each block uses its resolved Practitioner(s) at runtime (`Appointment.participant.actor` / task owner)
 
 #### Scenario: MDO takes multiple caregivers
 

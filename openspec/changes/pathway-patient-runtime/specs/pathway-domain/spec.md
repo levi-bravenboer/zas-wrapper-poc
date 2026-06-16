@@ -56,19 +56,19 @@ Every non-system block SHALL declare a runtime contract: its **actor** (system /
 - **WHEN** the `message` block contract is inspected
 - **THEN** actor is patient, the primitive is a mock logged send (audit/event only, no delivery), and it auto-completes on its timing with no typed result
 
-### Requirement: Materializing blocks reference a care-team role-type
+### Requirement: Blocks declare a FHIR action.participant (role + optional specialty)
 
-A block that materializes a work primitive (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-role code** from the shared FHIR-aligned value set (`role_in_care` / `PractitionerRole`) that `CareTeam.participant` already uses — no new role-type entity. The role reference is a **build-phase** declaration; choosing the actual caregiver(s) is **enroll-phase** (one or several per block — `mdo` takes multiple); the resulting participant(s)/assignee is **runtime**. The same role-type MAY be referenced by many blocks.
+Following FHIR `PlanDefinition.action.participant`, a block that materializes a work primitive (`appointment`/`treatment`/`mdo`/`task`) SHALL declare a required **participant**: `type = practitioner`, a **role code** (from the `CareTeam.participant.role` / `PractitionerRole.code` value set), and an **optional specialty** (`PractitionerRole.specialty` / `Specialism`). No person is named at build and no new entity is introduced. The participant spec is **build-phase**; resolving it to actual `Practitioner`(s) is **enroll-phase** (one or several per block — `mdo` takes multiple); the resulting `Appointment.participant.actor` / task owner is **runtime**.
 
-#### Scenario: Block references a care-team role-type
+#### Scenario: Block declares a participant spec
 
 - **WHEN** an `mdo` block is authored
-- **THEN** it references a care-team role-type, for which the caregiver chooses participant(s) at enrollment
+- **THEN** it declares `action.participant` with a role code (+ optional specialty), which enrollment resolves to Practitioner(s)
 
-#### Scenario: Role-types are derivable for the enroll form
+#### Scenario: Participant specs are derivable for the enroll form
 
 - **WHEN** a pathway version's enroll descriptor is requested
-- **THEN** it lists, per block, the care-team role-type(s) needing caregiver choice — over the fully-flattened (subpath-inlined) block set
+- **THEN** it lists, per block, the required participant role+specialty needing resolution — over the fully-flattened (subpath-inlined) block set
 
 ### Requirement: Blocks may declare clinical-date timing constraints
 

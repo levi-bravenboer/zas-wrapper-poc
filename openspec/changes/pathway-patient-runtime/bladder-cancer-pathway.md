@@ -14,15 +14,15 @@ Each Miro block carries three parts → our model:
 
 XOR/AND in the flow = a `decision` block (`mode=xor`) and an `all_of` convergence (the `operation` block depends on all parallel pre-op blocks).
 
-## Roles (bound to people at enrollment)
+## Participants (FHIR action.participant — role + specialty, resolved to Practitioners at enroll)
 
-| Role | role_in_care | Notes |
-|---|---|---|
-| Urologist (hoofdbehandelaar) | lead clinician | most appointments/tasks/decisions |
-| Casemanager (verpleegkundige) | care coordinator | coordinates, ends pathway |
-| MDO lead | lead at the multidisciplinary meeting | may = urologist |
-| GP (huisarts) | transmural, informed | receives shared results; not necessarily a bound actor |
-| Patient | subject | not a user — data |
+| Block participant | role code | specialty | Notes |
+|---|---|---|---|
+| Urologist (hoofdbehandelaar) | physician | urology | most appointments/tasks/decisions |
+| Casemanager (verpleegkundige) | nurse | — | coordinates, ends pathway |
+| MDO participants | physician | (per discipline) | the MDO panel — multiple, one lead |
+| GP (huisarts) | — | — | transmural, informed only — not a bound participant |
+| Patient | — | — | subject; not a user — data |
 
 ## Phases (from the blueprint)
 

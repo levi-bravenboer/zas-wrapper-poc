@@ -12,7 +12,7 @@
 - [ ] 2.3 Add build/enroll/runtime phase classification to the block model + expose it
 - [ ] 2.4 Add per-block runtime-contract metadata (actor, primitive, result, completion)
 - [ ] 2.5 Confirm relative timing is expressible via `timing_policy` on the dependent block (former `wait`)
-- [ ] 2.6 Per-block care-team role-type reference; expose per-block caregiver choice in the enroll descriptor (over flattened block set)
+- [ ] 2.6 Per-block FHIR `action.participant` (role code + optional specialty); expose per-block participant resolution in the enroll descriptor (over flattened block set)
 - [ ] 2.8 Named clinical-date declaration + per-block min-lead-time + clinical-date `timing_policy` (forward offsets)
 - [ ] 2.9 Subpath inlining: flatten subpath blocks into the pathway version at build/load
 - [ ] 2.7 Publish-time connection validation: predicate's referenced block + output/result-field must exist in the upstream runtime contract (reject data predicates on fake-log blocks)
@@ -45,7 +45,7 @@
 
 - [ ] 5.1 "Enroll in pathway" entry point on the patient page
 - [ ] 5.2 Enroll dialog: pick published version, set anchor date (default today), fill enroll-phase deferred values
-- [ ] 5.4 Enroll dialog caregiver-choice step: pick caregiver(s) per block from the care team (multi for MDO; add-to-team if missing); block submit until all chosen
+- [ ] 5.4 Enroll dialog participant-resolution step: per block, filter care-team/practitioners by role+specialty and pick Practitioner(s) (multi for MDO; add-to-CareTeam if missing); block submit until all resolved
 - [ ] 5.5 Enroll dialog clinical-date step: suggested-earliest `operation_date` (editable, not-earlier-than-feasible)
 - [ ] 5.3 Submit to `POST /enrollments`; surface validation errors (missing required deferred fields)
 
@@ -60,7 +60,7 @@
 
 ## 6b. Builder (author the bladder-cancer pathway)
 
-- [ ] 6b.1 Per-block care-role picker (shared FHIR `role_in_care`/`PractitionerRole` value set) in the inspectors
+- [ ] 6b.1 Per-block participant picker (FHIR `action.participant`: role code + optional specialty/`Specialism`) in the inspectors
 - [ ] 6b.2 Named clinical-date declaration + per-block min-lead-time / forward-offset timing authoring
 - [ ] 6b.3 Remove `MilestoneInspector` + `WaitInspector` + palette entries
 - [ ] 6b.4 Verify subpath (nested-pathway-blocks) + Luscii program picker author the flow as drawn

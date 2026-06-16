@@ -22,9 +22,9 @@ The pathway model, builder, and runtime aggregate (enrollment + block executions
 - `patient-pathway-tab`: the Pathway tab on the patient detail view — next vs finished steps and per-block caregiver actions.
 
 ### Modified Capabilities
-- `pathway-domain`: remove `milestone` and `wait` block kinds; `task.assignee` caregiver-only; add the build/enroll/runtime field-phase classification, per-block runtime-contract metadata, **care-team role-type references**, **named clinical dates + min-lead-time timing**, and publish-time predicate connection-validation.
+- `pathway-domain`: remove `milestone` and `wait` block kinds; `task.assignee` caregiver-only; add the build/enroll/runtime field-phase classification, per-block runtime-contract metadata, **FHIR `action.participant` (role + optional specialty) per block**, **named clinical dates + min-lead-time timing**, and publish-time predicate connection-validation.
 - `patient-profile-ui`: register the new Pathway tab in the patient detail tab set.
-- `pathway-builder`: per-block **care-role** picker; author **named clinical dates** + **min-lead-time**/forward-offset timing; remove the `milestone`/`wait` inspectors. (Subpath inlining + Luscii program picker already exist.)
+- `pathway-builder`: per-block **participant** picker (FHIR role + optional specialty); author **named clinical dates** + **min-lead-time**/forward-offset timing; **MDO outcome choices** + **message template-per-channel**; remove the `milestone`/`wait` inspectors. (Subpath inlining + Luscii program picker already exist.)
 
 > Note: the `/tasks` aggregator and the `Appointment` entity (with `appointments.pathway_block_instance_id`) originate in the in-flight `2026-06-10-patient-inbox` change and are **not yet archived** as standalone capabilities. This change adds a `pathway` task source and creates Appointments through those surfaces — specified here under `pathway-runtime-execution` / `patient-pathway-tab`. Once `tasks-base` / `appointment-base` are archived, the source addition + pathway-linked Appointments should be folded back as formal deltas on them.
 

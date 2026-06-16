@@ -137,12 +137,12 @@ The runtime executes on **Temporal**, not the in-process engine. Pathways are da
 
 ### D11 — People assignment: roles authored at build, bound to people at enrollment
 
-A block that materializes work needs people, modelled as a **care-team / role-type reference**, not hard-coded users:
-- **Build**: each materializing block (`appointment`, `treatment`, `mdo`, `task`) references a **care-role code** drawn from **one shared, FHIR-aligned value set** — the existing `role_in_care` / `PractitionerRole` codes that `CareTeam.participant` already uses. No new role-type entity: builder ↔ care-team ↔ `Appointment.participant` all align on this single vocabulary. The same role code may be referenced by many blocks.
-- **Enroll**: for each block (or each distinct role-type), the caregiver **chooses the actual caregiver(s)** from that care-team — **one or several** (MDO has multiple participants). People come from the patient's **care team** (added to it if not yet on it). Blocks sharing a role-type may default to the same pick with a per-block override where needed.
-- **Runtime**: materialization uses the chosen people — appointment/treatment/mdo → the picked caregiver(s) become the Appointment participants (one `lead` + optional support/observer); `task` → the picked caregiver is the assignee.
+People are modelled the **FHIR-correct way**: a pathway is a **`PlanDefinition`**, each block a **`PlanDefinition.action`**, and a block's required performer is **`action.participant`** — `{ type: practitioner, role: <code>, optional specialty }`. No person is named at build; no new entity is introduced.
+- **Build**: each materializing block (`appointment`, `treatment`, `mdo`, `task`) declares `action.participant` with a **role code** (`CareTeam.participant.role` / `PractitionerRole.code` value set) and an **optional specialty** (`PractitionerRole.specialty` / `Specialism`, SNOMED-codeable). The same participant spec may be referenced by many blocks.
+- **Enroll**: enrolling is the instance (≈ `CarePlan`). For each block the caregiver **resolves the required role+specialty to an actual `Practitioner`** by filtering the patient's **`CareTeam`** members (and practitioners) matching that role/specialty — **one or several** (`mdo` has multiple). The chosen practitioner is recorded as a **`CareTeam.participant`** (added if not already on the team).
+- **Runtime**: materialization sets the actor — `appointment`/`treatment`/`mdo` → **`Appointment.participant.actor`** = the Practitioner(s) (one `lead` + optional others; + `Appointment.specialty`); `task` → the pathway task's **owner** = the Practitioner.
 
-A pathway cannot be enrolled until every block's required caregiver(s) are chosen (same validation path as required deferred fields). Phase tags: the role-type *reference* is build; the role-type→caregiver(s) *choice* is enroll; the resulting participant(s)/assignee is runtime.
+A pathway cannot be enrolled until every block's required participant(s) are resolved (same validation path as required deferred fields). Phase tags: the `action.participant` *spec* is build; the role+specialty→Practitioner *resolution* is enroll; the resulting `Appointment.participant.actor` / task owner is runtime.
 
 ### D10 — Timed steps auto-advance; care-team visibility
 
