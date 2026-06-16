@@ -56,14 +56,9 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
   const blockName = (execution: BlockExecution): string =>
     blockById.get(execution.block_template_id)?.name ?? t('step.unknownBlock')
 
-  const isDoneActionable = (execution: BlockExecution): boolean => {
-    const kind = blockById.get(execution.block_template_id)?.kind
-    return kind !== undefined && DONE_ONLY_KINDS.has(kind)
-  }
-
-  const handleDone = (execution: BlockExecution): void => {
+  const handleComplete = (execution: BlockExecution, result?: Record<string, unknown>): void => {
     completeStep.mutate(
-      { enrollmentId: enrollment.id, execution },
+      { enrollmentId: enrollment.id, execution, result: result ?? null },
       {
         onSuccess: () => toast.success(t('step.doneToast.success')),
         onError: () => toast.error(t('step.doneToast.error')),
@@ -72,12 +67,44 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
   }
 
   const renderAction = (bucket: StepBucket, execution: BlockExecution): ReactElement | null => {
-    if (bucket !== 'next' || !isDoneActionable(execution)) return null
-    return (
-      <Button size="sm" disabled={completeStep.isPending} onClick={() => handleDone(execution)}>
-        {t('step.done')}
-      </Button>
-    )
+    if (bucket !== 'next') return null
+    const block = blockById.get(execution.block_template_id)
+    if (!block) return null
+
+    if (DONE_ONLY_KINDS.has(block.kind)) {
+      return (
+        <Button
+          size="sm"
+          disabled={completeStep.isPending}
+          onClick={() => handleComplete(execution)}
+        >
+          {t('step.done')}
+        </Button>
+      )
+    }
+
+    // Decision blocks with an `auto_resolve` settle from an upstream field — no
+    // manual pick. Only outputs-bearing, non-auto-resolved decisions are
+    // caregiver-actionable here.
+    if (block.kind === 'decision' && !block.auto_resolve && (block.outputs?.length ?? 0) > 0) {
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {block.outputs?.map((output) => (
+            <Button
+              key={output}
+              size="sm"
+              variant="outline"
+              disabled={completeStep.isPending}
+              onClick={() => handleComplete(execution, { output_key: output })}
+            >
+              {output}
+            </Button>
+          ))}
+        </div>
+      )
+    }
+
+    return null
   }
 
   return (
