@@ -1424,6 +1424,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/enrollments/descriptor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Enroll Descriptor */
+        get: operations["get_enroll_descriptor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/enrollments/{enrollment_id}": {
         parameters: {
             query?: never;
@@ -2306,6 +2323,43 @@ export interface components {
              * @enum {string}
              */
             kind: "end_pathway";
+        };
+        /**
+         * EnrollDescriptor
+         * @description Enroll-phase form descriptor for a pathway version — the deferred
+         *     fields a caregiver fills when enrolling a patient (tasks 4.1/5.2).
+         */
+        EnrollDescriptor: {
+            /**
+             * Pathway Version Id
+             * Format: uuid
+             */
+            pathway_version_id: string;
+            /** Fields */
+            fields?: components["schemas"]["EnrollDescriptorField"][];
+        };
+        /**
+         * EnrollDescriptorField
+         * @description One enrollment-time deferred field the enroll dialog must render.
+         */
+        EnrollDescriptorField: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Block Label */
+            block_label: string;
+            /** Attr */
+            attr: string;
+            /** Label */
+            label: string;
+            /** Kind */
+            kind: string;
+            /** Required */
+            required: boolean;
+            /** Help */
+            help?: string | null;
         };
         /**
          * EnrollmentCreate
@@ -9120,6 +9174,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_enroll_descriptor: {
+        parameters: {
+            query: {
+                pathway_version_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollDescriptor"];
                 };
             };
             /** @description Not Found */

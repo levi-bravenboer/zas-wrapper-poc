@@ -24,11 +24,30 @@ import {
 import { listPathways } from '@/modules/pathway/api'
 import type { PathwaySummary } from '@/modules/pathway/types'
 
-import type { EnrollmentApiError } from '../api'
+import { fetchEnrollDescriptor, type EnrollmentApiError } from '../api'
 import { useCreateEnrollment } from '../hooks'
+import type { EnrollDescriptorField } from '../types'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+function fieldKey(f: EnrollDescriptorField): string {
+  return `${f.block_template_id}::${f.attr}`
+}
+
+function inputType(kind: string): string {
+  if (kind === 'date') return 'date'
+  if (kind === 'number') return 'number'
+  return 'text'
+}
+
+function coerceValue(kind: string, raw: string): unknown {
+  if (kind === 'number') {
+    const n = Number(raw)
+    return Number.isNaN(n) ? raw : n
+  }
+  return raw
 }
 
 type PublishablePathway = PathwaySummary & { latest_published_version_id: string }
@@ -77,20 +96,40 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
   const [pathwayId, setPathwayId] = useState<string>('')
   const [anchorDate, setAnchorDate] = useState<string>(todayIso)
   const [missing, setMissing] = useState<string[] | null>(null)
+  const [values, setValues] = useState<Record<string, string>>({})
 
   const publishable = (pathwaysQuery.data ?? []).filter(isPublishable)
   const selected = publishable.find((p) => p.id === pathwayId)
-  const canSubmit = !!selected && anchorDate !== '' && !mutation.isPending
+  const versionId = selected?.latest_published_version_id ?? null
+
+  const descriptorQuery = useQuery({
+    queryKey: ['enroll-descriptor', versionId] as const,
+    queryFn: () => fetchEnrollDescriptor(versionId as string),
+    enabled: versionId !== null,
+  })
+  const fields = descriptorQuery.data?.fields ?? []
+
+  const requiredFilled = fields
+    .filter((f) => f.required)
+    .every((f) => (values[fieldKey(f)] ?? '').trim() !== '')
+  const canSubmit = !!selected && anchorDate !== '' && requiredFilled && !mutation.isPending
 
   async function handleSubmit(): Promise<void> {
     if (!selected) return
     setMissing(null)
+    const deferred = fields
+      .filter((f) => (values[fieldKey(f)] ?? '').trim() !== '')
+      .map((f) => ({
+        block_template_id: f.block_template_id,
+        attr: f.attr,
+        value_json: coerceValue(f.kind, values[fieldKey(f)] ?? ''),
+      }))
     try {
       await mutation.mutateAsync({
         patient_id: patientId,
         pathway_version_id: selected.latest_published_version_id,
         anchor_date: anchorDate,
-        deferred_values: [],
+        deferred_values: deferred,
       })
       toast.success(t('enroll.toast.success'))
       onClose()
@@ -141,6 +180,25 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
           onChange={(e) => setAnchorDate(e.target.value)}
         />
       </div>
+
+      {fields.map((f) => {
+        const key = fieldKey(f)
+        return (
+          <div key={key} className="flex flex-col gap-1.5">
+            <Label htmlFor={`enroll-field-${key}`}>
+              {f.block_label} · {f.label}
+              {f.required ? ' *' : ''}
+            </Label>
+            <Input
+              id={`enroll-field-${key}`}
+              type={inputType(f.kind)}
+              value={values[key] ?? ''}
+              onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
+            />
+            {f.help ? <p className="text-xs text-muted-foreground">{f.help}</p> : null}
+          </div>
+        )
+      })}
 
       {missing ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">

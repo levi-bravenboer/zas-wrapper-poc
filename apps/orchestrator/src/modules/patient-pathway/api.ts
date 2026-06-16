@@ -1,6 +1,16 @@
 import { api } from '@/lib/api/client'
 
-import type { BlockExecution, Enrollment, EnrollmentCreate } from './types'
+import type { BlockExecution, EnrollDescriptor, Enrollment, EnrollmentCreate } from './types'
+
+export async function fetchEnrollDescriptor(pathwayVersionId: string): Promise<EnrollDescriptor> {
+  const result = await api.GET('/enrollments/descriptor', {
+    params: { query: { pathway_version_id: pathwayVersionId } },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to load enroll form', result.response.status)
+  }
+  return result.data
+}
 
 export type EnrollmentApiError = Error & {
   status: number
