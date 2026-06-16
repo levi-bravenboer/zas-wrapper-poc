@@ -8,6 +8,8 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.user import Role
+from app.db.models.appointment.appointment import Appointment
+from app.db.models.appointment.appointment_participant import AppointmentParticipant
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.pathway import (
@@ -45,6 +47,10 @@ async def _wipe(session: AsyncSession) -> None:
     # wipe enrollments first so the downstream Pathway delete doesn't
     # hit a FK RESTRICT violation. Patient → Organisation cleanup
     # similarly sits ahead of Tenant.
+    # Pathway appointment/treatment steps materialise Appointment rows
+    # (FK → patients + users), so clear them ahead of the patient/user wipe.
+    await session.execute(delete(AppointmentParticipant))
+    await session.execute(delete(Appointment))
     await session.execute(delete(PathwayEnrollment))
     await session.execute(delete(Pathway))
     await session.execute(delete(PathwayLaneKind))

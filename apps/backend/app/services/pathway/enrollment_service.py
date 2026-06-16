@@ -34,6 +34,8 @@ from app.domain.pathway.runtime.scheduling import (
 )
 from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
+from app.schemas.auth.auth import SessionUser
+from app.services.pathway.appointment_materializer import materialize_appointment
 from app.schemas.pathway.enrollment import (
     BlockExecutionResponse,
     DeferredFieldValueOut,
@@ -407,6 +409,36 @@ class EnrollmentService:
             enrollment.state = "completed"
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
+
+    async def materialize_appointment(
+        self,
+        enrollment_id: UUID,
+        execution_id: UUID,
+        *,
+        actor: SessionUser,
+    ) -> None:
+        """Create a real Appointment for a just-completed appointment/treatment
+        step (§3.5). No-op for other block kinds or when one already exists."""
+        enrollment = await self._repo.get(enrollment_id, actor.tenant_id)
+        if enrollment is None:
+            return
+        row = await self._repo.get_execution(execution_id, enrollment_id, actor.tenant_id)
+        if row is None or row.state != "completed":
+            return
+        children = await self._pathway_repo.fetch_children(enrollment.pathway_version_id)
+        template = next(
+            (block_row_to_domain(b) for b in children.blocks if b.id == row.block_template_id),
+            None,
+        )
+        if template is None:
+            return
+        await materialize_appointment(
+            self._repo._session,  # noqa: SLF001
+            enrollment=enrollment,
+            execution=row,
+            block=template,
+            actor=actor,
+        )
 
     async def read_execution(
         self,

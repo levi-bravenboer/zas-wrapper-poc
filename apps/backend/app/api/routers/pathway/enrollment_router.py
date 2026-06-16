@@ -351,6 +351,8 @@ async def complete_block_execution(
         tenant_id=current_user.tenant_id,
         now=_now(),
     )
+    # §3.5: materialise a real Appointment for appointment/treatment steps.
+    await service.materialize_appointment(enrollment_id, execution_id, actor=current_user)
     return BlockExecutionResponse.model_validate(row)
 
 

@@ -42,6 +42,12 @@ async def complete_step(payload: CompleteStepInput) -> RuntimeTick:
             tenant_id=payload.actor.tenant_id,
             now=payload.now,
         )
+        # §3.5: an appointment/treatment step materialises a real Appointment.
+        await service.materialize_appointment(
+            payload.enrollment_id,
+            payload.execution_id,
+            actor=payload.actor,
+        )
         # Settle any time-gated auto blocks freed by the completion and
         # report the next pending timer in the same session.
         return await service.advance(
