@@ -118,7 +118,9 @@ The runtime executes on **Temporal**, not the in-process engine. Pathways are da
 
 **Dead-path cleanup:** when a `decision` prunes an `xor` branch or an enrollment is cancelled/paused, the workflow runs `cancelAppointment` / `withdrawTask` activities for the pruned blocks — their Appointments move to `cancelled` status and their task projections drop from the inbox, keeping all surfaces consistent. Materialization happens when a block becomes actionable (eligible, incl. greyed upcoming); pruned-before-materialized blocks need no cleanup.
 
-**Infra**: a Temporal server + the worker process via the Python `temporalio` SDK. Local: a Temporal service in `docker-compose`. Deploy: Temporal Cloud or self-hosted (decide at MVP).
+**Infra**: a Temporal server + the worker process via the Python `temporalio` SDK. Temporal runs **isolated** from the shared dev stack — a separate compose file or a compose `profile` — so it does not perturb the default `docker-compose` used across worktrees. Deploy: Temporal Cloud or self-hosted (decide at MVP).
+
+**Open (next session):** test pathways carrying the new fields (role-set, per-block role, runtime contracts) must be authored as **seed/fixtures** by hand, since builder authoring of these is a deferred follow-up.
 
 **Alternative considered:** in-process sync engine with event-emitting transitions (lighter, no infra) — set aside in favor of Temporal's durable timers and autonomous advancement.
 
