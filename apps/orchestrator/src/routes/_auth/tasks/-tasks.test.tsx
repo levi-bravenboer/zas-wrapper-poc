@@ -30,6 +30,13 @@ vi.mock('@/modules/tasks/hooks', () => ({
   useSetTaskStatus: useSetTaskStatusMock,
 }))
 
+// Stub the shared collaboration panels: they pull in the real app router via
+// `useSession`, which conflicts with the test's memory router.
+vi.mock('@/modules/collaboration/components', () => ({
+  NotesPanel: () => null,
+  AttachmentsPanel: () => null,
+}))
+
 const TASK = {
   id: 't-1',
   assignee_user_id: 'u-1',

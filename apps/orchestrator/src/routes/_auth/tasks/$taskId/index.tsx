@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { AttachmentsPanel, NotesPanel } from '@/modules/collaboration/components'
 import { useSetTaskStatus, useTaskQuery } from '@/modules/tasks/hooks'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
@@ -89,6 +90,8 @@ function TaskDetailRoute(): ReactElement {
               {t('tasks:detail.openPatient', { defaultValue: 'Open patiënt' })}
             </Link>
           ) : null}
+          <NotesPanel ownerType="task" ownerId={task.id} />
+          <AttachmentsPanel ownerType="task" ownerId={task.id} />
         </div>
       }
     />
