@@ -8,6 +8,7 @@ describe('getBlockEditingFeatures', () => {
       hasName: true,
       allowsLogic: false,
       allowsTiming: false,
+      allowsParticipant: false,
       deletable: false,
     })
   })
@@ -17,6 +18,7 @@ describe('getBlockEditingFeatures', () => {
       hasName: false,
       allowsLogic: true,
       allowsTiming: false,
+      allowsParticipant: false,
       deletable: false,
     })
   })
@@ -26,18 +28,27 @@ describe('getBlockEditingFeatures', () => {
       hasName: true,
       allowsLogic: true,
       allowsTiming: false,
+      allowsParticipant: false,
       deletable: true,
     })
   })
 
   it('regular kinds (appointment, task, decision, …) opt into every section', () => {
     for (const semantics of ['appointment', 'task', 'decision'] as const) {
-      expect(getBlockEditingFeatures(semantics)).toEqual({
-        hasName: true,
-        allowsLogic: true,
-        allowsTiming: true,
-        deletable: true,
-      })
+      const features = getBlockEditingFeatures(semantics)
+      expect(features.hasName).toBe(true)
+      expect(features.allowsLogic).toBe(true)
+      expect(features.allowsTiming).toBe(true)
+      expect(features.deletable).toBe(true)
+    }
+  })
+
+  it('participant section: only materializing kinds (appointment, treatment, mdo, task)', () => {
+    for (const semantics of ['appointment', 'treatment', 'mdo', 'task'] as const) {
+      expect(getBlockEditingFeatures(semantics).allowsParticipant).toBe(true)
+    }
+    for (const semantics of ['decision', 'start', 'end_pathway', 'informed_consent'] as const) {
+      expect(getBlockEditingFeatures(semantics).allowsParticipant).toBe(false)
     }
   })
 })
