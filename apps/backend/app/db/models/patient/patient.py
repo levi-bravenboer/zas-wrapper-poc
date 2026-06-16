@@ -32,6 +32,10 @@ if TYPE_CHECKING:
 class Patient(TenantOwnedEntity):
     __tablename__ = "patients"
     __realtime_resource__: ClassVar[str | None] = "patients"
+    __audited__: ClassVar[bool] = True
+    __audit_exclude__: ClassVar[frozenset[str]] = frozenset(
+        {"created_by", "updated_by", "deleted_by"}
+    )
     __table_args__ = (
         # Partial unique on the sync key: a given external system can only
         # map to one patient per tenant. `deleted_at IS NULL` lets a soft
