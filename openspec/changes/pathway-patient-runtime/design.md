@@ -66,7 +66,7 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 | `task` | C | title, due_offset_days, requires_completion, notes | — | `{done, completed_at}` | caregiver marks Done |
 | `appointment` | C | title, mode, duration_minutes, attendees_patient, notes | location (optional) | scheduled_at (book), `{performed_at}` | caregiver books date, then marks Performed |
 | `treatment` | C | title, location, duration_minutes, notes | date (optional) | scheduled_at, `{performed_at, notes, complications}` | caregiver books, then records result |
-| `mdo` | C | topic, expected_attendees_note | — | `{notes, closed_at}` | lead caregiver Closes + notes |
+| `mdo` | C | topic, **preset outcome choices** (like decision outputs), expected_attendees_note | — | `{chosen_option, notes, files, closed_at}` | Appointment (meeting); lead picks an outcome + notes/files → drives branching |
 | `decision` | C | question, outputs[], mode (xor/and), auto_resolve.field_path | — | picked `output_key` | caregiver picks branch (auto if field present); engine fans out |
 | `form` | P | title, intro, questions[], submit/confirmation labels | — | — (fake-log) | caregiver marks done (no patient portal) |
 | `message` | P (mock) | template per channel (email/sms/mobile), connected block + relative timing | — | logged only (audit/event) | auto on its timing — mock send |
@@ -160,7 +160,7 @@ A pathway cannot be enrolled until every block's required caregiver(s) are chose
 | `task` | title, due_offset_days, notes | `requires_completion` | assignee role | role binding; any deferred field | `{done, completed_at}` |
 | `appointment` | title, duration_minutes, attendees_patient, notes | `mode` (in_person/video/phone), `AppointmentKind` (consultation/lab/imaging) | lead role (+ support/observer) | location (optional), role binding(s), optional scheduled_at pre-fill | scheduled_at (book), `{performed_at}` |
 | `treatment` | title, duration_minutes, notes | kind fixed `procedure` | lead role | optional date, role binding | scheduled_at, `{performed_at, notes, complications}` |
-| `mdo` | topic, expected_attendees_note | kind fixed `other`; caregiver-only participants | lead role (+ caregiver participants) | role binding(s) | `{notes, closed_at}` |
+| `mdo` | topic, **preset outcome choices**, expected_attendees_note | kind fixed `other`; caregiver participants; outcomes drive branching (like `decision`) | lead role (+ caregiver participants) | role binding(s) | `{chosen_option, notes, files, closed_at}` |
 | `decision` | question | `outputs[]`, `mode` (xor/and), `auto_resolve.field_path` (authored, not wired) | role that picks | role binding | picked `output_key` |
 | `form` | title, intro, questions[], submit/confirmation labels | fake-log | — | — | — (answers later) |
 | `message` | template per channel (email/sms/mobile) | connected block + relative timing (e.g. `operation_date − N`); mock send | — | — | logged only (audit/event) |
@@ -169,6 +169,10 @@ A pathway cannot be enrolled until every block's required caregiver(s) are chose
 | `pathway_link` | target pathway, version pin | `mode` (blocking/fire_and_forget), nested render; fake-log | — | — | — (child completion later) |
 
 Notes: "fake-log" blocks expose no role and no typed runtime result in the PoC — they advance via a caregiver-logged action with the audit hook. The role columns are build-declared, enroll-bound (D11). `decision.auto_resolve` is authored but PoC always asks the caregiver (D8).
+
+**Notes + files on completion:** `appointment`, `task`, and `mdo` SHALL support attaching **notes + files** when completed/recorded (a shared completion-attachment capability).
+
+**`mdo` is appointment + decision:** an `mdo` is an Appointment (meeting) whose completion requires the lead to pick one of the **build-authored preset outcome choices**; that `chosen_option` behaves like a `decision` output — downstream blocks gate on it via `decision_output`-style predicates (subject to connection validation).
 
 ### D13 — Trigger predicates wired + connection validation
 

@@ -2,7 +2,7 @@
 
 ### Requirement: Pathway tab shows a patient's enrollments with three step buckets
 
-The patient detail view SHALL include a **Pathway** tab (UI label "Zorgpad"). For each active enrollment it SHALL show the **full** pathway across all horizons (near-term and far-future), rendered in three buckets: **Upcoming** (eligible but timing not elapsed — shown greyed with the ready/scheduled date, not actionable), **Next / actionable** (eligible with timing elapsed, or active — rendered with the block's caregiver action), and **Finished** (`completed`/`skipped`). Unlike the `/tasks` inbox (a near-term list windowed to ~30 days), the Zorgpad tab is not time-windowed. The tab is visible to the patient's care team.
+The patient detail view SHALL include a **Pathway** tab (UI label "Zorgpad"). It SHALL show **only active enrollments** (completed/cancelled enrollments drop off the tab in this version). For each active enrollment it SHALL show the **full** pathway across all horizons (near-term and far-future), rendered in three buckets: **Upcoming** (eligible but timing not elapsed — shown greyed with the ready/scheduled date, not actionable), **Next / actionable** (eligible with timing elapsed, or active — rendered with the block's caregiver action), and **Finished** (`completed`/`skipped`). Unlike the `/tasks` inbox (a near-term list windowed to ~30 days), the Zorgpad tab is not time-windowed. The tab is visible to the patient's care team.
 
 #### Scenario: Buckets reflect runtime state
 
