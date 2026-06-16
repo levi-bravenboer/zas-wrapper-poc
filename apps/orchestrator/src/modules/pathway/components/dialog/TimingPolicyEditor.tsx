@@ -51,7 +51,16 @@ const POLICY_META = {
     placeholder: '',
     labelFallback: 'Datum gekozen bij inschrijving',
   },
+  relative_to_date: {
+    isoField: 'offset_iso',
+    defaultIso: 'PT0S',
+    placeholder: 'P2D',
+    labelFallback: 'Relatief tot klinische datum',
+  },
 } as const satisfies Record<string, PolicyMeta>
+
+const DIRECTIONS = ['before', 'after'] as const
+type Direction = (typeof DIRECTIONS)[number]
 
 type PolicyKind = keyof typeof POLICY_META
 
@@ -70,11 +79,29 @@ function isoOf(value: TimingPolicyValue): string {
   return typeof raw === 'string' ? raw : ''
 }
 
-function buildPolicy(kind: PolicyKind, iso: string): TimingPolicyValue {
+function dateNameOf(value: TimingPolicyValue): string {
+  const raw = (value as Record<string, unknown> | null)?.date_name
+  return typeof raw === 'string' ? raw : ''
+}
+
+function directionOf(value: TimingPolicyValue): Direction {
+  const raw = (value as Record<string, unknown> | null)?.direction
+  return raw === 'after' ? 'after' : 'before'
+}
+
+function buildPolicy(
+  kind: PolicyKind,
+  iso: string,
+  relative?: { dateName: string; direction: Direction },
+): TimingPolicyValue {
   if (kind === 'none') return null
   const meta = POLICY_META[kind]
   const next: Record<string, unknown> = { kind }
   if (meta.isoField) next[meta.isoField] = iso || meta.defaultIso || ''
+  if (kind === 'relative_to_date') {
+    next.date_name = relative?.dateName ?? ''
+    next.direction = relative?.direction ?? 'before'
+  }
   return next as NonNullable<TimingPolicyValue>
 }
 
@@ -88,6 +115,9 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
   const kind = kindOf(value)
   const meta = POLICY_META[kind]
   const iso = isoOf(value)
+  const dateName = dateNameOf(value)
+  const direction = directionOf(value)
+  const relative = { dateName, direction }
 
   const kindOptions = POLICY_KINDS.map((option) => ({
     value: option,
@@ -100,7 +130,7 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
         <OptionsSelect
           value={kind}
           options={kindOptions}
-          onChange={(next) => onChange(buildPolicy(next as PolicyKind, iso))}
+          onChange={(next) => onChange(buildPolicy(next as PolicyKind, iso, relative))}
           triggerClassName="h-8 flex-1 text-[12px]"
         />
         {meta.isoField && (
@@ -108,11 +138,37 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
             aria-label={t('timingPolicy.isoLabel', { defaultValue: 'ISO 8601 duur' })}
             value={iso}
             placeholder={meta.placeholder}
-            onChange={(e) => onChange(buildPolicy(kind, e.target.value))}
+            onChange={(e) => onChange(buildPolicy(kind, e.target.value, relative))}
             className="h-8 w-[120px] text-[12px]"
           />
         )}
       </div>
+      {kind === 'relative_to_date' && (
+        <div className="flex items-center gap-2">
+          <Input
+            aria-label={t('timingPolicy.dateNameLabel', { defaultValue: 'Klinische datum' })}
+            value={dateName}
+            placeholder={t('timingPolicy.dateNamePlaceholder', { defaultValue: 'operation_date' })}
+            onChange={(e) =>
+              onChange(buildPolicy(kind, iso, { dateName: e.target.value, direction }))
+            }
+            className="h-8 flex-1 text-[12px]"
+          />
+          <OptionsSelect
+            value={direction}
+            options={DIRECTIONS.map((d) => ({
+              value: d,
+              label: t(`timingPolicy.direction.${d}`, {
+                defaultValue: d === 'before' ? 'voor' : 'na',
+              }),
+            }))}
+            onChange={(next) =>
+              onChange(buildPolicy(kind, iso, { dateName, direction: next as Direction }))
+            }
+            triggerClassName="h-8 w-[100px] text-[12px]"
+          />
+        </div>
+      )}
       <p className="text-[11px] text-muted-foreground">
         {t('timingPolicy.hint', {
           defaultValue: 'ISO 8601 duur: P1D = 1 dag, PT4H = 4 uur, P2W = 2 weken.',
