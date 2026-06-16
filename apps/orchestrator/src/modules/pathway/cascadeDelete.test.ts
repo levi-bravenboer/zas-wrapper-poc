@@ -53,11 +53,7 @@ describe('dependentBlocks', () => {
 
 describe('cascadeDeleteBlock', () => {
   it('drops the block and strips dependent rules', () => {
-    const version = stubVersion([
-      stubBlock('a'),
-      stubBlock('b', ['a']),
-      stubBlock('c', ['a', 'b']),
-    ])
+    const version = stubVersion([stubBlock('a'), stubBlock('b', ['a']), stubBlock('c', ['a', 'b'])])
     const next = cascadeDeleteBlock(version, 'a')
     const ids = (next.blocks ?? []).map((b) => b.id)
     expect(ids).toEqual(['b', 'c'])

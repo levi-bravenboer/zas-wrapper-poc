@@ -121,7 +121,8 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
       <div className="flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground">
           {t('inputLogic.hint', {
-            defaultValue: 'Wanneer wordt dit blok actief? Regels verwijzen naar geplaatste blokken.',
+            defaultValue:
+              'Wanneer wordt dit blok actief? Regels verwijzen naar geplaatste blokken.',
           })}
         </p>
         {rules.length > 1 && (

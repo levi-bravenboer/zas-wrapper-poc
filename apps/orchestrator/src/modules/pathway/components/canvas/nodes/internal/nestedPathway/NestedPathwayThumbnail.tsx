@@ -179,8 +179,14 @@ export function NestedPathwayThumbnail({
             const source = blocks.find((b) => b.id === edge.source_block_id)
             const target = blocks.find((b) => b.id === edge.target_block_id)
             if (!source || !target) return null
-            const sDim = getBlockDimensions(source, typesByCode.get(legacyBlockType(source)) ?? null)
-            const tDim = getBlockDimensions(target, typesByCode.get(legacyBlockType(target)) ?? null)
+            const sDim = getBlockDimensions(
+              source,
+              typesByCode.get(legacyBlockType(source)) ?? null,
+            )
+            const tDim = getBlockDimensions(
+              target,
+              typesByCode.get(legacyBlockType(target)) ?? null,
+            )
             const sPos = blockOrigin(source, geom, sDim)
             const tPos = blockOrigin(target, geom, tDim)
             const sx = sPos.x + sDim.width

@@ -1,4 +1,12 @@
-import { applyNodeChanges, Background, BackgroundVariant, ReactFlow, ViewportPortal, type NodeChange, type Node } from '@xyflow/react'
+import {
+  applyNodeChanges,
+  Background,
+  BackgroundVariant,
+  ReactFlow,
+  ViewportPortal,
+  type NodeChange,
+  type Node,
+} from '@xyflow/react'
 import { useCallback, useMemo, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -121,7 +129,11 @@ export function BuilderCanvasFrame({
 
   const flowEdges = useFlowEdges({ edges, blocks, blockTypes, timingValues })
 
-  const { onNodesChange: dispatchNodesChange, onEdgesChange, onPaneClick } = useCanvasHandlers({
+  const {
+    onNodesChange: dispatchNodesChange,
+    onEdgesChange,
+    onPaneClick,
+  } = useCanvasHandlers({
     dispatch,
   })
 
@@ -151,7 +163,9 @@ export function BuilderCanvasFrame({
         if (other.id === block.id) continue
         if (other.phase_id !== block.phase_id || other.lane_id !== block.lane_id) continue
         const hasManual = other.x !== 0 || other.y !== 0
-        const pos = hasManual ? { x: other.x, y: other.y } : layout.get(other.id) ?? { x: 0, y: 0 }
+        const pos = hasManual
+          ? { x: other.x, y: other.y }
+          : (layout.get(other.id) ?? { x: 0, y: 0 })
         const c = Math.max(0, Math.round((pos.x - LAYOUT_CELL_X_PAD) / colStep))
         const r = Math.max(0, Math.round((pos.y - LAYOUT_CELL_Y_PAD) / rowStep))
         occupied.add(`${c}::${r}`)
@@ -169,7 +183,11 @@ export function BuilderCanvasFrame({
   const scaffoldPresent = !!phases.length && !!lanes.length
 
   return (
-    <div role="application" aria-label={t('canvas.label')} className="absolute inset-0 overflow-hidden">
+    <div
+      role="application"
+      aria-label={t('canvas.label')}
+      className="absolute inset-0 overflow-hidden"
+    >
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}

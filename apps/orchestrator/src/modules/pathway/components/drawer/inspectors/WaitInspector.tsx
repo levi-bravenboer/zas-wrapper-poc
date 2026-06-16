@@ -113,7 +113,8 @@ export function WaitInspector({ config, blocks, currentBlockId, onChange }: Prop
             ) : (
               otherBlocks.map((b) => (
                 <SelectItem key={b.id} value={b.id}>
-                  {b.name || t(`blockType.${legacyBlockType(b)}`, { defaultValue: legacyBlockType(b) })}
+                  {b.name ||
+                    t(`blockType.${legacyBlockType(b)}`, { defaultValue: legacyBlockType(b) })}
                 </SelectItem>
               ))
             )}

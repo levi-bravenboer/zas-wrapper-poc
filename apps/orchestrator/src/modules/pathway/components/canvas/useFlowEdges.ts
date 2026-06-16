@@ -25,11 +25,7 @@ type Params = {
 // connector shape stays unchanged; per-predicate labels (delay
 // duration, marker offset) are deferred until slot #4 lands
 // `TimingPolicy` authoring.
-export function useFlowEdges({
-  edges,
-  blocks,
-  blockTypes,
-}: Params): Edge<SmoothstepEdgeData>[] {
+export function useFlowEdges({ edges, blocks, blockTypes }: Params): Edge<SmoothstepEdgeData>[] {
   const typesByCode = useMemo(() => new Map(blockTypes.map((t) => [t.type, t])), [blockTypes])
   const blocksById = useMemo(() => indexById(blocks), [blocks])
 

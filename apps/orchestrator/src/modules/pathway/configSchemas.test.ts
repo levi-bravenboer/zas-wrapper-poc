@@ -118,7 +118,11 @@ describe('parseBlockConfig — valid configs round-trip', () => {
 
   it('parses a decision config with outputs + mode', () => {
     const parsed = parseBlockConfig(
-      fakeBlock({ question: 'Herstel volgens plan?', outputs: ['goed', 'onvoldoende'], mode: 'xor' }),
+      fakeBlock({
+        question: 'Herstel volgens plan?',
+        outputs: ['goed', 'onvoldoende'],
+        mode: 'xor',
+      }),
       'decision',
     )
     expect(parsed.question).toBe('Herstel volgens plan?')

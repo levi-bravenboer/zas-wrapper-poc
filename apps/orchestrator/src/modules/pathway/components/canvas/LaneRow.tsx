@@ -15,14 +15,7 @@ type Props = {
   onResize: (height: number) => void
 }
 
-export function LaneRow({
-  lane,
-  topY,
-  height,
-  width,
-  isEmpty,
-  onResize,
-}: Props): ReactElement {
+export function LaneRow({ lane, topY, height, width, isEmpty, onResize }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const accent = laneAccent(lane)
   const { zoom } = useViewport()
@@ -66,9 +59,7 @@ export function LaneRow({
         ...style,
         background: `color-mix(in srgb, ${accent} 4%, transparent)`,
         borderTopColor: `color-mix(in srgb, ${accent} 12%, var(--hairline))`,
-        outline: isEmpty
-          ? `2px dashed color-mix(in srgb, ${accent} 30%, transparent)`
-          : undefined,
+        outline: isEmpty ? `2px dashed color-mix(in srgb, ${accent} 30%, transparent)` : undefined,
         outlineOffset: '-12px',
       }}
     >

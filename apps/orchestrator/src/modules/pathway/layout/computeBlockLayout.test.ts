@@ -16,10 +16,7 @@ const LANE_CARE = 'lane-caregiver'
 
 type StubRule = { node: string; args: { predicate: string; after_block: string } }
 
-function stubBlock(
-  id: string,
-  opts: { phase?: string; lane?: string; after?: string[] } = {},
-) {
+function stubBlock(id: string, opts: { phase?: string; lane?: string; after?: string[] } = {}) {
   const rules: StubRule[] = (opts.after ?? []).map((up) => ({
     node: up,
     args: { predicate: 'if_done', after_block: up },

@@ -17,9 +17,7 @@ import { isLaneAllowed } from '../utils/laneRules'
 
 type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
 
-type ParsedConfig =
-  | { success: true; data: BlockConfig }
-  | { success: false; error: unknown }
+type ParsedConfig = { success: true; data: BlockConfig } | { success: false; error: unknown }
 
 export type BlockDraft = {
   name: string

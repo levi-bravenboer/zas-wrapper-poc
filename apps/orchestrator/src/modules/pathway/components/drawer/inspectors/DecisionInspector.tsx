@@ -62,8 +62,7 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
       <InspectorField
         label={t('inspector.decision.outputs', { defaultValue: 'Uitkomsten' })}
         hint={t('inspector.decision.outputsHint', {
-          defaultValue:
-            'Volgende blokken verwijzen naar deze uitkomsten via hun bedrijfslogica.',
+          defaultValue: 'Volgende blokken verwijzen naar deze uitkomsten via hun bedrijfslogica.',
         })}
       >
         <div className="flex flex-col gap-2">
@@ -144,7 +143,6 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
           </SelectContent>
         </Select>
       </InspectorField>
-
     </div>
   )
 }

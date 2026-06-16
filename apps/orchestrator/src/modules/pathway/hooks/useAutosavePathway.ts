@@ -119,11 +119,13 @@ export function useAutosavePathway({
           // already closed by the time the PUT resolves).
           const apiError = (error ?? {}) as { field?: string; reason?: string }
           if (apiError.field && apiError.reason) {
-            toast.error(t('save.fieldError', {
-              defaultValue: 'Opslaan mislukt — {{field}}: {{reason}}',
-              field: apiError.field,
-              reason: apiError.reason,
-            }))
+            toast.error(
+              t('save.fieldError', {
+                defaultValue: 'Opslaan mislukt — {{field}}: {{reason}}',
+                field: apiError.field,
+                reason: apiError.reason,
+              }),
+            )
           } else {
             toast.error(t('save.error'))
           }

@@ -19,12 +19,7 @@ const TONE_CLASS: Record<Tone, string> = {
 }
 
 // Shared dialog header (used by BlockDialog + ConfirmDeleteBlockDialog).
-export function DialogHero({
-  icon,
-  title,
-  description,
-  tone = 'primary',
-}: Props): ReactElement {
+export function DialogHero({ icon, title, description, tone = 'primary' }: Props): ReactElement {
   return (
     <DialogHeader className="border-b px-5 py-4" style={{ borderColor: 'var(--hairline)' }}>
       <div className="flex items-center gap-3">
