@@ -12,7 +12,7 @@ from app.domain.pathway import (
 class TestParseBare:
     @pytest.mark.parametrize(
         "raw",
-        ["appointment", "task", "message", "form", "decision", "milestone", "wait", "pathway_link"],
+        ["appointment", "task", "message", "form", "decision", "pathway_link"],
     )
     def test_bare_codes_parse_with_null_provider_and_kind(self, raw: str) -> None:
         code = BlockTypeCode.parse(raw)
@@ -89,7 +89,7 @@ class TestPatternConsistency:
         assert BLOCK_TYPE_CODE_PATTERN.pattern.endswith("$")
 
     def test_pattern_accepts_known_codes(self) -> None:
-        for raw in ("appointment", "luscii.program", "hix.task", "wait", "pathway_link"):
+        for raw in ("appointment", "luscii.program", "hix.task", "pathway_link"):
             assert BLOCK_TYPE_CODE_PATTERN.fullmatch(raw) is not None
 
     def test_pattern_rejects_known_bad_codes(self) -> None:

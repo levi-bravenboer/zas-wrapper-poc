@@ -20,10 +20,8 @@ from app.domain.pathway.blocks.decision.typed import DecisionAutoResolve, Decisi
 from app.domain.pathway.blocks.form.typed import FormBlock, FormQuestion
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
-from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
-from app.domain.pathway.blocks.wait.typed import WaitBlock
 
 
 # Chain slot #2 §6 retired `legacy_to_domain` — the `(type, config)`
@@ -72,13 +70,6 @@ class _Row:
     form_questions: list[dict[str, Any]] | None = None
     form_submit_label: str | None = None
     form_confirmation_message: str | None = None
-    milestone_label: str | None = None
-    milestone_description: str | None = None
-    milestone_icon: str | None = None
-    wait_event_type: str | None = None
-    wait_source_block_id: UUID | None = None
-    wait_timeout_days: int | None = None
-    wait_on_timeout: str | None = None
     pathway_link_target_pathway_id: UUID | None = None
     pathway_link_mode: str | None = None
     pathway_link_version_pin: str | None = None
@@ -114,7 +105,7 @@ def _round_trip(block: BaseBlock) -> BaseBlock:
         TaskBlock(
             name="Bloed prikken",
             title="Bloed prikken",
-            assignee="patient",
+            assignee="caregiver",
             due_offset_days=3,
             requires_completion=True,
             notes="Vroeg in de ochtend",
@@ -142,19 +133,6 @@ def _round_trip(block: BaseBlock) -> BaseBlock:
             ],
             submit_label="Verzenden",
             confirmation_message="Bedankt",
-        ),
-        MilestoneBlock(
-            name="Operatie afgerond",
-            label="Operatie afgerond",
-            description="Mijlpaal na operatie",
-            icon="flag",
-        ),
-        WaitBlock(
-            name="Wacht op uitslag",
-            event_type="form_completed",
-            source_block_id=uuid4(),
-            timeout_days=7,
-            on_timeout="escalate",
         ),
         PathwayLinkBlock(
             name="Subpad",
@@ -208,17 +186,8 @@ def test_legacy_to_domain_external_program_injects_provider() -> None:
     assert block.program_id == "p1"
 
 
-@pytest.mark.skip(reason="legacy_to_domain retired in chain slot #2 §6")
-def test_to_domain_falls_back_to_legacy_when_kind_null() -> None:
-    row = _Row(type="milestone", label="M1", config={"label": "Operatie", "icon": "flag"})
-    block = to_domain(row)  # type: ignore[arg-type]
-    assert isinstance(block, MilestoneBlock)
-    assert block.label == "Operatie"
-
-
 def test_from_domain_includes_discriminator() -> None:
-    block = MilestoneBlock(name="M", label="Op")
+    block = TaskBlock(name="Taak", title="Bloed prikken", assignee="caregiver")
     kwargs = from_domain(block)
-    assert kwargs["kind"] == "milestone"
-    assert kwargs["label"] == "M"
-    assert kwargs["milestone_label"] == "Op"
+    assert kwargs["kind"] == "task"
+    assert kwargs["name"] == "Taak"

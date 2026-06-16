@@ -17,12 +17,10 @@ from app.domain.pathway.blocks.decision.typed import DecisionBlock
 from app.domain.pathway.blocks.form.typed import FormBlock, FormQuestion
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
-from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.resolver import BLOCK_CLASSES, resolve_block_kind
 from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.blocks.treatment.typed import TreatmentBlock, TreatmentResult
-from app.domain.pathway.blocks.wait.typed import WaitBlock
 from app.domain.pathway.lanes import (
     LANE_KIND_CAREGIVER,
     LANE_KIND_EXTERNAL,
@@ -103,9 +101,9 @@ def test_treatment_result_round_trip() -> None:
 
 
 def test_task_block_requires_assignee() -> None:
-    block = TaskBlock(name="Bloed prikken", title="Bloed prikken", assignee="patient")
-    assert block.assignee == "patient"
-    assert set(TaskBlock.allowed_lane_kinds) == {LANE_KIND_PATIENT, LANE_KIND_CAREGIVER}
+    block = TaskBlock(name="Bloed prikken", title="Bloed prikken", assignee="caregiver")
+    assert block.assignee == "caregiver"
+    assert TaskBlock.allowed_lane_kinds == (LANE_KIND_CAREGIVER,)
 
 
 def test_decision_block_supports_branches() -> None:
@@ -131,16 +129,6 @@ def test_form_block_requires_at_least_one_question() -> None:
         questions=[FormQuestion(id="age", type="text", label="Leeftijd", required=True)],
     )
     assert len(block.questions) == 1
-
-
-def test_milestone_block_minimal() -> None:
-    block = MilestoneBlock(name="Operatie afgerond", label="Operatie afgerond")
-    assert block.label == "Operatie afgerond"
-
-
-def test_wait_block_event_type() -> None:
-    block = WaitBlock(name="Wacht op uitslag", event_type="form_completed")
-    assert block.event_type == "form_completed"
 
 
 def test_pathway_link_specific_requires_pinned_version() -> None:

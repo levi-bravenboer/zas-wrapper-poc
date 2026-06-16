@@ -318,7 +318,7 @@ async def test_task_block_accepted_on_patient_lane(
         phase_id=phase.id,
         lane_id=patient_lane.id,
         kind="task",
-        config={"title": "Hydrate", "assignee": "patient"},
+        config={"title": "Hydrate", "assignee": "caregiver"},
     )
     result = await service.replace_definition(
         empty_pathway.id,
@@ -367,27 +367,6 @@ async def test_message_channel_outside_enum_raises(
         lane_id=lane.id,
         kind="message",
         config={"channel": "fax", "subject": "Hi", "body": "Welcome"},
-    )
-    with pytest.raises(BlockConfigError):
-        await service.replace_definition(
-            empty_pathway.id,
-            empty_pathway.tenant_id,
-            _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
-        )
-
-
-async def test_wait_event_type_outside_enum_raises(
-    db_session: AsyncSession, empty_pathway: Pathway
-) -> None:
-    service = _service(db_session)
-    phase = _phase()
-    lane = _lane(code="system")
-    block = PathwayBlockIn(
-        id=uuid.uuid4(),
-        phase_id=phase.id,
-        lane_id=lane.id,
-        kind="wait",
-        config={"event_type": "not_a_real_event"},
     )
     with pytest.raises(BlockConfigError):
         await service.replace_definition(
@@ -815,9 +794,8 @@ async def test_replace_definition_overwrites_children(
         id=uuid.uuid4(),
         phase_id=new_phase.id,
         lane_id=new_lane.id,
-        kind="milestone",
-        label="Operatie",
-        config={"label": "Operatie"},
+        kind="end_pathway",
+        config={},
     )
     result = await service.replace_definition(
         empty_pathway.id,

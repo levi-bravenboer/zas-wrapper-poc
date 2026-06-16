@@ -24,8 +24,6 @@ BlockSemanticsLiteral = Literal[
     "mdo",
     "form",
     "decision",
-    "milestone",
-    "wait",
     "pathway_link",
     "external_program",
     "end_pathway",

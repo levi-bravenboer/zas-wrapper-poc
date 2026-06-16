@@ -55,7 +55,5 @@ class TaskReadStateRepository:
         ).scalar_one_or_none()
         if existing is not None:
             return
-        self._session.add(
-            TaskReadState(user_id=user_id, source=source, source_id=source_id)
-        )
+        self._session.add(TaskReadState(user_id=user_id, source=source, source_id=source_id))
         await self._session.flush()

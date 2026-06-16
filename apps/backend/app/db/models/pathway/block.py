@@ -151,15 +151,6 @@ class PathwayBlock(TenantOwnedEntity):
     form_submit_label: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
     form_confirmation_message: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
-    milestone_label: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
-    milestone_description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
-    milestone_icon: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
-
-    wait_event_type: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
-    wait_source_block_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
-    wait_timeout_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
-    wait_on_timeout: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
-
     pathway_link_target_pathway_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), nullable=True
     )

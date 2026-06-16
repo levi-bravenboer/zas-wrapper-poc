@@ -19,7 +19,6 @@ from app.adapters.luscii import (
 )
 from app.domain.pathway import (
     BLOCK_CATALOGUE,
-    EVENT_TYPES,
     LANE_KIND_CAREGIVER,
     LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,
@@ -42,8 +41,6 @@ _EXPECTED_SEMANTICS: frozenset[str] = frozenset(
         "mdo",
         "form",
         "decision",
-        "milestone",
-        "wait",
         "pathway_link",
         "external_program",
         "end_pathway",
@@ -62,8 +59,6 @@ _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
         "mdo",
         "form",
         "decision",
-        "milestone",
-        "wait",
         "pathway_link",
         LUSCII_PROGRAM_BLOCK_TYPE,
         "end_pathway",
@@ -257,9 +252,3 @@ def test_luscii_program_config_rejects_invalid_mode_enum() -> None:
     }
     errors = list(validator.iter_errors(payload))
     assert any("yolo" in str(err.message) for err in errors), errors
-
-
-def test_wait_block_event_type_enum_matches_event_types() -> None:
-    wait = next(b for b in BLOCK_CATALOGUE if b.type == "wait")
-    declared = wait.config_schema["properties"]["event_type"]["enum"]
-    assert set(declared) == {e.code for e in EVENT_TYPES}
