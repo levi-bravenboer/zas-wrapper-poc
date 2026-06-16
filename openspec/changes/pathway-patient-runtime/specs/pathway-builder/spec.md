@@ -28,15 +28,15 @@ The `message` block inspector SHALL let the author pick a **message template per
 - **THEN** they pick a template per channel and a "N days before operation_date" timing
 - **AND** at runtime the block logs the send as an audit event without delivering
 
-### Requirement: MDO block authors preset outcome choices
+### Requirement: MDO block authors free-form outcome choices
 
-The `mdo` block inspector SHALL let the author define **preset outcome choices** (like a `decision`'s outputs). At runtime the MDO is an Appointment (meeting) whose lead, on the MDO view, SHALL pick one outcome and MAY add **notes + files**; the chosen outcome SHALL drive downstream branching (referenced via `decision_output`-style predicates). Authoring SHALL validate that downstream branches reference existing outcomes (connection validation).
+The `mdo` block inspector SHALL let the author define **free-form outcome options**, and connect downstream pathway blocks to continue based on the chosen option (business logic). At runtime the MDO is an Appointment (meeting) whose **lead** picks one option on the MDO view to complete it; **non-lead** participants MAY add **comments + files** but do not decide. The chosen option SHALL drive downstream branching (via `decision_output`-style predicates). Authoring SHALL validate that downstream branches reference existing options (connection validation).
 
-#### Scenario: Author defines MDO outcomes and branches
+#### Scenario: Author defines free-form MDO options and branches
 
 - **WHEN** the author configures an `mdo` block
-- **THEN** they define preset outcome choices, and downstream blocks may gate on a chosen outcome
-- **AND** at runtime the MDO lead picks one outcome (+ optional notes/files) to complete it
+- **THEN** they enter free-form outcome options and connect downstream blocks per option
+- **AND** at runtime the lead picks one option to complete it while non-leads add comments/files
 
 ## REMOVED Requirements
 

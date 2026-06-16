@@ -12,18 +12,20 @@ The audit/event-logging system has **merged to main** (`app/services/audit`, `em
 - A caregiver can enroll a patient into a published pathway version — binding roles to people, setting an anchor date, supplying enroll-phase values.
 - Every block kind has a phase-tagged contract: build (template) / enroll (deferred) / runtime (produced).
 - The runtime runs on **Temporal**: one interpreter workflow per enrollment; **durable timers auto-advance** timed steps (incl. `if_not_done_within` escalation).
-- Blocks **materialize work primitives** — Appointments (`appointment`/`treatment`/`mdo`) and a `pathway` task source (`task` + fake-log) — that surface in the calendar + `/tasks` inbox.
+- Blocks **materialize work primitives** — Appointments (`appointment`/`treatment`/`mdo`) and a `pathway` task source (`task`, `decision`) — that surface in the calendar + `/tasks` inbox; `external_program` enrolls in Luscii; `message` is mock-logged.
 - A **Zorgpad** tab on the patient detail view shows the full pathway (upcoming / actionable / finished); a list-by-patient endpoint backs it.
 - Every runtime transition invokes an `emitAuditEvent` activity calling the merged `app/services/audit` (`emit_committed`).
 
 **Non-Goals:**
 - Building the audit/event-logging store (the merged `audit` system is wired via an activity).
-
-**In scope (revised — D16):** the **pathway builder must fully author** the bladder-cancer pathway — every new field (care-team role-types, named clinical dates + min-lead-time, subpath, per-block runtime contracts, timing incl. forward offsets, input_logic predicates). A **seed script** also authors the same pathway for convenience.
-- A patient-facing portal — patient-lane blocks (form, message, informed_consent) are fake-log only; no patient channel.
-- (Revised — see D14/D15) A **subpath** (the flow's "operate (biopsy)") is **builder-time inlining**: it expands into regular blocks in the **same** pathway/enrollment — no nested child workflow. A cross-pathway **bridge** (handoff to the separate oncology pathway) is a different mechanism: `end_pathway` + a fire-and-forget `pathway_link` to another pathway. `external_program` (Luscii) is thin-real (enroll only).
+- A patient-facing portal — `message` is mock-logged; consent/questionnaires run inside Luscii; no patient channel built here.
 - Data-driven `decision.auto_resolve` (authored, not wired — caregiver picks).
 - Notifications/escalation beyond what an `if_not_done_within` timer triggers.
+- Rebuilding appointment booking / notes+files — consumed from `feat/split-appointments-and-tasks`.
+
+**In scope (revised — D16):** the **pathway builder must fully author** the bladder-cancer pathway — every new field (FHIR `action.participant` role+specialty, named clinical dates + min-lead-time, subpath, per-block runtime contracts, timing incl. forward offsets, MDO free-form outcomes, message template-per-channel, `input_logic` predicates). A **seed script** also authors the same pathway for convenience.
+
+**Subpath vs bridge (D14/D15):** a **subpath** ("operate (biopsy)") is builder-time **inlining** into the same pathway/enrollment (no nested child workflow); a cross-pathway **bridge** to oncology is a fire-and-forget `pathway_link` to a separate pathway.
 
 ## Decisions
 
@@ -38,7 +40,7 @@ Connections: a build choice can flip a field to enroll-deferred; an enroll value
 
 **Alternative considered:** one flat config blob resolved at runtime — rejected; loses the typed enroll-form descriptor and the build/runtime separation already in the model.
 
-### D2 — Uniform fake-log runtime + audit hook
+### D2 — Uniform advance mechanism + audit emission
 
 Every block advances through `pending → eligible → active → completed` (with `skipped` / `failed`). The **Temporal workflow** (D9) owns transitions: a caregiver advances a block via a Temporal Update, or a durable timer auto-advances a timed step. Blocks with real logic write a typed `result_json`; blocks without an integration just transition. Each transition invokes an `emitAuditEvent` activity carrying `{enrollment, execution, block_kind, action, actor, payload, at}` — calling the **merged `app/services/audit`** (`emit_committed`); no event store is built here.
 
@@ -57,7 +59,7 @@ The enroll field offers the range (pre-filled at `earliest`) and rejects out-of-
 
 ### D4 — Per-block runtime contracts
 
-Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-log).
+Actor: **S**ystem / **C**aregiver / **P**atient / **E**xternal. (`message` is mock-logged; `form`/`informed_consent` have no patient channel in the PoC; `external_program` is a real Luscii enroll.)
 
 | Block | Actor | Build (template) | Enroll (deferred) | Runtime (produced) | Completion |
 |---|---|---|---|---|---|
@@ -66,8 +68,8 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 | `task` | C | title, due_offset_days, requires_completion, notes | — | `{done, completed_at}` | caregiver marks Done |
 | `appointment` | C | title, mode, duration_minutes, attendees_patient, notes | location (optional) | scheduled_at (book), `{performed_at}` | caregiver books date, then marks Performed |
 | `treatment` | C | title, location, duration_minutes, notes | date (optional) | scheduled_at, `{performed_at, notes, complications}` | caregiver books, then records result |
-| `mdo` | C | topic, **preset outcome choices** (like decision outputs), expected_attendees_note | — | `{chosen_option, notes, files, closed_at}` | Appointment (meeting); lead picks an outcome + notes/files → drives branching |
-| `decision` | C | question, **preset outcomes** (outputs[]), mode (xor/and), auto_resolve.field_path | — | `{chosen_option, notes, files}` | caregiver picks an outcome (no meeting); workflow fans out / prunes xor branches |
+| `mdo` | C | topic, **free-form outcome choices** (like decision outputs), expected_attendees_note | — | `{chosen_option, notes, files, closed_at}` | Appointment (meeting); lead picks an outcome + notes/files → drives branching |
+| `decision` | C | question, **free-form outcomes** (outputs[]), mode (xor/and), auto_resolve.field_path | — | `{chosen_option, notes, files}` | caregiver picks an outcome (no meeting); workflow fans out / prunes xor branches |
 | `form` | P | title, intro, questions[], submit/confirmation labels | — | — (fake-log) | caregiver marks done (no patient portal) |
 | `message` | P (mock) | template per channel (email/sms/mobile), connected block + relative timing | — | logged only (audit/event) | auto on its timing — mock send |
 | `informed_consent` | P | questions[], channels[], reminder/expiry config | — | — (fake-log; real `{consented, expired, signed_at}` later) | caregiver records |
@@ -85,7 +87,8 @@ A block execution is not just a state row; when it becomes actionable the runtim
   - `mdo` has no patient attendance: `patient_id` = the enrolled (subject) patient, `participants` = caregivers only.
   - The **clinical result** (`treatment.complications`, `mdo.notes`) lives on `BlockExecution.result_json`, not on the Appointment. The Appointment owns scheduling + status; the execution owns the typed clinical outcome.
   - Completing/fulfilling the Appointment advances the block execution (status ↔ execution-state sync).
-- **Task (to-do) blocks** (`task` + fake-log: `form`, `message`, `informed_consent`, `decision`, `external_program`, `pathway_link`) → no `Appointment`; the block execution itself is projected into a `TaskItem` via a new **`pathway` source** in the tasks aggregator. (There is no `tasks` table; a task is a projection — same pattern as the appointment source.) Completing the to-do advances the execution.
+- **Task (to-do) blocks** (`task`, and caregiver-actioned `decision`) → no `Appointment`; the block execution is projected into a `TaskItem` via a new **`pathway` source** in the tasks aggregator. (No `tasks` table — a task is a projection, same pattern as the appointment source.) Completing the to-do advances the execution.
+- **Other kinds**: `external_program` → real Luscii enroll (`POST /v1/patients`); `message` → mock logged send; `form`/`informed_consent` → no patient channel in the PoC (Luscii-internal for the bladder seed); `pathway_link` → subpath inline or cross-pathway bridge (no materialized work item).
 - **System blocks** (`start`, `end_pathway`) → no work primitive.
 
 The `/tasks` inbox is therefore an aggregated view over distinct entities (appointments + pathway to-dos); it never conflates them.
@@ -111,7 +114,7 @@ The tab is labelled **"Zorgpad"** (Dutch UI string) and shows the **full** pathw
 
 ### D8 — Decision resolution (PoC)
 
-`decision` is a caregiver action: it surfaces as an actionable step, the caregiver picks one of the build-authored preset outcomes (+ optional notes/files), and the **workflow** fans out / prunes `xor` branches. `auto_resolve.field_path` may be authored in the builder but is **not wired** in the PoC (no data-driven resolution yet). (`mdo` is the same outcome pick backed by a meeting Appointment.)
+`decision` is a caregiver action: it surfaces as an actionable step, the caregiver picks one of the build-authored free-form outcomes (+ optional notes/files), and the **workflow** fans out / prunes `xor` branches. `auto_resolve.field_path` may be authored in the builder but is **not wired** in the PoC (no data-driven resolution yet). (`mdo` is the same outcome pick backed by a meeting Appointment.)
 
 ### D9 — Runtime substrate: Temporal (interpreter + SQL projection)
 
@@ -160,19 +163,19 @@ A pathway cannot be enrolled until every block's required participant(s) are res
 | `task` | title, due_offset_days, notes | `requires_completion` | assignee role | role binding; any deferred field | `{done, completed_at}` |
 | `appointment` | title, duration_minutes, attendees_patient, notes | `mode` (in_person/video/phone), `AppointmentKind` (consultation/lab/imaging) | lead role (+ support/observer) | location (optional), role binding(s), optional scheduled_at pre-fill | scheduled_at (book), `{performed_at}` |
 | `treatment` | title, duration_minutes, notes | kind fixed `procedure` | lead role | optional date, role binding | scheduled_at, `{performed_at, notes, complications}` |
-| `mdo` | topic, **preset outcome choices**, expected_attendees_note | kind fixed `other`; caregiver participants; outcomes drive branching (like `decision`) | lead role (+ caregiver participants) | role binding(s) | `{chosen_option, notes, files, closed_at}` |
+| `mdo` | topic, **free-form outcome choices**, expected_attendees_note | kind fixed `other`; caregiver participants; outcomes drive branching (like `decision`) | lead role (+ caregiver participants) | role binding(s) | `{chosen_option, notes, files, closed_at}` |
 | `decision` | question | `outputs[]`, `mode` (xor/and), `auto_resolve.field_path` (authored, not wired) | role that picks | role binding | picked `output_key` |
 | `form` | title, intro, questions[], submit/confirmation labels | fake-log | — | — | — (answers later) |
 | `message` | template per channel (email/sms/mobile) | connected block + relative timing (e.g. `operation_date − N`); mock send | — | — | logged only (audit/event) |
 | `informed_consent` | questions[] | `channels[]`, `reminder_offset_iso`, `reminder_max`, `expires_at_iso`; fake-log | — | — | — (`{consented, expired, signed_at}` later) |
-| `external_program` | program/type config | Luscii program ref; fake-log/external | — | — | — (program data later) |
-| `pathway_link` | target pathway, version pin | `mode` (blocking/fire_and_forget), nested render; fake-log | — | — | — (child completion later) |
+| `external_program` | Luscii program ref (`programId`/`protocolId`) | real Luscii enroll (`POST /v1/patients`); one program | — | — | enrolled (no per-step data) |
+| `pathway_link` | target pathway, version pin | `mode`: subpath-inline vs cross-pathway fire_and_forget | — | — | inline → flattened; cross-pathway → fire-and-forget child |
 
 Notes: "fake-log" blocks expose no role and no typed runtime result in the PoC — they advance via a caregiver-logged action with the audit hook. The role columns are build-declared, enroll-bound (D11). `decision.auto_resolve` is authored but PoC always asks the caregiver (D8).
 
-**Notes + files on completion:** `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** when completed/recorded. (`decision` = a quick outcome pick with no meeting; `mdo` = the same outcome pick backed by a meeting Appointment + participants. Both author preset outcomes and drive branching.) This is **consumed from the shared notes+files module** being built in `appointments-task-rebuild` (`feat/split-appointments-and-tasks`) — intended to be extracted as a loose, reusable service — not built here.
+**Notes + files on completion:** `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** when completed/recorded. (`decision` = a quick outcome pick with no meeting; `mdo` = the same outcome pick backed by a meeting Appointment + participants. Both author free-form outcomes and drive branching.) This is **consumed from the shared notes+files module** being built in `appointments-task-rebuild` (`feat/split-appointments-and-tasks`) — intended to be extracted as a loose, reusable service — not built here.
 
-**`mdo` is appointment + decision:** an `mdo` is an Appointment (meeting) whose completion requires the lead to pick one of the **build-authored preset outcome choices**; that `chosen_option` behaves like a `decision` output — downstream blocks gate on it via `decision_output`-style predicates (subject to connection validation).
+**`mdo` is appointment + decision:** an `mdo` is an Appointment (meeting) whose completion requires the **lead** to pick one of the **build-authored, free-form outcome options**; **non-lead** participants add comments + files but don't decide. That `chosen_option` behaves like a `decision` output — downstream blocks gate on it via `decision_output`-style predicates (subject to connection validation).
 
 ### D13 — Trigger predicates wired + connection validation
 

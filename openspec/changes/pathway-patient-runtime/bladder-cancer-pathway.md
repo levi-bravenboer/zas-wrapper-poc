@@ -113,6 +113,7 @@ To make this pathway actually run across enrollment + builder + runtime:
 - **Pathology results** are caregiver-marked (no lab/HiX integration).
 - **Messages + GP-share** are mock (logged, no delivery).
 - **`end_pathway` leaves the Luscii program running** — no unenroll/stop call; Luscii monitoring/PROMs continue independently.
+- **Decision/MDO outcomes are binary `treatment` / `nothing`** for the seed (decision 1: operate/nothing; final/MDO: treatment→bridge oncology / nothing→end). Richer staging-based outcomes (TURBT, BCG, cystectomy, chemoradiation, systemic) are a later, clinically-validated enrichment.
 
 ## Still needed
 

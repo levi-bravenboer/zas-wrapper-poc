@@ -71,6 +71,10 @@
 
 - [ ] 6c.1 Seed script that authors the bladder-cancer pathway (blocks + roles + clinical dates + timing + Luscii program ref)
 
+## Build order
+
+> Build **non-appointment parts first** (task/decision/mdo-page/Luscii/timing/tab/enroll). Appointment materialization (createAppointment + notes/files) consumes `feat/split-appointments-and-tasks` — add it once that module merges.
+
 ## 7. Integration + verification
 
 - [ ] 7.1 Seed a demo pathway + enroll a demo patient end-to-end through Temporal

@@ -50,7 +50,7 @@ When a block becomes actionable the runtime SHALL materialize the matching primi
 
 ### Requirement: Decision and MDO select an outcome that drives branching
 
-A `decision` (no meeting) and an `mdo` (a meeting Appointment) SHALL each complete by a caregiver picking one of the **build-authored preset outcomes**. The chosen outcome SHALL be stored on the execution and SHALL drive downstream branching via `decision_output` predicates; `xor` mode SHALL prune the unchosen branches (with dead-path cleanup). `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** on completion, via the shared notes/files module (`feat/split-appointments-and-tasks`).
+A `decision` (no meeting) and an `mdo` (a meeting Appointment) SHALL each complete when a caregiver picks one of the **build-authored, free-form outcome options**. For `mdo`, only the **lead** participant SHALL pick the option (completing it); **non-lead** participants MAY add **comments + files** but do not decide. The chosen option SHALL be stored on the execution and SHALL drive downstream branching via `decision_output` predicates; `xor` mode SHALL prune unchosen branches (with dead-path cleanup). `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** on completion, via the shared notes/files module (`feat/split-appointments-and-tasks`).
 
 #### Scenario: Picking a decision/MDO outcome branches downstream
 
