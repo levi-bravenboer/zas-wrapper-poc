@@ -20,16 +20,12 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-ACTOR_TYPE_VALUES = ("user", "system", "service", "anonymous")
+ACTOR_TYPE_VALUES = ("user", "system", "anonymous")
 AUDIT_ACTION_VALUES = (
     "created",
     "updated",
     "deleted",
     "login",
-    "logout",
-    "exported",
-    "published",
-    "access_granted",
 )
 AUDIT_RESULT_VALUES = ("success", "failure")
 

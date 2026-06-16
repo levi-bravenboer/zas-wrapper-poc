@@ -18,7 +18,6 @@ from enum import StrEnum
 class ActorType(StrEnum):
     USER = "user"
     SYSTEM = "system"
-    SERVICE = "service"
     ANONYMOUS = "anonymous"
 
 
@@ -27,10 +26,6 @@ class AuditAction(StrEnum):
     UPDATED = "updated"
     DELETED = "deleted"
     LOGIN = "login"
-    LOGOUT = "logout"
-    EXPORTED = "exported"
-    PUBLISHED = "published"
-    ACCESS_GRANTED = "access_granted"
 
 
 class AuditResult(StrEnum):

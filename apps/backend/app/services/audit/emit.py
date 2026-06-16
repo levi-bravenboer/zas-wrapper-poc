@@ -1,9 +1,5 @@
 """Write API for the audit trail.
 
-`emit()` records an explicit domain event onto an existing request session — it
-rides the surrounding unit-of-work, so if the business transaction rolls back
-its audit row rolls back too (correct: no audit row for a failed action).
-
 `emit_committed()` records a security event in its OWN short-lived session and
 commits independently, so it survives a rolled-back / 4xx request (e.g. a failed
 login that returns 401). This is the single deliberate exception to the
@@ -21,7 +17,6 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.enums.audit import ActorType, AuditAction, AuditResult
-from app.db.audit import SESSION_ACTOR_KEY
 from app.schemas.auth.auth import SessionUser
 from app.services.audit.context import AuditContext, FieldChange
 from app.services.audit.registry import is_known_resource
@@ -79,35 +74,6 @@ def _build(
         request_id=request_id,
         changes=_changes_payload(changes),
         context=_context_payload(context),
-    )
-
-
-async def emit(
-    session: AsyncSession,
-    *,
-    action: AuditAction,
-    result: AuditResult = AuditResult.SUCCESS,
-    resource_type: str | None = None,
-    resource_id: UUID | None = None,
-    request_id: UUID | None = None,
-    changes: dict[str, FieldChange] | None = None,
-    context: AuditContext | None = None,
-    actor: SessionUser | None = None,
-) -> None:
-    """Record a domain event on the request session (transaction-bound)."""
-
-    resolved = actor if actor is not None else session.info.get(SESSION_ACTOR_KEY)
-    session.add(
-        _build(
-            action=action,
-            result=result,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            request_id=request_id,
-            changes=changes,
-            context=context,
-            actor=resolved,
-        )
     )
 
 

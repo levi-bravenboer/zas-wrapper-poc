@@ -4729,7 +4729,6 @@
         "enum": [
           "user",
           "system",
-          "service",
           "anonymous"
         ],
         "title": "ActorType"
@@ -5090,11 +5089,7 @@
           "created",
           "updated",
           "deleted",
-          "login",
-          "logout",
-          "exported",
-          "published",
-          "access_granted"
+          "login"
         ],
         "title": "AuditAction"
       },
