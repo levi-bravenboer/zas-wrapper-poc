@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next'
 import { GroupedList, GroupedListSection, RailRow } from '@/components/rail'
 import { EmptyState } from '@/components/states/EmptyState'
 import { RowSkeleton } from '@/components/states/Skeleton'
+import { groupConsecutiveByDay } from '@/lib/utils/grouping'
 
 import { useAppointmentsQuery } from '../hooks'
-import type { Appointment } from '../types'
 
 const KIND_ICON: Record<string, ComponentType<{ className?: string }>> = {
   consultation: Stethoscope,
@@ -20,24 +20,6 @@ const KIND_ICON: Record<string, ComponentType<{ className?: string }>> = {
 
 const dayFmt = new Intl.DateTimeFormat('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' })
 const timeFmt = new Intl.DateTimeFormat('nl-BE', { hour: '2-digit', minute: '2-digit' })
-
-function dayKey(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-}
-
-type DayGroup = { key: string; label: string; items: Appointment[] }
-
-function groupByDay(items: Appointment[]): DayGroup[] {
-  const groups: DayGroup[] = []
-  for (const item of items) {
-    const key = dayKey(item.starts_at)
-    const last = groups[groups.length - 1]
-    if (last && last.key === key) last.items.push(item)
-    else groups.push({ key, label: dayFmt.format(new Date(item.starts_at)), items: [item] })
-  }
-  return groups
-}
 
 function AppointmentListBody({ selectedId }: { selectedId: string | undefined }): ReactElement {
   const { t } = useTranslation(['appointment'])
@@ -62,7 +44,7 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
     )
   }
 
-  const groups = groupByDay(query.data ?? [])
+  const groups = groupConsecutiveByDay(query.data ?? [], (appt) => appt.starts_at)
   if (groups.length === 0) {
     return (
       <EmptyState
@@ -76,7 +58,7 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
   return (
     <GroupedList>
       {groups.map((group) => (
-        <GroupedListSection key={group.key} label={group.label}>
+        <GroupedListSection key={group.key} label={dayFmt.format(new Date(group.items[0]!.starts_at))}>
           {group.items.map((appt) => {
             const KindIcon = KIND_ICON[appt.kind] ?? Calendar
             const secondary = [timeFmt.format(new Date(appt.starts_at)), appt.location_text]
