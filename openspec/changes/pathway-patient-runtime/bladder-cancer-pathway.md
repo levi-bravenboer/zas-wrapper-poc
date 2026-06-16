@@ -90,6 +90,20 @@ To make this pathway actually run across enrollment + builder + runtime:
 - **Pathology-reported gate (n10)** → **mock**: caregiver marks "results in" to make the review task actionable (no lab/HiX integration in PoC).
 - **Anesthesia + measurements gates** → **real, read-gated from Luscii** (`/v1/instrument-item-responses`, `/v1/measurements`, `/v1/alerts`).
 
+## operation_date allowed range (TODO — walk the pathway)
+
+`operation_date` is bounded by an allowed range `[earliest, latest]` derived from per-block constraints. Day-numbers to be filled by going over the flow:
+
+| Block | Constraint on operation_date | Days (TBD) |
+|---|---|---|
+| anesthesia (Luscii) | `≥ N days before` | ? |
+| pre-op info (`message`) | `≥ N days before` | ? |
+| lab test + review | must be `done` before (hard gate) | — |
+| scan + review | must be `done` before (hard gate) | — |
+| clinical urgency (if any) | `≤ M days` (latest bound) | ? |
+
+→ earliest = today + max(lead times); latest = tightest max bound (if any). Fill from the Miro "X days before operation" notes.
+
 ## PoC assumptions / shortcuts
 
 - **Consent is not gated.** Consent lives inside the Luscii program; for the PoC the pathway does **not** verify it — downstream blocks proceed (assume the patient consents). Real consent gating is a later upgrade (read Luscii consent action).
