@@ -1,5 +1,6 @@
 // surface-opt-out: app-only
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { ClipboardList } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -14,8 +15,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isApiError } from '@/lib/api/errors'
-import { formatDateOrDash } from '@/lib/utils/datetime'
+import { formatDateOrDash, formatDateTimeOrDash } from '@/lib/utils/datetime'
 import { CollaborationColumn } from '@/modules/collaboration/components'
+import { PatientSummaryCard } from '@/modules/patient/components/PatientSummaryCard'
 import { useSetTaskStatus, useTaskQuery } from '@/modules/tasks/hooks'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
@@ -75,9 +77,11 @@ function TaskDetailRoute(): ReactElement {
         </Button>
       }
       body={
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-          <DetailCard title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}>
-            <DetailRow label={t('tasks:detail.description', { defaultValue: 'Omschrijving' })}>
+        <div className="flex w-full flex-col gap-6">
+          {task.patient_id ? <PatientSummaryCard patientId={task.patient_id} /> : null}
+
+          <DetailCard icon={ClipboardList} title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}>
+            <DetailRow wide label={t('tasks:detail.reason', { defaultValue: 'Reden' })}>
               {task.description ? (
                 <span className="whitespace-pre-wrap">{task.description}</span>
               ) : (
@@ -94,17 +98,14 @@ function TaskDetailRoute(): ReactElement {
                 {t(`tasks:status.${task.status}`, { defaultValue: task.status })}
               </Badge>
             </DetailRow>
-            {task.patient_id ? (
-              <DetailRow label={t('tasks:detail.patient', { defaultValue: 'Patiënt' })}>
-                <Link
-                  to="/patients/$patientId"
-                  params={{ patientId: task.patient_id }}
-                  className="font-medium text-primary hover:underline"
-                >
-                  {t('tasks:detail.openPatient', { defaultValue: 'Open patiënt' })}
-                </Link>
+            {task.source_ref ? (
+              <DetailRow label={t('tasks:detail.source', { defaultValue: 'Bron' })}>
+                {task.source_ref}
               </DetailRow>
             ) : null}
+            <DetailRow label={t('tasks:detail.created', { defaultValue: 'Aangemaakt' })}>
+              {formatDateTimeOrDash(task.created_at, i18n.language)}
+            </DetailRow>
           </DetailCard>
 
           <CollaborationColumn ownerType="task" ownerId={task.id} />

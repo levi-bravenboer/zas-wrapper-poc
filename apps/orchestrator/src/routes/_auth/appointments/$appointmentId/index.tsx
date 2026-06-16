@@ -1,5 +1,6 @@
 // surface-opt-out: app-only
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { CalendarClock } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -18,6 +19,7 @@ import { isApiError } from '@/lib/api/errors'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 import { useAppointmentQuery } from '@/modules/appointment/hooks'
 import { CollaborationColumn } from '@/modules/collaboration/components'
+import { PatientSummaryCard } from '@/modules/patient/components/PatientSummaryCard'
 
 export const Route = createFileRoute('/_auth/appointments/$appointmentId/')({
   component: AppointmentDetailRoute,
@@ -69,13 +71,18 @@ function AppointmentDetailRoute(): ReactElement {
         </Button>
       }
       body={
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-          <DetailCard title={t('appointment:detail.title', { defaultValue: 'Details' })}>
+        <div className="flex w-full flex-col gap-6">
+          <PatientSummaryCard patientId={patient.id} />
+
+          <DetailCard icon={CalendarClock} title={t('appointment:detail.title', { defaultValue: 'Details' })}>
             {appt.description ? (
-              <DetailRow label={t('appointment:field.description', { defaultValue: 'Omschrijving' })}>
+              <DetailRow wide label={t('appointment:field.reason', { defaultValue: 'Reden' })}>
                 <span className="whitespace-pre-wrap">{appt.description}</span>
               </DetailRow>
             ) : null}
+            <DetailRow label={t('appointment:field.kind', { defaultValue: 'Soort' })}>
+              {t(`appointment:kind.${appt.kind}`, { defaultValue: appt.kind })}
+            </DetailRow>
             <DetailRow label={t('appointment:field.when', { defaultValue: 'Wanneer' })}>
               {when}
             </DetailRow>
@@ -83,17 +90,8 @@ function AppointmentDetailRoute(): ReactElement {
               {t(`appointment:modality.${appt.modality}`, { defaultValue: appt.modality })}
               {appt.location_text ? ` · ${appt.location_text}` : ''}
             </DetailRow>
-            <DetailRow label={t('appointment:field.patient', { defaultValue: 'Patiënt' })}>
-              <Link
-                to="/patients/$patientId"
-                params={{ patientId: patient.id }}
-                className="font-medium text-primary hover:underline"
-              >
-                {patient.family_name}, {patient.given_name}
-              </Link>
-            </DetailRow>
-            <DetailRow label={t('appointment:field.participants', { defaultValue: 'Deelnemers' })}>
-              <ul className="flex flex-col gap-2">
+            <DetailRow wide label={t('appointment:field.participants', { defaultValue: 'Deelnemers' })}>
+              <ul className="flex flex-wrap gap-x-6 gap-y-2">
                 {appt.participants.map((p) => (
                   <li key={p.user_id} className="flex items-center gap-2">
                     <PersonAvatar size="sm" name={p.user_display_name} tintId={p.user_id} />

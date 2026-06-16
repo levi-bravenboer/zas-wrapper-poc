@@ -1,4 +1,4 @@
-import { Download, Eye, FileText, Trash2, UploadCloud } from 'lucide-react'
+import { Download, Eye, FileText, FolderOpen, Trash2, UploadCloud } from 'lucide-react'
 import { useRef, useState, type DragEvent, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -58,7 +58,8 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
     <>
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <FolderOpen className="size-4 text-foreground-muted" aria-hidden />
           {t('collaboration:attachments.title', { defaultValue: 'Documenten' })}
         </CardTitle>
       </CardHeader>

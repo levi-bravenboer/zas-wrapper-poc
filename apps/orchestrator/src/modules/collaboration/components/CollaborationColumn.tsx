@@ -9,11 +9,12 @@ export type CollaborationColumnProps = {
   ownerId: string
 }
 
-/** Stacked notes + documents for an owner entity — the shared activity column
- *  on task/appointment/patient detail. */
+/** Notes + documents for an owner entity — the shared activity area on
+ *  task/appointment/patient detail. Side by side from `lg` up (notes wider),
+ *  stacked below. */
 export function CollaborationColumn({ ownerType, ownerId }: CollaborationColumnProps): ReactElement {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <NotesPanel ownerType={ownerType} ownerId={ownerId} />
       <AttachmentsPanel ownerType={ownerType} ownerId={ownerId} />
     </div>

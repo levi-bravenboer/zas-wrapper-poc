@@ -1,3 +1,4 @@
+import { MessageSquareText } from 'lucide-react'
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -25,9 +26,11 @@ function NotePost({ note }: { note: Note }): ReactElement {
         className="mt-0.5"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-medium text-foreground">{note.author_display_name}</span>
-          <span className="text-[11px] text-foreground-muted">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-sm font-medium text-foreground">
+            {note.author_display_name}
+          </span>
+          <span className="shrink-0 whitespace-nowrap text-[11px] text-foreground-muted">
             {formatDateTimeOrDash(note.created_at, 'nl')}
           </span>
         </div>
@@ -64,7 +67,8 @@ export function NotesPanel({ ownerType, ownerId }: NotesPanelProps): ReactElemen
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <MessageSquareText className="size-4 text-foreground-muted" aria-hidden />
           {t('collaboration:notes.title', { defaultValue: 'Notities' })}
         </CardTitle>
       </CardHeader>
