@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { api } from '@/lib/api/client'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { PathwayTab } from '@/modules/patient-pathway/components/PathwayTab'
 
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
@@ -58,6 +59,7 @@ export interface PatientProfilePageProps {
  */
 export function PatientProfilePage({ patientId }: PatientProfilePageProps): ReactElement {
   const { t, i18n } = useTranslation('patient-profile')
+  const { t: pathwayT } = useTranslation('patient-pathway')
 
   const patientQuery = usePatient(patientId)
   const organisationsQuery = useQuery({
@@ -122,6 +124,11 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
           <CareTeamSlot patientId={patient.id} />
           <EntityDetailTabs
             tabs={[
+              {
+                value: 'pathway',
+                label: pathwayT('tab.label'),
+                content: <PathwayTab patientId={patient.id} />,
+              },
               {
                 value: 'measurements',
                 label: t('tabs.measurements'),

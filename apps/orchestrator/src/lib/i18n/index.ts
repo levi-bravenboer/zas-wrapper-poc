@@ -12,6 +12,7 @@ import entityPage from './locales/nl/entity-page.json'
 import nav from './locales/nl/nav.json'
 import organisationsAdminUi from './locales/nl/organisations-admin-ui.json'
 import pathway from './locales/nl/pathway.json'
+import patientPathway from './locales/nl/patient-pathway.json'
 import patientProfile from './locales/nl/patient-profile.json'
 import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
 import shell from './locales/nl/shell.json'
@@ -45,6 +46,7 @@ void i18next.use(initReactI18next).init({
     'nav',
     'organisations-admin-ui',
     'pathway',
+    'patient-pathway',
     'patient-profile',
     'practitioner-roles-admin-ui',
     'shell',
@@ -66,6 +68,7 @@ void i18next.use(initReactI18next).init({
       nav,
       'organisations-admin-ui': organisationsAdminUi,
       pathway,
+      'patient-pathway': patientPathway,
       'patient-profile': patientProfile,
       'practitioner-roles-admin-ui': practitionerRolesAdminUi,
       shell,

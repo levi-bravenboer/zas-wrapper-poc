@@ -118,9 +118,14 @@ describe('PatientProfilePage', () => {
     useLusciiDataMock.mockReturnValue(stubQuery(null))
     useLinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
     useUnlinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
-    getMock.mockResolvedValue({
-      data: { items: [{ id: 'org-1', name: 'ZAS Mechelen' }] },
-      response: new Response(null, { status: 200 }),
+    getMock.mockImplementation((path: string) => {
+      if (path === '/enrollments') {
+        return Promise.resolve({ data: [], response: new Response(null, { status: 200 }) })
+      }
+      return Promise.resolve({
+        data: { items: [{ id: 'org-1', name: 'ZAS Mechelen' }] },
+        response: new Response(null, { status: 200 }),
+      })
     })
   })
 
@@ -130,6 +135,7 @@ describe('PatientProfilePage', () => {
 
     expect(await screen.findByRole('heading', { name: /Bos, Eva/ })).toBeTruthy()
     expect(screen.getAllByText(/80051203412/).length).toBeGreaterThan(0)
+    expect(screen.getByRole('tab', { name: /Zorgpad/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Metingen/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Labresultaten/ })).toBeTruthy()
     // Legacy meta tabs are gone per D10

@@ -1,0 +1,56 @@
+{
+  "tab": {
+    "label": "Zorgpad"
+  },
+  "empty": {
+    "title": "Geen actief zorgpad",
+    "body": "Deze patiënt volgt nog geen zorgpad. Schrijf de patiënt in om te beginnen.",
+    "enroll": "Inschrijven op zorgpad"
+  },
+  "enroll": {
+    "title": "Inschrijven op zorgpad",
+    "description": "Kies een gepubliceerd zorgpad en stel de ankerdatum in.",
+    "pathwayLabel": "Zorgpad",
+    "pathwayPlaceholder": "Kies een zorgpad",
+    "anchorLabel": "Ankerdatum",
+    "noPublished": "Er zijn nog geen gepubliceerde zorgpaden om op in te schrijven.",
+    "cancel": "Annuleren",
+    "submit": "Inschrijven",
+    "toast": {
+      "success": "Patiënt ingeschreven op zorgpad",
+      "error": "Inschrijven mislukt"
+    },
+    "validationTitle": "Inschrijven geblokkeerd"
+  },
+  "card": {
+    "anchor": "Ankerdatum",
+    "state": {
+      "active": "Actief",
+      "paused": "Gepauzeerd",
+      "completed": "Afgerond",
+      "cancelled": "Geannuleerd"
+    }
+  },
+  "buckets": {
+    "upcoming": "Aankomend",
+    "next": "Nu te doen",
+    "finished": "Afgerond",
+    "emptyUpcoming": "Geen aankomende stappen",
+    "emptyNext": "Geen openstaande stappen",
+    "emptyFinished": "Nog niets afgerond"
+  },
+  "step": {
+    "readyOn": "Klaar op {{date}}",
+    "scheduledFor": "Gepland op {{date}}",
+    "completedOn": "Afgerond op {{date}}",
+    "unknownBlock": "Onbekende stap",
+    "stateBadge": {
+      "active": "Bezig",
+      "eligible": "Beschikbaar",
+      "completed": "Afgerond",
+      "skipped": "Overgeslagen",
+      "failed": "Mislukt"
+    }
+  },
+  "loadError": "Zorgpad kon niet worden geladen"
+}

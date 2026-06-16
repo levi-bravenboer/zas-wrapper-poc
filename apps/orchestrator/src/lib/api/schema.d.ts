@@ -1081,7 +1081,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Enrollments By Patient */
+        get: operations["list_enrollments_by_patient"];
         put?: never;
         /** Create Enrollment */
         post: operations["create_enrollment"];
@@ -1904,6 +1905,11 @@ export interface components {
              * Format: uuid
              */
             patient_id: string;
+            /**
+             * Pathway Id
+             * Format: uuid
+             */
+            pathway_id: string;
             /**
              * Pathway Version Id
              * Format: uuid
@@ -7635,6 +7641,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_enrollments_by_patient: {
+        parameters: {
+            query: {
+                patient_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
