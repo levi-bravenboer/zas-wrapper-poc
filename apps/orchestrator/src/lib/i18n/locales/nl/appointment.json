@@ -1,4 +1,7 @@
 {
+  "title": "Afspraken",
+  "subtitle": "Geplande afspraken",
+  "openPatient": "Open patiënt",
   "kind": {
     "consultation": "Consultatie",
     "lab": "Lab",
@@ -9,5 +12,35 @@
   "modality": {
     "online": "Online",
     "on_site": "Ter plaatse"
+  },
+  "selection": {
+    "title": "Selecteer een afspraak",
+    "body": "Kies links een afspraak om de details te bekijken."
+  },
+  "empty": {
+    "title": "Geen afspraken",
+    "body": "Geplande afspraken verschijnen hier."
+  },
+  "error": {
+    "title": "Er ging iets mis",
+    "body": "Het laden is niet gelukt."
+  },
+  "field": {
+    "patient": "Patiënt",
+    "modality": "Modaliteit",
+    "lead": "Hoofdbehandelaar",
+    "status": "Status"
+  },
+  "notes": {
+    "title": "Notities",
+    "empty": "Nog geen notities.",
+    "placeholder": "Voeg een notitie toe…",
+    "add": "Toevoegen"
+  },
+  "attachments": {
+    "title": "Documenten",
+    "empty": "Nog geen documenten.",
+    "upload": "Document uploaden",
+    "delete": "Verwijderen"
   }
 }

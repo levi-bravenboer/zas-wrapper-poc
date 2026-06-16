@@ -9,10 +9,19 @@
   "tabs": {
     "measurements": "Metingen",
     "lab_results": "Labresultaten",
+    "appointments": {
+      "label": "Afspraken",
+      "about": "Over patiënt",
+      "with": "Met patiënt"
+    },
     "empty": {
       "lab_results": {
         "title": "Nog geen labresultaten gekoppeld",
         "body": "Wordt geleverd door de HiX-koppeling."
+      },
+      "appointments": {
+        "title": "Geen afspraken",
+        "body": "Afspraken over of met deze patiënt verschijnen hier."
       }
     }
   },

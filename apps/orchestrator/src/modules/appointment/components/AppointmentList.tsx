@@ -1,12 +1,11 @@
 import { Link, useParams } from '@tanstack/react-router'
-import { Activity, Calendar, FlaskConical, ScanLine, Stethoscope } from 'lucide-react'
+import { Activity, Calendar, FlaskConical, Inbox, ScanLine, Stethoscope } from 'lucide-react'
 import { type ComponentType, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { GroupedList, GroupedListSection, RailRow } from '@/components/rail'
 import { EmptyState } from '@/components/states/EmptyState'
 import { RowSkeleton } from '@/components/states/Skeleton'
-import { Inbox } from 'lucide-react'
 
 import { useAppointmentsQuery } from '../hooks'
 import type { Appointment } from '../types'
