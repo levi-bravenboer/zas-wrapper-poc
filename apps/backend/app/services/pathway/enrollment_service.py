@@ -19,6 +19,7 @@ from app.db.models.pathway import (
     PathwayBlockExecution,
     PathwayDeferredFieldValue,
     PathwayEnrollment,
+    PathwayEnrollmentParticipant,
     PathwayVersion,
 )
 from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
@@ -42,6 +43,7 @@ from app.schemas.pathway.enrollment import (
     DeferredFieldValuePatch,
     EnrollDescriptor,
     EnrollDescriptorField,
+    EnrollDescriptorParticipant,
     EnrollmentCreate,
     EnrollmentResponse,
     RuntimeTick,
@@ -141,6 +143,18 @@ class EnrollmentService:
                     block_template_id=v.block_template_id,
                     attr=v.attr,
                     value_json=v.value_json,
+                )
+            )
+
+        # §5.4: persist resolved per-block participants for materialisation.
+        for p in payload.participants:
+            session.add(
+                PathwayEnrollmentParticipant(
+                    id=uuid4(),
+                    enrollment_id=enrollment.id,
+                    block_template_id=p.block_template_id,
+                    user_id=p.user_id,
+                    role=p.role,
                 )
             )
 
@@ -291,6 +305,7 @@ class EnrollmentService:
         await self._assert_pathway_version_in_tenant(pathway_version_id, tenant_id)
         children = await self._pathway_repo.fetch_children(pathway_version_id)
         fields: list[EnrollDescriptorField] = []
+        participants: list[EnrollDescriptorParticipant] = []
         for row in children.blocks:
             template = block_row_to_domain(row)
             for spec in template.DEFERRED_FIELDS:
@@ -305,7 +320,18 @@ class EnrollmentService:
                         help=spec.help,
                     )
                 )
-        return EnrollDescriptor(pathway_version_id=pathway_version_id, fields=fields)
+            if template.participant is not None:
+                participants.append(
+                    EnrollDescriptorParticipant(
+                        block_template_id=row.id,
+                        block_label=template.name,
+                        role=template.participant.role,
+                        specialty=template.participant.specialty,
+                    )
+                )
+        return EnrollDescriptor(
+            pathway_version_id=pathway_version_id, fields=fields, participants=participants
+        )
 
     async def get_view(
         self,

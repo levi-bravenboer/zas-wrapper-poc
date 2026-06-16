@@ -37,6 +37,16 @@ class DeferredFieldValueIn(BaseModel):
     value_json: Any
 
 
+class EnrollmentParticipantIn(BaseModel):
+    """A Practitioner resolved for a block at enrollment (§5.4)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    block_template_id: UUID
+    user_id: UUID
+    role: str = Field(min_length=1, max_length=64)
+
+
 class EnrollmentCreate(BaseModel):
     """Body for `POST /enrollments`."""
 
@@ -46,6 +56,7 @@ class EnrollmentCreate(BaseModel):
     pathway_version_id: UUID
     anchor_date: date
     deferred_values: list[DeferredFieldValueIn] = Field(default_factory=list)
+    participants: list[EnrollmentParticipantIn] = Field(default_factory=list)
 
 
 class BlockExecutionResponse(BaseModel):
@@ -96,12 +107,23 @@ class EnrollDescriptorField(BaseModel):
     help: str | None = None
 
 
+class EnrollDescriptorParticipant(BaseModel):
+    """A block that needs a Practitioner bound at enrollment (role + specialty)."""
+
+    block_template_id: UUID
+    block_label: str
+    role: str
+    specialty: str | None = None
+
+
 class EnrollDescriptor(BaseModel):
     """Enroll-phase form descriptor for a pathway version — the deferred
-    fields a caregiver fills when enrolling a patient (tasks 4.1/5.2)."""
+    fields a caregiver fills + the per-block participants to resolve
+    (tasks 4.1/5.2/5.4)."""
 
     pathway_version_id: UUID
     fields: list[EnrollDescriptorField] = Field(default_factory=list)
+    participants: list[EnrollDescriptorParticipant] = Field(default_factory=list)
 
 
 class RuntimeTick(BaseModel):
@@ -149,6 +171,8 @@ __all__ = [
     "EnrollmentCreate",
     "EnrollDescriptor",
     "EnrollDescriptorField",
+    "EnrollDescriptorParticipant",
+    "EnrollmentParticipantIn",
     "EnrollmentResponse",
     "EnrollmentState",
     "ExecutionCompleteRequest",

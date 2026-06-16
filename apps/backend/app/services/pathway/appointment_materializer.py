@@ -24,7 +24,11 @@ from app.core.enums.appointment import (
 )
 from app.db.models.appointment.appointment import Appointment
 from app.db.models.appointment.appointment_participant import AppointmentParticipant
-from app.db.models.pathway import PathwayBlockExecution, PathwayEnrollment
+from app.db.models.pathway import (
+    PathwayBlockExecution,
+    PathwayEnrollment,
+    PathwayEnrollmentParticipant,
+)
 from app.domain.appointment.validator import (
     AppointmentParticipantSpec,
     AppointmentSpec,
@@ -79,6 +83,17 @@ async def materialize_appointment(
     if existing is not None:
         return None
 
+    # §5.4: prefer the Practitioner bound for this block at enrollment; fall
+    # back to the completing caregiver when none was resolved.
+    bound_user_id = await session.scalar(
+        select(PathwayEnrollmentParticipant.user_id).where(
+            PathwayEnrollmentParticipant.enrollment_id == enrollment.id,
+            PathwayEnrollmentParticipant.block_template_id == execution.block_template_id,
+            PathwayEnrollmentParticipant.deleted_at.is_(None),
+        )
+    )
+    lead_user_id = bound_user_id or actor.id
+
     starts_at = _performed_at(execution)
     duration = getattr(block, "duration_minutes", None) or _DEFAULT_DURATION_MIN
     ends_at = starts_at + timedelta(minutes=duration)
@@ -101,7 +116,7 @@ async def materialize_appointment(
         status=AppointmentStatus.FULFILLED,
         participants=(
             AppointmentParticipantSpec(
-                user_id=actor.id,
+                user_id=lead_user_id,
                 role=AppointmentParticipantRole.LEAD,
                 user_tenant_id=actor.tenant_id,
             ),
@@ -127,7 +142,7 @@ async def materialize_appointment(
         AppointmentParticipant(
             tenant_id=actor.tenant_id,
             appointment_id=appointment.id,
-            user_id=actor.id,
+            user_id=lead_user_id,
             role=AppointmentParticipantRole.LEAD,
         )
     )

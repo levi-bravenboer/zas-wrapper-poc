@@ -533,3 +533,82 @@ async def test_stamp_completion_records_caregiver(
     view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
     completed = next(e for e in view.executions if e.id == exec_id)
     assert completed.completed_by_name == ADMIN_DISPLAY_NAME
+
+
+# ---- participant resolution binds the appointment LEAD (§5.4) -------------
+
+
+async def test_resolved_participant_becomes_appointment_lead(
+    db_session: AsyncSession,
+    runtime_world: dict[str, object],
+    seeded_zas_users: list[object],
+) -> None:
+    from datetime import UTC as _UTC
+    from datetime import datetime as _dt
+
+    from sqlalchemy import select as _select
+
+    from app.core.enums.user import Role
+    from app.db.models.appointment.appointment import Appointment
+    from app.db.models.appointment.appointment_participant import AppointmentParticipant
+    from app.schemas.auth.auth import SessionUser
+    from app.schemas.pathway.enrollment import EnrollmentParticipantIn
+    from scripts.seed_users import (
+        ADMIN_DISPLAY_NAME,
+        ADMIN_EMAIL,
+        ADMIN_USER_ID,
+        CAREGIVER_EMAIL,
+    )
+
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)  # type: ignore[attr-defined]
+    service = _service(db_session)
+    patient = runtime_world["patient"]
+    version = runtime_world["version"]
+    block = runtime_world["block"]  # appointment
+
+    enrollment = await service.create(
+        EnrollmentCreate(
+            patient_id=patient.id,  # type: ignore[union-attr]
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            anchor_date=date(2026, 6, 10),
+            participants=[
+                EnrollmentParticipantIn(
+                    block_template_id=block.id,  # type: ignore[union-attr]
+                    user_id=caregiver.id,
+                    role="arts",
+                )
+            ],
+        ),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    exec_id = next(e.id for e in view.executions if e.block_template_id == block.id)  # type: ignore[union-attr]
+
+    actor = SessionUser(
+        id=ADMIN_USER_ID,
+        email=ADMIN_EMAIL,
+        display_name=ADMIN_DISPLAY_NAME,
+        tenant_id=ZAS_TENANT_ID,
+        role=Role.ADMIN,
+    )
+    await service.complete_step(
+        enrollment.id, exec_id, result=None, tenant_id=ZAS_TENANT_ID, now=_dt.now(_UTC)
+    )
+    await service.materialize_appointment(enrollment.id, exec_id, actor=actor)
+    await db_session.commit()
+
+    appt_id = (
+        await db_session.execute(
+            _select(Appointment.id).where(Appointment.pathway_block_instance_id == exec_id)
+        )
+    ).scalar_one()
+    lead = (
+        await db_session.execute(
+            _select(AppointmentParticipant.user_id).where(
+                AppointmentParticipant.appointment_id == appt_id
+            )
+        )
+    ).scalar_one()
+    # The bound caregiver, not the completing admin actor.
+    assert lead == caregiver.id

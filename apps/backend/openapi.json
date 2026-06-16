@@ -7925,6 +7925,13 @@
             },
             "type": "array",
             "title": "Fields"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollDescriptorParticipant"
+            },
+            "type": "array",
+            "title": "Participants"
           }
         },
         "type": "object",
@@ -7932,7 +7939,7 @@
           "pathway_version_id"
         ],
         "title": "EnrollDescriptor",
-        "description": "Enroll-phase form descriptor for a pathway version \u2014 the deferred\nfields a caregiver fills when enrolling a patient (tasks 4.1/5.2)."
+        "description": "Enroll-phase form descriptor for a pathway version \u2014 the deferred\nfields a caregiver fills + the per-block participants to resolve\n(tasks 4.1/5.2/5.4)."
       },
       "EnrollDescriptorField": {
         "properties": {
@@ -7985,6 +7992,42 @@
         "title": "EnrollDescriptorField",
         "description": "One enrollment-time deferred field the enroll dialog must render."
       },
+      "EnrollDescriptorParticipant": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "block_label": {
+            "type": "string",
+            "title": "Block Label"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          }
+        },
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "block_label",
+          "role"
+        ],
+        "title": "EnrollDescriptorParticipant",
+        "description": "A block that needs a Practitioner bound at enrollment (role + specialty)."
+      },
       "EnrollmentCreate": {
         "properties": {
           "patient_id": {
@@ -8008,6 +8051,13 @@
             },
             "type": "array",
             "title": "Deferred Values"
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentParticipantIn"
+            },
+            "type": "array",
+            "title": "Participants"
           }
         },
         "additionalProperties": false,
@@ -8019,6 +8069,35 @@
         ],
         "title": "EnrollmentCreate",
         "description": "Body for `POST /enrollments`."
+      },
+      "EnrollmentParticipantIn": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "user_id",
+          "role"
+        ],
+        "title": "EnrollmentParticipantIn",
+        "description": "A Practitioner resolved for a block at enrollment (\u00a75.4)."
       },
       "EnrollmentResponse": {
         "properties": {
