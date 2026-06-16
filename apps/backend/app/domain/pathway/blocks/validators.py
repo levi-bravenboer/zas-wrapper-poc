@@ -34,9 +34,7 @@ class StartBlockCardinalityError(ValueError):
     """
 
     def __init__(self, *, count: int) -> None:
-        super().__init__(
-            f"pathway version must contain exactly one StartBlock, found {count}"
-        )
+        super().__init__(f"pathway version must contain exactly one StartBlock, found {count}")
         self.count = count
 
 
@@ -86,7 +84,9 @@ class LaneKindNotAllowedError(ValueError):
         *,
         block_name: str | None = None,
     ) -> None:
-        prefix = f"block '{block_name}' ({block_cls.__name__})" if block_name else block_cls.__name__
+        prefix = (
+            f"block '{block_name}' ({block_cls.__name__})" if block_name else block_cls.__name__
+        )
         super().__init__(
             f"{prefix} placed on lane kind '{lane_kind_code}' which is not in "
             f"allowed_lane_kinds={tuple(block_cls.allowed_lane_kinds)!r}"
@@ -146,9 +146,7 @@ class BlockPublishValidationError(ValueError):
     """
 
     def __init__(self, block_cls: type[BaseBlock], cause: Exception) -> None:
-        super().__init__(
-            f"{block_cls.__name__} instance failed strict publish validation: {cause}"
-        )
+        super().__init__(f"{block_cls.__name__} instance failed strict publish validation: {cause}")
         self.block_cls = block_cls
         self.cause = cause
 
@@ -300,9 +298,7 @@ class IfNotDoneWithinRuleError(ValueError):
     """
 
     def __init__(self, *, target_block: BaseBlock, reason: str) -> None:
-        super().__init__(
-            f"if_not_done_within on '{target_block.name}': {reason}"
-        )
+        super().__init__(f"if_not_done_within on '{target_block.name}': {reason}")
         self.target_block = target_block
         self.reason = reason
 
@@ -325,9 +321,7 @@ def validate_if_not_done_within_rules(
             if str(args.after_block) not in blocks_by_id:
                 raise IfNotDoneWithinRuleError(
                     target_block=block,
-                    reason=(
-                        f"after_block {args.after_block} not in pathway version"
-                    ),
+                    reason=(f"after_block {args.after_block} not in pathway version"),
                 )
             try:
                 parse_iso_duration_timedelta(args.offset_iso)
@@ -416,9 +410,7 @@ def validate_event_rules(blocks_by_id: dict[str, BaseBlock]) -> None:
             if producer is None:
                 raise EventRuleError(
                     target_block=block,
-                    reason=(
-                        f"after_block {args.after_block} not in pathway version"
-                    ),
+                    reason=(f"after_block {args.after_block} not in pathway version"),
                 )
             declared = type(producer).EVENTS
             if args.event_type not in declared:
@@ -456,9 +448,7 @@ class EndPathwayBlockMissingError(ValueError):
     """
 
     def __init__(self) -> None:
-        super().__init__(
-            "pathway version must contain at least one EndPathwayBlock"
-        )
+        super().__init__("pathway version must contain at least one EndPathwayBlock")
 
 
 class EndPathwayBlockShapeError(ValueError):

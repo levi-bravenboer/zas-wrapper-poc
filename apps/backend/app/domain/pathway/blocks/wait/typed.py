@@ -18,7 +18,9 @@ class WaitBlock(BaseBlock):
     KIND: ClassVar[str] = "wait"
     TYPE_CODE: ClassVar[str] = "wait"
     LABEL: ClassVar[str] = "Wachten op resultaat"
-    DESCRIPTION: ClassVar[str] = "Pauses execution until a typed event arrives from a referenced block."
+    DESCRIPTION: ClassVar[str] = (
+        "Pauses execution until a typed event arrives from a referenced block."
+    )
     ICON: ClassVar[str] = "hourglass"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)
     CONFIG_SCHEMA: ClassVar[dict[str, Any]] = object_schema(

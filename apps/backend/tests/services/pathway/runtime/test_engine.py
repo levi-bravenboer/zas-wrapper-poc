@@ -28,7 +28,9 @@ from app.services.pathway.runtime.engine import RuntimeEngine
 _NOW = datetime(2026, 6, 10, 12, 0, tzinfo=UTC)
 
 
-def make_execution(template_id: UUID, *, state: str = "pending", result: dict | None = None) -> BlockExecution:
+def make_execution(
+    template_id: UUID, *, state: str = "pending", result: dict | None = None
+) -> BlockExecution:
     return BlockExecution(
         id=uuid4(),
         enrollment_id=uuid4(),
@@ -70,9 +72,7 @@ def test_auto_fire_starts_lands_start_at_completed() -> None:
     template = StartBlock(name="Start")
     run = make_execution(start_id)
     executions = {run.id: run}
-    fired = RuntimeEngine.auto_fire_starts(
-        executions, {start_id: template}, now=_NOW
-    )
+    fired = RuntimeEngine.auto_fire_starts(executions, {start_id: template}, now=_NOW)
     assert fired == [run.id]
     assert run.state == "completed"
     assert run.started_at == _NOW
@@ -85,9 +85,7 @@ def test_auto_fire_starts_is_idempotent() -> None:
     run = make_execution(start_id)
     executions = {run.id: run}
     RuntimeEngine.auto_fire_starts(executions, {start_id: template}, now=_NOW)
-    fired_again = RuntimeEngine.auto_fire_starts(
-        executions, {start_id: template}, now=_NOW
-    )
+    fired_again = RuntimeEngine.auto_fire_starts(executions, {start_id: template}, now=_NOW)
     assert fired_again == []
     assert run.state == "completed"
 
@@ -122,9 +120,7 @@ def test_auto_fire_starts_ignores_non_start_blocks() -> None:
     template = AppointmentBlock(name="Intake", title="Intake")
     run = make_execution(intake_id)
     executions = {run.id: run}
-    fired = RuntimeEngine.auto_fire_starts(
-        executions, {intake_id: template}, now=_NOW
-    )
+    fired = RuntimeEngine.auto_fire_starts(executions, {intake_id: template}, now=_NOW)
     assert fired == []
     assert run.state == "pending"
 
@@ -167,9 +163,7 @@ def test_eligibility_waits_for_if_done() -> None:
     assert followup_run.state == "pending"
 
     RuntimeEngine.start(intake_run, now=_NOW)
-    promoted = RuntimeEngine.complete(
-        executions, templates, intake_run.id, result={}, now=_NOW
-    )
+    promoted = RuntimeEngine.complete(executions, templates, intake_run.id, result={}, now=_NOW)
     assert followup_run.id in promoted
     assert followup_run.state == "eligible"
 

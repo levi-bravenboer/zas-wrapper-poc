@@ -77,7 +77,7 @@ class PathwayBlock(TenantOwnedEntity):
     input_logic: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
-        server_default=sa.text("'{\"rules\": [], \"aggregator\": \"all_of\"}'::jsonb"),
+        server_default=sa.text('\'{"rules": [], "aggregator": "all_of"}\'::jsonb'),
     )
     # `timing_policy` JSONB is retained for back-compat; chain slot #2
     # §4 introduces the typed `timing_policy_*` columns below. New

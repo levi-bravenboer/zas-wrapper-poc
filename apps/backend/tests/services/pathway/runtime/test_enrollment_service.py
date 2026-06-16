@@ -87,9 +87,9 @@ async def runtime_world(
 
     caregiver_lane_kind_id = (
         await db_session.execute(
-            __import__("sqlalchemy").select(PathwayLaneKind.id).where(
-                PathwayLaneKind.code == "caregiver"
-            )
+            __import__("sqlalchemy")
+            .select(PathwayLaneKind.id)
+            .where(PathwayLaneKind.code == "caregiver")
         )
     ).scalar_one()
     lane = PathwayLane(

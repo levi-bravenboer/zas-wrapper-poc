@@ -29,7 +29,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-_NEW_DEFAULT_SQL = "'{\"rules\": [], \"aggregator\": \"all_of\"}'::jsonb"
+_NEW_DEFAULT_SQL = '\'{"rules": [], "aggregator": "all_of"}\'::jsonb'
 _OLD_DEFAULT_SQL = "'[]'::jsonb"
 
 

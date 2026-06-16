@@ -156,11 +156,7 @@ def evaluate_rule(rule: InputLogicRule, ctx: PredicateContext) -> bool:
         case PredicateKind.DECISION_OUTPUT:
             assert isinstance(args, DecisionOutputArgs)
             view = ctx.blocks.get(args.after_block)
-            return (
-                view is not None
-                and view.done
-                and view.decision_output == args.output_key
-            )
+            return view is not None and view.done and view.decision_output == args.output_key
 
         case PredicateKind.IF_NOT_DONE_WITHIN:
             assert isinstance(args, IfNotDoneWithinArgs)

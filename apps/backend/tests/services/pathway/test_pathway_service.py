@@ -180,7 +180,9 @@ async def test_replace_definition_dual_writes_typed_columns(
     )
     await db_session.commit()
 
-    row = (await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))).scalar_one()
+    row = (
+        await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))
+    ).scalar_one()
     # Slot #2 §6 retired the legacy `type` / `config` columns; the
     # typed `kind` discriminator + per-kind columns + `label`
     # (storing `BaseBlock.name`) carry the row alone.
@@ -219,7 +221,9 @@ async def test_replace_definition_typed_shape_writes_typed_columns(
     )
     await db_session.commit()
 
-    row = (await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))).scalar_one()
+    row = (
+        await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))
+    ).scalar_one()
     assert row.kind == "appointment"
     assert row.appointment_title == "Intake"
     assert row.appointment_mode == "video"
@@ -490,7 +494,6 @@ async def test_branch_on_non_branching_block_raises(
         )
 
 
-
 @_SKIP_EDGE_TESTS
 async def test_duplicate_edge_raises(db_session: AsyncSession, empty_pathway: Pathway) -> None:
     """D20: (source, target, source_branch_id) must be unique."""
@@ -508,7 +511,6 @@ async def test_duplicate_edge_raises(db_session: AsyncSession, empty_pathway: Pa
             empty_pathway.tenant_id,
             _minimal_payload(phases=[phase], lanes=[lane], blocks=[a, b], edges=[edge1, edge2]),
         )
-
 
 
 @_SKIP_EDGE_TESTS
@@ -556,7 +558,6 @@ async def test_edge_source_branch_must_belong_to_source_block(
         )
 
 
-
 # ---------- Edge timing union ------------------------------------------------
 
 
@@ -591,7 +592,6 @@ async def test_edge_with_both_delay_and_marker_raises(
                 phases=[phase],
                 lanes=[lane],
                 blocks=[a, b],
-
                 edges=[edge],
                 timing_values=[delay, marker_value],
             ),
@@ -623,7 +623,6 @@ async def test_edge_marker_triple_partial_raises(
             empty_pathway.tenant_id,
             _minimal_payload(
                 phases=[phase],
-
                 lanes=[lane],
                 blocks=[a, b],
                 edges=[edge],
@@ -657,7 +656,6 @@ async def test_edge_marker_id_must_belong_to_version(
         await service.replace_definition(
             empty_pathway.id,
             empty_pathway.tenant_id,
-
             _minimal_payload(
                 phases=[phase],
                 lanes=[lane],

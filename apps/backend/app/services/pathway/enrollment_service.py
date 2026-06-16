@@ -83,9 +83,7 @@ class EnrollmentService:
         # so we keep the defence-in-depth assertions here — surfaces a 422
         # instead of a foreign-key 500 a few flushes later.
         await self._assert_patient_in_tenant(payload.patient_id, tenant_id)
-        await self._assert_pathway_version_in_tenant(
-            payload.pathway_version_id, tenant_id
-        )
+        await self._assert_pathway_version_in_tenant(payload.pathway_version_id, tenant_id)
 
         children = await self._pathway_repo.fetch_children(payload.pathway_version_id)
         templates: dict[UUID, BaseBlock] = {
@@ -93,8 +91,7 @@ class EnrollmentService:
         }
 
         supplied: dict[tuple[UUID, str], object] = {
-            (v.block_template_id, v.attr): v.value_json
-            for v in payload.deferred_values
+            (v.block_template_id, v.attr): v.value_json for v in payload.deferred_values
         }
 
         missing: list[str] = []
@@ -151,9 +148,7 @@ class EnrollmentService:
                 if template.timing_policy is not None
                 else None
             )
-            scheduled_at, due_at = schedule_from_anchor(
-                payload.anchor_date, timing_policy
-            )
+            scheduled_at, due_at = schedule_from_anchor(payload.anchor_date, timing_policy)
             if (
                 timing_policy is not None
                 and timing_policy.get("kind") == "at_enrollment_picked_date"
@@ -206,9 +201,7 @@ class EnrollmentService:
             anchor_date=enrollment.anchor_date,
             state=enrollment.state,  # type: ignore[arg-type]
             executions=[BlockExecutionResponse.model_validate(row) for row in executions],
-            deferred_values=[
-                DeferredFieldValueOut.model_validate(row) for row in deferred
-            ],
+            deferred_values=[DeferredFieldValueOut.model_validate(row) for row in deferred],
         )
 
     async def start_execution(
@@ -270,9 +263,7 @@ class EnrollmentService:
                 ) from exc
 
         try:
-            RuntimeEngine.complete(
-                executions, templates, execution_id, result=result, now=now
-            )
+            RuntimeEngine.complete(executions, templates, execution_id, result=result, now=now)
         except InvalidTransitionError as exc:
             # Engine internals leak through as 500s otherwise; reshape
             # to the documented 422 surface.
@@ -285,10 +276,7 @@ class EnrollmentService:
         # subsequent end completions on an already-`completed`
         # enrollment leave the state untouched. Mutating the tracked
         # ORM row is sufficient; the session commit persists it.
-        if (
-            isinstance(template, EndPathwayBlock)
-            and enrollment.state == "active"
-        ):
+        if isinstance(template, EndPathwayBlock) and enrollment.state == "active":
             enrollment.state = "completed"
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
@@ -315,9 +303,7 @@ class EnrollmentService:
         if enrollment is None:
             raise EnrollmentNotFoundError()
 
-        existing = await self._repo.get_deferred_value(
-            enrollment_id, patch.block_template_id, attr
-        )
+        existing = await self._repo.get_deferred_value(enrollment_id, patch.block_template_id, attr)
         now = datetime.now(UTC)
         if existing is not None:
             existing.value_json = patch.value_json
@@ -337,9 +323,7 @@ class EnrollmentService:
 
         # Re-run eligibility so any block whose `input_logic` now
         # resolves to true on the supplied value transitions.
-        children = await self._pathway_repo.fetch_children(
-            enrollment.pathway_version_id
-        )
+        children = await self._pathway_repo.fetch_children(enrollment.pathway_version_id)
         templates: dict[UUID, BaseBlock] = {
             block_row.id: block_row_to_domain(block_row) for block_row in children.blocks
         }
@@ -395,10 +379,7 @@ class EnrollmentService:
         if row is None:
             raise CrossTenantReferenceError(
                 field="pathway_version_id",
-                reason=(
-                    f"pathway_version {pathway_version_id} not visible "
-                    "to caller's tenant"
-                ),
+                reason=(f"pathway_version {pathway_version_id} not visible to caller's tenant"),
             )
 
     async def _run_eligibility(
@@ -416,9 +397,7 @@ class EnrollmentService:
         RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
         await self._save_executions(enrollment_id, executions)
 
-    async def _load_executions(
-        self, enrollment_id: UUID
-    ) -> dict[UUID, BlockExecution]:
+    async def _load_executions(self, enrollment_id: UUID) -> dict[UUID, BlockExecution]:
         rows = await self._repo.list_executions(enrollment_id)
         return {row.id: _row_to_domain_execution(row) for row in rows}
 

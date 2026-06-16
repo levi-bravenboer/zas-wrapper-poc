@@ -32,9 +32,7 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
-    async def list_executions(
-        self, enrollment_id: UUID
-    ) -> list[PathwayBlockExecution]:
+    async def list_executions(self, enrollment_id: UUID) -> list[PathwayBlockExecution]:
         stmt = (
             select(PathwayBlockExecution)
             .where(
@@ -45,9 +43,7 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
         )
         return list((await self._session.execute(stmt)).scalars().all())
 
-    async def list_deferred_values(
-        self, enrollment_id: UUID
-    ) -> list[PathwayDeferredFieldValue]:
+    async def list_deferred_values(self, enrollment_id: UUID) -> list[PathwayDeferredFieldValue]:
         stmt = select(PathwayDeferredFieldValue).where(
             PathwayDeferredFieldValue.enrollment_id == enrollment_id,
             PathwayDeferredFieldValue.deleted_at.is_(None),

@@ -133,9 +133,7 @@ def test_start_invariants_pass_for_lone_clean_start() -> None:
 
 
 def test_start_invariants_reject_zero_starts() -> None:
-    blocks: dict[str, BaseBlock] = {
-        str(uuid4()): AppointmentBlock(name="Intake", title="Intake")
-    }
+    blocks: dict[str, BaseBlock] = {str(uuid4()): AppointmentBlock(name="Intake", title="Intake")}
     with pytest.raises(StartBlockCardinalityError) as exc_info:
         validate_start_block_invariants(blocks)
     assert exc_info.value.count == 0
@@ -302,9 +300,7 @@ def test_if_not_done_within_valid_rule_passes() -> None:
             rules=[
                 InputLogicRule(
                     node=upstream_id,
-                    args=IfNotDoneWithinArgs(
-                        after_block=upstream_id, offset_iso="P14D"
-                    ),
+                    args=IfNotDoneWithinArgs(after_block=upstream_id, offset_iso="P14D"),
                 ),
             ],
         ),
@@ -325,9 +321,7 @@ def test_if_not_done_within_unknown_reference_rejected() -> None:
             rules=[
                 InputLogicRule(
                     node=ghost_id,
-                    args=IfNotDoneWithinArgs(
-                        after_block=ghost_id, offset_iso="P14D"
-                    ),
+                    args=IfNotDoneWithinArgs(after_block=ghost_id, offset_iso="P14D"),
                 ),
             ],
         ),
@@ -348,9 +342,7 @@ def test_if_not_done_within_invalid_iso_rejected() -> None:
             rules=[
                 InputLogicRule(
                     node=upstream_id,
-                    args=IfNotDoneWithinArgs(
-                        after_block=upstream_id, offset_iso="veertien dagen"
-                    ),
+                    args=IfNotDoneWithinArgs(after_block=upstream_id, offset_iso="veertien dagen"),
                 ),
             ],
         ),
@@ -403,9 +395,7 @@ def test_informed_consent_rejects_invalid_reminder_offset() -> None:
     )
     from app.domain.pathway.blocks.validators import InformedConsentShapeError
 
-    consent = InformedConsentBlock(
-        name="Toestemming", reminder_offset_iso="drie dagen"
-    )
+    consent = InformedConsentBlock(name="Toestemming", reminder_offset_iso="drie dagen")
     blocks: dict[str, BaseBlock] = {str(uuid4()): consent}
     with pytest.raises(InformedConsentShapeError) as exc_info:
         validate_informed_consent_invariants(blocks)
@@ -494,9 +484,7 @@ def test_event_rule_with_declared_event_type_passes() -> None:
             rules=[
                 InputLogicRule(
                     node=producer_id,
-                    args=EventArgs(
-                        after_block=producer_id, event_type="rescheduled"
-                    ),
+                    args=EventArgs(after_block=producer_id, event_type="rescheduled"),
                 ),
             ],
         ),
@@ -582,9 +570,7 @@ def test_input_logic_node_reference_within_version_passes() -> None:
         title="Follow-up",
         input_logic=InputLogic(
             rules=[
-                InputLogicRule(
-                    node=upstream_id, args=IfDoneArgs(after_block=upstream_id)
-                ),
+                InputLogicRule(node=upstream_id, args=IfDoneArgs(after_block=upstream_id)),
             ],
         ),
     )
@@ -634,9 +620,7 @@ def test_input_logic_wait_after_marker_rule_skipped() -> None:
             rules=[
                 InputLogicRule(
                     node=marker_id,
-                    args=WaitAfterArgs(
-                        marker_id=marker_id, offset_iso="P3D", direction="after"
-                    ),
+                    args=WaitAfterArgs(marker_id=marker_id, offset_iso="P3D", direction="after"),
                 ),
             ],
         ),

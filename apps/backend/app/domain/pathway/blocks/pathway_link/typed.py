@@ -52,8 +52,7 @@ class PathwayLinkBlock(BaseBlock):
     # `pathway_link` for back-compat.
     LABEL: ClassVar[str] = "Subpath"
     DESCRIPTION: ClassVar[str] = (
-        "Embeds another pathway by reference (sub-flow); canvas renders "
-        "an inline preview."
+        "Embeds another pathway by reference (sub-flow); canvas renders an inline preview."
     )
     ICON: ClassVar[str] = "git-merge"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)

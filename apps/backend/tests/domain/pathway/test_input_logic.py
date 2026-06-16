@@ -301,9 +301,7 @@ def test_if_not_done_within_false_before_window_expires() -> None:
         node=upstream,
         args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
     )
-    view = BlockExecutionView(
-        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
-    )
+    view = BlockExecutionView(block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor)
     not_yet = datetime(2026, 6, 10, tzinfo=UTC)
     assert evaluate_rule(rule, _sla_ctx(view, now=not_yet)) is False
 
@@ -317,9 +315,7 @@ def test_if_not_done_within_true_when_expired_and_still_pending() -> None:
         node=upstream,
         args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
     )
-    view = BlockExecutionView(
-        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
-    )
+    view = BlockExecutionView(block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor)
     expired = datetime(2026, 6, 16, tzinfo=UTC)
     assert evaluate_rule(rule, _sla_ctx(view, now=expired)) is True
 
@@ -333,9 +329,7 @@ def test_if_not_done_within_false_when_already_completed() -> None:
         node=upstream,
         args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
     )
-    view = BlockExecutionView(
-        block_id=upstream, done=True, terminal=True, sla_anchor_at=anchor
-    )
+    view = BlockExecutionView(block_id=upstream, done=True, terminal=True, sla_anchor_at=anchor)
     expired = datetime(2026, 6, 16, tzinfo=UTC)
     assert evaluate_rule(rule, _sla_ctx(view, now=expired)) is False
 
@@ -350,9 +344,7 @@ def test_if_not_done_within_false_when_skipped() -> None:
         args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="P14D"),
     )
     # skipped → terminal=True but done=False
-    view = BlockExecutionView(
-        block_id=upstream, done=False, terminal=True, sla_anchor_at=anchor
-    )
+    view = BlockExecutionView(block_id=upstream, done=False, terminal=True, sla_anchor_at=anchor)
     expired = datetime(2026, 6, 16, tzinfo=UTC)
     assert evaluate_rule(rule, _sla_ctx(view, now=expired)) is False
 
@@ -386,9 +378,7 @@ def test_if_not_done_within_supports_sub_day_windows() -> None:
         node=upstream,
         args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="PT4H"),
     )
-    view = BlockExecutionView(
-        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
-    )
+    view = BlockExecutionView(block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor)
     before = datetime(2026, 6, 1, 11, 0, tzinfo=UTC)
     after = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)
     assert evaluate_rule(rule, _sla_ctx(view, now=before)) is False
@@ -404,9 +394,7 @@ def test_if_not_done_within_invalid_iso_evaluates_false() -> None:
         node=upstream,
         args=IfNotDoneWithinArgs(after_block=upstream, offset_iso="14 days"),
     )
-    view = BlockExecutionView(
-        block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor
-    )
+    view = BlockExecutionView(block_id=upstream, done=False, terminal=False, sla_anchor_at=anchor)
     now = datetime(2026, 6, 16, tzinfo=UTC)
     assert evaluate_rule(rule, _sla_ctx(view, now=now)) is False
 

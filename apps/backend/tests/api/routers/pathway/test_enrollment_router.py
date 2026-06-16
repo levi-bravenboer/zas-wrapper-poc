@@ -246,19 +246,27 @@ async def test_endpoints_require_auth(async_client: AsyncClient) -> None:
     enrollment_id = uuid.uuid4()
     execution_id = uuid.uuid4()
     routes = [
-        ("POST", "/enrollments", {"patient_id": str(uuid.uuid4()),
-                                  "pathway_version_id": str(uuid.uuid4()),
-                                  "anchor_date": "2026-06-10"}),
+        (
+            "POST",
+            "/enrollments",
+            {
+                "patient_id": str(uuid.uuid4()),
+                "pathway_version_id": str(uuid.uuid4()),
+                "anchor_date": "2026-06-10",
+            },
+        ),
         ("GET", f"/enrollments/{enrollment_id}", None),
-        ("POST",
-         f"/enrollments/{enrollment_id}/executions/{execution_id}:start",
-         None),
-        ("POST",
-         f"/enrollments/{enrollment_id}/executions/{execution_id}:complete",
-         {"result": None}),
-        ("PATCH",
-         f"/enrollments/{enrollment_id}/deferred-values/location",
-         {"block_template_id": str(uuid.uuid4()), "value_json": "Room 7"}),
+        ("POST", f"/enrollments/{enrollment_id}/executions/{execution_id}:start", None),
+        (
+            "POST",
+            f"/enrollments/{enrollment_id}/executions/{execution_id}:complete",
+            {"result": None},
+        ),
+        (
+            "PATCH",
+            f"/enrollments/{enrollment_id}/deferred-values/location",
+            {"block_template_id": str(uuid.uuid4()), "value_json": "Room 7"},
+        ),
     ]
     for method, path, body in routes:
         response = await async_client.request(method, path, json=body)

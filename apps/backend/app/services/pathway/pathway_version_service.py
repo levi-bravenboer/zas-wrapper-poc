@@ -207,9 +207,7 @@ class PathwayVersionService:
                     reason="lane_kind_code unresolved at publish time",
                 )
             try:
-                validate_lane_kind(
-                    type(domain), lane_kind, block_name=domain.name
-                )
+                validate_lane_kind(type(domain), lane_kind, block_name=domain.name)
             except Exception as err:
                 raise BlockLaneNotAllowedError(
                     block_id=row.id,
@@ -278,11 +276,7 @@ class PathwayVersionService:
             validate_informed_consent_invariants(domain_blocks)
         except InformedConsentShapeError as err:
             consent_id = next(
-                (
-                    bid
-                    for bid, b in domain_blocks.items()
-                    if type(b).KIND == "informed_consent"
-                ),
+                (bid for bid, b in domain_blocks.items() if type(b).KIND == "informed_consent"),
                 "",
             )
             raise BlockConfigError(

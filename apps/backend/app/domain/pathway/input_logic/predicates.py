@@ -114,9 +114,7 @@ class IfNotDoneWithinArgs(_ArgsBase):
     — one duration grammar across the model, matching `TimingPolicy`.
     """
 
-    predicate: Literal[PredicateKind.IF_NOT_DONE_WITHIN] = (
-        PredicateKind.IF_NOT_DONE_WITHIN
-    )
+    predicate: Literal[PredicateKind.IF_NOT_DONE_WITHIN] = PredicateKind.IF_NOT_DONE_WITHIN
     after_block: UUID
     offset_iso: str
 

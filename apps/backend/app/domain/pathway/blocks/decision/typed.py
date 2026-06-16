@@ -31,7 +31,9 @@ class DecisionBlock(BaseBlock):
     KIND: ClassVar[str] = "decision"
     TYPE_CODE: ClassVar[str] = "decision"
     LABEL: ClassVar[str] = "Beslissing"
-    DESCRIPTION: ClassVar[str] = "Routes execution to one or more downstream blocks based on a predicate."
+    DESCRIPTION: ClassVar[str] = (
+        "Routes execution to one or more downstream blocks based on a predicate."
+    )
     ICON: ClassVar[str] = "git-branch"
     allowed_lane_kinds: ClassVar[tuple[str, ...]] = (LANE_KIND_SYSTEM,)
     SUPPORTS_BRANCHES: ClassVar[bool] = True

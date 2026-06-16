@@ -235,9 +235,7 @@ async def replace_pathway(
     # Slot #2 §6 retired the `X-Pathway-Block-Shape` header opt-in:
     # every block payload is now interpreted as the typed `BaseBlock`
     # subclass shape via `block_in_to_typed`.
-    return await service.replace_definition(
-        pathway_id, current_user.tenant_id, payload
-    )
+    return await service.replace_definition(pathway_id, current_user.tenant_id, payload)
 
 
 @router.delete(

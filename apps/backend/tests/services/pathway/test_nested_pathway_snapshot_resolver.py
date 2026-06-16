@@ -271,7 +271,11 @@ async def test_specific_pin_snapshots_configured_version(
         _payload(
             phases=[phase],
             lanes=[lane, caregiver_lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=caregiver_lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
+            blocks=[
+                _start_block(phase_id=phase.id, lane_id=caregiver_lane.id),
+                _end_block(phase_id=phase.id, lane_id=lane.id),
+                block,
+            ],
         ),
     )
     await db_session.commit()
@@ -314,7 +318,11 @@ async def test_latest_published_pin_snapshots_latest(
         _payload(
             phases=[phase],
             lanes=[lane, caregiver_lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=caregiver_lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
+            blocks=[
+                _start_block(phase_id=phase.id, lane_id=caregiver_lane.id),
+                _end_block(phase_id=phase.id, lane_id=lane.id),
+                block,
+            ],
         ),
     )
     await db_session.commit()
@@ -355,7 +363,11 @@ async def test_latest_published_pin_publish_fails_without_target_publish(
         _payload(
             phases=[phase],
             lanes=[lane, caregiver_lane],
-            blocks=[_start_block(phase_id=phase.id, lane_id=caregiver_lane.id), _end_block(phase_id=phase.id, lane_id=lane.id), block],
+            blocks=[
+                _start_block(phase_id=phase.id, lane_id=caregiver_lane.id),
+                _end_block(phase_id=phase.id, lane_id=lane.id),
+                block,
+            ],
         ),
     )
     await db_session.commit()

@@ -300,9 +300,7 @@ class PathwayRepository(BaseRepository[Pathway]):
             deferred_fields=list(deferred_fields),
         )
 
-    async def get_block_in_pathway(
-        self, block_id: UUID, pathway_id: UUID
-    ) -> PathwayBlock | None:
+    async def get_block_in_pathway(self, block_id: UUID, pathway_id: UUID) -> PathwayBlock | None:
         """Fetch a single non-deleted `PathwayBlock` belonging to `pathway_id`.
 
         Joins through `PathwayVersion` to assert ownership. Caller is

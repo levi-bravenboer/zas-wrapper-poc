@@ -60,18 +60,10 @@ class PathwayBlockExecution(TenantOwnedEntity):
         nullable=False,
         index=True,
     )
-    scheduled_at: Mapped[datetime | None] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    started_at: Mapped[datetime | None] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
-    due_at: Mapped[datetime | None] = mapped_column(
-        sa.DateTime(timezone=True), nullable=True
-    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     state: Mapped[str] = mapped_column(
         sa.String(16),
         nullable=False,

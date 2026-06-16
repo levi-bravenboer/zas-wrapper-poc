@@ -48,9 +48,7 @@ class DerivedEdge(BaseModel):
     args: dict[str, Any] = Field(default_factory=dict)
 
 
-def derive_edges_from_input_logic(
-    target_block_id: UUID, logic: InputLogic
-) -> list[DerivedEdge]:
+def derive_edges_from_input_logic(target_block_id: UUID, logic: InputLogic) -> list[DerivedEdge]:
     """Yield one `DerivedEdge` per rule on a block's `input_logic`.
 
     Pure function — no DB access. The runtime / canvas pipelines are
