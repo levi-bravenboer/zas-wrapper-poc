@@ -30,6 +30,7 @@ import {
 import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
+import { DeferredValuesEditor } from './DeferredValuesEditor'
 import { MdoAction } from './MdoAction'
 
 // Block kinds whose actionable step is a single "Done" with no result body.
@@ -213,6 +214,8 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+      <DeferredValuesEditor patientId={patientId} enrollment={enrollment} />
 
       <BucketSection
         bucket="next"

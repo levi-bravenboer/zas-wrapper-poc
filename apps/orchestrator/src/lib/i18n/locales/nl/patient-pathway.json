@@ -51,6 +51,15 @@
       "cancelled": "Geannuleerd"
     }
   },
+  "values": {
+    "header": "Waarden",
+    "save": "Opslaan",
+    "locked": "Vastgezet",
+    "toast": {
+      "success": "Waarde bijgewerkt",
+      "error": "Bijwerken mislukt"
+    }
+  },
   "buckets": {
     "upcoming": "Aankomend",
     "next": "Nu te doen",

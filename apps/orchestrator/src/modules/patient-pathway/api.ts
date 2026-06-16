@@ -69,6 +69,21 @@ export async function resumeEnrollment(enrollmentId: string): Promise<Enrollment
   return result.data
 }
 
+export async function patchDeferredValue(
+  enrollmentId: string,
+  attr: string,
+  blockTemplateId: string,
+  valueJson: unknown,
+): Promise<void> {
+  const result = await api.PATCH('/enrollments/{enrollment_id}/deferred-values/{attr}', {
+    params: { path: { enrollment_id: enrollmentId, attr } },
+    body: { block_template_id: blockTemplateId, value_json: valueJson },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to update value', result.response.status)
+  }
+}
+
 async function startExecution(enrollmentId: string, executionId: string): Promise<void> {
   const result = await api.POST('/enrollments/{enrollment_id}/executions/{execution_id}:start', {
     params: { path: { enrollment_id: enrollmentId, execution_id: executionId } },

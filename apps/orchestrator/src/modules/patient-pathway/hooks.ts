@@ -5,6 +5,7 @@ import {
   completeStep,
   createEnrollment,
   listPatientEnrollments,
+  patchDeferredValue,
   pauseEnrollment,
   resumeEnrollment,
 } from './api'
@@ -59,6 +60,22 @@ export function useResumeEnrollment(patientId: string) {
   const qc = useQueryClient()
   return useMutation<Enrollment, Error, string>({
     mutationFn: (enrollmentId) => resumeEnrollment(enrollmentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
+  })
+}
+
+export interface PatchValueVariables {
+  enrollmentId: string
+  attr: string
+  blockTemplateId: string
+  valueJson: unknown
+}
+
+export function usePatchDeferredValue(patientId: string) {
+  const qc = useQueryClient()
+  return useMutation<void, Error, PatchValueVariables>({
+    mutationFn: ({ enrollmentId, attr, blockTemplateId, valueJson }) =>
+      patchDeferredValue(enrollmentId, attr, blockTemplateId, valueJson),
     onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
   })
 }
