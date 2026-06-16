@@ -32,10 +32,10 @@ import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
 import { DeferredValuesEditor } from './DeferredValuesEditor'
 import { MdoAction } from './MdoAction'
+import { TreatmentAction } from './TreatmentAction'
 
 // Block kinds whose actionable step is a single "Done" with no result body.
-// Decision is handled separately (outcome picker). Appointment/treatment/mdo
-// contracts are not wired yet.
+// decision/mdo/treatment/appointment are handled with their own controls below.
 const DONE_ONLY_KINDS = new Set(['task'])
 
 const STATE_BADGE_VARIANT: Record<string, 'default' | 'soft' | 'outline'> = {
@@ -133,6 +133,28 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
           disabled={completeStep.isPending}
           onConfirm={(result) => handleComplete(execution, result)}
         />
+      )
+    }
+
+    if (block.kind === 'treatment') {
+      return (
+        <TreatmentAction
+          disabled={completeStep.isPending}
+          onConfirm={(result) => handleComplete(execution, { ...result })}
+        />
+      )
+    }
+
+    // Appointment completion is an opaque event (no typed result).
+    if (block.kind === 'appointment') {
+      return (
+        <Button
+          size="sm"
+          disabled={completeStep.isPending}
+          onClick={() => handleComplete(execution)}
+        >
+          {t('step.appointment.perform')}
+        </Button>
       )
     }
 

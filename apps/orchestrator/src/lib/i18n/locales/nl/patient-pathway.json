@@ -84,6 +84,18 @@
       "notesPlaceholder": "Besproken en besloten…",
       "confirm": "Afronden"
     },
+    "appointment": {
+      "perform": "Markeer uitgevoerd"
+    },
+    "treatment": {
+      "open": "Resultaat vastleggen",
+      "performedAt": "Uitgevoerd op",
+      "notes": "Notities",
+      "notesPlaceholder": "Verloop van de behandeling…",
+      "complications": "Complicaties",
+      "complicationsPlaceholder": "Indien van toepassing…",
+      "confirm": "Vastleggen"
+    },
     "stateBadge": {
       "active": "Bezig",
       "eligible": "Beschikbaar",
