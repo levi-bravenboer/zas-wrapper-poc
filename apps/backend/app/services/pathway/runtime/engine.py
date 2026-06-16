@@ -28,6 +28,7 @@ from uuid import UUID
 
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.input_logic import InputLogic
 from app.domain.pathway.input_logic.evaluator import (
@@ -116,6 +117,34 @@ class RuntimeEngine:
             execution.transition("completed")
             execution.completed_at = now
             execution.result_json = {"auto_fired": template.KIND}
+            fired.append(exec_id)
+        return fired
+
+    @staticmethod
+    def auto_fire_end(
+        executions: dict[UUID, BlockExecution],
+        templates: dict[UUID, BaseBlock],
+        *,
+        now: datetime,
+    ) -> list[UUID]:
+        """Force `eligible` `end_pathway` blocks through to `completed`.
+
+        End blocks carry no caregiver action — they fire as soon as
+        they are reachable. The caller (enrollment service) flips the
+        enrollment to `completed` when this returns a non-empty list.
+        Idempotent. Returns the ids that moved.
+        """
+        fired: list[UUID] = []
+        for exec_id, execution in executions.items():
+            if execution.state != "eligible":
+                continue
+            template = templates.get(execution.block_template_id)
+            if not isinstance(template, EndPathwayBlock):
+                continue
+            execution.transition("active")
+            execution.started_at = now
+            execution.transition("completed")
+            execution.completed_at = now
             fired.append(exec_id)
         return fired
 

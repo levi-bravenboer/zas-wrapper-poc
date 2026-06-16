@@ -278,3 +278,44 @@ async def test_patch_deferred_value_creates_row(
     await db_session.commit()
     assert row.value_json == "Room 7"
     assert row.set_at >= before
+
+
+# ---- end_pathway auto-completes the enrollment ---------------------------
+
+
+async def test_reachable_end_block_auto_completes_enrollment(
+    db_session: AsyncSession, runtime_world: dict[str, object]
+) -> None:
+    """An `end_pathway` block with no upstream gate fires on enroll and
+    flips the enrollment to `completed`."""
+    version = runtime_world["version"]
+    phase_id = runtime_world["block"].phase_id  # type: ignore[union-attr]
+    lane_id = runtime_world["block"].lane_id  # type: ignore[union-attr]
+    patient = runtime_world["patient"]
+
+    end_block = PathwayBlock(
+        id=uuid.uuid4(),
+        pathway_version_id=version.id,  # type: ignore[union-attr]
+        phase_id=phase_id,
+        lane_id=lane_id,
+        label="Einde",
+        kind="end_pathway",
+    )
+    db_session.add(end_block)
+    await db_session.commit()
+
+    service = _service(db_session)
+    enrollment = await service.create(
+        EnrollmentCreate(
+            patient_id=patient.id,  # type: ignore[union-attr]
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            anchor_date=date(2026, 6, 10),
+        ),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    assert view.state == "completed"
+    end_exec = next(e for e in view.executions if e.block_template_id == end_block.id)
+    assert end_exec.state == "completed"

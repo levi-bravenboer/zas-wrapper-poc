@@ -170,7 +170,7 @@ class EnrollmentService:
         # Initial eligibility pass: blocks with empty `input_logic`
         # transition to `eligible` immediately so the caller doesn't
         # need a follow-up POST.
-        await self._run_eligibility(enrollment.id, templates)
+        await self._run_eligibility(enrollment, templates)
 
         return enrollment
 
@@ -324,8 +324,11 @@ class EnrollmentService:
         if isinstance(template, EndPathwayBlock) and enrollment.state == "active":
             enrollment.state = "completed"
         # Fire any system/auto blocks (message / external_program) that just
-        # became eligible from this completion so the runtime doesn't stall.
-        _settle_auto_fire(executions, templates, now=now)
+        # became eligible from this completion so the runtime doesn't stall,
+        # plus a reachable `end_pathway` block — which terminates the run.
+        end_fired = _settle_auto_fire(executions, templates, now=now)
+        if end_fired and enrollment.state == "active":
+            enrollment.state = "completed"
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 
@@ -375,7 +378,7 @@ class EnrollmentService:
         templates: dict[UUID, BaseBlock] = {
             block_row.id: block_row_to_domain(block_row) for block_row in children.blocks
         }
-        await self._run_eligibility(enrollment_id, templates)
+        await self._run_eligibility(enrollment, templates)
         return row
 
     # ---- internals ---------------------------------------------------------
@@ -432,10 +435,10 @@ class EnrollmentService:
 
     async def _run_eligibility(
         self,
-        enrollment_id: UUID,
+        enrollment: PathwayEnrollment,
         templates: dict[UUID, BaseBlock],
     ) -> None:
-        executions = await self._load_executions(enrollment_id)
+        executions = await self._load_executions(enrollment.id)
         now = datetime.now(UTC)
         # Catalogue-expansion § 1: `StartBlock` executions skip the
         # `pending`/`eligible` states and land directly at `completed`
@@ -443,8 +446,10 @@ class EnrollmentService:
         # downstream `if_done(start)` rules in the same loop.
         RuntimeEngine.auto_fire_starts(executions, templates, now=now)
         RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
-        _settle_auto_fire(executions, templates, now=now)
-        await self._save_executions(enrollment_id, executions)
+        end_fired = _settle_auto_fire(executions, templates, now=now)
+        if end_fired and enrollment.state == "active":
+            enrollment.state = "completed"
+        await self._save_executions(enrollment.id, executions)
 
     async def _load_executions(self, enrollment_id: UUID) -> dict[UUID, BlockExecution]:
         rows = await self._repo.list_executions(enrollment_id)
@@ -469,20 +474,28 @@ def _settle_auto_fire(
     templates: dict[UUID, BaseBlock],
     *,
     now: datetime,
-) -> None:
-    """Fire system/auto blocks to a fixpoint.
+) -> bool:
+    """Fire system/auto + `end_pathway` blocks to a fixpoint.
 
     Auto-firing a `message` / `external_program` block can make its
     downstream eligible, which may itself be an auto block — so we
-    alternate `auto_fire_system` + `evaluate_eligibility` until no
-    further block fires. Bounded by the number of executions (each
-    block fires at most once).
+    alternate firing + `evaluate_eligibility` until nothing more
+    fires. Bounded by the number of executions (each block fires at
+    most once).
+
+    Returns `True` when an `end_pathway` block completed, so the
+    caller can flip the enrollment to `completed`.
     """
+    end_fired = False
     for _ in range(len(executions) + 1):
         fired = RuntimeEngine.auto_fire_system(executions, templates, now=now)
-        if not fired:
-            return
+        ended = RuntimeEngine.auto_fire_end(executions, templates, now=now)
+        if ended:
+            end_fired = True
+        if not fired and not ended:
+            return end_fired
         RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
+    return end_fired
 
 
 def _picked_scheduled_at(

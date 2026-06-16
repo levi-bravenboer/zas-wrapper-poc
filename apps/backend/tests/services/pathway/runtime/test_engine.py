@@ -300,3 +300,28 @@ def test_auto_fire_system_ignores_caregiver_blocks() -> None:
     )
     assert fired == []
     assert run.state == "eligible"
+
+
+# ---- Auto-fire end_pathway -----------------------------------------------
+
+
+def test_auto_fire_end_completes_eligible_end_block() -> None:
+    from app.domain.pathway.blocks.end_pathway.typed import EndPathwayBlock
+
+    template_id = uuid4()
+    run = make_execution(template_id, state="eligible")
+    fired = RuntimeEngine.auto_fire_end(
+        {run.id: run}, {template_id: EndPathwayBlock(name="End")}, now=_NOW
+    )
+    assert fired == [run.id]
+    assert run.state == "completed"
+
+
+def test_auto_fire_end_ignores_non_end_blocks() -> None:
+    template_id = uuid4()
+    run = make_execution(template_id, state="eligible")
+    fired = RuntimeEngine.auto_fire_end(
+        {run.id: run}, {template_id: AppointmentBlock(name="Intake", title="Intake")}, now=_NOW
+    )
+    assert fired == []
+    assert run.state == "eligible"
