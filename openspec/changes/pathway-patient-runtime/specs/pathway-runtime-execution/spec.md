@@ -31,7 +31,7 @@ Caregiver actions (complete a step, pick a decision branch, book an appointment)
 
 ### Requirement: Blocks materialize work primitives when actionable
 
-When a block becomes actionable the runtime SHALL materialize the matching primitive: `appointment`, `treatment`, and `mdo` blocks SHALL create a real `Appointment` row linked via `appointments.pathway_block_instance_id` (kind: appointment→builder-selected, treatment→`procedure`, mdo→`other`; mdo uses the subject patient with caregiver-only participants); `task` and the fake-log blocks (`form`, `message`, `informed_consent`, `decision`, `external_program`, `pathway_link`) SHALL be projected into the `/tasks` aggregator through a new `pathway` source. `start` and `end_pathway` SHALL materialize no primitive. People come from the block's **enroll-bound role**: the role's person SHALL be the Appointment `lead` participant (appointment/treatment/mdo) or the task assignee. **Materialization timing is not a fixed look-ahead window** — a block materializes when its own `input_logic` + `timing_policy` (evaluated against the enrollment's anchor date and settings) make it eligible, which may be future-dated (`upcoming`); downstream of incomplete/branching blocks is not materialized until reached. Completing the primitive SHALL advance the block execution.
+When a block becomes actionable the runtime SHALL materialize the matching primitive: `appointment`, `treatment`, and `mdo` blocks SHALL create a real `Appointment` row linked via `appointments.pathway_block_instance_id` (kind: appointment→builder-selected, treatment→`procedure`, mdo→`other`; mdo uses the subject patient with caregiver-only participants); `task` blocks SHALL be projected into the `/tasks` aggregator through a new `pathway` source; `external_program` (Luscii) SHALL enroll the patient via `POST /v1/patients` (one program; see the Luscii requirement); `message` is mock (logged, no delivery). `start` and `end_pathway` SHALL materialize no primitive. People come from the block's **enroll-chosen caregiver(s)** for its care-team role-type: the chosen caregiver(s) SHALL be the Appointment participants (one `lead` + optional others) or the task assignee. **Materialization timing is not a fixed look-ahead window** — a block materializes when its own `input_logic` + `timing_policy` (evaluated against the enrollment's anchor + named clinical dates) make it eligible, which may be future-dated (`upcoming`); downstream of incomplete/branching blocks is not materialized until reached. Completing the primitive SHALL advance the block execution.
 
 #### Scenario: Appointment block creates an Appointment
 
@@ -47,6 +47,46 @@ When a block becomes actionable the runtime SHALL materialize the matching primi
 
 - **WHEN** a `treatment` block's appointment is fulfilled with notes/complications
 - **THEN** the scheduling/status lives on the `Appointment` and the `{performed_at, notes, complications}` result is stored on the block execution `result_json`
+
+### Requirement: external_program enrolls the patient in a Luscii program
+
+When an `external_program` (Luscii) block becomes actionable, an activity SHALL ensure a Luscii connection and enroll the patient via `POST /v1/patients` (demographics + identifiers + `programId`/`protocolId`), reusing an existing Luscii patient if found. One program covers the patient's Luscii content (consent, questionnaires, measurements) **internally**; the pathway SHALL NOT model those as separate blocks. The pathway SHALL NOT auto-gate on Luscii completion in the PoC — where a downstream block needs Luscii pre-work verified, a caregiver `task` ("review Luscii data") gates it. Luscii reads (`GET /v1/measurements`, `/v1/alerts`) feed the existing patient-detail `MeasurementCharts` display, not an auto-gate. `end_pathway` SHALL leave the Luscii program running (no unenroll).
+
+#### Scenario: Luscii block enrolls the patient
+
+- **WHEN** the `external_program` block becomes actionable
+- **THEN** the patient is enrolled in the configured Luscii program (connection ensured, `programId` set) and the block completes on successful enrollment
+
+#### Scenario: Operation gated by a caregiver review task, not auto-read
+
+- **GIVEN** an operation that needs Luscii pre-op data verified
+- **WHEN** the caregiver marks the "review Luscii pre-op data" task done
+- **THEN** the operation becomes eligible (the pathway does not auto-read Luscii to gate)
+
+### Requirement: A subpath inlines into one pathway; a cross-pathway link is separate
+
+A `subpath` SHALL be **inlined** at build time into the same pathway version — its blocks become ordinary blocks in **one** enrollment and **one** Temporal workflow (no nested child workflow). A `pathway_link` to a **separate** pathway (e.g. the oncology **bridge**) SHALL instead spawn a **fire-and-forget** child enrollment and not block the parent.
+
+#### Scenario: Subpath blocks run in the parent workflow
+
+- **GIVEN** a pathway using a subpath ("operate")
+- **WHEN** it is enrolled
+- **THEN** the subpath's blocks are ordinary executions in the single workflow — no separate child enrollment is created
+
+#### Scenario: Bridge spawns a separate pathway
+
+- **WHEN** the final decision selects "cancer treatment"
+- **THEN** this pathway ends (`end_pathway`) and a fire-and-forget `pathway_link` starts the separate oncology pathway
+
+### Requirement: Timing keys off named clinical-date anchors, including forward offsets
+
+`timing_policy` SHALL support keying off a **named clinical-date anchor** (e.g. `operation_date`) in addition to node-completion, including **forward/negative offsets** (`operation_date − N days`) so pre-op work fires ahead of a planned date. A block MAY declare a **min-lead-time** to a named date (`≥ N days before <date>`); the enroll-time earliest-feasible suggestion SHALL combine these with blocking prerequisites. Editing a named clinical date (rebooking) SHALL recompute the dependent Temporal timers.
+
+#### Scenario: Pre-op block fires N days before the operation date
+
+- **GIVEN** a block timed `operation_date − 3 days`
+- **WHEN** `operation_date` is set
+- **THEN** the block becomes actionable 3 days before it; if the date is rebooked, the timer recomputes
 
 ### Requirement: Durable timers auto-advance timed steps
 

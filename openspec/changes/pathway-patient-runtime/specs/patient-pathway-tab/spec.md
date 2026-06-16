@@ -37,6 +37,21 @@ A finished step SHALL display its typed result summary (e.g. appointment `perfor
 - **WHEN** a caregiver views a finished `treatment` step
 - **THEN** it shows performed_at, notes, complications, plus who completed it and when
 
+### Requirement: Authorized users can edit still-updatable enrollment values
+
+From the Zorgpad tab, a caregiver with rights (or an admin) SHALL be able to **edit still-updatable values** on a running enrollment — named clinical dates (e.g. `operation_date`), deferred values, and caregiver choices — provided they have not been consumed (a completed block's result is locked; pending ones are editable). Editing a named clinical date SHALL recompute the dependent runtime timers. The patient is never an editor.
+
+#### Scenario: Rebooking the operation date recomputes pre-op timers
+
+- **GIVEN** a running enrollment with `operation_date` set and pre-op blocks timed `operation_date − N`
+- **WHEN** an authorized caregiver changes `operation_date` on the Zorgpad tab
+- **THEN** the value updates and the dependent timers recompute to the new date
+
+#### Scenario: Consumed values are locked
+
+- **WHEN** a user views a value belonging to an already-completed block
+- **THEN** it is shown read-only and cannot be edited
+
 ### Requirement: Pathway steps also surface in the unified tasks inbox
 
 Actionable `task`-family steps SHALL appear in the `/tasks` inbox via the `pathway` source, and appointment-backed steps via the appointment source, scoped to the caller's care-team membership — so a caregiver can work pathway steps from either the Pathway tab or the inbox.

@@ -12,7 +12,9 @@
 - [ ] 2.3 Add build/enroll/runtime phase classification to the block model + expose it
 - [ ] 2.4 Add per-block runtime-contract metadata (actor, primitive, result, completion)
 - [ ] 2.5 Confirm relative timing is expressible via `timing_policy` on the dependent block (former `wait`)
-- [ ] 2.6 Add pathway role-set declaration + per-block role reference; expose required roles in the enroll descriptor
+- [ ] 2.6 Per-block care-team role-type reference; expose per-block caregiver choice in the enroll descriptor (over flattened block set)
+- [ ] 2.8 Named clinical-date declaration + per-block min-lead-time + clinical-date `timing_policy` (forward offsets)
+- [ ] 2.9 Subpath inlining: flatten subpath blocks into the pathway version at build/load
 - [ ] 2.7 Publish-time connection validation: predicate's referenced block + output/result-field must exist in the upstream runtime contract (reject data predicates on fake-log blocks)
 
 ## 3. Runtime workflow + activities
@@ -22,7 +24,9 @@
 - [ ] 3.3 Implement Temporal Update handlers for caregiver actions; Signal for cancel
 - [ ] 3.4 Implement durable timers for relative timing → auto-advance upcoming→actionable; pause/resume halts timers
 - [ ] 3.9 Evaluate full predicate vocabulary (IF_DONE/DECISION_OUTPUT/HAS_DATA/VALUE_EQUALS/VALUE_GT) + timer-backed WAIT_AFTER/IF_NOT_DONE_WITHIN escalation; aggregators all_of/any_of/n_of_m
-- [ ] 3.5 Implement materialization activities: `createAppointment` (appointment/treatment/mdo, kind mapping, participants) and `projectPathwayTask`
+- [ ] 3.5 Implement materialization activities: `createAppointment` (appointment/treatment/mdo, kind mapping, chosen participants) and `projectPathwayTask`
+- [ ] 3.10 Luscii enroll activity (`POST /v1/patients`, reuse-or-create); `message` mock-send; leave Luscii running on end
+- [ ] 3.11 Clinical-date timers (forward offsets `date − N`) + recompute on date edit; min-lead-time honored
 - [ ] 3.6 Implement dead-path cleanup activities (`cancelAppointment`/`withdrawTask`) on xor-prune + cancel
 - [ ] 3.7 Implement `emitAuditEvent` activity stub (hook for `feat/audit-event-logging`) at every transition
 - [ ] 3.8 Port `engine.py` unit tests as interpreter tests
@@ -34,12 +38,15 @@
 - [ ] 4.3 Lifecycle endpoints: cancel (Signal), pause, resume
 - [ ] 4.4 List-by-patient enrollments endpoint (care-team scoped) with executions
 - [ ] 4.5 Add `pathway` source to the `/tasks` aggregator (care-team visibility)
+- [ ] 4.6 Earliest-feasible clinical-date suggestion endpoint (blocking prereqs + min-lead-times)
+- [ ] 4.7 Edit still-updatable enrollment values endpoint (authz: caregiver-with-rights/admin); recompute timers on date change
 
 ## 5. Frontend — enroll flow (orchestrator)
 
 - [ ] 5.1 "Enroll in pathway" entry point on the patient page
 - [ ] 5.2 Enroll dialog: pick published version, set anchor date (default today), fill enroll-phase deferred values
-- [ ] 5.4 Role-binding step in enroll dialog: one person per required role from the care team (add-to-team if missing); block submit until all bound
+- [ ] 5.4 Enroll dialog caregiver-choice step: pick caregiver(s) per block from the care team (multi for MDO; add-to-team if missing); block submit until all chosen
+- [ ] 5.5 Enroll dialog clinical-date step: suggested-earliest `operation_date` (editable, not-earlier-than-feasible)
 - [ ] 5.3 Submit to `POST /enrollments`; surface validation errors (missing required deferred fields)
 
 ## 6. Frontend — patient Pathway tab (orchestrator)
@@ -49,6 +56,7 @@
 - [ ] 6.3 Per-block action controls wired to the action endpoints (Done / Book / Perform / Close / Pick branch / Advance)
 - [ ] 6.4 Finished steps show result summary + who/when
 - [ ] 6.5 Lifecycle controls (cancel / pause / resume) per enrollment
+- [ ] 6.6 Edit still-updatable values on the tab (clinical dates, deferred values, caregiver choices); locked once consumed
 
 ## 7. Integration + verification
 

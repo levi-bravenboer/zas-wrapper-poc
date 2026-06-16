@@ -56,19 +56,28 @@ Every non-system block SHALL declare a runtime contract: its **actor** (caregive
 - **WHEN** the `message` block contract is inspected
 - **THEN** actor is patient(fake-log), the primitive is a `pathway`-source to-do, and completion is a caregiver-logged advance with no typed result
 
-### Requirement: Pathways declare roles that materializing blocks reference
+### Requirement: Materializing blocks reference a care-team role-type
 
-A pathway SHALL declare a set of distinct **roles** (each mapping to a `role_in_care` / `practitioner_role`). A block that materializes a work primitive (`appointment`/`treatment`/`mdo`/`task`) SHALL reference one of the pathway's roles for the person it needs. Roles are a **build-phase** declaration; the role→person binding is **enroll-phase**; the resulting participant/assignee is **runtime**.
+A block that materializes a work primitive (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-team / role-type** (the category of who does it; e.g. urology, MDO panel). The role-type reference is a **build-phase** declaration; choosing the actual caregiver(s) is **enroll-phase** (one or several per block — `mdo` takes multiple); the resulting participant(s)/assignee is **runtime**. The same role-type MAY be referenced by many blocks.
 
-#### Scenario: Block references a declared role
+#### Scenario: Block references a care-team role-type
 
-- **WHEN** a `task` block is authored
-- **THEN** it references one of the pathway's declared roles, which is later bound to a person at enrollment
+- **WHEN** an `mdo` block is authored
+- **THEN** it references a care-team role-type, for which the caregiver chooses participant(s) at enrollment
 
-#### Scenario: Role set is derivable for the enroll form
+#### Scenario: Role-types are derivable for the enroll form
 
 - **WHEN** a pathway version's enroll descriptor is requested
-- **THEN** it lists the distinct roles the version's blocks require, so the enroll form can prompt one person per role
+- **THEN** it lists, per block, the care-team role-type(s) needing caregiver choice — over the fully-flattened (subpath-inlined) block set
+
+### Requirement: Blocks may declare clinical-date timing constraints
+
+The domain SHALL support a pathway declaring **named clinical dates** (e.g. `operation_date`). A block MAY carry a **min-lead-time** to a named date (`≥ N days before <date>`) and/or a `timing_policy` keyed off a named date including forward offsets (`<date> − N days`); these constraints SHALL be build-phase, while the date value is enroll-phase (suggested earliest-feasible, editable).
+
+#### Scenario: Block declares a min-lead-time
+
+- **WHEN** a pre-op block is authored with "≥ 7 days before operation_date"
+- **THEN** the earliest-feasible `operation_date` suggestion at enroll accounts for that lead time
 
 ### Requirement: Trigger predicates are validated against upstream runtime contracts
 

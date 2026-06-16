@@ -2,7 +2,7 @@
 
 ### Requirement: Caregiver enrolls a patient into a published pathway version
 
-A caregiver on the patient's care team SHALL enroll the patient into a **published** pathway version from the patient page. Enrollment SHALL capture an **anchor date** (the day-0 that relative timing counts from; defaults to today, editable) and the **enroll-phase deferred values** described by the pathway's deferred-field descriptor. The enrollment SHALL be **pinned** to that version. Submitting SHALL create the enrollment via the existing `POST /enrollments` and start its runtime workflow.
+A caregiver on the patient's care team SHALL enroll the patient into a **published** pathway version from the patient page. Enrollment SHALL capture an **anchor date** (day-0; defaults to today, editable), any **named clinical dates** the pathway declares (e.g. `operation_date`) — pre-filled with the system's **earliest-feasible** suggestion (from blocking prerequisites + per-block min-lead-times) and editable — and the **enroll-phase deferred values** from the pathway's deferred-field descriptor. The descriptor SHALL be built over the **fully-flattened** block set (including blocks inlined by any subpath). The enrollment SHALL be **pinned** to that version. Submitting SHALL create the enrollment via the existing `POST /enrollments` and start its runtime workflow.
 
 #### Scenario: Successful enrollment
 
@@ -19,25 +19,36 @@ A caregiver on the patient's care team SHALL enroll the patient into a **publish
 - **WHEN** the caregiver opens the pathway picker
 - **THEN** only published versions are selectable; concept/draft versions are not offered
 
-### Requirement: Enrollment binds pathway roles to people from the care team
+#### Scenario: Named clinical date is suggested and editable
 
-A pathway SHALL declare the set of distinct **roles** its blocks need (each a `role_in_care` / `practitioner_role`). At enrollment the caregiver SHALL bind **each required role to an actual person**, picked from the patient's **care team**; if the chosen person is not yet on the care team, binding them SHALL also add them to the care team. Binding SHALL be **per-role and reused** across every block referencing that role. An enrollment SHALL NOT be created until every required role is bound (same validation path as required deferred fields).
+- **GIVEN** a pathway declaring `operation_date` with blocking prereqs + min-lead-times
+- **WHEN** the caregiver reaches that field at enroll
+- **THEN** it is pre-filled with the earliest feasible date and the caregiver may push it later (not earlier than feasible)
 
-#### Scenario: Roles bound from the care team
+### Requirement: Enrollment chooses caregivers for each block's care-team role
 
-- **WHEN** a caregiver enrolls a patient in a pathway that needs roles (e.g. surgeon, physio)
-- **THEN** the enroll form asks for one person per role, offering the patient's care-team members
-- **AND** each block that references a role uses the bound person at runtime
+Each materializing block (`appointment`/`treatment`/`mdo`/`task`) SHALL reference a **care-team / role-type** at build time (the category of who does it). At enrollment the caregiver SHALL **choose the actual caregiver(s)** for each block (or each distinct role-type) from the patient's **care team** — **one or several** (e.g. an `mdo` has multiple participants). If a chosen caregiver is not yet on the care team, choosing them SHALL also add them to the care team. Blocks sharing a role-type MAY default to the same choice with a per-block override. An enrollment SHALL NOT be created until every block's required caregiver(s) are chosen (same validation path as required deferred fields).
 
-#### Scenario: Binding a non-member adds them to the care team
+#### Scenario: Caregivers chosen per block from the care team
 
-- **WHEN** the caregiver binds a role to a caregiver not currently on the patient's care team
+- **WHEN** a caregiver enrolls a patient in a pathway whose blocks reference role-types (e.g. urology, MDO panel)
+- **THEN** the enroll form asks for the caregiver(s) for each block, offering the patient's care-team members
+- **AND** each block uses its chosen caregiver(s) at runtime (Appointment participants / task assignee)
+
+#### Scenario: MDO takes multiple caregivers
+
+- **WHEN** an `mdo` block is enrolled
+- **THEN** the caregiver may choose several participants (one lead + others) for it
+
+#### Scenario: Choosing a non-member adds them to the care team
+
+- **WHEN** the caregiver chooses someone not currently on the patient's care team
 - **THEN** that caregiver is added to the care team as part of enrollment
 
-#### Scenario: Unbound required role blocks enrollment
+#### Scenario: Unfilled required block caregiver blocks enrollment
 
-- **WHEN** the caregiver submits with a required role left unbound
-- **THEN** enrollment is rejected naming the unbound role, and no enrollment is created
+- **WHEN** the caregiver submits with a block's required caregiver left unchosen
+- **THEN** enrollment is rejected naming the block, and no enrollment is created
 
 ### Requirement: A patient may hold multiple concurrent enrollments
 
