@@ -325,6 +325,34 @@ async def test_list_enrollments_by_patient(
     assert len(body[0]["executions"]) >= 1
 
 
+async def test_cancel_enrollment(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+    enrollment_id = created.json()["id"]
+
+    response = await async_client.post(f"/enrollments/{enrollment_id}:cancel")
+    assert response.status_code == 200, response.text
+    assert response.json()["state"] == "cancelled"
+
+    # Idempotent: cancelling again leaves it cancelled.
+    again = await async_client.post(f"/enrollments/{enrollment_id}:cancel")
+    assert again.status_code == 200, again.text
+    assert again.json()["state"] == "cancelled"
+
+
 async def test_get_unknown_enrollment_returns_404(
     async_client: AsyncClient,
     seeded_zas_users: list[User],

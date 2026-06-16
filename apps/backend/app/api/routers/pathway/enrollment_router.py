@@ -211,6 +211,21 @@ async def get_enrollment(
 
 
 @router.post(
+    "/{enrollment_id}:cancel",
+    operation_id="cancel_enrollment",
+    response_model=EnrollmentResponse,
+    responses=_ERRORS_404,
+    dependencies=[_REQUIRE_ENROLLMENT_EDIT],
+)
+async def cancel_enrollment(
+    enrollment_id: UUID,
+    current_user: CurrentUserDep,
+    service: EnrollmentServiceDep,
+) -> EnrollmentResponse:
+    return await service.cancel(enrollment_id, tenant_id=current_user.tenant_id)
+
+
+@router.post(
     "/{enrollment_id}/executions/{execution_id}:start",
     operation_id="start_block_execution",
     response_model=BlockExecutionResponse,

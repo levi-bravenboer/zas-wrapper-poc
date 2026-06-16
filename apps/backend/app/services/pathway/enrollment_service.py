@@ -174,6 +174,26 @@ class EnrollmentService:
 
         return enrollment
 
+    async def cancel(
+        self,
+        enrollment_id: UUID,
+        *,
+        tenant_id: UUID,
+    ) -> EnrollmentResponse:
+        """Cancel a running enrollment.
+
+        Terminal (`completed`/`cancelled`) enrollments are left
+        untouched — the call is idempotent. Dead-path cleanup of
+        materialised appointments/tasks lands with the Temporal
+        cancel Signal (tasks 3.6/4.3); here we only flip the
+        aggregate state.
+        """
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        if enrollment.state in ("active", "paused"):
+            enrollment.state = "cancelled"
+            await self._repo._session.flush()  # noqa: SLF001
+        return await self._build_view(enrollment)
+
     async def get(self, enrollment_id: UUID, *, tenant_id: UUID) -> PathwayEnrollment:
         row = await self._repo.get(enrollment_id, tenant_id)
         if row is None:
