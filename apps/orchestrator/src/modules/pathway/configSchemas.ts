@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
+import type { components } from '@/lib/api/schema'
 import { legacyBlockConfig, type BlockSemantics, type PathwayBlock } from './types'
+
+type Schemas = components['schemas']
 
 const FormQuestion = z.object({
   id: z.string(),
@@ -22,13 +25,28 @@ export const FORM_QUESTION_TYPES = [
   'file',
 ] as const satisfies ReadonlyArray<FormQuestion['type']>
 
-export const MESSAGE_CHANNELS = ['email', 'sms', 'push', 'in_app'] as const
+export const MESSAGE_CHANNELS = [
+  'email',
+  'sms',
+  'push',
+  'in_app',
+] as const satisfies readonly NonNullable<Schemas['MessageBlockOut']['channel']>[]
 
-export const PATHWAY_LINK_MODES = ['blocking', 'fire_and_forget'] as const
+export const PATHWAY_LINK_MODES = [
+  'blocking',
+  'fire_and_forget',
+] as const satisfies readonly NonNullable<Schemas['PathwayLinkBlockOut']['mode']>[]
 
-export const PATHWAY_LINK_VERSION_PINS = ['latest_published', 'specific'] as const
+export const PATHWAY_LINK_VERSION_PINS = [
+  'latest_published',
+  'specific',
+] as const satisfies readonly NonNullable<Schemas['PathwayLinkBlockOut']['version_pin']>[]
 
-export const APPOINTMENT_MODES = ['in_person', 'video', 'phone'] as const
+export const APPOINTMENT_MODES = [
+  'in_person',
+  'video',
+  'phone',
+] as const satisfies readonly NonNullable<Schemas['AppointmentBlockOut']['mode']>[]
 
 // All `.optional()` fields are also `.nullable()` so they round-trip
 // the BE wire shape, which serialises unset nullable columns as
@@ -42,7 +60,9 @@ const AppointmentConfig = z.object({
   notes: z.string().max(2000).nullable().optional(),
 })
 
-export const TASK_ASSIGNEES = ['caregiver'] as const
+export const TASK_ASSIGNEES = ['caregiver'] as const satisfies readonly NonNullable<
+  Schemas['TaskBlockOut']['assignee']
+>[]
 
 const TaskConfig = z.object({
   title: z.string().min(1).max(255).nullable().optional(),
@@ -68,7 +88,9 @@ const FormConfig = z.object({
   confirmation_message: z.string().max(2000).nullable().optional(),
 })
 
-export const DECISION_MODES = ['xor', 'and'] as const
+export const DECISION_MODES = ['xor', 'and'] as const satisfies readonly NonNullable<
+  Schemas['DecisionBlockOut']['mode']
+>[]
 
 // Slot #2 §5: a DecisionBlock declares `question` + typed `outputs`
 // (the keys downstream `decision_output` rules point at) + firing
@@ -123,7 +145,12 @@ const TreatmentConfig = z.object({
 // pathway-completion § A8: InformedConsentBlock — two-actor consent
 // lifecycle. Reminder/expiry timing is owned by these fields;
 // timing_policy is forbidden for this kind.
-export const INFORMED_CONSENT_CHANNELS = ['email', 'sms', 'push', 'in_app'] as const
+export const INFORMED_CONSENT_CHANNELS = [
+  'email',
+  'sms',
+  'push',
+  'in_app',
+] as const satisfies readonly NonNullable<Schemas['InformedConsentBlockOut']['channels']>[number][]
 
 const InformedConsentConfig = z.object({
   questions: z.array(FormQuestion).default([]),
