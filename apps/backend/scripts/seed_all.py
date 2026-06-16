@@ -27,6 +27,7 @@ from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_access_entitlements import seed_access_entitlements
 from scripts.seed_appointments import seed_appointments
+from scripts.seed_collaboration import seed_collaboration
 from scripts.seed_tasks import seed_tasks
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
 from scripts.seed_luscii_demo import seed_luscii_demo
@@ -60,6 +61,8 @@ SEED_STEPS: list[SeedStep] = [
     seed_appointments,
     # demo tasks assigned to the caregiver so the Taken inbox is not empty.
     seed_tasks,
+    # demo collaboration notes (appointment + patient owners) for the panels.
+    seed_collaboration,
     seed_lane_kinds,
     seed_rugrevalidatie,
     # access-entitlements demo data (campuses, specialisms, carepath links,
