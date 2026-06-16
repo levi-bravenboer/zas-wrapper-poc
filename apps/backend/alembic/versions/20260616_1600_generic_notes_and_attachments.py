@@ -11,13 +11,19 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "e8a0c2d4f6b9"
 down_revision: str | None = "d6f8b0c2e4a6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_OWNER_TYPE = sa.Enum("appointment", "task", "patient", name="owner_type")
+# create_type=False: the type is created once via `.create()` below; without it
+# each `create_table` using the column re-emits CREATE TYPE and the upgrade
+# fails with "type owner_type already exists".
+_OWNER_TYPE = postgresql.ENUM(
+    "appointment", "task", "patient", name="owner_type", create_type=False
+)
 
 _AUDIT_COLS = (
     ("tenant_id", sa.UUID(), False),

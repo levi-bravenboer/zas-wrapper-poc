@@ -11,13 +11,17 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "b2d4f6a8c0e2"
 down_revision: str | None = "a1c0d2e4f6b8"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_TASK_STATUS = sa.Enum("open", "done", name="task_status")
+# create_type=False: the type lifecycle is managed explicitly via
+# `.create()` / `.drop()`; without it `create_table` re-emits CREATE TYPE and
+# the upgrade fails with "type task_status already exists".
+_TASK_STATUS = postgresql.ENUM("open", "done", name="task_status", create_type=False)
 
 
 def upgrade() -> None:
