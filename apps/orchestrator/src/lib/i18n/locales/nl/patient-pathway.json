@@ -22,6 +22,15 @@
     },
     "validationTitle": "Inschrijven geblokkeerd"
   },
+  "pause": {
+    "pause": "Pauzeren",
+    "resume": "Hervatten",
+    "toast": {
+      "paused": "Zorgpad gepauzeerd",
+      "resumed": "Zorgpad hervat",
+      "error": "Actie mislukt"
+    }
+  },
   "cancel": {
     "action": "Annuleren",
     "title": "Zorgpad annuleren?",

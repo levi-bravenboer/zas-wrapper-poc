@@ -49,6 +49,26 @@ export async function cancelEnrollment(enrollmentId: string): Promise<Enrollment
   return result.data
 }
 
+export async function pauseEnrollment(enrollmentId: string): Promise<Enrollment> {
+  const result = await api.POST('/enrollments/{enrollment_id}:pause', {
+    params: { path: { enrollment_id: enrollmentId } },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to pause enrollment', result.response.status)
+  }
+  return result.data
+}
+
+export async function resumeEnrollment(enrollmentId: string): Promise<Enrollment> {
+  const result = await api.POST('/enrollments/{enrollment_id}:resume', {
+    params: { path: { enrollment_id: enrollmentId } },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to resume enrollment', result.response.status)
+  }
+  return result.data
+}
+
 async function startExecution(enrollmentId: string, executionId: string): Promise<void> {
   const result = await api.POST('/enrollments/{enrollment_id}/executions/{execution_id}:start', {
     params: { path: { enrollment_id: enrollmentId, execution_id: executionId } },

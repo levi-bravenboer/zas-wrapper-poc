@@ -28,7 +28,7 @@ export function PathwayTab({ patientId }: PathwayTabProps): ReactElement {
     return <p className="text-sm text-destructive">{t('loadError')}</p>
   }
 
-  const active = (query.data ?? []).filter((e) => e.state === 'active')
+  const active = (query.data ?? []).filter((e) => e.state === 'active' || e.state === 'paused')
 
   return (
     <div className="flex flex-col gap-4">

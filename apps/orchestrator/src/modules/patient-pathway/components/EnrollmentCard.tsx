@@ -21,7 +21,12 @@ import { formatDateOrDash } from '@/lib/utils/datetime'
 import { getPathwayVersion } from '@/modules/pathway/api'
 import type { PathwayBlock } from '@/modules/pathway/types'
 
-import { useCancelEnrollment, useCompleteStep } from '../hooks'
+import {
+  useCancelEnrollment,
+  useCompleteStep,
+  usePauseEnrollment,
+  useResumeEnrollment,
+} from '../hooks'
 import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
@@ -49,11 +54,27 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
   const { t, i18n } = useTranslation('patient-pathway')
   const completeStep = useCompleteStep(patientId)
   const cancelEnrollmentMutation = useCancelEnrollment(patientId)
+  const pauseMutation = usePauseEnrollment(patientId)
+  const resumeMutation = useResumeEnrollment(patientId)
 
   const handleCancel = (): void => {
     cancelEnrollmentMutation.mutate(enrollment.id, {
       onSuccess: () => toast.success(t('cancel.toast.success')),
       onError: () => toast.error(t('cancel.toast.error')),
+    })
+  }
+
+  const handlePause = (): void => {
+    pauseMutation.mutate(enrollment.id, {
+      onSuccess: () => toast.success(t('pause.toast.paused')),
+      onError: () => toast.error(t('pause.toast.error')),
+    })
+  }
+
+  const handleResume = (): void => {
+    resumeMutation.mutate(enrollment.id, {
+      onSuccess: () => toast.success(t('pause.toast.resumed')),
+      onError: () => toast.error(t('pause.toast.error')),
     })
   }
 
@@ -145,12 +166,36 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
         <span className="text-sm text-muted-foreground">
           {t('card.anchor')}: {formatDateOrDash(enrollment.anchor_date, i18n.language)}
         </span>
+        {enrollment.state === 'active' ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            disabled={pauseMutation.isPending}
+            onClick={handlePause}
+          >
+            {t('pause.pause')}
+          </Button>
+        ) : null}
+        {enrollment.state === 'paused' ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            disabled={resumeMutation.isPending}
+            onClick={handleResume}
+          >
+            {t('pause.resume')}
+          </Button>
+        ) : null}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="ml-auto"
+              className={
+                enrollment.state === 'active' || enrollment.state === 'paused' ? '' : 'ml-auto'
+              }
               disabled={cancelEnrollmentMutation.isPending}
             >
               {t('cancel.action')}
