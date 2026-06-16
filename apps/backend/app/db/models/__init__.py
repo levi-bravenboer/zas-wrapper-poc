@@ -49,7 +49,7 @@ from app.db.models.practitioner import (
     PractitionerRoleSpecialism,
     Specialism,
 )
-from app.db.models.task import TaskReadState
+from app.db.models.task import Task
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
@@ -93,7 +93,7 @@ __all__ = [
     "ShieldedItem",
     "ShieldingRule",
     "Specialism",
-    "TaskReadState",
+    "Task",
     "Tenant",
     "User",
 ]

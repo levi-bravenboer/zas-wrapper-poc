@@ -12,12 +12,12 @@
 - [x] Tests: participant scope, admin tenant-wide, detail 404 hiding, about/with union (5 tests, pass).
 
 ## 2. Real task domain + CUTOVER (replaces the appointment-as-task projection)
-- [ ] `app/core/enums/task.py` — `TaskStatus` (`open`, `done`).
-- [ ] `app/db/models/task/task.py` — `Task(TenantOwnedEntity)`: `assignee_user_id`, `title`, `description?`, `status`, `due_at?`, `patient_id?`, `source_ref?`. Declare `__realtime_resource__` + `__audited__`.
-- [ ] `TaskRepository` + `TaskService` (list-for-caller, get, create+assign [service-only], set-status) + `TaskRead`/`TaskStatusUpdate`.
-- [ ] `task_router` (rewrite `/tasks`): `GET /tasks`, `GET /tasks/{id}`, `PATCH /tasks/{id}`; `ADMIN|CAREGIVER`; assignee/admin visibility. NO `POST`.
-- [ ] **Now** delete the projection: `app/services/tasks/` (aggregator + sources), `schemas/task/task_item.py`, `task_read_state` model + repo. Migration: create `tasks` (+ `task_status`), **drop `task_read_state`**.
-- [ ] Tests: assignee filter, service create+assign, complete, auth; old `/tasks/{source}/{source_id}` gone.
+- [x] `app/core/enums/task.py` — `TaskStatus` (`open`, `done`).
+- [x] `app/db/models/task/task.py` — `Task(TenantOwnedEntity)`: `assignee_user_id`, `title`, `description?`, `status`, `due_at?`, `patient_id?`, `source_ref?`. Declares `__realtime_resource__` + `__audited__`.
+- [x] `TaskRepository` + `TaskService` (list-for-caller, get, create+assign [service-only], set-status) + `TaskRead`/`TaskStatusUpdate`.
+- [x] `task_router` (rewrite `/tasks`): `GET /tasks`, `GET /tasks/{id}`, `PATCH /tasks/{id}`; `ADMIN|CAREGIVER`; assignee/admin visibility. NO `POST`.
+- [x] Deleted the projection: `app/services/tasks/`, `schemas/task/task_item.py`, `task_read_state` model + repo, `appointment_task_repository`. Migration: create `tasks` (+ `task_status`), **drop `task_read_state`**. Audited-set conformance updated (+Task).
+- [x] Tests: assignee filter, service create+assign, close-via-status, auth; old aggregator tests replaced. Full suite 1022 passed / 0 failed.
 
 ## 3. Storage infra — MinIO (before any attachment code)
 - [ ] Add `zas_minio` (S3-compatible) to `docker-compose.yml` (`zas_`-prefixed; volume `zas_minio_data`); one-shot bucket init.
