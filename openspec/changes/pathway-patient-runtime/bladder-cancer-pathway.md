@@ -77,7 +77,7 @@ To make this pathway actually run across enrollment + builder + runtime:
 1. **Subpath inlining** — "operate (biopsy)" is a **subpath**: builder-time inlining that flattens into regular blocks in the **same** pathway/enrollment (no nested child workflow). The builder must expand it; **enrollment must scan the flattened block set** so any enroll value/role a subpath block introduces is prompted for. (The oncology **bridge** at the end is the separate-pathway `pathway_link` — a real handoff, distinct from subpath.)
 2. **Named clinical-date anchors set at enrollment (e.g. operation date)** — RESOLVED: the operation date is a **planned clinical date set at enrollment**, with **constraint-assisted suggestion**. Blocks constrain it two ways: (a) **blocking** prerequisites (`operation` `all_of(lab, anesthesia, measurements)` — must finish before), and (b) **min lead time** ("earliest N days from now / from block X"). The system computes the earliest feasible operation date to guide the caregiver. **Forward timing** then becomes simple: pre-op blocks (info, anesthesia) fire at `operation_date − N days`. If the date is rebooked, dependent timers recompute.
 3. **Timing keys off named anchors** — `timing_policy` gains an anchor reference: relative to node-completion (existing) **or** relative to a named clinical-date anchor (e.g. `operation_date − N days`). Anchors are enroll-set dates; `anchor_date` (day-0) is the default one.
-4. **Luscii activities** — (a) **enroll**: `POST /v1/patients` with `programId`/`protocolId` (create connection + program); (b) **read-gating**: poll `GET /v1/instrument-item-responses` + `GET /v1/measurements` + `GET /v1/alerts` to complete the anesthesia/measurements blocks + escalate out-of-bounds. Built on the existing read adapter + a new enroll call.
+4. **Luscii enroll activity** — `POST /v1/patients` with `programId`/`protocolId` (one program; resolve our patient via the existing Luscii patient-identifier link). No per-step Luscii orchestration; a caregiver `task` gates the operation. Measurement display on patient detail reuses the existing `MeasurementCharts` (read). Built on the existing read adapter + a new enroll call.
 5. **Role-set authoring + binding** — urologist, casemanager, MDO lead bound at enroll from the care team.
 6. **Materialization mapping** — Appointment kinds (imaging/lab/consultation/procedure/other) per block; task projection via the `pathway` source.
 7. **Decision outputs feeding XOR** — `decision_output` predicate gates the two XOR branches; publish-validation that the referenced outputs exist.
@@ -88,7 +88,7 @@ To make this pathway actually run across enrollment + builder + runtime:
 - **Forward timing** ("X days before operation") → named clinical-date anchor `operation_date`, set at enroll with constraint-assisted "earliest feasible" suggestion; pre-op blocks = `operation_date − N` (D3a).
 - **Subpath "operate"** → builder-time **inlining** into the same pathway/enrollment (D15); enrollment scans the flattened block set for enroll values. Not a nested child workflow.
 - **Pathology-reported gate (n10)** → **mock**: caregiver marks "results in" to make the review task actionable (no lab/HiX integration in PoC).
-- **Anesthesia + measurements gates** → **real, read-gated from Luscii** (`/v1/instrument-item-responses`, `/v1/measurements`, `/v1/alerts`).
+- **Anesthesia + measurements** → **Luscii-internal** (inside the one program), not separate blocks; the operation is gated by a **caregiver task** ("review Luscii pre-op data is good").
 
 ## operation_date allowed range (TODO — walk the pathway)
 
@@ -96,11 +96,13 @@ To make this pathway actually run across enrollment + builder + runtime:
 
 | Block | Constraint on operation_date | Days (TBD) |
 |---|---|---|
-| anesthesia (Luscii) | `≥ N days before` | ? |
 | pre-op info (`message`) | `≥ N days before` | ? |
+| review Luscii pre-op data (`task`) | must be `done` before (hard gate) | — |
 | lab test + review | must be `done` before (hard gate) | — |
 | scan + review | must be `done` before (hard gate) | — |
 | clinical urgency (if any) | `≤ M days` (latest bound) | ? |
+
+> Anesthesia/measurements run inside the Luscii program (not blocks); the caregiver `task` "review Luscii pre-op data" is the gate.
 
 → earliest = today + max(lead times); latest = tightest max bound (if any). Fill from the Miro "X days before operation" notes.
 

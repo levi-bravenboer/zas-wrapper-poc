@@ -16,7 +16,7 @@ The patient detail view SHALL include a **Pathway** tab (UI label "Zorgpad"). It
 
 ### Requirement: Each block renders its contract-specific action
 
-An actionable step SHALL render the caregiver action matching its block contract: `task`→Done, `appointment`→Book date then Mark performed, `treatment`→Book then Record result, `mdo`→Close + notes, `decision`→Pick branch, and fake-log blocks (`form`, `message`, `informed_consent`, `external_program`, `pathway_link`)→Advance (clearly labelled as a logged advance with no real downstream effect yet). Triggering the action sends the corresponding Temporal Update and reflects the returned state.
+An actionable step SHALL render the caregiver action matching its block contract: `task`→Done (+ optional notes/files), `appointment`→Book date then Mark performed, `treatment`→Book then Record result, `mdo`→Pick outcome + notes/files, `decision`→Pick outcome (+ optional notes/files). System/auto blocks render no caregiver action: `start`/`end_pathway` auto-fire, `external_program` auto-enrolls in Luscii on reach, `message` auto-sends (mock, logged). Triggering a caregiver action sends the corresponding Temporal Update and reflects the returned state.
 
 #### Scenario: Completing a task
 

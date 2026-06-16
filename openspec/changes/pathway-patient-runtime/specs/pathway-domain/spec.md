@@ -44,17 +44,17 @@ Every block field SHALL be classified by the phase at which its value is supplie
 
 ### Requirement: Each block declares a runtime contract
 
-Every non-system block SHALL declare a runtime contract: its **actor** (caregiver / patient(fake-log) / external(fake-log)), the **work primitive** it materializes (Appointment for `appointment`/`treatment`/`mdo`; a `pathway`-source to-do for `task` and the fake-log blocks), the typed **result** it exposes (if any), and how it **completes**. `start` and `end_pathway` are system blocks that materialize no primitive.
+Every non-system block SHALL declare a runtime contract: its **actor** (system / caregiver / patient / external), the **work primitive** it materializes (`Appointment` for `appointment`/`treatment`/`mdo`; a `pathway`-source to-do for `task`; a Luscii program enrollment for `external_program`; a mock logged send for `message`), the typed **result** it exposes (if any), and how it **completes**. `start` and `end_pathway` are system blocks that materialize no primitive.
 
 #### Scenario: Appointment-backed contract
 
 - **WHEN** the `treatment` block contract is inspected
 - **THEN** actor is caregiver, the primitive is an `Appointment` (kind `procedure`), and the result is `{performed_at, notes, complications}` on the execution
 
-#### Scenario: Fake-log contract
+#### Scenario: Mock message contract
 
 - **WHEN** the `message` block contract is inspected
-- **THEN** actor is patient(fake-log), the primitive is a `pathway`-source to-do, and completion is a caregiver-logged advance with no typed result
+- **THEN** actor is patient, the primitive is a mock logged send (audit/event only, no delivery), and it auto-completes on its timing with no typed result
 
 ### Requirement: Materializing blocks reference a care-team role-type
 

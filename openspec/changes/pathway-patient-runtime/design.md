@@ -72,7 +72,7 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 | `message` | P (mock) | template per channel (email/sms/mobile), connected block + relative timing | — | logged only (audit/event) | auto on its timing — mock send |
 | `informed_consent` | P | questions[], channels[], reminder/expiry config | — | — (fake-log; real `{consented, expired, signed_at}` later) | caregiver records |
 | `external_program` | E | Luscii program ref | — | — (enroll only; no per-step data) | on reach: ensure Luscii connection + enroll in program (real, thin); no further orchestration |
-| `pathway_link` | S | target pathway, version pin, mode (blocking/fire_and_forget) | — | — (fake-log; child completion later) | caregiver advances; nested enrollment hooked |
+| `pathway_link` | S | target pathway, version pin, mode (subpath-inline vs cross-pathway fire_and_forget) | — | — | **subpath** → inlined into this pathway (D15); **cross-pathway** (bridge) → spawns a separate fire-and-forget enrollment |
 
 ### D4a — Runtime materializes work primitives (task vs appointment are distinct)
 
@@ -102,7 +102,7 @@ New `GET /patients/{patient_id}/enrollments` (or `GET /enrollments?patient_id=`)
 
 A new tab on the patient detail view, one section per active enrollment. Three step buckets:
 - **Upcoming** — eligible but timing not yet elapsed: shown greyed with its due/scheduled date, not yet actionable (needs an `available_at`/ready gate on the execution beyond input-logic eligibility).
-- **Next / actionable** — eligible with timing elapsed, or active: rendered per its D4 contract with the matching caregiver action (Done / Book / Perform / Close / Pick branch / Advance).
+- **Next / actionable** — eligible with timing elapsed, or active: rendered per its D4 contract with the matching caregiver action (task→Done, appointment→Book/Perform, treatment→Book/Perform+result, mdo/decision→Pick outcome + notes/files). System/auto blocks (start, end_pathway, external_program enroll, message send) show no action.
 - **Finished** — `completed`/`skipped`: shows the typed **result summary** (appointment performed_at, treatment notes/complications, decision branch picked, mdo notes) plus the caregiver + timestamp.
 
 **Editable values on the tab.** Beyond advancing steps, an authorized caregiver (with rights) or admin may **edit still-updatable values** on a running enrollment from the Zorgpad tab — clinical dates (e.g. `operation_date`), deferred values, role bindings — as long as they haven't been consumed (a completed block's result is locked; pending ones are editable). Editing a named clinical date (e.g. rebooking `operation_date`) **recomputes** the dependent Temporal timers (`operation_date − N`). The patient is data, never an editor.
@@ -131,7 +131,7 @@ The runtime executes on **Temporal**, not the in-process engine. Pathways are da
 
 **Infra**: a Temporal server + the worker process via the Python `temporalio` SDK. Temporal runs **isolated** from the shared dev stack — a separate compose file or a compose `profile` — so it does not perturb the default `docker-compose` used across worktrees. Deploy: Temporal Cloud or self-hosted (decide at MVP).
 
-**Open (next session):** test pathways carrying the new fields (role-set, per-block role, runtime contracts) must be authored as **seed/fixtures** by hand, since builder authoring of these is a deferred follow-up.
+**Note:** the builder fully authors these fields (D16); a seed/fixture script also authors the bladder-cancer pathway for convenience.
 
 **Alternative considered:** in-process sync engine with event-emitting transitions (lighter, no infra) — set aside in favor of Temporal's durable timers and autonomous advancement.
 
@@ -192,7 +192,7 @@ The demo seed is the real bladder-cancer urology flow (authored in Miro). Decode
 start → informed_consent → external_program(Luscii invite) → appointment(scan)
 → task(review scan) → appointment(discuss results) → decision
   ──XOR──┬─ end_pathway ("do nothing")
-         └─ pathway_link: nested sub-pathway "operate (biopsy)"  [REAL nested enrollment]
+         └─ subpath "operate (biopsy)"  [INLINED into this pathway — D15, one workflow]
               ──AND(all_of)── appointment(lab test)→task(review lab test)
                               message(pre-op info)
                               form(anesthesia questionnaire)

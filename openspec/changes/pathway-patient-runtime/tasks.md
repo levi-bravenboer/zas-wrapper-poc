@@ -24,7 +24,7 @@
 - [ ] 3.3 Implement Temporal Update handlers for caregiver actions; Signal for cancel
 - [ ] 3.4 Implement durable timers for relative timing → auto-advance upcoming→actionable; pause/resume halts timers
 - [ ] 3.9 Evaluate full predicate vocabulary (IF_DONE/DECISION_OUTPUT/HAS_DATA/VALUE_EQUALS/VALUE_GT) + timer-backed WAIT_AFTER/IF_NOT_DONE_WITHIN escalation; aggregators all_of/any_of/n_of_m
-- [ ] 3.5 Implement materialization activities: `createAppointment` (appointment/treatment/mdo, kind mapping, chosen participants) and `projectPathwayTask`
+- [ ] 3.5 Implement materialization activities: `createAppointment` (appointment/treatment/mdo, kind mapping, chosen participants) and `projectPathwayTask` — **consume the appointment + notes/files module from `feat/split-appointments-and-tasks`** (don't rebuild booking/notes/files)
 - [ ] 3.10 Luscii enroll activity (`POST /v1/patients`, reuse-or-create); `message` mock-send; leave Luscii running on end
 - [ ] 3.11 Clinical-date timers (forward offsets `date − N`) + recompute on date edit; min-lead-time honored
 - [ ] 3.6 Implement dead-path cleanup activities (`cancelAppointment`/`withdrawTask`) on xor-prune + cancel
@@ -53,7 +53,7 @@
 
 - [ ] 6.1 Register the Pathway tab in the patient detail tab set (+ empty state)
 - [ ] 6.2 Render per-enrollment sections with Upcoming / Next-actionable / Finished buckets
-- [ ] 6.3 Per-block action controls wired to the action endpoints (Done / Book / Perform / Close / Pick branch / Advance)
+- [ ] 6.3 Per-block action controls wired to the action endpoints (task→Done, appointment→Book/Perform, treatment→Book/Perform+result, mdo/decision→Pick outcome + notes/files); auto blocks render no action
 - [ ] 6.4 Finished steps show result summary + who/when
 - [ ] 6.5 Lifecycle controls (cancel / pause / resume) per enrollment
 - [ ] 6.6 Edit still-updatable values on the tab (clinical dates, deferred values, caregiver choices); locked once consumed
@@ -64,7 +64,8 @@
 - [ ] 6b.2 Named clinical-date declaration + per-block min-lead-time / forward-offset timing authoring
 - [ ] 6b.3 Remove `MilestoneInspector` + `WaitInspector` + palette entries
 - [ ] 6b.4 Verify subpath (nested-pathway-blocks) + Luscii program picker author the flow as drawn
-- [ ] 6b.5 Author the full bladder-cancer pathway in the builder end-to-end
+- [ ] 6b.5 MDO outcome-choices authoring + `message` template-per-channel + timing authoring; notes/files via the shared module
+- [ ] 6b.6 Author the full bladder-cancer pathway in the builder end-to-end
 
 ## 6c. Seed script
 
