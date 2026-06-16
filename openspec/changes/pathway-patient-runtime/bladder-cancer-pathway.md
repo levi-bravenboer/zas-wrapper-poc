@@ -28,7 +28,9 @@ XOR/AND in the flow = a `decision` block (`mode=xor`) and an `all_of` convergenc
 
 First complaints · First consultation · Initial onboarding · Scans · Decision to biopsy · Pre surgery · Day of surgery · Recovery & waiting for results · Analysis of tissue · Diagnosis & treatment decision · (→ oncology care path)
 
-## Block-by-block
+## Block-by-block (initial Miro decode — SUPERSEDED)
+
+> This was the first read of the Miro. The **authoritative** seed is the "Seed definition — walked together" section below (it adds a diagnostic MDO, places Luscii early, makes lab-review a decision, etc.). Kept for reference only.
 
 Linear spine, then an XOR, then the nested "operate" sub-pathway with an AND fan-out.
 
@@ -69,6 +71,37 @@ Fan-out after `operation`:
 | n12 | XOR → end pathway | `end_pathway` | caregiver | `decision_output(n10, nothing)` | — | pathway ended |
 
 > PROM + post-op measurements are part of the **one Luscii program** (post-op phase) — internal, not separate pathway blocks.
+
+## Seed definition — walked together (authoritative)
+
+Early spine (confirmed):
+
+| # | Block | Kind | Participant (role/specialty) | prereq | Completes |
+|---|---|---|---|---|---|
+| 1 | Patient added | `start` | system | — | auto at enroll |
+| 2 | Enroll in Luscii | `external_program` | — | `if_done(1)` | program enrolled (does consent + measurements + PROM internally) |
+| 3 | Appointment: scan | `appointment` (imaging) | urologist (physician/urology) | `if_done(2)` | patient attended + scan made |
+| 4 | Task: review scan | `task` | urologist | `if_done(3)` | urologist reviewed |
+| 5 | MDO (diagnostic) | `mdo` | panel: urologist (lead) + radiology + pathology + oncology | `if_done(4)` | lead picks outcome (operate / do-nothing) |
+| 6 | Appointment: discuss results | `appointment` (consultation) | urologist | `if_done(5)` | patient attended |
+| 7 | Decision: operate? | `decision` | urologist | `if_done(6)` | outcome recorded (operate / do-nothing); XOR |
+
+XOR on (7): **do-nothing → `end_pathway`**; **operate → subpath "operate (biopsy)"** (inlined):
+
+| # | Block | Kind | Participant | prereq | Notes |
+|---|---|---|---|---|---|
+| 8 | Appointment: lab test | `appointment` (lab) | urologist | enter (`decision_output(7,operate)`) | |
+| 9 | Decision: review lab test | `decision` | urologist | `if_done(8)` | outcomes proceed/abort; abort → `end_pathway` |
+| 10 | Send pre-op info | `message` | — (mock) | enter | timing `operation_date − N` |
+| 11 | Task: review Luscii pre-op data | `task` | urologist | enter | gates op on Luscii measurements/anesthesia |
+| 12 | Operation | `treatment` (procedure) | urologist | `all_of(decision_output(9,proceed), 10, 11)` | scheduled `operation_date`; result {performed_at,notes,complications} |
+| 13 | Send post-op info | `message` | — (mock) | `if_done(12)` | |
+| 14 | Task: view pathology results | `task` | urologist | `if_done(12)` + pathology marked-in (mock) | |
+| 15 | MDO (post-op) | `mdo` | panel (lead urologist + radiology + pathology + oncology) | `if_done(14)` | outcomes treatment/nothing |
+| 16 | Appointment: discuss | `appointment` (consultation) | urologist | `if_done(15)` | |
+| 17 | Decision: treat? | `decision` | urologist | `if_done(16)` | outcomes treatment/nothing; XOR |
+| 18a | treatment → bridge | `end_pathway` + `pathway_link`(fire_and_forget → oncology) | system | `decision_output(17,treatment)` | hand to oncology pathway |
+| 18b | nothing → end | `end_pathway` | system | `decision_output(17,nothing)` | |
 
 ## Seed data (so the pathway need not be hand-built)
 
