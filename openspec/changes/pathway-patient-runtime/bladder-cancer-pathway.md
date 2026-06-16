@@ -163,8 +163,8 @@ To make this pathway actually run across enrollment + builder + runtime:
 - **`end_pathway` leaves the Luscii program running** — no unenroll/stop call; Luscii monitoring/PROMs continue independently.
 - **Decision/MDO outcomes are binary `treatment` / `nothing`** for the seed (decision 1: operate/nothing; final/MDO: treatment→bridge oncology / nothing→end). Richer staging-based outcomes (TURBT, BCG, cystectomy, chemoradiation, systemic) are a later, clinically-validated enrichment.
 
-## Still needed
+## Still needed (build-time, no design decisions left)
 
-- Luscii enroll endpoint wiring (`POST /v1/patients`) + read-poll cadence (timer vs on-eval).
-- Constraint-assisted `operation_date` computation (min lead times + blocking prereqs).
-- "Share result with GP" actions (decision blocks) — mock for PoC.
+- Real Luscii **programId/protocolId** (seed uses a placeholder).
+- The appointment + notes/files module from `feat/split-appointments-and-tasks` (build non-appointment parts first).
+- "Share result with GP" actions — mock for PoC.
