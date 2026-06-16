@@ -3,12 +3,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.collaboration import OwnerType
 from app.db.models.collaboration import Note
-from app.db.models.user import User
+from app.repositories.collaboration._queries import list_with_author_name
 
 
 class NoteRepository:
@@ -32,13 +31,14 @@ class NoteRepository:
 
     async def _list(self, *predicates, tenant_id: UUID, ascending: bool) -> Sequence[tuple[Note, str]]:
         order = Note.created_at.asc() if ascending else Note.created_at.desc()
-        result = await self._session.execute(
-            select(Note, User.display_name)
-            .join(User, User.id == Note.author_user_id)
-            .where(Note.tenant_id == tenant_id, Note.deleted_at.is_(None), *predicates)
-            .order_by(order, Note.id.asc())
+        return await list_with_author_name(
+            self._session,
+            Note,
+            author_col=Note.author_user_id,
+            tenant_id=tenant_id,
+            predicates=predicates,
+            order_by=(order, Note.id.asc()),
         )
-        return result.tuples().all()
 
     async def add(
         self,

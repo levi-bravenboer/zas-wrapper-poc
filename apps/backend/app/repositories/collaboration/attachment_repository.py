@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.collaboration import OwnerType
 from app.db.models.collaboration import Attachment
-from app.db.models.user import User
+from app.repositories.collaboration._queries import list_with_author_name
 
 
 class AttachmentRepository:
@@ -30,13 +30,14 @@ class AttachmentRepository:
         return await self._list(Attachment.patient_id == patient_id, tenant_id=tenant_id)
 
     async def _list(self, *predicates, tenant_id: UUID) -> Sequence[tuple[Attachment, str]]:
-        result = await self._session.execute(
-            select(Attachment, User.display_name)
-            .join(User, User.id == Attachment.uploaded_by)
-            .where(Attachment.tenant_id == tenant_id, Attachment.deleted_at.is_(None), *predicates)
-            .order_by(Attachment.created_at.desc(), Attachment.id.desc())
+        return await list_with_author_name(
+            self._session,
+            Attachment,
+            author_col=Attachment.uploaded_by,
+            tenant_id=tenant_id,
+            predicates=predicates,
+            order_by=(Attachment.created_at.desc(), Attachment.id.desc()),
         )
-        return result.tuples().all()
 
     async def add(
         self,
