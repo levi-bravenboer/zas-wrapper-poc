@@ -34,7 +34,7 @@ Linear spine, then an XOR, then the nested "operate" sub-pathway with an AND fan
 
 | # | Block | Kind | Actor/Role | input_logic (prereq) | Timing | Actions (materialize) | Complete-if | Phase |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Patient added to carepath | `start` | system | — | at enroll | invite patient, set primary caregiver | patient logs into portal first time | Onboarding |
+| 1 | Patient added to carepath | `start` | system | — | at enroll | (portal invite mocked) | auto-fires at enroll (portal-login gating skipped, PoC) | Onboarding |
 | 2 | Enroll in Luscii program | `external_program` | external/Luscii | `if_done(1)` | at enroll/reach | `POST /v1/patients` (programId) — one program does consent + questionnaires + measurements internally | enrolled in program | Onboarding |
 | 4 | Appointment: scan | `appointment` | urologist | `if_done(2)` consent | — | create Appointment(kind=imaging), invite to schedule, share prep info | patient attended, scan made | Scans |
 | 5 | Task: review scan | `task` | urologist | `if_done(4)` | — | project task for urologist | urologist reviewed scan | Scans |
@@ -89,6 +89,13 @@ To make this pathway actually run across enrollment + builder + runtime:
 - **Subpath "operate"** → builder-time **inlining** into the same pathway/enrollment (D15); enrollment scans the flattened block set for enroll values. Not a nested child workflow.
 - **Pathology-reported gate (n10)** → **mock**: caregiver marks "results in" to make the review task actionable (no lab/HiX integration in PoC).
 - **Anesthesia + measurements gates** → **real, read-gated from Luscii** (`/v1/instrument-item-responses`, `/v1/measurements`, `/v1/alerts`).
+
+## PoC assumptions / shortcuts
+
+- **Consent is not gated.** Consent lives inside the Luscii program; for the PoC the pathway does **not** verify it — downstream blocks proceed (assume the patient consents). Real consent gating is a later upgrade (read Luscii consent action).
+- **Operation pre-op gate is a caregiver task** ("review Luscii pre-op data is good"), not an automatic Luscii read.
+- **Pathology results** are caregiver-marked (no lab/HiX integration).
+- **Messages + GP-share** are mock (logged, no delivery).
 
 ## Still needed
 
