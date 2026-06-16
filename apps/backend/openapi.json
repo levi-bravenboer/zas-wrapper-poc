@@ -3765,12 +3765,6 @@
                       "$ref": "#/components/schemas/FormBlockOut"
                     },
                     {
-                      "$ref": "#/components/schemas/MilestoneBlockOut"
-                    },
-                    {
-                      "$ref": "#/components/schemas/WaitBlockOut"
-                    },
-                    {
                       "$ref": "#/components/schemas/PathwayLinkBlockOut"
                     },
                     {
@@ -3792,8 +3786,6 @@
                       "informed_consent": "#/components/schemas/InformedConsentBlockOut",
                       "mdo": "#/components/schemas/MdoBlockOut",
                       "form": "#/components/schemas/FormBlockOut",
-                      "milestone": "#/components/schemas/MilestoneBlockOut",
-                      "wait": "#/components/schemas/WaitBlockOut",
                       "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
                       "external_program": "#/components/schemas/ExternalProgramBlockOut",
                       "end_pathway": "#/components/schemas/EndPathwayBlockOut"
@@ -8664,146 +8656,6 @@
         ],
         "title": "MessageBlockOut"
       },
-      "MilestoneBlockOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "phase_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Phase Id"
-          },
-          "lane_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Lane Id"
-          },
-          "duration_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration Value Id"
-          },
-          "x": {
-            "type": "integer",
-            "title": "X",
-            "default": 0
-          },
-          "y": {
-            "type": "integer",
-            "title": "Y",
-            "default": 0
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "lane_kind": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lane Kind"
-          },
-          "input_logic": {
-            "$ref": "#/components/schemas/InputLogic",
-            "default": {
-              "rules": [],
-              "aggregator": "all_of"
-            }
-          },
-          "timing_policy": {
-            "anyOf": [
-              {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/FixedDurationPolicy"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WaitAfterPolicy"
-                  },
-                  {
-                    "$ref": "#/components/schemas/DueWithinPolicy"
-                  },
-                  {
-                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
-                  }
-                ],
-                "discriminator": {
-                  "propertyName": "kind",
-                  "mapping": {
-                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
-                    "due_within": "#/components/schemas/DueWithinPolicy",
-                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
-                    "wait_after": "#/components/schemas/WaitAfterPolicy"
-                  }
-                }
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timing Policy"
-          },
-          "label": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Label"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "kind": {
-            "type": "string",
-            "const": "milestone",
-            "title": "Kind",
-            "default": "milestone"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "phase_id",
-          "lane_id",
-          "name",
-          "label"
-        ],
-        "title": "MilestoneBlockOut"
-      },
       "MobileHealthResponse": {
         "properties": {
           "status": {
@@ -9705,8 +9557,6 @@
               "mdo",
               "form",
               "decision",
-              "milestone",
-              "wait",
               "pathway_link",
               "external_program",
               "end_pathway"
@@ -10923,12 +10773,6 @@
                   "$ref": "#/components/schemas/FormBlockOut"
                 },
                 {
-                  "$ref": "#/components/schemas/MilestoneBlockOut"
-                },
-                {
-                  "$ref": "#/components/schemas/WaitBlockOut"
-                },
-                {
                   "$ref": "#/components/schemas/PathwayLinkBlockOut"
                 },
                 {
@@ -10949,12 +10793,10 @@
                   "informed_consent": "#/components/schemas/InformedConsentBlockOut",
                   "mdo": "#/components/schemas/MdoBlockOut",
                   "message": "#/components/schemas/MessageBlockOut",
-                  "milestone": "#/components/schemas/MilestoneBlockOut",
                   "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
                   "start": "#/components/schemas/StartBlockOut",
                   "task": "#/components/schemas/TaskBlockOut",
-                  "treatment": "#/components/schemas/TreatmentBlockOut",
-                  "wait": "#/components/schemas/WaitBlockOut"
+                  "treatment": "#/components/schemas/TreatmentBlockOut"
                 }
               }
             },
@@ -12478,10 +12320,7 @@
           },
           "assignee": {
             "type": "string",
-            "enum": [
-              "patient",
-              "caregiver"
-            ],
+            "const": "caregiver",
             "title": "Assignee"
           },
           "due_offset_days": {
@@ -13130,160 +12969,6 @@
         "type": "object",
         "title": "WaitAfterPolicy",
         "description": "Block fires after an ISO 8601 offset from its eligibility moment.\n\n`PT0S` means \"fire as soon as eligible\" \u2014 used as the default\nbackfill for rows that carry no authored timing."
-      },
-      "WaitBlockOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "phase_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Phase Id"
-          },
-          "lane_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Lane Id"
-          },
-          "duration_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration Value Id"
-          },
-          "x": {
-            "type": "integer",
-            "title": "X",
-            "default": 0
-          },
-          "y": {
-            "type": "integer",
-            "title": "Y",
-            "default": 0
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "lane_kind": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lane Kind"
-          },
-          "input_logic": {
-            "$ref": "#/components/schemas/InputLogic",
-            "default": {
-              "rules": [],
-              "aggregator": "all_of"
-            }
-          },
-          "timing_policy": {
-            "anyOf": [
-              {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/FixedDurationPolicy"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WaitAfterPolicy"
-                  },
-                  {
-                    "$ref": "#/components/schemas/DueWithinPolicy"
-                  },
-                  {
-                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
-                  }
-                ],
-                "discriminator": {
-                  "propertyName": "kind",
-                  "mapping": {
-                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
-                    "due_within": "#/components/schemas/DueWithinPolicy",
-                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
-                    "wait_after": "#/components/schemas/WaitAfterPolicy"
-                  }
-                }
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timing Policy"
-          },
-          "event_type": {
-            "type": "string",
-            "title": "Event Type"
-          },
-          "source_block_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Block Id"
-          },
-          "timeout_days": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timeout Days"
-          },
-          "on_timeout": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "continue",
-                  "escalate"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "On Timeout"
-          },
-          "kind": {
-            "type": "string",
-            "const": "wait",
-            "title": "Kind",
-            "default": "wait"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "phase_id",
-          "lane_id",
-          "name",
-          "event_type"
-        ],
-        "title": "WaitBlockOut"
       }
     }
   }

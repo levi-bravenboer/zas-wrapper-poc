@@ -52,8 +52,6 @@ describe('blockSemanticsSummary', () => {
       '2',
     ],
     ['decision', { question: 'Risico hoog?' }, 'Risico hoog?'],
-    ['milestone', { label: 'baseline' }, 'baseline'],
-    ['wait', { event_type: 'pathology_report' }, 'pathology_report'],
     ['pathway_link', { mode: 'blocking' }, 'blocking'],
     ['treatment', { title: 'Lumbale spinale fusie' }, 'Lumbale spinale fusie'],
   ]

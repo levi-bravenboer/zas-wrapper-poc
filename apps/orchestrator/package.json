@@ -21,7 +21,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "typegen": "openapi-typescript http://localhost:18000/openapi.json -o src/lib/api/schema.d.ts"
+    "typegen": "openapi-typescript http://localhost:18000/openapi.json --enum-values -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

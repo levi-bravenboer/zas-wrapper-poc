@@ -11,11 +11,9 @@ import { InformedConsentInspector } from './inspectors/InformedConsentInspector'
 import { LusciiProgramInspector } from './inspectors/LusciiProgramInspector'
 import { MdoInspector } from './inspectors/MdoInspector'
 import { MessageInspector } from './inspectors/MessageInspector'
-import { MilestoneInspector } from './inspectors/MilestoneInspector'
 import { PathwayLinkInspector } from './inspectors/PathwayLinkInspector'
 import { TaskInspector } from './inspectors/TaskInspector'
 import { TreatmentInspector } from './inspectors/TreatmentInspector'
-import { WaitInspector } from './inspectors/WaitInspector'
 
 export type InspectorSwitchProps = {
   blockType: PathwayBlockType
@@ -31,9 +29,7 @@ export type InspectorSwitchProps = {
 // per-kind authoring surface beyond the inherited name.
 export function InspectorSwitch({
   blockType,
-  block,
   data,
-  blocks,
   currentPathwayId,
   onPatchConfig,
 }: InspectorSwitchProps): ReactElement | null {
@@ -75,22 +71,6 @@ export function InspectorSwitch({
       return (
         <DecisionInspector
           config={data as ConfigForSemantics<'decision'>}
-          onChange={onPatchConfig}
-        />
-      )
-    case 'milestone':
-      return (
-        <MilestoneInspector
-          config={data as ConfigForSemantics<'milestone'>}
-          onChange={onPatchConfig}
-        />
-      )
-    case 'wait':
-      return (
-        <WaitInspector
-          config={data as ConfigForSemantics<'wait'>}
-          blocks={blocks}
-          currentBlockId={block.id}
           onChange={onPatchConfig}
         />
       )

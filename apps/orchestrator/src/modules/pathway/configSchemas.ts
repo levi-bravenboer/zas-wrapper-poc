@@ -22,15 +22,6 @@ export const FORM_QUESTION_TYPES = [
   'file',
 ] as const satisfies ReadonlyArray<FormQuestion['type']>
 
-export const WAIT_EVENT_TYPES = [
-  'pathology_report',
-  'scan_report',
-  'lab_result',
-  'external_data',
-] as const
-
-export const WAIT_ON_TIMEOUT = ['advance', 'escalate'] as const
-
 export const MESSAGE_CHANNELS = ['email', 'sms', 'push', 'in_app'] as const
 
 export const PATHWAY_LINK_MODES = ['blocking', 'fire_and_forget'] as const
@@ -51,7 +42,7 @@ const AppointmentConfig = z.object({
   notes: z.string().max(2000).nullable().optional(),
 })
 
-export const TASK_ASSIGNEES = ['patient', 'caregiver'] as const
+export const TASK_ASSIGNEES = ['caregiver'] as const
 
 const TaskConfig = z.object({
   title: z.string().min(1).max(255).nullable().optional(),
@@ -86,19 +77,6 @@ const DecisionConfig = z.object({
   question: z.string().min(1).max(500).nullable().optional(),
   outputs: z.array(z.string().min(1).max(64)).default([]),
   mode: z.enum(DECISION_MODES).nullable().optional(),
-})
-
-const MilestoneConfig = z.object({
-  label: z.string().min(1).max(255).nullable().optional(),
-  description: z.string().max(2000).nullable().optional(),
-  icon: z.string().max(64).nullable().optional(),
-})
-
-const WaitConfig = z.object({
-  event_type: z.enum(WAIT_EVENT_TYPES).nullable().optional(),
-  timeout_days: z.number().int().positive().nullable().optional(),
-  on_timeout: z.enum(WAIT_ON_TIMEOUT).nullable().optional(),
-  source_block_id: z.string().uuid().nullable().optional(),
 })
 
 const PathwayLinkConfig = z.object({
@@ -172,8 +150,6 @@ export const CONFIG_SCHEMAS = {
   mdo: MdoConfig,
   form: FormConfig,
   decision: DecisionConfig,
-  milestone: MilestoneConfig,
-  wait: WaitConfig,
   pathway_link: PathwayLinkConfig,
   external_program: ExternalProgramConfig,
   end_pathway: EndPathwayConfig,

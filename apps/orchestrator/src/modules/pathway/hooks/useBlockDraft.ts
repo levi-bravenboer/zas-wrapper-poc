@@ -71,7 +71,7 @@ type Result = {
   parsed: ParsedConfig
   canSubmit: boolean
   /** Stub envelope so `InspectorSwitch` consumers that read block
-   *  identity (e.g. WaitInspector's self-exclusion) behave in add mode
+   *  identity behave in add mode
    *  too. */
   inspectorBlock: PathwayBlock
 }

@@ -132,6 +132,13 @@ Pick the **lowest tier that fits**. Promote up only when the type genuinely need
    type User = components['schemas']['User']
    ```
    Re-run `moon run orchestrator:typegen` when the backend contract changes.
+   **Enum VALUES too, not just types.** Never hand-roll an enum value set the backend already defines (assignee, channel, mode, kind, status…). Generated types aren't runtime values, so for a runtime array (e.g. a Zod `z.enum`) constrain it against the generated enum so drift fails to compile:
+   ```ts
+   export const TASK_ASSIGNEES = ['caregiver'] as const satisfies readonly NonNullable<
+     components['schemas']['TaskBlockOut']['assignee']
+   >[]
+   ```
+   When the backend enum changes, this stops compiling — single source of truth stays the backend.
 
 2. **Zod-inferred for boundaries.** For runtime-validated payloads (route search, HTTP bodies, env) define the schema in `<module>/schemas.ts` and infer the type: `type LoginRequest = z.infer<typeof LoginRequestSchema>`.
 
@@ -154,6 +161,7 @@ Pick the **lowest tier that fits**. Promote up only when the type genuinely need
 
 - TypeScript `strict: true`. No `any` without a one-line `// reason:` comment.
 - No `enum` — use `as const` object + derived union.
+- **Never hardcode user-facing text.** All copy goes through i18n (`useTranslation` / `t('<key>')`); keys live in `lib/i18n/locales/nl/<namespace>.json`. No literal UI strings (labels, placeholders, button text, option labels) in components — not even as a `t()` `defaultValue`. Add the key to the locale file instead.
 - Function components only. `function` declarations, not arrows, for top-level components.
 - All HTTP through `lib/api/client.ts`. Never raw `fetch` in modules outside `api.ts`.
 - All server reads via `useQuery`; writes via `useMutation`. No `useState` for server data, no `useEffect` for fetching.

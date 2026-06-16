@@ -31,7 +31,7 @@ describe('getBlockEditingFeatures', () => {
   })
 
   it('regular kinds (appointment, task, decision, …) opt into every section', () => {
-    for (const semantics of ['appointment', 'task', 'decision', 'milestone', 'wait'] as const) {
+    for (const semantics of ['appointment', 'task', 'decision'] as const) {
       expect(getBlockEditingFeatures(semantics)).toEqual({
         hasName: true,
         allowsLogic: true,

@@ -3007,60 +3007,6 @@ export interface components {
              */
             kind: "message";
         };
-        /** MilestoneBlockOut */
-        MilestoneBlockOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Phase Id
-             * Format: uuid
-             */
-            phase_id: string;
-            /**
-             * Lane Id
-             * Format: uuid
-             */
-            lane_id: string;
-            /** Duration Value Id */
-            duration_value_id?: string | null;
-            /**
-             * X
-             * @default 0
-             */
-            x: number;
-            /**
-             * Y
-             * @default 0
-             */
-            y: number;
-            /** Name */
-            name: string;
-            /** Lane Kind */
-            lane_kind?: string | null;
-            /**
-             * @default {
-             *       "rules": [],
-             *       "aggregator": "all_of"
-             *     }
-             */
-            input_logic: components["schemas"]["InputLogic"];
-            /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
-            /** Label */
-            label: string;
-            /** Description */
-            description?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "milestone";
-        };
         /**
          * MobileHealthResponse
          * @description Stable shape for the mobile-app liveness probe.
@@ -3444,7 +3390,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "mdo" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
+            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "mdo" | "form" | "decision" | "pathway_link" | "external_program" | "end_pathway";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -3960,7 +3906,7 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
+            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
@@ -4623,9 +4569,9 @@ export interface components {
             title: string;
             /**
              * Assignee
-             * @enum {string}
+             * @constant
              */
-            assignee: "patient" | "caregiver";
+            assignee: "caregiver";
             /** Due Offset Days */
             due_offset_days?: number | null;
             /** Requires Completion */
@@ -4913,62 +4859,6 @@ export interface components {
              * @default PT0S
              */
             offset_iso: string;
-        };
-        /** WaitBlockOut */
-        WaitBlockOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Phase Id
-             * Format: uuid
-             */
-            phase_id: string;
-            /**
-             * Lane Id
-             * Format: uuid
-             */
-            lane_id: string;
-            /** Duration Value Id */
-            duration_value_id?: string | null;
-            /**
-             * X
-             * @default 0
-             */
-            x: number;
-            /**
-             * Y
-             * @default 0
-             */
-            y: number;
-            /** Name */
-            name: string;
-            /** Lane Kind */
-            lane_kind?: string | null;
-            /**
-             * @default {
-             *       "rules": [],
-             *       "aggregator": "all_of"
-             *     }
-             */
-            input_logic: components["schemas"]["InputLogic"];
-            /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
-            /** Event Type */
-            event_type: string;
-            /** Source Block Id */
-            source_block_id?: string | null;
-            /** Timeout Days */
-            timeout_days?: number | null;
-            /** On Timeout */
-            on_timeout?: ("continue" | "escalate") | null;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "wait";
         };
     };
     responses: never;
@@ -7446,7 +7336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
+                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
                 };
             };
             /** @description Not Found */
@@ -8050,3 +7940,93 @@ export interface operations {
         };
     };
 }
+type FlattenedDeepRequired<T> = {
+    [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
+};
+type ReadonlyArray<T> = [
+    Exclude<T, undefined>
+] extends [
+    unknown[]
+] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const pathsUsersGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/users"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsPatientsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/patients"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsAuditEventsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/audit-events"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsPractitionerRolesGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/practitioner-roles"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsTasksGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/tasks"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const actorTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ActorType"]> = ["user", "system", "anonymous"];
+export const appointmentBlockOutModeAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentBlockOut"]["mode"]> = ["in_person", "video", "phone"];
+export const appointmentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentBlockOut"]["kind"]> = ["appointment"];
+export const appointmentKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentKind"]> = ["consultation", "lab", "imaging", "procedure", "other"];
+export const appointmentModalityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentModality"]> = ["online", "on_site"];
+export const appointmentParticipantRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentParticipantRole"]> = ["lead", "support", "observer"];
+export const appointmentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentStatus"]> = ["proposed", "pending", "booked", "arrived", "fulfilled", "cancelled", "noshow", "entered_in_error", "checked_in", "waitlist"];
+export const atEnrollmentPickedDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AtEnrollmentPickedDatePolicy"]["kind"]> = ["at_enrollment_picked_date"];
+export const auditActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditAction"]> = ["created", "updated", "deleted", "login"];
+export const auditResultValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditResult"]> = ["success", "failure"];
+export const blockExecutionResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BlockExecutionResponse"]["state"]> = ["pending", "eligible", "active", "completed", "skipped", "failed"];
+export const careTeamStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CareTeamStatus"]> = ["active", "inactive"];
+export const consentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConsentStatus"]> = ["active", "revoked"];
+export const decisionBlockOutModeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionBlockOut"]["mode"]> = ["xor", "and"];
+export const decisionBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionBlockOut"]["kind"]> = ["decision"];
+export const decisionOutputArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionOutputArgs"]["predicate"]> = ["decision_output"];
+export const dueWithinPolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DueWithinPolicy"]["kind"]> = ["due_within"];
+export const endPathwayBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EndPathwayBlockOut"]["kind"]> = ["end_pathway"];
+export const enrollmentResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EnrollmentResponse"]["state"]> = ["active", "paused", "completed", "cancelled"];
+export const eventArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EventArgs"]["predicate"]> = ["event"];
+export const externalProgramBlockOutModeAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ExternalProgramBlockOut"]["mode"]> = ["blocking", "fire_and_forget"];
+export const externalProgramBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ExternalProgramBlockOut"]["kind"]> = ["external_program"];
+export const fixedDurationPolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["FixedDurationPolicy"]["kind"]> = ["fixed_duration"];
+export const formBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["FormBlockOut"]["kind"]> = ["form"];
+export const formQuestionTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["FormQuestion"]["type"]> = ["text", "long_text", "single_choice", "multi_choice", "scale", "date", "file"];
+export const genderValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Gender"]> = ["male", "female", "other", "unknown"];
+export const hasDataArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["HasDataArgs"]["predicate"]> = ["has_data"];
+export const ifDoneArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["IfDoneArgs"]["predicate"]> = ["if_done"];
+export const ifNotDoneWithinArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["IfNotDoneWithinArgs"]["predicate"]> = ["if_not_done_within"];
+export const informedConsentBlockOutChannelsValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["InformedConsentBlockOut"]["channels"]> = ["email", "sms", "push", "in_app"];
+export const informedConsentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["InformedConsentBlockOut"]["kind"]> = ["informed_consent"];
+export const inputLogicAggregatorValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["InputLogic"]["aggregator"]> = ["all_of", "any_of"];
+export const itemCategoryValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ItemCategory"]> = ["questionnaire_answers", "diary", "attachments", "parameters", "documents"];
+export const lusciiCategoricalPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiCategoricalPoint"]["archetype"]> = ["categorical"];
+export const lusciiFreeTextPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiFreeTextPoint"]["archetype"]> = ["free_text"];
+export const lusciiLayoutLaneKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiLayoutLane"]["kind"]> = ["patient", "caregiver", "external", "system"];
+export const lusciiLayoutNodeTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiLayoutNode"]["type"]> = ["appointment", "task", "message", "form", "questionnaire", "measurement", "decision", "milestone", "education"];
+export const lusciiMeasurementSeriesArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiMeasurementSeries"]["archetype"]> = ["numeric", "ordinal", "categorical", "free_text", "unknown"];
+export const lusciiMeasurementValueViewArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiMeasurementValueView"]["archetype"]> = ["numeric", "ordinal", "categorical", "free_text", "unknown"];
+export const lusciiNumericPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiNumericPoint"]["archetype"]> = ["numeric"];
+export const lusciiOrdinalPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiOrdinalPoint"]["archetype"]> = ["ordinal"];
+export const lusciiPatientDataStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiPatientData"]["state"]> = ["linked", "not_linked"];
+export const lusciiUnknownPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiUnknownPoint"]["archetype"]> = ["unknown"];
+export const mdoBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MdoBlockOut"]["kind"]> = ["mdo"];
+export const messageBlockOutChannelValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["channel"]> = ["email", "sms", "push", "in_app"];
+export const messageBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["kind"]> = ["message"];
+export const pathwayBlockTypeSemanticsValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["semantics"]> = ["start", "appointment", "treatment", "task", "message", "informed_consent", "mdo", "form", "decision", "pathway_link", "external_program", "end_pathway"];
+export const pathwayBlockTypeSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["source"]> = ["native", "external", "internal"];
+export const pathwayBlockTypeNested_renderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["nested_render"]> = ["inline_preview", "collapsed_card"];
+export const pathwayEdgeTimingKindKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayEdgeTimingKind"]["kind"]> = ["completion", "marker", "immediate", "branch"];
+export const pathwayLinkBlockOutModeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayLinkBlockOut"]["mode"]> = ["blocking", "fire_and_forget"];
+export const pathwayLinkBlockOutVersion_pinValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayLinkBlockOut"]["version_pin"]> = ["latest_published", "specific"];
+export const pathwayLinkBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayLinkBlockOut"]["kind"]> = ["pathway_link"];
+export const pathwayTimingValueInKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayTimingValueIn"]["kind"]> = ["fixed", "enrollment"];
+export const pathwayTimingValueOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayTimingValueOut"]["kind"]> = ["fixed", "enrollment"];
+export const pathwayVersionDefinitionStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionDefinition"]["status"]> = ["concept", "published", "archived"];
+export const pathwayVersionDefinitionKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionDefinition"]["kind"]> = ["initial", "fork-from-publish", "restore-from-version"];
+export const pathwayVersionSummaryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionSummary"]["status"]> = ["concept", "published", "archived"];
+export const pathwayVersionSummaryKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionSummary"]["kind"]> = ["initial", "fork-from-publish", "restore-from-version"];
+export const patientSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PatientSource"]> = ["local", "hix", "luscii"];
+export const practitionerRoleCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PractitionerRoleCode"]> = ["gp", "physiotherapist", "psychologist", "nurse", "physician", "other"];
+export const predicateKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PredicateKind"]> = ["if_done", "has_data", "value_equals", "value_gt", "wait_after", "decision_output", "if_not_done_within", "event"];
+export const providerDescriptorKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderDescriptor"]["kind"]> = ["password", "oidc"];
+export const readinessResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["status"]> = ["ready", "not_ready"];
+export const readinessResponseChecksValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["checks"][string]> = ["ok", "fail"];
+export const roleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Role"]> = ["admin", "caregiver", "patient"];
+export const roleInCareValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RoleInCare"]> = ["primary", "consulting", "observer"];
+export const shieldingAudienceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ShieldingAudience"]> = ["representative", "external_professional", "patient_other_role"];
+export const startBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartBlockOut"]["kind"]> = ["start"];
+export const taskBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskBlockOut"]["kind"]> = ["task"];
+export const taskItemPriorityAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskItem"]["priority"]> = ["low", "normal", "high", "urgent"];
+export const treatmentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TreatmentBlockOut"]["kind"]> = ["treatment"];
+export const valueEqualsArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ValueEqualsArgs"]["predicate"]> = ["value_equals"];
+export const valueGtArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ValueGtArgs"]["predicate"]> = ["value_gt"];
+export const waitAfterArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WaitAfterArgs"]["predicate"]> = ["wait_after"];
+export const waitAfterArgsDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WaitAfterArgs"]["direction"]> = ["before", "after"];
+export const waitAfterPolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WaitAfterPolicy"]["kind"]> = ["wait_after"];

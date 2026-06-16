@@ -53,9 +53,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
           <SelectContent>
             {TASK_ASSIGNEES.map((assignee) => (
               <SelectItem key={assignee} value={assignee}>
-                {t(`inspector.task.assigneeOption.${assignee}`, {
-                  defaultValue: assignee === 'patient' ? 'Patiënt' : 'Zorgteam',
-                })}
+                {t(`inspector.task.assigneeOption.${assignee}`)}
               </SelectItem>
             ))}
           </SelectContent>

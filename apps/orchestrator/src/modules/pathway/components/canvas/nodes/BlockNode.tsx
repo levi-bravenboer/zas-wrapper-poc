@@ -30,8 +30,6 @@ function translateSemanticsSummary(
       return t(`inspector.task.assigneeOption.${value}`, { defaultValue: value })
     case 'message':
       return t(`inspector.message.channelOption.${value}`, { defaultValue: value })
-    case 'wait':
-      return t(`eventType.${value}`, { defaultValue: value })
     case 'pathway_link':
       return t(`inspector.pathwayLink.modeOption.${value}`, { defaultValue: value })
     default:
