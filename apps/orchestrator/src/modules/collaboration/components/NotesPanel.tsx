@@ -1,12 +1,11 @@
 import { useState, type KeyboardEvent, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { PersonAvatar } from '@/components/PersonAvatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
-import { initials } from '@/lib/utils/initials'
 
 import { useAddNote, useNotes } from '../hooks'
 import type { Note, OwnerType } from '../types'
@@ -19,9 +18,12 @@ export type NotesPanelProps = {
 function NotePost({ note }: { note: Note }): ReactElement {
   return (
     <li className="flex items-start gap-3">
-      <Avatar size="sm" tintBy={note.author_user_id} className="mt-0.5">
-        <AvatarFallback tinted>{initials(note.author_display_name)}</AvatarFallback>
-      </Avatar>
+      <PersonAvatar
+        size="sm"
+        name={note.author_display_name}
+        tintId={note.author_user_id}
+        className="mt-0.5"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-medium text-foreground">{note.author_display_name}</span>

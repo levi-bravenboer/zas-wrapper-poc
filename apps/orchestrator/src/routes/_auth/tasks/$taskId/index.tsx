@@ -75,7 +75,7 @@ function TaskDetailRoute(): ReactElement {
         </Button>
       }
       body={
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(260px,320px)_1fr]">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
           <DetailCard title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}>
             <DetailRow label={t('tasks:detail.description', { defaultValue: 'Omschrijving' })}>
               {task.description ? (

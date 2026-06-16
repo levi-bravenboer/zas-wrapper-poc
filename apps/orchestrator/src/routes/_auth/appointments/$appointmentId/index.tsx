@@ -11,12 +11,11 @@ import {
   EntityErrorCard,
   EntityNotFound,
 } from '@/components/entity'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { PersonAvatar } from '@/components/PersonAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
-import { initials } from '@/lib/utils/initials'
 import { useAppointmentQuery } from '@/modules/appointment/hooks'
 import { CollaborationColumn } from '@/modules/collaboration/components'
 
@@ -70,7 +69,7 @@ function AppointmentDetailRoute(): ReactElement {
         </Button>
       }
       body={
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(260px,320px)_1fr]">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
           <DetailCard title={t('appointment:detail.title', { defaultValue: 'Details' })}>
             {appt.description ? (
               <DetailRow label={t('appointment:field.description', { defaultValue: 'Omschrijving' })}>
@@ -97,9 +96,7 @@ function AppointmentDetailRoute(): ReactElement {
               <ul className="flex flex-col gap-2">
                 {appt.participants.map((p) => (
                   <li key={p.user_id} className="flex items-center gap-2">
-                    <Avatar size="sm" tintBy={p.user_id}>
-                      <AvatarFallback tinted>{initials(p.user_display_name)}</AvatarFallback>
-                    </Avatar>
+                    <PersonAvatar size="sm" name={p.user_display_name} tintId={p.user_id} />
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate text-sm text-foreground">{p.user_display_name}</span>
                       <span className="text-[11px] text-foreground-muted">
