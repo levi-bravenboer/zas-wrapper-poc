@@ -72,6 +72,7 @@ FIXTURE_PATIENTS: Final[tuple[tuple[str, int], ...]] = (
     ("fa11c001-1111-4111-8111-111111111111", 1),
     ("fa11c002-2222-4222-8222-222222222222", 2),
     ("fa11c003-3333-4333-8333-333333333333", 3),
+    ("fa11c004-4444-4444-8444-444444444444", 4),
 )
 _KNOWN_IDS: Final[frozenset[str]] = frozenset(pid for pid, _ in FIXTURE_PATIENTS)
 

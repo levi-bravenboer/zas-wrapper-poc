@@ -43,6 +43,7 @@ const TASK = {
   title: 'Controle bloeddruk',
   kind: 'consultation',
   priority: null,
+  opened: false,
   payload: {
     id: 't-1',
     patient: {

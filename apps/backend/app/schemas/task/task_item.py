@@ -70,4 +70,7 @@ class TaskItem(BaseModel):
     title: str
     kind: str | None = None
     priority: TaskPriority | None = None
+    # Per-caller read-state: True once this user has opened the task. Drives
+    # the unread indicator in the inbox; the detail read stamps it.
+    opened: bool = False
     payload: AppointmentPayload

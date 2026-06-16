@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request, Response
 
+from app.api._request import client_ip, user_agent
 from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.repositories.patient.deps import PatientRepoDep
@@ -61,8 +62,8 @@ async def mobile_login_password(
                 event="auth.login.failure",
                 provider_key="password",
                 surface="mobile",
-                client_ip=request.client.host if request.client else None,
-                user_agent=request.headers.get("user-agent"),
+                client_ip=client_ip(request),
+                user_agent=user_agent(request),
                 user_id=exc.audit_user_id,
                 reason=exc.audit_reason,
             )
@@ -102,8 +103,8 @@ async def mobile_login_password(
             event="auth.login.success",
             provider_key="password",
             surface="mobile",
-            client_ip=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
+            client_ip=client_ip(request),
+            user_agent=user_agent(request),
             user_id=result.user.id,
         )
     )

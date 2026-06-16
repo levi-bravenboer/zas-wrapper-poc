@@ -12,6 +12,7 @@ from app.db.models.access import (
     ShieldingRule,
 )
 from app.db.models.appointment import Appointment, AppointmentParticipant
+from app.db.models.audit import AuditEvent
 from app.db.models.authz import AuthzOutbox
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.luscii import (
@@ -44,6 +45,7 @@ from app.db.models.practitioner import (
     PractitionerRoleSpecialism,
     Specialism,
 )
+from app.db.models.task import TaskReadState
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
@@ -51,6 +53,7 @@ __all__ = [
     "AccessGrant",
     "Appointment",
     "AppointmentParticipant",
+    "AuditEvent",
     "AuthzOutbox",
     "CareTeam",
     "CareTeamParticipant",
@@ -85,6 +88,7 @@ __all__ = [
     "ShieldedItem",
     "ShieldingRule",
     "Specialism",
+    "TaskReadState",
     "Tenant",
     "User",
 ]

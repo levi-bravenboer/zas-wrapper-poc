@@ -1,7 +1,8 @@
 // surface-opt-out: app-only
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Activity, FlaskConical } from 'lucide-react'
-import { type ReactElement } from 'react'
+import { useEffect, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -18,6 +19,7 @@ import { formatDateOrDash } from '@/lib/utils/datetime'
 import { PatientKebab } from '@/modules/patient/components/PatientKebab'
 import { usePatient } from '@/modules/patient/hooks'
 import { useTaskQuery } from '@/modules/tasks/hooks'
+import { tasksListKeyPrefix } from '@/modules/tasks/keys'
 import { AppointmentContextBlock } from '@/modules/tasks/components/AppointmentContextBlock'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
@@ -27,11 +29,21 @@ export const Route = createFileRoute('/_auth/tasks/$taskId/')({
 function TaskDetailRoute(): ReactElement {
   const { t, i18n } = useTranslation(['patient-profile', 'tasks'])
   const { taskId } = Route.useParams()
+  const queryClient = useQueryClient()
   const taskQuery = useTaskQuery(taskId)
   // Full patient row (identifiers, birth_date, audit fields) for the header
   // subtitle + the kebab dialogs; the TaskItem payload only carries the thin
   // inline summary.
   const patientQuery = usePatient(taskQuery.data?.payload.patient.id ?? null)
+
+  // The detail GET marks the task read server-side; refresh the inbox so its
+  // unread indicator clears without waiting for the poll interval.
+  const opened = taskQuery.data?.opened
+  useEffect(() => {
+    if (opened) {
+      void queryClient.invalidateQueries({ queryKey: tasksListKeyPrefix, exact: true })
+    }
+  }, [opened, queryClient])
 
   if (taskQuery.isLoading || (taskQuery.data && patientQuery.isLoading)) {
     return <EntityDetailSkeleton />

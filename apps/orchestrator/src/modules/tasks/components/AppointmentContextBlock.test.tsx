@@ -18,6 +18,7 @@ function makeTask(overrides: Partial<TaskItem> = {}): TaskItem {
     title: 'Controle bloeddruk',
     kind: 'consultation',
     priority: null,
+    opened: false,
     payload: {
       id: '11111111-1111-4111-8111-111111111111',
       patient: {

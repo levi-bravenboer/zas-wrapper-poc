@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.appointment import Appointment
 from app.repositories.task.appointment_task_repository import AppointmentTaskRepository
+from app.repositories.task.task_read_state_repository import TaskReadStateRepository
 from app.schemas._list.page import Page
 from app.schemas.appointment.appointment import AppointmentParticipantInlineSummary
 from app.schemas.auth.auth import SessionUser
@@ -40,6 +41,8 @@ def _project(
     appointment: Appointment,
     patient_summary: PatientInlineSummary,
     participants: list[AppointmentParticipantInlineSummary],
+    *,
+    opened: bool,
 ) -> TaskItem:
     payload = AppointmentPayload(
         id=appointment.id,
@@ -60,6 +63,7 @@ def _project(
         title=appointment.title,
         kind=appointment.kind.value,
         priority=None,
+        opened=opened,
         payload=payload,
     )
 
@@ -71,10 +75,15 @@ class AppointmentSource:
 
     def __init__(self, session: AsyncSession) -> None:
         self._repository = AppointmentTaskRepository(session)
+        self._read_state = TaskReadStateRepository(session)
 
-    async def _assemble(self, rows: list[Appointment]) -> list[TaskItem]:
+    async def _assemble(self, rows: list[Appointment], *, caller: SessionUser) -> list[TaskItem]:
         patient_ids = [row.patient_id for row in rows]
         appointment_ids = [row.id for row in rows]
+
+        opened_ids = await self._read_state.opened_source_ids(
+            user_id=caller.id, source=SOURCE_NAME, source_ids=appointment_ids
+        )
 
         insz_by_patient = await self._repository.insz_by_patient(patient_ids)
         summaries: dict[UUID, PatientInlineSummary] = {
@@ -103,7 +112,12 @@ class AppointmentSource:
         # Guard the READ COMMITTED race where a patient is soft-deleted between
         # the window query and the summary lookup — drop the row instead of 500.
         return [
-            _project(row, summaries[row.patient_id], participants.get(row.id, []))
+            _project(
+                row,
+                summaries[row.patient_id],
+                participants.get(row.id, []),
+                opened=row.id in opened_ids,
+            )
             for row in rows
             if row.patient_id in summaries
         ]
@@ -133,7 +147,7 @@ class AppointmentSource:
             offset=(page - 1) * page_size,
             limit=page_size,
         )
-        items = await self._assemble(list(rows))
+        items = await self._assemble(list(rows), caller=caller)
         return Page[TaskItem].build(items=items, page=page, page_size=page_size, total=total)
 
     async def get(self, caller: SessionUser, source_id: UUID) -> TaskItem | None:
@@ -147,5 +161,9 @@ class AppointmentSource:
         )
         if row is None:
             return None
-        items = await self._assemble([row])
+        # Opening the detail marks the task read for this caller (idempotent).
+        await self._read_state.mark_opened(
+            user_id=caller.id, source=SOURCE_NAME, source_id=row.id
+        )
+        items = await self._assemble([row], caller=caller)
         return items[0] if items else None
