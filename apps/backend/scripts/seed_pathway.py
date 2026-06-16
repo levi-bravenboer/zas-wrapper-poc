@@ -64,6 +64,7 @@ LANE_EXTERNAL_ID: UUID = UUID("00000000-0000-4000-8000-000000000204")
 BLOCK_START_ID: UUID = UUID("00000000-0000-4000-8000-000000000300")
 BLOCK_INTAKE_ID: UUID = UUID("00000000-0000-4000-8000-000000000301")
 BLOCK_OPERATIE_ID: UUID = UUID("00000000-0000-4000-8000-000000000302")
+BLOCK_PREOP_REMINDER_ID: UUID = UUID("00000000-0000-4000-8000-000000000308")
 BLOCK_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000304")
 BLOCK_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000306")
 BLOCK_END_ID: UUID = UUID("00000000-0000-4000-8000-000000000307")
@@ -176,6 +177,31 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "location": "ZAS Antwerpen, polikliniek",
                     "duration_minutes": 30,
                     "input_logic": _gate_if_done(BLOCK_START_ID),
+                },
+                x=0,
+                y=0,
+            ),
+            # Pre-op reminder: auto-sent message timed two days before the
+            # named clinical date `operation_date` (supplied at enrollment).
+            # Exercises `relative_to_date` timing + `message` auto-fire on a
+            # durable timer.
+            PathwayBlockIn(
+                id=BLOCK_PREOP_REMINDER_ID,
+                phase_id=PHASE_PRE_OP_ID,
+                lane_id=LANE_PATIENT_ID,
+                kind="message",
+                label="Herinnering operatie",
+                config={
+                    "channel": "email",
+                    "subject": "Uw operatie nadert",
+                    "body": "Uw operatie staat over twee dagen gepland.",
+                    "input_logic": _gate_if_done(BLOCK_INTAKE_ID),
+                    "timing_policy": {
+                        "kind": "relative_to_date",
+                        "date_name": "operation_date",
+                        "offset_iso": "P2D",
+                        "direction": "before",
+                    },
                 },
                 x=0,
                 y=0,
