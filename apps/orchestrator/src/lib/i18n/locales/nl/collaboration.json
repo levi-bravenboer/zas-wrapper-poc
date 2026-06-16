@@ -11,6 +11,8 @@
     "empty": "Nog geen documenten.",
     "upload": "Document uploaden",
     "download": "Downloaden",
+    "preview": "Bekijken",
+    "noPreview": "Geen voorbeeld beschikbaar voor dit bestandstype.",
     "delete": "Verwijderen"
   },
   "owner": {

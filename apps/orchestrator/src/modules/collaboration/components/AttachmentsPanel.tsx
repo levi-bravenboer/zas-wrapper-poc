@@ -1,4 +1,4 @@
-import { Download, FileText, Trash2, UploadCloud } from 'lucide-react'
+import { Download, Eye, FileText, Trash2, UploadCloud } from 'lucide-react'
 import { useRef, useState, type DragEvent, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,7 +10,9 @@ import { useSession } from '@/modules/auth/hooks'
 
 import { getAttachmentUrl } from '../api'
 import { useAttachments, useDeleteAttachment, useUploadAttachment } from '../hooks'
-import type { OwnerType } from '../types'
+import type { Attachment, OwnerType } from '../types'
+
+import { AttachmentPreviewDialog } from './AttachmentPreviewDialog'
 
 export type AttachmentsPanelProps = {
   ownerType: OwnerType
@@ -27,10 +29,16 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
   const session = useSession()
   const fileRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [preview, setPreview] = useState<{ att: Attachment; url: string } | null>(null)
 
   async function download(attachmentId: string): Promise<void> {
     const url = await getAttachmentUrl(ownerType, ownerId, attachmentId)
     window.open(url, '_blank', 'noopener')
+  }
+
+  async function openPreview(att: Attachment): Promise<void> {
+    const url = await getAttachmentUrl(ownerType, ownerId, att.id)
+    setPreview({ att, url })
   }
 
   function uploadFiles(files: FileList | null): void {
@@ -47,6 +55,7 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
   const items = attachments.data ?? []
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="text-base">
@@ -72,6 +81,14 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
                     {att.uploader_display_name} · {formatDateTimeOrDash(att.created_at, 'nl')}
                   </span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t('collaboration:attachments.preview', { defaultValue: 'Bekijken' })}
+                  onClick={() => void openPreview(att)}
+                >
+                  <Eye className="size-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -137,5 +154,11 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
         </button>
       </CardContent>
     </Card>
+    <AttachmentPreviewDialog
+      attachment={preview?.att ?? null}
+      url={preview?.url ?? null}
+      onClose={() => setPreview(null)}
+    />
+    </>
   )
 }
