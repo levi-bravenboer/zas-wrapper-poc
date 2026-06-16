@@ -1,36 +1,28 @@
 import { api } from '@/lib/api/client'
-import { apiError } from '@/lib/api/errors'
+import { unwrapApi } from '@/lib/api/unwrap'
 
 import type { Appointment, PatientAppointmentEntry } from './types'
 
 export async function fetchAppointments(): Promise<Appointment[]> {
-  const { data, response } = await api.GET('/appointments', {
-    params: { query: { page_size: 100 } },
-  })
-  if (!response.ok || !data) {
-    throw apiError('Appointments fetch failed', response.status)
-  }
-  return data.items
+  const page = await unwrapApi(
+    api.GET('/appointments', { params: { query: { page_size: 100 } } }),
+    'Appointments fetch failed',
+  )
+  return page.items
 }
 
 export async function fetchAppointment(appointmentId: string): Promise<Appointment> {
-  const { data, response } = await api.GET('/appointments/{appointment_id}', {
-    params: { path: { appointment_id: appointmentId } },
-  })
-  if (!response.ok || !data) {
-    throw apiError('Appointment fetch failed', response.status)
-  }
-  return data
+  return unwrapApi(
+    api.GET('/appointments/{appointment_id}', { params: { path: { appointment_id: appointmentId } } }),
+    'Appointment fetch failed',
+  )
 }
 
 export async function fetchPatientAppointments(
   patientId: string,
 ): Promise<PatientAppointmentEntry[]> {
-  const { data, response } = await api.GET('/patients/{patient_id}/appointments', {
-    params: { path: { patient_id: patientId } },
-  })
-  if (!response.ok || !data) {
-    throw apiError('Patient appointments fetch failed', response.status)
-  }
-  return data
+  return unwrapApi(
+    api.GET('/patients/{patient_id}/appointments', { params: { path: { patient_id: patientId } } }),
+    'Patient appointments fetch failed',
+  )
 }
