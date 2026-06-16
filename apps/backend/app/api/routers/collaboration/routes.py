@@ -34,7 +34,6 @@ from app.schemas.collaboration.note import NoteCreate, NoteRead
 from app.services.access.identity.deps import require_role
 from app.services.appointment.deps import require_appointment_access
 from app.services.collaboration.deps import AttachmentServiceDep, NoteServiceDep
-from app.services.collaboration.errors import OwnerHasNoPatientError
 from app.services.patient.deps import PatientAccessDep
 from app.services.task.deps import require_task_access
 
@@ -50,7 +49,7 @@ def _build_owner_collab_router(
     owner_type: OwnerType,
     access: Callable[..., Any],
     get_owner_id: Callable[[Any], UUID],
-    get_patient_id: Callable[[Any], UUID],
+    get_patient_id: Callable[[Any], UUID | None],
 ) -> APIRouter:
     """Build the 6-route notes/attachments surface for one owner entity.
 
@@ -199,9 +198,9 @@ def _build_owner_collab_router(
     return router
 
 
-def _task_patient_id(task: Task) -> UUID:
-    if task.patient_id is None:
-        raise OwnerHasNoPatientError()
+def _task_patient_id(task: Task) -> UUID | None:
+    # A task need not be linked to a patient; its notes/documents simply carry
+    # no patient_id and won't surface in any patient aggregate.
     return task.patient_id
 
 

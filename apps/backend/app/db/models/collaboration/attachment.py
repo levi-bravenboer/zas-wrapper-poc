@@ -45,10 +45,12 @@ class Attachment(TenantOwnedEntity):
         nullable=False,
     )
     owner_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
-    patient_id: Mapped[UUID] = mapped_column(
+    # Nullable: an attachment's owner (e.g. a task) need not be linked to a
+    # patient. When set, the patient view can aggregate everything about them.
+    patient_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         sa.ForeignKey("patients.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     uploaded_by: Mapped[UUID] = mapped_column(

@@ -51,7 +51,7 @@ class NoteService:
         *,
         owner_type: OwnerType,
         owner_id: UUID,
-        patient_id: UUID,
+        patient_id: UUID | None,
         author: SessionUser,
         body: str,
     ) -> NoteRead:

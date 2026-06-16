@@ -71,7 +71,7 @@ class AttachmentService:
         *,
         owner_type: OwnerType,
         owner_id: UUID,
-        patient_id: UUID,
+        patient_id: UUID | None,
         uploader: SessionUser,
         filename: str,
         content_type: str,

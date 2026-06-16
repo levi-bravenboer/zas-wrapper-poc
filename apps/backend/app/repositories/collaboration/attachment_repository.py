@@ -45,7 +45,7 @@ class AttachmentRepository:
         *,
         owner_type: OwnerType,
         owner_id: UUID,
-        patient_id: UUID,
+        patient_id: UUID | None,
         uploaded_by: UUID,
         filename: str,
         content_type: str,

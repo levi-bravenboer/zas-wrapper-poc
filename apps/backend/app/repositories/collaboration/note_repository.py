@@ -45,7 +45,7 @@ class NoteRepository:
         *,
         owner_type: OwnerType,
         owner_id: UUID,
-        patient_id: UUID,
+        patient_id: UUID | None,
         author_user_id: UUID,
         body: str,
     ) -> Note:

@@ -1744,11 +1744,8 @@ export interface components {
              * Format: uuid
              */
             owner_id: string;
-            /**
-             * Patient Id
-             * Format: uuid
-             */
-            patient_id: string;
+            /** Patient Id */
+            patient_id: string | null;
             /** Filename */
             filename: string;
             /** Content Type */
@@ -3426,11 +3423,8 @@ export interface components {
              * Format: uuid
              */
             owner_id: string;
-            /**
-             * Patient Id
-             * Format: uuid
-             */
-            patient_id: string;
+            /** Patient Id */
+            patient_id: string | null;
             /**
              * Author User Id
              * Format: uuid

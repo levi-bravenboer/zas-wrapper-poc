@@ -6298,8 +6298,15 @@
             "title": "Owner Id"
           },
           "patient_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Patient Id"
           },
           "filename": {
@@ -10163,8 +10170,15 @@
             "title": "Owner Id"
           },
           "patient_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Patient Id"
           },
           "author_user_id": {

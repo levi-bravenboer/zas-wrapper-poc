@@ -112,7 +112,7 @@ async def test_care_team_caregiver_can_author_without_being_participant(
     )
 
 
-async def test_task_without_patient_rejects_note(
+async def test_task_without_patient_allows_note_with_null_patient(
     async_client: AsyncClient,
     db_session: AsyncSession,
     seeded_zas_users: list[User],
@@ -125,7 +125,8 @@ async def test_task_without_patient_rejects_note(
 
     await _login(async_client, CAREGIVER_EMAIL)
     r = await async_client.post(f"/tasks/{task.id}/notes", json={"body": "x"})
-    assert r.status_code == 422
+    assert r.status_code == 201, r.text
+    assert r.json()["patient_id"] is None
 
 
 async def test_attachment_upload_and_uploader_delete(

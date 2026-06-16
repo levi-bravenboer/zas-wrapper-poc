@@ -19,9 +19,3 @@ class AttachmentForbiddenError(AppError):
     code = "forbidden.attachment.not_uploader"
     status_code = 403
     message = "Only the uploader may delete this attachment."
-
-
-class OwnerHasNoPatientError(AppError):
-    code = "invalid.collaboration.owner_has_no_patient"
-    status_code = 422
-    message = "Cannot attach notes or documents: the owner is not linked to a patient."

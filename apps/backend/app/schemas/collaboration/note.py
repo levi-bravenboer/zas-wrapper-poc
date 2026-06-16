@@ -14,7 +14,7 @@ class NoteRead(BaseModel):
     id: UUID
     owner_type: OwnerType
     owner_id: UUID
-    patient_id: UUID
+    patient_id: UUID | None
     author_user_id: UUID
     author_display_name: str
     body: str
