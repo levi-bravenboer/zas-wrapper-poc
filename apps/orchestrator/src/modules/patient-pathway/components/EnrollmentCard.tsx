@@ -15,7 +15,8 @@ import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
 // Block kinds whose actionable step is a single "Done" with no result body.
-// Richer contracts (appointment/treatment/mdo/decision) are not wired yet.
+// Decision is handled separately (outcome picker). Appointment/treatment/mdo
+// contracts are not wired yet.
 const DONE_ONLY_KINDS = new Set(['task'])
 
 const STATE_BADGE_VARIANT: Record<string, 'default' | 'soft' | 'outline'> = {
