@@ -27,13 +27,12 @@ This change ships a custom, append-only **unified audit trail** capturing all th
 ### New backend capability — `audit-trail-base`
 
 - **New `audit_events` table** — append-only, immutable. One row per audited event. Inherits `Base` directly (not `Entity`) so it carries `id` + `created_at` only — no `updated_at`, no `deleted_at`, no soft-delete: immutability is structural. Columns: `actor_type`, `actor_id?`, `actor_label?`, `tenant_id?`, `action`, `result`, `resource_type?`, `resource_id?`, `changes jsonb?`, `context jsonb?` (the metadata column — named `context` to avoid SQLAlchemy's reserved `metadata`). No FKs on `tenant_id` / `actor_id` — the record must survive tenant archival / user deletion. Supporting indexes for the three query axes (by resource, by actor, by tenant timeline) + `(action, result, …)`.
-- **Three new Postgres enums** (`app/core/enums/audit.py`): `ActorType` (user|system|service|anonymous), `AuditAction` (the **verb** — created/updated/deleted/login/logout/exported/published/access_granted), `AuditResult` (success|failure). The action is the verb only; the noun lives in free-text `resource_type` — so auditing a new model reuses `created/updated/deleted` with **no enum migration**. Outcome is the orthogonal `result` field, not a `login_failed` verb.
+- **Three new Postgres enums** (`app/core/enums/audit.py`): `ActorType` (user|system|anonymous), `AuditAction` (the **verb** — created/updated/deleted/login), `AuditResult` (success|failure). The action is the verb only; the noun lives in free-text `resource_type` — so auditing a new model reuses `created/updated/deleted` with **no enum migration**, and new verbs are added only when a feed needs them. Outcome is the orthogonal `result` field, not a `login_failed` verb.
 - **Two typed Pydantic payloads** for the jsonb columns (storage stays jsonb): `FieldChange{old,new}` (`changes: dict[str, FieldChange]` — named fields, not a positional `[old,new]` list) and `AuditContext` (`extra="allow"`; typed known keys `ip: IPvAnyAddress`, `user_agent`, `request_id`, `reason`).
 - **Three capture feeds into that one table:**
   1. **Automatic data-change diffs** — extend the existing `before_flush` listener in `app/db/audit.py`. Models opt in via `__audited__ = True`. The hook reads SQLAlchemy attribute history, builds the `FieldChange` map, and `session.add()`s an `AuditEvent` riding the same transaction. Emits `action=created/updated/deleted` (soft-delete detected as a `deleted_at` transition → `deleted`).
-  2. **Explicit domain events** — an `emit(session, *, action, result=…, resource_type=…, resource_id=…, changes=…, context=…)` helper callable from any service. Rides the request transaction (if the action rolls back, its audit row does too — correct).
-  3. **Authentication events** — `emit()` calls in the auth flow for `login` / `logout` (and `login` + `result=failure`). Security events that must survive a rolled-back / 4xx request use a **separately-committed** variant (`emit_committed`) so a failed login is still recorded.
-- **Audited-resource registry** — `emit()` validates `resource_type` against an app-level set of audited names (type-safe at the boundary, migration-free on new models).
+  2. **Authentication events** — `emit_committed()` calls in the auth flow for `login` (success and `result=failure`). Security events must survive a rolled-back / 4xx request, so this variant writes in a **separately-committed** session — a failed login that returns 401 is still recorded. A transaction-bound explicit-domain-event `emit()` was scoped but dropped before merge as unused; `emit_committed` is the single write API until a domain-event call site lands.
+- **Audited-resource registry** — `emit_committed()` validates any explicit `resource_type` against an app-level set of audited names (type-safe at the boundary, migration-free on new models).
 - **Read access** — `AuditEventRepository` (extends `BaseListRepository`) + an admin-only `GET /audit-events` list endpoint with filters (`resource_type`, `resource_id`, `actor_id`, `action`, `result`, time range) so the custom UI (built separately) has a typed, paged data source.
 - **JSON-safe serialisation** — a coercion helper for `changes` / `context` (UUID, datetime, date, Decimal, Enum → JSON primitives).
 
@@ -41,7 +40,7 @@ This change ships a custom, append-only **unified audit trail** capturing all th
 
 ### Added Capabilities
 
-- `audit-trail-base` — append-only `audit_events` table; three enums (`ActorType` / `AuditAction` / `AuditResult`); typed payloads (`FieldChange` / `AuditContext`); automatic data-change diff capture via the extended `before_flush` hook (`__audited__` opt-in); `emit()` / `emit_committed()` helpers + audited-resource registry for domain + auth events; `AuditEventRepository` + admin-only `GET /audit-events` read API; JSON-safe serialiser.
+- `audit-trail-base` — append-only `audit_events` table; three enums (`ActorType` / `AuditAction` / `AuditResult`); typed payloads (`FieldChange` / `AuditContext`); automatic data-change diff capture via the extended `before_flush` hook (`__audited__` opt-in); `emit_committed()` helper + audited-resource registry for auth events; `AuditEventRepository` + admin-only `GET /audit-events` read API; JSON-safe serialiser.
 
 ### Modified Capabilities
 
@@ -53,11 +52,11 @@ This change ships a custom, append-only **unified audit trail** capturing all th
 - **Backend code** (`apps/backend/app/`):
   - `db/models/audit/audit_event.py` — `AuditEvent` ORM model (inherits `Base`).
   - `db/audit.py` — extend the `before_flush` listener with diff capture; add `__audited__` / `__audit_exclude__` class markers (on `Entity`, default off).
-  - `services/audit/emit.py` — `emit()` + `emit_committed()` + JSON-safe coercion helper.
+  - `services/audit/emit.py` — `emit_committed()` + JSON-safe coercion helper.
   - `repositories/audit/audit_event_repository.py` — `AuditEventRepository(BaseListRepository)`.
   - `schemas/audit/audit_event.py` — `AuditEventRead` + filter params.
   - `api/routers/audit/audit_router.py` — admin-only `GET /audit-events`.
-  - Auth flow — `emit()` / `emit_committed()` calls at login / logout / login-failure.
+  - Auth flow — `emit_committed()` calls at login success / login-failure.
   - First `__audited__ = True` opt-ins on a starter set (recommend `User`, `Patient`; expand later).
 - **OpenAPI / typed client**: regenerated (`GET /audit-events` is a new operation).
 
