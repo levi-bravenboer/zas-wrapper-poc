@@ -195,6 +195,38 @@ class EnrollmentService:
             await self._repo._session.flush()  # noqa: SLF001
         return await self._build_view(enrollment)
 
+    async def pause(
+        self,
+        enrollment_id: UUID,
+        *,
+        tenant_id: UUID,
+    ) -> EnrollmentResponse:
+        """Halt a running enrollment — timers stop until resumed. Idempotent."""
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        if enrollment.state == "active":
+            enrollment.state = "paused"
+            await self._repo._session.flush()  # noqa: SLF001
+        return await self._build_view(enrollment)
+
+    async def resume(
+        self,
+        enrollment_id: UUID,
+        *,
+        tenant_id: UUID,
+        now: datetime,
+    ) -> EnrollmentResponse:
+        """Resume a paused enrollment + catch up any timers due while paused."""
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        if enrollment.state == "paused":
+            enrollment.state = "active"
+            await self._repo._session.flush()  # noqa: SLF001
+            children = await self._pathway_repo.fetch_children(enrollment.pathway_version_id)
+            templates: dict[UUID, BaseBlock] = {
+                row.id: block_row_to_domain(row) for row in children.blocks
+            }
+            await self._run_eligibility(enrollment, templates, now=now)
+        return await self._build_view(enrollment)
+
     async def advance(
         self,
         enrollment_id: UUID,
@@ -211,7 +243,11 @@ class EnrollmentService:
         Terminal (`completed`/`cancelled`) enrollments are a no-op tick.
         """
         enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
-        if enrollment.state not in ("active", "paused"):
+        if enrollment.state == "paused":
+            # Paused: timers are halted, no firing. The workflow parks until
+            # a resume Signal flips the state back to active.
+            return RuntimeTick(state=enrollment.state, next_wake_at=None, terminal=False)  # type: ignore[arg-type]
+        if enrollment.state != "active":
             return RuntimeTick(state=enrollment.state, next_wake_at=None, terminal=True)  # type: ignore[arg-type]
 
         children = await self._pathway_repo.fetch_children(enrollment.pathway_version_id)

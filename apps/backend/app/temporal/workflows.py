@@ -46,6 +46,7 @@ class HealthWorkflow:
 class PathwayEnrollmentWorkflow:
     def __init__(self) -> None:
         self._cancel_requested = False
+        self._paused = False
         self._wake = False
         self._terminal = False
         self._input: EnrollmentWorkflowInput | None = None
@@ -56,10 +57,19 @@ class PathwayEnrollmentWorkflow:
         tick = await self._advance()
 
         while not self._terminal and not self._cancel_requested:
+            if self._paused:
+                # Halt timers — park until resumed or cancelled.
+                await workflow.wait_condition(
+                    lambda: not self._paused or self._cancel_requested
+                )
+                if self._cancel_requested:
+                    break
+                tick = await self._advance()
+                continue
             timeout = self._timeout_until(tick.next_wake_at)
             try:
                 await workflow.wait_condition(
-                    lambda: self._wake or self._cancel_requested,
+                    lambda: self._wake or self._cancel_requested or self._paused,
                     timeout=timeout,
                 )
             except asyncio.TimeoutError:
@@ -68,6 +78,8 @@ class PathwayEnrollmentWorkflow:
             self._wake = False
             if self._cancel_requested:
                 break
+            if self._paused:
+                continue
             tick = await self._advance()
 
         if self._cancel_requested:
@@ -124,6 +136,16 @@ class PathwayEnrollmentWorkflow:
     @workflow.signal
     def cancel(self) -> None:
         self._cancel_requested = True
+
+    @workflow.signal
+    def pause(self) -> None:
+        self._paused = True
+        self._wake = True
+
+    @workflow.signal
+    def resume(self) -> None:
+        self._paused = False
+        self._wake = True
 
 
 __all__ = ["HealthWorkflow", "PathwayEnrollmentWorkflow"]

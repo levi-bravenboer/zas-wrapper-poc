@@ -45,6 +45,8 @@ from app.services.pathway.errors import (
 from app.services.pathway.runtime_dispatch import (
     cancel_via_workflow,
     complete_via_workflow,
+    pause_via_workflow,
+    resume_via_workflow,
     start_enrollment_workflow,
 )
 
@@ -246,6 +248,46 @@ async def cancel_enrollment(
         # Stop the workflow's timer loop; the DB state is already flipped
         # above and the workflow's cancel activity is idempotent.
         await cancel_via_workflow(request.app, enrollment_id=enrollment_id)
+    return view
+
+
+@router.post(
+    "/{enrollment_id}:pause",
+    operation_id="pause_enrollment",
+    response_model=EnrollmentResponse,
+    responses=_ERRORS_404,
+    dependencies=[_REQUIRE_ENROLLMENT_EDIT],
+)
+async def pause_enrollment(
+    request: Request,
+    enrollment_id: UUID,
+    current_user: CurrentUserDep,
+    service: EnrollmentServiceDep,
+    settings: SettingsDep,
+) -> EnrollmentResponse:
+    view = await service.pause(enrollment_id, tenant_id=current_user.tenant_id)
+    if settings.pathway_runtime_engine == "temporal":
+        await pause_via_workflow(request.app, enrollment_id=enrollment_id)
+    return view
+
+
+@router.post(
+    "/{enrollment_id}:resume",
+    operation_id="resume_enrollment",
+    response_model=EnrollmentResponse,
+    responses=_ERRORS_404,
+    dependencies=[_REQUIRE_ENROLLMENT_EDIT],
+)
+async def resume_enrollment(
+    request: Request,
+    enrollment_id: UUID,
+    current_user: CurrentUserDep,
+    service: EnrollmentServiceDep,
+    settings: SettingsDep,
+) -> EnrollmentResponse:
+    view = await service.resume(enrollment_id, tenant_id=current_user.tenant_id, now=_now())
+    if settings.pathway_runtime_engine == "temporal":
+        await resume_via_workflow(request.app, enrollment_id=enrollment_id)
     return view
 
 

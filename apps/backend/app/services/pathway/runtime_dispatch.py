@@ -72,8 +72,22 @@ async def cancel_via_workflow(app: FastAPI, *, enrollment_id: UUID) -> None:
     await handle.signal(PathwayEnrollmentWorkflow.cancel)
 
 
+async def pause_via_workflow(app: FastAPI, *, enrollment_id: UUID) -> None:
+    client = await _client(app)
+    handle = client.get_workflow_handle(_workflow_id(enrollment_id))
+    await handle.signal(PathwayEnrollmentWorkflow.pause)
+
+
+async def resume_via_workflow(app: FastAPI, *, enrollment_id: UUID) -> None:
+    client = await _client(app)
+    handle = client.get_workflow_handle(_workflow_id(enrollment_id))
+    await handle.signal(PathwayEnrollmentWorkflow.resume)
+
+
 __all__ = [
     "cancel_via_workflow",
     "complete_via_workflow",
+    "pause_via_workflow",
+    "resume_via_workflow",
     "start_enrollment_workflow",
 ]
