@@ -1,4 +1,13 @@
-import { Building2, Home, Inbox, Settings, Users, UsersRound, Workflow } from 'lucide-react'
+import {
+  Building2,
+  Calendar,
+  Home,
+  Inbox,
+  Settings,
+  Users,
+  UsersRound,
+  Workflow,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import type { Role } from '@/modules/auth/schemas'
@@ -34,6 +43,7 @@ export const navGroups: readonly NavGroup[] = [
     placement: 'main',
     items: [
       { to: '/', labelKey: 'nav:dashboard', icon: Home, order: 10 },
+      { to: '/appointments', labelKey: 'nav:appointments', icon: Calendar, order: 15 },
       { to: '/tasks', labelKey: 'nav:tasks', icon: Inbox, order: 20 },
       { to: '/pathways', labelKey: 'nav:pathways', icon: Workflow, order: 40 },
     ],

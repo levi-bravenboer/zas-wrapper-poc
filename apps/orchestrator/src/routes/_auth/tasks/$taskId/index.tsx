@@ -1,54 +1,38 @@
 // surface-opt-out: app-only
-import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Activity, FlaskConical } from 'lucide-react'
-import { useEffect, type ReactElement } from 'react'
+import { ClipboardList } from 'lucide-react'
+import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
+  DetailCard,
+  DetailRow,
   EntityDetailPage,
   EntityDetailSkeleton,
-  EntityDetailTabs,
   EntityErrorCard,
   EntityNotFound,
 } from '@/components/entity'
-import { EmptyState } from '@/components/states/EmptyState'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { isApiError } from '@/lib/api/errors'
-import { formatDateOrDash } from '@/lib/utils/datetime'
-import { PatientKebab } from '@/modules/patient/components/PatientKebab'
-import { usePatient } from '@/modules/patient/hooks'
-import { useTaskQuery } from '@/modules/tasks/hooks'
-import { tasksListKeyPrefix } from '@/modules/tasks/keys'
-import { AppointmentContextBlock } from '@/modules/tasks/components/AppointmentContextBlock'
+import { formatDateOrDash, formatDateTimeOrDash } from '@/lib/utils/datetime'
+import { CollaborationColumn } from '@/modules/collaboration/components'
+import { PatientSummaryCard } from '@/modules/patient/components/PatientSummaryCard'
+import { useSetTaskStatus, useTaskQuery } from '@/modules/tasks/hooks'
 
 export const Route = createFileRoute('/_auth/tasks/$taskId/')({
   component: TaskDetailRoute,
 })
 
 function TaskDetailRoute(): ReactElement {
-  const { t, i18n } = useTranslation(['patient-profile', 'tasks'])
+  const { t, i18n } = useTranslation(['tasks'])
   const { taskId } = Route.useParams()
-  const queryClient = useQueryClient()
   const taskQuery = useTaskQuery(taskId)
-  // Full patient row (identifiers, birth_date, audit fields) for the header
-  // subtitle + the kebab dialogs; the TaskItem payload only carries the thin
-  // inline summary.
-  const patientQuery = usePatient(taskQuery.data?.payload.patient.id ?? null)
+  const setStatus = useSetTaskStatus(taskId)
 
-  // The detail GET marks the task read server-side; refresh the inbox so its
-  // unread indicator clears without waiting for the poll interval.
-  const opened = taskQuery.data?.opened
-  useEffect(() => {
-    if (opened) {
-      void queryClient.invalidateQueries({ queryKey: tasksListKeyPrefix, exact: true })
-    }
-  }, [opened, queryClient])
-
-  if (taskQuery.isLoading || (taskQuery.data && patientQuery.isLoading)) {
+  if (taskQuery.isLoading) {
     return <EntityDetailSkeleton />
   }
-
   if (taskQuery.error) {
     if (isApiError(taskQuery.error) && taskQuery.error.status === 404) {
       return <EntityNotFound backTo={{ to: '/tasks' }} />
@@ -56,29 +40,21 @@ function TaskDetailRoute(): ReactElement {
     return <EntityErrorCard onRetry={() => void taskQuery.refetch()} />
   }
 
-  if (patientQuery.error) {
-    return <EntityErrorCard onRetry={() => void patientQuery.refetch()} />
-  }
-
   const task = taskQuery.data
   if (!task) return <EntityNotFound backTo={{ to: '/tasks' }} />
 
-  const inline = task.payload.patient
-  const patient = patientQuery.data
-  const fullName = `${inline.family_name}, ${inline.given_name}`
+  const done = task.status === 'done'
+  const nextStatus = done ? 'open' : 'done'
 
   const subtitle = (
     <div className="flex flex-wrap items-center gap-2">
-      {inline.insz ? (
-        <Badge variant="default">
-          {t('header.insz')}: <span className="ml-1 font-mono">{inline.insz}</span>
-        </Badge>
-      ) : (
-        <Badge variant="soft">{t('header.noInsz')}</Badge>
-      )}
+      <Badge variant={done ? 'soft' : 'default'}>
+        {t(`tasks:status.${task.status}`, { defaultValue: task.status })}
+      </Badge>
       <span className="text-sm text-muted-foreground">
-        {t('header.born', {
-          date: formatDateOrDash(patient?.birth_date ?? null, i18n.language),
+        {t('tasks:detail.due', {
+          defaultValue: 'Deadline: {{date}}',
+          date: formatDateOrDash(task.due_at ?? null, i18n.language),
         })}
       </span>
     </div>
@@ -86,40 +62,54 @@ function TaskDetailRoute(): ReactElement {
 
   return (
     <EntityDetailPage
-      title={fullName}
+      title={task.title}
       subtitle={subtitle}
       back={{ to: '/tasks' }}
-      actions={patient ? <PatientKebab patient={patient} /> : undefined}
+      actions={
+        <Button
+          variant={done ? 'outline' : 'default'}
+          disabled={setStatus.isPending}
+          onClick={() => setStatus.mutate(nextStatus)}
+        >
+          {done
+            ? t('tasks:detail.reopen', { defaultValue: 'Heropen' })
+            : t('tasks:detail.complete', { defaultValue: 'Markeer als afgerond' })}
+        </Button>
+      }
       body={
-        <>
-          <AppointmentContextBlock task={task} />
-          <EntityDetailTabs
-            tabs={[
-              {
-                value: 'measurements',
-                label: t('tasks:tabs.measurements'),
-                content: (
-                  <EmptyState
-                    icon={Activity}
-                    title={t('tasks:tabs.empty.measurements.title')}
-                    body={t('tasks:tabs.empty.measurements.body')}
-                  />
-                ),
-              },
-              {
-                value: 'lab_results',
-                label: t('tasks:tabs.lab_results'),
-                content: (
-                  <EmptyState
-                    icon={FlaskConical}
-                    title={t('tasks:tabs.empty.lab_results.title')}
-                    body={t('tasks:tabs.empty.lab_results.body')}
-                  />
-                ),
-              },
-            ]}
-          />
-        </>
+        <div className="flex w-full flex-col gap-6">
+          {task.patient_id ? <PatientSummaryCard patientId={task.patient_id} /> : null}
+
+          <DetailCard icon={ClipboardList} title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}>
+            <DetailRow wide label={t('tasks:detail.reason', { defaultValue: 'Reden' })}>
+              {task.description ? (
+                <span className="whitespace-pre-wrap">{task.description}</span>
+              ) : (
+                <span className="text-foreground-muted">
+                  {t('tasks:detail.noDescription', { defaultValue: 'Geen omschrijving.' })}
+                </span>
+              )}
+            </DetailRow>
+            <DetailRow label={t('tasks:detail.deadline', { defaultValue: 'Deadline' })}>
+              {formatDateOrDash(task.due_at ?? null, i18n.language)}
+            </DetailRow>
+            <DetailRow label={t('tasks:detail.status', { defaultValue: 'Status' })}>
+              <Badge variant={done ? 'soft' : 'default'}>
+                {t(`tasks:status.${task.status}`, { defaultValue: task.status })}
+              </Badge>
+            </DetailRow>
+            {task.source_ref ? (
+              <DetailRow label={t('tasks:detail.source', { defaultValue: 'Bron' })}>
+                {task.source_ref}
+              </DetailRow>
+            ) : null}
+            <DetailRow label={t('tasks:detail.created', { defaultValue: 'Aangemaakt' })}>
+              {formatDateTimeOrDash(task.created_at, i18n.language)}
+            </DetailRow>
+          </DetailCard>
+
+          <CollaborationColumn ownerType="task" ownerId={task.id} />
+        </div>
       }
     />
   )

@@ -17,3 +17,6 @@ export { EntityErrorCard } from './EntityErrorCard'
 export type { EntityErrorCardProps } from './EntityErrorCard'
 
 export { EntityDetailSkeleton } from './EntityDetailSkeleton'
+
+export { DetailCard, DetailRow } from './DetailCard'
+export type { DetailCardProps, DetailRowProps } from './DetailCard'

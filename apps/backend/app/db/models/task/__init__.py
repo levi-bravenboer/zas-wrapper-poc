@@ -1,3 +1,3 @@
-from app.db.models.task.task_read_state import TaskReadState
+from app.db.models.task.task import Task
 
-__all__ = ["TaskReadState"]
+__all__ = ["Task"]

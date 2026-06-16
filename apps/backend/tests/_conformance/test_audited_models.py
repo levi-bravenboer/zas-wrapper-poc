@@ -10,8 +10,16 @@ import app.db.models  # noqa: F401  (register every model)
 from app.db.base import Entity
 
 # PathwayEnrollment + PathwayBlockExecution audit their runtime transitions
-# (pathway-runtime §3.7).
-_EXPECTED = {"User", "Patient", "PathwayEnrollment", "PathwayBlockExecution"}
+# (pathway-runtime §3.7); Task/Note/Attachment from split-appointments-and-tasks.
+_EXPECTED = {
+    "User",
+    "Patient",
+    "PathwayEnrollment",
+    "PathwayBlockExecution",
+    "Task",
+    "Note",
+    "Attachment",
+}
 
 
 def _all_subclasses(cls: type) -> set[type]:

@@ -1,0 +1,23 @@
+{
+  "notes": {
+    "title": "Notities",
+    "empty": "Nog geen notities.",
+    "placeholder": "Voeg een notitie toe…",
+    "add": "Toevoegen",
+    "hint": "⌘/Ctrl + Enter om te versturen"
+  },
+  "attachments": {
+    "title": "Documenten",
+    "empty": "Nog geen documenten.",
+    "upload": "Document uploaden",
+    "download": "Downloaden",
+    "preview": "Bekijken",
+    "noPreview": "Geen voorbeeld beschikbaar voor dit bestandstype.",
+    "delete": "Verwijderen"
+  },
+  "owner": {
+    "appointment": "Op afspraak",
+    "task": "Op taak",
+    "patient": "Op patiënt"
+  }
+}

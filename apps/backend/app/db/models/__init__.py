@@ -11,9 +11,14 @@ from app.db.models.access import (
     ShieldedItem,
     ShieldingRule,
 )
-from app.db.models.appointment import Appointment, AppointmentParticipant
+from app.db.models.appointment import (
+    Appointment,
+    AppointmentParticipant,
+    AppointmentPatientAttendee,
+)
 from app.db.models.audit import AuditEvent
 from app.db.models.authz import AuthzOutbox
+from app.db.models.collaboration import Attachment, Note
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
@@ -45,7 +50,7 @@ from app.db.models.practitioner import (
     PractitionerRoleSpecialism,
     Specialism,
 )
-from app.db.models.task import TaskReadState
+from app.db.models.task import Task
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
@@ -53,6 +58,8 @@ __all__ = [
     "AccessGrant",
     "Appointment",
     "AppointmentParticipant",
+    "AppointmentPatientAttendee",
+    "Attachment",
     "AuditEvent",
     "AuthzOutbox",
     "CareTeam",
@@ -60,6 +67,7 @@ __all__ = [
     "LusciiInstrumentItemLocalisationRow",
     "LusciiInstrumentLocalisationRow",
     "LusciiItemResponseLocalisationRow",
+    "Note",
     "Organisation",
     "Pathway",
     "PathwayBlock",
@@ -88,7 +96,7 @@ __all__ = [
     "ShieldedItem",
     "ShieldingRule",
     "Specialism",
-    "TaskReadState",
+    "Task",
     "Tenant",
     "User",
 ]

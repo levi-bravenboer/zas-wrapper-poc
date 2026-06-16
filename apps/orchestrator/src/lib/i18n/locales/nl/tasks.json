@@ -13,35 +13,29 @@
     "overdue": "verlopen {{time}}",
     "today": "vandaag {{time}}",
     "tomorrow": "morgen {{time}}",
+    "none": "Geen datum",
     "in_days_one": "over {{count}} dag",
     "in_days_other": "over {{count}} dagen"
   },
   "group": {
     "overdue": "Verlopen",
     "today": "Vandaag",
-    "tomorrow": "Morgen"
+    "tomorrow": "Morgen",
+    "none": "Geen datum"
+  },
+  "status": {
+    "open": "Open",
+    "done": "Afgerond"
+  },
+  "detail": {
+    "due": "Deadline: {{date}}",
+    "complete": "Markeer als afgerond",
+    "reopen": "Heropen",
+    "noDescription": "Geen omschrijving.",
+    "openPatient": "Open patiënt"
   },
   "selection": {
     "title": "Selecteer een taak",
-    "body": "Kies links een taak om de patiënt en de afspraak te bekijken."
-  },
-  "context": {
-    "lead": "Lead {{name}}",
-    "open_appointment": "Open afspraak",
-    "open_appointment_unavailable": "Komt later — het afsprakenscherm is nog niet beschikbaar"
-  },
-  "tabs": {
-    "measurements": "Metingen",
-    "lab_results": "Labresultaten",
-    "empty": {
-      "measurements": {
-        "title": "Nog geen metingen gekoppeld",
-        "body": "Wordt geleverd door de monitoring-koppeling."
-      },
-      "lab_results": {
-        "title": "Nog geen labresultaten gekoppeld",
-        "body": "Wordt geleverd door de HiX-koppeling."
-      }
-    }
+    "body": "Kies links een taak om de details te bekijken."
   }
 }
