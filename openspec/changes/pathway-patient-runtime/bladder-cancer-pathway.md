@@ -93,7 +93,7 @@ XOR on (7): **do-nothing → `end_pathway`**; **operate → subpath "operate (bi
 |---|---|---|---|---|---|
 | 8 | Appointment: lab test | `appointment` (lab) | urologist | enter (`decision_output(7,operate)`) | |
 | 9 | Decision: review lab test | `decision` | urologist | `if_done(8)` | outcomes proceed/abort; abort → `end_pathway` |
-| 10 | Send pre-op info | `message` | — (mock) | enter | timing `operation_date − N` |
+| 10 | Send pre-op info | `message` | — (mock) | enter | timing `operation_date − 3 days` |
 | 11 | Task: review Luscii pre-op data | `task` | urologist | enter | gates op on Luscii measurements/anesthesia |
 | 12 | Operation | `treatment` (procedure) | urologist | `all_of(decision_output(9,proceed), 10, 11)` | scheduled `operation_date`; result {performed_at,notes,complications} |
 | 13 | Send post-op info | `message` | — (mock) | `if_done(12)` | |
@@ -141,15 +141,16 @@ To make this pathway actually run across enrollment + builder + runtime:
 
 `operation_date` is bounded by an allowed range `[earliest, latest]` derived from per-block constraints. Day-numbers to be filled by going over the flow:
 
-| Block | Constraint on operation_date | Days (TBD) |
+| Block | Constraint on operation_date | Days (seed) |
 |---|---|---|
-| pre-op info (`message`) | `≥ N days before` | ? |
+| pre-op info (`message`) | `≥ N days before` | **3** |
+| (pathway minimum) | earliest = enroll + X days | **14** |
 | review Luscii pre-op data (`task`) | must be `done` before (hard gate) | — |
-| lab test + review | must be `done` before (hard gate) | — |
+| lab test + review-decision | must be `done` before (hard gate) | — |
 | scan + review | must be `done` before (hard gate) | — |
-| clinical urgency (if any) | `≤ M days` (latest bound) | ? |
+| clinical urgency | `≤ M days` (latest bound) | none for seed |
 
-> Anesthesia/measurements run inside the Luscii program (not blocks); the caregiver `task` "review Luscii pre-op data" is the gate.
+→ **earliest = enroll + 14 days**; pre-op info fires at `operation_date − 3 days`; no latest bound. (Anesthesia/measurements run inside the Luscii program; the caregiver `task` "review Luscii pre-op data" is the gate.)
 
 → earliest = today + max(lead times); latest = tightest max bound (if any). Fill from the Miro "X days before operation" notes.
 
