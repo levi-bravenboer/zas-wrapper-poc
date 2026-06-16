@@ -82,7 +82,8 @@ Early spine (confirmed):
 | 2 | Enroll in Luscii | `external_program` | — | `if_done(1)` | program enrolled (does consent + measurements + PROM internally) |
 | 3 | Appointment: scan | `appointment` (imaging) | urologist (physician/urology) | `if_done(2)` | patient attended + scan made |
 | 4 | Task: review scan | `task` | urologist | `if_done(3)` | urologist reviewed |
-| 5 | MDO (diagnostic) | `mdo` | panel: urologist (lead) + radiology + pathology + oncology | `if_done(4)` | lead picks outcome (operate / do-nothing) |
+| 4b | Task: prep diagnostic MDO | `task` (**links to 5**) | urologist | `if_done(4)` | add draft outcome + notes/files to MDO 5 |
+| 5 | MDO (diagnostic) | `mdo` | panel: urologist (lead) + radiology + pathology + oncology | `if_done(4b)` | lead **commits** outcome (operate / do-nothing) |
 | 6 | Appointment: discuss results | `appointment` (consultation) | urologist | `if_done(5)` | patient attended |
 | 7 | Decision: operate? | `decision` | urologist | `if_done(6)` | outcome recorded (operate / do-nothing); XOR |
 
@@ -96,8 +97,8 @@ XOR on (7): **do-nothing → `end_pathway`**; **operate → subpath "operate (bi
 | 11 | Task: review Luscii pre-op data | `task` | urologist | enter | gates op on Luscii measurements/anesthesia |
 | 12 | Operation | `treatment` (procedure) | urologist | `all_of(decision_output(9,proceed), 10, 11)` | scheduled `operation_date`; result {performed_at,notes,complications} |
 | 13 | Send post-op info | `message` | — (mock) | `if_done(12)` | |
-| 14 | Task: view pathology results | `task` | urologist | `if_done(12)` + pathology marked-in (mock) | |
-| 15 | MDO (post-op) | `mdo` | panel (lead urologist + radiology + pathology + oncology) | `if_done(14)` | outcomes treatment/nothing |
+| 14 | Task: view pathology results | `task` (**links to 15**) | urologist | `if_done(12)` + pathology marked-in (mock) | review results; add draft + notes/files to MDO 15 |
+| 15 | MDO (post-op) | `mdo` | panel (lead urologist + radiology + pathology + oncology) | `if_done(14)` | lead **commits** outcome (treatment/nothing) |
 | 16 | Appointment: discuss | `appointment` (consultation) | urologist | `if_done(15)` | |
 | 17 | Decision: treat? | `decision` | urologist | `if_done(16)` | outcomes treatment/nothing; XOR |
 | 18a | treatment → bridge | `end_pathway` + `pathway_link`(fire_and_forget → oncology) | system | `decision_output(17,treatment)` | hand to oncology pathway |

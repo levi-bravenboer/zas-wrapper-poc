@@ -175,6 +175,8 @@ Notes: "fake-log" blocks expose no role and no typed runtime result in the PoC �
 
 **Notes + files on completion:** `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** when completed/recorded. (`decision` = a quick outcome pick with no meeting; `mdo` = the same outcome pick backed by a meeting Appointment + participants. Both author free-form outcomes and drive branching.) This is **consumed from the shared notes+files module** being built in `appointments-task-rebuild` (`feat/split-appointments-and-tasks`) — intended to be extracted as a loose, reusable service — not built here.
 
+**A `task` may link to another block.** A `task` can reference another block (e.g. an `mdo`) so its assignee **contributes** to that block before it completes — adding a **draft outcome** and/or **notes + files**. This is how "prep the MDO" works: it's just a task linked to the MDO (author-added, not a fixed structure). The linked block (MDO) shows the accumulated drafts/notes/files; its lead **commits** the final outcome later.
+
 **`mdo` is appointment + decision:** an `mdo` is an Appointment (meeting) whose completion requires the **lead** to pick one of the **build-authored, free-form outcome options**; **non-lead** participants add comments + files but don't decide. That `chosen_option` behaves like a `decision` output — downstream blocks gate on it via `decision_output`-style predicates (subject to connection validation).
 
 ### D13 — Trigger predicates wired + connection validation

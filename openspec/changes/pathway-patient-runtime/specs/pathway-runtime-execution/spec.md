@@ -62,6 +62,12 @@ A `decision` (no meeting) and an `mdo` (a meeting Appointment) SHALL each comple
 - **WHEN** a caregiver completes an `appointment`/`task`/`mdo`/`decision`
 - **THEN** they may attach notes + files (multi-caregiver) recorded against the execution
 
+#### Scenario: A prep task contributes to a linked MDO
+
+- **GIVEN** a `task` linked to an `mdo` (a prep task)
+- **WHEN** its assignee adds a draft outcome + notes/files and completes it
+- **THEN** those drafts/notes/files accumulate on the linked `mdo`, which the lead later commits
+
 ### Requirement: external_program enrolls the patient in a Luscii program
 
 When an `external_program` (Luscii) block becomes actionable, an activity SHALL ensure a Luscii connection and enroll the patient via `POST /v1/patients` (demographics + identifiers + `programId`/`protocolId`). It SHALL resolve our patient → Luscii patient through the **existing Luscii patient-identifier link**, reusing an existing Luscii patient when found and creating one (with BSN/`patientNumber`) otherwise. One program covers the patient's Luscii content (consent, questionnaires, measurements) **internally**; the pathway SHALL NOT model those as separate blocks. The pathway SHALL NOT auto-gate on Luscii completion in the PoC — where a downstream block needs Luscii pre-work verified, a caregiver `task` ("review Luscii data") gates it. Luscii reads (`GET /v1/measurements`, `/v1/alerts`) feed the existing patient-detail `MeasurementCharts` display, not an auto-gate. `end_pathway` SHALL leave the Luscii program running (no unenroll).

@@ -15,6 +15,7 @@
 - [ ] 2.6 Per-block FHIR `action.participant` (role code + optional specialty); expose per-block participant resolution in the enroll descriptor (over flattened block set)
 - [ ] 2.8 Named clinical-date declaration + per-block min-lead-time + clinical-date `timing_policy` (forward offsets)
 - [ ] 2.9 Subpath inlining: flatten subpath blocks into the pathway version at build/load
+- [ ] 2.10 Task→block link (e.g. prep task → MDO): contributions (draft outcome + notes/files) accumulate on the linked block before it commits
 - [ ] 2.7 Publish-time connection validation: predicate's referenced block + output/result-field must exist in the upstream runtime contract (reject data predicates on fake-log blocks)
 
 ## 3. Runtime workflow + activities
