@@ -367,6 +367,48 @@ class EnrollmentService:
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 
+    async def read_execution(
+        self,
+        enrollment_id: UUID,
+        execution_id: UUID,
+        *,
+        tenant_id: UUID,
+    ) -> PathwayBlockExecution:
+        """Fetch one execution row (used by the temporal-mode endpoints to
+        re-read the projection after an Update settles)."""
+        row = await self._repo.get_execution(execution_id, enrollment_id, tenant_id)
+        if row is None:
+            raise BlockExecutionNotFoundError()
+        return row
+
+    async def complete_step(
+        self,
+        enrollment_id: UUID,
+        execution_id: UUID,
+        *,
+        result: dict | None,
+        tenant_id: UUID,
+        now: datetime,
+    ) -> PathwayBlockExecution:
+        """Start-if-needed then complete — the single caregiver action.
+
+        The runtime requires `eligible → active → completed`, so an
+        eligible step is started first. Mirrors the orchestrator tab's
+        two-step flow and is what the Temporal `complete` Update calls.
+        """
+        row = await self._repo.get_execution(execution_id, enrollment_id, tenant_id)
+        if row is None:
+            raise BlockExecutionNotFoundError()
+        if row.state == "eligible":
+            await self.start_execution(enrollment_id, execution_id, tenant_id=tenant_id, now=now)
+        return await self.complete_execution(
+            enrollment_id,
+            execution_id,
+            result=result,
+            tenant_id=tenant_id,
+            now=now,
+        )
+
     async def patch_deferred_value(
         self,
         enrollment_id: UUID,

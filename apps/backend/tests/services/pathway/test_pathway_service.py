@@ -305,10 +305,34 @@ async def test_block_on_disallowed_lane_raises(
         )
 
 
-async def test_task_block_accepted_on_patient_lane(
+async def test_task_block_accepted_on_caregiver_lane(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
-    """task.allowed_lane_kind_codes = ['patient','caregiver']; patient lane is valid."""
+    """task.allowed_lane_kind_codes = ['caregiver']; caregiver lane is valid."""
+
+    service = _service(db_session)
+    phase = _phase()
+    caregiver_lane = _lane(code="caregiver")
+    task = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=caregiver_lane.id,
+        kind="task",
+        config={"title": "Hydrate", "assignee": "caregiver"},
+    )
+    result = await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[caregiver_lane], blocks=[task]),
+    )
+    assert len(result.version.blocks) == 1
+    assert result.version.blocks[0].lane_id == caregiver_lane.id
+
+
+async def test_task_block_rejected_on_patient_lane(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """task is caregiver-only now (catalogue prune); patient lane is rejected."""
 
     service = _service(db_session)
     phase = _phase()
@@ -320,13 +344,12 @@ async def test_task_block_accepted_on_patient_lane(
         kind="task",
         config={"title": "Hydrate", "assignee": "caregiver"},
     )
-    result = await service.replace_definition(
-        empty_pathway.id,
-        empty_pathway.tenant_id,
-        _minimal_payload(phases=[phase], lanes=[patient_lane], blocks=[task]),
-    )
-    assert len(result.version.blocks) == 1
-    assert result.version.blocks[0].lane_id == patient_lane.id
+    with pytest.raises(BlockLaneNotAllowedError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(phases=[phase], lanes=[patient_lane], blocks=[task]),
+        )
 
 
 async def test_block_config_validates_against_schema(

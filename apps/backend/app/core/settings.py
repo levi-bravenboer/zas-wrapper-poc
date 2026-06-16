@@ -77,6 +77,12 @@ class Settings(BaseSettings):
     temporal_address: str = "localhost:7233"
     temporal_namespace: str = "default"
     temporal_task_queue: str = "pathway-runtime"
+    # Runtime driver for enrollments. `sync` runs the engine inline in the
+    # request (no Temporal needed — used by tests + envs without a worker);
+    # `temporal` starts a `PathwayEnrollmentWorkflow` per enrollment and
+    # routes caregiver actions through Updates/Signals so durable timers
+    # advance time-gated blocks. Flip to `temporal` once a worker is deployed.
+    pathway_runtime_engine: Literal["sync", "temporal"] = "sync"
 
 
 @lru_cache

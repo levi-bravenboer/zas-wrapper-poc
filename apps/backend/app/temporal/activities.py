@@ -35,7 +35,7 @@ async def advance_runtime(payload: AdvanceInput) -> RuntimeTick:
 async def complete_step(payload: CompleteStepInput) -> RuntimeTick:
     async with script_session(actor=payload.actor) as session:
         service = EnrollmentService(PathwayRepository(session), EnrollmentRepository(session))
-        await service.complete_execution(
+        await service.complete_step(
             payload.enrollment_id,
             payload.execution_id,
             result=payload.result,

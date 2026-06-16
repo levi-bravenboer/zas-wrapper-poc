@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import select
 
 from app.core.enums.user import Role
@@ -41,6 +41,11 @@ from app.services.pathway.deps import EnrollmentServiceDep
 from app.services.pathway.errors import (
     EnrollmentNotFoundError,
     PathwayNotFoundError,
+)
+from app.services.pathway.runtime_dispatch import (
+    cancel_via_workflow,
+    complete_via_workflow,
+    start_enrollment_workflow,
 )
 
 router = APIRouter(prefix="/enrollments", tags=["enrollments"])
@@ -124,6 +129,7 @@ def _now() -> datetime:
     responses={**_ERRORS_404, **_ERRORS_422},
 )
 async def create_enrollment(
+    request: Request,
     payload: EnrollmentCreate,
     service: EnrollmentServiceDep,
     patient_service: PatientServiceDep,
@@ -158,7 +164,18 @@ async def create_enrollment(
     # carry the same guarantee for the direct call.
     await require_carepath_access(pathway_id, session, settings, keto, current_user)
     enrollment = await service.create(payload, tenant_id=current_user.tenant_id)
-    return await service.get_view(enrollment.id, tenant_id=current_user.tenant_id)
+    view = await service.get_view(enrollment.id, tenant_id=current_user.tenant_id)
+    if settings.pathway_runtime_engine == "temporal":
+        # Commit the freshly-created rows so the worker's activities (separate
+        # sessions) can see them, then hand the enrollment to its workflow.
+        await session.commit()
+        await start_enrollment_workflow(
+            request.app,
+            enrollment_id=enrollment.id,
+            actor=current_user,
+            task_queue=settings.temporal_task_queue,
+        )
+    return view
 
 
 @router.get(
@@ -218,11 +235,18 @@ async def get_enrollment(
     dependencies=[_REQUIRE_ENROLLMENT_EDIT],
 )
 async def cancel_enrollment(
+    request: Request,
     enrollment_id: UUID,
     current_user: CurrentUserDep,
     service: EnrollmentServiceDep,
+    settings: SettingsDep,
 ) -> EnrollmentResponse:
-    return await service.cancel(enrollment_id, tenant_id=current_user.tenant_id)
+    view = await service.cancel(enrollment_id, tenant_id=current_user.tenant_id)
+    if settings.pathway_runtime_engine == "temporal":
+        # Stop the workflow's timer loop; the DB state is already flipped
+        # above and the workflow's cancel activity is idempotent.
+        await cancel_via_workflow(request.app, enrollment_id=enrollment_id)
+    return view
 
 
 @router.post(
@@ -255,12 +279,28 @@ async def start_block_execution(
     dependencies=[_REQUIRE_ENROLLMENT_EDIT],
 )
 async def complete_block_execution(
+    request: Request,
     enrollment_id: UUID,
     execution_id: UUID,
     payload: ExecutionCompleteRequest,
     current_user: CurrentUserDep,
     service: EnrollmentServiceDep,
+    settings: SettingsDep,
 ) -> BlockExecutionResponse:
+    if settings.pathway_runtime_engine == "temporal":
+        # Route the caregiver action through the workflow Update so durable
+        # timers + downstream eligibility settle inside the workflow, then
+        # re-read the committed projection for the response.
+        await complete_via_workflow(
+            request.app,
+            enrollment_id=enrollment_id,
+            execution_id=execution_id,
+            result=payload.result,
+        )
+        row = await service.read_execution(
+            enrollment_id, execution_id, tenant_id=current_user.tenant_id
+        )
+        return BlockExecutionResponse.model_validate(row)
     row = await service.complete_execution(
         enrollment_id,
         execution_id,
