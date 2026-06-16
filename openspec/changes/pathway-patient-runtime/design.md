@@ -20,7 +20,7 @@ The audit/event-logging system is being built separately (`feat/audit-event-logg
 - Building the audit/event-logging store (stub activity only).
 - Builder UI for authoring the per-block runtime overrides + roles (follow-up change).
 - A patient-facing portal — patient-lane blocks (form, message, informed_consent) are fake-log only; no patient channel.
-- Real external integrations for `external_program` (Luscii) and nested enrollment for `pathway_link` — fake-log now, hooked for later.
+- (Revised — see D14) `pathway_link` nested enrollment is **in scope** (the bladder-cancer flow's "operate (biopsy)" is a real nested sub-pathway). `external_program` (Luscii) realness is being decided **per block** (mock / Luscii / build). A cross-pathway **bridge** is modelled as `end_pathway` + a fire-and-forget `pathway_link` (no separate bridge block).
 - Data-driven `decision.auto_resolve` (authored, not wired — caregiver picks).
 - Notifications/escalation beyond what an `if_not_done_within` timer triggers.
 
@@ -47,7 +47,9 @@ Every block advances through `pending → eligible → active → completed` (wi
 
 Relative delays are authored as each block's `timing_policy` (`fixed_duration`, `wait_after {node, offset}`, `due_within`) and drive when the execution becomes eligible/`due_at`. The `wait` block is removed.
 
-**Alternative considered:** keep `wait` as an explicit block — rejected; duplicates timing already expressible on the dependent block.
+**Named clinical-date anchors (D3a).** Beyond `anchor_date` (day-0), a pathway may declare **named clinical dates** (e.g. `operation_date`) that are **set at enrollment with constraint-assisted guidance**. Blocks constrain such a date two ways: **blocking** prerequisites (a block's `all_of` inputs must complete before the date) and **min lead time** ("earliest N days from now / from block X"). The system computes the earliest feasible date to suggest to the caregiver. `timing_policy` may then key off a named anchor — including **forward/negative offsets** (`operation_date − N days`) so pre-op work fires ahead of a planned date. If the date is rebooked, dependent Temporal timers recompute. (Driven by the bladder-cancer flow's "send pre-op info X days before the operation.")
+
+**Alternative considered:** keep `wait` as an explicit block — rejected; duplicates timing already expressible on the dependent block. Forward timing onto a *downstream block's* runtime-booked date (vs an enroll-set named date) — rejected as harder to reason about; the enroll-set planned date is clearer and matches how clinicians plan around a surgery date.
 
 ### D4 — Per-block runtime contracts
 
@@ -65,7 +67,7 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 | `form` | P | title, intro, questions[], submit/confirmation labels | — | — (fake-log) | caregiver marks done (no patient portal) |
 | `message` | P | subject, body, cta_label, cta_target, channel | — | — (fake-log) | caregiver marks sent |
 | `informed_consent` | P | questions[], channels[], reminder/expiry config | — | — (fake-log; real `{consented, expired, signed_at}` later) | caregiver records |
-| `external_program` | E | program/type config (Luscii) | — | — (fake-log; real program data later) | caregiver advances; real Luscii enroll hooked |
+| `external_program` | E | Luscii program ref | — | — (enroll only; no per-step data) | on reach: ensure Luscii connection + enroll in program (real, thin); no further orchestration |
 | `pathway_link` | S | target pathway, version pin, mode (blocking/fire_and_forget) | — | — (fake-log; child completion later) | caregiver advances; nested enrollment hooked |
 
 ### D4a — Runtime materializes work primitives (task vs appointment are distinct)
@@ -169,6 +171,43 @@ The PoC `input_logic` vocabulary is: `IF_DONE`, `WAIT_AFTER`, `IF_NOT_DONE_WITHI
 - **`EVENT`** is dropped for the PoC (no emitter); re-introduced with real external integrations.
 
 **Connection validation (publish-time):** a predicate that references a block + output/result-field SHALL be rejected (422) unless that block's runtime contract exposes it. This is the rule that keeps "what you can author to connect/trigger blocks" tied to "what the upstream block actually produces at runtime" — the builder cannot wire a trigger onto an output that doesn't exist.
+
+### D14 — Reference seed pathway: bladder-cancer (urology) + integration classification
+
+The demo seed is the real bladder-cancer urology flow (authored in Miro). Decoded block sequence:
+
+```
+start → informed_consent → external_program(Luscii invite) → appointment(scan)
+→ task(review scan) → appointment(discuss results) → decision
+  ──XOR──┬─ end_pathway ("do nothing")
+         └─ pathway_link: nested sub-pathway "operate (biopsy)"  [REAL nested enrollment]
+              ──AND(all_of)── appointment(lab test)→task(review lab test)
+                              message(pre-op info)
+                              form(anesthesia questionnaire)
+                              external_program(Luscii measurements + escalate-if-out-of-bounds)
+              → treatment(Operation)
+              → fan-out: message(post-op info), form(PROM),
+                         external_program(Luscii params),
+                         task(view pathology results)
+                           → mdo(MDO) → appointment → decision
+                              ──┬─ end_pathway + pathway_link(fire_and_forget → oncology)  [bridge]
+                                └─ end_pathway
+```
+
+The sticky-note structure (Pre-requisites / Actions / Complete-if) maps to: `input_logic` / materialization actions / completion predicate.
+
+**Integration classification (mock / Luscii / build) — decided per block, filled as we walk:**
+
+| Block (flow) | mock vs Luscii vs build | Notes |
+|---|---|---|
+| informed_consent | Luscii (inside program) | consent handled within a Luscii program, not a standalone block |
+| external_program: Luscii enroll | Luscii (real, thin) | on reach: ensure connection + enroll in Luscii program; nothing orchestrated after |
+| consent / anesthesia questionnaire / PROM / measurements | Luscii-internal (not a pathway block) | happen inside Luscii; pathway does not gate on them per-step |
+| Luscii measurements on patient detail | existing (already partly built) | MeasurementCharts; a read surface, not pathway runtime |
+| message: pre-op / post-op info | mock (logged) | no real delivery in PoC |
+| appointment / task / treatment / mdo / decision | build | caregiver-facing, built here |
+
+**Luscii scope is deliberately thin.** The pathway has **one** Luscii (`external_program`) block: when it becomes eligible, an activity (1) ensures the patient has a Luscii **connection** (get-or-create), then (2) **enrolls the patient in the configured Luscii program**. After that the pathway does **not** call or gate on Luscii — questionnaires/measurements/consent run inside Luscii and are not tracked as pathway steps. The only other Luscii touchpoint is the **patient-detail measurement display** (already partly built via `MeasurementCharts`), which is a read surface, not pathway runtime. Built on the existing `app/adapters/luscii` client; the enroll/connection endpoints come from Luscii's API (to be provided). Downstream pathway gates that the Miro flow drew as "Luscii measurements done" become **mock/manual** (caregiver marks) for the PoC, since the pathway no longer observes Luscii per-step.
 
 ## Risks / Trade-offs
 
