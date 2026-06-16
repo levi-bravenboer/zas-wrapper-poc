@@ -170,7 +170,7 @@ A pathway cannot be enrolled until every block's required caregiver(s) are chose
 
 Notes: "fake-log" blocks expose no role and no typed runtime result in the PoC — they advance via a caregiver-logged action with the audit hook. The role columns are build-declared, enroll-bound (D11). `decision.auto_resolve` is authored but PoC always asks the caregiver (D8).
 
-**Notes + files on completion:** `appointment`, `task`, and `mdo` SHALL support attaching **notes + files** when completed/recorded (a shared completion-attachment capability).
+**Notes + files on completion:** `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** when completed/recorded. (`decision` = a quick outcome pick with no meeting; `mdo` = the same outcome pick backed by a meeting Appointment + participants. Both author preset outcomes and drive branching.) This is **consumed from the shared notes+files module** being built in `appointments-task-rebuild` (`feat/split-appointments-and-tasks`) — intended to be extracted as a loose, reusable service — not built here.
 
 **`mdo` is appointment + decision:** an `mdo` is an Appointment (meeting) whose completion requires the lead to pick one of the **build-authored preset outcome choices**; that `chosen_option` behaves like a `decision` output — downstream blocks gate on it via `decision_output`-style predicates (subject to connection validation).
 
