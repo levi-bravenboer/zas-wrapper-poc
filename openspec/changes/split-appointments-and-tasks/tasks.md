@@ -62,3 +62,10 @@
 - [ ] Seed: appointments visible via Afspraken (existing `seed_appointments`); add `seed_tasks` demo (assigned to demo caregiver) so Taken isn't empty; optionally demo notes/attendees.
 - [ ] `moon run backend:typecheck backend:lint` + backend tests; `moon run orchestrator:typecheck orchestrator:lint` + orchestrator tests.
 - [ ] Manual: Afspraken list + detail (open patiënt, add note, upload/download/delete attachment); Taken real tasks; patient Afspraken tab (about/with).
+
+## Follow-up (post initial implementation — see session tasks #12–16)
+- [ ] **Realtime notes/attachments** — provider invalidates by `[event.resource]` = query-key prefix. `tasks`/`appointments` match; `appointment_notes`/`appointment_attachments` do NOT (keys are `['appointments', id, 'notes'|'attachments']`). Align the note/attachment query keys to the resource name OR add an explicit resource→queryKey mapping in `providers/realtime-invalidation.tsx`. (Mutation `onSuccess` already invalidates for the acting user; this is cross-user live updates.)
+- [ ] **External-author test** — `appointment-collab` external-collaborator note scenario is already satisfied by the impl (external = org-derived CAREGIVER + access grant; `AppointmentAccessDep` → `resolve_patient_with_relation` admits grant-holders). Add a backend test: an org-external caregiver holding an `AccessGrant` to the patient (not an appointment participant) can POST a note.
+- [ ] **Live browser verification** — none done (shared docker stack runs main's code). Point the stack at this worktree (or merge), `:reset` → `backend:migrate` → `backend:seed`, exercise Afspraken/Taken/notes/attachments(MinIO presign)/patient-tab in-app.
+- [ ] **Optional** — seed demo notes + one `appointment_patient_attendees` row so the detail + 'Met patiënt' tab show data.
+- [ ] **Archive** — after merge, run the openspec archive flow + cross-link `tasks-base`/`appointment-base`/`appointment-collab`/`appointments-ui`/`patient-profile-ui` specs.
