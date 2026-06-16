@@ -9,8 +9,9 @@ import { RowSkeleton } from '@/components/states/Skeleton'
 import { groupConsecutiveByDay } from '@/lib/utils/grouping'
 
 import { useAppointmentsQuery } from '../hooks'
+import type { AppointmentKind } from '../types'
 
-const KIND_ICON: Record<string, ComponentType<{ className?: string }>> = {
+const KIND_ICON: Record<AppointmentKind, ComponentType<{ className?: string }>> = {
   consultation: Stethoscope,
   lab: FlaskConical,
   imaging: ScanLine,
@@ -57,8 +58,10 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
 
   return (
     <GroupedList>
-      {groups.map((group) => (
-        <GroupedListSection key={group.key} label={dayFmt.format(new Date(group.items[0]!.starts_at))}>
+      {groups.map((group) => {
+        const first = group.items[0]
+        return (
+        <GroupedListSection key={group.key} label={first ? dayFmt.format(new Date(first.starts_at)) : ''}>
           {group.items.map((appt) => {
             const KindIcon = KIND_ICON[appt.kind] ?? Calendar
             const secondary = [timeFmt.format(new Date(appt.starts_at)), appt.location_text]
@@ -84,7 +87,8 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
             )
           })}
         </GroupedListSection>
-      ))}
+        )
+      })}
     </GroupedList>
   )
 }

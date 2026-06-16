@@ -2,6 +2,7 @@ import { useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 
 import { useAddNote, useNotes } from '../hooks'
@@ -41,12 +42,11 @@ export function NotesPanel({ ownerType, ownerId }: NotesPanelProps): ReactElemen
         ) : null}
       </ul>
       <div className="flex flex-col gap-2">
-        <textarea
+        <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={2}
           placeholder={t('collaboration:notes.placeholder', { defaultValue: 'Voeg een notitie toe…' })}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
         />
         <div className="flex justify-end">
           <Button

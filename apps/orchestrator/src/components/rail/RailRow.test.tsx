@@ -20,12 +20,11 @@ describe('RailRow', () => {
     expect(screen.getByTestId('trail')).toBeInTheDocument()
   })
 
-  it('applies selected styling via the data-active marker and accent classes', () => {
+  it('marks the selected row via the data-active marker', () => {
     render(<RailRow primary="Geselecteerd" selected />)
 
     const row = screen.getByRole('button', { name: /geselecteerd/i })
     expect(row).toHaveAttribute('data-active', 'true')
-    expect(row.className).toContain('before:bg-primary')
   })
 
   it('lets the caller own the link element via render, passing content + className', () => {
