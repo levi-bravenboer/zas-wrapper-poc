@@ -48,6 +48,20 @@ When a block becomes actionable the runtime SHALL materialize the matching primi
 - **WHEN** a `treatment` block's appointment is fulfilled with notes/complications
 - **THEN** the scheduling/status lives on the `Appointment` and the `{performed_at, notes, complications}` result is stored on the block execution `result_json`
 
+### Requirement: Decision and MDO select an outcome that drives branching
+
+A `decision` (no meeting) and an `mdo` (a meeting Appointment) SHALL each complete by a caregiver picking one of the **build-authored preset outcomes**. The chosen outcome SHALL be stored on the execution and SHALL drive downstream branching via `decision_output` predicates; `xor` mode SHALL prune the unchosen branches (with dead-path cleanup). `appointment`, `task`, `mdo`, and `decision` SHALL support attaching **notes + files from multiple caregivers** on completion, via the shared notes/files module (`feat/split-appointments-and-tasks`).
+
+#### Scenario: Picking a decision/MDO outcome branches downstream
+
+- **WHEN** the caregiver (or MDO lead) picks an outcome on a `decision`/`mdo`
+- **THEN** the chosen outcome is stored, downstream blocks gated on it become eligible, and unchosen `xor` branches are pruned + their materialized work cancelled
+
+#### Scenario: Completion captures notes and files
+
+- **WHEN** a caregiver completes an `appointment`/`task`/`mdo`/`decision`
+- **THEN** they may attach notes + files (multi-caregiver) recorded against the execution
+
 ### Requirement: external_program enrolls the patient in a Luscii program
 
 When an `external_program` (Luscii) block becomes actionable, an activity SHALL ensure a Luscii connection and enroll the patient via `POST /v1/patients` (demographics + identifiers + `programId`/`protocolId`). It SHALL resolve our patient → Luscii patient through the **existing Luscii patient-identifier link**, reusing an existing Luscii patient when found and creating one (with BSN/`patientNumber`) otherwise. One program covers the patient's Luscii content (consent, questionnaires, measurements) **internally**; the pathway SHALL NOT model those as separate blocks. The pathway SHALL NOT auto-gate on Luscii completion in the PoC — where a downstream block needs Luscii pre-work verified, a caregiver `task` ("review Luscii data") gates it. Luscii reads (`GET /v1/measurements`, `/v1/alerts`) feed the existing patient-detail `MeasurementCharts` display, not an auto-gate. `end_pathway` SHALL leave the Luscii program running (no unenroll).
@@ -65,7 +79,7 @@ When an `external_program` (Luscii) block becomes actionable, an activity SHALL 
 
 ### Requirement: A subpath inlines into one pathway; a cross-pathway link is separate
 
-A `subpath` SHALL be **inlined** at build time into the same pathway version — its blocks become ordinary blocks in **one** enrollment and **one** Temporal workflow (no nested child workflow). A `pathway_link` to a **separate** pathway (e.g. the oncology **bridge**) SHALL instead spawn a **fire-and-forget** child enrollment and not block the parent.
+A `pathway_link` block carries a **mode**. In **subpath/inline** mode it SHALL be **inlined** at build time into the same pathway version — its referenced pathway's blocks become ordinary blocks in **one** enrollment and **one** Temporal workflow (no nested child workflow). In **cross-pathway** mode (e.g. the oncology **bridge**) it SHALL instead spawn a **fire-and-forget** child enrollment of the separate pathway and not block the parent.
 
 #### Scenario: Subpath blocks run in the parent workflow
 
@@ -132,9 +146,9 @@ When a `decision` prunes an `xor` branch, or an enrollment is cancelled, the wor
 
 ### Requirement: Every transition emits an audit event via an activity
 
-Each runtime state transition SHALL invoke an `emitAuditEvent` activity carrying `{enrollment, execution, block_kind, action, actor, payload, at}`. This change SHALL NOT build the event store; the activity is a hook to be wired into the forthcoming audit/event-logging system. The hook SHALL be present even for fake-log blocks that carry no real integration.
+Each runtime state transition SHALL invoke an `emitAuditEvent` activity carrying `{enrollment, execution, block_kind, action, actor, payload, at}`, calling the **merged `app/services/audit`** (`emit_committed`). This change SHALL NOT build an event store. The emission SHALL occur for every block, including `message` (mock) and other no-result blocks.
 
-#### Scenario: Advancing a fake-log block still emits an audit event
+#### Scenario: Advancing a no-result block still emits an audit event
 
-- **WHEN** a caregiver advances a `message` block
-- **THEN** the execution transitions and an `emitAuditEvent` activity is invoked for the transition
+- **WHEN** a `message` (mock) block transitions
+- **THEN** an `emitAuditEvent` activity is invoked (calling `app/services/audit`) for the transition

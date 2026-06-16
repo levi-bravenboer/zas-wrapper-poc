@@ -28,7 +28,7 @@
 - [ ] 3.10 Luscii enroll activity (`POST /v1/patients`, reuse-or-create); `message` mock-send; leave Luscii running on end
 - [ ] 3.11 Clinical-date timers (forward offsets `date − N`) + recompute on date edit; min-lead-time honored
 - [ ] 3.6 Implement dead-path cleanup activities (`cancelAppointment`/`withdrawTask`) on xor-prune + cancel
-- [ ] 3.7 Implement `emitAuditEvent` activity stub (hook for `feat/audit-event-logging`) at every transition
+- [ ] 3.7 Implement `emitAuditEvent` activity calling the merged `app/services/audit` (`emit_committed`) at every transition
 - [ ] 3.8 Port `engine.py` unit tests as interpreter tests
 
 ## 4. Backend API surface

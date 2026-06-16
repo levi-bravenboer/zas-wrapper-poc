@@ -4,7 +4,7 @@ The pathway domain (typed block hierarchy), the runtime aggregate (`PathwayEnrol
 
 What is missing is the **caregiver-facing path**: enrolling a patient, advancing their blocks, and viewing progress — plus a **defined runtime contract per block kind** so each block behaves predictably. This design fills that gap for the PoC.
 
-The audit/event-logging system is being built separately (`feat/audit-event-logging`); this change emits audit events through a stub `emitAuditEvent` activity (a hook), not a built event store. The existing in-process engine logic is **re-homed into a Temporal workflow** (D9).
+The audit/event-logging system has **merged to main** (`app/services/audit`, `emit_committed`); this change emits runtime events through an `emitAuditEvent` activity that calls it (not a stub). The existing in-process engine logic is **re-homed into a Temporal workflow** (D9).
 
 ## Goals / Non-Goals
 
@@ -14,7 +14,7 @@ The audit/event-logging system is being built separately (`feat/audit-event-logg
 - The runtime runs on **Temporal**: one interpreter workflow per enrollment; **durable timers auto-advance** timed steps (incl. `if_not_done_within` escalation).
 - Blocks **materialize work primitives** — Appointments (`appointment`/`treatment`/`mdo`) and a `pathway` task source (`task` + fake-log) — that surface in the calendar + `/tasks` inbox.
 - A **Zorgpad** tab on the patient detail view shows the full pathway (upcoming / actionable / finished); a list-by-patient endpoint backs it.
-- Every runtime transition invokes a stub `emitAuditEvent` activity (hook for `feat/audit-event-logging`).
+- Every runtime transition invokes an `emitAuditEvent` activity calling the merged `app/services/audit` (`emit_committed`).
 
 **Non-Goals:**
 - Building the audit/event-logging store (the merged `audit` system is wired via an activity).
@@ -40,7 +40,7 @@ Connections: a build choice can flip a field to enroll-deferred; an enroll value
 
 ### D2 — Uniform fake-log runtime + audit hook
 
-Every block advances through `pending → eligible → active → completed` (with `skipped` / `failed`). The **Temporal workflow** (D9) owns transitions: a caregiver advances a block via a Temporal Update, or a durable timer auto-advances a timed step. Blocks with real logic write a typed `result_json`; blocks without an integration just transition. Each transition invokes an `emitAuditEvent` activity carrying `{enrollment, execution, block_kind, action, actor, payload, at}` — a **stub hook** for `feat/audit-event-logging` (no event store built here).
+Every block advances through `pending → eligible → active → completed` (with `skipped` / `failed`). The **Temporal workflow** (D9) owns transitions: a caregiver advances a block via a Temporal Update, or a durable timer auto-advances a timed step. Blocks with real logic write a typed `result_json`; blocks without an integration just transition. Each transition invokes an `emitAuditEvent` activity carrying `{enrollment, execution, block_kind, action, actor, payload, at}` — calling the **merged `app/services/audit`** (`emit_committed`); no event store is built here.
 
 **Why:** makes the whole pathway demoable now without per-block integrations, and gives a single, consistent advance mechanism.
 
@@ -67,7 +67,7 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 | `appointment` | C | title, mode, duration_minutes, attendees_patient, notes | location (optional) | scheduled_at (book), `{performed_at}` | caregiver books date, then marks Performed |
 | `treatment` | C | title, location, duration_minutes, notes | date (optional) | scheduled_at, `{performed_at, notes, complications}` | caregiver books, then records result |
 | `mdo` | C | topic, **preset outcome choices** (like decision outputs), expected_attendees_note | — | `{chosen_option, notes, files, closed_at}` | Appointment (meeting); lead picks an outcome + notes/files → drives branching |
-| `decision` | C | question, outputs[], mode (xor/and), auto_resolve.field_path | — | picked `output_key` | caregiver picks branch (auto if field present); engine fans out |
+| `decision` | C | question, **preset outcomes** (outputs[]), mode (xor/and), auto_resolve.field_path | — | `{chosen_option, notes, files}` | caregiver picks an outcome (no meeting); workflow fans out / prunes xor branches |
 | `form` | P | title, intro, questions[], submit/confirmation labels | — | — (fake-log) | caregiver marks done (no patient portal) |
 | `message` | P (mock) | template per channel (email/sms/mobile), connected block + relative timing | — | logged only (audit/event) | auto on its timing — mock send |
 | `informed_consent` | P | questions[], channels[], reminder/expiry config | — | — (fake-log; real `{consented, expired, signed_at}` later) | caregiver records |
@@ -111,14 +111,14 @@ The tab is labelled **"Zorgpad"** (Dutch UI string) and shows the **full** pathw
 
 ### D8 — Decision resolution (PoC)
 
-`decision` is a caregiver action: it surfaces as an actionable step, the caregiver picks one of the build-authored `outputs`, and the engine fans out. `auto_resolve.field_path` may be authored in the builder but is **not wired** in the PoC (no data-driven resolution yet).
+`decision` is a caregiver action: it surfaces as an actionable step, the caregiver picks one of the build-authored preset outcomes (+ optional notes/files), and the **workflow** fans out / prunes `xor` branches. `auto_resolve.field_path` may be authored in the builder but is **not wired** in the PoC (no data-driven resolution yet). (`mdo` is the same outcome pick backed by a meeting Appointment.)
 
 ### D9 — Runtime substrate: Temporal (interpreter + SQL projection)
 
 The runtime executes on **Temporal**, not the in-process engine. Pathways are data (builder-authored), so we do **not** compile a workflow per pathway. Instead:
 
 - **One generic `PathwayEnrollmentWorkflow`** per enrollment. At start, an Activity loads the **pinned pathway version** (blocks + input_logic + timing) and hands it to the workflow as data; the workflow interprets it deterministically (version-pinning satisfies Temporal determinism — a running enrollment never sees a re-authored pathway).
-- **Activities** (retryable side-effects, the only place I/O happens): `loadPathwayVersion`, `createAppointment`, `projectPathwayTask`, `writeExecutionProjection`, `emitAuditEvent` (→ `feat/audit-event-logging`), `callLuscii` (later). The current `engine.py` eligibility logic moves into the workflow interpreter; persistence moves into activities.
+- **Activities** (retryable side-effects, the only place I/O happens): `loadPathwayVersion`, `createAppointment`, `projectPathwayTask`, `writeExecutionProjection`, `emitAuditEvent` (→ merged `app/services/audit`), `enrollLuscii` (`POST /v1/patients`). The current `engine.py` eligibility logic moves into the workflow interpreter; persistence moves into activities.
 - **Signals** drive caregiver actions: `blockCompleted(execId, result)`, `decisionPicked(output)`, `cancel`, `pause`, `resume`.
 - **Timers** handle block timing (`wait_after`, `due_within`) and escalation durably — no cron. This is the main reason for choosing Temporal.
 - **Source of truth**: the Temporal workflow holds authoritative execution state. The Postgres `pathway_block_execution` / `pathway_enrollment` rows become a **read projection** written exclusively by activities, so the patient tab and the `pathway` task source can keep querying SQL. The workflow is the sole writer-trigger; projection writes are idempotent.
@@ -250,7 +250,7 @@ A **subpath** is **another pathway, inlined**: a subpath block references a sepa
 - Stand up Temporal: add a `temporal` service to `docker-compose`; add `temporalio` to backend deps; run a worker (backend process) registering `PathwayEnrollmentWorkflow` + activities.
 - Port `engine.py` eligibility/fanout into the workflow interpreter; move persistence into activities writing the `pathway_block_execution` / `pathway_enrollment` projection.
 - Remove `MilestoneBlock` and `WaitBlock` classes + catalogue entries; migration drops the `milestone`/`wait` kinds. `task.allowed_lane_kinds` → caregiver-only.
-- No runtime-event table (audit emission deferred to `feat/audit-event-logging` via an activity).
+- No runtime-event table (audit emission via the merged `app/services/audit` from an activity).
 - No data backfill — no live enrollments exist.
 
 ## Open Questions
