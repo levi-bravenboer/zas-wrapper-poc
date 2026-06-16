@@ -69,7 +69,8 @@
 
 ## 6c. Seed script
 
-- [ ] 6c.1 Seed script that authors the bladder-cancer pathway (blocks + roles + clinical dates + timing + Luscii program ref)
+- [ ] 6c.1 Seed script that authors the bladder-cancer pathway (blocks + participants + clinical dates + timing + Luscii program placeholder)
+- [ ] 6c.2 Seed the demo cast: patient Jansen + CareTeam + practitioners (urology/radiology/pathology/oncology + nurse casemanager) with PractitionerRole code+specialty
 
 ## Build order
 

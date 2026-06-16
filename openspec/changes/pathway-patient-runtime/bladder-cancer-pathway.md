@@ -70,6 +70,19 @@ Fan-out after `operation`:
 
 > PROM + post-op measurements are part of the **one Luscii program** (post-op phase) — internal, not separate pathway blocks.
 
+## Seed data (so the pathway need not be hand-built)
+
+The seed script SHALL create:
+- **Pathway**: the full bladder-cancer pathway template (blocks + participants + clinical dates + timing + Luscii `programId` placeholder), published.
+- **Patient**: Jansen, Pieter (68, M) + a `CareTeam`.
+- **Practitioners** (with `PractitionerRole` code + specialty):
+  - Dr. A. de Vries — `physician` / `urology` (urologist, lead)
+  - S. Smit — `nurse` (casemanager)
+  - Dr. R. Jansen — `physician` / `radiology` (MDO)
+  - Dr. P. Klein — `physician` / `pathology` (MDO)
+  - Dr. O. Bos — `physician` / `oncology` (MDO)
+- GP — informed only, not a bound participant.
+
 ## What must be built / matched (gaps)
 
 To make this pathway actually run across enrollment + builder + runtime:
