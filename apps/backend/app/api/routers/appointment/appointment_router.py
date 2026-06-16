@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
+from app.api.deps import ListQueryParamsDep
 from app.core.enums.user import Role
 from app.schemas._list.page import Page
 from app.schemas.appointment.appointment import AppointmentRead, PatientAppointmentEntry
@@ -31,11 +32,12 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 )
 async def list_appointments(
     service: AppointmentReadServiceDep,
+    query: ListQueryParamsDep,
     current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
-    page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 25,
 ) -> Page[AppointmentRead]:
-    return await service.list_visible(current_user, page=page, page_size=page_size)
+    return await service.list_visible(
+        current_user, page=query.page, page_size=query.page_size
+    )
 
 
 @router.get(

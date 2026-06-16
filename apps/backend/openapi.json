@@ -1310,6 +1310,447 @@
         }
       }
     },
+    "/appointments": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "List Appointments",
+        "operationId": "list_appointments",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AppointmentRead_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointment_id}": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Get Appointment",
+        "operationId": "get_appointment",
+        "parameters": [
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/appointments": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "List Patient Appointments",
+        "operationId": "list_patient_appointments",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientAppointmentEntry"
+                  },
+                  "title": "Response List Patient Appointments"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointment_id}/notes": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "List Appointment Notes",
+        "operationId": "list_appointment_notes",
+        "parameters": [
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppointmentNoteRead"
+                  },
+                  "title": "Response List Appointment Notes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Add Appointment Note",
+        "operationId": "add_appointment_note",
+        "parameters": [
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentNoteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentNoteRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointment_id}/attachments": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "List Appointment Attachments",
+        "operationId": "list_appointment_attachments",
+        "parameters": [
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttachmentRead"
+                  },
+                  "title": "Response List Appointment Attachments"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Create Appointment Attachment",
+        "operationId": "create_appointment_attachment",
+        "parameters": [
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointment_id}/attachments/{attachment_id}/url": {
+      "get": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Get Appointment Attachment Url",
+        "operationId": "get_appointment_attachment_url",
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentDownload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appointments/{appointment_id}/attachments/{attachment_id}": {
+      "delete": {
+        "tags": [
+          "appointments"
+        ],
+        "summary": "Delete Appointment Attachment",
+        "operationId": "delete_appointment_attachment",
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Appointment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/patients/{patient_id}/access-grants": {
       "post": {
         "tags": [
@@ -3116,7 +3557,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_TaskItem_"
+                  "$ref": "#/components/schemas/Page_TaskRead_"
                 }
               }
             }
@@ -3134,7 +3575,7 @@
         }
       }
     },
-    "/tasks/{source}/{source_id}": {
+    "/tasks/{task_id}": {
       "get": {
         "tags": [
           "tasks"
@@ -3143,22 +3584,13 @@
         "operationId": "get_task",
         "parameters": [
           {
-            "name": "source",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Source"
-            }
-          },
-          {
-            "name": "source_id",
+            "name": "task_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Source Id"
+              "title": "Task Id"
             }
           }
         ],
@@ -3168,7 +3600,58 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskItem"
+                  "$ref": "#/components/schemas/TaskRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Update Task Status",
+        "operationId": "update_task_status",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRead"
                 }
               }
             }
@@ -4928,6 +5411,57 @@
         ],
         "title": "AppointmentModality"
       },
+      "AppointmentNoteCreate": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "AppointmentNoteCreate"
+      },
+      "AppointmentNoteRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "author_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Author User Id"
+          },
+          "author_display_name": {
+            "type": "string",
+            "title": "Author Display Name"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "author_user_id",
+          "author_display_name",
+          "body",
+          "created_at"
+        ],
+        "title": "AppointmentNoteRead"
+      },
       "AppointmentParticipantInlineSummary": {
         "properties": {
           "user_id": {
@@ -4961,7 +5495,7 @@
         ],
         "title": "AppointmentParticipantRole"
       },
-      "AppointmentPayload": {
+      "AppointmentRead": {
         "properties": {
           "id": {
             "type": "string",
@@ -4970,6 +5504,24 @@
           },
           "patient": {
             "$ref": "#/components/schemas/PatientInlineSummary"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AppointmentKind"
           },
           "starts_at": {
             "type": "string",
@@ -4980,9 +5532,6 @@
             "type": "string",
             "format": "date-time",
             "title": "Ends At"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/AppointmentKind"
           },
           "modality": {
             "$ref": "#/components/schemas/AppointmentModality"
@@ -5013,15 +5562,16 @@
         "required": [
           "id",
           "patient",
+          "title",
+          "kind",
           "starts_at",
           "ends_at",
-          "kind",
           "modality",
           "status",
           "participants"
         ],
-        "title": "AppointmentPayload",
-        "description": "Discriminated payload for `source = \"appointment\"`.\n\nCarries the source row's data needed by the frontend without forcing\na follow-up `/appointments` fetch (which is also unavailable v1 \u2014 the\nappointment domain ships without HTTP routes)."
+        "title": "AppointmentRead",
+        "description": "Read model for the first-class `/appointments` API."
       },
       "AppointmentStatus": {
         "type": "string",
@@ -5082,6 +5632,111 @@
         "type": "object",
         "title": "AtEnrollmentPickedDatePolicy",
         "description": "Schedule is the date supplied at enrollment as a deferred field."
+      },
+      "AttachmentCreate": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Content Type"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Size"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filename",
+          "content_type",
+          "size"
+        ],
+        "title": "AttachmentCreate"
+      },
+      "AttachmentDownload": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "AttachmentDownload"
+      },
+      "AttachmentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "uploaded_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uploaded By"
+          },
+          "uploader_display_name": {
+            "type": "string",
+            "title": "Uploader Display Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "content_type",
+          "size",
+          "uploaded_by",
+          "uploader_display_name",
+          "created_at"
+        ],
+        "title": "AttachmentRead"
+      },
+      "AttachmentUploadResponse": {
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/AttachmentRead"
+          },
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachment",
+          "upload_url"
+        ],
+        "title": "AttachmentUploadResponse"
       },
       "AuditAction": {
         "type": "string",
@@ -9090,6 +9745,46 @@
         "type": "object",
         "title": "OrganisationUpdate"
       },
+      "Page_AppointmentRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AppointmentRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "total_pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "title": "Page[AppointmentRead]"
+      },
       "Page_AuditEventRead_": {
         "properties": {
           "items": {
@@ -9210,11 +9905,11 @@
         ],
         "title": "Page[PractitionerRoleRead]"
       },
-      "Page_TaskItem_": {
+      "Page_TaskRead_": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/TaskItem"
+              "$ref": "#/components/schemas/TaskRead"
             },
             "type": "array",
             "title": "Items"
@@ -9248,7 +9943,7 @@
           "total",
           "total_pages"
         ],
-        "title": "Page[TaskItem]"
+        "title": "Page[TaskRead]"
       },
       "Page_UserRow_": {
         "properties": {
@@ -11137,6 +11832,28 @@
         "title": "PathwayWithVersionResponse",
         "description": "Resolved-version envelope for `GET /pathways/{id}` and `POST /pathways`.\n\n`version` is the current concept if one exists, else the latest published\n(per `pathway-version` spec Requirement 9)."
       },
+      "PatientAppointmentEntry": {
+        "properties": {
+          "relation": {
+            "type": "string",
+            "enum": [
+              "about",
+              "with"
+            ],
+            "title": "Relation"
+          },
+          "appointment": {
+            "$ref": "#/components/schemas/AppointmentRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "relation",
+          "appointment"
+        ],
+        "title": "PatientAppointmentEntry",
+        "description": "An appointment in the patient-profile Afspraken tab, tagged by relation."
+      },
       "PatientCreate": {
         "properties": {
           "primary_organisation_id": {
@@ -12536,33 +13253,23 @@
         ],
         "title": "TaskBlockOut"
       },
-      "TaskItem": {
+      "TaskRead": {
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id"
           },
-          "source": {
-            "type": "string",
-            "const": "appointment",
-            "title": "Source"
-          },
-          "source_id": {
+          "assignee_user_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Source Id"
-          },
-          "due_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Due At"
+            "title": "Assignee User Id"
           },
           "title": {
             "type": "string",
             "title": "Title"
           },
-          "kind": {
+          "description": {
             "anyOf": [
               {
                 "type": "string"
@@ -12571,45 +13278,88 @@
                 "type": "null"
               }
             ],
-            "title": "Kind"
+            "title": "Description"
           },
-          "priority": {
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "due_at": {
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "low",
-                  "normal",
-                  "high",
-                  "urgent"
-                ]
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Priority"
+            "title": "Due At"
           },
-          "opened": {
-            "type": "boolean",
-            "title": "Opened",
-            "default": false
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Id"
           },
-          "payload": {
-            "$ref": "#/components/schemas/AppointmentPayload"
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "source",
-          "source_id",
-          "due_at",
+          "assignee_user_id",
           "title",
-          "payload"
+          "status",
+          "created_at",
+          "updated_at"
         ],
-        "title": "TaskItem",
-        "description": "Unified envelope returned by `GET /tasks` and `GET /tasks/{source}/{source_id}`.\n\nSortable by `due_at` (which v1 always maps to `appointment.starts_at`).\n`priority` is reserved for future sources; v1 appointment source\nalways emits `null`."
+        "title": "TaskRead"
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "done"
+        ],
+        "title": "TaskStatus"
+      },
+      "TaskStatusUpdate": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TaskStatusUpdate"
       },
       "TreatmentBlockOut": {
         "properties": {

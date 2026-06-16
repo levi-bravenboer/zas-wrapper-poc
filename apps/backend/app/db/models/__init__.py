@@ -58,6 +58,8 @@ from app.db.models.user import User
 __all__ = [
     "AccessGrant",
     "Appointment",
+    "AppointmentAttachment",
+    "AppointmentNote",
     "AppointmentParticipant",
     "AppointmentPatientAttendee",
     "AuditEvent",

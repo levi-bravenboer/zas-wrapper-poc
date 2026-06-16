@@ -87,7 +87,6 @@ async def test_download_url_and_uploader_only_delete(
     seeded_zas_users: list[User],
     seeded_zas_patients: list[Patient],
 ) -> None:
-    admin = _user(seeded_zas_users, ADMIN_EMAIL)
     caregiver = _user(seeded_zas_users, CAREGIVER_EMAIL)
     # Appointment both can see: caregiver lead + admin tenant-wide.
     appt = await _appointment_for(db_session, user=caregiver, patient=seeded_zas_patients[0])

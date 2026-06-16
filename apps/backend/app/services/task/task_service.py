@@ -44,6 +44,9 @@ class TaskService:
             return None
         task.status = status
         await self._session.flush()
+        # `updated_at` is DB-computed via `onupdate`; refresh so serialising the
+        # response doesn't trigger an async lazy-load outside the greenlet.
+        await self._session.refresh(task)
         return task
 
     async def create(

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.task import TaskStatus
 from app.db.audit import SESSION_ACTOR_KEY
+from app.db.models.task import Task
 from app.db.models.user import User
 from app.repositories.task import TaskRepository
 from app.schemas.auth.auth import SessionUser
@@ -27,7 +28,7 @@ def _user(users: list[User], email: str) -> User:
 
 async def _create_task(
     session: AsyncSession, *, actor: User, assignee: User, title: str = "Taak"
-) -> object:
+) -> Task:
     previous = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = SessionUser(
         id=actor.id,
