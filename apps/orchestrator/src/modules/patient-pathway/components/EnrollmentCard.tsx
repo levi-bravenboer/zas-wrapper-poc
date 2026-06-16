@@ -14,6 +14,8 @@ import { useCompleteStep } from '../hooks'
 import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
+import { MdoAction } from './MdoAction'
+
 // Block kinds whose actionable step is a single "Done" with no result body.
 // Decision is handled separately (outcome picker). Appointment/treatment/mdo
 // contracts are not wired yet.
@@ -81,6 +83,15 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
         >
           {t('step.done')}
         </Button>
+      )
+    }
+
+    if (block.kind === 'mdo') {
+      return (
+        <MdoAction
+          disabled={completeStep.isPending}
+          onConfirm={(result) => handleComplete(execution, result)}
+        />
       )
     }
 

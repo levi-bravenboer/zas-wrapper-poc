@@ -49,6 +49,12 @@
       "success": "Stap afgerond",
       "error": "Stap afronden mislukt"
     },
+    "mdo": {
+      "open": "MDO afronden",
+      "notesLabel": "Notities",
+      "notesPlaceholder": "Besproken en besloten…",
+      "confirm": "Afronden"
+    },
     "stateBadge": {
       "active": "Bezig",
       "eligible": "Beschikbaar",
