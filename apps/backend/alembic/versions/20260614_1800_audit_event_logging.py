@@ -1,7 +1,7 @@
 """audit-event-logging
 
 Revision ID: a7c3e9b1f204
-Revises: 2dd11b50fcb2
+Revises: 6ffb3cb72c4c
 Create Date: 2026-06-14 18:00:00.000000
 
 """
@@ -15,7 +15,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "a7c3e9b1f204"
-down_revision: str | None = "2dd11b50fcb2"
+down_revision: str | None = "6ffb3cb72c4c"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
