@@ -5,6 +5,7 @@ import appointment from './locales/nl/appointment.json'
 import auth from './locales/nl/auth.json'
 import careTeamsUi from './locales/nl/care-teams-ui.json'
 import caregiverShell from './locales/nl/caregiver-shell.json'
+import collaboration from './locales/nl/collaboration.json'
 import common from './locales/nl/common.json'
 import dashboard from './locales/nl/dashboard.json'
 import dataTable from './locales/nl/data-table.json'
@@ -39,6 +40,7 @@ void i18next.use(initReactI18next).init({
     'auth',
     'care-teams-ui',
     'caregiver-shell',
+    'collaboration',
     'dashboard',
     'data-table',
     'entity-page',
@@ -60,6 +62,7 @@ void i18next.use(initReactI18next).init({
       auth,
       'care-teams-ui': careTeamsUi,
       'caregiver-shell': caregiverShell,
+      collaboration,
       dashboard,
       'data-table': dataTable,
       'entity-page': entityPage,

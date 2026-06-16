@@ -1,0 +1,19 @@
+{
+  "notes": {
+    "title": "Notities",
+    "empty": "Nog geen notities.",
+    "placeholder": "Voeg een notitie toe…",
+    "add": "Toevoegen"
+  },
+  "attachments": {
+    "title": "Documenten",
+    "empty": "Nog geen documenten.",
+    "upload": "Document uploaden",
+    "delete": "Verwijderen"
+  },
+  "owner": {
+    "appointment": "Op afspraak",
+    "task": "Op taak",
+    "patient": "Op patiënt"
+  }
+}
