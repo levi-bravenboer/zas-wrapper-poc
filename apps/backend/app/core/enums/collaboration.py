@@ -15,3 +15,6 @@ class OwnerType(StrEnum):
     APPOINTMENT = "appointment"
     TASK = "task"
     PATIENT = "patient"
+    # A pathway runtime step (`PathwayBlockExecution`) — notes/files for an
+    # mdo/treatment/appointment step are addressed by the execution id.
+    PATHWAY_STEP = "pathway_step"

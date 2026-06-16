@@ -37,6 +37,8 @@ from app.services.collaboration.deps import AttachmentServiceDep, NoteServiceDep
 from app.services.patient.deps import PatientAccessDep
 from app.services.task.deps import require_task_access
 
+from app.api.routers.collaboration.pathway_step_dep import require_pathway_step_access
+
 _GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 
 
@@ -75,7 +77,9 @@ def _build_owner_collab_router(
         "return": list[NoteRead],
     }
     list_notes.__name__ = f"list_{singular}_notes"
-    router.add_api_route(f"{base}/notes", list_notes, methods=["GET"], response_model=list[NoteRead])
+    router.add_api_route(
+        f"{base}/notes", list_notes, methods=["GET"], response_model=list[NoteRead]
+    )
 
     async def add_note(owner, payload, service, current_user):  # type: ignore[no-untyped-def]
         return await service.add(
@@ -224,6 +228,17 @@ task_collab_router = _build_owner_collab_router(
     access=require_task_access,
     get_owner_id=lambda task: task.id,
     get_patient_id=_task_patient_id,
+)
+
+pathway_step_collab_router = _build_owner_collab_router(
+    prefix="pathway-steps",
+    id_param="execution_id",
+    singular="pathway_step",
+    tag="pathway-steps",
+    owner_type=OwnerType.PATHWAY_STEP,
+    access=require_pathway_step_access,
+    get_owner_id=lambda step: step.id,
+    get_patient_id=lambda step: step.patient_id,
 )
 
 

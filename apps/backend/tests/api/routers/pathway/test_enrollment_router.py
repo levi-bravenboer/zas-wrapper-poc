@@ -93,7 +93,12 @@ async def _autoclean_runtime_tables(
 
 
 async def _wipe(session: AsyncSession) -> None:
+    from app.db.models.collaboration.attachment import Attachment
+    from app.db.models.collaboration.note import Note
+
     for model in (
+        Note,
+        Attachment,
         PathwayDeferredFieldValue,
         PathwayBlockExecution,
         PathwayEnrollment,
@@ -378,6 +383,35 @@ async def test_pause_then_resume_enrollment(
     resumed = await async_client.post(f"/enrollments/{enrollment_id}:resume")
     assert resumed.status_code == 200, resumed.text
     assert resumed.json()["state"] == "active"
+
+
+async def test_pathway_step_notes_roundtrip(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+    execution_id = created.json()["executions"][0]["id"]
+
+    note = await async_client.post(
+        f"/pathway-steps/{execution_id}/notes",
+        json={"body": "Besproken in MDO"},
+    )
+    assert note.status_code == 201, note.text
+
+    listed = await async_client.get(f"/pathway-steps/{execution_id}/notes")
+    assert listed.status_code == 200, listed.text
+    assert any(n["body"] == "Besproken in MDO" for n in listed.json())
 
 
 async def test_get_unknown_enrollment_returns_404(

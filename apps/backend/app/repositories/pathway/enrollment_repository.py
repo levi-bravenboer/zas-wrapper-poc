@@ -80,6 +80,18 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
+    async def get_execution_by_id(
+        self,
+        execution_id: UUID,
+        tenant_id: UUID,
+    ) -> PathwayBlockExecution | None:
+        stmt = select(PathwayBlockExecution).where(
+            PathwayBlockExecution.id == execution_id,
+            PathwayBlockExecution.tenant_id == tenant_id,
+            PathwayBlockExecution.deleted_at.is_(None),
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
     async def get_deferred_value(
         self,
         enrollment_id: UUID,

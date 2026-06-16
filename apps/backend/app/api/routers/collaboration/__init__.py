@@ -1,5 +1,6 @@
 from app.api.routers.collaboration.routes import (
     appointment_collab_router,
+    pathway_step_collab_router,
     patient_collab_router,
     task_collab_router,
 )
@@ -7,6 +8,7 @@ from app.api.routers.collaboration.routes import (
 collaboration_routers = [
     appointment_collab_router,
     task_collab_router,
+    pathway_step_collab_router,
     patient_collab_router,
 ]
 
