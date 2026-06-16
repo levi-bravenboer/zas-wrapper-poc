@@ -329,6 +329,41 @@ export interface paths {
         patch: operations["update_patient"];
         trace?: never;
     };
+    "/patients/{patient_id}/luscii-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link Patient Luscii */
+        put: operations["link_patient_luscii"];
+        post?: never;
+        /** Unlink Patient Luscii */
+        delete: operations["unlink_patient_luscii"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/luscii-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Patient Luscii Data */
+        get: operations["get_patient_luscii_data"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patient_id}/access-grants": {
         parameters: {
             query?: never;
@@ -728,6 +763,40 @@ export interface paths {
         head?: never;
         /** Update Practitioner Role */
         patch: operations["update_practitioner_role"];
+        trace?: never;
+    };
+    "/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tasks */
+        get: operations["list_tasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{source}/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Task */
+        get: operations["get_task"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/pathways/blocks": {
@@ -1269,6 +1338,77 @@ export interface components {
              */
             kind: "appointment";
         };
+        /**
+         * AppointmentKind
+         * @enum {string}
+         */
+        AppointmentKind: "consultation" | "lab" | "imaging" | "procedure" | "other";
+        /**
+         * AppointmentModality
+         * @enum {string}
+         */
+        AppointmentModality: "online" | "on_site";
+        /**
+         * AppointmentParticipantInlineSummary
+         * @description Inline projection of one `appointment_participants` row.
+         *
+         *     Used inside `AppointmentPayload.participants` on the `TaskItem` envelope.
+         *     `user_display_name` is resolved via the same users projection used elsewhere
+         *     in the codebase (e.g. care-team participant reads).
+         */
+        AppointmentParticipantInlineSummary: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            role: components["schemas"]["AppointmentParticipantRole"];
+            /** User Display Name */
+            user_display_name: string;
+        };
+        /**
+         * AppointmentParticipantRole
+         * @enum {string}
+         */
+        AppointmentParticipantRole: "lead" | "support" | "observer";
+        /**
+         * AppointmentPayload
+         * @description Discriminated payload for `source = "appointment"`.
+         *
+         *     Carries the source row's data needed by the frontend without forcing
+         *     a follow-up `/appointments` fetch (which is also unavailable v1 — the
+         *     appointment domain ships without HTTP routes).
+         */
+        AppointmentPayload: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            patient: components["schemas"]["PatientInlineSummary"];
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            kind: components["schemas"]["AppointmentKind"];
+            modality: components["schemas"]["AppointmentModality"];
+            /** Location Text */
+            location_text?: string | null;
+            status: components["schemas"]["AppointmentStatus"];
+            /** Participants */
+            participants: components["schemas"]["AppointmentParticipantInlineSummary"][];
+        };
+        /**
+         * AppointmentStatus
+         * @enum {string}
+         */
+        AppointmentStatus: "proposed" | "pending" | "booked" | "arrived" | "fulfilled" | "cancelled" | "noshow" | "entered_in_error" | "checked_in" | "waitlist";
         /** AssignRoleRequest */
         AssignRoleRequest: {
             role: components["schemas"]["Role"];
@@ -2230,6 +2370,46 @@ export interface components {
             rule: string;
         };
         /**
+         * LusciiCategoricalPoint
+         * @description A single measurement point projected from a multiple-choice item.
+         */
+        LusciiCategoricalPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "categorical";
+            /** Responses */
+            responses?: string[];
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiFreeTextPoint
+         * @description A single measurement point projected from a free-text answer.
+         */
+        LusciiFreeTextPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "free_text";
+            /** Text */
+            text: string;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
          * LusciiInstrument
          * @description A measurement / questionnaire instrument inside the program.
          */
@@ -2330,6 +2510,185 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** LusciiLinkRequest */
+        LusciiLinkRequest: {
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+        };
+        /**
+         * LusciiLinkResult
+         * @description Echo of the linked Luscii patient for eyeball verification in the UI.
+         */
+        LusciiLinkResult: {
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+            /** Program Name */
+            program_name?: string | null;
+            /** Protocol Name */
+            protocol_name?: string | null;
+        };
+        /**
+         * LusciiMeasurementSeries
+         * @description A time-projected series of one instrument-item across the window.
+         *
+         *     `unit` is present only when `archetype` is `numeric` or `ordinal`;
+         *     categorical / free_text / unknown series carry no unit. Points are
+         *     sorted ascending by `observed_at` at projection time and the list is
+         *     never empty (series with zero points are not emitted).
+         */
+        LusciiMeasurementSeries: {
+            /** Series Id */
+            series_id: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Instrument Name */
+            instrument_name?: string | null;
+            /** Item Id */
+            item_id: string;
+            /** Label */
+            label?: string | null;
+            /**
+             * Archetype
+             * @enum {string}
+             */
+            archetype: "numeric" | "ordinal" | "categorical" | "free_text" | "unknown";
+            /** Unit */
+            unit?: string | null;
+            /** Points */
+            points?: (components["schemas"]["LusciiNumericPoint"] | components["schemas"]["LusciiOrdinalPoint"] | components["schemas"]["LusciiCategoricalPoint"] | components["schemas"]["LusciiFreeTextPoint"] | components["schemas"]["LusciiUnknownPoint"])[];
+        };
+        /**
+         * LusciiMeasurementValueView
+         * @description One decoded `measurement.details` item. `label`/`unit` come from the
+         *     Luscii item localisation (nl preferred); `response_texts` resolve the
+         *     multiple-choice `response_ids`. Unknown items keep `label=None` with the
+         *     raw `value`.
+         *
+         *     `item_id`/`instrument_id` are passed through from the Luscii source row;
+         *     they let clients group values across measurements into a time-series.
+         *     `archetype` is set by the pure `classify_archetype` classifier — never
+         *     `null`, defaults to `"unknown"` when classification fails.
+         */
+        LusciiMeasurementValueView: {
+            /** Label */
+            label?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Response Texts */
+            response_texts?: string[];
+            /** Item Id */
+            item_id?: string | null;
+            /** Instrument Id */
+            instrument_id?: string | null;
+            /**
+             * Archetype
+             * @default unknown
+             * @enum {string}
+             */
+            archetype: "numeric" | "ordinal" | "categorical" | "free_text" | "unknown";
+        };
+        /** LusciiMeasurementView */
+        LusciiMeasurementView: {
+            /** Measurement Id */
+            measurement_id?: string | null;
+            /** Instrument Id */
+            instrument_id?: string | null;
+            /** Instrument Name */
+            instrument_name?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Processed At */
+            processed_at?: string | null;
+            /** Values */
+            values?: components["schemas"]["LusciiMeasurementValueView"][];
+        };
+        /**
+         * LusciiNumericPoint
+         * @description A single measurement point projected as a numeric value.
+         */
+        LusciiNumericPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "numeric";
+            /** Value */
+            value: number;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiOrdinalPoint
+         * @description A single measurement point projected as an ordinal (allowlisted unit).
+         */
+        LusciiOrdinalPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "ordinal";
+            /** Value */
+            value: number;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiPatientData
+         * @description `GET /patients/{id}/luscii-data` response.
+         */
+        LusciiPatientData: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "linked" | "not_linked";
+            /** Luscii Patient Id */
+            luscii_patient_id?: string | null;
+            /** Window Days */
+            window_days: number;
+            program?: components["schemas"]["LusciiProgramView"] | null;
+            protocol?: components["schemas"]["LusciiProtocolView"] | null;
+            /** Planned Actions */
+            planned_actions?: components["schemas"]["LusciiPlannedActionView"][];
+            /** Unmatched Measurements */
+            unmatched_measurements?: components["schemas"]["LusciiMeasurementView"][];
+            /** Series */
+            series?: components["schemas"]["LusciiMeasurementSeries"][];
+        };
+        /** LusciiPlannedActionView */
+        LusciiPlannedActionView: {
+            /** Id */
+            id: string;
+            /** Not Before */
+            not_before?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Self Planned */
+            self_planned?: boolean | null;
+            measurement?: components["schemas"]["LusciiMeasurementView"] | null;
+        };
         /**
          * LusciiProgramData
          * @description Full Luscii program payload, stored as JSONB in `luscii_program.data`.
@@ -2401,6 +2760,15 @@ export interface components {
              */
             enrolled_count_org_wide: number;
         };
+        /** LusciiProgramView */
+        LusciiProgramView: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+        };
         /**
          * LusciiProtocol
          * @description A Luscii protocol — variant of a program with its own cadence.
@@ -2421,6 +2789,33 @@ export interface components {
              * @default false
              */
             is_default: boolean;
+        };
+        /** LusciiProtocolView */
+        LusciiProtocolView: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * LusciiUnknownPoint
+         * @description Fallback point for values the classifier cannot categorise.
+         */
+        LusciiUnknownPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "unknown";
+            /** Raw */
+            raw?: string | null;
+            /** Program Id */
+            program_id?: string | null;
         };
         /** MdoBlockOut */
         MdoBlockOut: {
@@ -2702,6 +3097,19 @@ export interface components {
         Page_PractitionerRoleRead_: {
             /** Items */
             items: components["schemas"]["PractitionerRoleRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** Page[TaskItem] */
+        Page_TaskItem_: {
+            /** Items */
+            items: components["schemas"]["TaskItem"][];
             /** Page */
             page: number;
             /** Page Size */
@@ -3592,6 +4000,37 @@ export interface components {
             /** Use */
             use?: string | null;
         };
+        /**
+         * PatientInlineSummary
+         * @description Thin patient projection used as a JOIN-resolved inline summary.
+         *
+         *     Lives in the patient domain so any caller that needs a "patient
+         *     headline" projection (today: `tasks-base` aggregator; tomorrow:
+         *     notification feeds, alerts, anywhere a patient name + INSZ + org is
+         *     needed without a full `PatientRead`) shares one shape.
+         *
+         *     `insz` is the value of the patient's INSZ identifier row from
+         *     `patient_identifiers`, NULL when missing. Resolved by the caller via
+         *     JOIN at projection time — the model itself does not load it.
+         */
+        PatientInlineSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Family Name */
+            family_name: string;
+            /** Given Name */
+            given_name: string;
+            /** Insz */
+            insz?: string | null;
+            /**
+             * Primary Organisation Id
+             * Format: uuid
+             */
+            primary_organisation_id: string;
+        };
         /** PatientRead */
         PatientRead: {
             /**
@@ -4108,6 +4547,43 @@ export interface components {
              * @enum {string}
              */
             kind: "task";
+        };
+        /**
+         * TaskItem
+         * @description Unified envelope returned by `GET /tasks` and `GET /tasks/{source}/{source_id}`.
+         *
+         *     Sortable by `due_at` (which v1 always maps to `appointment.starts_at`).
+         *     `priority` is reserved for future sources; v1 appointment source
+         *     always emits `null`.
+         */
+        TaskItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source
+             * @constant
+             */
+            source: "appointment";
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Title */
+            title: string;
+            /** Kind */
+            kind?: string | null;
+            /** Priority */
+            priority?: ("low" | "normal" | "high" | "urgent") | null;
+            payload: components["schemas"]["AppointmentPayload"];
         };
         /** TreatmentBlockOut */
         TreatmentBlockOut: {
@@ -5146,6 +5622,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_patient_luscii: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LusciiLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiLinkResult"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unlink_patient_luscii: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_patient_luscii_data: {
+        parameters: {
+            query?: {
+                /** @description Lookback window */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiPatientData"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -6192,6 +6811,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PractitionerRoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks: {
+        parameters: {
+            query?: {
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_TaskItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source: string;
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskItem"];
                 };
             };
             /** @description Validation Error */
