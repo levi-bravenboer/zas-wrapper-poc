@@ -43,6 +43,9 @@ class AppointmentReadService:
             items=items, page=page, page_size=page_size, total=total
         )
 
+    async def is_participant(self, *, appointment_id: UUID, user_id: UUID) -> bool:
+        return await self._repo.is_participant(appointment_id=appointment_id, user_id=user_id)
+
     async def get(self, *, tenant_id: UUID, appointment_id: UUID) -> AppointmentRead | None:
         row = await self._repo.get_in_tenant(tenant_id=tenant_id, appointment_id=appointment_id)
         if row is None:

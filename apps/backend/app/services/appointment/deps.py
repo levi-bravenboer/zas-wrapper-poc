@@ -57,7 +57,7 @@ async def require_appointment_access(
         return read
     # A participant on the appointment sees it directly; otherwise fall back
     # to patient-relation access (care-team / org / external grant).
-    if await AppointmentReadRepository(session).is_participant(
+    if await appointment_service.is_participant(
         appointment_id=appointment_id, user_id=current_user.id
     ):
         return read
