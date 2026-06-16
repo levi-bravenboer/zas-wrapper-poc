@@ -3,13 +3,13 @@
 **Ordering rule**: never leave the app broken. Appointments get their own read surface *before* `/tasks` stops serving them; infra lands *before* the code that needs it; shared UI primitives *before* the views; regen types *between* backend and frontend.
 
 ## 1. Appointment read surface + patient attendees (additive — nothing removed yet)
-- [ ] `app/db/models/appointment/appointment_patient_attendee.py` — `appointment_patient_attendees` (`appointment_id`, `patient_id`, timestamps); register.
-- [ ] `app/services/appointment/` read service + repository (booked-window + user-participant visibility, lifted from `AppointmentSource`).
-- [ ] `AppointmentRead` schema.
-- [ ] `appointment_router`: `GET /appointments` (internal, `ADMIN|CAREGIVER` + participant scope), `GET /appointments/{id}` (access-based via `require_patient_access`, admits external grant-holders).
-- [ ] Patient-keyed query: `patient_id == p` (about) ∪ attendee rows (with).
-- [ ] Migration: `appointment_patient_attendees`.
-- [ ] Tests: participant scope, admin tenant-wide, detail 404 hiding, about/with union.
+- [x] `app/db/models/appointment/appointment_patient_attendee.py` — `appointment_patient_attendees` (`appointment_id`, `patient_id`, timestamps); register.
+- [x] `app/services/appointment/` read service + repository (booked-window + user-participant visibility, lifted from `AppointmentSource`).
+- [x] `AppointmentRead` schema.
+- [x] `appointment_router`: `GET /appointments` (internal, `ADMIN|CAREGIVER` + participant scope), `GET /appointments/{id}` (access-based: participant OR `require_patient_access`, admits external grant-holders), `GET /patients/{id}/appointments` (patient-access-gated about/with).
+- [x] Patient-keyed query: `patient_id == p` (about) ∪ attendee rows (with).
+- [x] Migration: `appointment_patient_attendees`.
+- [x] Tests: participant scope, admin tenant-wide, detail 404 hiding, about/with union (5 tests, pass).
 
 ## 2. Real task domain + CUTOVER (replaces the appointment-as-task projection)
 - [ ] `app/core/enums/task.py` — `TaskStatus` (`open`, `done`).

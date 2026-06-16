@@ -11,7 +11,11 @@ from app.db.models.access import (
     ShieldedItem,
     ShieldingRule,
 )
-from app.db.models.appointment import Appointment, AppointmentParticipant
+from app.db.models.appointment import (
+    Appointment,
+    AppointmentParticipant,
+    AppointmentPatientAttendee,
+)
 from app.db.models.audit import AuditEvent
 from app.db.models.authz import AuthzOutbox
 from app.db.models.care_team import CareTeam, CareTeamParticipant
@@ -53,6 +57,7 @@ __all__ = [
     "AccessGrant",
     "Appointment",
     "AppointmentParticipant",
+    "AppointmentPatientAttendee",
     "AuditEvent",
     "AuthzOutbox",
     "CareTeam",
