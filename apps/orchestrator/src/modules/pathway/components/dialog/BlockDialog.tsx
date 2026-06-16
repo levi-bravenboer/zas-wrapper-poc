@@ -23,6 +23,7 @@ import { BlockIdentityFields } from './BlockIdentityFields'
 import { DialogHero } from './DialogHero'
 import { DialogSection } from './DialogSection'
 import { InputLogicEditor } from './InputLogicEditor'
+import { ParticipantEditor } from './ParticipantEditor'
 import { TimingPolicyEditor } from './TimingPolicyEditor'
 
 export type { BlockDraft } from '../../hooks/useBlockDraft'
@@ -128,6 +129,17 @@ export function BlockDialog({
         <TimingPolicyEditor
           value={draft.timingPolicy}
           onChange={(timingPolicy) => setDraft({ ...draft, timingPolicy })}
+        />
+      ),
+    },
+    {
+      id: 'participant',
+      visible: features.allowsParticipant,
+      header: t('blockDialog.participantHeader'),
+      body: (
+        <ParticipantEditor
+          value={draft.participant}
+          onChange={(participant) => setDraft({ ...draft, participant })}
         />
       ),
     },

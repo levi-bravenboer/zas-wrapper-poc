@@ -6,8 +6,18 @@ export type BlockEditingFeatures = {
   hasName: boolean
   allowsLogic: boolean
   allowsTiming: boolean
+  allowsParticipant: boolean
   deletable: boolean
 }
+
+// Materializing kinds carry a FHIR action.participant (role + specialty),
+// resolved to a Practitioner at enrollment.
+const MATERIALIZING_SEMANTICS = [
+  'appointment',
+  'treatment',
+  'mdo',
+  'task',
+] as const satisfies readonly BlockSemantics[]
 
 export function getBlockEditingFeatures(semantics: BlockSemantics): BlockEditingFeatures {
   const isStart = semantics === 'start'
@@ -16,6 +26,7 @@ export function getBlockEditingFeatures(semantics: BlockSemantics): BlockEditing
     hasName: !isEnd,
     allowsLogic: !isStart,
     allowsTiming: !isStart && !isEnd && semantics !== 'informed_consent',
+    allowsParticipant: (MATERIALIZING_SEMANTICS as readonly BlockSemantics[]).includes(semantics),
     deletable: !isStart && !isEnd,
   }
 }

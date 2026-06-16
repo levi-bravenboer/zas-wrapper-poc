@@ -17,6 +17,8 @@ import { isLaneAllowed } from '../utils/laneRules'
 
 type InputLogicShape = NonNullable<PathwayBlock['input_logic']>
 
+export type ParticipantValue = PathwayBlock['participant']
+
 type ParsedConfig = { success: true; data: BlockConfig } | { success: false; error: unknown }
 
 export type BlockDraft = {
@@ -26,6 +28,7 @@ export type BlockDraft = {
   config: BlockConfig
   inputLogic: InputLogicShape
   timingPolicy: TimingPolicyValue
+  participant: ParticipantValue
 }
 
 const EMPTY_LOGIC: InputLogicShape = { rules: [], aggregator: 'all_of' }
@@ -45,6 +48,7 @@ function initialDraft(
       config: legacyBlockConfig(block),
       inputLogic: block.input_logic ?? EMPTY_LOGIC,
       timingPolicy: block.timing_policy ?? null,
+      participant: block.participant ?? null,
     }
   }
   return {
@@ -54,6 +58,7 @@ function initialDraft(
     config: defaultConfig(blockType.semantics) as BlockConfig,
     inputLogic: EMPTY_LOGIC,
     timingPolicy: null,
+    participant: null,
   }
 }
 

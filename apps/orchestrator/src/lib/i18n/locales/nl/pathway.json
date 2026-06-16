@@ -1,4 +1,13 @@
 {
+  "participant": {
+    "role": "Rol",
+    "rolePlaceholder": "bijv. arts",
+    "specialty": "Specialisme",
+    "specialtyPlaceholder": "bijv. urologie"
+  },
+  "blockDialog": {
+    "participantHeader": "Betrokkene"
+  },
   "overview": {
     "title": "Zorgpaden",
     "sub": "Beheer en ontwerp van klinische zorgpaden.",
