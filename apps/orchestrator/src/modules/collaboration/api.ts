@@ -27,6 +27,13 @@ export async function fetchNotes(ownerType: OwnerType, ownerId: string): Promise
         api.GET('/patients/{patient_id}/notes', { params: { path: { patient_id: ownerId } } }),
         'Notes fetch failed',
       )
+    case 'pathway_step':
+      return unwrapApi(
+        api.GET('/pathway-steps/{execution_id}/notes', {
+          params: { path: { execution_id: ownerId } },
+        }),
+        'Notes fetch failed',
+      )
   }
 }
 
@@ -56,6 +63,14 @@ export async function addNote(ownerType: OwnerType, ownerId: string, body: strin
         }),
         'Note add failed',
       )
+    case 'pathway_step':
+      return unwrapApi(
+        api.POST('/pathway-steps/{execution_id}/notes', {
+          params: { path: { execution_id: ownerId } },
+          body: { body },
+        }),
+        'Note add failed',
+      )
   }
 }
 
@@ -80,6 +95,13 @@ export async function fetchAttachments(
       return unwrapApi(
         api.GET('/patients/{patient_id}/attachments', {
           params: { path: { patient_id: ownerId } },
+        }),
+        'Attachments fetch failed',
+      )
+    case 'pathway_step':
+      return unwrapApi(
+        api.GET('/pathway-steps/{execution_id}/attachments', {
+          params: { path: { execution_id: ownerId } },
         }),
         'Attachments fetch failed',
       )
@@ -118,6 +140,14 @@ export async function createAttachment(
         }),
         'Attachment create failed',
       )
+    case 'pathway_step':
+      return unwrapApi(
+        api.POST('/pathway-steps/{execution_id}/attachments', {
+          params: { path: { execution_id: ownerId } },
+          body: file,
+        }),
+        'Attachment create failed',
+      )
   }
 }
 
@@ -139,6 +169,10 @@ export async function getAttachmentUrl(
       case 'patient':
         return api.GET('/patients/{patient_id}/attachments/{attachment_id}/url', {
           params: { path: { patient_id: ownerId, attachment_id: attachmentId } },
+        })
+      case 'pathway_step':
+        return api.GET('/pathway-steps/{execution_id}/attachments/{attachment_id}/url', {
+          params: { path: { execution_id: ownerId, attachment_id: attachmentId } },
         })
     }
   })()
@@ -164,6 +198,10 @@ export async function deleteAttachment(
       case 'patient':
         return api.DELETE('/patients/{patient_id}/attachments/{attachment_id}', {
           params: { path: { patient_id: ownerId, attachment_id: attachmentId } },
+        })
+      case 'pathway_step':
+        return api.DELETE('/pathway-steps/{execution_id}/attachments/{attachment_id}', {
+          params: { path: { execution_id: ownerId, attachment_id: attachmentId } },
         })
     }
   })()

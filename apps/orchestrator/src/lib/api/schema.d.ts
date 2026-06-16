@@ -555,6 +555,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pathway-steps/{execution_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Step Notes */
+        get: operations["list_pathway_step_notes_pathway_steps__execution_id__notes_get"];
+        put?: never;
+        /** Add Pathway Step Note */
+        post: operations["add_pathway_step_note_pathway_steps__execution_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathway-steps/{execution_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Step Attachments */
+        get: operations["list_pathway_step_attachments_pathway_steps__execution_id__attachments_get"];
+        put?: never;
+        /** Create Pathway Step Attachment */
+        post: operations["create_pathway_step_attachment_pathway_steps__execution_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathway-steps/{execution_id}/attachments/{attachment_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pathway Step Attachment Url */
+        get: operations["pathway_step_attachment_url_pathway_steps__execution_id__attachments__attachment_id__url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathway-steps/{execution_id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Pathway Step Attachment */
+        delete: operations["delete_pathway_step_attachment_pathway_steps__execution_id__attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patient_id}/notes": {
         parameters: {
             query?: never;
@@ -3523,7 +3593,7 @@ export interface components {
          * OwnerType
          * @enum {string}
          */
-        OwnerType: "appointment" | "task" | "patient";
+        OwnerType: "appointment" | "task" | "patient" | "pathway_step";
         /** Page[AppointmentRead] */
         Page_AppointmentRead_: {
             /** Items */
@@ -6729,6 +6799,200 @@ export interface operations {
             };
         };
     };
+    list_pathway_step_notes_pathway_steps__execution_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_pathway_step_note_pathway_steps__execution_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pathway_step_attachments_pathway_steps__execution_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_pathway_step_attachment_pathway_steps__execution_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pathway_step_attachment_url_pathway_steps__execution_id__attachments__attachment_id__url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pathway_step_attachment_pathway_steps__execution_id__attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_patient_notes_patients__patient_id__notes_get: {
         parameters: {
             query?: never;
@@ -9313,6 +9577,7 @@ type ReadonlyArray<T> = [
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const pathsUsersGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/users"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
 export const pathsPatientsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/patients"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsAppointmentsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/appointments"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
 export const pathsAuditEventsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/audit-events"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
 export const pathsPractitionerRolesGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/practitioner-roles"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
 export const pathsTasksGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/tasks"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
@@ -9362,6 +9627,7 @@ export const lusciiUnknownPointArchetypeValues: ReadonlyArray<FlattenedDeepRequi
 export const mdoBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MdoBlockOut"]["kind"]> = ["mdo"];
 export const messageBlockOutChannelValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["channel"]> = ["email", "sms", "push", "in_app"];
 export const messageBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["kind"]> = ["message"];
+export const ownerTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["OwnerType"]> = ["appointment", "task", "patient", "pathway_step"];
 export const pathwayBlockTypeSemanticsValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["semantics"]> = ["start", "appointment", "treatment", "task", "message", "informed_consent", "mdo", "form", "decision", "pathway_link", "external_program", "end_pathway"];
 export const pathwayBlockTypeSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["source"]> = ["native", "external", "internal"];
 export const pathwayBlockTypeNested_renderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["nested_render"]> = ["inline_preview", "collapsed_card"];
@@ -9375,6 +9641,7 @@ export const pathwayVersionDefinitionStatusValues: ReadonlyArray<FlattenedDeepRe
 export const pathwayVersionDefinitionKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionDefinition"]["kind"]> = ["initial", "fork-from-publish", "restore-from-version"];
 export const pathwayVersionSummaryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionSummary"]["status"]> = ["concept", "published", "archived"];
 export const pathwayVersionSummaryKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionSummary"]["kind"]> = ["initial", "fork-from-publish", "restore-from-version"];
+export const patientAppointmentEntryRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PatientAppointmentEntry"]["relation"]> = ["about", "with"];
 export const patientSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PatientSource"]> = ["local", "hix", "luscii"];
 export const practitionerRoleCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PractitionerRoleCode"]> = ["gp", "physiotherapist", "psychologist", "nurse", "physician", "other"];
 export const predicateKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PredicateKind"]> = ["if_done", "has_data", "value_equals", "value_gt", "wait_after", "decision_output", "if_not_done_within", "event"];
@@ -9388,7 +9655,7 @@ export const roleInCareValues: ReadonlyArray<FlattenedDeepRequired<components>["
 export const shieldingAudienceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ShieldingAudience"]> = ["representative", "external_professional", "patient_other_role"];
 export const startBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartBlockOut"]["kind"]> = ["start"];
 export const taskBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskBlockOut"]["kind"]> = ["task"];
-export const taskItemPriorityAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskItem"]["priority"]> = ["low", "normal", "high", "urgent"];
+export const taskStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskStatus"]> = ["open", "done"];
 export const treatmentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TreatmentBlockOut"]["kind"]> = ["treatment"];
 export const valueEqualsArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ValueEqualsArgs"]["predicate"]> = ["value_equals"];
 export const valueGtArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ValueGtArgs"]["predicate"]> = ["value_gt"];

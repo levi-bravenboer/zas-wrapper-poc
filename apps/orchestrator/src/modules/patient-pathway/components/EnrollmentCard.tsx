@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { CollaborationColumn } from '@/modules/collaboration/components/CollaborationColumn'
 import { getPathwayVersion } from '@/modules/pathway/api'
 import type { PathwayBlock } from '@/modules/pathway/types'
 
@@ -37,6 +38,9 @@ import { TreatmentAction } from './TreatmentAction'
 // Block kinds whose actionable step is a single "Done" with no result body.
 // decision/mdo/treatment/appointment are handled with their own controls below.
 const DONE_ONLY_KINDS = new Set(['task'])
+
+// Block kinds whose finished step carries a notes/files collaboration surface.
+const COLLABORATIVE_KINDS = new Set(['mdo', 'treatment', 'appointment'])
 
 const STATE_BADGE_VARIANT: Record<string, 'default' | 'soft' | 'outline'> = {
   active: 'default',
@@ -182,6 +186,14 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
     return null
   }
 
+  // Notes + files on a finished mdo/treatment/appointment step, addressed by
+  // the execution id (collaboration owner_type `pathway_step`).
+  const renderExtra = (execution: BlockExecution): ReactElement | null => {
+    const block = blockById.get(execution.block_template_id)
+    if (!block || !COLLABORATIVE_KINDS.has(block.kind)) return null
+    return <CollaborationColumn ownerType="pathway_step" ownerId={execution.id} />
+  }
+
   return (
     <Card className="flex flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
@@ -259,6 +271,7 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
         blockName={blockName}
         language={i18n.language}
         renderAction={renderAction}
+        renderExtra={renderExtra}
       />
     </Card>
   )
@@ -270,6 +283,7 @@ interface BucketSectionProps {
   blockName: (execution: BlockExecution) => string
   language: string
   renderAction: (bucket: StepBucket, execution: BlockExecution) => ReactElement | null
+  renderExtra?: (execution: BlockExecution) => ReactElement | null
 }
 
 function BucketSection({
@@ -278,6 +292,7 @@ function BucketSection({
   blockName,
   language,
   renderAction,
+  renderExtra,
 }: BucketSectionProps): ReactElement {
   const { t } = useTranslation('patient-pathway')
   const emptyKey = {
@@ -303,6 +318,7 @@ function BucketSection({
               name={blockName(execution)}
               language={language}
               action={renderAction(bucket, execution)}
+              extra={renderExtra?.(execution) ?? null}
             />
           ))}
         </ul>
@@ -317,25 +333,25 @@ interface StepRowProps {
   name: string
   language: string
   action: ReactElement | null
+  extra: ReactElement | null
 }
 
-function StepRow({ bucket, execution, name, language, action }: StepRowProps): ReactElement {
+function StepRow({ bucket, execution, name, language, action, extra }: StepRowProps): ReactElement {
   const muted = bucket === 'upcoming'
 
   return (
-    <li
-      className={`flex items-start justify-between gap-3 rounded-md border p-3 ${
-        muted ? 'opacity-60' : ''
-      }`}
-    >
-      <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-medium">{name}</span>
-        <StepMeta bucket={bucket} execution={execution} language={language} />
+    <li className={`flex flex-col gap-3 rounded-md border p-3 ${muted ? 'opacity-60' : ''}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">{name}</span>
+          <StepMeta bucket={bucket} execution={execution} language={language} />
+        </div>
+        <div className="flex items-center gap-2">
+          {action}
+          <StateBadge state={execution.state} />
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {action}
-        <StateBadge state={execution.state} />
-      </div>
+      {extra}
     </li>
   )
 }
