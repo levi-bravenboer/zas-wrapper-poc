@@ -28,12 +28,23 @@ config.set_main_option("sqlalchemy.url", settings.database_url)
 target_metadata = Base.metadata
 
 
+def include_object(obj, name, type_, reflected, compare_to) -> bool:
+    # Soft-delete-aware partial unique indexes (`*_live`, WHERE
+    # deleted_at IS NULL) are maintained in migrations only — autogenerate
+    # can't round-trip the partial WHERE reliably, so it would spuriously
+    # drop/recreate them on every run. Exclude them from drift comparison.
+    if type_ == "index" and name and name.endswith("_live"):
+        return False
+    return True
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -43,6 +54,7 @@ def do_run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
