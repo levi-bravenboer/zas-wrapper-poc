@@ -132,6 +132,12 @@ services:
       # `BACKEND_LUSCII_FIXTURES=false` to fall back to the unconfigured
       # state (useful when validating the not-configured panel).
       BACKEND_LUSCII_FIXTURES: ${BACKEND_LUSCII_FIXTURES:-true}
+      # Pathway runtime via Temporal: the API starts a workflow per enrollment
+      # and routes caregiver actions through Updates/Signals. Flip to `sync`
+      # to run the engine inline (no worker needed):
+      #   BACKEND_PATHWAY_RUNTIME_ENGINE=sync docker compose up -d backend
+      BACKEND_PATHWAY_RUNTIME_ENGINE: ${BACKEND_PATHWAY_RUNTIME_ENGINE:-temporal}
+      BACKEND_TEMPORAL_ADDRESS: temporal:7233
     ports:
       - "18000:8000"
     develop:
@@ -160,6 +166,8 @@ services:
         condition: service_started
       keto:
         condition: service_started
+      temporal:
+        condition: service_healthy
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -168,6 +176,48 @@ services:
       timeout: 3s
       retries: 20
       start_period: 10s
+    networks: [zas_net]
+
+  # Temporal dev server for the pathway runtime. In-memory dev server (no
+  # external DB) — fine for local/PoC; a production deploy points at a
+  # persistent Temporal cluster instead. gRPC :7233, Web UI :8233.
+  temporal:
+    image: temporalio/temporal:latest
+    container_name: zas_temporal
+    command: ["server", "start-dev", "--ip", "0.0.0.0", "--namespace", "default"]
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [zas_net]
+
+  # Pathway-runtime worker — same image as the backend, separate process.
+  # Runs `PathwayEnrollmentWorkflow` + activities. Skips the backend
+  # entrypoint (migrate + seed) since `backend` owns that; waits for it to
+  # be healthy so the schema + seed exist before any activity runs.
+  worker:
+    image: zas_backend:dev
+    container_name: zas_pathway_worker
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    entrypoint: ["uv", "run", "python", "-m", "app.temporal.worker"]
+    env_file:
+      - path: ./apps/backend/.env
+        required: false
+    environment:
+      BACKEND_DATABASE_URL: postgresql+asyncpg://zas:zas@db:5432/zas
+      BACKEND_LOG_LEVEL: INFO
+      BACKEND_TEMPORAL_ADDRESS: temporal:7233
+    depends_on:
+      backend:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
     networks: [zas_net]
 
 volumes:
