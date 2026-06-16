@@ -24,9 +24,7 @@ export function MasterDetailRail({
   return (
     <div className="flex h-full min-h-0 w-full">
       <div
-        className={cn(
-          'hidden shrink-0 flex-col border-r border-border bg-background md:flex',
-        )}
+        className={cn('hidden shrink-0 flex-col border-r border-border bg-background md:flex')}
         style={{ width: railWidth } satisfies CSSProperties}
       >
         {rail}

@@ -30,9 +30,7 @@ export function useTaskQuery(taskId: string): UseQueryResult<Task, Error> {
   })
 }
 
-export function useSetTaskStatus(
-  taskId: string,
-): UseMutationResult<Task, Error, TaskStatus> {
+export function useSetTaskStatus(taskId: string): UseMutationResult<Task, Error, TaskStatus> {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (status: TaskStatus) => setTaskStatus(taskId, status),

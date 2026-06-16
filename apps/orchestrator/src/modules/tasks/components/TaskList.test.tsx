@@ -37,7 +37,12 @@ function isoAt(daysFromNow: number, hour = 10): string {
   return d.toISOString()
 }
 
-function makeTask(id: string, daysFromNow: number, title = 'Taak', status: Task['status'] = 'open'): Task {
+function makeTask(
+  id: string,
+  daysFromNow: number,
+  title = 'Taak',
+  status: Task['status'] = 'open',
+): Task {
   return {
     id,
     assignee_user_id: `u-${id}`,
@@ -78,7 +83,10 @@ describe('TaskList', () => {
 
   it('renders one row per task showing the title', () => {
     useTasksQueryMock.mockReturnValue({
-      data: [makeTask('t-1', 0, 'Bloeddruk controleren'), makeTask('t-2', 0, 'Labresultaat nakijken')],
+      data: [
+        makeTask('t-1', 0, 'Bloeddruk controleren'),
+        makeTask('t-2', 0, 'Labresultaat nakijken'),
+      ],
       isLoading: false,
       isError: false,
     })

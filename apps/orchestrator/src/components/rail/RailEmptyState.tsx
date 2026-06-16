@@ -45,10 +45,7 @@ export function RailEmptyState({
  * een item"). Same content slots as `RailEmptyState`, but fills and centers
  * within the detail pane.
  */
-export function RailSelectionEmptyState({
-  className,
-  ...rest
-}: RailEmptyStateProps): ReactElement {
+export function RailSelectionEmptyState({ className, ...rest }: RailEmptyStateProps): ReactElement {
   return (
     <div className={cn('flex h-full items-center justify-center p-8', className)}>
       <RailEmptyState {...rest} />

@@ -74,7 +74,10 @@ function AppointmentDetailRoute(): ReactElement {
         <div className="flex w-full flex-col gap-6">
           <PatientSummaryCard patientId={patient.id} />
 
-          <DetailCard icon={CalendarClock} title={t('appointment:detail.title', { defaultValue: 'Details' })}>
+          <DetailCard
+            icon={CalendarClock}
+            title={t('appointment:detail.title', { defaultValue: 'Details' })}
+          >
             {appt.description ? (
               <DetailRow wide label={t('appointment:field.reason', { defaultValue: 'Reden' })}>
                 <span className="whitespace-pre-wrap">{appt.description}</span>
@@ -90,13 +93,18 @@ function AppointmentDetailRoute(): ReactElement {
               {t(`appointment:modality.${appt.modality}`, { defaultValue: appt.modality })}
               {appt.location_text ? ` · ${appt.location_text}` : ''}
             </DetailRow>
-            <DetailRow wide label={t('appointment:field.participants', { defaultValue: 'Deelnemers' })}>
+            <DetailRow
+              wide
+              label={t('appointment:field.participants', { defaultValue: 'Deelnemers' })}
+            >
               <ul className="flex flex-wrap gap-x-6 gap-y-2">
                 {appt.participants.map((p) => (
                   <li key={p.user_id} className="flex items-center gap-2">
                     <PersonAvatar size="sm" name={p.user_display_name} tintId={p.user_id} />
                     <div className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm text-foreground">{p.user_display_name}</span>
+                      <span className="truncate text-sm text-foreground">
+                        {p.user_display_name}
+                      </span>
                       <span className="text-[11px] text-foreground-muted">
                         {t(`appointment:role.${p.role}`, { defaultValue: p.role })}
                       </span>

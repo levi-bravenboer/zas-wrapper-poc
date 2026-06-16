@@ -32,7 +32,13 @@ function ageFromBirthDate(iso: string | null | undefined): number | null {
   return age
 }
 
-function Fact({ label, children }: { label: string; children: ReactElement | string }): ReactElement {
+function Fact({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactElement | string
+}): ReactElement {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[11px] uppercase tracking-wide text-foreground-muted">{label}</span>
@@ -91,9 +97,7 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
               ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
           </Fact>
-          <Fact label="INSZ">
-            {insz ? <span className="font-mono">{insz}</span> : '—'}
-          </Fact>
+          <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
           <Fact label={t('field.source', { defaultValue: 'Bron' })}>
             <Badge variant="soft">{patient.source}</Badge>
           </Fact>

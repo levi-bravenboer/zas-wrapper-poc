@@ -80,7 +80,10 @@ function TaskDetailRoute(): ReactElement {
         <div className="flex w-full flex-col gap-6">
           {task.patient_id ? <PatientSummaryCard patientId={task.patient_id} /> : null}
 
-          <DetailCard icon={ClipboardList} title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}>
+          <DetailCard
+            icon={ClipboardList}
+            title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}
+          >
             <DetailRow wide label={t('tasks:detail.reason', { defaultValue: 'Reden' })}>
               {task.description ? (
                 <span className="whitespace-pre-wrap">{task.description}</span>

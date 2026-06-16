@@ -18,7 +18,10 @@ import { attachmentsKey, notesKey } from './keys'
 import type { Attachment, Note, OwnerType } from './types'
 
 export function useNotes(ownerType: OwnerType, ownerId: string): UseQueryResult<Note[], Error> {
-  return useQuery({ queryKey: notesKey(ownerType, ownerId), queryFn: () => fetchNotes(ownerType, ownerId) })
+  return useQuery({
+    queryKey: notesKey(ownerType, ownerId),
+    queryFn: () => fetchNotes(ownerType, ownerId),
+  })
 }
 
 export function useAddNote(

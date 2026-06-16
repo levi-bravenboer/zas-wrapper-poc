@@ -56,110 +56,116 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
 
   return (
     <>
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <FolderOpen className="size-4 text-foreground-muted" aria-hidden />
-          {t('collaboration:attachments.title', { defaultValue: 'Documenten' })}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {items.length > 0 ? (
-          <ul className="flex flex-col gap-2">
-            {items.map((att) => (
-              <li
-                key={att.id}
-                className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5 transition-colors hover:bg-surface-1"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-2 text-foreground-muted">
-                  <FileText className="size-4" />
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {att.filename}
-                  </span>
-                  <span className="truncate text-[11px] text-foreground-muted">
-                    {att.uploader_display_name} · {formatDateTimeOrDash(att.created_at, 'nl')}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t('collaboration:attachments.preview', { defaultValue: 'Bekijken' })}
-                  onClick={() => void openPreview(att)}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FolderOpen className="size-4 text-foreground-muted" aria-hidden />
+            {t('collaboration:attachments.title', { defaultValue: 'Documenten' })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {items.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {items.map((att) => (
+                <li
+                  key={att.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5 transition-colors hover:bg-surface-1"
                 >
-                  <Eye className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t('collaboration:attachments.download', { defaultValue: 'Downloaden' })}
-                  onClick={() => void download(att.id)}
-                >
-                  <Download className="size-4" />
-                </Button>
-                {att.uploaded_by === session.data?.id ? (
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-2 text-foreground-muted">
+                    <FileText className="size-4" />
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium text-foreground">
+                      {att.filename}
+                    </span>
+                    <span className="truncate text-[11px] text-foreground-muted">
+                      {att.uploader_display_name} · {formatDateTimeOrDash(att.created_at, 'nl')}
+                    </span>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={t('collaboration:attachments.delete', { defaultValue: 'Verwijderen' })}
-                    disabled={remove.isPending}
-                    onClick={() => remove.mutate(att.id)}
+                    aria-label={t('collaboration:attachments.preview', {
+                      defaultValue: 'Bekijken',
+                    })}
+                    onClick={() => void openPreview(att)}
                   >
-                    <Trash2 className="size-4" />
+                    <Eye className="size-4" />
                   </Button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('collaboration:attachments.download', {
+                      defaultValue: 'Downloaden',
+                    })}
+                    onClick={() => void download(att.id)}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                  {att.uploaded_by === session.data?.id ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('collaboration:attachments.delete', {
+                        defaultValue: 'Verwijderen',
+                      })}
+                      disabled={remove.isPending}
+                      onClick={() => remove.mutate(att.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            uploadFiles(e.target.files)
-            e.target.value = ''
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragging(true)
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          disabled={upload.isPending}
-          className={cn(
-            'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors',
-            dragging
-              ? 'border-primary bg-primary-soft/40'
-              : 'border-border hover:border-primary/50 hover:bg-surface-1',
-          )}
-        >
-          <UploadCloud className="size-6 text-foreground-muted" />
-          <span className="text-sm font-medium text-foreground">
-            {t('collaboration:attachments.dropTitle', {
-              defaultValue: 'Sleep documenten hierheen',
-            })}
-          </span>
-          <span className="text-[11px] text-foreground-muted">
-            {t('collaboration:attachments.dropHint', {
-              defaultValue: 'of klik om te bladeren · meerdere bestanden mogelijk',
-            })}
-          </span>
-        </button>
-      </CardContent>
-    </Card>
-    <AttachmentPreviewDialog
-      attachment={preview?.att ?? null}
-      url={preview?.url ?? null}
-      onClose={() => setPreview(null)}
-    />
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              uploadFiles(e.target.files)
+              e.target.value = ''
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragging(true)
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            disabled={upload.isPending}
+            className={cn(
+              'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors',
+              dragging
+                ? 'border-primary bg-primary-soft/40'
+                : 'border-border hover:border-primary/50 hover:bg-surface-1',
+            )}
+          >
+            <UploadCloud className="size-6 text-foreground-muted" />
+            <span className="text-sm font-medium text-foreground">
+              {t('collaboration:attachments.dropTitle', {
+                defaultValue: 'Sleep documenten hierheen',
+              })}
+            </span>
+            <span className="text-[11px] text-foreground-muted">
+              {t('collaboration:attachments.dropHint', {
+                defaultValue: 'of klik om te bladeren · meerdere bestanden mogelijk',
+              })}
+            </span>
+          </button>
+        </CardContent>
+      </Card>
+      <AttachmentPreviewDialog
+        attachment={preview?.att ?? null}
+        url={preview?.url ?? null}
+        onClose={() => setPreview(null)}
+      />
     </>
   )
 }

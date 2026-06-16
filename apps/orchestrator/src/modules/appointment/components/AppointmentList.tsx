@@ -19,7 +19,11 @@ const KIND_ICON: Record<AppointmentKind, ComponentType<{ className?: string }>> 
   other: Calendar,
 }
 
-const dayFmt = new Intl.DateTimeFormat('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' })
+const dayFmt = new Intl.DateTimeFormat('nl-BE', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+})
 const timeFmt = new Intl.DateTimeFormat('nl-BE', { hour: '2-digit', minute: '2-digit' })
 
 function AppointmentListBody({ selectedId }: { selectedId: string | undefined }): ReactElement {
@@ -61,32 +65,39 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
       {groups.map((group) => {
         const first = group.items[0]
         return (
-        <GroupedListSection key={group.key} label={first ? dayFmt.format(new Date(first.starts_at)) : ''}>
-          {group.items.map((appt) => {
-            const KindIcon = KIND_ICON[appt.kind] ?? Calendar
-            const secondary = [timeFmt.format(new Date(appt.starts_at)), appt.location_text]
-              .filter(Boolean)
-              .join(' · ')
-            return (
-              <RailRow
-                key={appt.id}
-                selected={selectedId === appt.id}
-                leading={
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-2">
-                    <KindIcon className="size-4 text-foreground-muted" />
-                  </span>
-                }
-                primary={`${appt.patient.family_name}, ${appt.patient.given_name}`}
-                secondary={secondary}
-                render={({ content, className }) => (
-                  <Link to="/appointments/$appointmentId" params={{ appointmentId: appt.id }} className={className}>
-                    {content}
-                  </Link>
-                )}
-              />
-            )
-          })}
-        </GroupedListSection>
+          <GroupedListSection
+            key={group.key}
+            label={first ? dayFmt.format(new Date(first.starts_at)) : ''}
+          >
+            {group.items.map((appt) => {
+              const KindIcon = KIND_ICON[appt.kind] ?? Calendar
+              const secondary = [timeFmt.format(new Date(appt.starts_at)), appt.location_text]
+                .filter(Boolean)
+                .join(' · ')
+              return (
+                <RailRow
+                  key={appt.id}
+                  selected={selectedId === appt.id}
+                  leading={
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-2">
+                      <KindIcon className="size-4 text-foreground-muted" />
+                    </span>
+                  }
+                  primary={`${appt.patient.family_name}, ${appt.patient.given_name}`}
+                  secondary={secondary}
+                  render={({ content, className }) => (
+                    <Link
+                      to="/appointments/$appointmentId"
+                      params={{ appointmentId: appt.id }}
+                      className={className}
+                    >
+                      {content}
+                    </Link>
+                  )}
+                />
+              )
+            })}
+          </GroupedListSection>
         )
       })}
     </GroupedList>

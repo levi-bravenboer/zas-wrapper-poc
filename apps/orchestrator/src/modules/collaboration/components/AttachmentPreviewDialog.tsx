@@ -14,13 +14,7 @@ export type AttachmentPreviewDialogProps = {
   onClose: () => void
 }
 
-function PreviewBody({
-  attachment,
-  url,
-}: {
-  attachment: Attachment
-  url: string
-}): ReactElement {
+function PreviewBody({ attachment, url }: { attachment: Attachment; url: string }): ReactElement {
   const { t } = useTranslation(['collaboration'])
 
   if (attachment.content_type.startsWith('image/')) {

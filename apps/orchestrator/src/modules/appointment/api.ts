@@ -13,7 +13,9 @@ export async function fetchAppointments(): Promise<Appointment[]> {
 
 export async function fetchAppointment(appointmentId: string): Promise<Appointment> {
   return unwrapApi(
-    api.GET('/appointments/{appointment_id}', { params: { path: { appointment_id: appointmentId } } }),
+    api.GET('/appointments/{appointment_id}', {
+      params: { path: { appointment_id: appointmentId } },
+    }),
     'Appointment fetch failed',
   )
 }

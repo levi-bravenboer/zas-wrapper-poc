@@ -22,10 +22,7 @@ export type GroupedListSectionProps = {
  * sticky header (e.g. "MORGEN" / "VR 19 JUN") above its rows. Generalised from
  * the section header in the tasks rail.
  */
-export function GroupedListSection({
-  label,
-  children,
-}: GroupedListSectionProps): ReactElement {
+export function GroupedListSection({ label, children }: GroupedListSectionProps): ReactElement {
   return (
     <section>
       <h2 className="sticky top-0 z-10 bg-background/95 px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-foreground-muted backdrop-blur-sm">
