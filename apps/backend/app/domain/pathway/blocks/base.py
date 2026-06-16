@@ -31,6 +31,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
 from app.domain.pathway.input_logic import InputLogic
+from app.domain.pathway.participant import ParticipantSpec
 from app.domain.pathway.timing import TimingPolicy
 from app.schemas.pathway.blocks import BlockSourceLiteral, NestedRenderLiteral
 
@@ -80,6 +81,11 @@ class BaseBlock(BaseModel):
     # block"; the mapper writes the discriminated union to JSONB and
     # round-trips through `model_validate` on read.
     timing_policy: TimingPolicy | None = None
+
+    # FHIR `action.participant` (role + optional specialty) — the required
+    # performer for a materializing block, resolved to a Practitioner at
+    # enrollment. `None` for non-materializing blocks (start/end/decision…).
+    participant: ParticipantSpec | None = None
 
     # --- CLASS: per-kind metadata, no instance state, no DB columns ---
     KIND: ClassVar[str] = ""

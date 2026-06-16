@@ -26,6 +26,7 @@ _BASE_FIELD_TO_COLUMN: dict[str, str] = {
     "name": "label",
     "input_logic": "input_logic",
     "timing_policy": "timing_policy",
+    "participant": "participant",
     # `lane_kind` is derived at the API layer from the joined `lane.kind`;
     # the column is not stored on `pathway_block` directly.
 }

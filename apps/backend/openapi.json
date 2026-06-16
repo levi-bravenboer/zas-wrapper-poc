@@ -4819,6 +4819,16 @@
             ],
             "title": "Timing Policy"
           },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "title": {
             "type": "string",
             "title": "Title"
@@ -5685,6 +5695,16 @@
             ],
             "title": "Timing Policy"
           },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "question": {
             "type": "string",
             "title": "Question"
@@ -5994,6 +6014,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "kind": {
             "type": "string",
@@ -6424,6 +6454,16 @@
             ],
             "title": "Timing Policy"
           },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "provider": {
             "type": "string",
             "const": "luscii",
@@ -6625,6 +6665,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": {
             "type": "string",
@@ -7003,6 +7053,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "questions": {
             "items": {
@@ -8469,6 +8529,16 @@
             ],
             "title": "Timing Policy"
           },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "topic": {
             "type": "string",
             "title": "Topic"
@@ -8595,6 +8665,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "channel": {
             "type": "string",
@@ -9259,6 +9339,30 @@
         ],
         "title": "ParticipantRoleChange",
         "description": "`PATCH /care-teams/{id}/participants/{user_id}` payload.\n\nRole changes are append-only: the service closes the current open\nrow (sets `period_end`, `unassigned_by`) and inserts a new open row\nwith the new role in the same transaction."
+      },
+      "ParticipantSpec": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "ParticipantSpec"
       },
       "PathwayActorRef": {
         "properties": {
@@ -10071,6 +10175,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "target_pathway_id": {
             "type": "string",
@@ -12203,6 +12317,16 @@
             ],
             "title": "Timing Policy"
           },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "kind": {
             "type": "string",
             "const": "start",
@@ -12313,6 +12437,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": {
             "type": "string",
@@ -12543,6 +12677,16 @@
               }
             ],
             "title": "Timing Policy"
+          },
+          "participant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParticipantSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": {
             "type": "string",

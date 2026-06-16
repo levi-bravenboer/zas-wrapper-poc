@@ -1342,6 +1342,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /** Mode */
@@ -1693,6 +1694,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Question */
             question: string;
             auto_resolve?: components["schemas"]["DecisionAutoResolve"] | null;
@@ -1860,6 +1862,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -2096,6 +2099,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Provider
              * @constant
@@ -2176,6 +2180,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /** Intro */
@@ -2351,6 +2356,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Questions */
             questions?: components["schemas"]["FormQuestion"][];
             /** Channels */
@@ -2936,6 +2942,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Topic */
             topic: string;
             /** Expected Attendees Note */
@@ -2988,6 +2995,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Channel
              * @enum {string}
@@ -3227,6 +3235,13 @@ export interface components {
          */
         ParticipantRoleChange: {
             role_in_care: components["schemas"]["RoleInCare"];
+        };
+        /** ParticipantSpec */
+        ParticipantSpec: {
+            /** Role */
+            role: string;
+            /** Specialty */
+            specialty?: string | null;
         };
         /**
          * PathwayActorRef
@@ -3628,6 +3643,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Target Pathway Id
              * Format: uuid
@@ -4517,6 +4533,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -4565,6 +4582,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /**
@@ -4668,6 +4686,7 @@ export interface components {
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
             timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /** Location */

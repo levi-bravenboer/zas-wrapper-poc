@@ -86,6 +86,10 @@ class PathwayBlock(TenantOwnedEntity):
     # cleanup once every consumer reads off the typed columns.
     timing_policy: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     timing_policy_kind: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+
+    # FHIR action.participant {role, specialty} — round-trips as JSONB via
+    # the base-field mapper (like input_logic / timing_policy).
+    participant: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     timing_offset_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     timing_window_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     timing_duration_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
