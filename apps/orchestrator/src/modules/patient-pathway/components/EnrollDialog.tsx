@@ -99,6 +99,8 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
   const [values, setValues] = useState<Record<string, string>>({})
   // block_template_id → resolved user_id
   const [participants, setParticipants] = useState<Record<string, string>>({})
+  // clinical-date name → ISO date
+  const [clinicalDates, setClinicalDates] = useState<Record<string, string>>({})
 
   const publishable = (pathwaysQuery.data ?? []).filter(isPublishable)
   const selected = publishable.find((p) => p.id === pathwayId)
@@ -111,6 +113,7 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
   })
   const fields = descriptorQuery.data?.fields ?? []
   const participantSlots = descriptorQuery.data?.participants ?? []
+  const clinicalDateSlots = descriptorQuery.data?.clinical_dates ?? []
 
   const candidatesQuery = useQuery({
     queryKey: ['enroll-candidates'] as const,
@@ -138,6 +141,15 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
         attr: f.attr,
         value_json: coerceValue(f.kind, values[fieldKey(f)] ?? ''),
       }))
+    // Named clinical dates resolve `relative_to_date` timers; stored as a
+    // deferred value keyed by the date name (resolution is by attr).
+    const clinicalDeferred = clinicalDateSlots
+      .filter((c) => (clinicalDates[c.name] ?? '') !== '')
+      .map((c) => ({
+        block_template_id: c.block_template_id,
+        attr: c.name,
+        value_json: clinicalDates[c.name] ?? '',
+      }))
     const resolvedParticipants = participantSlots
       .filter((p) => (participants[p.block_template_id] ?? '') !== '')
       .map((p) => ({
@@ -150,7 +162,7 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
         patient_id: patientId,
         pathway_version_id: selected.latest_published_version_id,
         anchor_date: anchorDate,
-        deferred_values: deferred,
+        deferred_values: [...deferred, ...clinicalDeferred],
         participants: resolvedParticipants,
       })
       toast.success(t('enroll.toast.success'))
@@ -221,6 +233,18 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
           </div>
         )
       })}
+
+      {clinicalDateSlots.map((c) => (
+        <div key={c.name} className="flex flex-col gap-1.5">
+          <Label htmlFor={`enroll-clinical-${c.name}`}>{c.name}</Label>
+          <Input
+            id={`enroll-clinical-${c.name}`}
+            type="date"
+            value={clinicalDates[c.name] ?? ''}
+            onChange={(e) => setClinicalDates((prev) => ({ ...prev, [c.name]: e.target.value }))}
+          />
+        </div>
+      ))}
 
       {participantSlots.map((p) => (
         <div key={p.block_template_id} className="flex flex-col gap-1.5">

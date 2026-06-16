@@ -2329,8 +2329,8 @@ export interface components {
         /**
          * EnrollDescriptor
          * @description Enroll-phase form descriptor for a pathway version — the deferred
-         *     fields a caregiver fills + the per-block participants to resolve
-         *     (tasks 4.1/5.2/5.4).
+         *     fields a caregiver fills, the per-block participants to resolve, and the
+         *     named clinical dates to set (tasks 4.1/5.2/5.4/5.5).
          */
         EnrollDescriptor: {
             /**
@@ -2342,6 +2342,24 @@ export interface components {
             fields?: components["schemas"]["EnrollDescriptorField"][];
             /** Participants */
             participants?: components["schemas"]["EnrollDescriptorParticipant"][];
+            /** Clinical Dates */
+            clinical_dates?: components["schemas"]["EnrollDescriptorClinicalDate"][];
+        };
+        /**
+         * EnrollDescriptorClinicalDate
+         * @description A named clinical date (e.g. `operation_date`) that `relative_to_date`
+         *     blocks anchor to — collected at enrollment so their timers resolve (§5.5).
+         *     `block_template_id` is a representative referencing block (for the
+         *     deferred-value FK; resolution is by `name` across the enrollment).
+         */
+        EnrollDescriptorClinicalDate: {
+            /** Name */
+            name: string;
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
         };
         /**
          * EnrollDescriptorField
