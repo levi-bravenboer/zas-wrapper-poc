@@ -323,6 +323,9 @@ class EnrollmentService:
         # ORM row is sufficient; the session commit persists it.
         if isinstance(template, EndPathwayBlock) and enrollment.state == "active":
             enrollment.state = "completed"
+        # Fire any system/auto blocks (message / external_program) that just
+        # became eligible from this completion so the runtime doesn't stall.
+        _settle_auto_fire(executions, templates, now=now)
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 
@@ -440,6 +443,7 @@ class EnrollmentService:
         # downstream `if_done(start)` rules in the same loop.
         RuntimeEngine.auto_fire_starts(executions, templates, now=now)
         RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
+        _settle_auto_fire(executions, templates, now=now)
         await self._save_executions(enrollment_id, executions)
 
     async def _load_executions(self, enrollment_id: UUID) -> dict[UUID, BlockExecution]:
@@ -458,6 +462,27 @@ class EnrollmentService:
                 continue
             _apply_domain(row, exec_domain)
         await self._repo._session.flush()  # noqa: SLF001
+
+
+def _settle_auto_fire(
+    executions: dict[UUID, BlockExecution],
+    templates: dict[UUID, BaseBlock],
+    *,
+    now: datetime,
+) -> None:
+    """Fire system/auto blocks to a fixpoint.
+
+    Auto-firing a `message` / `external_program` block can make its
+    downstream eligible, which may itself be an auto block — so we
+    alternate `auto_fire_system` + `evaluate_eligibility` until no
+    further block fires. Bounded by the number of executions (each
+    block fires at most once).
+    """
+    for _ in range(len(executions) + 1):
+        fired = RuntimeEngine.auto_fire_system(executions, templates, now=now)
+        if not fired:
+            return
+        RuntimeEngine.evaluate_eligibility(executions, templates, now=now)
 
 
 def _picked_scheduled_at(

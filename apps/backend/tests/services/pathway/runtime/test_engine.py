@@ -10,6 +10,7 @@ import pytest
 from app.domain.pathway.blocks.appointment.typed import AppointmentBlock
 from app.domain.pathway.blocks.base import BaseBlock
 from app.domain.pathway.blocks.decision.typed import DecisionBlock
+from app.domain.pathway.blocks.message.typed import MessageBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.input_logic import (
@@ -262,3 +263,40 @@ def test_decision_and_mode_does_not_auto_skip() -> None:
     assert high_run.state == "eligible"
     assert low_run.state == "pending"
     del decision_id, high_id, low_id
+
+
+# ---- Auto-fire system blocks ---------------------------------------------
+
+
+def _message_block(name: str = "Notify") -> MessageBlock:
+    return MessageBlock(name=name, channel="email", subject="Hi", body="Body")
+
+
+def test_auto_fire_system_completes_eligible_message() -> None:
+    template_id = uuid4()
+    run = make_execution(template_id, state="eligible")
+    fired = RuntimeEngine.auto_fire_system({run.id: run}, {template_id: _message_block()}, now=_NOW)
+    assert fired == [run.id]
+    assert run.state == "completed"
+    assert run.result_json == {"auto_fired": "message"}
+
+
+def test_auto_fire_system_respects_pending_timing() -> None:
+    template_id = uuid4()
+    run = make_execution(template_id, state="eligible")
+    run.scheduled_at = datetime(2026, 6, 20, 12, 0, tzinfo=UTC)  # after _NOW
+    fired = RuntimeEngine.auto_fire_system({run.id: run}, {template_id: _message_block()}, now=_NOW)
+    assert fired == []
+    assert run.state == "eligible"
+
+
+def test_auto_fire_system_ignores_caregiver_blocks() -> None:
+    template_id = uuid4()
+    run = make_execution(template_id, state="eligible")
+    fired = RuntimeEngine.auto_fire_system(
+        {run.id: run},
+        {template_id: TaskBlock(name="Do it", title="Do it", assignee="caregiver")},
+        now=_NOW,
+    )
+    assert fired == []
+    assert run.state == "eligible"
