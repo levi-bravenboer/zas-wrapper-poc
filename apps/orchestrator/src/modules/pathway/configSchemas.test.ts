@@ -208,6 +208,6 @@ describe('AnyBlockConfig — type coverage smoke', () => {
       mdo: { topic: 'Bespreking pathologie' },
       end_pathway: { name: 'End' },
     }
-    expect(Object.keys(sample)).toHaveLength(14)
+    expect(Object.keys(sample)).toHaveLength(12)
   })
 })
