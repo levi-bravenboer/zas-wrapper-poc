@@ -13,13 +13,12 @@ from app.db.models.access import (
 )
 from app.db.models.appointment import (
     Appointment,
-    AppointmentAttachment,
-    AppointmentNote,
     AppointmentParticipant,
     AppointmentPatientAttendee,
 )
 from app.db.models.audit import AuditEvent
 from app.db.models.authz import AuthzOutbox
+from app.db.models.collaboration import Attachment, Note
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
@@ -58,10 +57,9 @@ from app.db.models.user import User
 __all__ = [
     "AccessGrant",
     "Appointment",
-    "AppointmentAttachment",
-    "AppointmentNote",
     "AppointmentParticipant",
     "AppointmentPatientAttendee",
+    "Attachment",
     "AuditEvent",
     "AuthzOutbox",
     "CareTeam",
@@ -69,6 +67,7 @@ __all__ = [
     "LusciiInstrumentItemLocalisationRow",
     "LusciiInstrumentLocalisationRow",
     "LusciiItemResponseLocalisationRow",
+    "Note",
     "Organisation",
     "Pathway",
     "PathwayBlock",

@@ -2,9 +2,10 @@ from fastapi import FastAPI
 
 from app.api.routers.access import router as access_router
 from app.api.routers.appointment import router as appointment_router
-from app.api.routers.appointment.attachment_router import router as appointment_attachment_router
-from app.api.routers.appointment.note_router import router as appointment_note_router
 from app.api.routers.audit import router as audit_router
+from app.api.routers.collaboration import (
+    collaboration_routers,
+)
 from app.api.routers.auth import router as auth_router
 from app.api.routers.care_team import router as care_team_router
 from app.api.routers.events_router import router as events_router
@@ -31,8 +32,8 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(patient_router)
     app.include_router(patient_luscii_router)
     app.include_router(appointment_router)
-    app.include_router(appointment_note_router)
-    app.include_router(appointment_attachment_router)
+    for collaboration_router in collaboration_routers:
+        app.include_router(collaboration_router)
     app.include_router(access_router)
     app.include_router(audit_router)
     app.include_router(care_team_router)

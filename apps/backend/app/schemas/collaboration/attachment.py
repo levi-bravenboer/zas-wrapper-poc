@@ -5,11 +5,16 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.enums.collaboration import OwnerType
+
 
 class AttachmentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    owner_type: OwnerType
+    owner_id: UUID
+    patient_id: UUID
     filename: str
     content_type: str
     size: int
