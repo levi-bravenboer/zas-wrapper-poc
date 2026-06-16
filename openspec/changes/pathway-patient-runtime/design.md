@@ -78,6 +78,8 @@ Actor: **S**ystem / **C**aregiver / **P**atient (fake-log) / **E**xternal (fake-
 
 A block execution is not just a state row; when it becomes actionable the runtime materializes the matching **work primitive**, which surfaces in existing caregiver surfaces. **Task and appointment are different entities**, not the same thing:
 
+> **Dependency:** appointment booking/scheduling logic comes from the in-flight **`feat/split-appointments-and-tasks`** worktree. This change **consumes** that system to materialize pathway Appointments (booking, status, slots) once it lands — it does not rebuild appointment scheduling. The status↔execution-state mapping below aligns with that work.
+
 - **Appointment-backed blocks** (`appointment`, `treatment`, `mdo`) → create a real `Appointment` row (already pathway-aware via `appointments.pathway_block_instance_id`). The Appointment carries scheduling (`starts_at`/`ends_at`, `modality`, `location_text`), `participants` (roles lead/support/observer), and FHIR `status`. It surfaces in the existing `appointment` task source + calendar + `/tasks` inbox.
   - Kind mapping: `appointment` block — builder picks `AppointmentKind` (consultation/lab/imaging); `treatment` → `procedure`; `mdo` → `other`.
   - `mdo` has no patient attendance: `patient_id` = the enrolled (subject) patient, `participants` = caregivers only.
