@@ -83,6 +83,26 @@ class EnrollmentResponse(BaseModel):
     deferred_values: list[DeferredFieldValueOut] = Field(default_factory=list)
 
 
+class EnrollDescriptorField(BaseModel):
+    """One enrollment-time deferred field the enroll dialog must render."""
+
+    block_template_id: UUID
+    block_label: str
+    attr: str
+    label: str
+    kind: str
+    required: bool
+    help: str | None = None
+
+
+class EnrollDescriptor(BaseModel):
+    """Enroll-phase form descriptor for a pathway version — the deferred
+    fields a caregiver fills when enrolling a patient (tasks 4.1/5.2)."""
+
+    pathway_version_id: UUID
+    fields: list[EnrollDescriptorField] = Field(default_factory=list)
+
+
 class RuntimeTick(BaseModel):
     """Result of one runtime advance — drives the Temporal timer loop.
 
@@ -126,6 +146,8 @@ __all__ = [
     "DeferredFieldValueOut",
     "DeferredFieldValuePatch",
     "EnrollmentCreate",
+    "EnrollDescriptor",
+    "EnrollDescriptorField",
     "EnrollmentResponse",
     "EnrollmentState",
     "ExecutionCompleteRequest",

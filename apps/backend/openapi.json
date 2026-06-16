@@ -5700,6 +5700,59 @@
         }
       }
     },
+    "/enrollments/descriptor": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Get Enroll Descriptor",
+        "operationId": "get_enroll_descriptor",
+        "parameters": [
+          {
+            "name": "pathway_version_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollDescriptor"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
     "/enrollments/{enrollment_id}": {
       "get": {
         "tags": [
@@ -7847,6 +7900,79 @@
           "name"
         ],
         "title": "EndPathwayBlockOut"
+      },
+      "EnrollDescriptor": {
+        "properties": {
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Version Id"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollDescriptorField"
+            },
+            "type": "array",
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pathway_version_id"
+        ],
+        "title": "EnrollDescriptor",
+        "description": "Enroll-phase form descriptor for a pathway version \u2014 the deferred\nfields a caregiver fills when enrolling a patient (tasks 4.1/5.2)."
+      },
+      "EnrollDescriptorField": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "block_label": {
+            "type": "string",
+            "title": "Block Label"
+          },
+          "attr": {
+            "type": "string",
+            "title": "Attr"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required"
+          },
+          "help": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help"
+          }
+        },
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "block_label",
+          "attr",
+          "label",
+          "kind",
+          "required"
+        ],
+        "title": "EnrollDescriptorField",
+        "description": "One enrollment-time deferred field the enroll dialog must render."
       },
       "EnrollmentCreate": {
         "properties": {

@@ -40,6 +40,8 @@ from app.schemas.pathway.enrollment import (
     BlockExecutionResponse,
     DeferredFieldValueOut,
     DeferredFieldValuePatch,
+    EnrollDescriptor,
+    EnrollDescriptorField,
     EnrollmentCreate,
     EnrollmentResponse,
     RuntimeTick,
@@ -277,6 +279,33 @@ class EnrollmentService:
         if row is None:
             raise EnrollmentNotFoundError()
         return row
+
+    async def enroll_descriptor(
+        self,
+        pathway_version_id: UUID,
+        *,
+        tenant_id: UUID,
+    ) -> EnrollDescriptor:
+        """List the enroll-phase deferred fields a caregiver fills for a version
+        (tasks 4.1/5.2). Aggregates each block's code-declared `DEFERRED_FIELDS`."""
+        await self._assert_pathway_version_in_tenant(pathway_version_id, tenant_id)
+        children = await self._pathway_repo.fetch_children(pathway_version_id)
+        fields: list[EnrollDescriptorField] = []
+        for row in children.blocks:
+            template = block_row_to_domain(row)
+            for spec in template.DEFERRED_FIELDS:
+                fields.append(
+                    EnrollDescriptorField(
+                        block_template_id=row.id,
+                        block_label=template.name,
+                        attr=spec.attr,
+                        label=spec.label,
+                        kind=str(spec.kind),
+                        required=spec.required,
+                        help=spec.help,
+                    )
+                )
+        return EnrollDescriptor(pathway_version_id=pathway_version_id, fields=fields)
 
     async def get_view(
         self,

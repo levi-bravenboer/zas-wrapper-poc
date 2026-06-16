@@ -22,6 +22,7 @@ from app.schemas.pathway.enrollment import (
     BlockExecutionResponse,
     DeferredFieldValueOut,
     DeferredFieldValuePatch,
+    EnrollDescriptor,
     EnrollmentCreate,
     EnrollmentResponse,
     ExecutionCompleteRequest,
@@ -213,6 +214,31 @@ async def list_enrollments_by_patient(
         relation="view",
     )
     return await service.list_views_by_patient(patient_id, tenant_id=current_user.tenant_id)
+
+
+@router.get(
+    "/descriptor",
+    operation_id="get_enroll_descriptor",
+    response_model=EnrollDescriptor,
+    responses={**_ERRORS_404, **_ERRORS_422},
+)
+async def get_enroll_descriptor(
+    pathway_version_id: UUID = Query(...),  # noqa: B008
+    *,
+    service: EnrollmentServiceDep,
+    session: SessionDep,
+    settings: SettingsDep,
+    keto: KetoClientDep,
+    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+) -> EnrollDescriptor:
+    # Carepath scope on the version's pathway — same gate as create.
+    pathway_id = await session.scalar(
+        select(PathwayVersion.pathway_id).where(PathwayVersion.id == pathway_version_id)
+    )
+    if pathway_id is None:
+        raise PathwayNotFoundError()
+    await require_carepath_access(pathway_id, session, settings, keto, current_user)
+    return await service.enroll_descriptor(pathway_version_id, tenant_id=current_user.tenant_id)
 
 
 @router.get(

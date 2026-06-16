@@ -414,6 +414,23 @@ async def test_pathway_step_notes_roundtrip(
     assert any(n["body"] == "Besproken in MDO" for n in listed.json())
 
 
+async def test_enroll_descriptor_returns_fields_list(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    response = await async_client.get(
+        "/enrollments/descriptor",
+        params={"pathway_version_id": str(world["version_id"])},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["pathway_version_id"] == str(world["version_id"])
+    assert isinstance(body["fields"], list)
+
+
 async def test_get_unknown_enrollment_returns_404(
     async_client: AsyncClient,
     seeded_zas_users: list[User],
