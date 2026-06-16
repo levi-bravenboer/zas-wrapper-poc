@@ -35,8 +35,7 @@ Linear spine, then an XOR, then the nested "operate" sub-pathway with an AND fan
 | # | Block | Kind | Actor/Role | input_logic (prereq) | Timing | Actions (materialize) | Complete-if | Phase |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Patient added to carepath | `start` | system | — | at enroll | invite patient, set primary caregiver | patient logs into portal first time | Onboarding |
-| 2 | Send informed consent | (Luscii-internal) | patient/Luscii | `if_done(1)` | — | (inside Luscii program) | patient signs consent | Onboarding |
-| 3 | Enroll in Luscii program | `external_program` | external/Luscii | `if_done(1)` | at enroll/reach | ensure Luscii connection + enroll program | enrolled in program | Onboarding |
+| 2 | Enroll in Luscii program | `external_program` | external/Luscii | `if_done(1)` | at enroll/reach | `POST /v1/patients` (programId) — one program does consent + questionnaires + measurements internally | enrolled in program | Onboarding |
 | 4 | Appointment: scan | `appointment` | urologist | `if_done(2)` consent | — | create Appointment(kind=imaging), invite to schedule, share prep info | patient attended, scan made | Scans |
 | 5 | Task: review scan | `task` | urologist | `if_done(4)` | — | project task for urologist | urologist reviewed scan | Scans |
 | 6 | Appointment: discuss results | `appointment` | urologist | `if_done(5)` | — | create Appointment(consultation), invite to schedule | patient attended | Decision to biopsy |
@@ -53,24 +52,23 @@ AND fan (all start after the operate decision; `operation` requires `all_of`):
 |---|---|---|---|---|---|---|---|
 | n1 | Appointment: lab test | `appointment` | urologist | enter sub-pathway | — | Appointment(kind=lab) | patient attended |
 | n2 | Task: review lab test | `task` | urologist | `if_done(n1)` | — | project task | urologist reviewed |
-| n3 | Send pre-op info | `message` | patient | enter | **X days before n6 (operation)** | mock: log send | sent |
-| n4 | Anesthesia questionnaire | `external_program` (Luscii, read-gated) | patient/Luscii | enter | `operation_date − N days` | read `GET /v1/instrument-item-responses` | questionnaire answered |
-| n5 | Luscii measurements | `external_program` (Luscii, read-gated) | patient/Luscii | enter | — | read `GET /v1/measurements`; `GET /v1/alerts` → escalate out-of-bounds | measurements provided |
-| n6 | Treatment: Operation | `treatment` | urologist | `all_of(n2, n3, n4, n5)` | scheduled date (booked) | Appointment(kind=procedure) + book + perform; clinical result | operation done |
+| n3 | Send pre-op info | `message` | patient | enter | **`operation_date − N days`** | mock: log send | sent |
+| n4 | Task: review Luscii pre-op data | `task` | caregiver | enter | — | caregiver verifies anesthesia + measurements are good in Luscii (MeasurementCharts) | caregiver marked good |
+| n5 | Treatment: Operation | `treatment` | urologist | `all_of(n2, n3, n4)` | scheduled `operation_date` | Appointment(kind=procedure) + book + perform; clinical result | operation done |
 
 Fan-out after `operation`:
 
 | # | Block | Kind | Role | input_logic | Actions | Complete-if |
 |---|---|---|---|---|---|---|
-| n7 | Send post-op info | `message` | patient | `if_done(n6)` | mock: log send | sent |
-| n8 | PROM | (Luscii-internal) | patient/Luscii | `if_done(n6)` | inside Luscii | patient completed |
-| n9 | Luscii params (post-op) | (Luscii-internal) | external/Luscii | `if_done(n6)` | inside Luscii | — |
-| n10 | Task: view pathology results | `task` | urologist | `if_done(n6)` + pathology reported | project task | urologist reviewed results |
-| n11 | MDO | `mdo` | MDO lead + caregivers | `if_done(n10)` (reviewed by all) | Appointment(kind=other, caregiver participants) | everyone contributed, lead decided |
-| n12 | Appointment (post-MDO) | `appointment` | urologist | `if_done(n11)` | Appointment(consultation), patient discusses options | patient attended |
-| n13 | Decision (treat?) | `decision` | urologist | `if_done(n11)` | record decision (outputs: cancer_treatment / nothing) | decision recorded |
-| n14 | XOR → cancer treatment | `end_pathway` + `pathway_link`(fire_and_forget → oncology) | system | `decision_output(n13, cancer_treatment)` | end this pathway + kick off oncology pathway | handed over |
-| n15 | XOR → end pathway | `end_pathway` | caregiver | `decision_output(n13, nothing)` | — | pathway ended |
+| n6 | Send post-op info | `message` | patient | `if_done(n5)` | mock: log send | sent |
+| n7 | Task: view pathology results | `task` | urologist | `if_done(n5)` + pathology marked in (mock) | project task | urologist reviewed results |
+| n8 | MDO | `mdo` | MDO lead + caregivers | `if_done(n7)` (reviewed by all) | Appointment(kind=other, caregiver participants) | everyone contributed, lead decided |
+| n9 | Appointment (post-MDO) | `appointment` | urologist | `if_done(n8)` | Appointment(consultation), patient discusses options | patient attended |
+| n10 | Decision (treat?) | `decision` | urologist | `if_done(n8)` | record decision (outputs: cancer_treatment / nothing) | decision recorded |
+| n11 | XOR → cancer treatment | `end_pathway` + `pathway_link`(fire_and_forget → oncology) | system | `decision_output(n10, cancer_treatment)` | end this pathway + kick off oncology pathway | handed over |
+| n12 | XOR → end pathway | `end_pathway` | caregiver | `decision_output(n10, nothing)` | — | pathway ended |
+
+> PROM + post-op measurements are part of the **one Luscii program** (post-op phase) — internal, not separate pathway blocks.
 
 ## What must be built / matched (gaps)
 

@@ -201,21 +201,18 @@ The sticky-note structure (Pre-requisites / Actions / Complete-if) maps to: `inp
 | Block (flow) | mock vs Luscii vs build | Notes |
 |---|---|---|
 | informed_consent | Luscii (inside program) | consent handled within a Luscii program, not a standalone block |
-| external_program: Luscii enroll | Luscii (real) | on reach: ensure connection + enroll via `POST /v1/patients` (`programId`/`protocolId`) |
-| anesthesia questionnaire | Luscii (real, read-gated) | completes when `GET /v1/instrument-item-responses` shows it answered |
-| measurements | Luscii (real, read-gated) | completes on `GET /v1/measurements`; escalation via `GET /v1/alerts` (out-of-bounds) |
-| consent / PROM | Luscii-internal | inside the program; not gated as pathway steps in PoC |
-| Luscii measurements on patient detail | existing (MeasurementCharts) | read surface, not pathway runtime |
+| external_program: Luscii enroll | Luscii (real) | ONE block, enrolled once: `POST /v1/patients` (`programId`/`protocolId`); program does consent + questionnaires + measurements internally |
+| consent / anesthesia / measurements / PROM | Luscii-internal | all inside the one Luscii program — not separate pathway blocks |
+| `task`: review Luscii pre-op data | build (caregiver) | caregiver verifies anesthesia + measurements are good in Luscii, marks done — **this gates the operation** |
+| Luscii measurements on patient detail | existing (MeasurementCharts) | the read surface the caregiver reviews |
 | message: pre-op / post-op info | mock (logged) | no real delivery in PoC |
 | appointment / task / treatment / mdo / decision | build | caregiver-facing, built here |
 
-**Luscii scope (moderate).** Confirmed against `luscii-public-api.json`:
-- **Enroll** — when a Luscii (`external_program`) block becomes eligible, an activity ensures a connection / enrolls the patient: `POST /v1/patients` carries demographics + identifiers + **`programId` / `protocolId`** (one call = create connection + program enrollment). Reuse an existing patient if found.
-- **One program, enrolled once early.** A single Luscii program (`programId`) is enrolled at the early `external_program` block (after consent) and covers consent + monitoring + pre-op questionnaire/measurements. The later gate blocks do **not** re-enroll — they read from that same program.
-- **Read-on-demand gating** — Luscii-backed gate blocks (anesthesia questionnaire, measurements) complete by **reading** Luscii: `GET /v1/instrument-item-responses` (questionnaire answered), `GET /v1/measurements` (provided), `GET /v1/alerts` (out-of-bounds → escalation). A Temporal activity polls on a timer (or on eligibility eval); webhooks (`/v1/webhooks-events`) are a later upgrade for push.
-- Patient-detail measurement display stays the existing `MeasurementCharts` read surface.
-
-Built on the existing read adapter (`get_measurements`, `get_planned_actions`, `get_item_response_localisations`) plus the `POST /v1/patients` enroll call (new).
+**Luscii scope.** Confirmed against `luscii-public-api.json`:
+- **One program, one block, enrolled once.** A single Luscii program (`programId`) is enrolled at the early `external_program` block via `POST /v1/patients` (demographics + identifiers + `programId`/`protocolId`; reuse an existing patient if found). The program runs consent + questionnaire + measurements **internally** — none are separate pathway blocks.
+- **The operation gates on a caregiver task, not an auto-read.** Auto-gating on Luscii completion proved awkward, so a `task` ("review Luscii pre-op data is good") lets a caregiver verify anesthesia + measurements in Luscii and mark it done, gating the operation.
+- **Reads feed the display, not auto-gates.** `GET /v1/measurements` / `/v1/alerts` power the existing `MeasurementCharts` patient-detail view the caregiver reviews. Webhooks (`/v1/webhooks-events`) are a later upgrade.
+- Built on the existing read adapter plus the new `POST /v1/patients` enroll call.
 
 ### D15 — Subpath is inlining, not nested enrollment
 
