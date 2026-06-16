@@ -9,17 +9,28 @@ type CreateBlockInput = {
 }
 
 export function createBlock({ blockType, phaseId, laneId, x, y }: CreateBlockInput): PathwayBlock {
+  // Chain slot #1 (`pathway-model-foundations`): the builder still
+  // produces the legacy `(type, config)` shape on the client; the
+  // backend write shim (`block_write_shim.block_in_to_typed`) turns it
+  // into the typed `BaseBlock` subclass on PUT. The typed envelope
+  // fields (`kind`, `name`, `input_logic`, per-kind required fields)
+  // are absent until autosave round-trips and re-fetches the typed
+  // shape from `GET /pathways/{id}`. Cast through the union to keep
+  // the in-memory shape forwards-compatible without rewriting every
+  // inspector ahead of slot #2.
   return {
     id: crypto.randomUUID(),
     phase_id: phaseId,
     lane_id: laneId,
-    type: blockType.type,
-    label: null,
+    kind: blockType.semantics,
+    name: blockType.label,
     duration_value_id: null,
-    config: buildDefaultBlockConfig(blockType.config_schema, blockType.label),
+    input_logic: { rules: [], aggregator: 'all_of' },
+    timing_policy: null,
     x: Math.round(x),
     y: Math.round(y),
-  }
+    ...buildDefaultBlockConfig(blockType.config_schema, blockType.label),
+  } as unknown as PathwayBlock
 }
 
 // Walks a JSON Schema `required` list and produces the smallest object that

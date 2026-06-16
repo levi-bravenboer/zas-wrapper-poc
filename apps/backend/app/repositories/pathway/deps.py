@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.db.engine import SessionDep
+from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 
@@ -17,5 +18,10 @@ def get_pathway_version_repository(session: SessionDep) -> PathwayVersionReposit
     return PathwayVersionRepository(session)
 
 
+def get_enrollment_repository(session: SessionDep) -> EnrollmentRepository:
+    return EnrollmentRepository(session)
+
+
 PathwayRepoDep = Annotated[PathwayRepository, Depends(get_pathway_repository)]
 PathwayVersionRepoDep = Annotated[PathwayVersionRepository, Depends(get_pathway_version_repository)]
+EnrollmentRepoDep = Annotated[EnrollmentRepository, Depends(get_enrollment_repository)]

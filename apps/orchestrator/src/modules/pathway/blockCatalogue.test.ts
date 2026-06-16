@@ -11,10 +11,16 @@ describe('resolveLucideIcon', () => {
     'clock',
     'flag',
     'git-branch',
+    'git-merge',
     'hourglass',
     'link-2',
     'list-checks',
     'mail',
+    'play',
+    'signature',
+    'square',
+    'stethoscope',
+    'users',
     'workflow',
   ])('resolves catalogue icon %s to a lucide component', (name) => {
     const Icon = resolveLucideIcon(name)
@@ -32,7 +38,7 @@ describe('resolveLucideIcon', () => {
 
 describe('blockSemanticsSummary', () => {
   const cases: Array<[BlockSemantics, Record<string, unknown>, string | undefined]> = [
-    ['appointment', { kind: 'consult' }, 'consult'],
+    ['appointment', { title: 'Consult' }, 'Consult'],
     ['task', { assignee: 'caregiver' }, 'caregiver'],
     ['message', { channel: 'email' }, 'email'],
     [
@@ -45,10 +51,11 @@ describe('blockSemanticsSummary', () => {
       },
       '2',
     ],
-    ['decision', { criterion: 'risk_score' }, 'risk_score'],
-    ['milestone', { note: 'baseline' }, 'baseline'],
+    ['decision', { question: 'Risico hoog?' }, 'Risico hoog?'],
+    ['milestone', { label: 'baseline' }, 'baseline'],
     ['wait', { event_type: 'pathology_report' }, 'pathology_report'],
     ['pathway_link', { mode: 'blocking' }, 'blocking'],
+    ['treatment', { title: 'Lumbale spinale fusie' }, 'Lumbale spinale fusie'],
   ]
 
   it.each(cases)('summarises %s from config', (semantics, config, expected) => {

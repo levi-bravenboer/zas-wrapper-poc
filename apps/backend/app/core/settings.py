@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     # client, unset ⇒ unconfigured (endpoints answer 503 luscii_not_configured).
     luscii_api_url: AnyHttpUrl = AnyHttpUrl("https://vitalsapi.luscii.com")
     luscii_api_token: SecretStr | None = None
+    # DEV-ONLY: serve a canned `LusciiFixtureClient` when no real token is
+    # configured. Lets `moon run :up` reach the chart UI without a token.
+    # MUST stay off in production — fixture data is synthetic.
+    luscii_fixtures: bool = False
 
     @field_validator("luscii_api_token", mode="before")
     @classmethod

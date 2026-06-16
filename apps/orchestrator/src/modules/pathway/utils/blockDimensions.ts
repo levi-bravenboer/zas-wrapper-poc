@@ -10,6 +10,10 @@ export type BlockDimensions = { width: number; height: number }
 
 const NATIVE_DIMENSIONS: BlockDimensions = { width: BLOCK_WIDTH, height: BLOCK_HEIGHT }
 
+// Marker blocks (Start / EndPathway) render as 64×64 circles.
+const START_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
+const END_DIMENSIONS: BlockDimensions = { width: BLOCK_HEIGHT, height: BLOCK_HEIGHT }
+
 // ---- Luscii Program size computer ----------------------------------------
 // Auto-scales the Luscii block based on the resolved program's layout density
 // (phases × lanes). Range 360×200 → 540×300. See
@@ -102,6 +106,8 @@ export function getBlockDimensions(
   block: PathwayBlock,
   blockType: PathwayBlockType | null,
 ): BlockDimensions {
+  if (block.kind === 'start') return START_DIMENSIONS
+  if (block.kind === 'end_pathway') return END_DIMENSIONS
   if (
     blockType?.source === 'external' &&
     blockType.provider === LUSCII_PROVIDER &&

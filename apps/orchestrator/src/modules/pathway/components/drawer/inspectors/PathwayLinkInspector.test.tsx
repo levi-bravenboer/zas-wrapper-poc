@@ -55,7 +55,7 @@ describe('PathwayLinkInspector (8.2)', () => {
   it('renders the InspectorHeaderChip and target field label', () => {
     renderInspector({ target_pathway_id: CHILD_ID, mode: 'blocking', context_mapping: {} })
 
-    expect(screen.getByText('Pad-koppeling')).toBeInTheDocument()
+    expect(screen.getByText('Subpath')).toBeInTheDocument()
     expect(screen.getByText(/Doel-zorgpad/i)).toBeInTheDocument()
   })
 

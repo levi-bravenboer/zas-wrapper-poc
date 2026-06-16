@@ -378,22 +378,39 @@ async def test_luscii_data_merges_actions_and_measurements(
     matched = actions["pa-1"]["measurement"]
     assert matched["measurement_id"] == "m-1"
     assert matched["instrument_name"] == "Gewicht meting"
+    assert matched["instrument_id"] == "i-1"
     values = matched["values"]
-    # nl localisation preferred over en
-    assert {"label": "Gewicht", "value": "82", "unit": "kg", "response_texts": []} in values
-    # locale fallback to en + multiple-choice answer text resolved
+    # nl localisation preferred over en; new wire fields tagged on every value.
+    assert {
+        "label": "Gewicht",
+        "value": "82",
+        "unit": "kg",
+        "response_texts": [],
+        "item_id": "item-w",
+        "instrument_id": "i-1",
+        "archetype": "numeric",
+    } in values
+    # locale fallback to en + multiple-choice answer text resolved →
+    # `response_ids` present, so the classifier marks it categorical.
     assert {
         "label": "Feeling ok?",
         "value": None,
         "unit": None,
         "response_texts": ["Ja"],
+        "item_id": "item-q",
+        "instrument_id": "i-1",
+        "archetype": "categorical",
     } in values
-    # unknown item degrades to raw value with null label
+    # unknown item degrades to raw value with null label/unit; classifier
+    # routes it to `free_text` (non-empty value, no unit, no response_ids).
     assert {
         "label": None,
         "value": "raw-only",
         "unit": None,
         "response_texts": [],
+        "item_id": "item-unknown",
+        "instrument_id": "i-1",
+        "archetype": "free_text",
     } in values
     assert actions["pa-2"]["measurement"] is None
 
@@ -402,6 +419,44 @@ async def test_luscii_data_merges_actions_and_measurements(
     # Labels resolve from the synced tables — the request path must not
     # sweep the 95k-row upstream catalogues.
     assert not any("localisation" in c for c in luscii.calls)
+
+    # ── series[] block: time-projected per (instrument_id, item_id). ──
+    series = body["series"]
+    assert isinstance(series, list)
+    by_pair = {(s["instrument_id"], s["item_id"]): s for s in series}
+    # Both decoded measurements (m-1, m-2) target the same instrument-item
+    # for the weight value; the series merges them.
+    weight = by_pair[("i-1", "item-w")]
+    assert weight["archetype"] == "numeric"
+    assert weight["unit"] == "kg"
+    assert weight["instrument_name"] == "Gewicht meting"
+    # m-1 contributes one weight value; m-2 has empty details. Lock to the
+    # exact count so a future fixture/projection regression surfaces.
+    assert len(weight["points"]) == 1
+    weight_observed = [p["observed_at"] for p in weight["points"]]
+    assert weight_observed == sorted(weight_observed), "points within a series MUST be sorted ASC"
+    for point in weight["points"]:
+        assert point["archetype"] == "numeric"
+        assert isinstance(point["value"], (int, float))
+    # The categorical questionnaire item lands as a `categorical` series.
+    mc = by_pair[("i-1", "item-q")]
+    assert mc["archetype"] == "categorical"
+    assert mc["unit"] is None
+    assert mc["points"][0]["archetype"] == "categorical"
+    assert mc["points"][0]["responses"] == ["Ja"]
+    # Series sort is DESC by most-recent point timestamp (D-LAYOUT).
+    most_recent = [s["points"][-1]["observed_at"] for s in series]
+    assert most_recent == sorted(most_recent, reverse=True), (
+        "series MUST be sorted DESC by most-recent point"
+    )
+    # Every point in the response carries the current programme id (D-PROGRAM).
+    expected_program_id = body["program"]["id"]
+    for s in series:
+        for point in s["points"]:
+            assert point.get("program_id") == expected_program_id
+    # series_id is a 12-char hex hash (no need to recompute; stability is
+    # covered by the unit test on compute_series_id).
+    assert all(len(s["series_id"]) == 12 for s in series)
 
 
 async def test_luscii_data_not_linked_short_circuits(

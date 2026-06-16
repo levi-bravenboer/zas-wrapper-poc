@@ -2,7 +2,9 @@ import type { PathwayBlock, PathwayLane, PathwayPhase } from './types'
 
 export const CANVAS_LEFT_PAD = 96
 export const PHASE_COL_WIDTH = 380
-export const PHASE_COL_MIN_WIDTH = 240
+// Min must keep a native 240px block fully inside its phase (no
+// half-overlap into the neighbour). 240 + 2 × 32 cell-pad = 304.
+export const PHASE_COL_MIN_WIDTH = 304
 export const PHASE_HEADER_HEIGHT = 36
 export const LANE_TOP_PAD = PHASE_HEADER_HEIGHT + 12
 // Bumped from 180 → 320 to accommodate variable-size external-provider
@@ -11,12 +13,13 @@ export const LANE_TOP_PAD = PHASE_HEADER_HEIGHT + 12
 // blocks are unaffected functionally; lanes simply carry more vertical
 // breathing room. Author-resizable lane heights still apply on top.
 export const LANE_ROW_HEIGHT = 320
-export const LANE_ROW_MIN_HEIGHT = 110
+// Min must keep a native 64px block fully inside its lane.
+// 64 + 2 × 28 cell-pad = 120.
+export const LANE_ROW_MIN_HEIGHT = 120
 export const LANE_INSET = 58
 export const BLOCK_WIDTH = 240
 export const BLOCK_HEIGHT = 64
 export const BLOCK_DEFAULT_X = 70
-export const BLOCK_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT / 2
 
 /**
  * Default y-offset (relative to lane top) for a block of `blockHeight` inside
@@ -34,38 +37,18 @@ export function laneInset(blockHeight: number, laneHeight: number): number {
   return Math.round(Math.max(0, Math.min(maxInset, referenceOffset)))
 }
 
-export function phaseColumnX(index: number): number {
-  return CANVAS_LEFT_PAD + index * PHASE_COL_WIDTH
-}
-
-export function laneRowY(index: number): number {
-  return LANE_TOP_PAD + index * LANE_ROW_HEIGHT
-}
-
-export function canvasInnerWidth(phaseCount: number): number {
-  return CANVAS_LEFT_PAD + Math.max(phaseCount, 1) * PHASE_COL_WIDTH
-}
-
-export function canvasInnerHeight(laneCount: number): number {
-  return LANE_TOP_PAD + Math.max(laneCount, 1) * LANE_ROW_HEIGHT
-}
-
 export type CanvasGeometry = {
   phaseX: (phaseId: string) => number
   phaseW: (phaseId: string) => number
   laneY: (laneId: string) => number
   laneH: (laneId: string) => number
-  phaseIndex: (phaseId: string) => number
-  laneIndex: (laneId: string) => number
-  phaseAt: (flowX: number) => string | null
-  laneAt: (flowY: number) => string | null
   flowWidth: number
   flowHeight: number
 }
 
 /** Extra breathing room kept between a block's far edge and the cell border
  * when auto-growing a phase column or lane row to contain its contents. */
-export const CELL_FIT_PADDING = 16
+export const CELL_FIT_PADDING = 28
 
 export type BlockFitInput = Pick<PathwayBlock, 'phase_id' | 'lane_id' | 'x' | 'y'> & {
   width: number
@@ -96,28 +79,26 @@ export function buildCanvasGeometry(
   blocks: BlockFitInput[] = [],
 ): CanvasGeometry {
   const { perPhase, perLane } = aggregateBlockFits(blocks)
-  const phaseEntries: Array<{ id: string; x: number; w: number; idx: number }> = []
+  const phaseEntries: Array<{ id: string; x: number; w: number }> = []
   const phasesByOrd = phases.toSorted((a, b) => a.ord - b.ord)
   let cursorX = CANVAS_LEFT_PAD
-  phasesByOrd.forEach((p, i) => {
+  for (const p of phasesByOrd) {
     const declared = Math.max(PHASE_COL_MIN_WIDTH, p.width_px ?? PHASE_COL_WIDTH)
-    const needed = perPhase.get(p.id) ?? 0
-    const w = Math.max(declared, needed)
-    phaseEntries.push({ id: p.id, x: cursorX, w, idx: i })
+    const w = Math.max(declared, perPhase.get(p.id) ?? 0)
+    phaseEntries.push({ id: p.id, x: cursorX, w })
     cursorX += w
-  })
+  }
   const flowWidth = Math.max(CANVAS_LEFT_PAD + PHASE_COL_WIDTH, cursorX)
 
-  const laneEntries: Array<{ id: string; y: number; h: number; idx: number }> = []
+  const laneEntries: Array<{ id: string; y: number; h: number }> = []
   const lanesByOrd = lanes.toSorted((a, b) => a.ord - b.ord)
   let cursorY = LANE_TOP_PAD
-  lanesByOrd.forEach((l, i) => {
+  for (const l of lanesByOrd) {
     const declared = Math.max(LANE_ROW_MIN_HEIGHT, l.height_px ?? LANE_ROW_HEIGHT)
-    const needed = perLane.get(l.id) ?? 0
-    const h = Math.max(declared, needed)
-    laneEntries.push({ id: l.id, y: cursorY, h, idx: i })
+    const h = Math.max(declared, perLane.get(l.id) ?? 0)
+    laneEntries.push({ id: l.id, y: cursorY, h })
     cursorY += h
-  })
+  }
   const flowHeight = Math.max(LANE_TOP_PAD + LANE_ROW_HEIGHT, cursorY)
 
   const phaseMap = new Map(phaseEntries.map((e) => [e.id, e]))
@@ -128,12 +109,6 @@ export function buildCanvasGeometry(
     phaseW: (id) => phaseMap.get(id)?.w ?? PHASE_COL_WIDTH,
     laneY: (id) => laneMap.get(id)?.y ?? LANE_TOP_PAD,
     laneH: (id) => laneMap.get(id)?.h ?? LANE_ROW_HEIGHT,
-    phaseIndex: (id) => phaseMap.get(id)?.idx ?? 0,
-    laneIndex: (id) => laneMap.get(id)?.idx ?? 0,
-    phaseAt: (flowX) =>
-      phaseEntries.find((e) => flowX < e.x + e.w)?.id ?? phaseEntries.at(-1)?.id ?? null,
-    laneAt: (flowY) =>
-      laneEntries.find((e) => flowY < e.y + e.h)?.id ?? laneEntries.at(-1)?.id ?? null,
     flowWidth,
     flowHeight,
   }

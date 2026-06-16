@@ -955,6 +955,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pathways/{pathway_id}/blocks/{block_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pathway Block */
+        get: operations["get_pathway_block"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pathways/{pathway_id}/versions": {
         parameters: {
             query?: never;
@@ -1038,6 +1055,91 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Enrollment */
+        post: operations["create_enrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Enrollment */
+        get: operations["get_enrollment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}/executions/{execution_id}:start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Block Execution */
+        post: operations["start_block_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}/executions/{execution_id}:complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Block Execution */
+        post: operations["complete_block_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}/deferred-values/{attr}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Deferred Value */
+        patch: operations["patch_deferred_value"];
         trace?: never;
     };
     "/luscii/programs": {
@@ -1176,6 +1278,66 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /** AppointmentBlockOut */
+        AppointmentBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Title */
+            title: string;
+            /** Mode */
+            mode?: ("in_person" | "video" | "phone") | null;
+            /** Location */
+            location?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Attendees Patient */
+            attendees_patient?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "appointment";
+        };
         /**
          * AppointmentKind
          * @enum {string}
@@ -1259,6 +1421,49 @@ export interface components {
         AssignedUserIdsUpdate: {
             /** User Ids */
             user_ids: string[];
+        };
+        /**
+         * AtEnrollmentPickedDatePolicy
+         * @description Schedule is the date supplied at enrollment as a deferred field.
+         */
+        AtEnrollmentPickedDatePolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "at_enrollment_picked_date";
+        };
+        /** BlockExecutionResponse */
+        BlockExecutionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Scheduled At */
+            scheduled_at?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "eligible" | "active" | "completed" | "skipped" | "failed";
+            /** Result Json */
+            result_json?: {
+                [key: string]: unknown;
+            } | null;
+            /** Decision Output */
+            decision_output?: string | null;
         };
         /**
          * CareTeamCreate
@@ -1368,6 +1573,286 @@ export interface components {
          * @enum {string}
          */
         ConsentStatus: "active" | "revoked";
+        /** DecisionAutoResolve */
+        DecisionAutoResolve: {
+            /**
+             * Source Block Id
+             * Format: uuid
+             */
+            source_block_id: string;
+            /** Field Path */
+            field_path: string;
+        };
+        /** DecisionBlockOut */
+        DecisionBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Question */
+            question: string;
+            auto_resolve?: components["schemas"]["DecisionAutoResolve"] | null;
+            /** Outputs */
+            outputs?: string[];
+            /**
+             * Mode
+             * @default and
+             * @enum {string}
+             */
+            mode: "xor" | "and";
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "decision";
+        };
+        /**
+         * DecisionOutputArgs
+         * @description Producer `decision`-class block fired the named `output_key`.
+         */
+        DecisionOutputArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "decision_output";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Output Key */
+            output_key: string;
+        };
+        /**
+         * DeferredFieldValueIn
+         * @description One `(block_template_id, attr, value_json)` triple at enrollment time.
+         */
+        DeferredFieldValueIn: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Attr */
+            attr: string;
+            /** Value Json */
+            value_json: unknown;
+        };
+        /** DeferredFieldValueOut */
+        DeferredFieldValueOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Attr */
+            attr: string;
+            /** Value Json */
+            value_json: unknown;
+            /**
+             * Set At
+             * Format: date-time
+             */
+            set_at: string;
+        };
+        /**
+         * DeferredFieldValuePatch
+         * @description Body for `PATCH /enrollments/{id}/deferred-values/{attr}`.
+         *
+         *     Late-supply value for a `DeferredFieldSpec` whose value wasn't
+         *     available at enrollment creation. The engine re-evaluates
+         *     eligibility once the value lands.
+         */
+        DeferredFieldValuePatch: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Value Json */
+            value_json: unknown;
+        };
+        /**
+         * DerivedEdge
+         * @description One canvas connector derived from a target block's `input_logic` rule.
+         *
+         *     `source_block_id` identifies the producer; for predicates that do
+         *     not name a block (`wait_after` — anchored on a marker, not a
+         *     block), `source_block_id` is `None` and the canvas renders the
+         *     edge as marker-anchored instead.
+         */
+        DerivedEdge: {
+            /**
+             * Target Block Id
+             * Format: uuid
+             */
+            target_block_id: string;
+            /** Source Block Id */
+            source_block_id: string | null;
+            predicate: components["schemas"]["PredicateKind"];
+            /** Args */
+            args?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DueWithinPolicy
+         * @description Block must complete within an ISO 8601 window of its eligibility.
+         */
+        DueWithinPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "due_within";
+            /** Window Iso */
+            window_iso: string;
+        };
+        /** EndPathwayBlockOut */
+        EndPathwayBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "end_pathway";
+        };
+        /**
+         * EnrollmentCreate
+         * @description Body for `POST /enrollments`.
+         */
+        EnrollmentCreate: {
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /**
+             * Pathway Version Id
+             * Format: uuid
+             */
+            pathway_version_id: string;
+            /**
+             * Anchor Date
+             * Format: date
+             */
+            anchor_date: string;
+            /** Deferred Values */
+            deferred_values?: components["schemas"]["DeferredFieldValueIn"][];
+        };
+        /** EnrollmentResponse */
+        EnrollmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /**
+             * Pathway Version Id
+             * Format: uuid
+             */
+            pathway_version_id: string;
+            /**
+             * Anchor Date
+             * Format: date
+             */
+            anchor_date: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "paused" | "completed" | "cancelled";
+            /** Executions */
+            executions?: components["schemas"]["BlockExecutionResponse"][];
+            /** Deferred Values */
+            deferred_values?: components["schemas"]["DeferredFieldValueOut"][];
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Code */
@@ -1376,6 +1861,42 @@ export interface components {
             message: string;
             /** Details */
             details?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * EventArgs
+         * @description In-execution event: the referenced block fired a typed event.
+         *
+         *     `event_type` must be declared in the referenced block kind's
+         *     class-level `EVENTS` tuple (enforced at publish time — no kind is
+         *     silently usable as an event source). True once the event has been
+         *     recorded for the referenced execution; the receive endpoint +
+         *     event store land in the "pathway-nested-runtime" PR
+         *     (pathway-completion § B3.3/B3.4) — until then this predicate
+         *     evaluates to `False` at runtime.
+         */
+        EventArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "event";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Event Type */
+            event_type: string;
+        };
+        /**
+         * ExecutionCompleteRequest
+         * @description Body for `POST /enrollments/{id}/executions/{exec_id}:complete`.
+         */
+        ExecutionCompleteRequest: {
+            /** Result */
+            result?: {
                 [key: string]: unknown;
             } | null;
         };
@@ -1465,6 +1986,166 @@ export interface components {
             /** Period End */
             period_end: string | null;
         };
+        /** ExternalProgramBlockOut */
+        ExternalProgramBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "luscii";
+            /** Program Id */
+            program_id?: string | null;
+            /** Protocol Id */
+            protocol_id?: string | null;
+            /** Mode */
+            mode?: ("blocking" | "fire_and_forget") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "external_program";
+        };
+        /**
+         * FixedDurationPolicy
+         * @description Block has a fixed ISO 8601 duration.
+         */
+        FixedDurationPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "fixed_duration";
+            /** Duration Iso */
+            duration_iso: string;
+        };
+        /** FormBlockOut */
+        FormBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Title */
+            title: string;
+            /** Intro */
+            intro?: string | null;
+            /** Questions */
+            questions: components["schemas"]["FormQuestion"][];
+            /** Submit Label */
+            submit_label?: string | null;
+            /** Confirmation Message */
+            confirmation_message?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "form";
+        };
+        /** FormQuestion */
+        FormQuestion: {
+            /** Id */
+            id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "text" | "long_text" | "single_choice" | "multi_choice" | "scale" | "date" | "file";
+            /** Label */
+            label: string;
+            /** Required */
+            required: boolean;
+            /**
+             * Options
+             * @default []
+             */
+            options: components["schemas"]["FormQuestionOption"][];
+            /** Validation */
+            validation?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** FormQuestionOption */
+        FormQuestionOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
         /**
          * Gender
          * @enum {string}
@@ -1474,6 +2155,24 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HasDataArgs
+         * @description A produced field on `block` is non-null at evaluation time.
+         */
+        HasDataArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "has_data";
+            /**
+             * Block
+             * Format: uuid
+             */
+            block: string;
+            /** Field Path */
+            field_path: string;
         };
         /** HealthResponse */
         HealthResponse: {
@@ -1490,6 +2189,159 @@ export interface components {
              * Format: date-time
              */
             started_at: string;
+        };
+        /**
+         * IfDoneArgs
+         * @description Predecessor block has completed (with optional `delay_iso` wait).
+         */
+        IfDoneArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "if_done";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Delay Iso */
+            delay_iso?: string | null;
+        };
+        /**
+         * IfNotDoneWithinArgs
+         * @description SLA / timeout: the referenced block is STILL not done after a window.
+         *
+         *     True when the referenced block's execution is NOT in a terminal
+         *     state (`completed` / `skipped`) AND `now >= sla_anchor + offset_iso`.
+         *     The anchor is the referenced block's eligibility moment
+         *     (`scheduled_at` until a dedicated `eligible_at` runtime column
+         *     lands). `offset_iso` is an ISO 8601 duration (`"P14D"`, `"PT4H"`)
+         *     — one duration grammar across the model, matching `TimingPolicy`.
+         */
+        IfNotDoneWithinArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "if_not_done_within";
+            /**
+             * After Block
+             * Format: uuid
+             */
+            after_block: string;
+            /** Offset Iso */
+            offset_iso: string;
+        };
+        /** InformedConsentBlockOut */
+        InformedConsentBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Questions */
+            questions?: components["schemas"]["FormQuestion"][];
+            /** Channels */
+            channels?: ("email" | "sms" | "push" | "in_app")[];
+            /**
+             * Reminder Offset Iso
+             * @default P3D
+             */
+            reminder_offset_iso: string;
+            /**
+             * Reminder Max
+             * @default 3
+             */
+            reminder_max: number;
+            /** Expires At Iso */
+            expires_at_iso?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "informed_consent";
+        };
+        /**
+         * InputLogic
+         * @description Aggregate of rules attached to a `BaseBlock`.
+         *
+         *     `aggregator` defines the combinator: `all_of` (default — every rule
+         *     must hold) or `any_of` (at least one). `n_of_m` is an optional
+         *     voting threshold for `any_of`-style gates; when set, the rule list
+         *     must satisfy at least `n` of `m` clauses.
+         */
+        InputLogic: {
+            /**
+             * Rules
+             * @default []
+             */
+            rules: components["schemas"]["InputLogicRule"][];
+            /**
+             * Aggregator
+             * @default all_of
+             * @enum {string}
+             */
+            aggregator: "all_of" | "any_of";
+            /** N Of M */
+            n_of_m?: [
+                number,
+                number
+            ] | null;
+        };
+        /**
+         * InputLogicRule
+         * @description One typed eligibility rule referenced from a downstream block.
+         *
+         *     `node` is the producer block reference (uuid string) for
+         *     visualization / canvas wiring; the predicate's typed `args` model
+         *     carries the same id and any predicate-specific fields. Carrying
+         *     `node` at the rule level keeps canvas dispatch O(1) without
+         *     walking into the args union.
+         */
+        InputLogicRule: {
+            /**
+             * Node
+             * Format: uuid
+             */
+            node: string;
+            /** Args */
+            args: components["schemas"]["IfDoneArgs"] | components["schemas"]["HasDataArgs"] | components["schemas"]["ValueEqualsArgs"] | components["schemas"]["ValueGtArgs"] | components["schemas"]["WaitAfterArgs"] | components["schemas"]["DecisionOutputArgs"] | components["schemas"]["IfNotDoneWithinArgs"] | components["schemas"]["EventArgs"];
         };
         /**
          * ItemCategory
@@ -1516,6 +2368,46 @@ export interface components {
             label: string;
             /** Rule */
             rule: string;
+        };
+        /**
+         * LusciiCategoricalPoint
+         * @description A single measurement point projected from a multiple-choice item.
+         */
+        LusciiCategoricalPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "categorical";
+            /** Responses */
+            responses?: string[];
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiFreeTextPoint
+         * @description A single measurement point projected from a free-text answer.
+         */
+        LusciiFreeTextPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "free_text";
+            /** Text */
+            text: string;
+            /** Program Id */
+            program_id?: string | null;
         };
         /**
          * LusciiInstrument
@@ -1642,11 +2534,46 @@ export interface components {
             protocol_name?: string | null;
         };
         /**
+         * LusciiMeasurementSeries
+         * @description A time-projected series of one instrument-item across the window.
+         *
+         *     `unit` is present only when `archetype` is `numeric` or `ordinal`;
+         *     categorical / free_text / unknown series carry no unit. Points are
+         *     sorted ascending by `observed_at` at projection time and the list is
+         *     never empty (series with zero points are not emitted).
+         */
+        LusciiMeasurementSeries: {
+            /** Series Id */
+            series_id: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Instrument Name */
+            instrument_name?: string | null;
+            /** Item Id */
+            item_id: string;
+            /** Label */
+            label?: string | null;
+            /**
+             * Archetype
+             * @enum {string}
+             */
+            archetype: "numeric" | "ordinal" | "categorical" | "free_text" | "unknown";
+            /** Unit */
+            unit?: string | null;
+            /** Points */
+            points?: (components["schemas"]["LusciiNumericPoint"] | components["schemas"]["LusciiOrdinalPoint"] | components["schemas"]["LusciiCategoricalPoint"] | components["schemas"]["LusciiFreeTextPoint"] | components["schemas"]["LusciiUnknownPoint"])[];
+        };
+        /**
          * LusciiMeasurementValueView
          * @description One decoded `measurement.details` item. `label`/`unit` come from the
          *     Luscii item localisation (nl preferred); `response_texts` resolve the
          *     multiple-choice `response_ids`. Unknown items keep `label=None` with the
          *     raw `value`.
+         *
+         *     `item_id`/`instrument_id` are passed through from the Luscii source row;
+         *     they let clients group values across measurements into a time-series.
+         *     `archetype` is set by the pure `classify_archetype` classifier — never
+         *     `null`, defaults to `"unknown"` when classification fails.
          */
         LusciiMeasurementValueView: {
             /** Label */
@@ -1657,11 +2584,23 @@ export interface components {
             unit?: string | null;
             /** Response Texts */
             response_texts?: string[];
+            /** Item Id */
+            item_id?: string | null;
+            /** Instrument Id */
+            instrument_id?: string | null;
+            /**
+             * Archetype
+             * @default unknown
+             * @enum {string}
+             */
+            archetype: "numeric" | "ordinal" | "categorical" | "free_text" | "unknown";
         };
         /** LusciiMeasurementView */
         LusciiMeasurementView: {
             /** Measurement Id */
             measurement_id?: string | null;
+            /** Instrument Id */
+            instrument_id?: string | null;
             /** Instrument Name */
             instrument_name?: string | null;
             /** Created At */
@@ -1670,6 +2609,46 @@ export interface components {
             processed_at?: string | null;
             /** Values */
             values?: components["schemas"]["LusciiMeasurementValueView"][];
+        };
+        /**
+         * LusciiNumericPoint
+         * @description A single measurement point projected as a numeric value.
+         */
+        LusciiNumericPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "numeric";
+            /** Value */
+            value: number;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /**
+         * LusciiOrdinalPoint
+         * @description A single measurement point projected as an ordinal (allowlisted unit).
+         */
+        LusciiOrdinalPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "ordinal";
+            /** Value */
+            value: number;
+            /** Program Id */
+            program_id?: string | null;
         };
         /**
          * LusciiPatientData
@@ -1691,6 +2670,8 @@ export interface components {
             planned_actions?: components["schemas"]["LusciiPlannedActionView"][];
             /** Unmatched Measurements */
             unmatched_measurements?: components["schemas"]["LusciiMeasurementView"][];
+            /** Series */
+            series?: components["schemas"]["LusciiMeasurementSeries"][];
         };
         /** LusciiPlannedActionView */
         LusciiPlannedActionView: {
@@ -1815,6 +2796,193 @@ export interface components {
             id?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /**
+         * LusciiUnknownPoint
+         * @description Fallback point for values the classifier cannot categorise.
+         */
+        LusciiUnknownPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            archetype: "unknown";
+            /** Raw */
+            raw?: string | null;
+            /** Program Id */
+            program_id?: string | null;
+        };
+        /** MdoBlockOut */
+        MdoBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Topic */
+            topic: string;
+            /** Expected Attendees Note */
+            expected_attendees_note?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "mdo";
+        };
+        /** MessageBlockOut */
+        MessageBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "email" | "sms" | "push" | "in_app";
+            /** Subject */
+            subject: string;
+            /** Body */
+            body: string;
+            /** Cta Label */
+            cta_label?: string | null;
+            /** Cta Target */
+            cta_target?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "message";
+        };
+        /** MilestoneBlockOut */
+        MilestoneBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Label */
+            label: string;
+            /** Description */
+            description?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "milestone";
         };
         /**
          * MobileHealthResponse
@@ -2124,7 +3292,17 @@ export interface components {
             /** Field Path */
             field_path: string;
         };
-        /** PathwayBlockIn */
+        /**
+         * PathwayBlockIn
+         * @description Typed-only block payload (chain slot #2 §6).
+         *
+         *     The slot-#1 legacy `(type, config)` dual shape is retired; the
+         *     wire now carries the typed `BaseBlock` subclass payload under
+         *     `config` directly. `kind` is the discriminator (replaces the
+         *     slot-#1 `type` column) — `_LEGACY_TYPE_ALIASES` in the resolver
+         *     still maps the dotted external-program code (`luscii.program`)
+         *     for storage parity.
+         */
         PathwayBlockIn: {
             /**
              * Id
@@ -2141,46 +3319,8 @@ export interface components {
              * @description Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0]).
              */
             lane_id?: string | null;
-            /** Type */
-            type: string;
-            /** Label */
-            label?: string | null;
-            /** Duration Value Id */
-            duration_value_id?: string | null;
-            /** Config */
-            config?: {
-                [key: string]: unknown;
-            };
-            /**
-             * X
-             * @default 0
-             */
-            x: number;
-            /**
-             * Y
-             * @default 0
-             */
-            y: number;
-        };
-        /** PathwayBlockOut */
-        PathwayBlockOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Phase Id
-             * Format: uuid
-             */
-            phase_id: string;
-            /**
-             * Lane Id
-             * Format: uuid
-             */
-            lane_id: string;
-            /** Type */
-            type: string;
+            /** Kind */
+            kind: string;
             /** Label */
             label?: string | null;
             /** Duration Value Id */
@@ -2214,7 +3354,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "appointment" | "task" | "message" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program";
+            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "mdo" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -2320,8 +3460,6 @@ export interface components {
             blocks?: components["schemas"]["PathwayBlockIn"][];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchIn"][];
-            /** Edges */
-            edges?: components["schemas"]["PathwayEdgeIn"][];
             /** Time Markers */
             time_markers?: components["schemas"]["PathwayTimeMarkerIn"][];
             /** Deferred Fields */
@@ -2335,34 +3473,6 @@ export interface components {
              */
             source_version_id: string;
         };
-        /** PathwayEdgeIn */
-        PathwayEdgeIn: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Source Block Id
-             * Format: uuid
-             */
-            source_block_id: string;
-            /**
-             * Target Block Id
-             * Format: uuid
-             */
-            target_block_id: string;
-            /** Source Branch Id */
-            source_branch_id?: string | null;
-            /** Delay Value Id */
-            delay_value_id?: string | null;
-            /** Time Marker Id */
-            time_marker_id?: string | null;
-            /** Offset Value Id */
-            offset_value_id?: string | null;
-            /** Offset Direction Code */
-            offset_direction_code?: string | null;
-        };
         /** PathwayEdgeOffsetDirection */
         PathwayEdgeOffsetDirection: {
             /** Code */
@@ -2371,34 +3481,6 @@ export interface components {
             label: string;
             /** Ord */
             ord: number;
-        };
-        /** PathwayEdgeOut */
-        PathwayEdgeOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Source Block Id
-             * Format: uuid
-             */
-            source_block_id: string;
-            /**
-             * Target Block Id
-             * Format: uuid
-             */
-            target_block_id: string;
-            /** Source Branch Id */
-            source_branch_id?: string | null;
-            /** Delay Value Id */
-            delay_value_id?: string | null;
-            /** Time Marker Id */
-            time_marker_id?: string | null;
-            /** Offset Value Id */
-            offset_value_id?: string | null;
-            /** Offset Direction Code */
-            offset_direction_code?: string | null;
         };
         /** PathwayEdgeTimingKind */
         PathwayEdgeTimingKind: {
@@ -2467,6 +3549,79 @@ export interface components {
             is_default: boolean;
             /** Height Px */
             height_px: number;
+        };
+        /** PathwayLinkBlockOut */
+        PathwayLinkBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * Target Pathway Id
+             * Format: uuid
+             */
+            target_pathway_id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "blocking" | "fire_and_forget";
+            /**
+             * Version Pin
+             * @default latest_published
+             * @enum {string}
+             */
+            version_pin: "latest_published" | "specific";
+            /** Pinned Version Id */
+            pinned_version_id?: string | null;
+            /**
+             * Context Mapping
+             * @default {}
+             */
+            context_mapping: {
+                [key: string]: string;
+            };
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "pathway_link";
         };
         /**
          * PathwayParentReference
@@ -2715,11 +3870,11 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: components["schemas"]["PathwayBlockOut"][];
+            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
-            edges?: components["schemas"]["PathwayEdgeOut"][];
+            edges?: components["schemas"]["DerivedEdge"][];
             /** Time Markers */
             time_markers?: components["schemas"]["PathwayTimeMarkerOut"][];
             /** Deferred Fields */
@@ -3126,6 +4281,15 @@ export interface components {
             /** Qualification */
             qualification?: string | null;
         };
+        /**
+         * PredicateKind
+         * @description Closed enum of supported input-logic predicates (D3).
+         *
+         *     No expression language. Adding a new predicate is a typed code
+         *     change here + a new `Args` model + an evaluator branch.
+         * @enum {string}
+         */
+        PredicateKind: "if_done" | "has_data" | "value_equals" | "value_gt" | "wait_after" | "decision_output" | "if_not_done_within" | "event";
         /** ProviderDescriptor */
         ProviderDescriptor: {
             /** Key */
@@ -3275,6 +4439,115 @@ export interface components {
             /** Source */
             source: string;
         };
+        /** StartBlockOut */
+        StartBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "start";
+        };
+        /** TaskBlockOut */
+        TaskBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Title */
+            title: string;
+            /**
+             * Assignee
+             * @enum {string}
+             */
+            assignee: "patient" | "caregiver";
+            /** Due Offset Days */
+            due_offset_days?: number | null;
+            /** Requires Completion */
+            requires_completion?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "task";
+        };
         /**
          * TaskItem
          * @description Unified envelope returned by `GET /tasks` and `GET /tasks/{source}/{source_id}`.
@@ -3311,6 +4584,62 @@ export interface components {
             /** Priority */
             priority?: ("low" | "normal" | "high" | "urgent") | null;
             payload: components["schemas"]["AppointmentPayload"];
+        };
+        /** TreatmentBlockOut */
+        TreatmentBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Title */
+            title: string;
+            /** Location */
+            location?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "treatment";
         };
         /**
          * UserCreate
@@ -3407,6 +4736,144 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * ValueEqualsArgs
+         * @description A produced field equals `expected`. Pure value compare, no coercion.
+         */
+        ValueEqualsArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "value_equals";
+            /**
+             * Block
+             * Format: uuid
+             */
+            block: string;
+            /** Field Path */
+            field_path: string;
+            /** Expected */
+            expected: unknown;
+        };
+        /**
+         * ValueGtArgs
+         * @description A produced numeric field is strictly greater than `threshold`.
+         */
+        ValueGtArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "value_gt";
+            /**
+             * Block
+             * Format: uuid
+             */
+            block: string;
+            /** Field Path */
+            field_path: string;
+            /** Threshold */
+            threshold: number;
+        };
+        /**
+         * WaitAfterArgs
+         * @description Anchored wait: marker reached + ISO 8601 offset, direction-signed.
+         */
+        WaitAfterArgs: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            predicate: "wait_after";
+            /**
+             * Marker Id
+             * Format: uuid
+             */
+            marker_id: string;
+            /** Offset Iso */
+            offset_iso: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "before" | "after";
+        };
+        /**
+         * WaitAfterPolicy
+         * @description Block fires after an ISO 8601 offset from its eligibility moment.
+         *
+         *     `PT0S` means "fire as soon as eligible" — used as the default
+         *     backfill for rows that carry no authored timing.
+         */
+        WaitAfterPolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "wait_after";
+            /**
+             * Offset Iso
+             * @default PT0S
+             */
+            offset_iso: string;
+        };
+        /** WaitBlockOut */
+        WaitBlockOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Phase Id
+             * Format: uuid
+             */
+            phase_id: string;
+            /**
+             * Lane Id
+             * Format: uuid
+             */
+            lane_id: string;
+            /** Duration Value Id */
+            duration_value_id?: string | null;
+            /**
+             * X
+             * @default 0
+             */
+            x: number;
+            /**
+             * Y
+             * @default 0
+             */
+            y: number;
+            /** Name */
+            name: string;
+            /** Lane Kind */
+            lane_kind?: string | null;
+            /**
+             * @default {
+             *       "rules": [],
+             *       "aggregator": "all_of"
+             *     }
+             */
+            input_logic: components["schemas"]["InputLogic"];
+            /** Timing Policy */
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            /** Event Type */
+            event_type: string;
+            /** Source Block Id */
+            source_block_id?: string | null;
+            /** Timeout Days */
+            timeout_days?: number | null;
+            /** On Timeout */
+            on_timeout?: ("continue" | "escalate") | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "wait";
         };
     };
     responses: never;
@@ -5826,6 +7293,47 @@ export interface operations {
             };
         };
     };
+    get_pathway_block: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pathway_id: string;
+                block_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_pathway_versions: {
         parameters: {
             query?: never;
@@ -6042,6 +7550,219 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_block_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockExecutionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_block_execution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecutionCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockExecutionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_deferred_value: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+                attr: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeferredFieldValuePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeferredFieldValueOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

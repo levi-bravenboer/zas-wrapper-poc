@@ -18,7 +18,6 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldIn,
     PathwayBlockIn,
     PathwayDefinitionReplace,
-    PathwayEdgeIn,
     PathwayLaneIn,
     PathwayPhaseIn,
     PathwayTimingValueIn,
@@ -29,8 +28,6 @@ from app.services.pathway.errors import (
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
-    EdgeTimingValidationError,
-    EdgeValidationError,
     NoConceptVersionError,
     PathwayNotFoundError,
     PathwayValidationError,
@@ -40,6 +37,33 @@ from app.services.pathway.errors import (
     UnknownPhaseError,
 )
 from app.services.pathway.pathway_service import PathwayService
+
+
+# Edge validation retired in chain slot #2 §3 — the legacy edge tests
+# below depend on the now-defunct `PathwayEdgeIn` payload shape and
+# `EdgeValidationError` / `EdgeTimingValidationError` exception
+# codepaths. The placeholder shims below preserve the test bodies as
+# `pytest.mark.skip` entries so the deletion shows up explicitly in
+# CI; the §7 backfill round-trip + the `_validate_input_logic_node_refs`
+# unit test replace them.
+class PathwayEdgeIn:  # type: ignore[no-redef]
+    """Placeholder for slot-#1 edge wire shape; retired in slot #2 §3."""
+
+    def __init__(self, **_: object) -> None:
+        return None
+
+
+class EdgeValidationError(Exception):  # type: ignore[no-redef]
+    pass
+
+
+class EdgeTimingValidationError(Exception):  # type: ignore[no-redef]
+    pass
+
+
+_SKIP_EDGE_TESTS = pytest.mark.skip(
+    reason="edge validation retired in slot #2 §3; replaced by input_logic.node refs"
+)
 
 
 def _phase(label: str = "Pre-op", ord_: int = 0) -> PathwayPhaseIn:
@@ -65,7 +89,7 @@ def _appointment_block(
         id=uuid.uuid4(),
         phase_id=phase_id,
         lane_id=lane_id,
-        type="appointment",
+        kind="appointment",
         label=title,
         config={"title": title},
     )
@@ -85,18 +109,22 @@ def _minimal_payload(
     lanes: list[PathwayLaneIn] | None = None,
     blocks: list[PathwayBlockIn] | None = None,
     branches: list[PathwayBlockBranchIn] | None = None,
-    edges: list[PathwayEdgeIn] | None = None,
     timing_values: list[PathwayTimingValueIn] | None = None,
     time_markers: list[PathwayTimeMarkerIn] | None = None,
     deferred_fields: list[PathwayBlockDeferredFieldIn] | None = None,
+    # Slot #2 §3: `edges` retired from the write surface. The kwarg
+    # is silently accepted and ignored so the existing edge-shaped
+    # tests can be retypeset to `input_logic` rules in §7 without
+    # rewriting every test fixture in one pass.
+    edges: list[object] | None = None,
 ) -> PathwayDefinitionReplace:
+    del edges  # ignored — see comment above
     return PathwayDefinitionReplace(
         name=name,
         phases=phases or [],
         lanes=lanes or [],
         blocks=blocks or [],
         branches=branches or [],
-        edges=edges or [],
         timing_values=timing_values or [],
         time_markers=time_markers or [],
         deferred_fields=deferred_fields or [],
@@ -129,6 +157,79 @@ async def test_list_summaries_includes_block_count(
     assert summaries[0].latest_published_version_id is None
 
 
+async def test_replace_definition_dual_writes_typed_columns(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """Chain slot #1 §5.1 contract: legacy `(type, config)` payload lands on
+    both the legacy columns and the typed per-kind columns on the same row."""
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        kind="appointment",
+        label="Intake",
+        config={"title": "Intake", "mode": "in_person", "duration_minutes": 30},
+    )
+    await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+    )
+    await db_session.commit()
+
+    row = (
+        await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))
+    ).scalar_one()
+    # Slot #2 §6 retired the legacy `type` / `config` columns; the
+    # typed `kind` discriminator + per-kind columns + `label`
+    # (storing `BaseBlock.name`) carry the row alone.
+    assert row.label == "Intake"
+    assert row.kind == "appointment"
+    assert row.appointment_title == "Intake"
+    assert row.appointment_mode == "in_person"
+    assert row.appointment_duration_minutes == 30
+
+
+async def test_replace_definition_typed_shape_writes_typed_columns(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """Chain slot #1 §5.2: with `typed_shape=True`, `config` is the typed
+    subclass payload — typed columns must populate from it."""
+    service = _service(db_session)
+    phase = _phase()
+    lane = _lane()
+    block = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=lane.id,
+        kind="appointment",
+        label="Intake",
+        # Typed payload still travels in `config` for chain slot #1 because
+        # `PathwayBlockIn` is unchanged; the header signals "treat config as
+        # AppointmentBlock payload" rather than the loose legacy bag.
+        config={"title": "Intake", "mode": "video", "duration_minutes": 15},
+    )
+    # Slot #2 §6: `typed_shape` kwarg retired — every block is the
+    # typed subclass payload now.
+    await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
+    )
+    await db_session.commit()
+
+    row = (
+        await db_session.execute(select(PathwayBlock).where(PathwayBlock.id == block.id))
+    ).scalar_one()
+    assert row.kind == "appointment"
+    assert row.appointment_title == "Intake"
+    assert row.appointment_mode == "video"
+    assert row.appointment_duration_minutes == 15
+
+
 async def test_get_with_resolved_version_missing_raises(db_session: AsyncSession) -> None:
     service = _service(db_session)
     with pytest.raises(PathwayNotFoundError):
@@ -146,7 +247,7 @@ async def test_unknown_block_type_raises(db_session: AsyncSession, empty_pathway
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="nonexistent",
+        kind="nonexistent",
         config={},
     )
     with pytest.raises(UnknownBlockTypeError):
@@ -193,7 +294,7 @@ async def test_block_on_disallowed_lane_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=caregiver_lane.id,
-        type="message",
+        kind="message",
         config={"channel": "email", "subject": "Hi", "body": "Welcome"},
     )
     with pytest.raises(BlockLaneNotAllowedError):
@@ -216,7 +317,7 @@ async def test_task_block_accepted_on_patient_lane(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=patient_lane.id,
-        type="task",
+        kind="task",
         config={"title": "Hydrate", "assignee": "patient"},
     )
     result = await service.replace_definition(
@@ -240,7 +341,7 @@ async def test_block_config_validates_against_schema(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={},
     )
     with pytest.raises(BlockConfigError):
@@ -264,7 +365,7 @@ async def test_message_channel_outside_enum_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="message",
+        kind="message",
         config={"channel": "fax", "subject": "Hi", "body": "Welcome"},
     )
     with pytest.raises(BlockConfigError):
@@ -285,7 +386,7 @@ async def test_wait_event_type_outside_enum_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="wait",
+        kind="wait",
         config={"event_type": "not_a_real_event"},
     )
     with pytest.raises(BlockConfigError):
@@ -306,7 +407,7 @@ async def test_pathway_link_mode_outside_enum_raises(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="pathway_link",
+        kind="pathway_link",
         config={
             "target_pathway_id": str(uuid.uuid4()),
             "mode": "broadcast",
@@ -330,7 +431,7 @@ async def test_form_block_accepted_with_valid_questions(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=lane.id,
-        type="form",
+        kind="form",
         config={
             "title": "Pijn vragenlijst",
             "questions": [
@@ -344,7 +445,7 @@ async def test_form_block_accepted_with_valid_questions(
         _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
     )
     assert len(result.version.blocks) == 1
-    assert result.version.blocks[0].type == "form"
+    assert result.version.blocks[0].kind == "form"
 
 
 # ---------- Timing validation -------------------------------------------------
@@ -393,6 +494,7 @@ async def test_branch_on_non_branching_block_raises(
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_duplicate_edge_raises(db_session: AsyncSession, empty_pathway: Pathway) -> None:
     """D20: (source, target, source_branch_id) must be unique."""
 
@@ -411,6 +513,7 @@ async def test_duplicate_edge_raises(db_session: AsyncSession, empty_pathway: Pa
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_source_branch_must_belong_to_source_block(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -422,14 +525,14 @@ async def test_edge_source_branch_must_belong_to_source_block(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=system_lane.id,
-        type="decision",
+        kind="decision",
         config={"question": "?"},
     )
     decision_b = PathwayBlockIn(
         id=uuid.uuid4(),
         phase_id=phase.id,
         lane_id=system_lane.id,
-        type="decision",
+        kind="decision",
         config={"question": "?"},
     )
     target = _appointment_block(phase.id, caregiver_lane.id, "T")
@@ -458,6 +561,7 @@ async def test_edge_source_branch_must_belong_to_source_block(
 # ---------- Edge timing union ------------------------------------------------
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_with_both_delay_and_marker_raises(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -494,6 +598,7 @@ async def test_edge_with_both_delay_and_marker_raises(
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_marker_triple_partial_raises(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -526,6 +631,7 @@ async def test_edge_marker_triple_partial_raises(
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_marker_id_must_belong_to_version(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -560,6 +666,7 @@ async def test_edge_marker_id_must_belong_to_version(
         )
 
 
+@_SKIP_EDGE_TESTS
 async def test_edge_offset_direction_code_must_be_seeded(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
@@ -708,7 +815,7 @@ async def test_replace_definition_overwrites_children(
         id=uuid.uuid4(),
         phase_id=new_phase.id,
         lane_id=new_lane.id,
-        type="milestone",
+        kind="milestone",
         label="Operatie",
         config={"label": "Operatie"},
     )
@@ -748,14 +855,14 @@ async def test_duplicate_block_id_in_payload_raises(
         id=shared_id,
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={"title": "A"},
     )
     b = PathwayBlockIn(
         id=shared_id,
         phase_id=phase.id,
         lane_id=lane.id,
-        type="appointment",
+        kind="appointment",
         config={"title": "B"},
     )
     with pytest.raises(PathwayValidationError):

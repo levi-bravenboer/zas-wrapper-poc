@@ -9,7 +9,7 @@ function makeBlockType(overrides: Partial<PathwayBlockType> & { type: string }):
   return {
     type: overrides.type,
     label: overrides.label ?? overrides.type,
-    semantics: overrides.semantics ?? 'task',
+    semantics: overrides.semantics ?? (overrides.type as PathwayBlockType['semantics']),
     icon: overrides.icon ?? 'square',
     allowed_lane_kind_codes: overrides.allowed_lane_kind_codes ?? ['patient'],
     config_schema: overrides.config_schema ?? {},
@@ -30,9 +30,8 @@ describe('createBlock', () => {
       x: 10,
       y: 20,
     })
-    expect(block.type).toBe('wait')
-    expect(block.config).toEqual({})
-    expect(block.label).toBeNull()
+    expect(block.kind).toBe('wait')
+    expect(block.name).toBe('wait')
   })
 
   it('rounds non-integer coordinates', () => {
@@ -66,7 +65,7 @@ describe('createBlock', () => {
       x: 0,
       y: 0,
     })
-    expect(block.config).toEqual({ title: 'Afspraak' })
+    expect((block as unknown as { title: string }).title).toBe('Afspraak')
   })
 
   it('picks first enum value for required enum fields', () => {
@@ -88,7 +87,8 @@ describe('createBlock', () => {
       x: 0,
       y: 0,
     })
-    expect(block.config).toEqual({ title: 'Taak', assignee: 'patient' })
+    expect((block as unknown as { title: string; assignee: string }).title).toBe('Taak')
+    expect((block as unknown as { title: string; assignee: string }).assignee).toBe('patient')
   })
 })
 

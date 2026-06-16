@@ -134,6 +134,7 @@ export function BuilderMiniMap({
           )
         })}
         {edges.map((edge) => {
+          if (!edge.source_block_id) return null
           const s = blocksById.get(edge.source_block_id)
           const t = blocksById.get(edge.target_block_id)
           if (!s || !t) return null
@@ -141,7 +142,7 @@ export function BuilderMiniMap({
           const tb = blockBox(t)
           return (
             <line
-              key={edge.id}
+              key={`${edge.source_block_id}->${edge.target_block_id}:${edge.predicate}`}
               x1={sb.x + sb.w}
               y1={sb.y + sb.h / 2}
               x2={tb.x}

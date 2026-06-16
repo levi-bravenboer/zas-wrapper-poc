@@ -64,12 +64,19 @@ export function useUpdatePatient() {
   })
 }
 
-export function useLusciiData(patientId: string | null) {
+export type LusciiWindowDays = 7 | 30 | 90 | 365
+
+export interface UseLusciiDataOptions {
+  days?: LusciiWindowDays
+}
+
+export function useLusciiData(patientId: string | null, options?: UseLusciiDataOptions) {
+  const days = options?.days ?? 30
   return useQuery<LusciiPatientData>({
-    queryKey: patientKeys.lusciiData(patientId ?? ''),
+    queryKey: patientKeys.lusciiData(patientId ?? '', days),
     queryFn: () => {
       if (!patientId) return Promise.reject(new Error('patientId required'))
-      return fetchLusciiData(patientId)
+      return fetchLusciiData(patientId, { days })
     },
     enabled: !!patientId,
     staleTime: PATIENT_STALE_MS,
@@ -81,7 +88,8 @@ export function useLusciiData(patientId: string | null) {
 
 async function invalidateLusciiCaches(qc: QueryClient, patientId: string): Promise<void> {
   await Promise.all([
-    qc.invalidateQueries({ queryKey: patientKeys.lusciiData(patientId) }),
+    // Prefix invalidation so every active window (7d/30d/90d/365d) refreshes.
+    qc.invalidateQueries({ queryKey: patientKeys.lusciiDataPrefix(patientId) }),
     // The link lives in patient.identifiers — refresh the detail too.
     qc.invalidateQueries({ queryKey: patientKeys.detail(patientId) }),
   ])

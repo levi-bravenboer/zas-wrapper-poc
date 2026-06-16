@@ -4,10 +4,16 @@ import {
   Clock,
   Flag,
   GitBranch,
+  GitMerge,
   Hourglass,
   Link2,
   ListChecks,
   Mail,
+  Play,
+  Signature,
+  Square,
+  Stethoscope,
+  Users,
   Workflow,
   type LucideIcon,
 } from 'lucide-react'
@@ -24,10 +30,16 @@ const LUCIDE_BY_NAME: Record<string, LucideIcon> = {
   clock: Clock,
   flag: Flag,
   'git-branch': GitBranch,
+  'git-merge': GitMerge,
   hourglass: Hourglass,
   'link-2': Link2,
   'list-checks': ListChecks,
   mail: Mail,
+  play: Play,
+  signature: Signature,
+  square: Square,
+  stethoscope: Stethoscope,
+  users: Users,
   workflow: Workflow,
 }
 
@@ -54,21 +66,23 @@ export function blockSemanticsSummary(
   const data = parsed.data
   switch (semantics) {
     case 'appointment':
-      return 'kind' in data ? data.kind : undefined
+      return 'title' in data ? (data.title ?? undefined) : undefined
+    case 'treatment':
+      return 'title' in data ? (data.title ?? undefined) : undefined
     case 'task':
-      return 'assignee' in data ? data.assignee : undefined
+      return 'assignee' in data ? (data.assignee ?? undefined) : undefined
     case 'message':
-      return 'channel' in data ? data.channel : undefined
+      return 'channel' in data ? (data.channel ?? undefined) : undefined
     case 'form':
       return 'questions' in data && data.questions ? `${data.questions.length}` : undefined
     case 'decision':
-      return 'criterion' in data ? data.criterion : undefined
+      return 'question' in data ? (data.question ?? undefined) : undefined
     case 'milestone':
-      return 'note' in data ? data.note : undefined
+      return 'label' in data ? (data.label ?? undefined) : undefined
     case 'wait':
-      return 'event_type' in data ? data.event_type : undefined
+      return 'event_type' in data ? (data.event_type ?? undefined) : undefined
     case 'pathway_link':
-      return 'mode' in data ? data.mode : undefined
+      return 'mode' in data ? (data.mode ?? undefined) : undefined
     default:
       return undefined
   }

@@ -73,3 +73,9 @@ class FakeLusciiClient:
     ) -> list[LusciiItemResponseLocalisation]:
         self._gate("get_item_response_localisations")
         return list(self.item_response_localisations)
+
+    async def aclose(self) -> None:
+        # No pooled resources in the in-memory fake; matches the Protocol so
+        # callers can `await client.aclose()` regardless of which client is
+        # wired.
+        return None

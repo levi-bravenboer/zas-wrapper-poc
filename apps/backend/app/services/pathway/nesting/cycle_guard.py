@@ -38,7 +38,7 @@ async def assert_no_nested_pathway_cycles(
     """
     proposed: list[tuple[UUID, UUID]] = []
     for block in blocks:
-        if block.type != "pathway_link":
+        if block.kind != "pathway_link":
             continue
         target_raw = (block.config or {}).get("target_pathway_id")
         if not target_raw:

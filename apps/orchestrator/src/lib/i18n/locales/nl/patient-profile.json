@@ -115,5 +115,48 @@
       "unknownInstrument": "Onbekend instrument",
       "noValues": "Geen waarden"
     }
+  },
+  "charts": {
+    "programme": {
+      "label": "Programma",
+      "fallback": "Geen programma",
+      "transition_label": "Programmawissel"
+    },
+    "overview": {
+      "aria_label": "Overzicht van laatste metingen",
+      "column": {
+        "item": "Meting",
+        "value": "Laatste waarde",
+        "time": "Tijdstip"
+      }
+    },
+    "window": {
+      "label": "Venster",
+      "7d": "7 dagen",
+      "30d": "30 dagen",
+      "90d": "90 dagen",
+      "365d": "365 dagen"
+    },
+    "empty": {
+      "title": "Geen metingen in deze periode",
+      "body": "Er zijn geen metingen geregistreerd binnen het geselecteerde tijdvenster.",
+      "widen_cta": "Bekijk 90 dagen"
+    },
+    "planned_actions": {
+      "toggle_show": "Geplande acties ({{count}}) tonen",
+      "toggle_hide": "Geplande acties ({{count}}) verbergen"
+    },
+    "unknown_instrument": "Onbekend instrument",
+    "unknown_format": "Onbekend formaat",
+    "last_value": "Laatste meting",
+    "error": {
+      "title": "Luscii-gegevens konden niet worden geladen",
+      "body": "Probeer opnieuw, of vernieuw de pagina.",
+      "retry": "Opnieuw proberen"
+    },
+    "free_text": {
+      "show_more": "meer tonen",
+      "show_less": "minder tonen"
+    }
   }
 }

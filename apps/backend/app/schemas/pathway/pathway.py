@@ -1,10 +1,22 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+# `PathwayTypedBlockOut` is the discriminated-union response shape for
+# pathway blocks (chain slot #1 §4.1). Imported as a forward reference
+# to avoid a circular import: `typed_blocks` depends on the per-kind
+# domain `BaseBlock` subclasses which transitively re-enter the
+# `app.schemas.pathway` package via `_base.py`'s import of the small
+# `Literal` types. `app/schemas/pathway/__init__.py` calls
+# `PathwayVersionDefinition.model_rebuild()` after the typed_blocks
+# module has loaded to resolve the forward ref.
+if TYPE_CHECKING:
+    from app.domain.pathway.input_logic.derived_edges import DerivedEdge
+    from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut
 
 
 class PathwayCreate(BaseModel):
@@ -146,6 +158,16 @@ class PathwayLaneOut(BaseModel):
 
 
 class PathwayBlockIn(BaseModel):
+    """Typed-only block payload (chain slot #2 §6).
+
+    The slot-#1 legacy `(type, config)` dual shape is retired; the
+    wire now carries the typed `BaseBlock` subclass payload under
+    `config` directly. `kind` is the discriminator (replaces the
+    slot-#1 `type` column) — `_LEGACY_TYPE_ALIASES` in the resolver
+    still maps the dotted external-program code (`luscii.program`)
+    for storage parity.
+    """
+
     id: UUID
     phase_id: UUID
     lane_id: UUID | None = Field(
@@ -155,9 +177,18 @@ class PathwayBlockIn(BaseModel):
             "default lane (catalogue.allowed_lane_kind_codes[0])."
         ),
     )
-    type: str = Field(min_length=1, max_length=63)
+    kind: str = Field(min_length=1, max_length=63)
+    # Optional convenience: callers can pass the display label as a
+    # top-level field; the write shim merges it into `config["name"]`
+    # before validating against the typed subclass. Slot #1 carried
+    # `label` as a separate ORM column; slot #2 §6 stores it on
+    # `BaseBlock.name` (mapped to the `label` column by the mapper).
     label: str | None = Field(default=None, max_length=255)
     duration_value_id: UUID | None = None
+    # `config` is the typed `BaseBlock` subclass payload (per-kind
+    # fields + the shared `name` / `input_logic` / `timing_policy`).
+    # Slot #1 had it as a loose JSON bag; slot #2 §6 makes it
+    # subclass-typed via `block_in_to_typed`.
     config: dict[str, Any] = Field(default_factory=dict)
     x: int = 0
     y: int = 0
@@ -188,22 +219,10 @@ class PathwayBlockBranchOut(PathwayBlockBranchIn):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PathwayEdgeIn(BaseModel):
-    id: UUID
-    source_block_id: UUID
-    target_block_id: UUID
-    source_branch_id: UUID | None = None
-    delay_value_id: UUID | None = None
-    # Marker-anchored timing: all three must be set together or all null.
-    # Cross-kind invariant (`completion XOR marker XOR branch XOR immediate`)
-    # is enforced in the service layer + a Postgres CHECK constraint.
-    time_marker_id: UUID | None = None
-    offset_value_id: UUID | None = None
-    offset_direction_code: str | None = Field(default=None, max_length=63)
-
-
-class PathwayEdgeOut(PathwayEdgeIn):
-    model_config = ConfigDict(from_attributes=True)
+# `PathwayEdgeIn` / `PathwayEdgeOut` were retired in
+# `pathway-input-logic-and-timing` §3.2. The authored `pathway_edge`
+# table no longer exists; the canvas reads edges via the derived
+# `DerivedEdge` shape computed from each block's `input_logic`.
 
 
 class PathwayTimeMarkerIn(BaseModel):
@@ -294,9 +313,15 @@ class PathwayVersionDefinition(BaseModel):
     phases: list[PathwayPhaseOut] = Field(default_factory=list)
     lanes: list[PathwayLaneOut] = Field(default_factory=list)
     timing_values: list[PathwayTimingValueOut] = Field(default_factory=list)
-    blocks: list[PathwayBlockOut] = Field(default_factory=list)
+    blocks: list["PathwayTypedBlockOut"] = Field(default_factory=list)
     branches: list[PathwayBlockBranchOut] = Field(default_factory=list)
-    edges: list[PathwayEdgeOut] = Field(default_factory=list)
+    # `edges` is derived from `blocks[*].input_logic` per
+    # `pathway-input-logic-and-timing` §3.3. The authored
+    # `pathway_edge` table no longer exists; the canvas keeps
+    # rendering one connector per producer→consumer relationship by
+    # walking this list. Forward-reference to `DerivedEdge` is
+    # resolved alongside `PathwayTypedBlockOut` from `typed_blocks`.
+    edges: list["DerivedEdge"] = Field(default_factory=list)
     time_markers: list[PathwayTimeMarkerOut] = Field(default_factory=list)
     deferred_fields: list[PathwayBlockDeferredFieldOut] = Field(default_factory=list)
 
@@ -327,7 +352,9 @@ class PathwayDefinitionReplace(BaseModel):
     timing_values: list[PathwayTimingValueIn] = Field(default_factory=list)
     blocks: list[PathwayBlockIn] = Field(default_factory=list)
     branches: list[PathwayBlockBranchIn] = Field(default_factory=list)
-    edges: list[PathwayEdgeIn] = Field(default_factory=list)
+    # `edges` retired from the write surface in slot #2 §3 — the
+    # builder authors `input_logic` rules on each block instead and
+    # the canvas derives edges on read.
     time_markers: list[PathwayTimeMarkerIn] = Field(default_factory=list)
     deferred_fields: list[PathwayBlockDeferredFieldIn] = Field(default_factory=list)
 

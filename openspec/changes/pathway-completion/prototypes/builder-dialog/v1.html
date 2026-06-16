@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE — builder-dialog v1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-background: oklch(1 0 0);
+        --color-surface-1: oklch(0.985 0.003 175);
+        --color-surface-2: oklch(0.97 0.01 175);
+        --color-foreground: oklch(0.21 0.04 265);
+        --color-foreground-muted: oklch(0.5 0.02 265);
+        --color-muted-foreground: var(--color-foreground-muted);
+        --color-card: var(--color-background);
+        --color-card-foreground: var(--color-foreground);
+        --color-popover: var(--color-background);
+        --color-popover-foreground: var(--color-foreground);
+        --color-muted: var(--color-surface-2);
+
+        --color-primary: oklch(0.46 0.07 175);
+        --color-primary-hover: oklch(0.4 0.07 175);
+        --color-primary-pressed: oklch(0.34 0.06 175);
+        --color-primary-foreground: oklch(1 0 0);
+        --color-primary-soft: oklch(0.93 0.04 175);
+        --color-primary-subtle: oklch(0.97 0.01 175);
+        --color-accent-mint: oklch(0.78 0.08 175);
+
+        --color-destructive: oklch(0.6 0.22 30);
+        --color-destructive-foreground: oklch(1 0 0);
+        --color-warning: oklch(0.75 0.18 65);
+        --color-warning-foreground: oklch(0.21 0.04 265);
+        --color-success: oklch(0.55 0.1 175);
+        --color-success-foreground: oklch(1 0 0);
+
+        --color-border: oklch(0.91 0.005 265);
+        --color-border-strong: oklch(0.82 0.01 265);
+        --color-input: var(--color-border);
+        --color-ring: var(--color-primary);
+
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+
+        --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+        --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+        --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.1);
+
+        --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+      :root {
+        --gradient-aurora:
+          radial-gradient(ellipse 65% 55% at 100% 100%, rgba(111, 199, 182, 0.22) 0%, transparent 70%),
+          linear-gradient(180deg, #f6f8f7 0%, #eef2f0 100%);
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--gradient-aurora);
+        color: var(--color-foreground);
+        font-size: 0.875rem;
+      }
+      .lane-bg-patient {
+        background: linear-gradient(180deg, rgba(207, 237, 232, 0.35), rgba(207, 237, 232, 0.15));
+      }
+      .lane-bg-caregiver {
+        background: linear-gradient(180deg, rgba(220, 232, 245, 0.4), rgba(220, 232, 245, 0.15));
+      }
+      .lane-bg-system {
+        background: linear-gradient(180deg, rgba(241, 248, 247, 0.7), rgba(241, 248, 247, 0.3));
+      }
+      .lane-bg-external {
+        background: linear-gradient(180deg, rgba(255, 232, 217, 0.4), rgba(255, 232, 217, 0.15));
+      }
+      .modal-backdrop {
+        background: rgba(16, 24, 40, 0.45);
+        backdrop-filter: blur(2px);
+      }
+      details > summary {
+        cursor: pointer;
+        list-style: none;
+      }
+      details > summary::-webkit-details-marker {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="h-screen overflow-hidden">
+    <!--
+      Mock data (Rugrevalidatie demo)
+        b-start          start          system     phase=pre-op
+        b-intake         appointment    caregiver  phase=pre-op       input_logic: if_done(b-start)
+        b-operatie       treatment      caregiver  phase=surgery      input_logic: if_done(b-intake)
+        b-recovery       wait           system     phase=recovery     input_logic: if_done(b-operatie)
+        b-voortgang      decision       system     phase=follow-up    input_logic: if_done(b-recovery)
+                                                                       outputs: ["goed","onvoldoende"]
+        b-extra-controle appointment    caregiver  phase=follow-up    input_logic: decision_output(b-voortgang,"onvoldoende")
+        b-einde          end_pathway    system     phase=follow-up    input_logic: decision_output(b-voortgang,"goed") OR if_done(b-extra-controle)
+    -->
+
+    <header
+      class="flex h-14 items-center justify-between border-b border-[--color-border] bg-[--color-background]/80 px-6 backdrop-blur"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="flex h-8 w-8 items-center justify-center rounded-md bg-[--color-primary] text-[--color-primary-foreground]"
+        >
+          <i data-lucide="workflow" class="h-4 w-4"></i>
+        </div>
+        <div class="text-[13px] text-[--color-foreground-muted]">
+          Zorgpaden <span class="px-1">/</span>
+          <span class="font-medium text-[--color-foreground]">Rugrevalidatie</span>
+          <span class="px-1">/</span>
+          <span>Werkversie v1</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1.5 text-[12px] text-[--color-foreground-muted]">
+          <span class="h-1.5 w-1.5 rounded-full bg-[--color-success]"></span>
+          Opgeslagen 15:42
+        </span>
+        <button
+          class="rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px] font-medium hover:bg-[--color-surface-1]"
+        >
+          Versies
+        </button>
+        <button
+          class="rounded-md bg-[--color-primary] px-3 py-1.5 text-[13px] font-medium text-[--color-primary-foreground] hover:bg-[--color-primary-hover]"
+        >
+          Publiceren
+        </button>
+      </div>
+    </header>
+
+    <nav
+      class="flex items-center gap-1 border-b border-[--color-border] bg-[--color-background]/60 px-6 py-2 backdrop-blur"
+    >
+      <span class="mr-2 text-[11px] uppercase tracking-wider text-[--color-foreground-muted]">
+        Fasen
+      </span>
+      <button
+        class="rounded-md bg-[--color-primary-soft] px-2.5 py-1 text-[12px] font-medium text-[--color-primary-pressed]"
+      >
+        Pre-op <span class="ml-1 opacity-60">(2)</span>
+      </button>
+      <button class="rounded-md px-2.5 py-1 text-[12px] font-medium text-[--color-foreground-muted] hover:bg-[--color-surface-1]">
+        Surgery <span class="ml-1 opacity-60">(1)</span>
+      </button>
+      <button class="rounded-md px-2.5 py-1 text-[12px] font-medium text-[--color-foreground-muted] hover:bg-[--color-surface-1]">
+        Recovery <span class="ml-1 opacity-60">(1)</span>
+      </button>
+      <button class="rounded-md px-2.5 py-1 text-[12px] font-medium text-[--color-foreground-muted] hover:bg-[--color-surface-1]">
+        Follow-up <span class="ml-1 opacity-60">(3)</span>
+      </button>
+      <button class="ml-1 flex items-center gap-1 rounded-md border border-dashed border-[--color-border] px-2.5 py-1 text-[12px] text-[--color-foreground-muted] hover:bg-[--color-surface-1]">
+        <i data-lucide="plus" class="h-3 w-3"></i> Fase
+      </button>
+      <div class="ml-auto flex items-center gap-2 text-[11px] text-[--color-foreground-muted]">
+        <i data-lucide="info" class="h-3.5 w-3.5"></i>
+        Lijnen worden afgeleid van blok-logica (input_logic)
+      </div>
+    </nav>
+
+    <main class="h-[calc(100vh-14rem)] overflow-x-auto overflow-y-auto px-6 py-6">
+      <div class="relative inline-flex min-w-full gap-6">
+        <section class="flex w-[300px] flex-shrink-0 flex-col gap-3">
+          <header class="flex items-center justify-between">
+            <h2 class="text-[12px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+              Pre-op
+            </h2>
+            <button class="text-[--color-foreground-muted] hover:text-[--color-foreground]">
+              <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+            </button>
+          </header>
+          <div class="lane-bg-system rounded-md border border-[--color-border] p-3">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[--color-foreground-muted]">
+              <i data-lucide="cog" class="h-3 w-3"></i>
+              Systeem
+            </div>
+            <div class="space-y-2">
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-start"
+                onclick="openEditDialog('b-start')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-start')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-[--color-primary-soft] text-[--color-primary-pressed]">
+                    <i data-lucide="play" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Start</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Start</div>
+              </div>
+            </div>
+          </div>
+          <div class="lane-bg-caregiver rounded-md border border-[--color-border] p-3">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[--color-foreground-muted]">
+              <i data-lucide="stethoscope" class="h-3 w-3"></i>
+              Zorgteam
+            </div>
+            <div class="space-y-2">
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-intake"
+                onclick="openEditDialog('b-intake')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-intake')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-blue-700">
+                    <i data-lucide="calendar" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Afspraak</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Intake gesprek</div>
+                <div class="mt-0.5 text-[11px] text-[--color-foreground-muted]">
+                  ZAS Antwerpen · 30 min
+                </div>
+                <div class="mt-2 flex items-center gap-1 text-[11px] text-[--color-foreground-muted]">
+                  <i data-lucide="link" class="h-3 w-3"></i>
+                  wacht op Start
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="flex w-[300px] flex-shrink-0 flex-col gap-3">
+          <header class="flex items-center justify-between">
+            <h2 class="text-[12px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+              Surgery
+            </h2>
+            <button class="text-[--color-foreground-muted] hover:text-[--color-foreground]">
+              <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+            </button>
+          </header>
+          <div class="lane-bg-caregiver rounded-md border border-[--color-border] p-3">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[--color-foreground-muted]">
+              <i data-lucide="stethoscope" class="h-3 w-3"></i>
+              Zorgteam
+            </div>
+            <div class="space-y-2">
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-operatie"
+                onclick="openEditDialog('b-operatie')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-operatie')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-rose-100 text-rose-700">
+                    <i data-lucide="scissors" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Behandeling</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Operatie</div>
+                <div class="mt-0.5 text-[11px] text-[--color-foreground-muted]">
+                  Lumbale spinale fusie
+                </div>
+                <div class="mt-2 flex items-center gap-1 text-[11px] text-[--color-foreground-muted]">
+                  <i data-lucide="link" class="h-3 w-3"></i>
+                  wacht op Intake
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="flex w-[300px] flex-shrink-0 flex-col gap-3">
+          <header class="flex items-center justify-between">
+            <h2 class="text-[12px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+              Recovery
+            </h2>
+            <button class="text-[--color-foreground-muted] hover:text-[--color-foreground]">
+              <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+            </button>
+          </header>
+          <div class="lane-bg-system rounded-md border border-[--color-border] p-3">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[--color-foreground-muted]">
+              <i data-lucide="cog" class="h-3 w-3"></i>
+              Systeem
+            </div>
+            <div class="space-y-2">
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-recovery"
+                onclick="openEditDialog('b-recovery')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-recovery')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-amber-100 text-amber-700">
+                    <i data-lucide="hourglass" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Wachten</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Thuisrevalidatie</div>
+                <div class="mt-0.5 text-[11px] text-[--color-foreground-muted]">
+                  Wacht 42 dagen
+                </div>
+                <div class="mt-2 flex items-center gap-1 text-[11px] text-[--color-foreground-muted]">
+                  <i data-lucide="link" class="h-3 w-3"></i>
+                  wacht op Operatie
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="flex w-[300px] flex-shrink-0 flex-col gap-3">
+          <header class="flex items-center justify-between">
+            <h2 class="text-[12px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+              Follow-up
+            </h2>
+            <button class="text-[--color-foreground-muted] hover:text-[--color-foreground]">
+              <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+            </button>
+          </header>
+          <div class="lane-bg-caregiver rounded-md border border-[--color-border] p-3">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[--color-foreground-muted]">
+              <i data-lucide="stethoscope" class="h-3 w-3"></i>
+              Zorgteam
+            </div>
+            <div class="space-y-2">
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-extra-controle"
+                onclick="openEditDialog('b-extra-controle')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-extra-controle')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-blue-700">
+                    <i data-lucide="calendar" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Afspraak</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Extra controle</div>
+                <div class="mt-0.5 text-[11px] text-[--color-foreground-muted]">
+                  Bij onvoldoende herstel · 20 min
+                </div>
+                <div class="mt-2 flex items-center gap-1 text-[11px] text-[--color-foreground-muted]">
+                  <i data-lucide="git-branch" class="h-3 w-3"></i>
+                  Voortgangsmeting → onvoldoende
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="lane-bg-system rounded-md border border-[--color-border] p-3">
+            <div class="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[--color-foreground-muted]">
+              <i data-lucide="cog" class="h-3 w-3"></i>
+              Systeem
+            </div>
+            <div class="space-y-2">
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-voortgang"
+                onclick="openEditDialog('b-voortgang')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-voortgang')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-purple-100 text-purple-700">
+                    <i data-lucide="git-branch" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Beslissing</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Voortgangsmeting</div>
+                <div class="mt-0.5 text-[11px] text-[--color-foreground-muted]">
+                  Verloopt het herstel volgens plan?
+                </div>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <span class="rounded-full bg-[--color-success]/15 px-2 py-0.5 text-[10px] font-medium text-[--color-success]">
+                    goed
+                  </span>
+                  <span class="rounded-full bg-[--color-destructive]/15 px-2 py-0.5 text-[10px] font-medium text-[--color-destructive]">
+                    onvoldoende
+                  </span>
+                </div>
+              </div>
+              <div
+                class="group relative cursor-pointer rounded-md border border-[--color-border] bg-[--color-background] p-3 shadow-sm transition hover:border-[--color-primary] hover:shadow-md"
+                data-block-id="b-einde"
+                onclick="openEditDialog('b-einde')"
+              >
+                <button
+                  class="absolute right-1.5 top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-[--color-destructive] text-[--color-destructive-foreground] hover:bg-red-700 group-hover:flex"
+                  onclick="event.stopPropagation(); openDeleteConfirm('b-einde')"
+                  aria-label="Verwijderen"
+                >
+                  <i data-lucide="x" class="h-3 w-3"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-slate-200 text-slate-700">
+                    <i data-lucide="square" class="h-3.5 w-3.5"></i>
+                  </span>
+                  <span class="text-[11px] uppercase tracking-wide text-[--color-foreground-muted]">Einde</span>
+                </div>
+                <div class="mt-1.5 text-[13px] font-medium">Einde pathway</div>
+                <div class="mt-2 flex items-center gap-1 text-[11px] text-[--color-foreground-muted]">
+                  <i data-lucide="git-branch" class="h-3 w-3"></i>
+                  Voortgang → goed OF extra controle → klaar
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer
+      class="absolute bottom-0 left-0 right-0 border-t border-[--color-border] bg-[--color-background]/90 px-6 py-3 backdrop-blur"
+    >
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] uppercase tracking-wider text-[--color-foreground-muted]">
+          Voeg blok toe — klik om dialoog te openen
+        </span>
+        <span class="text-[11px] text-[--color-foreground-muted]">
+          12 typen · automatische lane &amp; layout
+        </span>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        <button onclick="openAddDialog('start')" class="palette-tile">
+          <i data-lucide="play" class="h-3.5 w-3.5"></i> Start
+        </button>
+        <button onclick="openAddDialog('appointment')" class="palette-tile">
+          <i data-lucide="calendar" class="h-3.5 w-3.5"></i> Afspraak
+        </button>
+        <button onclick="openAddDialog('treatment')" class="palette-tile">
+          <i data-lucide="scissors" class="h-3.5 w-3.5"></i> Behandeling
+        </button>
+        <button onclick="openAddDialog('task')" class="palette-tile">
+          <i data-lucide="check-square" class="h-3.5 w-3.5"></i> Taak
+        </button>
+        <button onclick="openAddDialog('decision')" class="palette-tile">
+          <i data-lucide="git-branch" class="h-3.5 w-3.5"></i> Beslissing
+        </button>
+        <button onclick="openAddDialog('message')" class="palette-tile">
+          <i data-lucide="mail" class="h-3.5 w-3.5"></i> Bericht
+        </button>
+        <button onclick="openAddDialog('informed_consent')" class="palette-tile">
+          <i data-lucide="signature" class="h-3.5 w-3.5"></i> Informed consent
+        </button>
+        <button onclick="openAddDialog('form')" class="palette-tile">
+          <i data-lucide="clipboard-list" class="h-3.5 w-3.5"></i> Formulier
+        </button>
+        <button onclick="openAddDialog('milestone')" class="palette-tile">
+          <i data-lucide="flag" class="h-3.5 w-3.5"></i> Mijlpaal
+        </button>
+        <button onclick="openAddDialog('wait')" class="palette-tile">
+          <i data-lucide="hourglass" class="h-3.5 w-3.5"></i> Wachten
+        </button>
+        <button onclick="openAddDialog('mdo')" class="palette-tile">
+          <i data-lucide="users" class="h-3.5 w-3.5"></i> MDO
+        </button>
+        <button onclick="openAddDialog('pathway_link')" class="palette-tile">
+          <i data-lucide="git-merge" class="h-3.5 w-3.5"></i> Subpath
+        </button>
+        <button onclick="openAddDialog('end_pathway')" class="palette-tile">
+          <i data-lucide="square" class="h-3.5 w-3.5"></i> Einde
+        </button>
+      </div>
+      <style type="text/tailwindcss">
+        .palette-tile {
+          @apply flex items-center gap-1.5 rounded-md border border-[--color-border] bg-[--color-background] px-2.5 py-1.5 text-[12px] font-medium text-[--color-foreground-muted] transition hover:border-[--color-primary] hover:bg-[--color-primary-subtle] hover:text-[--color-primary-pressed];
+        }
+      </style>
+    </footer>
+
+    <!-- Block dialog -->
+    <div
+      id="block-dialog"
+      class="modal-backdrop fixed inset-0 z-40 hidden items-center justify-center p-6"
+    >
+      <div
+        class="flex max-h-[88vh] w-full max-w-[560px] flex-col overflow-hidden rounded-lg bg-[--color-background] shadow-lg"
+      >
+        <div class="flex items-start justify-between border-b border-[--color-border] px-5 py-4">
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-md bg-[--color-primary-soft] text-[--color-primary-pressed]"
+            >
+              <i id="dialog-kind-icon" data-lucide="signature" class="h-5 w-5"></i>
+            </div>
+            <div>
+              <div id="dialog-mode-label" class="text-[11px] uppercase tracking-wider text-[--color-foreground-muted]">
+                Nieuw blok
+              </div>
+              <h3 id="dialog-kind-label" class="text-[15px] font-semibold">Informed consent</h3>
+              <p id="dialog-kind-desc" class="text-[12px] text-[--color-foreground-muted]">
+                Twee-staps: jij verstuurt, patiënt tekent. Reminders + expiry ingebouwd.
+              </p>
+            </div>
+          </div>
+          <button
+            onclick="closeDialog()"
+            class="rounded-md p-1 text-[--color-foreground-muted] hover:bg-[--color-surface-1] hover:text-[--color-foreground]"
+          >
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-5 py-4">
+          <section class="mb-5 space-y-3">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+              Identiteit
+            </h4>
+            <div>
+              <label class="mb-1 block text-[12px] font-medium">Naam</label>
+              <input
+                id="dialog-name-input"
+                type="text"
+                value="Toestemming heupoperatie"
+                class="w-full rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px] focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-ring]"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="mb-1 block text-[12px] font-medium">Fase</label>
+                <select
+                  class="w-full rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px] focus:border-[--color-primary] focus:outline-none"
+                >
+                  <option>Pre-op</option>
+                  <option>Surgery</option>
+                  <option>Recovery</option>
+                  <option>Follow-up</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-[12px] font-medium">Lane</label>
+                <div
+                  id="dialog-lane-readonly"
+                  class="flex items-center gap-2 rounded-md border border-[--color-border] bg-[--color-surface-1] px-3 py-1.5 text-[13px] text-[--color-foreground-muted]"
+                >
+                  <i data-lucide="user" class="h-3.5 w-3.5"></i>
+                  <span id="dialog-lane-label">Patiënt</span>
+                  <span class="ml-auto text-[10px]">vast voor dit type</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="mb-5 space-y-3 rounded-md border border-[--color-border] bg-[--color-surface-1]/40 p-3">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+              Blok-instellingen
+            </h4>
+            <p id="dialog-config-hint" class="text-[11px] text-[--color-foreground-muted]">
+              Vragen, kanalen, reminder schedule, expiry.
+            </p>
+            <div>
+              <label class="mb-1 block text-[12px] font-medium">Vragen</label>
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2 rounded-md border border-[--color-border] bg-[--color-background] px-2.5 py-1.5">
+                  <i data-lucide="check-circle" class="h-3.5 w-3.5 text-[--color-foreground-muted]"></i>
+                  <span class="text-[12px]">Ik geef toestemming voor de heupoperatie</span>
+                  <span class="ml-auto text-[10px] uppercase tracking-wider text-[--color-foreground-muted]">
+                    ja/nee
+                  </span>
+                </div>
+                <button class="flex items-center gap-1 text-[11px] text-[--color-primary] hover:text-[--color-primary-pressed]">
+                  <i data-lucide="plus" class="h-3 w-3"></i> Voeg vraag toe
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="mb-1 block text-[12px] font-medium">Kanalen</label>
+              <div class="flex flex-wrap gap-1.5">
+                <label class="flex cursor-pointer items-center gap-1 rounded-full border border-[--color-primary] bg-[--color-primary-soft] px-2.5 py-0.5 text-[11px] font-medium text-[--color-primary-pressed]">
+                  <input type="checkbox" checked class="hidden" />
+                  <i data-lucide="mail" class="h-3 w-3"></i> Email
+                </label>
+                <label class="flex cursor-pointer items-center gap-1 rounded-full border border-[--color-primary] bg-[--color-primary-soft] px-2.5 py-0.5 text-[11px] font-medium text-[--color-primary-pressed]">
+                  <input type="checkbox" checked class="hidden" />
+                  <i data-lucide="bell" class="h-3 w-3"></i> Push
+                </label>
+                <label class="flex cursor-pointer items-center gap-1 rounded-full border border-[--color-border] px-2.5 py-0.5 text-[11px] text-[--color-foreground-muted] hover:border-[--color-primary]">
+                  <input type="checkbox" class="hidden" />
+                  <i data-lucide="message-square" class="h-3 w-3"></i> SMS
+                </label>
+                <label class="flex cursor-pointer items-center gap-1 rounded-full border border-[--color-border] px-2.5 py-0.5 text-[11px] text-[--color-foreground-muted] hover:border-[--color-primary]">
+                  <input type="checkbox" class="hidden" />
+                  <i data-lucide="smartphone" class="h-3 w-3"></i> In-app
+                </label>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="mb-1 block text-[12px] font-medium">Reminder elke</label>
+                <input
+                  type="text"
+                  value="P3D"
+                  class="w-full rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px]"
+                />
+                <p class="mt-0.5 text-[10px] text-[--color-foreground-muted]">ISO duration · 3 dagen</p>
+              </div>
+              <div>
+                <label class="mb-1 block text-[12px] font-medium">Max reminders</label>
+                <input
+                  type="number"
+                  value="3"
+                  min="0"
+                  max="10"
+                  class="w-full rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px]"
+                />
+              </div>
+              <div>
+                <label class="mb-1 block text-[12px] font-medium">Verloopt na</label>
+                <input
+                  type="text"
+                  value="P30D"
+                  placeholder="leeg = nooit"
+                  class="w-full rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px]"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="mb-5 space-y-3 rounded-md border border-[--color-border] bg-[--color-surface-1]/40 p-3">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+                Bedrijfslogica · input_logic
+              </h4>
+              <select class="rounded-md border border-[--color-border] bg-[--color-background] px-2 py-0.5 text-[11px]">
+                <option>aggregator: all_of</option>
+                <option>aggregator: any_of</option>
+              </select>
+            </div>
+            <p class="text-[11px] text-[--color-foreground-muted]">
+              Wanneer wordt dit blok actief? Voeg regels toe over al geplaatste blokken.
+            </p>
+            <div class="flex items-center gap-2 rounded-md border border-[--color-border] bg-[--color-background] px-2.5 py-1.5">
+              <select class="rounded-md border border-[--color-border] bg-[--color-background] px-2 py-0.5 text-[12px]">
+                <option>if_done</option>
+                <option>has_data</option>
+                <option>value_equals</option>
+                <option>value_gt</option>
+                <option>wait_after</option>
+                <option>decision_output</option>
+                <option>if_not_done_within</option>
+                <option>event</option>
+              </select>
+              <span class="text-[12px] text-[--color-foreground-muted]">na</span>
+              <select class="flex-1 rounded-md border border-[--color-border] bg-[--color-background] px-2 py-0.5 text-[12px]">
+                <option>Intake gesprek</option>
+                <option>Start</option>
+                <option>Operatie</option>
+              </select>
+              <button class="text-[--color-foreground-muted] hover:text-[--color-destructive]">
+                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+              </button>
+            </div>
+            <button class="flex items-center gap-1 text-[11px] text-[--color-primary] hover:text-[--color-primary-pressed]">
+              <i data-lucide="plus" class="h-3 w-3"></i> Voeg regel toe
+            </button>
+          </section>
+
+          <section
+            id="dialog-timing-section"
+            class="space-y-3 rounded-md border border-[--color-border] bg-[--color-surface-1]/40 p-3"
+          >
+            <div class="flex items-center justify-between">
+              <h4 class="text-[11px] font-semibold uppercase tracking-wider text-[--color-foreground-muted]">
+                Timing · timing_policy
+              </h4>
+              <span
+                id="dialog-timing-badge"
+                class="rounded-full bg-[--color-surface-1] px-2 py-0.5 text-[10px] text-[--color-foreground-muted]"
+              >
+                niet toegestaan voor consent (lifecycle ingebouwd)
+              </span>
+            </div>
+            <p id="dialog-timing-hint" class="text-[11px] text-[--color-foreground-muted]">
+              Dit blok beheert eigen timing via "Reminder elke" + "Verloopt na" hierboven.
+            </p>
+          </section>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-[--color-border] bg-[--color-surface-1]/40 px-5 py-3">
+          <button
+            id="dialog-delete-btn"
+            class="hidden items-center gap-1 text-[12px] font-medium text-[--color-destructive] hover:text-red-700"
+            onclick="openDeleteConfirm(currentBlockId)"
+          >
+            <i data-lucide="trash-2" class="h-3.5 w-3.5"></i> Verwijderen
+          </button>
+          <div class="ml-auto flex items-center gap-2">
+            <button
+              onclick="closeDialog()"
+              class="rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px] font-medium hover:bg-[--color-surface-1]"
+            >
+              Annuleren
+            </button>
+            <button
+              id="dialog-submit-btn"
+              class="rounded-md bg-[--color-primary] px-4 py-1.5 text-[13px] font-medium text-[--color-primary-foreground] hover:bg-[--color-primary-hover]"
+            >
+              Voeg toe
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm delete -->
+    <div
+      id="confirm-dialog"
+      class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-6"
+    >
+      <div class="w-full max-w-[440px] rounded-lg bg-[--color-background] shadow-lg">
+        <div class="border-b border-[--color-border] px-5 py-4">
+          <div class="flex items-start gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-md bg-[--color-destructive]/10 text-[--color-destructive]">
+              <i data-lucide="triangle-alert" class="h-4 w-4"></i>
+            </div>
+            <div>
+              <h3 class="text-[15px] font-semibold">Blok verwijderen?</h3>
+              <p id="confirm-target-label" class="mt-0.5 text-[12px] text-[--color-foreground-muted]">
+                "Voortgangsmeting"
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 py-4">
+          <p id="confirm-dependency-intro" class="mb-2 text-[12px] text-[--color-foreground-muted]">
+            De volgende blokken verwijzen ernaar. Hun input_logic regels worden opgeschoond.
+          </p>
+          <ul id="confirm-deps-list" class="space-y-1.5"></ul>
+        </div>
+        <div class="flex items-center justify-end gap-2 border-t border-[--color-border] bg-[--color-surface-1]/40 px-5 py-3">
+          <button
+            onclick="closeConfirm()"
+            class="rounded-md border border-[--color-border] bg-[--color-background] px-3 py-1.5 text-[13px] font-medium hover:bg-[--color-surface-1]"
+          >
+            Annuleren
+          </button>
+          <button
+            onclick="closeConfirm()"
+            class="rounded-md bg-[--color-destructive] px-4 py-1.5 text-[13px] font-medium text-[--color-destructive-foreground] hover:bg-red-700"
+          >
+            Verwijderen + opschonen
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const KINDS = {
+        start: { label: 'Start', desc: 'Startpunt van de pathway. Fires automatisch bij enrollment.', icon: 'play', lane: 'Systeem', timingAllowed: false, timingMsg: 'Start fired t=0, geen timing nodig.', configHint: 'Geen instellingen — alleen naam.' },
+        end_pathway: { label: 'Einde pathway', desc: 'Eindpunt. Eerste die fired sluit enrollment af.', icon: 'square', lane: 'Systeem', timingAllowed: false, timingMsg: 'Einde fired meteen op eligibility.', configHint: 'Geen instellingen — alleen naam.' },
+        appointment: { label: 'Afspraak', desc: 'Geplande consultatie of bezoek.', icon: 'calendar', lane: 'Zorgteam', timingAllowed: true, timingMsg: '', configHint: 'Titel, locatie, duur, type (in-person / video / phone).' },
+        treatment: { label: 'Behandeling', desc: 'Uitgevoerde ingreep met klinische uitkomst.', icon: 'scissors', lane: 'Zorgteam', timingAllowed: true, timingMsg: '', configHint: 'Titel, locatie, duur, treatment_notes (SOP).' },
+        task: { label: 'Taak', desc: 'Actie voor patiënt of zorgteam.', icon: 'check-square', lane: 'Patiënt / Zorgteam', timingAllowed: true, timingMsg: '', configHint: 'Assignee, beschrijving.' },
+        decision: { label: 'Beslissing', desc: 'Routeert downstream blokken op basis van uitkomst.', icon: 'git-branch', lane: 'Systeem', timingAllowed: true, timingMsg: '', configHint: 'Vraag + outputs (yes/no, goed/onvoldoende).' },
+        message: { label: 'Bericht', desc: 'Eenmalig bericht via kanaal naar patiënt.', icon: 'mail', lane: 'Patiënt', timingAllowed: true, timingMsg: '', configHint: 'Kanaal, onderwerp, body, optionele CTA.' },
+        informed_consent: { label: 'Informed consent', desc: 'Twee-staps: jij verstuurt, patiënt tekent. Reminders + expiry ingebouwd.', icon: 'signature', lane: 'Patiënt', timingAllowed: false, timingMsg: 'niet toegestaan voor consent (lifecycle ingebouwd)', configHint: 'Vragen, kanalen, reminder schedule, expiry.' },
+        form: { label: 'Formulier', desc: 'Vragenlijst voor patiënt of zorgteam.', icon: 'clipboard-list', lane: 'Patiënt / Zorgteam', timingAllowed: true, timingMsg: '', configHint: 'Lijst met vragen (text, choice, scale, date).' },
+        milestone: { label: 'Mijlpaal', desc: 'Markeer een moment in de pathway.', icon: 'flag', lane: 'Systeem', timingAllowed: false, timingMsg: 'mijlpaal heeft geen eigen timing', configHint: 'Label.' },
+        wait: { label: 'Wachten', desc: 'Pauze tot externe data of timeout.', icon: 'hourglass', lane: 'Systeem', timingAllowed: true, timingMsg: '', configHint: 'Event_type, timeout_days, on_timeout (advance/escalate).' },
+        mdo: { label: 'MDO', desc: 'Multi-disciplinair overleg. 1 leading caregiver + onbeperkt extra.', icon: 'users', lane: 'Zorgteam', timingAllowed: true, timingMsg: '', configHint: 'Onderwerp + advies wie aan te sluiten (vrije tekst).' },
+        pathway_link: { label: 'Subpath', desc: 'Verwijzing naar geneste pathway.', icon: 'git-merge', lane: 'Systeem', timingAllowed: true, timingMsg: '', configHint: 'Target pathway + version pin + context mapping.' },
+      };
+
+      const BLOCKS = {
+        'b-start': { kind: 'start', name: 'Start' },
+        'b-intake': { kind: 'appointment', name: 'Intake gesprek' },
+        'b-operatie': { kind: 'treatment', name: 'Operatie' },
+        'b-recovery': { kind: 'wait', name: 'Thuisrevalidatie' },
+        'b-voortgang': { kind: 'decision', name: 'Voortgangsmeting' },
+        'b-extra-controle': { kind: 'appointment', name: 'Extra controle' },
+        'b-einde': { kind: 'end_pathway', name: 'Einde pathway' },
+      };
+
+      const DEPENDENTS = {
+        'b-start': [{ id: 'b-intake', rule: 'if_done' }],
+        'b-intake': [{ id: 'b-operatie', rule: 'if_done' }],
+        'b-operatie': [{ id: 'b-recovery', rule: 'if_done' }],
+        'b-recovery': [{ id: 'b-voortgang', rule: 'if_done' }],
+        'b-voortgang': [
+          { id: 'b-extra-controle', rule: 'decision_output → onvoldoende' },
+          { id: 'b-einde', rule: 'decision_output → goed' },
+        ],
+        'b-extra-controle': [{ id: 'b-einde', rule: 'if_done' }],
+        'b-einde': [],
+      };
+
+      let currentBlockId = null;
+
+      function openAddDialog(kind) {
+        currentBlockId = null;
+        applyKind(kind, 'Nieuw blok', 'Voeg toe', '');
+        document.getElementById('dialog-delete-btn').classList.add('hidden');
+        document.getElementById('dialog-delete-btn').classList.remove('flex');
+        showDialog();
+      }
+
+      function openEditDialog(blockId) {
+        const block = BLOCKS[blockId];
+        if (!block) return;
+        currentBlockId = blockId;
+        applyKind(block.kind, 'Blok bewerken — ' + block.name, 'Opslaan', block.name);
+        document.getElementById('dialog-delete-btn').classList.remove('hidden');
+        document.getElementById('dialog-delete-btn').classList.add('flex');
+        showDialog();
+      }
+
+      function applyKind(kind, modeLabel, submitLabel, nameValue) {
+        const meta = KINDS[kind];
+        document.getElementById('dialog-mode-label').textContent = modeLabel;
+        document.getElementById('dialog-kind-label').textContent = meta.label;
+        document.getElementById('dialog-kind-desc').textContent = meta.desc;
+        document.getElementById('dialog-config-hint').textContent = meta.configHint;
+
+        const iconEl = document.getElementById('dialog-kind-icon');
+        iconEl.setAttribute('data-lucide', meta.icon);
+
+        const laneLabelEl = document.getElementById('dialog-lane-label');
+        laneLabelEl.textContent = meta.lane;
+
+        const timingSection = document.getElementById('dialog-timing-section');
+        const timingBadge = document.getElementById('dialog-timing-badge');
+        const timingHint = document.getElementById('dialog-timing-hint');
+        if (meta.timingAllowed) {
+          timingBadge.textContent = 'optioneel';
+          timingHint.textContent =
+            'Kies een policy: FixedDuration / WaitAfter / DueWithin / AtEnrollmentPickedDate.';
+          timingSection.classList.remove('opacity-60');
+        } else {
+          timingBadge.textContent = meta.timingMsg || 'niet toegestaan';
+          timingHint.textContent =
+            meta.timingMsg ||
+            'Dit type heeft geen authored timing — runtime bepaalt het lifecycle moment.';
+          timingSection.classList.add('opacity-60');
+        }
+
+        document.getElementById('dialog-name-input').value = nameValue || '';
+        document.getElementById('dialog-submit-btn').textContent = submitLabel;
+
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }
+
+      function showDialog() {
+        const el = document.getElementById('block-dialog');
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+      function closeDialog() {
+        const el = document.getElementById('block-dialog');
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+
+      function buildDepRow(depBlock, ruleLabel) {
+        const meta = KINDS[depBlock.kind];
+        const li = document.createElement('li');
+        li.className =
+          'flex items-center gap-2 rounded-md border border-[--color-border] bg-[--color-surface-1]/40 px-2.5 py-1.5';
+
+        const icon = document.createElement('i');
+        icon.setAttribute('data-lucide', meta.icon);
+        icon.className = 'h-3.5 w-3.5 text-[--color-foreground-muted]';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'text-[12px]';
+        nameSpan.textContent = depBlock.name;
+
+        const ruleSpan = document.createElement('span');
+        ruleSpan.className = 'ml-auto text-[10px] text-[--color-foreground-muted]';
+        ruleSpan.textContent = ruleLabel;
+
+        li.appendChild(icon);
+        li.appendChild(nameSpan);
+        li.appendChild(ruleSpan);
+        return li;
+      }
+
+      function buildEmptyDepRow() {
+        const li = document.createElement('li');
+        li.className =
+          'rounded-md border border-dashed border-[--color-border] px-2.5 py-3 text-center text-[12px] text-[--color-foreground-muted]';
+        li.textContent = 'Geen afhankelijke blokken — veilig om te verwijderen.';
+        return li;
+      }
+
+      function openDeleteConfirm(blockId) {
+        const block = BLOCKS[blockId];
+        if (!block) return;
+        document.getElementById('confirm-target-label').textContent = '"' + block.name + '"';
+        const deps = DEPENDENTS[blockId] || [];
+        const list = document.getElementById('confirm-deps-list');
+        while (list.firstChild) list.removeChild(list.firstChild);
+        const intro = document.getElementById('confirm-dependency-intro');
+        if (deps.length === 0) {
+          intro.textContent = 'Geen andere blokken verwijzen ernaar.';
+          list.appendChild(buildEmptyDepRow());
+        } else {
+          intro.textContent =
+            'De volgende blokken verwijzen ernaar. Hun input_logic regels worden opgeschoond.';
+          for (const d of deps) {
+            const depBlock = BLOCKS[d.id];
+            if (depBlock) list.appendChild(buildDepRow(depBlock, d.rule));
+          }
+        }
+        const el = document.getElementById('confirm-dialog');
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }
+      function closeConfirm() {
+        const el = document.getElementById('confirm-dialog');
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeConfirm();
+          closeDialog();
+        }
+      });
+
+      window.addEventListener('load', () => {
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

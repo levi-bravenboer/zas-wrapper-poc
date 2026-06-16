@@ -13,7 +13,6 @@ from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
     PathwayBlockDeferredField,
-    PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
     PathwayPhase,
@@ -46,7 +45,6 @@ class PathwayChildren:
     timing_values: list[PathwayTimingValue]
     blocks: list[PathwayBlock]
     branches: list[PathwayBlockBranch]
-    edges: list[PathwayEdge]
     time_markers: list[PathwayTimeMarker]
     deferred_fields: list[PathwayBlockDeferredField]
 
@@ -220,8 +218,11 @@ class PathwayRepository(BaseRepository[Pathway]):
             .where(
                 PathwayBlock.tenant_id == tenant_id,
                 PathwayBlock.deleted_at.is_(None),
-                PathwayBlock.type == "pathway_link",
-                PathwayBlock.config["target_pathway_id"].astext.in_(target_strs),
+                # Slot #2 §6 dropped `type` + `config` columns; the
+                # typed `kind` discriminator + per-kind columns are
+                # authoritative.
+                PathwayBlock.kind == "pathway_link",
+                PathwayBlock.pathway_link_target_pathway_id.in_(target_strs),
             )
             .distinct()
         )
@@ -270,12 +271,9 @@ class PathwayRepository(BaseRepository[Pathway]):
             if block_ids
             else []
         )
-        edges = await self._scalars(
-            select(PathwayEdge).where(
-                PathwayEdge.pathway_version_id == pathway_version_id,
-                PathwayEdge.deleted_at.is_(None),
-            )
-        )
+        # `pathway_edge` was retired in chain slot #2 §3.2; edges are
+        # derived on read from `block.input_logic` instead. The repo
+        # no longer fetches them.
         time_markers = await self._scalars(
             select(PathwayTimeMarker).where(
                 PathwayTimeMarker.pathway_version_id == pathway_version_id,
@@ -298,10 +296,30 @@ class PathwayRepository(BaseRepository[Pathway]):
             timing_values=list(timing_values),
             blocks=list(blocks),
             branches=list(branches),
-            edges=list(edges),
             time_markers=list(time_markers),
             deferred_fields=list(deferred_fields),
         )
+
+    async def get_block_in_pathway(self, block_id: UUID, pathway_id: UUID) -> PathwayBlock | None:
+        """Fetch a single non-deleted `PathwayBlock` belonging to `pathway_id`.
+
+        Joins through `PathwayVersion` to assert ownership. Caller is
+        responsible for tenant-scoping the pathway before this call (the
+        carepath guard on the route does it). Returns `None` when the
+        block is missing, soft-deleted, or owned by a different pathway.
+        """
+        stmt = (
+            select(PathwayBlock)
+            .join(PathwayVersion, PathwayBlock.pathway_version_id == PathwayVersion.id)
+            .where(
+                PathwayBlock.id == block_id,
+                PathwayBlock.deleted_at.is_(None),
+                PathwayVersion.pathway_id == pathway_id,
+                PathwayVersion.deleted_at.is_(None),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def lane_kinds_by_code(self) -> dict[str, PathwayLaneKind]:
         result = await self._session.execute(
@@ -318,10 +336,8 @@ class PathwayRepository(BaseRepository[Pathway]):
         """
 
         opts = {"synchronize_session": False}
-        await self._session.execute(
-            delete(PathwayEdge).where(PathwayEdge.pathway_version_id == pathway_version_id),
-            execution_options=opts,
-        )
+        # `pathway_edge` was retired in chain slot #2 §3.2; no edge
+        # rows to delete.
         await self._session.execute(
             delete(PathwayBlockBranch).where(
                 PathwayBlockBranch.block_id.in_(

@@ -152,6 +152,14 @@ async def _resolve_patient_with_relation(
 
 require_patient_access = require_patient_relation("view")
 
+# Public alias for the underlying resolver — lets sibling guards (e.g.
+# the enrollment-keyed access guard in
+# `app.api.routers.pathway.enrollment_router`) delegate to the same
+# Keto-graduated / SQL-fallback patient-verb logic without reaching
+# across modules for a `_`-prefixed name. Keep the private name as the
+# canonical implementation so the existing dep factory stays unchanged.
+resolve_patient_with_relation = _resolve_patient_with_relation
+
 PatientAccessDep = Annotated[Patient, Depends(require_patient_access)]
 # Write routes: verb-granular guard (REQ-FUN-42) — care-team members,
 # break-glass grantees and external_writer subjects only when the flag is on.

@@ -4,7 +4,12 @@ import { toast } from 'sonner'
 
 import type { SaveState } from '../components/topbar/SaveStatusPill'
 import { useReplacePathway } from '../hooks'
-import type { PathwayBare, PathwayVersionDefinition } from '../types'
+import {
+  legacyBlockConfig,
+  legacyBlockType,
+  type PathwayBare,
+  type PathwayVersionDefinition,
+} from '../types'
 import type { BuilderAction } from '../useBuilderState'
 
 const AUTOSAVE_DEBOUNCE_MS = 800
@@ -20,6 +25,17 @@ type AutosaveHandlers = {
   saveState: SaveState
   flush: () => void
   onRename: (name: string) => void
+}
+
+// BE schemas don't accept `null` for unset per-kind columns; GET
+// returns explicit nulls. Strip them before PUT.
+function stripNullEntries(config: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(config)) {
+    if (value === null) continue
+    out[key] = value
+  }
+  return out
 }
 
 function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
@@ -41,15 +57,25 @@ function buildPayload(pathway: PathwayBare, version: PathwayVersionDefinition) {
       id: b.id,
       phase_id: b.phase_id,
       lane_id: b.lane_id,
-      type: b.type,
-      label: b.label ?? null,
+      // Slot #2 §6 wire shape: `kind` is the discriminator, `config`
+      // carries the typed `BaseBlock` subclass payload (per-kind
+      // fields + the shared `name` / `input_logic` / `timing_policy`).
+      // `label` is sent as a convenience for the write shim to fold
+      // into `config.name` when the typed shape doesn't carry it.
+      kind: legacyBlockType(b),
+      label: b.name,
       duration_value_id: b.duration_value_id ?? null,
-      config: b.config ?? {},
+      config: {
+        ...stripNullEntries(legacyBlockConfig(b)),
+        name: b.name,
+        input_logic: b.input_logic,
+        timing_policy: b.timing_policy,
+      },
       x: b.x,
       y: b.y,
     })),
     branches: (version.branches ?? []).map((br) => ({ ...br })),
-    edges: (version.edges ?? []).map((e) => ({ ...e })),
+    // Slot #2 §3: edges are derived on read; not sent on write.
     time_markers: (version.time_markers ?? []).map((tm) => ({ ...tm })),
     deferred_fields: (version.deferred_fields ?? []).map((df) => ({ ...df })),
   }
@@ -85,9 +111,24 @@ export function useAutosavePathway({
           lastErroredVersion.current = null
           dispatch({ type: 'reset', version: next.version })
         },
-        onError: () => {
+        onError: (error) => {
           lastErroredVersion.current = v
-          toast.error(t('save.error'))
+          // § C4.7: name the offending field when the backend 422
+          // carries `details.field` — re-open the block via click to
+          // fix it (saves are debounced/optimistic, so the dialog has
+          // already closed by the time the PUT resolves).
+          const apiError = (error ?? {}) as { field?: string; reason?: string }
+          if (apiError.field && apiError.reason) {
+            toast.error(
+              t('save.fieldError', {
+                defaultValue: 'Opslaan mislukt — {{field}}: {{reason}}',
+                field: apiError.field,
+                reason: apiError.reason,
+              }),
+            )
+          } else {
+            toast.error(t('save.error'))
+          }
         },
       })
     },

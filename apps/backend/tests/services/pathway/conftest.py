@@ -8,7 +8,14 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.user import Role
-from app.db.models.pathway import Pathway, PathwayLaneKind, PathwayVersion
+from app.db.models.organisation import Organisation
+from app.db.models.patient import Patient
+from app.db.models.pathway import (
+    Pathway,
+    PathwayEnrollment,
+    PathwayLaneKind,
+    PathwayVersion,
+)
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
@@ -34,8 +41,15 @@ async def _autoclean_pathway_tables(db_session: AsyncSession) -> AsyncIterator[N
 
 
 async def _wipe(session: AsyncSession) -> None:
+    # Slot #3 runtime aggregate references pathway_version + patients;
+    # wipe enrollments first so the downstream Pathway delete doesn't
+    # hit a FK RESTRICT violation. Patient → Organisation cleanup
+    # similarly sits ahead of Tenant.
+    await session.execute(delete(PathwayEnrollment))
     await session.execute(delete(Pathway))
     await session.execute(delete(PathwayLaneKind))
+    await session.execute(delete(Patient))
+    await session.execute(delete(Organisation))
     await session.execute(delete(User))
     await session.execute(delete(Tenant))
     await session.commit()

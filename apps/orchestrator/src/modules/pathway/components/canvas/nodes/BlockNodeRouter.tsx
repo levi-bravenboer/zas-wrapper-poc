@@ -2,10 +2,12 @@ import { type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
 import { BlockNode, type BlockFlowNode } from './BlockNode'
-import { LUSCII_PROGRAM_BLOCK_TYPE, LusciiProgramBlockNode } from './external/luscii'
+import { LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
 import { NestedPathwayBlockNode } from './internal/nestedPathway'
 import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathwayBlockNode'
+import { EndBlockNode, type EndFlowNode } from './EndBlockNode'
+import { StartBlockNode, type StartFlowNode } from './StartBlockNode'
 
 /**
  * xyflow node-type dispatcher.
@@ -23,8 +25,18 @@ import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathw
 export const BlockNodeRouter = memo(BlockNodeRouterImpl)
 
 function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
-  const blockType = props.data.block.type
-  if (blockType === LUSCII_PROGRAM_BLOCK_TYPE) {
+  // Dispatch on the typed `kind` discriminator from
+  // `pathway-model-foundations` §4.1. The legacy `type` column is
+  // Slot #2 §6 retired the legacy `type` envelope field; dispatch
+  // solely on the typed `kind` discriminator.
+  const kind = props.data.block.kind
+  if (kind === 'start') {
+    return <StartBlockNode {...(props as NodeProps<StartFlowNode>)} />
+  }
+  if (kind === 'end_pathway') {
+    return <EndBlockNode {...(props as NodeProps<EndFlowNode>)} />
+  }
+  if (kind === 'external_program') {
     // reason: variance erasure between two heterogeneous xyflow node-data
     // shapes that share the same xyflow type key. `LusciiProgramBlockNodeData`
     // extends `BlockNodeData` with an optional `resolvedProgram` field that
@@ -33,7 +45,7 @@ function BlockNodeRouterImpl(props: NodeProps<BlockFlowNode>): ReactElement {
     // missing field as `null` (empty state).
     return <LusciiProgramBlockNode {...(props as NodeProps<LusciiProgramFlowNode>)} />
   }
-  if (blockType === 'pathway_link') {
+  if (kind === 'pathway_link') {
     // Internal-source dispatch — `pathway.link` follows the same per-kind
     // pattern as external providers so future internal kinds (e.g.
     // `pathway.fork`) land alongside it without touching the generic
