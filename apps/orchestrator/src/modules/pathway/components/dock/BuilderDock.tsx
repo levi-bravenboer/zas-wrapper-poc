@@ -9,16 +9,9 @@ import { groupCatalogueBySource } from './groupCatalogue'
 type Props = {
   catalogue: PathwayBlockType[]
   onAddBlock: (blockType: PathwayBlockType) => void
-  onDragStartType?: (blockType: PathwayBlockType) => void
-  onDragEndType?: () => void
 }
 
-export function BuilderDock({
-  catalogue,
-  onAddBlock,
-  onDragStartType,
-  onDragEndType,
-}: Props): ReactElement {
+export function BuilderDock({ catalogue, onAddBlock }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   const groups = useMemo(() => groupCatalogueBySource(catalogue), [catalogue])
   return (
@@ -49,8 +42,6 @@ export function BuilderDock({
                   key={blockType.type}
                   blockType={blockType}
                   onAdd={() => onAddBlock(blockType)}
-                  onDragStartType={onDragStartType}
-                  onDragEndType={onDragEndType}
                 />
               ))}
             </div>

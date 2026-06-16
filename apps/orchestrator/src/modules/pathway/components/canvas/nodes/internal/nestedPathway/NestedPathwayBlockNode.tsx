@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { getPathway, getPathwaySummary } from '../../../../../api'
 import type { ConfigForSemantics } from '../../../../../configSchemas'
+import { legacyBlockConfig } from '../../../../../types'
 import { pathwayKeys } from '../../../../../keys'
 import { useBuilderFlush } from '../../../useBuilderFlush'
 import type { BlockNodeData } from '../../BlockNode'
@@ -38,7 +39,7 @@ function NestedPathwayBlockNodeImpl({
   const { t } = useTranslation('pathway')
   const { flush, saveState } = useBuilderFlush()
 
-  const config = (data.block.config ?? {}) as NestedConfig
+  const config = legacyBlockConfig(data.block) as NestedConfig
   const targetId = config.target_pathway_id ?? null
   const empty = !targetId
 

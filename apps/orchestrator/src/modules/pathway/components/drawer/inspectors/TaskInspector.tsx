@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
-import type { ConfigForSemantics } from '../../../configSchemas'
+import { TASK_ASSIGNEES, type ConfigForSemantics } from '../../../configSchemas'
 
 import { InspectorField } from './InspectorField'
 
@@ -19,34 +20,72 @@ type Props = {
   onChange: (next: ConfigForSemantics<'task'>) => void
 }
 
-const ASSIGNEES = ['caregiver', 'admin'] as const
-
+// Synced to the typed `TaskBlock` shape: title + assignee
+// (patient | caregiver) are required at publish; the legacy
+// `description` field maps to `notes`.
 export function TaskInspector({ config, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
     <div className="flex flex-col gap-3">
+      <InspectorField
+        label={t('inspector.task.title', { defaultValue: 'Titel' })}
+        htmlFor="task-title"
+      >
+        <Input
+          id="task-title"
+          value={config.title ?? ''}
+          onChange={(e) => onChange({ ...config, title: e.target.value || undefined })}
+          placeholder={t('inspector.task.titlePlaceholder', {
+            defaultValue: 'Bijv. Bel patiënt',
+          })}
+        />
+      </InspectorField>
       <InspectorField label={t('inspector.task.assignee')}>
         <Select
           value={config.assignee ?? ''}
-          onValueChange={(v) => onChange({ ...config, assignee: v || undefined })}
+          onValueChange={(assignee) =>
+            onChange({ ...config, assignee: assignee as (typeof TASK_ASSIGNEES)[number] })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder={t('inspector.task.assigneePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            {ASSIGNEES.map((a) => (
-              <SelectItem key={a} value={a}>
-                {t(`inspector.task.assigneeOption.${a}`)}
+            {TASK_ASSIGNEES.map((assignee) => (
+              <SelectItem key={assignee} value={assignee}>
+                {t(`inspector.task.assigneeOption.${assignee}`, {
+                  defaultValue: assignee === 'patient' ? 'Patiënt' : 'Zorgteam',
+                })}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </InspectorField>
-      <InspectorField label={t('inspector.task.description')} htmlFor="task-desc">
+      <InspectorField
+        label={t('inspector.task.dueOffset', { defaultValue: 'Af te ronden binnen (dagen)' })}
+        htmlFor="task-due-offset"
+      >
+        <Input
+          id="task-due-offset"
+          type="number"
+          min={0}
+          value={config.due_offset_days ?? ''}
+          onChange={(e) =>
+            onChange({
+              ...config,
+              due_offset_days: e.target.value === '' ? undefined : Number(e.target.value),
+            })
+          }
+        />
+      </InspectorField>
+      <InspectorField
+        label={t('inspector.task.notes', { defaultValue: 'Notities' })}
+        htmlFor="task-notes"
+      >
         <Textarea
-          id="task-desc"
-          value={config.description ?? ''}
-          onChange={(e) => onChange({ ...config, description: e.target.value || undefined })}
+          id="task-notes"
+          value={config.notes ?? ''}
+          onChange={(e) => onChange({ ...config, notes: e.target.value || undefined })}
           placeholder={t('inspector.task.descriptionPlaceholder')}
         />
       </InspectorField>

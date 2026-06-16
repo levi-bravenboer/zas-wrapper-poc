@@ -18,28 +18,55 @@ from app.adapters.luscii import (
     LUSCII_PROVIDER,
 )
 from app.domain.pathway import (
-    BLOCK_TYPES,
+    BLOCK_CATALOGUE,
     EVENT_TYPES,
     LANE_KIND_CAREGIVER,
     LANE_KIND_EXTERNAL,
     LANE_KIND_PATIENT,
     LANE_KIND_SYSTEM,
-    BlockSemantics,
-    get_block_type,
+    get_catalogue_entry,
+)
+
+
+# Chain slot #1 §1.4 / §7.1: the legacy `BlockTypeEntry` dataclass
+# registry is retired; `BLOCK_CATALOGUE` is derived from the typed
+# `BaseBlock` subclasses. These tests now exercise the derived shape.
+_EXPECTED_SEMANTICS: frozenset[str] = frozenset(
+    {
+        "start",
+        "appointment",
+        "treatment",
+        "task",
+        "message",
+        "informed_consent",
+        "mdo",
+        "form",
+        "decision",
+        "milestone",
+        "wait",
+        "pathway_link",
+        "external_program",
+        "end_pathway",
+    }
 )
 
 
 _EXPECTED_BLOCK_TYPES: frozenset[str] = frozenset(
     {
+        "start",
         "appointment",
+        "treatment",
         "task",
         "message",
+        "informed_consent",
+        "mdo",
         "form",
         "decision",
         "milestone",
         "wait",
         "pathway_link",
         LUSCII_PROGRAM_BLOCK_TYPE,
+        "end_pathway",
     }
 )
 
@@ -51,27 +78,30 @@ _VALID_LANE_KINDS: frozenset[str] = frozenset(
 
 
 def test_block_roster_matches_expected_set() -> None:
-    assert {b.type for b in BLOCK_TYPES} == _EXPECTED_BLOCK_TYPES
+    assert {b.type for b in BLOCK_CATALOGUE} == _EXPECTED_BLOCK_TYPES
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_block_entry_has_known_semantics(entry) -> None:
-    assert isinstance(entry.semantics, BlockSemantics)
+    # `semantics` is now a typed literal string mirroring the
+    # `BlockSemanticsLiteral` union (chain slot #1 retires the
+    # `BlockSemantics` enum alongside `BlockTypeEntry`).
+    assert entry.semantics in _EXPECTED_SEMANTICS
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_block_entry_icon_non_empty(entry) -> None:
     assert isinstance(entry.icon, str) and entry.icon
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_block_entry_lanes_known(entry) -> None:
     assert entry.allowed_lane_kind_codes, f"{entry.type} declares no allowed lanes"
     for code in entry.allowed_lane_kind_codes:
         assert code in _VALID_LANE_KINDS, f"{entry.type} declares unknown lane kind {code!r}"
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_block_entry_ui_schema_order_references_declared_props(entry) -> None:
     order = entry.ui_schema.get("order")
     if not order:
@@ -84,12 +114,12 @@ def test_block_entry_ui_schema_order_references_declared_props(entry) -> None:
 # ---- Provenance metadata (source / provider / kind) ----------------------
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_block_entry_source_is_known(entry) -> None:
     assert entry.source in _EXPECTED_SOURCES
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_native_entries_have_null_provider_and_kind(entry) -> None:
     if entry.source != "native":
         return
@@ -97,7 +127,7 @@ def test_native_entries_have_null_provider_and_kind(entry) -> None:
     assert entry.kind is None, f"{entry.type}: native entry must not declare a kind"
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_external_entries_have_provider_and_kind(entry) -> None:
     if entry.source != "external":
         return
@@ -105,7 +135,7 @@ def test_external_entries_have_provider_and_kind(entry) -> None:
     assert entry.kind, f"{entry.type}: external entry must declare a kind"
 
 
-@pytest.mark.parametrize("entry", BLOCK_TYPES, ids=lambda e: e.type)
+@pytest.mark.parametrize("entry", BLOCK_CATALOGUE, ids=lambda e: e.type)
 def test_external_entry_type_code_matches_provider_kind(entry) -> None:
     """Dotted type code must equal `<provider>.<kind>` so `BlockTypeCode.parse`
     and the catalogue lookup stay in lockstep."""
@@ -117,7 +147,7 @@ def test_external_entry_type_code_matches_provider_kind(entry) -> None:
 
 
 def test_native_bare_codes_contain_no_dot() -> None:
-    for entry in BLOCK_TYPES:
+    for entry in BLOCK_CATALOGUE:
         if entry.source == "native":
             assert "." not in entry.type, f"{entry.type}: native codes must be bare (no dot)"
 
@@ -126,13 +156,13 @@ def test_native_bare_codes_contain_no_dot() -> None:
 
 
 def test_luscii_program_entry_present_with_expected_provenance() -> None:
-    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
+    luscii = next(b for b in BLOCK_CATALOGUE if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     assert luscii.source == "external"
     assert luscii.provider == LUSCII_PROVIDER
     assert luscii.kind == LUSCII_PROGRAM_KIND
-    assert luscii.semantics == BlockSemantics.EXTERNAL_PROGRAM
+    assert luscii.semantics == "external_program"
     assert luscii.icon == "activity"
-    assert luscii.allowed_lane_kind_codes == (LANE_KIND_EXTERNAL,)
+    assert list(luscii.allowed_lane_kind_codes) == [LANE_KIND_EXTERNAL]
     assert luscii.supports_branches is False
 
 
@@ -141,7 +171,7 @@ def test_luscii_program_config_schema_is_author_time_only() -> None:
     `required` constraint — autosave persists in-progress drafts (program
     picked but no protocol yet); publish-time validation re-asserts
     completeness."""
-    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
+    luscii = next(b for b in BLOCK_CATALOGUE if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     props = luscii.config_schema["properties"]
     assert set(props.keys()) == {"program_id", "protocol_id", "mode"}
     assert "required" not in luscii.config_schema
@@ -152,7 +182,7 @@ def test_luscii_program_config_schema_excludes_per_patient_fields() -> None:
     """Hard guard against accidentally exposing patient-level config at design
     time. Per-patient values belong to the enrollment surface, not block config.
     """
-    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
+    luscii = next(b for b in BLOCK_CATALOGUE if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     forbidden_prefixes = ("patient_", "target_", "dose")
     forbidden_suffix = "_per_patient"
     for prop in luscii.config_schema["properties"]:
@@ -165,10 +195,10 @@ def test_luscii_program_config_schema_excludes_per_patient_fields() -> None:
         )
 
 
-def test_get_block_type_resolves_luscii_program() -> None:
+def test_get_catalogue_entry_resolves_luscii_program() -> None:
     """Dotted code resolves via the same lookup path as bare codes —
-    `BlockTypeCode` parsing and `BLOCK_TYPES` registry stay in lockstep."""
-    entry = get_block_type(LUSCII_PROGRAM_BLOCK_TYPE)
+    `BlockTypeCode` parsing and `BLOCK_CATALOGUE` registry stay in lockstep."""
+    entry = get_catalogue_entry(LUSCII_PROGRAM_BLOCK_TYPE)
     assert entry is not None
     assert entry.type == LUSCII_PROGRAM_BLOCK_TYPE
     assert entry.source == "external"
@@ -176,7 +206,7 @@ def test_get_block_type_resolves_luscii_program() -> None:
 
 def _luscii_validator() -> jsonschema.protocols.Validator:
     """Build a Draft 2020-12 validator from the luscii.program config_schema."""
-    luscii = next(b for b in BLOCK_TYPES if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
+    luscii = next(b for b in BLOCK_CATALOGUE if b.type == LUSCII_PROGRAM_BLOCK_TYPE)
     cls = jsonschema.validators.validator_for(luscii.config_schema)
     cls.check_schema(luscii.config_schema)
     return cls(luscii.config_schema)
@@ -230,6 +260,6 @@ def test_luscii_program_config_rejects_invalid_mode_enum() -> None:
 
 
 def test_wait_block_event_type_enum_matches_event_types() -> None:
-    wait = next(b for b in BLOCK_TYPES if b.type == "wait")
+    wait = next(b for b in BLOCK_CATALOGUE if b.type == "wait")
     declared = wait.config_schema["properties"]["event_type"]["enum"]
     assert set(declared) == {e.code for e in EVENT_TYPES}

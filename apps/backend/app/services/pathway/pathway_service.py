@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from jsonschema import Draft202012Validator
@@ -10,7 +10,6 @@ from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
     PathwayBlockDeferredField,
-    PathwayEdge,
     PathwayLane,
     PathwayLaneKind,
     PathwayPhase,
@@ -18,14 +17,22 @@ from app.db.models.pathway import (
     PathwayTimingValue,
     PathwayVersion,
 )
+from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
+from app.db.models.pathway.block_write_shim import block_in_to_orm_kwargs
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.domain.pathway import (
-    BLOCK_TYPES,
     EDGE_TIMING_KINDS,
     PHASE_TEMPLATES,
     SEEDED_OFFSET_DIRECTIONS,
-    get_block_type,
+)
+from app.domain.pathway.blocks.catalogue import (
+    BLOCK_CATALOGUE,
+    get_catalogue_entry,
+)
+from app.domain.pathway.input_logic.derived_edges import (
+    DerivedEdge,
+    derive_edges_from_input_logic,
 )
 from app.schemas.pathway import (
     PathwayBlockType,
@@ -40,11 +47,8 @@ from app.schemas.pathway.pathway import (
     PathwayBlockDeferredFieldIn,
     PathwayBlockDeferredFieldOut,
     PathwayBlockIn,
-    PathwayBlockOut,
     PathwayChildSummary,
     PathwayDefinitionReplace,
-    PathwayEdgeIn,
-    PathwayEdgeOut,
     PathwayLaneIn,
     PathwayLaneOut,
     PathwayParentReference,
@@ -58,17 +62,17 @@ from app.schemas.pathway.pathway import (
     PathwayVersionDefinition,
     PathwayWithVersionResponse,
 )
+from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut, out_class_for_kind
 from app.services.pathway.nesting import assert_no_nested_pathway_cycles
 from app.services.pathway.pathway_version_service import PathwayVersionService
 from app.services.pathway.errors import (
     BlockConfigError,
-    PathwayHasReferrersError,
     BlockLaneNotAllowedError,
     BranchOwnershipError,
     DeferredFieldError,
-    EdgeTimingValidationError,
-    EdgeValidationError,
     NoConceptVersionError,
+    PathwayBlockNotFoundError,
+    PathwayHasReferrersError,
     PathwayNotFoundError,
     PathwayValidationError,
     PathwayVersionImmutableError,
@@ -109,6 +113,27 @@ class PathwayService:
             )
             for r in rows
         ]
+
+    async def get_block(
+        self,
+        pathway_id: UUID,
+        block_id: UUID,
+        tenant_id: UUID,
+    ) -> PathwayTypedBlockOut:
+        """Return one block as a typed discriminated-union member.
+
+        Backs `GET /pathways/{pathway_id}/blocks/{block_id}` per chain
+        slot #1 §4.2. Carepath authorization runs as a route dependency;
+        this method only asserts ownership + tenancy then materialises
+        the row via the same mapper used by the version-definition path.
+        """
+        pathway = await self._repo.get(pathway_id, tenant_id)
+        if pathway is None:
+            raise PathwayNotFoundError()
+        row = await self._repo.get_block_in_pathway(block_id, pathway_id)
+        if row is None:
+            raise PathwayBlockNotFoundError()
+        return _block_row_to_typed_out(row)
 
     async def get_child_summary(self, pathway_id: UUID, tenant_id: UUID) -> PathwayChildSummary:
         """Drive the nested-pathway inspector preview. Counts come from the
@@ -166,22 +191,12 @@ class PathwayService:
     # ---- Catalogue surfaces ----------------------------------------------
 
     def list_block_types(self) -> list[PathwayBlockType]:
-        return [
-            PathwayBlockType(
-                type=entry.type,
-                label=entry.label,
-                semantics=entry.semantics.value,
-                icon=entry.icon,
-                allowed_lane_kind_codes=list(entry.allowed_lane_kind_codes),
-                config_schema=entry.config_schema,
-                ui_schema=entry.ui_schema,
-                supports_branches=entry.supports_branches,
-                source=entry.source,
-                provider=entry.provider,
-                kind=entry.kind,
-            )
-            for entry in BLOCK_TYPES
-        ]
+        # Catalogue derived from the typed `BaseBlock` subclasses
+        # (`pathway-model-foundations` §1.4 / §7.1). The legacy
+        # `BlockTypeEntry` registry is retired; each entry is a
+        # projection of per-kind `ClassVar` metadata via
+        # `block_catalogue.BLOCK_CATALOGUE`.
+        return list(BLOCK_CATALOGUE)
 
     def list_phase_templates(self) -> list[PathwayPhaseTemplate]:
         return [
@@ -239,20 +254,55 @@ class PathwayService:
             ("caregiver", "Zorgteam", False),
             ("system", "Systeem", False),
         ]
-        session.add_all(
-            [
-                PathwayLane(
+        lane_rows = [
+            PathwayLane(
+                id=uuid4(),
+                pathway_version_id=version.id,
+                pathway_lane_kind_id=lane_kinds[code].id,
+                label=label,
+                ord=(idx + 1) * 10,
+                is_default=is_default,
+            )
+            for idx, (code, label, is_default) in enumerate(default_lane_codes)
+            if code in lane_kinds
+        ]
+        session.add_all(lane_rows)
+        # Scaffold a Pre-op phase + §A1 StartBlock on the caregiver
+        # lane so fresh pathways open ready to author.
+        caregiver_kind = lane_kinds.get("caregiver")
+        caregiver_lane = (
+            next(
+                (lane for lane in lane_rows if lane.pathway_lane_kind_id == caregiver_kind.id),
+                None,
+            )
+            if caregiver_kind is not None
+            else None
+        )
+        if caregiver_lane is not None:
+            scaffold_phase = PathwayPhase(
+                id=uuid4(),
+                pathway_version_id=version.id,
+                template_id="pre-op",
+                label="Pre-op",
+                ord=10,
+            )
+            session.add(scaffold_phase)
+            # Flush so phase / lane FKs exist before adding the block.
+            await session.flush()
+            session.add(
+                PathwayBlock(
                     id=uuid4(),
                     pathway_version_id=version.id,
-                    pathway_lane_kind_id=lane_kinds[code].id,
-                    label=label,
-                    ord=(idx + 1) * 10,
-                    is_default=is_default,
+                    phase_id=scaffold_phase.id,
+                    lane_id=caregiver_lane.id,
+                    kind="start",
+                    label="Start",
+                    input_logic={"rules": [], "aggregator": "all_of", "n_of_m": None},
+                    timing_policy=None,
+                    x=0,
+                    y=0,
                 )
-                for idx, (code, label, is_default) in enumerate(default_lane_codes)
-                if code in lane_kinds
-            ]
-        )
+            )
         await session.flush()
         definition = await self._build_version_definition(version)
         return PathwayWithVersionResponse(
@@ -266,6 +316,11 @@ class PathwayService:
         tenant_id: UUID,
         payload: PathwayDefinitionReplace,
     ) -> PathwayWithVersionResponse:
+        """Replace the concept version's children.
+
+        Slot #2 §6: every block payload is the typed `BaseBlock`
+        subclass shape — the slot-#1 `typed_shape` flag is retired.
+        """
         pathway = await self._repo.get(pathway_id, tenant_id)
         if pathway is None:
             raise PathwayNotFoundError()
@@ -312,7 +367,7 @@ class PathwayService:
         # here because they were already rejected upstream.
         to_check: list[tuple[UUID, UUID, UUID]] = []
         for block in blocks:
-            if block.type != "pathway_link":
+            if block.kind != "pathway_link":
                 continue
             config = block.config or {}
             if config.get("version_pin") != "specific":
@@ -437,16 +492,24 @@ class PathwayService:
             timing_values=[
                 PathwayTimingValueOut.model_validate(tv) for tv in children.timing_values
             ],
-            blocks=[PathwayBlockOut.model_validate(b) for b in children.blocks],
+            blocks=[_block_row_to_typed_out(b) for b in children.blocks],
             branches=[PathwayBlockBranchOut.model_validate(br) for br in children.branches],
-            edges=[PathwayEdgeOut.model_validate(e) for e in children.edges],
+            # Derived edges per chain slot #2 §3.3: one entry per
+            # `InputLogicRule` on each block. The runtime evaluator
+            # consumes `input_logic` directly; this projection only
+            # drives the canvas connector layer.
+            edges=_derive_edges_for_response(children.blocks),
             time_markers=[PathwayTimeMarkerOut.model_validate(m) for m in children.time_markers],
             deferred_fields=[
                 PathwayBlockDeferredFieldOut.model_validate(fr) for fr in children.deferred_fields
             ],
         )
 
-    async def _persist_children(self, pathway_version_id: UUID, r: _ResolvedDefinition) -> None:
+    async def _persist_children(
+        self,
+        pathway_version_id: UUID,
+        r: _ResolvedDefinition,
+    ) -> None:
         session = self._repo._session  # noqa: SLF001 — service owns repo internals here
         session.add_all(
             [
@@ -490,19 +553,18 @@ class PathwayService:
             ]
         )
         await session.flush()
+        # Chain slot #1 §5.1: dual-write — legacy `(type, config)` payload
+        # is shimmed into typed per-kind columns alongside the verbatim
+        # legacy columns. Both shapes live on the same row until chain
+        # slot #2 drops the legacy pair.
         session.add_all(
             [
                 PathwayBlock(
-                    id=b.id,
-                    pathway_version_id=pathway_version_id,
-                    phase_id=b.phase_id,
-                    lane_id=b.lane_id,  # type: ignore[arg-type] — resolver guarantees non-null
-                    type=b.type,
-                    label=b.label,
-                    duration_value_id=b.duration_value_id,
-                    config=b.config,
-                    x=b.x,
-                    y=b.y,
+                    **block_in_to_orm_kwargs(
+                        b,
+                        pathway_version_id=pathway_version_id,
+                        lane_id=b.lane_id,  # type: ignore[arg-type] — resolver guarantees non-null
+                    )
                 )
                 for b in r.blocks
             ]
@@ -515,22 +577,8 @@ class PathwayService:
             ]
         )
         await session.flush()
-        session.add_all(
-            [
-                PathwayEdge(
-                    id=e.id,
-                    pathway_version_id=pathway_version_id,
-                    source_block_id=e.source_block_id,
-                    target_block_id=e.target_block_id,
-                    source_branch_id=e.source_branch_id,
-                    delay_value_id=e.delay_value_id,
-                    time_marker_id=e.time_marker_id,
-                    offset_value_id=e.offset_value_id,
-                    offset_direction_code=e.offset_direction_code,
-                )
-                for e in r.edges
-            ]
-        )
+        # Edges retired in slot #2 §3 — the canvas connector layer
+        # is derived from `block.input_logic` at read time.
         session.add_all(
             [
                 PathwayTimeMarker(
@@ -555,7 +603,7 @@ class _ResolvedDefinition:
     """Validated + materialized payload, ready for persistence.
 
     Walks the wire shape once, enforcing every cross-entity invariant the
-    spec requires (block.type ∈ catalogue, lane resolves, phase belongs to
+    spec requires (block.kind ∈ catalogue, lane resolves, phase belongs to
     payload, branch on branching block only per D19, edge endpoints exist,
     branch matches source, timing CHECK columns, field_path ∈ config_schema).
     On success exposes the resolved children for the service to persist verbatim.
@@ -570,7 +618,6 @@ class _ResolvedDefinition:
         timing_values: list[PathwayTimingValueIn],
         blocks: list[PathwayBlockIn],
         branches: list[PathwayBlockBranchIn],
-        edges: list[PathwayEdgeIn],
         time_markers: list[PathwayTimeMarkerIn],
         deferred_fields: list[PathwayBlockDeferredFieldIn],
     ) -> None:
@@ -581,7 +628,6 @@ class _ResolvedDefinition:
         self.timing_values = timing_values
         self.blocks = blocks
         self.branches = branches
-        self.edges = edges
         self.time_markers = time_markers
         self.deferred_fields = deferred_fields
 
@@ -638,11 +684,11 @@ class _ResolvedDefinition:
                     field=f"blocks[{block.id}]", reason="duplicate block id"
                 )
             block_ids.add(block.id)
-            entry = get_block_type(block.type)
+            entry = get_catalogue_entry(block.kind)
             if entry is None:
                 raise UnknownBlockTypeError(
                     field=f"blocks[{block.id}].type",
-                    reason=f"unknown block type '{block.type}'",
+                    reason=f"unknown block type '{block.kind}'",
                 )
             if block.phase_id not in phase_ids:
                 raise UnknownPhaseError(
@@ -666,12 +712,12 @@ class _ResolvedDefinition:
             if resolved_kind_code not in entry.allowed_lane_kind_codes:
                 raise BlockLaneNotAllowedError(
                     block_id=block.id,
-                    block_type=block.type,
+                    block_type=block.kind,
                     lane_kind_code=resolved_kind_code,
                     allowed=entry.allowed_lane_kind_codes,
                 )
             _validate_block_config(block.id, entry.config_schema, block.config)
-            block_types_by_id[block.id] = block.type
+            block_types_by_id[block.id] = block.kind
             materialized_blocks.append(block.model_copy(update={"lane_id": resolved_lane_id}))
 
         # ---- Branches: catalogue.supports_branches per D19
@@ -689,7 +735,7 @@ class _ResolvedDefinition:
                     field=f"branches[{branch.id}].block_id",
                     reason="block_id not present in payload blocks",
                 )
-            entry = get_block_type(block_type)
+            entry = get_catalogue_entry(block_type)
             assert entry is not None  # validated above
             if not entry.supports_branches:
                 raise BranchOwnershipError(
@@ -698,107 +744,11 @@ class _ResolvedDefinition:
                 )
             block_id_by_branch[branch.id] = branch.block_id
 
-        # ---- Edges: endpoints ∈ blocks, branch ∈ source block, uniqueness
-        # Pre-collect marker ids and valid offset direction codes so edges can
-        # validate cross-references in a single pass.
-        marker_id_set: set[UUID] = {m.id for m in payload.time_markers}
-        valid_offset_codes: set[str] = {code for code, _, _ in SEEDED_OFFSET_DIRECTIONS}
-        edge_ids: set[UUID] = set()
-        edge_keys: set[tuple[UUID, UUID, UUID | None]] = set()
-        for edge in payload.edges:
-            if edge.id in edge_ids:
-                raise EdgeValidationError(field=f"edges[{edge.id}]", reason="duplicate edge id")
-            edge_ids.add(edge.id)
-            if edge.source_block_id not in block_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}].source_block_id",
-                    reason="source_block_id not present in payload blocks",
-                )
-            if edge.target_block_id not in block_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}].target_block_id",
-                    reason="target_block_id not present in payload blocks",
-                )
-            if edge.source_branch_id is not None:
-                owner = block_id_by_branch.get(edge.source_branch_id)
-                if owner is None:
-                    raise EdgeValidationError(
-                        field=f"edges[{edge.id}].source_branch_id",
-                        reason="source_branch_id not present in payload branches",
-                    )
-                if owner != edge.source_block_id:
-                    raise EdgeValidationError(
-                        field=f"edges[{edge.id}].source_branch_id",
-                        reason="source_branch_id does not belong to source_block_id",
-                    )
-            if edge.delay_value_id is not None and edge.delay_value_id not in timing_ids:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}].delay_value_id",
-                    reason="delay_value_id not present in payload timing_values",
-                )
-
-            # Edge timing union: at most one of (delay_value_id, time_marker_id,
-            # source_branch_id) may be set. Mirrors the DB CHECK so violations
-            # surface as 422 not 23514.
-            timing_discriminators = [
-                edge.delay_value_id is not None,
-                edge.time_marker_id is not None,
-                edge.source_branch_id is not None,
-            ]
-            if sum(timing_discriminators) > 1:
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason=(
-                        "edge may set at most one of delay_value_id, "
-                        "time_marker_id, source_branch_id"
-                    ),
-                )
-
-            # Marker triple: time_marker_id, offset_value_id, offset_direction_code
-            # must all be set together or all null. Avoids partially-configured
-            # marker edges sneaking past schema validation.
-            marker_parts = (
-                edge.time_marker_id is not None,
-                edge.offset_value_id is not None,
-                edge.offset_direction_code is not None,
-            )
-            if any(marker_parts) and not all(marker_parts):
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason=(
-                        "marker timing requires time_marker_id, offset_value_id, "
-                        "and offset_direction_code to be set together"
-                    ),
-                )
-            if edge.time_marker_id is not None and edge.time_marker_id not in marker_id_set:
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason="time_marker_id not present in payload time_markers",
-                )
-            if edge.offset_value_id is not None and edge.offset_value_id not in timing_ids:
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason="offset_value_id not present in payload timing_values",
-                )
-            if (
-                edge.offset_direction_code is not None
-                and edge.offset_direction_code not in valid_offset_codes
-            ):
-                raise EdgeTimingValidationError(
-                    edge_id=edge.id,
-                    reason=(
-                        f"offset_direction_code '{edge.offset_direction_code}' "
-                        f"is not a seeded value"
-                    ),
-                )
-
-            key = (edge.source_block_id, edge.target_block_id, edge.source_branch_id)
-            if key in edge_keys:
-                raise EdgeValidationError(
-                    field=f"edges[{edge.id}]",
-                    reason="duplicate edge (source_block_id, target_block_id, source_branch_id)",
-                )
-            edge_keys.add(key)
+        # Edges retired in chain slot #2 §3 — connectivity is now
+        # authored via `block.input_logic` rules. §3.4 validator
+        # (`_validate_input_logic_node_refs`) asserts every rule's
+        # `node` resolves to a block in the payload below.
+        _validate_input_logic_node_refs(payload.blocks, block_ids)
 
         # ---- Time markers
         marker_ids: set[UUID] = set()
@@ -818,7 +768,7 @@ class _ResolvedDefinition:
         # We resolve schemas once per block id.
         block_schemas: dict[UUID, dict[str, Any]] = {}
         for block in materialized_blocks:
-            entry = get_block_type(block.type)
+            entry = get_catalogue_entry(block.kind)
             assert entry is not None
             block_schemas[block.id] = entry.config_schema
         # Block.duration_value_id existence check
@@ -855,7 +805,6 @@ class _ResolvedDefinition:
             timing_values=list(payload.timing_values),
             blocks=materialized_blocks,
             branches=list(payload.branches),
-            edges=list(payload.edges),
             time_markers=list(payload.time_markers),
             deferred_fields=list(payload.deferred_fields),
         )
@@ -864,7 +813,7 @@ class _ResolvedDefinition:
 def _resolve_or_materialize_lane(
     *,
     block: PathwayBlockIn,
-    entry: Any,  # BlockTypeEntry — typed loose to avoid circular import friction
+    entry: PathwayBlockType,
     lanes: list[PathwayLaneIn],
     lane_kind_ids: dict[UUID, UUID],
     lane_kind_codes: dict[UUID, str],
@@ -902,9 +851,23 @@ def _resolve_or_materialize_lane(
     return materialized_id
 
 
+_BLOCK_ENVELOPE_KEYS: frozenset[str] = frozenset(
+    {"name", "lane_kind", "input_logic", "timing_policy"}
+)
+
+
 def _validate_block_config(block_id: UUID, schema: dict[str, Any], config: dict[str, Any]) -> None:
+    # Slot #2 §6 introduced typed envelope fields (`name`, `lane_kind`,
+    # `input_logic`, `timing_policy`) that the frontend ships inside
+    # the same `config` bag as the per-kind fields. The legacy slot #1
+    # `CONFIG_SCHEMA` is `additionalProperties: false` and only declares
+    # per-kind properties, so it spuriously rejects the envelope keys.
+    # Pydantic strict validation in `block_in_to_typed` is authoritative
+    # for those keys; strip them here before running the JSON Schema
+    # pre-check.
+    per_kind_config = {k: v for k, v in config.items() if k not in _BLOCK_ENVELOPE_KEYS}
     validator = Draft202012Validator(schema)
-    errors = sorted(validator.iter_errors(config), key=lambda e: list(e.absolute_path))
+    errors = sorted(validator.iter_errors(per_kind_config), key=lambda e: list(e.absolute_path))
     if not errors:
         return
     first = errors[0]
@@ -928,3 +891,91 @@ def _field_path_in_schema(schema: dict[str, Any], field_path: str) -> bool:
             return False
         cursor = properties[part]
     return True
+
+
+def _block_row_to_typed_out(row: PathwayBlock) -> PathwayTypedBlockOut:
+    """Materialise a `PathwayBlock` ORM row into its typed discriminated-union
+    response member (chain slot #1 §4.1).
+
+    Dispatches via the mapper (`to_domain`) onto the typed `BaseBlock`
+    subclass — picking up legacy `(type, config)` rows transparently via
+    the `legacy_to_domain` fallback — then merges the row-level envelope
+    fields and instantiates the matching `*BlockOut` for the kind.
+
+    The legacy `type` / `label` / `config` ORM columns are surfaced on
+    the envelope unchanged during chain slot #1 so the builder UI keeps
+    rendering and autosaving while it migrates kind-by-kind onto the
+    typed fields (`block_write_shim` §5.1). Slot #2 drops them.
+    """
+    domain = block_row_to_domain(row)
+    out_cls = out_class_for_kind(domain.KIND)
+    envelope: dict[str, Any] = {
+        "id": row.id,
+        "phase_id": row.phase_id,
+        "lane_id": row.lane_id,
+        "duration_value_id": row.duration_value_id,
+        "x": row.x,
+        "y": row.y,
+    }
+    out = out_cls.model_validate({**domain.model_dump(), **envelope, "kind": domain.KIND})
+    # Cast: `out_class_for_kind` is typed as `type[BaseModel]` to keep the
+    # registry table flat (Pydantic discriminated unions are runtime
+    # constructs, not a single base class). The lookup table is keyed on
+    # the same `kind` values as the union and only ever returns a member
+    # of `PathwayTypedBlockOut`.
+    return cast(PathwayTypedBlockOut, out)
+
+
+def _derive_edges_for_response(blocks: list[PathwayBlock]) -> list[DerivedEdge]:
+    """Walk every block row's `input_logic` to produce the derived edge list.
+
+    Chain slot #2 §3.3: the canvas connector layer is computed from
+    the typed `InputLogic` aggregate on each block. The mapper's
+    `_normalise_input_logic` handles legacy list-shaped stubs, so a
+    pre-migration row produces an empty rule list without raising.
+    """
+    edges: list[DerivedEdge] = []
+    for row in blocks:
+        domain = block_row_to_domain(row)
+        edges.extend(derive_edges_from_input_logic(row.id, domain.input_logic))
+    return edges
+
+
+def _validate_input_logic_node_refs(
+    blocks: list[PathwayBlockIn],
+    block_ids: set[UUID],
+) -> None:
+    """Reject payloads whose `input_logic.node` refs miss a block (§3.4).
+
+    Each rule references a producer block by id; the rule's typed
+    `args` carry the same id. Any reference that does not resolve to
+    a block in the same pathway version is a publish blocker.
+    """
+    for block in blocks:
+        # The payload still arrives in the slot #1 wire shape (`config`
+        # bag with an `input_logic` key); the new typed aggregate is
+        # read off the typed write surface in slot #2 §6 once the
+        # builder migrates. For now skim the bag defensively.
+        config = block.config or {}
+        raw_logic = config.get("input_logic")
+        if not raw_logic:
+            continue
+        rules = raw_logic.get("rules") if isinstance(raw_logic, dict) else raw_logic
+        if not isinstance(rules, list):
+            continue
+        for idx, rule in enumerate(rules):
+            if not isinstance(rule, dict):
+                continue
+            node_str = rule.get("node")
+            try:
+                node = UUID(str(node_str))
+            except (TypeError, ValueError):
+                raise PathwayValidationError(
+                    field=f"blocks[{block.id}].input_logic.rules[{idx}].node",
+                    reason=f"not a valid uuid: {node_str!r}",
+                )
+            if node not in block_ids:
+                raise PathwayValidationError(
+                    field=f"blocks[{block.id}].input_logic.rules[{idx}].node",
+                    reason=f"node {node} not present in payload blocks",
+                )

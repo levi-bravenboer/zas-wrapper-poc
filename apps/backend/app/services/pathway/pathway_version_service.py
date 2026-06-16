@@ -8,14 +8,39 @@ from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
     PathwayBlockDeferredField,
-    PathwayEdge,
     PathwayLane,
     PathwayPhase,
     PathwayTimeMarker,
     PathwayTimingValue,
     PathwayVersion,
 )
+from app.db.models.pathway.block_mapper import to_domain as block_row_to_domain
+from app.domain.pathway.blocks.base import BaseBlock
+from app.db.models.pathway.block_write_shim import block_row_clone_kwargs
 from app.db.models.user import User
+from app.domain.pathway.blocks.validators import (
+    BlockPublishValidationError,
+    DecisionOutputReferenceError,
+    DecisionOutputsEmptyError,
+    EndPathwayBlockMissingError,
+    EndPathwayBlockShapeError,
+    EventRuleError,
+    IfNotDoneWithinRuleError,
+    InformedConsentShapeError,
+    InputLogicNodeUnknownError,
+    validate_decision_block_outputs,
+    validate_decision_output_references,
+    validate_end_pathway_block_invariants,
+    validate_event_rules,
+    validate_if_not_done_within_rules,
+    validate_informed_consent_invariants,
+    validate_input_logic_node_references,
+    validate_lane_kind,
+    StartBlockCardinalityError,
+    StartBlockShapeError,
+    validate_publish_block,
+    validate_start_block_invariants,
+)
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.schemas.pathway.pathway import (
@@ -24,6 +49,8 @@ from app.schemas.pathway.pathway import (
     PathwayVersionSummary,
 )
 from app.services.pathway.errors import (
+    BlockConfigError,
+    BlockLaneNotAllowedError,
     ConceptAlreadyExistsError,
     ForkSourceNotPublishedError,
     NoConceptVersionError,
@@ -73,6 +100,14 @@ class PathwayVersionService:
         concept = await self._version_repo.get_concept(pathway_id)
         if concept is None:
             raise NoConceptVersionError()
+        # §6: publish-time validation gate.
+        # 6.1 — every block instance must satisfy its typed subclass in
+        #        Pydantic v2 strict mode (no value coercion). Surfaces as
+        #        422 keyed on the block id so the builder canvas can
+        #        highlight the offending block.
+        # 6.2 — the block's lane.kind must be in the subclass's
+        #        `allowed_lane_kinds` (D7 class-level invariant).
+        await self._validate_publish_blocks(concept.id)
         # Resolve nested-pathway snapshots BEFORE flipping to published so a
         # failure (latest_published target with no published version) cancels
         # the publish entirely. Mutates `pathway_block.snapshot_json` on the
@@ -118,6 +153,182 @@ class PathwayVersionService:
             kind="fork-from-publish",
             require_published_source=True,
         )
+
+    async def _validate_publish_blocks(self, pathway_version_id: UUID) -> None:
+        """Run the publish-time per-block invariant checks (§6.1, §6.2).
+
+        Loads each block as its typed `BaseBlock` subclass via the
+        mapper, then:
+
+        1. Re-validates the instance in Pydantic v2 strict mode and
+           raises `BlockConfigError` (422) on failure — surfaces the
+           Pydantic validation error path under
+           `blocks[<id>].<field>` so the builder canvas can highlight
+           the offending field.
+        2. Asserts that the block's lane kind is in
+           `block_cls.allowed_lane_kinds` (D7) — raises
+           `BlockLaneNotAllowedError` otherwise.
+        """
+        children = await self._repo.fetch_children(pathway_version_id)
+        lane_kind_codes = {
+            lane.id: code
+            for code, kind in (await self._repo.lane_kinds_by_code()).items()
+            for lane in children.lanes
+            if lane.pathway_lane_kind_id == kind.id
+        }
+        # Materialise the domain blocks once — slot #2 §5.2 walks the
+        # cross-block `decision_output` reference graph below, which
+        # needs every block already on the typed domain side.
+        domain_blocks: dict[str, BaseBlock] = {}
+        for row in children.blocks:
+            domain = block_row_to_domain(row)
+            domain_blocks[str(row.id)] = domain
+            try:
+                validate_publish_block(domain)
+            except BlockPublishValidationError as err:
+                raise BlockConfigError(
+                    field=f"blocks[{row.id}]",
+                    reason=str(err.cause),
+                ) from err
+            # Slot #2 §5.1: every decision block must declare outputs.
+            try:
+                validate_decision_block_outputs(domain)
+            except DecisionOutputsEmptyError as err:
+                raise BlockConfigError(
+                    field=f"blocks[{row.id}].outputs",
+                    reason=str(err),
+                ) from err
+            lane_kind = lane_kind_codes.get(row.lane_id)
+            if lane_kind is None:
+                # Defensive — fetch_children always returns the block's
+                # lane row; missing lane_kind would mean a divergence.
+                raise BlockConfigError(
+                    field=f"blocks[{row.id}].lane_id",
+                    reason="lane_kind_code unresolved at publish time",
+                )
+            try:
+                validate_lane_kind(type(domain), lane_kind, block_name=domain.name)
+            except Exception as err:
+                raise BlockLaneNotAllowedError(
+                    block_id=row.id,
+                    block_type=type(domain).KIND,
+                    lane_kind_code=lane_kind,
+                    allowed=type(domain).allowed_lane_kinds,
+                ) from err
+
+        # Slot #2 §5.2: cross-block `decision_output` reference check.
+        # Runs after the per-block validation pass so producers + their
+        # `outputs` tuples are already typed-correct.
+        try:
+            validate_decision_output_references(domain_blocks)
+        except DecisionOutputReferenceError as err:
+            raise BlockConfigError(
+                field=(
+                    f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
+                    f".input_logic.decision_output"
+                ),
+                reason=str(err),
+            ) from err
+
+        # Pathway-completion § C6: generic rule-level node reference
+        # check — every `input_logic` rule must point at a block in
+        # this version (the builder cascade-delete's safety net).
+        try:
+            validate_input_logic_node_references(domain_blocks)
+        except InputLogicNodeUnknownError as err:
+            raise BlockConfigError(
+                field=(
+                    f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
+                    f".input_logic.rules[{err.rule_index}].node"
+                ),
+                reason=str(err),
+            ) from err
+
+        # Pathway-completion § B1.5: `if_not_done_within` rule checks
+        # (same-version reference + parseable ISO duration).
+        try:
+            validate_if_not_done_within_rules(domain_blocks)
+        except IfNotDoneWithinRuleError as err:
+            raise BlockConfigError(
+                field=(
+                    f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
+                    f".input_logic.if_not_done_within"
+                ),
+                reason=str(err),
+            ) from err
+
+        # Pathway-completion § B3.5: `event` rule checks (same-version
+        # reference + event_type declared on the producer kind).
+        try:
+            validate_event_rules(domain_blocks)
+        except EventRuleError as err:
+            raise BlockConfigError(
+                field=(
+                    f"blocks[{next((bid for bid, b in domain_blocks.items() if b is err.target_block), '')}]"
+                    f".input_logic.event"
+                ),
+                reason=str(err),
+            ) from err
+
+        # Pathway-completion § A8.6: InformedConsentBlock lifecycle shape
+        # (no timing_policy; reminder/expiry ISO durations parse).
+        try:
+            validate_informed_consent_invariants(domain_blocks)
+        except InformedConsentShapeError as err:
+            consent_id = next(
+                (bid for bid, b in domain_blocks.items() if type(b).KIND == "informed_consent"),
+                "",
+            )
+            raise BlockConfigError(
+                field=f"blocks[{consent_id}].{err.field}",
+                reason=err.reason,
+            ) from err
+
+        # Catalogue-expansion § 1: pathway-wide StartBlock invariants.
+        # Enforces exactly one StartBlock per version + empty
+        # input_logic + null timing_policy on that block.
+        try:
+            validate_start_block_invariants(domain_blocks)
+        except StartBlockCardinalityError as err:
+            raise BlockConfigError(
+                field="blocks",
+                reason=str(err),
+            ) from err
+        except StartBlockShapeError as err:
+            # Find the StartBlock id to surface the field path.
+            start_id = next(
+                (bid for bid, b in domain_blocks.items() if type(b).KIND == "start"),
+                "",
+            )
+            raise BlockConfigError(
+                field=f"blocks[{start_id}].{err.field}",
+                reason=err.reason,
+            ) from err
+
+        # Catalogue-expansion § 2: pathway-wide EndPathwayBlock invariants.
+        # Enforces ≥1 EndPathwayBlock per version + null timing_policy on
+        # every terminal. `input_logic` is intentionally unrestricted —
+        # authors gate which branch leads to which terminal.
+        try:
+            validate_end_pathway_block_invariants(domain_blocks)
+        except EndPathwayBlockMissingError as err:
+            raise BlockConfigError(
+                field="blocks",
+                reason=str(err),
+            ) from err
+        except EndPathwayBlockShapeError as err:
+            end_id = next(
+                (
+                    bid
+                    for bid, b in domain_blocks.items()
+                    if type(b).KIND == "end_pathway" and b.timing_policy is not None
+                ),
+                "",
+            )
+            raise BlockConfigError(
+                field=f"blocks[{end_id}].timing_policy",
+                reason=err.reason,
+            ) from err
 
     # ---- Helpers ---------------------------------------------------------
 
@@ -220,23 +431,25 @@ class PathwayVersionService:
         )
         await session.flush()
 
+        # Chain slot #1 §5.1: dual-write — clone path round-trips through
+        # the typed mapper so the new row inherits the per-kind columns
+        # populated on the source row's chain-slot-#1 write.
         session.add_all(
             [
                 PathwayBlock(
-                    id=block_id_map[b.id],
-                    pathway_version_id=target_version_id,
-                    phase_id=phase_id_map[b.phase_id],
-                    lane_id=lane_id_map[b.lane_id],
-                    type=b.type,
-                    label=b.label,
-                    duration_value_id=(
-                        timing_id_map[b.duration_value_id]
-                        if b.duration_value_id is not None
-                        else None
-                    ),
-                    config=b.config,
-                    x=b.x,
-                    y=b.y,
+                    **block_row_clone_kwargs(
+                        b,
+                        new_id=block_id_map[b.id],
+                        pathway_version_id=target_version_id,
+                        phase_id=phase_id_map[b.phase_id],
+                        lane_id=lane_id_map[b.lane_id],
+                        duration_value_id=(
+                            timing_id_map[b.duration_value_id]
+                            if b.duration_value_id is not None
+                            else None
+                        ),
+                        block_id_map=block_id_map,
+                    )
                 )
                 for b in src.blocks
             ]
@@ -256,25 +469,10 @@ class PathwayVersionService:
         )
         await session.flush()
 
-        session.add_all(
-            [
-                PathwayEdge(
-                    id=uuid4(),
-                    pathway_version_id=target_version_id,
-                    source_block_id=block_id_map[e.source_block_id],
-                    target_block_id=block_id_map[e.target_block_id],
-                    source_branch_id=(
-                        branch_id_map[e.source_branch_id]
-                        if e.source_branch_id is not None
-                        else None
-                    ),
-                    delay_value_id=(
-                        timing_id_map[e.delay_value_id] if e.delay_value_id is not None else None
-                    ),
-                )
-                for e in src.edges
-            ]
-        )
+        # Edges retired in slot #2 §3 — fork-from-publish carries
+        # `block.input_logic` over with the block rows themselves
+        # (cloned via `block_row_clone_kwargs`), so connectivity
+        # follows automatically without a per-edge copy step.
         session.add_all(
             [
                 PathwayTimeMarker(

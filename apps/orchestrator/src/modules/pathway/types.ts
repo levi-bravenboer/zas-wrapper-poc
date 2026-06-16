@@ -16,13 +16,65 @@ export type PathwayPhaseTemplate = components['schemas']['PathwayPhaseTemplate']
 export type PathwayEdgeTimingKind = components['schemas']['PathwayEdgeTimingKind']
 export type PathwayEdgeOffsetDirection = components['schemas']['PathwayEdgeOffsetDirection']
 export type BlockSemantics = PathwayBlockType['semantics']
-export type EdgeTimingKindCode = PathwayEdgeTimingKind['kind']
 export type PathwayTimingValue = components['schemas']['PathwayTimingValueOut']
-export type PathwayBlock = components['schemas']['PathwayBlockOut']
-export type PathwayEdge = components['schemas']['PathwayEdgeOut']
+// `PathwayVersionDefinition.blocks` carries the typed discriminated
+// union from `pathway-model-foundations` §4.1. Each member exposes the
+// chain-slot-#1 envelope compat fields (`type`, `label`, `config`) so
+// existing builder UI keeps reading them while migrating onto the typed
+// per-kind fields.
+export type PathwayBlock = NonNullable<PathwayVersionDefinition['blocks']>[number]
+
+// `timing_policy` discriminated union; `null` when the kind forbids
+// timing or no policy is picked yet.
+export type TimingPolicyValue = PathwayBlock['timing_policy'] | null
+
+export type BlockDialogMode = 'add' | 'edit'
+
+// Legacy `pathway_block.type` discriminator code, derived from the
+// typed `kind` discriminator. Matches the backend resolver's
+// `_LEGACY_TYPE_ALIASES` mapping in reverse — the only kind whose
+// legacy string differs is `external_program` (was `luscii.program`
+// on the wire).
+export function legacyBlockType(block: PathwayBlock): string {
+  return block.kind === 'external_program' ? 'luscii.program' : block.kind
+}
+
+// Per-kind config bag synthesised from the typed envelope so existing
+// inspectors keep working without rewiring against the typed fields.
+// The returned object excludes the row-level identity / placement
+// fields + the `kind` discriminator; inspectors edit it just as they
+// did the slot-#1 `config` JSONB.
+const _ENVELOPE_KEYS = new Set([
+  'id',
+  'phase_id',
+  'lane_id',
+  'duration_value_id',
+  'x',
+  'y',
+  'kind',
+  'name',
+  'lane_kind',
+  'input_logic',
+  'timing_policy',
+])
+
+export function legacyBlockConfig(block: PathwayBlock): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(block)) {
+    if (_ENVELOPE_KEYS.has(key)) continue
+    out[key] = value
+  }
+  return out
+}
+// Chain slot #2 §3 replaces the authored `pathway_edge` table with
+// `input_logic` rules per block; the canvas reads the connector layer
+// off the `DerivedEdge` projection the server computes on read. The
+// `PathwayEdge` alias keeps its name so existing import sites land on
+// the new shape without churning every file in this commit.
+export type PathwayEdge = components['schemas']['DerivedEdge']
+export type DerivedEdge = components['schemas']['DerivedEdge']
 export type PathwayPhase = components['schemas']['PathwayPhaseOut']
 export type PathwayLane = components['schemas']['PathwayLaneOut']
-export type PathwayBlockBranch = components['schemas']['PathwayBlockBranchOut']
 export type PathwayTimeMarker = components['schemas']['PathwayTimeMarkerOut']
 export type PathwayBlockDeferredField = components['schemas']['PathwayBlockDeferredFieldOut']
 
@@ -34,30 +86,17 @@ export function isLaneKindCode(value: string): value is LaneKindCode {
   return (LANE_KIND_CODES as readonly string[]).includes(value)
 }
 
-export type BlockConfig = NonNullable<PathwayBlock['config']>
+// `BlockConfig` is the slot #1 wire compat bag — `Record<string, unknown>`
+// is wider than the typed per-kind shape, but inspectors continue to
+// edit it through Zod schemas until slot #2 swaps them onto the typed
+// envelope fields directly.
+export type BlockConfig = Record<string, unknown>
 export type BlockConfigSchema = NonNullable<PathwayBlockType['config_schema']>
 
-export type EdgeTiming =
-  | { kind: 'completion'; delay_value_id: string }
-  | {
-      kind: 'marker'
-      time_marker_id: string
-      offset_value_id: string
-      offset_direction_code: string
-    }
-  | { kind: 'immediate' }
-  | { kind: 'branch'; source_branch_id: string }
-
-export function readEdgeTiming(edge: PathwayEdge): EdgeTiming {
-  if (edge.time_marker_id && edge.offset_value_id && edge.offset_direction_code) {
-    return {
-      kind: 'marker',
-      time_marker_id: edge.time_marker_id,
-      offset_value_id: edge.offset_value_id,
-      offset_direction_code: edge.offset_direction_code,
-    }
-  }
-  if (edge.source_branch_id) return { kind: 'branch', source_branch_id: edge.source_branch_id }
-  if (edge.delay_value_id) return { kind: 'completion', delay_value_id: edge.delay_value_id }
-  return { kind: 'immediate' }
-}
+// `EdgeTiming` and `readEdgeTiming` were retired alongside the
+// `pathway_edge` table in chain slot #2 §3. Edge timing
+// (delay / marker / branch) is now expressed as `input_logic`
+// rule args on the target block; the canvas reads the predicate
+// directly off `DerivedEdge.predicate` + `args` and lets the rule
+// inspector author the typed shape. Slot #4 lifts ISO-duration
+// authoring (`TimingPolicy`) onto the block itself.

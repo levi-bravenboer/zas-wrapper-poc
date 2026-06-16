@@ -3,6 +3,7 @@ import { type Node, type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
 import type { ConfigForSemantics } from '../../../../../configSchemas'
+import { legacyBlockConfig } from '../../../../../types'
 import {
   computeLusciiProgramDimensions,
   type BlockDimensions,
@@ -42,7 +43,7 @@ function LusciiProgramBlockNodeImpl({
   // generic site; narrow to the Luscii-shaped variant here. The runtime
   // contract is enforced by `CONFIG_SCHEMAS.external_program` at the
   // BuilderDrawer save path, so this narrowing is safe to perform with `as`.
-  const config = (data.block.config ?? {}) as LusciiConfig
+  const config = legacyBlockConfig(data.block) as LusciiConfig
   const empty = !config.program_id
 
   // Resolve the program: parent override wins (preview/test surfaces), else

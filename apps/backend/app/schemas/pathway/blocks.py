@@ -15,15 +15,20 @@ from pydantic import BaseModel, Field
 
 
 BlockSemanticsLiteral = Literal[
+    "start",
     "appointment",
+    "treatment",
     "task",
     "message",
+    "informed_consent",
+    "mdo",
     "form",
     "decision",
     "milestone",
     "wait",
     "pathway_link",
     "external_program",
+    "end_pathway",
 ]
 
 # Single-source-of-truth for the native / external / internal provenance

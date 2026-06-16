@@ -1,0 +1,91 @@
+# NOW — current focus
+
+Single source of truth for "what is the team working on right now".
+Every agent reads this file at the start of any session before
+touching `openspec/changes/`. Updated whenever focus shifts.
+
+## Active change
+
+**`pathway-completion`** —
+`openspec/changes/pathway-completion/`
+
+This is **the leading spec for this worktree**. It folds together
+everything that was still open after PR #42 (the pathway-model
+redesign chain) and the dialog-driven builder rewrite. No sibling
+changes; no separate chain docs. One folder, one tasks list, one
+status snapshot.
+
+Three parts, executed strictly in order:
+
+- **Part A — Block catalogue completion** — ✓ DONE (template
+  scope): start, end_pathway, treatment, mdo, informed_consent
+  shipped; notification dropped (message covers it); subpath
+  reuses pathway_link; bridge deferred (BL-072).
+- **Part B — Predicate catalogue completion** — ✓ DONE (template
+  scope): if_not_done_within + event shipped (evaluator + publish
+  gates); n_of_m deferred (BL-073).
+- **Part C — Builder dialog flow** — ✓ DONE except C8.2 (manual
+  browser run) and C1.2 (optional prototype iteration):
+  read-only canvas + auto-layout, BlockDialog add/edit with
+  config + input_logic + timing_policy editors, cascade delete
+  with confirm, backend node-reference gate.
+
+**Next up after C8.2 sign-off**: the follow-up
+**"pathway-nested-runtime" PR** — nested-enrollment spawn
+(A5.2/A5.5), record_event endpoint + event store (B3.3/B3.4 +
+A7.5), re-evaluation tick scheduler (B1.4), notification /
+reminder / expiry sends (A8.5). Deferred tasks are marked inline
+in `tasks.md`.
+
+Scope split (locked): **this PR = template + builder-config only**
+(classes, schemas, migrations, publish gates, pure evaluators).
+Runtime hooks (nested-enrollment spawn, event store + endpoint,
+tick scheduler, notification sends) move to the follow-up
+**"pathway-nested-runtime" PR** — its § tasks are marked "Deferred"
+inline in `tasks.md`.
+
+- A3, A6, B2 are DROPPED / DEFERRED — no implementation work.
+- Within this PR's template scope there are NO cross-Part blockers.
+
+Execution order this PR: **A4 ✓ → A5 ✓ → B1 → A8 → B3 → A7 → Part C**.
+
+Full task list + status snapshot live in
+`openspec/changes/pathway-completion/tasks.md`. Update that file
+whenever a `§` advances state.
+
+## Completed chain (do NOT pick work from here)
+
+**Pathway model — Redesign chain** —
+`openspec/changes/CHAIN-pathway-model.md`
+
+Parent design + slots #1 / #2 / #3 (foundations + input_logic +
+runtime aggregate). Bundled in PR #42. Carry a `STATUS: FROZEN`
+banner at the top. Reference for design context (D1-D10 decisions,
+urology example flow) only. Any follow-up on the redesign happens
+via the active change above.
+
+## How agents should pick work
+
+1. Read this file (NOW.md).
+2. Open `openspec/changes/pathway-completion/tasks.md`.
+3. Pick the topmost section whose status is **pending** and whose
+   cross-Part dependencies (if any) are satisfied.
+4. Verify the section still matches `openspec/scope.md` (PoC tier).
+5. Implement.
+
+## When to update NOW.md
+
+- The active change completes → move it to the "Completed" section
+  and point to the next active change.
+- Focus area changes → replace the "Active change" section.
+- Active work forks (rare; we generally avoid this) → list each
+  forked change with its own status pointer.
+
+## Where related background lives
+
+- Tier ledger: `openspec/scope.md`
+- Parked ideas: `openspec/backlog.md`
+- MDR safety: `openspec/mdr-watchlist.md`
+- Long-lived project context: `openspec/project.md`
+- Workflow rules: `openspec/AGENTS.md`
+- Design context for the underlying model: `openspec/changes/CHAIN-pathway-model.md` (frozen)

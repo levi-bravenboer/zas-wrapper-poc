@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
+
 from httpx import AsyncClient
 
 from app.adapters.luscii import LUSCII_PROGRAM_BLOCK_TYPE
@@ -34,29 +36,60 @@ async def _create(client: AsyncClient, name: str = "Test") -> dict:
 def _replace_payload(name: str, lane_kinds: dict[str, PathwayLaneKind]) -> dict:
     del lane_kinds
     phase_id = str(uuid.uuid4())
-    lane_id = str(uuid.uuid4())
-    block_id = str(uuid.uuid4())
+    caregiver_lane_id = str(uuid.uuid4())
+    system_lane_id = str(uuid.uuid4())
+    start_block_id = str(uuid.uuid4())
+    appointment_block_id = str(uuid.uuid4())
+    end_block_id = str(uuid.uuid4())
     return {
         "name": name,
         "phases": [{"id": phase_id, "template_id": "pre-op", "label": "Pre-op", "ord": 0}],
         "lanes": [
             {
-                "id": lane_id,
+                "id": caregiver_lane_id,
                 "lane_kind_code": "caregiver",
                 "label": "Caregiver",
                 "ord": 0,
                 "is_default": True,
-            }
+            },
+            {
+                "id": system_lane_id,
+                "lane_kind_code": "system",
+                "label": "System",
+                "ord": 1,
+                "is_default": False,
+            },
         ],
         "blocks": [
+            # Catalogue-expansion § 1: every published pathway needs a
+            # StartBlock on the `caregiver` lane (publish-time
+            # invariant after the lane-kind narrow).
             {
-                "id": block_id,
+                "id": start_block_id,
                 "phase_id": phase_id,
-                "lane_id": lane_id,
-                "type": "appointment",
+                "lane_id": caregiver_lane_id,
+                "kind": "start",
+                "label": "Start",
+                "config": {"name": "Start"},
+            },
+            {
+                "id": appointment_block_id,
+                "phase_id": phase_id,
+                "lane_id": caregiver_lane_id,
+                "kind": "appointment",
                 "label": "Intake",
                 "config": {"title": "Intake"},
-            }
+            },
+            # Catalogue-expansion § 2: every published pathway needs at
+            # least one EndPathwayBlock on a `system` lane.
+            {
+                "id": end_block_id,
+                "phase_id": phase_id,
+                "lane_id": system_lane_id,
+                "kind": "end_pathway",
+                "label": "End",
+                "config": {"name": "End"},
+            },
         ],
     }
 
@@ -85,21 +118,31 @@ async def test_list_block_types(
     rows = response.json()
     codes = {row["type"] for row in rows}
     assert codes == {
+        "start",
         "appointment",
+        "treatment",
         "task",
         "message",
+        "informed_consent",
+        "mdo",
         "form",
         "decision",
         "milestone",
         "wait",
         "pathway_link",
         LUSCII_PROGRAM_BLOCK_TYPE,
+        "end_pathway",
     }
     for row in rows:
         assert row["semantics"] in {
+            "start",
+            "end_pathway",
             "appointment",
+            "treatment",
             "task",
             "message",
+            "informed_consent",
+            "mdo",
             "form",
             "decision",
             "milestone",
@@ -190,7 +233,16 @@ async def test_create_pathway_returns_definition(
     assert body["pathway"]["patient_goal"] == "Walk pain-free with my grandkids."
     assert body["version"]["status"] == "concept"
     assert body["version"]["kind"] == "initial"
-    assert body["version"]["blocks"] == []
+    # §A1 scaffold: fresh pathway opens with a Start block on the
+    # caregiver lane already placed.
+    assert len(body["version"]["blocks"]) == 1
+    scaffolded = body["version"]["blocks"][0]
+    assert scaffolded["kind"] == "start"
+    caregiver_lane = next(
+        lane for lane in body["version"]["lanes"] if lane["lane_kind_code"] == "caregiver"
+    )
+    assert scaffolded["lane_id"] == caregiver_lane["id"]
+    assert body["version"]["phases"][0]["template_id"] == "pre-op"
 
 
 async def test_list_pathways_includes_created(
@@ -255,8 +307,11 @@ async def test_pathway_summary_returns_counts(
     body = response.json()
     assert body["id"] == created["pathway"]["id"]
     assert body["name"] == "ChildPath"
-    assert body["lane_count"] == 1
-    assert body["block_count"] == 1
+    # _replace_payload now seeds 2 lanes (caregiver + system) and 3 blocks
+    # (StartBlock + Appointment + EndPathwayBlock) per catalogue-expansion
+    # § 1 + § 2.
+    assert body["lane_count"] == 2
+    assert body["block_count"] == 3
     assert body["latest_published_version_id"] is None
 
 
@@ -296,9 +351,34 @@ async def test_replace_pathway_overwrites(
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["pathway"]["name"] == "After"
-    assert len(body["version"]["blocks"]) == 1
+    # _replace_payload now seeds 2 lanes (caregiver + system) and 3 blocks
+    # (StartBlock + Appointment + EndPathwayBlock) per catalogue-expansion
+    # § 1 + § 2.
+    assert len(body["version"]["blocks"]) == 3
     assert len(body["version"]["phases"]) == 1
-    assert len(body["version"]["lanes"]) == 1
+    assert len(body["version"]["lanes"]) == 2
+
+
+async def test_replace_pathway_accepts_envelope_keys_in_config(
+    async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
+) -> None:
+    """Slot #2 §6 envelope keys (input_logic, timing_policy, lane_kind) ride
+    inside the `config` bag on the wire — the legacy slot #1 CONFIG_SCHEMA
+    validator must NOT reject them as additional properties."""
+
+    await _login(async_client)
+    created = await _create(async_client, name="EnvelopeKeys")
+
+    payload = _replace_payload("EnvelopeKeys", lane_kinds)
+    # Stuff envelope-shared fields into every block's config — mirrors
+    # what `useAutosavePathway.buildPayload` ships from the orchestrator.
+    for block in payload["blocks"]:
+        block["config"]["input_logic"] = {"rules": [], "aggregator": "all_of"}
+        block["config"]["timing_policy"] = None
+        block["config"]["lane_kind"] = None
+
+    response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
+    assert response.status_code == 200, response.text
 
 
 async def test_replace_unknown_pathway_returns_404(
@@ -319,7 +399,7 @@ async def test_replace_invalid_payload_returns_422(
     created = await _create(async_client)
 
     payload = _replace_payload("Bad", lane_kinds)
-    payload["blocks"][0]["type"] = "not-a-real-block-type"
+    payload["blocks"][0]["kind"] = "not-a-real-block-type"
 
     response = await async_client.put(f"/pathways/{created['pathway']['id']}", json=payload)
 
@@ -335,8 +415,10 @@ async def test_replace_disallowed_lane_returns_422(
     created = await _create(async_client)
 
     payload = _replace_payload("Bad lane", lane_kinds)
-    payload["blocks"][0]["type"] = "message"
-    payload["blocks"][0]["config"] = {
+    # _replace_payload seeds [StartBlock(caregiver), Appointment(caregiver), End(system)];
+    # mutate the appointment block to a message kind that requires patient lane.
+    payload["blocks"][1]["kind"] = "message"
+    payload["blocks"][1]["config"] = {
         "channel": "email",
         "subject": "Hi",
         "body": "Welcome",
@@ -348,11 +430,14 @@ async def test_replace_disallowed_lane_returns_422(
     assert response.status_code == 422, response.text
     body = response.json()
     details = body["details"]
-    assert details["block_id"] == payload["blocks"][0]["id"]
+    assert details["block_id"] == payload["blocks"][1]["id"]
     assert details["lane_kind_code"] == "caregiver"
     assert details["allowed_lane_kind_codes"] == ["patient"]
 
 
+@pytest.mark.skip(
+    reason="edge validation retired in slot #2 §3; input_logic refs replace edge timing"
+)
 async def test_replace_invalid_edge_timing_returns_422(
     async_client: AsyncClient, lane_kinds: dict[str, PathwayLaneKind]
 ) -> None:
@@ -371,7 +456,7 @@ async def test_replace_invalid_edge_timing_returns_422(
             "id": second_block_id,
             "phase_id": payload["blocks"][0]["phase_id"],
             "lane_id": payload["blocks"][0]["lane_id"],
-            "type": "appointment",
+            "kind": "appointment",
             "label": "Follow-up",
             "config": {"title": "Follow-up"},
         }
@@ -443,7 +528,7 @@ async def test_parent_references_lists_referring_pathway(
                 "id": block_id,
                 "phase_id": phase_id,
                 "lane_id": lane_id,
-                "type": "pathway_link",
+                "kind": "pathway_link",
                 "config": {
                     "target_pathway_id": target["pathway"]["id"],
                     "mode": "blocking",
@@ -491,7 +576,7 @@ async def test_delete_pathway_with_referrers_returns_409(
                 "id": block_id,
                 "phase_id": phase_id,
                 "lane_id": lane_id,
-                "type": "pathway_link",
+                "kind": "pathway_link",
                 "config": {
                     "target_pathway_id": target["pathway"]["id"],
                     "mode": "blocking",

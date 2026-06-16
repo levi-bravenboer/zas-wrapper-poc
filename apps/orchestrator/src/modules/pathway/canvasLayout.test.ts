@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BLOCK_DEFAULT_X,
-  BLOCK_DEFAULT_Y,
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
   LANE_INSET,
@@ -11,6 +10,10 @@ import {
   buildCanvasGeometry,
   laneInset,
 } from './canvasLayout'
+
+// Native default y for a 64-tall block in a 320-tall lane.
+// Inlined here (was `BLOCK_DEFAULT_Y` export, now dead-code-trimmed).
+const NATIVE_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT / 2
 import type { PathwayLane, PathwayPhase } from './types'
 
 const phases = [
@@ -41,9 +44,9 @@ const lanes = [
 
 describe('laneInset', () => {
   it('returns the historic 26 for a native 64-tall block in a 180-tall lane', () => {
-    // Pre-refactor: BLOCK_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT/2 = 58 - 32 = 26.
+    // Pre-refactor: NATIVE_DEFAULT_Y = LANE_INSET - BLOCK_HEIGHT/2 = 58 - 32 = 26.
     // The new function must preserve this for the native case.
-    expect(laneInset(BLOCK_HEIGHT, LANE_ROW_HEIGHT)).toBe(BLOCK_DEFAULT_Y)
+    expect(laneInset(BLOCK_HEIGHT, LANE_ROW_HEIGHT)).toBe(NATIVE_DEFAULT_Y)
     expect(laneInset(64, 180)).toBe(26)
   })
 
@@ -76,7 +79,7 @@ describe('blockOrigin', () => {
   it('uses the native default y when block.y is falsy and no dimensions are passed', () => {
     const origin = blockOrigin({ phase_id: 'p1', lane_id: 'l1', x: 0, y: 0 }, geometry)
     expect(origin.x).toBe(geometry.phaseX('p1') + BLOCK_DEFAULT_X)
-    expect(origin.y).toBe(geometry.laneY('l1') + BLOCK_DEFAULT_Y)
+    expect(origin.y).toBe(geometry.laneY('l1') + NATIVE_DEFAULT_Y)
   })
 
   it('recomputes the default y for a custom (taller) block height when block.y is falsy', () => {
@@ -93,7 +96,7 @@ describe('blockOrigin', () => {
       width: BLOCK_WIDTH,
       height: BLOCK_HEIGHT,
     })
-    expect(origin.y).toBe(geometry.laneY('l1') + BLOCK_DEFAULT_Y)
+    expect(origin.y).toBe(geometry.laneY('l1') + NATIVE_DEFAULT_Y)
   })
 })
 
@@ -101,15 +104,15 @@ describe('buildCanvasGeometry fit-grow', () => {
   it('grows phase width to contain a block that overflows the declared column', () => {
     const blocks = [{ phase_id: 'p1', lane_id: 'l1', x: 70, y: 0, width: 540, height: 100 }]
     const geometry = buildCanvasGeometry(phases, lanes, blocks)
-    // 70 + 540 + 16 padding = 626 > declared 380
-    expect(geometry.phaseW('p1')).toBe(626)
+    // 70 + 540 + 28 padding = 638 > declared 380
+    expect(geometry.phaseW('p1')).toBe(638)
   })
 
   it('grows lane height to contain a tall block', () => {
     const blocks = [{ phase_id: 'p1', lane_id: 'l1', x: 0, y: 30, width: 240, height: 400 }]
     const geometry = buildCanvasGeometry(phases, lanes, blocks)
-    // 30 + 400 + 16 padding = 446 > declared LANE_ROW_HEIGHT (320)
-    expect(geometry.laneH('l1')).toBe(446)
+    // 30 + 400 + 28 padding = 458 > declared LANE_ROW_HEIGHT (320)
+    expect(geometry.laneH('l1')).toBe(458)
   })
 
   it('keeps declared dimensions when blocks fit comfortably', () => {
@@ -126,9 +129,9 @@ describe('buildCanvasGeometry fit-grow', () => {
       { phase_id: 'p1', lane_id: 'l1', x: 50, y: 50, width: 360, height: 200 },
     ]
     const geometry = buildCanvasGeometry(phases, lanes, blocks)
-    // widest: 200 + 540 + 16 = 756
-    expect(geometry.phaseW('p1')).toBe(756)
-    // tallest: 100 + 300 + 16 = 416
-    expect(geometry.laneH('l1')).toBe(416)
+    // widest: 200 + 540 + 28 = 768
+    expect(geometry.phaseW('p1')).toBe(768)
+    // tallest: 100 + 300 + 28 = 428
+    expect(geometry.laneH('l1')).toBe(428)
   })
 })

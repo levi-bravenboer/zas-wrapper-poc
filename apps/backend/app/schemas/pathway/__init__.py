@@ -23,8 +23,6 @@ from app.schemas.pathway.pathway import (
     PathwayDefinitionReplace,
     PathwayDuplicateRequest,
     PathwayParentReference,
-    PathwayEdgeIn,
-    PathwayEdgeOut,
     PathwayLaneIn,
     PathwayLaneOut,
     PathwayPhaseIn,
@@ -43,6 +41,16 @@ from app.schemas.pathway.pathway import (
 )
 from app.schemas.pathway.phases import PathwayPhaseTemplate
 
+# Note: `typed_blocks` is NOT re-exported from this package init. Importing
+# it here would re-enter the domain layer (`app.domain.pathway.blocks.*`)
+# which in turn re-enters this same `__init__.py` via `_base.py`'s
+# `from app.schemas.pathway.blocks import ...`, deadlocking the package
+# bootstrap. Consumers import typed_blocks directly:
+#   `from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut`
+# `typed_blocks` calls `PathwayVersionDefinition.model_rebuild()` itself
+# at the bottom of its module so the forward reference on `.blocks`
+# resolves once the union exists.
+
 __all__ = [
     "BlockSemanticsLiteral",
     "BlockSourceLiteral",
@@ -60,9 +68,7 @@ __all__ = [
     "PathwayCreate",
     "PathwayDefinitionReplace",
     "PathwayDuplicateRequest",
-    "PathwayEdgeIn",
     "PathwayEdgeOffsetDirection",
-    "PathwayEdgeOut",
     "PathwayEdgeTimingKind",
     "PathwayEventType",
     "PathwayLaneIn",

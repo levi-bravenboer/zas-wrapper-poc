@@ -11,10 +11,7 @@ import type {
   PathwayVersionDefinition,
 } from './types'
 
-export type BuilderSelection =
-  | { kind: 'none' }
-  | { kind: 'block'; blockId: string }
-  | { kind: 'edge'; edgeId: string }
+export type BuilderSelection = { kind: 'none' } | { kind: 'block'; blockId: string }
 
 type EditableSnapshot = {
   blocks: PathwayBlock[]
@@ -36,9 +33,6 @@ export type BuilderAction =
   | { type: 'patch-block'; blockId: string; patch: Partial<PathwayBlock> }
   | { type: 'add-block'; block: PathwayBlock }
   | { type: 'delete-block'; blockId: string }
-  | { type: 'add-edge'; edge: PathwayEdge }
-  | { type: 'patch-edge'; edgeId: string; patch: Partial<PathwayEdge> }
-  | { type: 'delete-edge'; edgeId: string }
   | { type: 'add-phase'; phase: PathwayPhase }
   | { type: 'reorder-phase'; phaseId: string; toIndex: number }
   | { type: 'resize-phase'; phaseId: string; width: number }
@@ -92,8 +86,14 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'patch-block': {
       const history = pushHistory(state)
-      const blocks = (state.version.blocks ?? []).map((b) =>
-        b.id === action.blockId ? { ...b, ...action.patch } : b,
+      // Cast: `Partial<PathwayBlock>` is a partial of the typed
+      // discriminated union, so spreading it over a narrowed member
+      // produces an unknown intersection. Inspectors only patch shared
+      // envelope fields (`label`, `config`, position) plus per-kind
+      // typed fields that are valid for the active block's kind; the
+      // result remains within the union by construction.
+      const blocks = ((state.version.blocks ?? []) as PathwayBlock[]).map((b) =>
+        b.id === action.blockId ? ({ ...b, ...action.patch } as PathwayBlock) : b,
       )
       return { ...state, version: { ...state.version, blocks }, history }
     }
@@ -109,35 +109,9 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
     }
     case 'delete-block': {
       const history = pushHistory(state)
-      const blocks = (state.version.blocks ?? []).filter((b) => b.id !== action.blockId)
-      const edges = (state.version.edges ?? []).filter(
-        (e) => e.source_block_id !== action.blockId && e.target_block_id !== action.blockId,
-      )
       return {
         ...state,
-        version: { ...state.version, blocks, edges },
-        history,
-        selection: { kind: 'none' },
-      }
-    }
-    case 'add-edge': {
-      const history = pushHistory(state)
-      const edges = [...(state.version.edges ?? []), action.edge]
-      return { ...state, version: { ...state.version, edges }, history }
-    }
-    case 'patch-edge': {
-      const history = pushHistory(state)
-      const edges = (state.version.edges ?? []).map((e) =>
-        e.id === action.edgeId ? { ...e, ...action.patch } : e,
-      )
-      return { ...state, version: { ...state.version, edges }, history }
-    }
-    case 'delete-edge': {
-      const history = pushHistory(state)
-      const edges = (state.version.edges ?? []).filter((e) => e.id !== action.edgeId)
-      return {
-        ...state,
-        version: { ...state.version, edges },
+        version: cascadeDeleteBlock(state.version, action.blockId),
         history,
         selection: { kind: 'none' },
       }
@@ -207,6 +181,42 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
   }
 }
 
+/** Blocks whose `input_logic.rules` reference `blockId` — shown in the
+ * delete-confirm dialog and stripped by the cascade
+ * (pathway-completion § C5). */
+export function dependentBlocks(blocks: PathwayBlock[], blockId: string): PathwayBlock[] {
+  return blocks.filter(
+    (b) => b.id !== blockId && (b.input_logic?.rules ?? []).some((r) => r.node === blockId),
+  )
+}
+
+/** Cascade-delete (pathway-completion § C5.1): drop the block, strip
+ * every other block's `input_logic.rules` entries that reference it,
+ * drop its branches, and drop derived edges touching it. Concept
+ * version template only — published versions are immutable and active
+ * runtime enrollments are never mutated by builder edits. */
+export function cascadeDeleteBlock(
+  version: PathwayVersionDefinition,
+  blockId: string,
+): PathwayVersionDefinition {
+  const blocks = ((version.blocks ?? []) as PathwayBlock[])
+    .filter((b) => b.id !== blockId)
+    .map((b) => {
+      const rules = b.input_logic?.rules ?? []
+      const kept = rules.filter((r) => r.node !== blockId)
+      if (kept.length === rules.length) return b
+      return {
+        ...b,
+        input_logic: { ...(b.input_logic ?? { aggregator: 'all_of' }), rules: kept },
+      } as PathwayBlock
+    })
+  const edges = (version.edges ?? []).filter(
+    (e) => e.source_block_id !== blockId && e.target_block_id !== blockId,
+  )
+  const branches = (version.branches ?? []).filter((br) => br.block_id !== blockId)
+  return { ...version, blocks, edges, branches }
+}
+
 const DEFAULT_LANE_SCAFFOLD: Array<{
   code: PathwayLane['lane_kind_code']
   label: string
@@ -250,9 +260,6 @@ function preserveSelection(
 ): BuilderSelection {
   if (current.kind === 'block') {
     return (next.blocks ?? []).some((b) => b.id === current.blockId) ? current : { kind: 'none' }
-  }
-  if (current.kind === 'edge') {
-    return (next.edges ?? []).some((e) => e.id === current.edgeId) ? current : { kind: 'none' }
   }
   return current
 }

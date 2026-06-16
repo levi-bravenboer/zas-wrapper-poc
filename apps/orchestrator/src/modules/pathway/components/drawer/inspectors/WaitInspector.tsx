@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 
 import { WAIT_EVENT_TYPES, WAIT_ON_TIMEOUT, type ConfigForSemantics } from '../../../configSchemas'
-import type { PathwayBlock } from '../../../types'
+import { legacyBlockType, type PathwayBlock } from '../../../types'
 
 import { InspectorField } from './InspectorField'
 
@@ -113,7 +113,8 @@ export function WaitInspector({ config, blocks, currentBlockId, onChange }: Prop
             ) : (
               otherBlocks.map((b) => (
                 <SelectItem key={b.id} value={b.id}>
-                  {b.label ?? t(`blockType.${b.type}`, { defaultValue: b.type })}
+                  {b.name ||
+                    t(`blockType.${legacyBlockType(b)}`, { defaultValue: legacyBlockType(b) })}
                 </SelectItem>
               ))
             )}

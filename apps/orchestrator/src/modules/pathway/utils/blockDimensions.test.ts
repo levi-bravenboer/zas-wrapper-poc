@@ -62,7 +62,7 @@ describe('getBlockDimensions', () => {
   })
 
   it('reserves the Luscii maximum (540×300) for luscii.program so lanes pre-fetch never underallocate', () => {
-    const block = makeBlock({ type: LUSCII_PROGRAM_BLOCK_TYPE })
+    const block = makeBlock({ kind: 'external_program' })
     const blockType = {
       ...makeBlockType({ type: LUSCII_PROGRAM_BLOCK_TYPE }),
       source: 'external',

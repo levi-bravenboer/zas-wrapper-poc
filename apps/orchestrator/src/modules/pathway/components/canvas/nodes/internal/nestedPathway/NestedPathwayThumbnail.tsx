@@ -4,12 +4,13 @@ import { BlockTypeIcon } from '../../../../../blockCatalogue'
 import { blockOrigin, buildCanvasGeometry, type BlockFitInput } from '../../../../../canvasLayout'
 import { laneAccent, phaseTint } from '../../../../../constants/theme'
 import { usePathwayBlocks } from '../../../../../hooks'
-import type {
-  PathwayBlock,
-  PathwayBlockType,
-  PathwayEdge,
-  PathwayLane,
-  PathwayPhase,
+import {
+  legacyBlockType,
+  type PathwayBlock,
+  type PathwayBlockType,
+  type PathwayEdge,
+  type PathwayLane,
+  type PathwayPhase,
 } from '../../../../../types'
 import { getBlockDimensions } from '../../../../../utils/blockDimensions'
 
@@ -57,7 +58,7 @@ export function NestedPathwayThumbnail({
   const sortedLanes = lanes.toSorted((a, b) => a.ord - b.ord)
 
   const fitInput: BlockFitInput[] = blocks.map((b) => {
-    const dim = getBlockDimensions(b, typesByCode.get(b.type) ?? null)
+    const dim = getBlockDimensions(b, typesByCode.get(legacyBlockType(b)) ?? null)
     return {
       phase_id: b.phase_id,
       lane_id: b.lane_id,
@@ -174,11 +175,18 @@ export function NestedPathwayThumbnail({
           style={{ overflow: 'visible' }}
         >
           {edges.map((edge) => {
+            if (!edge.source_block_id) return null
             const source = blocks.find((b) => b.id === edge.source_block_id)
             const target = blocks.find((b) => b.id === edge.target_block_id)
             if (!source || !target) return null
-            const sDim = getBlockDimensions(source, typesByCode.get(source.type) ?? null)
-            const tDim = getBlockDimensions(target, typesByCode.get(target.type) ?? null)
+            const sDim = getBlockDimensions(
+              source,
+              typesByCode.get(legacyBlockType(source)) ?? null,
+            )
+            const tDim = getBlockDimensions(
+              target,
+              typesByCode.get(legacyBlockType(target)) ?? null,
+            )
             const sPos = blockOrigin(source, geom, sDim)
             const tPos = blockOrigin(target, geom, tDim)
             const sx = sPos.x + sDim.width
@@ -188,7 +196,7 @@ export function NestedPathwayThumbnail({
             const cx = sx + (tx - sx) / 2
             return (
               <path
-                key={edge.id}
+                key={`${edge.source_block_id}->${edge.target_block_id}:${edge.predicate}`}
                 d={`M ${sx} ${sy} C ${cx} ${sy}, ${cx} ${ty}, ${tx} ${ty}`}
                 stroke="rgba(11,26,23,0.45)"
                 strokeWidth={1.5}
@@ -203,7 +211,7 @@ export function NestedPathwayThumbnail({
             <MiniBlockCard
               key={block.id}
               block={block}
-              blockType={typesByCode.get(block.type) ?? null}
+              blockType={typesByCode.get(legacyBlockType(block)) ?? null}
               accent={lane ? laneAccent(lane) : 'var(--color-primary)'}
               geometry={geom}
               isEntry={(incoming.get(block.id) ?? 0) === 0}
@@ -226,7 +234,7 @@ type CardProps = {
 function MiniBlockCard({ block, blockType, accent, geometry, isEntry }: CardProps): ReactElement {
   const dim = getBlockDimensions(block, blockType)
   const pos = blockOrigin(block, geometry, dim)
-  const name = block.label?.trim() || blockType?.label || block.type
+  const name = block.name?.trim() || blockType?.label || legacyBlockType(block)
   return (
     <div
       className="absolute grid grid-cols-[4px_36px_1fr] grid-rows-[auto_auto] rounded-[6px] border bg-card shadow-sm"
@@ -257,7 +265,7 @@ function MiniBlockCard({ block, blockType, accent, geometry, isEntry }: CardProp
           {name}
         </span>
         <span className="truncate text-[11.5px] font-medium text-muted-foreground">
-          {blockType?.label ?? block.type}
+          {blockType?.label ?? legacyBlockType(block)}
         </span>
       </div>
       {isEntry && (

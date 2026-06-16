@@ -3577,6 +3577,132 @@
         }
       }
     },
+    "/pathways/{pathway_id}/blocks/{block_id}": {
+      "get": {
+        "tags": [
+          "pathways"
+        ],
+        "summary": "Get Pathway Block",
+        "operationId": "get_pathway_block",
+        "parameters": [
+          {
+            "name": "pathway_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pathway Id"
+            }
+          },
+          {
+            "name": "block_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Block Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/StartBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AppointmentBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TreatmentBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TaskBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DecisionBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MessageBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InformedConsentBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MdoBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FormBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MilestoneBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WaitBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PathwayLinkBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ExternalProgramBlockOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EndPathwayBlockOut"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "kind",
+                    "mapping": {
+                      "start": "#/components/schemas/StartBlockOut",
+                      "appointment": "#/components/schemas/AppointmentBlockOut",
+                      "treatment": "#/components/schemas/TreatmentBlockOut",
+                      "task": "#/components/schemas/TaskBlockOut",
+                      "decision": "#/components/schemas/DecisionBlockOut",
+                      "message": "#/components/schemas/MessageBlockOut",
+                      "informed_consent": "#/components/schemas/InformedConsentBlockOut",
+                      "mdo": "#/components/schemas/MdoBlockOut",
+                      "form": "#/components/schemas/FormBlockOut",
+                      "milestone": "#/components/schemas/MilestoneBlockOut",
+                      "wait": "#/components/schemas/WaitBlockOut",
+                      "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
+                      "external_program": "#/components/schemas/ExternalProgramBlockOut",
+                      "end_pathway": "#/components/schemas/EndPathwayBlockOut"
+                    }
+                  },
+                  "title": "Response Get Pathway Block"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pathways/{pathway_id}/versions": {
       "get": {
         "tags": [
@@ -3916,6 +4042,318 @@
         }
       }
     },
+    "/enrollments": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Create Enrollment",
+        "operationId": "create_enrollment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Get Enrollment",
+        "operationId": "get_enrollment",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}/executions/{execution_id}:start": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Start Block Execution",
+        "operationId": "start_block_execution",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockExecutionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}/executions/{execution_id}:complete": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Complete Block Execution",
+        "operationId": "complete_block_execution",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockExecutionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/enrollments/{enrollment_id}/deferred-values/{attr}": {
+      "patch": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Patch Deferred Value",
+        "operationId": "patch_deferred_value",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "name": "attr",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attr"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeferredFieldValuePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeferredFieldValueOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
     "/luscii/programs": {
       "get": {
         "tags": [
@@ -4162,6 +4600,182 @@
         ],
         "title": "AccessGrantRead"
       },
+      "AppointmentBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "in_person",
+                  "video",
+                  "phone"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "attendees_patient": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendees Patient"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "kind": {
+            "type": "string",
+            "const": "appointment",
+            "title": "Kind",
+            "default": "appointment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "title"
+        ],
+        "title": "AppointmentBlockOut"
+      },
       "AppointmentKind": {
         "type": "string",
         "enum": [
@@ -4321,6 +4935,124 @@
         ],
         "title": "AssignedUserIdsUpdate",
         "description": "Replace-set semantics. An empty list clears explicit assignment \u2014\nthe carepath falls back to specialism-wide access (REQ-NON-12)."
+      },
+      "AtEnrollmentPickedDatePolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "at_enrollment_picked_date",
+            "title": "Kind",
+            "default": "at_enrollment_picked_date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AtEnrollmentPickedDatePolicy",
+        "description": "Schedule is the date supplied at enrollment as a deferred field."
+      },
+      "BlockExecutionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "scheduled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "eligible",
+              "active",
+              "completed",
+              "skipped",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "result_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Json"
+          },
+          "decision_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_template_id",
+          "state"
+        ],
+        "title": "BlockExecutionResponse"
       },
       "CareTeamCreate": {
         "properties": {
@@ -4561,6 +5293,538 @@
         ],
         "title": "ConsentStatus"
       },
+      "DecisionAutoResolve": {
+        "properties": {
+          "source_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Block Id"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_block_id",
+          "field_path"
+        ],
+        "title": "DecisionAutoResolve"
+      },
+      "DecisionBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "auto_resolve": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionAutoResolve"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Outputs"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "xor",
+              "and"
+            ],
+            "title": "Mode",
+            "default": "and"
+          },
+          "kind": {
+            "type": "string",
+            "const": "decision",
+            "title": "Kind",
+            "default": "decision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "question"
+        ],
+        "title": "DecisionBlockOut"
+      },
+      "DecisionOutputArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "decision_output",
+            "title": "Predicate",
+            "default": "decision_output"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "output_key": {
+            "type": "string",
+            "title": "Output Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block",
+          "output_key"
+        ],
+        "title": "DecisionOutputArgs",
+        "description": "Producer `decision`-class block fired the named `output_key`."
+      },
+      "DeferredFieldValueIn": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "attr": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Attr"
+          },
+          "value_json": {
+            "title": "Value Json"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "attr",
+          "value_json"
+        ],
+        "title": "DeferredFieldValueIn",
+        "description": "One `(block_template_id, attr, value_json)` triple at enrollment time."
+      },
+      "DeferredFieldValueOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "attr": {
+            "type": "string",
+            "title": "Attr"
+          },
+          "value_json": {
+            "title": "Value Json"
+          },
+          "set_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Set At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "block_template_id",
+          "attr",
+          "value_json",
+          "set_at"
+        ],
+        "title": "DeferredFieldValueOut"
+      },
+      "DeferredFieldValuePatch": {
+        "properties": {
+          "block_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block Template Id"
+          },
+          "value_json": {
+            "title": "Value Json"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block_template_id",
+          "value_json"
+        ],
+        "title": "DeferredFieldValuePatch",
+        "description": "Body for `PATCH /enrollments/{id}/deferred-values/{attr}`.\n\nLate-supply value for a `DeferredFieldSpec` whose value wasn't\navailable at enrollment creation. The engine re-evaluates\neligibility once the value lands."
+      },
+      "DerivedEdge": {
+        "properties": {
+          "target_block_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Block Id"
+          },
+          "source_block_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Block Id"
+          },
+          "predicate": {
+            "$ref": "#/components/schemas/PredicateKind"
+          },
+          "args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Args"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target_block_id",
+          "source_block_id",
+          "predicate"
+        ],
+        "title": "DerivedEdge",
+        "description": "One canvas connector derived from a target block's `input_logic` rule.\n\n`source_block_id` identifies the producer; for predicates that do\nnot name a block (`wait_after` \u2014 anchored on a marker, not a\nblock), `source_block_id` is `None` and the canvas renders the\nedge as marker-anchored instead."
+      },
+      "DueWithinPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "due_within",
+            "title": "Kind",
+            "default": "due_within"
+          },
+          "window_iso": {
+            "type": "string",
+            "title": "Window Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "window_iso"
+        ],
+        "title": "DueWithinPolicy",
+        "description": "Block must complete within an ISO 8601 window of its eligibility."
+      },
+      "EndPathwayBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "kind": {
+            "type": "string",
+            "const": "end_pathway",
+            "title": "Kind",
+            "default": "end_pathway"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name"
+        ],
+        "title": "EndPathwayBlockOut"
+      },
+      "EnrollmentCreate": {
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Version Id"
+          },
+          "anchor_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Anchor Date"
+          },
+          "deferred_values": {
+            "items": {
+              "$ref": "#/components/schemas/DeferredFieldValueIn"
+            },
+            "type": "array",
+            "title": "Deferred Values"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "patient_id",
+          "pathway_version_id",
+          "anchor_date"
+        ],
+        "title": "EnrollmentCreate",
+        "description": "Body for `POST /enrollments`."
+      },
+      "EnrollmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Pathway Version Id"
+          },
+          "anchor_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Anchor Date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "cancelled"
+            ],
+            "title": "State"
+          },
+          "executions": {
+            "items": {
+              "$ref": "#/components/schemas/BlockExecutionResponse"
+            },
+            "type": "array",
+            "title": "Executions"
+          },
+          "deferred_values": {
+            "items": {
+              "$ref": "#/components/schemas/DeferredFieldValueOut"
+            },
+            "type": "array",
+            "title": "Deferred Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "pathway_version_id",
+          "anchor_date",
+          "state"
+        ],
+        "title": "EnrollmentResponse"
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -4590,6 +5854,53 @@
           "message"
         ],
         "title": "ErrorResponse"
+      },
+      "EventArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "event",
+            "title": "Predicate",
+            "default": "event"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block",
+          "event_type"
+        ],
+        "title": "EventArgs",
+        "description": "In-execution event: the referenced block fired a typed event.\n\n`event_type` must be declared in the referenced block kind's\nclass-level `EVENTS` tuple (enforced at publish time \u2014 no kind is\nsilently usable as an event source). True once the event has been\nrecorded for the referenced execution; the receive endpoint +\nevent store land in the \"pathway-nested-runtime\" PR\n(pathway-completion \u00a7 B3.3/B3.4) \u2014 until then this predicate\nevaluates to `False` at runtime."
+      },
+      "ExecutionCompleteRequest": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ExecutionCompleteRequest",
+        "description": "Body for `POST /enrollments/{id}/executions/{exec_id}:complete`."
       },
       "ExternalAccessProfileRead": {
         "properties": {
@@ -4740,6 +6051,424 @@
         ],
         "title": "ExternalGrantRead"
       },
+      "ExternalProgramBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "provider": {
+            "type": "string",
+            "const": "luscii",
+            "title": "Provider"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          },
+          "protocol_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Id"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blocking",
+                  "fire_and_forget"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "kind": {
+            "type": "string",
+            "const": "external_program",
+            "title": "Kind",
+            "default": "external_program"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "provider"
+        ],
+        "title": "ExternalProgramBlockOut"
+      },
+      "FixedDurationPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "fixed_duration",
+            "title": "Kind",
+            "default": "fixed_duration"
+          },
+          "duration_iso": {
+            "type": "string",
+            "title": "Duration Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "duration_iso"
+        ],
+        "title": "FixedDurationPolicy",
+        "description": "Block has a fixed ISO 8601 duration."
+      },
+      "FormBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "intro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/FormQuestion"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Questions"
+          },
+          "submit_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submit Label"
+          },
+          "confirmation_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Message"
+          },
+          "kind": {
+            "type": "string",
+            "const": "form",
+            "title": "Kind",
+            "default": "form"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "title",
+          "questions"
+        ],
+        "title": "FormBlockOut"
+      },
+      "FormQuestion": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "long_text",
+              "single_choice",
+              "multi_choice",
+              "scale",
+              "date",
+              "file"
+            ],
+            "title": "Type"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/FormQuestionOption"
+            },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "label",
+          "required"
+        ],
+        "title": "FormQuestion"
+      },
+      "FormQuestionOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "FormQuestionOption"
+      },
       "Gender": {
         "type": "string",
         "enum": [
@@ -4762,6 +6491,33 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HasDataArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "has_data",
+            "title": "Predicate",
+            "default": "has_data"
+          },
+          "block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block",
+          "field_path"
+        ],
+        "title": "HasDataArgs",
+        "description": "A produced field on `block` is non-null at evaluation time."
       },
       "HealthResponse": {
         "properties": {
@@ -4787,6 +6543,327 @@
           "started_at"
         ],
         "title": "HealthResponse"
+      },
+      "IfDoneArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "if_done",
+            "title": "Predicate",
+            "default": "if_done"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "delay_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block"
+        ],
+        "title": "IfDoneArgs",
+        "description": "Predecessor block has completed (with optional `delay_iso` wait)."
+      },
+      "IfNotDoneWithinArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "if_not_done_within",
+            "title": "Predicate",
+            "default": "if_not_done_within"
+          },
+          "after_block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "After Block"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "after_block",
+          "offset_iso"
+        ],
+        "title": "IfNotDoneWithinArgs",
+        "description": "SLA / timeout: the referenced block is STILL not done after a window.\n\nTrue when the referenced block's execution is NOT in a terminal\nstate (`completed` / `skipped`) AND `now >= sla_anchor + offset_iso`.\nThe anchor is the referenced block's eligibility moment\n(`scheduled_at` until a dedicated `eligible_at` runtime column\nlands). `offset_iso` is an ISO 8601 duration (`\"P14D\"`, `\"PT4H\"`)\n\u2014 one duration grammar across the model, matching `TimingPolicy`."
+      },
+      "InformedConsentBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/FormQuestion"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Questions"
+          },
+          "channels": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "email",
+                "sms",
+                "push",
+                "in_app"
+              ]
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Channels"
+          },
+          "reminder_offset_iso": {
+            "type": "string",
+            "title": "Reminder Offset Iso",
+            "default": "P3D"
+          },
+          "reminder_max": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Reminder Max",
+            "default": 3
+          },
+          "expires_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At Iso"
+          },
+          "kind": {
+            "type": "string",
+            "const": "informed_consent",
+            "title": "Kind",
+            "default": "informed_consent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name"
+        ],
+        "title": "InformedConsentBlockOut"
+      },
+      "InputLogic": {
+        "properties": {
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/InputLogicRule"
+            },
+            "type": "array",
+            "title": "Rules",
+            "default": []
+          },
+          "aggregator": {
+            "type": "string",
+            "enum": [
+              "all_of",
+              "any_of"
+            ],
+            "title": "Aggregator",
+            "default": "all_of"
+          },
+          "n_of_m": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Of M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "InputLogic",
+        "description": "Aggregate of rules attached to a `BaseBlock`.\n\n`aggregator` defines the combinator: `all_of` (default \u2014 every rule\nmust hold) or `any_of` (at least one). `n_of_m` is an optional\nvoting threshold for `any_of`-style gates; when set, the rule list\nmust satisfy at least `n` of `m` clauses."
+      },
+      "InputLogicRule": {
+        "properties": {
+          "node": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Node"
+          },
+          "args": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/IfDoneArgs"
+              },
+              {
+                "$ref": "#/components/schemas/HasDataArgs"
+              },
+              {
+                "$ref": "#/components/schemas/ValueEqualsArgs"
+              },
+              {
+                "$ref": "#/components/schemas/ValueGtArgs"
+              },
+              {
+                "$ref": "#/components/schemas/WaitAfterArgs"
+              },
+              {
+                "$ref": "#/components/schemas/DecisionOutputArgs"
+              },
+              {
+                "$ref": "#/components/schemas/IfNotDoneWithinArgs"
+              },
+              {
+                "$ref": "#/components/schemas/EventArgs"
+              }
+            ],
+            "title": "Args",
+            "discriminator": {
+              "propertyName": "predicate",
+              "mapping": {
+                "decision_output": "#/components/schemas/DecisionOutputArgs",
+                "event": "#/components/schemas/EventArgs",
+                "has_data": "#/components/schemas/HasDataArgs",
+                "if_done": "#/components/schemas/IfDoneArgs",
+                "if_not_done_within": "#/components/schemas/IfNotDoneWithinArgs",
+                "value_equals": "#/components/schemas/ValueEqualsArgs",
+                "value_gt": "#/components/schemas/ValueGtArgs",
+                "wait_after": "#/components/schemas/WaitAfterArgs"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node",
+          "args"
+        ],
+        "title": "InputLogicRule",
+        "description": "One typed eligibility rule referenced from a downstream block.\n\n`node` is the producer block reference (uuid string) for\nvisualization / canvas wiring; the predicate's typed `args` model\ncarries the same id and any predicate-specific fields. Carrying\n`node` at the rule level keeps canvas dispatch O(1) without\nwalking into the args union."
       },
       "ItemCategory": {
         "type": "string",
@@ -5991,6 +8068,427 @@
         "title": "LusciiUnknownPoint",
         "description": "Fallback point for values the classifier cannot categorise."
       },
+      "MdoBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "expected_attendees_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Attendees Note"
+          },
+          "kind": {
+            "type": "string",
+            "const": "mdo",
+            "title": "Kind",
+            "default": "mdo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "topic"
+        ],
+        "title": "MdoBlockOut"
+      },
+      "MessageBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "sms",
+              "push",
+              "in_app"
+            ],
+            "title": "Channel"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "cta_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cta Label"
+          },
+          "cta_target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cta Target"
+          },
+          "kind": {
+            "type": "string",
+            "const": "message",
+            "title": "Kind",
+            "default": "message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "channel",
+          "subject",
+          "body"
+        ],
+        "title": "MessageBlockOut"
+      },
+      "MilestoneBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "kind": {
+            "type": "string",
+            "const": "milestone",
+            "title": "Kind",
+            "default": "milestone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "label"
+        ],
+        "title": "MilestoneBlockOut"
+      },
       "MobileHealthResponse": {
         "properties": {
           "status": {
@@ -6774,11 +9272,11 @@
             "title": "Lane Id",
             "description": "Optional. When omitted the backend materializes the block type's default lane (catalogue.allowed_lane_kind_codes[0])."
           },
-          "type": {
+          "kind": {
             "type": "string",
             "maxLength": 63,
             "minLength": 1,
-            "title": "Type"
+            "title": "Kind"
           },
           "label": {
             "anyOf": [
@@ -6824,78 +9322,10 @@
         "required": [
           "id",
           "phase_id",
-          "type"
+          "kind"
         ],
-        "title": "PathwayBlockIn"
-      },
-      "PathwayBlockOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "phase_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Phase Id"
-          },
-          "lane_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Lane Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "duration_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration Value Id"
-          },
-          "config": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Config"
-          },
-          "x": {
-            "type": "integer",
-            "title": "X",
-            "default": 0
-          },
-          "y": {
-            "type": "integer",
-            "title": "Y",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "phase_id",
-          "lane_id",
-          "type"
-        ],
-        "title": "PathwayBlockOut"
+        "title": "PathwayBlockIn",
+        "description": "Typed-only block payload (chain slot #2 \u00a76).\n\nThe slot-#1 legacy `(type, config)` dual shape is retired; the\nwire now carries the typed `BaseBlock` subclass payload under\n`config` directly. `kind` is the discriminator (replaces the\nslot-#1 `type` column) \u2014 `_LEGACY_TYPE_ALIASES` in the resolver\nstill maps the dotted external-program code (`luscii.program`)\nfor storage parity."
       },
       "PathwayBlockType": {
         "properties": {
@@ -6911,15 +9341,20 @@
           "semantics": {
             "type": "string",
             "enum": [
+              "start",
               "appointment",
+              "treatment",
               "task",
               "message",
+              "informed_consent",
+              "mdo",
               "form",
               "decision",
               "milestone",
               "wait",
               "pathway_link",
-              "external_program"
+              "external_program",
+              "end_pathway"
             ],
             "title": "Semantics",
             "description": "Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching."
@@ -7152,13 +9587,6 @@
             "type": "array",
             "title": "Branches"
           },
-          "edges": {
-            "items": {
-              "$ref": "#/components/schemas/PathwayEdgeIn"
-            },
-            "type": "array",
-            "title": "Edges"
-          },
           "time_markers": {
             "items": {
               "$ref": "#/components/schemas/PathwayTimeMarkerIn"
@@ -7195,92 +9623,6 @@
         ],
         "title": "PathwayDuplicateRequest"
       },
-      "PathwayEdgeIn": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "source_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Source Block Id"
-          },
-          "target_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Target Block Id"
-          },
-          "source_branch_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Branch Id"
-          },
-          "delay_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Delay Value Id"
-          },
-          "time_marker_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Marker Id"
-          },
-          "offset_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Value Id"
-          },
-          "offset_direction_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 63
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Direction Code"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "source_block_id",
-          "target_block_id"
-        ],
-        "title": "PathwayEdgeIn"
-      },
       "PathwayEdgeOffsetDirection": {
         "properties": {
           "code": {
@@ -7303,92 +9645,6 @@
           "ord"
         ],
         "title": "PathwayEdgeOffsetDirection"
-      },
-      "PathwayEdgeOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "source_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Source Block Id"
-          },
-          "target_block_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Target Block Id"
-          },
-          "source_branch_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Branch Id"
-          },
-          "delay_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Delay Value Id"
-          },
-          "time_marker_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Marker Id"
-          },
-          "offset_value_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Value Id"
-          },
-          "offset_direction_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 63
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset Direction Code"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "source_block_id",
-          "target_block_id"
-        ],
-        "title": "PathwayEdgeOut"
       },
       "PathwayEdgeTimingKind": {
         "properties": {
@@ -7516,6 +9772,161 @@
           "height_px"
         ],
         "title": "PathwayLaneOut"
+      },
+      "PathwayLinkBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "target_pathway_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Pathway Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "fire_and_forget"
+            ],
+            "title": "Mode"
+          },
+          "version_pin": {
+            "type": "string",
+            "enum": [
+              "latest_published",
+              "specific"
+            ],
+            "title": "Version Pin",
+            "default": "latest_published"
+          },
+          "pinned_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned Version Id"
+          },
+          "context_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Context Mapping",
+            "default": {}
+          },
+          "kind": {
+            "type": "string",
+            "const": "pathway_link",
+            "title": "Kind",
+            "default": "pathway_link"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "target_pathway_id",
+          "mode"
+        ],
+        "title": "PathwayLinkBlockOut"
       },
       "PathwayParentReference": {
         "properties": {
@@ -8128,7 +10539,69 @@
           },
           "blocks": {
             "items": {
-              "$ref": "#/components/schemas/PathwayBlockOut"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/StartBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/AppointmentBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/TreatmentBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/TaskBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/DecisionBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/MessageBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/InformedConsentBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/MdoBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/FormBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/MilestoneBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/WaitBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/PathwayLinkBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/ExternalProgramBlockOut"
+                },
+                {
+                  "$ref": "#/components/schemas/EndPathwayBlockOut"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "kind",
+                "mapping": {
+                  "appointment": "#/components/schemas/AppointmentBlockOut",
+                  "decision": "#/components/schemas/DecisionBlockOut",
+                  "end_pathway": "#/components/schemas/EndPathwayBlockOut",
+                  "external_program": "#/components/schemas/ExternalProgramBlockOut",
+                  "form": "#/components/schemas/FormBlockOut",
+                  "informed_consent": "#/components/schemas/InformedConsentBlockOut",
+                  "mdo": "#/components/schemas/MdoBlockOut",
+                  "message": "#/components/schemas/MessageBlockOut",
+                  "milestone": "#/components/schemas/MilestoneBlockOut",
+                  "pathway_link": "#/components/schemas/PathwayLinkBlockOut",
+                  "start": "#/components/schemas/StartBlockOut",
+                  "task": "#/components/schemas/TaskBlockOut",
+                  "treatment": "#/components/schemas/TreatmentBlockOut",
+                  "wait": "#/components/schemas/WaitBlockOut"
+                }
+              }
             },
             "type": "array",
             "title": "Blocks"
@@ -8142,7 +10615,7 @@
           },
           "edges": {
             "items": {
-              "$ref": "#/components/schemas/PathwayEdgeOut"
+              "$ref": "#/components/schemas/DerivedEdge"
             },
             "type": "array",
             "title": "Edges"
@@ -9097,6 +11570,21 @@
         "type": "object",
         "title": "PractitionerUpdate"
       },
+      "PredicateKind": {
+        "type": "string",
+        "enum": [
+          "if_done",
+          "has_data",
+          "value_equals",
+          "value_gt",
+          "wait_after",
+          "decision_output",
+          "if_not_done_within",
+          "event"
+        ],
+        "title": "PredicateKind",
+        "description": "Closed enum of supported input-logic predicates (D3).\n\nNo expression language. Adding a new predicate is a typed code\nchange here + a new `Args` model + an evaluator branch."
+      },
       "ProviderDescriptor": {
         "properties": {
           "key": {
@@ -9424,6 +11912,275 @@
         ],
         "title": "SpecialismRead"
       },
+      "StartBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "kind": {
+            "type": "string",
+            "const": "start",
+            "title": "Kind",
+            "default": "start"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name"
+        ],
+        "title": "StartBlockOut"
+      },
+      "TaskBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "assignee": {
+            "type": "string",
+            "enum": [
+              "patient",
+              "caregiver"
+            ],
+            "title": "Assignee"
+          },
+          "due_offset_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Offset Days"
+          },
+          "requires_completion": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requires Completion"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "kind": {
+            "type": "string",
+            "const": "task",
+            "title": "Kind",
+            "default": "task"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "title",
+          "assignee"
+        ],
+        "title": "TaskBlockOut"
+      },
       "TaskItem": {
         "properties": {
           "id": {
@@ -9493,6 +12250,155 @@
         ],
         "title": "TaskItem",
         "description": "Unified envelope returned by `GET /tasks` and `GET /tasks/{source}/{source_id}`.\n\nSortable by `due_at` (which v1 always maps to `appointment.starts_at`).\n`priority` is reserved for future sources; v1 appointment source\nalways emits `null`."
+      },
+      "TreatmentBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "kind": {
+            "type": "string",
+            "const": "treatment",
+            "title": "Kind",
+            "default": "treatment"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "title"
+        ],
+        "title": "TreatmentBlockOut"
       },
       "UserCreate": {
         "properties": {
@@ -9746,6 +12652,278 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValueEqualsArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "value_equals",
+            "title": "Predicate",
+            "default": "value_equals"
+          },
+          "block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          },
+          "expected": {
+            "title": "Expected"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block",
+          "field_path",
+          "expected"
+        ],
+        "title": "ValueEqualsArgs",
+        "description": "A produced field equals `expected`. Pure value compare, no coercion."
+      },
+      "ValueGtArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "value_gt",
+            "title": "Predicate",
+            "default": "value_gt"
+          },
+          "block": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Block"
+          },
+          "field_path": {
+            "type": "string",
+            "title": "Field Path"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "block",
+          "field_path",
+          "threshold"
+        ],
+        "title": "ValueGtArgs",
+        "description": "A produced numeric field is strictly greater than `threshold`."
+      },
+      "WaitAfterArgs": {
+        "properties": {
+          "predicate": {
+            "type": "string",
+            "const": "wait_after",
+            "title": "Predicate",
+            "default": "wait_after"
+          },
+          "marker_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Marker Id"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "before",
+              "after"
+            ],
+            "title": "Direction"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "marker_id",
+          "offset_iso",
+          "direction"
+        ],
+        "title": "WaitAfterArgs",
+        "description": "Anchored wait: marker reached + ISO 8601 offset, direction-signed."
+      },
+      "WaitAfterPolicy": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "wait_after",
+            "title": "Kind",
+            "default": "wait_after"
+          },
+          "offset_iso": {
+            "type": "string",
+            "title": "Offset Iso",
+            "default": "PT0S"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "WaitAfterPolicy",
+        "description": "Block fires after an ISO 8601 offset from its eligibility moment.\n\n`PT0S` means \"fire as soon as eligible\" \u2014 used as the default\nbackfill for rows that carry no authored timing."
+      },
+      "WaitBlockOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "phase_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Phase Id"
+          },
+          "lane_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Lane Id"
+          },
+          "duration_value_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Value Id"
+          },
+          "x": {
+            "type": "integer",
+            "title": "X",
+            "default": 0
+          },
+          "y": {
+            "type": "integer",
+            "title": "Y",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lane_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane Kind"
+          },
+          "input_logic": {
+            "$ref": "#/components/schemas/InputLogic",
+            "default": {
+              "rules": [],
+              "aggregator": "all_of"
+            }
+          },
+          "timing_policy": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/FixedDurationPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WaitAfterPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DueWithinPolicy"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AtEnrollmentPickedDatePolicy"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "kind",
+                  "mapping": {
+                    "at_enrollment_picked_date": "#/components/schemas/AtEnrollmentPickedDatePolicy",
+                    "due_within": "#/components/schemas/DueWithinPolicy",
+                    "fixed_duration": "#/components/schemas/FixedDurationPolicy",
+                    "wait_after": "#/components/schemas/WaitAfterPolicy"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing Policy"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "source_block_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Block Id"
+          },
+          "timeout_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout Days"
+          },
+          "on_timeout": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "continue",
+                  "escalate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On Timeout"
+          },
+          "kind": {
+            "type": "string",
+            "const": "wait",
+            "title": "Kind",
+            "default": "wait"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "phase_id",
+          "lane_id",
+          "name",
+          "event_type"
+        ],
+        "title": "WaitBlockOut"
       }
     }
   }
