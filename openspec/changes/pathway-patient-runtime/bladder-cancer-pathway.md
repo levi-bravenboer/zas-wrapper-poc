@@ -96,6 +96,7 @@ To make this pathway actually run across enrollment + builder + runtime:
 - **Operation pre-op gate is a caregiver task** ("review Luscii pre-op data is good"), not an automatic Luscii read.
 - **Pathology results** are caregiver-marked (no lab/HiX integration).
 - **Messages + GP-share** are mock (logged, no delivery).
+- **`end_pathway` leaves the Luscii program running** — no unenroll/stop call; Luscii monitoring/PROMs continue independently.
 
 ## Still needed
 
