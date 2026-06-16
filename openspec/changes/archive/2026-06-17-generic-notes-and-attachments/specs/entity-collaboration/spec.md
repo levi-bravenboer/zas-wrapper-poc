@@ -2,7 +2,7 @@
 
 ### Requirement: Notes and attachments are generic over the owner entity and keyed to a patient
 
-The backend SHALL persist two polymorphic, tenant-owned tables — `notes` and `attachments` — each with `owner_type` (enum `owner_type`: `appointment | task | patient`), `owner_id` (UUID, NO foreign key), and `patient_id` (UUID, FK `patients.id`, NOT NULL — the patient the item is about). `notes` adds `author_user_id` + `body` (append-only). `attachments` adds `uploaded_by`, `filename`, `content_type`, `size`, `storage_key` (unique), with bytes on S3 via presigned URLs. Both declare `__realtime_resource__` + `__audited__`. The appointment-specific `appointment_notes` / `appointment_attachments` tables are REMOVED and replaced by these.
+The backend SHALL persist two polymorphic, tenant-owned tables — `notes` and `attachments` — each with `owner_type` (enum `owner_type`: `appointment | task | patient`), `owner_id` (UUID, NO foreign key), and `patient_id` (UUID, FK `patients.id`, NULLABLE — the patient the item is about, when the owner is linked to one). `notes` adds `author_user_id` + `body` (append-only). `attachments` adds `uploaded_by`, `filename`, `content_type`, `size`, `storage_key` (unique), with bytes on S3 via presigned URLs. Both declare `__realtime_resource__` + `__audited__`. The appointment-specific `appointment_notes` / `appointment_attachments` tables are REMOVED and replaced by these.
 
 A shared, authz-free `NoteService`/`AttachmentService` (+ repositories) serve every owner, parameterised by `(owner_type, owner_id, patient_id)`; the attachment service reuses the existing S3 storage with `storage_key = "{owner_type}/{owner_id}/{uuid}/{filename}"` and the 50 MB cap.
 
@@ -14,7 +14,7 @@ A shared, authz-free `NoteService`/`AttachmentService` (+ repositories) serve ev
 #### Scenario: Every item records its subject patient
 
 - **WHEN** a note or attachment is created on any owner
-- **THEN** its `patient_id` MUST be set to the owner's patient (appointment→`patient_id`, task→`patient_id`, patient→self); a task with no patient MUST yield `422`
+- **THEN** its `patient_id` MUST be set to the owner's patient when one exists (appointment→`patient_id`, task→`patient_id` when set, patient→self); a task with no patient leaves `patient_id` null and the item is still created
 
 ### Requirement: Per-entity routes enforce that entity's access, then delegate to the shared service
 
