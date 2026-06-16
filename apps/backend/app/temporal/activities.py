@@ -42,6 +42,12 @@ async def complete_step(payload: CompleteStepInput) -> RuntimeTick:
             tenant_id=payload.actor.tenant_id,
             now=payload.now,
         )
+        # §6.4: record who completed the step.
+        await service.stamp_completion(
+            payload.enrollment_id,
+            payload.execution_id,
+            actor=payload.actor,
+        )
         # §3.5: an appointment/treatment step materialises a real Appointment.
         await service.materialize_appointment(
             payload.enrollment_id,

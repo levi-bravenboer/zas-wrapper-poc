@@ -482,3 +482,54 @@ async def test_completing_appointment_step_materializes_appointment(
     ).scalar_one()
     assert appt.patient_id == patient.id  # type: ignore[union-attr]
     assert appt.status == AppointmentStatus.FULFILLED
+
+
+# ---- caregiver attribution on completion (§6.4) --------------------------
+
+
+async def test_stamp_completion_records_caregiver(
+    db_session: AsyncSession,
+    runtime_world: dict[str, object],
+    seeded_zas_users: list[object],
+) -> None:
+    from datetime import UTC as _UTC
+    from datetime import datetime as _dt
+
+    from app.core.enums.user import Role
+    from app.schemas.auth.auth import SessionUser
+    from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
+
+    del seeded_zas_users
+    service = _service(db_session)
+    patient = runtime_world["patient"]
+    version = runtime_world["version"]
+    block = runtime_world["block"]
+
+    enrollment = await service.create(
+        EnrollmentCreate(
+            patient_id=patient.id,  # type: ignore[union-attr]
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            anchor_date=date(2026, 6, 10),
+        ),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    exec_id = next(e.id for e in view.executions if e.block_template_id == block.id)  # type: ignore[union-attr]
+
+    actor = SessionUser(
+        id=ADMIN_USER_ID,
+        email=ADMIN_EMAIL,
+        display_name=ADMIN_DISPLAY_NAME,
+        tenant_id=ZAS_TENANT_ID,
+        role=Role.ADMIN,
+    )
+    await service.complete_step(
+        enrollment.id, exec_id, result=None, tenant_id=ZAS_TENANT_ID, now=_dt.now(_UTC)
+    )
+    await service.stamp_completion(enrollment.id, exec_id, actor=actor)
+    await db_session.commit()
+
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    completed = next(e for e in view.executions if e.id == exec_id)
+    assert completed.completed_by_name == ADMIN_DISPLAY_NAME

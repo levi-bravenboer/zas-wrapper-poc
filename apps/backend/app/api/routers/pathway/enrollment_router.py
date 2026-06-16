@@ -377,8 +377,13 @@ async def complete_block_execution(
         tenant_id=current_user.tenant_id,
         now=_now(),
     )
+    # §6.4: record who completed the step.
+    await service.stamp_completion(enrollment_id, execution_id, actor=current_user)
     # §3.5: materialise a real Appointment for appointment/treatment steps.
     await service.materialize_appointment(enrollment_id, execution_id, actor=current_user)
+    row = await service.read_execution(
+        enrollment_id, execution_id, tenant_id=current_user.tenant_id
+    )
     return BlockExecutionResponse.model_validate(row)
 
 

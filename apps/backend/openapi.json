@@ -7184,6 +7184,17 @@
               }
             ],
             "title": "Decision Output"
+          },
+          "completed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed By Name"
           }
         },
         "type": "object",

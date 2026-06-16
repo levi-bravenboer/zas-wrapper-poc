@@ -73,6 +73,11 @@ class PathwayBlockExecution(TenantOwnedEntity):
         server_default=sa.text("'pending'"),
     )
     result_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # Caregiver who completed the step (§6.4 attribution). `completed_by_name`
+    # is denormalised so the tab renders who/when without a user join; the
+    # bare UUID stays FK-less (mirrors other runtime-projection links).
+    completed_by: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+    completed_by_name: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     # DecisionBlock-only: which `outputs[*]` key fired at completion.
     # Populated by the engine; reused by the `decision_output`
     # predicate evaluator without re-parsing `result_json`.

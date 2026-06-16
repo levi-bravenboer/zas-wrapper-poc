@@ -60,6 +60,7 @@ class BlockExecutionResponse(BaseModel):
     state: BlockExecutionState
     result_json: dict[str, Any] | None = None
     decision_output: str | None = None
+    completed_by_name: str | None = None
 
 
 class DeferredFieldValueOut(BaseModel):

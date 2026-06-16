@@ -439,6 +439,22 @@ class EnrollmentService:
         await self._save_executions(enrollment_id, executions)
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 
+    async def stamp_completion(
+        self,
+        enrollment_id: UUID,
+        execution_id: UUID,
+        *,
+        actor: SessionUser,
+    ) -> None:
+        """Record who completed a step (§6.4) — denormalised name + id so the
+        tab renders who/when without a user join. No-op unless completed."""
+        row = await self._repo.get_execution(execution_id, enrollment_id, actor.tenant_id)
+        if row is None or row.state != "completed":
+            return
+        row.completed_by = actor.id
+        row.completed_by_name = actor.display_name
+        await self._repo._session.flush()  # noqa: SLF001
+
     async def materialize_appointment(
         self,
         enrollment_id: UUID,
