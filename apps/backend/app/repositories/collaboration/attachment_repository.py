@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.collaboration import OwnerType
+from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.collaboration import Attachment
 from app.repositories.collaboration._queries import list_with_author_name
 
@@ -77,4 +78,7 @@ class AttachmentRepository:
 
     async def soft_delete(self, attachment: Attachment) -> None:
         attachment.deleted_at = func.now()
+        actor = self._session.info.get(SESSION_ACTOR_KEY)
+        if actor is not None:
+            attachment.deleted_by = actor.id
         await self._session.flush()
