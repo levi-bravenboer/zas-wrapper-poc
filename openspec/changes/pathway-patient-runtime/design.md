@@ -211,6 +211,7 @@ The sticky-note structure (Pre-requisites / Actions / Complete-if) maps to: `inp
 
 **Luscii scope (moderate).** Confirmed against `luscii-public-api.json`:
 - **Enroll** — when a Luscii (`external_program`) block becomes eligible, an activity ensures a connection / enrolls the patient: `POST /v1/patients` carries demographics + identifiers + **`programId` / `protocolId`** (one call = create connection + program enrollment). Reuse an existing patient if found.
+- **One program, enrolled once early.** A single Luscii program (`programId`) is enrolled at the early `external_program` block (after consent) and covers consent + monitoring + pre-op questionnaire/measurements. The later gate blocks do **not** re-enroll — they read from that same program.
 - **Read-on-demand gating** — Luscii-backed gate blocks (anesthesia questionnaire, measurements) complete by **reading** Luscii: `GET /v1/instrument-item-responses` (questionnaire answered), `GET /v1/measurements` (provided), `GET /v1/alerts` (out-of-bounds → escalation). A Temporal activity polls on a timer (or on eligibility eval); webhooks (`/v1/webhooks-events`) are a later upgrade for push.
 - Patient-detail measurement display stays the existing `MeasurementCharts` read surface.
 
