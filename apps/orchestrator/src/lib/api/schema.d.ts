@@ -1988,6 +1988,8 @@ export interface components {
             } | null;
             /** Decision Output */
             decision_output?: string | null;
+            /** Completed By Name */
+            completed_by_name?: string | null;
         };
         /**
          * CareTeamCreate

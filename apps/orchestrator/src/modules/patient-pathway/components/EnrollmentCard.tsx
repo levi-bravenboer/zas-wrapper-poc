@@ -382,6 +382,7 @@ function StepMeta({
         {execution.completed_at
           ? t('step.completedOn', { date: formatDateOrDash(execution.completed_at, language) })
           : null}
+        {execution.completed_by_name ? ` · ${execution.completed_by_name}` : null}
         {summary ? ` · ${summary}` : null}
       </span>
     )
