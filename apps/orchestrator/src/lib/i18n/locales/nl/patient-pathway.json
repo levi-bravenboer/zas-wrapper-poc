@@ -13,6 +13,7 @@
     "pathwayLabel": "Zorgpad",
     "pathwayPlaceholder": "Kies een zorgpad",
     "anchorLabel": "Ankerdatum",
+    "participantPlaceholder": "Kies een zorgverlener",
     "noPublished": "Er zijn nog geen gepubliceerde zorgpaden om op in te schrijven.",
     "cancel": "Annuleren",
     "submit": "Inschrijven",

@@ -12,6 +12,21 @@ export async function fetchEnrollDescriptor(pathwayVersionId: string): Promise<E
   return result.data
 }
 
+export interface CandidateUser {
+  id: string
+  display_name: string
+}
+
+export async function fetchCandidateUsers(): Promise<CandidateUser[]> {
+  const result = await api.GET('/users', {})
+  if (!result.data) {
+    throw enrollmentError('Failed to load practitioners', result.response.status)
+  }
+  return result.data.items
+    .filter((u) => u.is_active && u.role !== 'patient')
+    .map((u) => ({ id: u.id, display_name: u.display_name }))
+}
+
 export type EnrollmentApiError = Error & {
   status: number
   code?: string

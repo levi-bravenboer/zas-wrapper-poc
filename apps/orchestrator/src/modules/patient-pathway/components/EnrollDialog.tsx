@@ -24,7 +24,7 @@ import {
 import { listPathways } from '@/modules/pathway/api'
 import type { PathwaySummary } from '@/modules/pathway/types'
 
-import { fetchEnrollDescriptor, type EnrollmentApiError } from '../api'
+import { fetchCandidateUsers, fetchEnrollDescriptor, type EnrollmentApiError } from '../api'
 import { useCreateEnrollment } from '../hooks'
 import type { EnrollDescriptorField } from '../types'
 
@@ -97,6 +97,8 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
   const [anchorDate, setAnchorDate] = useState<string>(todayIso)
   const [missing, setMissing] = useState<string[] | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
+  // block_template_id → resolved user_id
+  const [participants, setParticipants] = useState<Record<string, string>>({})
 
   const publishable = (pathwaysQuery.data ?? []).filter(isPublishable)
   const selected = publishable.find((p) => p.id === pathwayId)
@@ -108,11 +110,23 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
     enabled: versionId !== null,
   })
   const fields = descriptorQuery.data?.fields ?? []
+  const participantSlots = descriptorQuery.data?.participants ?? []
+
+  const candidatesQuery = useQuery({
+    queryKey: ['enroll-candidates'] as const,
+    queryFn: fetchCandidateUsers,
+    enabled: participantSlots.length > 0,
+  })
+  const candidates = candidatesQuery.data ?? []
 
   const requiredFilled = fields
     .filter((f) => f.required)
     .every((f) => (values[fieldKey(f)] ?? '').trim() !== '')
-  const canSubmit = !!selected && anchorDate !== '' && requiredFilled && !mutation.isPending
+  const participantsResolved = participantSlots.every(
+    (p) => (participants[p.block_template_id] ?? '') !== '',
+  )
+  const canSubmit =
+    !!selected && anchorDate !== '' && requiredFilled && participantsResolved && !mutation.isPending
 
   async function handleSubmit(): Promise<void> {
     if (!selected) return
@@ -124,12 +138,20 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
         attr: f.attr,
         value_json: coerceValue(f.kind, values[fieldKey(f)] ?? ''),
       }))
+    const resolvedParticipants = participantSlots
+      .filter((p) => (participants[p.block_template_id] ?? '') !== '')
+      .map((p) => ({
+        block_template_id: p.block_template_id,
+        user_id: participants[p.block_template_id] as string,
+        role: p.role,
+      }))
     try {
       await mutation.mutateAsync({
         patient_id: patientId,
         pathway_version_id: selected.latest_published_version_id,
         anchor_date: anchorDate,
         deferred_values: deferred,
+        participants: resolvedParticipants,
       })
       toast.success(t('enroll.toast.success'))
       onClose()
@@ -199,6 +221,32 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
           </div>
         )
       })}
+
+      {participantSlots.map((p) => (
+        <div key={p.block_template_id} className="flex flex-col gap-1.5">
+          <Label htmlFor={`enroll-participant-${p.block_template_id}`}>
+            {p.block_label} · {p.role}
+            {p.specialty ? ` (${p.specialty})` : ''} *
+          </Label>
+          <Select
+            value={participants[p.block_template_id] ?? ''}
+            onValueChange={(v) =>
+              setParticipants((prev) => ({ ...prev, [p.block_template_id]: v }))
+            }
+          >
+            <SelectTrigger id={`enroll-participant-${p.block_template_id}`}>
+              <SelectValue placeholder={t('enroll.participantPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              {candidates.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.display_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ))}
 
       {missing ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">

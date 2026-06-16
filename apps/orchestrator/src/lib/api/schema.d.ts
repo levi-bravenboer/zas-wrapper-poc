@@ -2329,7 +2329,8 @@ export interface components {
         /**
          * EnrollDescriptor
          * @description Enroll-phase form descriptor for a pathway version — the deferred
-         *     fields a caregiver fills when enrolling a patient (tasks 4.1/5.2).
+         *     fields a caregiver fills + the per-block participants to resolve
+         *     (tasks 4.1/5.2/5.4).
          */
         EnrollDescriptor: {
             /**
@@ -2339,6 +2340,8 @@ export interface components {
             pathway_version_id: string;
             /** Fields */
             fields?: components["schemas"]["EnrollDescriptorField"][];
+            /** Participants */
+            participants?: components["schemas"]["EnrollDescriptorParticipant"][];
         };
         /**
          * EnrollDescriptorField
@@ -2364,6 +2367,23 @@ export interface components {
             help?: string | null;
         };
         /**
+         * EnrollDescriptorParticipant
+         * @description A block that needs a Practitioner bound at enrollment (role + specialty).
+         */
+        EnrollDescriptorParticipant: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Block Label */
+            block_label: string;
+            /** Role */
+            role: string;
+            /** Specialty */
+            specialty?: string | null;
+        };
+        /**
          * EnrollmentCreate
          * @description Body for `POST /enrollments`.
          */
@@ -2385,6 +2405,26 @@ export interface components {
             anchor_date: string;
             /** Deferred Values */
             deferred_values?: components["schemas"]["DeferredFieldValueIn"][];
+            /** Participants */
+            participants?: components["schemas"]["EnrollmentParticipantIn"][];
+        };
+        /**
+         * EnrollmentParticipantIn
+         * @description A Practitioner resolved for a block at enrollment (§5.4).
+         */
+        EnrollmentParticipantIn: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Role */
+            role: string;
         };
         /** EnrollmentResponse */
         EnrollmentResponse: {
