@@ -750,13 +750,16 @@ def _next_auto_wake(
     *,
     now: datetime,
 ) -> datetime | None:
-    """Earliest future `scheduled_at` of a still-eligible auto block.
+    """Earliest future moment the workflow must re-advance.
 
-    These are the blocks `auto_fire_system` deferred because their
-    timing had not elapsed — the workflow sleeps until the soonest one
-    so it can fire on schedule.
+    Two sources:
+    - `scheduled_at` of a still-eligible auto block (`auto_fire_system`
+      deferred it until its timing elapses — fire on schedule).
+    - `due_at` of a non-terminal block (§3.9): when the SLA window
+      elapses, an `if_not_done_within` predicate flips, so the workflow
+      wakes to re-evaluate eligibility and surface the escalation path.
     """
-    candidates = [
+    candidates: list[datetime] = [
         execution.scheduled_at
         for execution in executions.values()
         if execution.state == "eligible"
@@ -764,6 +767,13 @@ def _next_auto_wake(
         and execution.scheduled_at > now
         and (template := templates.get(execution.block_template_id)) is not None
         and template.KIND in _AUTO_FIRE_KINDS
+    ]
+    candidates += [
+        execution.due_at
+        for execution in executions.values()
+        if execution.state in ("pending", "eligible", "active")
+        and execution.due_at is not None
+        and execution.due_at > now
     ]
     return min(candidates) if candidates else None
 

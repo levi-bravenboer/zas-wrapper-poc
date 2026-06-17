@@ -648,3 +648,48 @@ async def test_enroll_descriptor_lists_clinical_dates(
     )
     op_date = next(c for c in descriptor.clinical_dates if c.name == "operation_date")
     assert op_date.earliest_offset_days == 2
+
+
+# ---- SLA timer: advance wakes at a future due_at (§3.9) ------------------
+
+
+async def test_advance_wakes_at_future_due_at(
+    db_session: AsyncSession, runtime_world: dict[str, object]
+) -> None:
+    from datetime import UTC as _UTC
+    from datetime import datetime as _dt
+
+    version = runtime_world["version"]
+    phase_id = runtime_world["block"].phase_id  # type: ignore[union-attr]
+    lane_id = runtime_world["block"].lane_id  # type: ignore[union-attr]
+    patient = runtime_world["patient"]
+
+    db_session.add(
+        PathwayBlock(
+            id=uuid.uuid4(),
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            phase_id=phase_id,
+            lane_id=lane_id,
+            label="SLA task",
+            kind="task",
+            task_title="Within window",
+            task_assignee="caregiver",
+            timing_policy_kind="due_within",
+            timing_window_iso="P7D",
+        )
+    )
+    await db_session.commit()
+
+    service = _service(db_session)
+    enrollment = await service.create(
+        EnrollmentCreate(
+            patient_id=patient.id,  # type: ignore[union-attr]
+            pathway_version_id=version.id,  # type: ignore[union-attr]
+            anchor_date=date.today(),
+        ),
+        tenant_id=ZAS_TENANT_ID,
+    )
+    await db_session.commit()
+
+    tick = await service.advance(enrollment.id, tenant_id=ZAS_TENANT_ID, now=_dt.now(_UTC))
+    assert tick.next_wake_at is not None
