@@ -415,14 +415,15 @@ async def test_edit_session_intervening_lifecycle_emits(
 # ---------- read-API surface (no DB) -----------------------------------------
 
 
-def test_published_is_filterable_but_operation_is_not() -> None:
-    """`published` flows through the existing action filter; `context.operation`
-    is display-only and intentionally NOT server-side filterable in v1."""
+def test_published_is_filterable_via_event_code_but_operation_is_not() -> None:
+    """`pathway.published` is server-side filterable via the indexed `event_code`
+    column (publish = `action=execute` + `event_code=pathway.published`);
+    `context.operation` stays display-only and NOT server-side filterable."""
     from app.repositories.audit.audit_event_repository import AuditEventRepository
+    from app.services.audit.registry import KNOWN_EVENT_CODES
 
-    assert "published" in {a.value for a in AuditAction}
-    action_ops = AuditEventRepository.filterable_fields["action"]
-    assert {"eq", "in"} <= action_ops
-    # No JSONB / context.operation filter exposed.
+    assert "pathway.published" in KNOWN_EVENT_CODES
+    assert {"eq", "in"} <= AuditEventRepository.filterable_fields["event_code"]
+    # operation lives in the context JSONB blob — display-only, not filterable.
     assert "context" not in AuditEventRepository.filterable_fields
     assert "operation" not in AuditEventRepository.filterable_fields

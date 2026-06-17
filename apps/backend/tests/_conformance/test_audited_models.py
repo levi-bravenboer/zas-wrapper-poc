@@ -11,7 +11,9 @@ from app.db.base import Entity
 
 # PathwayEnrollment + PathwayBlockExecution audit their runtime transitions
 # (pathway-runtime §3.7); Task/Note/Attachment from split-appointments-and-tasks;
-# Pathway/PathwayBlock/Appointment from fhir-aligned-audit-trail.
+# Appointment from fhir-aligned-audit-trail. Pathway / PathwayBlock are
+# deliberately NOT auto-audited — pathway authoring is captured as explicit
+# domain events (app/services/pathway/audit_events.py), so they are absent here.
 _EXPECTED = {
     "User",
     "Patient",
@@ -20,13 +22,11 @@ _EXPECTED = {
     "Task",
     "Note",
     "Attachment",
-    "Pathway",
-    "PathwayBlock",
     "Appointment",
 }
 
 # Audited models whose rows do NOT concern a single patient (no patient axis).
-_PATIENTLESS = {"User", "Pathway", "PathwayBlock"}
+_PATIENTLESS = {"User"}
 
 # Patient-scoped but the patient is reached via a parent, not a direct column
 # (Q1-sub): `PathwayBlockExecution` resolves its patient through the enrollment.
