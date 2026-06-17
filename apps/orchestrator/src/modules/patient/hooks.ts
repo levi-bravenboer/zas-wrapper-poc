@@ -16,7 +16,6 @@ import {
   fetchLusciiData,
   fetchPatient,
   fetchPatientCareTeams,
-  linkLuscii,
   patientsListKeyPrefix,
   unlinkLuscii,
   updatePatient,
@@ -26,7 +25,6 @@ import type { EnrollmentCarepath } from './lusciiCarepathMatch'
 import type {
   CareTeamRow,
   LusciiConnectionSummary,
-  LusciiLinkResult,
   LusciiPatientData,
   PatientRow,
   PatientUpdatePayload,
@@ -144,19 +142,6 @@ export function useDeactivateLusciiConnection() {
     mutationFn: ({ patientId, connectionId }) =>
       deactivateLusciiConnection(patientId, connectionId),
     onSuccess: (_void, { patientId }) => invalidateLusciiCaches(qc, patientId),
-  })
-}
-
-export interface LinkLusciiVariables {
-  patientId: string
-  lusciiPatientId: string
-}
-
-export function useLinkLuscii() {
-  const qc = useQueryClient()
-  return useMutation<LusciiLinkResult, Error, LinkLusciiVariables>({
-    mutationFn: ({ patientId, lusciiPatientId }) => linkLuscii(patientId, lusciiPatientId),
-    onSuccess: (_result, { patientId }) => invalidateLusciiCaches(qc, patientId),
   })
 }
 

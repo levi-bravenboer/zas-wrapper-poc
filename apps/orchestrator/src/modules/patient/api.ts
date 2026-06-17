@@ -6,7 +6,6 @@ import { apiError, readErrorBody } from '@/lib/api/errors'
 import type {
   CareTeamRow,
   LusciiConnectionSummary,
-  LusciiLinkResult,
   LusciiPatientData,
   PatientRow,
   PatientUpdatePayload,
@@ -96,20 +95,6 @@ export async function fetchLusciiData(
   })
   if (!response.ok || !data) {
     return lusciiError('Luscii data fetch failed', response)
-  }
-  return data
-}
-
-export async function linkLuscii(
-  patientId: string,
-  lusciiPatientId: string,
-): Promise<LusciiLinkResult> {
-  const { data, response } = await api.PUT('/patients/{patient_id}/luscii-link', {
-    params: { path: { patient_id: patientId } },
-    body: { luscii_patient_id: lusciiPatientId },
-  })
-  if (!response.ok || !data) {
-    return lusciiError('Luscii link failed', response)
   }
   return data
 }

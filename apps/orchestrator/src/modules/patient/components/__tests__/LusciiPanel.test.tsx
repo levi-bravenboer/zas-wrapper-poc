@@ -10,15 +10,13 @@ import type { LusciiPatientData } from '@/modules/patient/types'
 
 import { LusciiPanel } from '../LusciiPanel'
 
-const { useLusciiDataMock, useLinkLusciiMock, useUnlinkLusciiMock } = vi.hoisted(() => ({
+const { useLusciiDataMock, useUnlinkLusciiMock } = vi.hoisted(() => ({
   useLusciiDataMock: vi.fn(),
-  useLinkLusciiMock: vi.fn(),
   useUnlinkLusciiMock: vi.fn(),
 }))
 
 vi.mock('@/modules/patient/hooks', () => ({
   useLusciiData: useLusciiDataMock,
-  useLinkLuscii: useLinkLusciiMock,
   useUnlinkLuscii: useUnlinkLusciiMock,
   usePatientCarepaths: () => [],
 }))
@@ -103,17 +101,13 @@ function renderPanel(): void {
   )
 }
 
-function mockIdleMutations(): { mutate: ReturnType<typeof vi.fn> } {
-  const link = { mutate: vi.fn(), isPending: false, error: null }
-  useLinkLusciiMock.mockReturnValue(link)
+function mockIdleMutations(): void {
   useUnlinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
-  return link
 }
 
 describe('LusciiPanel', () => {
   beforeEach(() => {
     useLusciiDataMock.mockReset()
-    useLinkLusciiMock.mockReset()
     useUnlinkLusciiMock.mockReset()
   })
 
@@ -191,7 +185,6 @@ describe('LusciiPanel', () => {
 
   it('unlink calls the mutation', () => {
     const unlinkMutate = vi.fn()
-    useLinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
     useUnlinkLusciiMock.mockReturnValue({ mutate: unlinkMutate, isPending: false, error: null })
     useLusciiDataMock.mockReturnValue({
       data: LINKED_DATA,
