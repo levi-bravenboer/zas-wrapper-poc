@@ -2,6 +2,18 @@
   "tab": {
     "label": "Zorgpad"
   },
+  "timeline": {
+    "title": "Zorgpad",
+    "manage": "Beheer zorgpad",
+    "hide": "Verberg beheer",
+    "enrollAnother": "Nieuw zorgpad",
+    "noSteps": "Nog geen stappen",
+    "state": {
+      "finished": "Afgerond",
+      "next": "Nu",
+      "upcoming": "Gepland"
+    }
+  },
   "empty": {
     "title": "Geen actief zorgpad",
     "body": "Deze patiënt volgt nog geen zorgpad. Schrijf de patiënt in om te beginnen.",
@@ -9,15 +21,32 @@
   },
   "enroll": {
     "title": "Inschrijven op zorgpad",
-    "description": "Kies een gepubliceerd zorgpad en stel de ankerdatum in.",
+    "description": "Kies een gepubliceerd zorgpad en stel de startdatum in.",
     "pathwayLabel": "Zorgpad",
     "pathwayPlaceholder": "Kies een zorgpad",
-    "anchorLabel": "Ankerdatum",
+    "anchorLabel": "Startdatum",
     "participantPlaceholder": "Kies een zorgverlener",
     "earliestHint": "Vroegst haalbaar: {{date}}",
     "noPublished": "Er zijn nog geen gepubliceerde zorgpaden om op in te schrijven.",
     "cancel": "Annuleren",
     "submit": "Inschrijven",
+    "next": "Volgende",
+    "back": "Vorige",
+    "stepIndicator": "Stap {{current}} van {{total}}",
+    "earlierSteps": "eerder",
+    "laterSteps": "later",
+    "locationLabel": "Locatie afspraak",
+    "practitionerLabel": "Behandelaar",
+    "step": {
+      "setup": "Zorgpad & data",
+      "review": "Controleren"
+    },
+    "review": {
+      "title": "Controleer en bevestig",
+      "pathway": "Zorgpad",
+      "anchor": "Startdatum",
+      "unset": "—"
+    },
     "toast": {
       "success": "Patiënt ingeschreven op zorgpad",
       "error": "Inschrijven mislukt"
@@ -45,7 +74,7 @@
     }
   },
   "card": {
-    "anchor": "Ankerdatum",
+    "anchor": "Startdatum",
     "state": {
       "active": "Actief",
       "paused": "Gepauzeerd",
