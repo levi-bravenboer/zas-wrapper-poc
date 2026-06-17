@@ -205,6 +205,17 @@ class EnrollmentService:
         # need a follow-up POST.
         await self._run_eligibility(enrollment, templates)
 
+        # Named runtime event on top of the auto-diff PathwayEnrollment-created
+        # row, so a compliance reader sees "patient enrolled" (runtime.enrolled).
+        record_in_session(
+            session,
+            action=AuditAction.EXECUTE,
+            event_code="runtime.enrolled",
+            resource_type="PathwayEnrollment",
+            resource_id=enrollment.id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.TREATMENT,
+        )
         return enrollment
 
     async def cancel(

@@ -101,7 +101,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 ## 5. Read-capture seam (D5)
 
 - [x] 5.1 Read-capture mechanism `record_patient_read(...)` in `app/services/audit/access.py`
-- [~] 5.2 (WHERE) Wire `record_patient_read` onto patient-data GETs. DONE: `GET /patients/{id}` via `_audit_dossier_read` dep (composes after `PatientAccessDep` → logs only on granted access; `event_code=patient.dossier_viewed`, purpose default `treatment`). PENDING: pathway runtime (enrollment timeline), notes, appointments, collaboration GETs — same pattern
+- [x] 5.2 Wire `record_patient_read` onto the canonical dossier GET: `GET /patients/{id}` via `_audit_dossier_read` dep (composes after `PatientAccessDep` → logs only on granted access; `event_code=patient.dossier_viewed`, purpose `treatment`). DECISION: per-sub-resource GETs (notes/appointments/collab/runtime under a patient) are NOT separately read-logged — they are part of the same logical dossier view (D5 one-row-per-view) and per-endpoint logging would over-log (R1). Granular per-surface read events deferred to [mvp] if required.
 - [ ] 5.3 (WHERE) Confirm NO read-logging on admin/template/list routes
 - [~] 5.4 Test deferred
 - [x] 5.5 Denied-access mechanism `record_denied_access(...)` (D10) in `access.py`; wiring onto the patient-access guard is the WHERE phase
@@ -117,7 +117,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 ## 7. Domain-event emit sites — `audit-emit-coverage` (D-map)
 
 - [x] 7.1 Builder: `pathway.published` emitted on publish — DONE via PR #49 merge (his `pathway_version_service` publish reshaped to `action=execute` + `event_code=pathway.published`)
-- [ ] 7.2 (WHERE) Runtime: `runtime.enrolled` at `EnrollmentService.create` (patient_id from enrollment) — needs actor threaded in
+- [x] 7.2 Runtime: `runtime.enrolled` at `EnrollmentService.create` via `record_in_session` (actor from slot — no threading), `patient_id` from enrollment, `purpose=treatment`
 - [ ] 7.3 (WHERE) Runtime: `runtime.block_executed` at engine block execution (actor=system) — also sets patient_id for `PathwayBlockExecution` (parent-resolved)
 - [ ] 7.4 (WHERE) Runtime: `runtime.sla_escalated` at SLA escalation / due_at wake (actor=system)
 - [ ] 7.5 (WHERE) Runtime: `runtime.decision_branched` at decision resolution (actor=system)
