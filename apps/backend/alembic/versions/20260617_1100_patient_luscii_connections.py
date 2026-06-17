@@ -17,6 +17,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "lscconn00001"
 down_revision: str | None = "md0outc0me01"
@@ -35,7 +36,7 @@ def upgrade() -> None:
         sa.Column("luscii_patient_id", sa.UUID(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum(
+            postgresql.ENUM(
                 "active",
                 "inactive",
                 name="luscii_connection_status",
