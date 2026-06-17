@@ -81,7 +81,7 @@ export function PathwayTrailNode({
       aria-label={`${name} — ${stateLabel}`}
       className="flex min-w-[6.5rem] shrink-0 grow basis-[6.5rem] flex-col items-center"
     >
-      <div className="flex w-full items-center">
+      <div className="flex h-9 w-full items-center">
         <TrailConnector on={leftOn} hide={leftHide} />
         <Circle state={state} icon={icon} overdue={overdue} />
         <TrailConnector on={rightOn} hide={rightHide} />
