@@ -111,7 +111,7 @@ def _gate_decision(decision: UUID, output_key: str) -> dict[str, object]:
     }
 
 
-_UROLOGY = {"role": "physician", "specialty": "urology"}
+_UROLOGY = {"role": "physician", "specialty": "urologie"}
 
 
 def _build_payload() -> PathwayDefinitionReplace:

@@ -5753,6 +5753,31 @@
         }
       }
     },
+    "/enrollments/candidates": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "List Enrollment Candidates",
+        "operationId": "list_enrollment_candidates",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EnrollmentCandidate"
+                  },
+                  "type": "array",
+                  "title": "Response List Enrollment Candidates"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/enrollments/{enrollment_id}": {
       "get": {
         "tags": [
@@ -8059,6 +8084,53 @@
         ],
         "title": "EnrollDescriptorParticipant",
         "description": "A block that needs a Practitioner bound at enrollment (role + specialty)."
+      },
+      "EnrollmentCandidate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "practitioner_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practitioner Role"
+          },
+          "specialty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialty"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "display_name",
+          "role"
+        ],
+        "title": "EnrollmentCandidate",
+        "description": "An assignable user (caregiver/physician) for a participant slot \u2014\nserved to the enroll dialog so a caregiver can resolve each block's\nparticipant without admin-only `/users` access.\n\n`practitioner_role` / `specialty` come from the user's open practitioner\nrole (when they have one) so the dialog can scope each dropdown to the\nblock's required role + specialty."
       },
       "EnrollmentCreate": {
         "properties": {

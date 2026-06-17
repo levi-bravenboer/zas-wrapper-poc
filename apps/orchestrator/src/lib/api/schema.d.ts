@@ -1441,6 +1441,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/enrollments/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Enrollment Candidates */
+        get: operations["list_enrollment_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/enrollments/{enrollment_id}": {
         parameters: {
             query?: never;
@@ -2408,6 +2425,31 @@ export interface components {
             block_label: string;
             /** Role */
             role: string;
+            /** Specialty */
+            specialty?: string | null;
+        };
+        /**
+         * EnrollmentCandidate
+         * @description An assignable user (caregiver/physician) for a participant slot —
+         *     served to the enroll dialog so a caregiver can resolve each block's
+         *     participant without admin-only `/users` access.
+         *
+         *     `practitioner_role` / `specialty` come from the user's open practitioner
+         *     role (when they have one) so the dialog can scope each dropdown to the
+         *     block's required role + specialty.
+         */
+        EnrollmentCandidate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Display Name */
+            display_name: string;
+            /** Role */
+            role: string;
+            /** Practitioner Role */
+            practitioner_role?: string | null;
             /** Specialty */
             specialty?: string | null;
         };
@@ -9322,6 +9364,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_enrollment_candidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentCandidate"][];
                 };
             };
         };

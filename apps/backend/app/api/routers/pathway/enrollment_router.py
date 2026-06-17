@@ -16,6 +16,9 @@ from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.db.models.pathway import PathwayEnrollment
 from app.db.models.pathway.version import PathwayVersion
+from app.db.models.practitioner.practitioner import Practitioner
+from app.db.models.practitioner.practitioner_role import PractitionerRole
+from app.db.models.user.user import User
 from app.repositories.pathway.deps import EnrollmentRepoDep
 from app.schemas.auth.auth import SessionUser
 from app.schemas.pathway.enrollment import (
@@ -23,6 +26,7 @@ from app.schemas.pathway.enrollment import (
     DeferredFieldValueOut,
     DeferredFieldValuePatch,
     EnrollDescriptor,
+    EnrollmentCandidate,
     EnrollmentCreate,
     EnrollmentResponse,
     ExecutionCompleteRequest,
@@ -143,9 +147,13 @@ async def create_enrollment(
     keto: KetoClientDep,
     current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
 ) -> EnrollmentResponse:
-    # AUTH-HARDEN (slot #3 §5): patient `edit` verb + carepath scope before write.
-    # Body-keyed, so the route can't use the path-param `_require_enrollment_access`
-    # factory; we delegate to the same Keto-graduated helpers inline.
+    # AUTH-HARDEN (slot #3 §5): patient `view` + carepath scope before write.
+    # Enrolling is itself the act by which a caregiver takes on a patient, so
+    # we don't pre-require care-team `edit` (chicken-and-egg). Instead we gate
+    # on `view` + carepath access (the carepath authorises the write), then
+    # auto-join the enroller to the care team below so subsequent writes have
+    # the `edit` relation. Body-keyed, so we delegate to the Keto-graduated
+    # helpers inline rather than the path-param factory.
     await resolve_patient_with_relation(
         payload.patient_id,
         patient_service,
@@ -154,7 +162,7 @@ async def create_enrollment(
         settings,
         keto,
         current_user,
-        relation="edit",
+        relation="view",
     )
     pathway_id = await session.scalar(
         select(PathwayVersion.pathway_id).where(
@@ -167,6 +175,10 @@ async def create_enrollment(
     # default; we rely on the route-level `_ENROLLMENT_ROLES` tuple above to
     # carry the same guarantee for the direct call.
     await require_carepath_access(pathway_id, session, settings, keto, current_user)
+    # Auto-join: enrolling makes the caregiver a care-team member so the
+    # enrollment's downstream writes (complete step, materialise appointment)
+    # satisfy the `edit` relation.
+    await care_team_service.ensure_membership(current_user, payload.patient_id)
     enrollment = await service.create(payload, tenant_id=current_user.tenant_id)
     view = await service.get_view(enrollment.id, tenant_id=current_user.tenant_id)
     if settings.pathway_runtime_engine == "temporal":
@@ -239,6 +251,57 @@ async def get_enroll_descriptor(
         raise PathwayNotFoundError()
     await require_carepath_access(pathway_id, session, settings, keto, current_user)
     return await service.enroll_descriptor(pathway_version_id, tenant_id=current_user.tenant_id)
+
+
+@router.get(
+    "/candidates",
+    operation_id="list_enrollment_candidates",
+    response_model=list[EnrollmentCandidate],
+)
+async def list_enrollment_candidates(
+    session: SessionDep,
+    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+) -> list[EnrollmentCandidate]:
+    # Assignable users for participant slots: active, non-patient users in the
+    # caller's tenant. Caregiver-accessible (unlike admin-only `/users`). The
+    # left-join carries each user's open practitioner role + specialty so the
+    # dialog can scope each dropdown to the block's required role/specialty.
+    rows = (
+        await session.execute(
+            select(User, PractitionerRole.code, PractitionerRole.specialty)
+            .join(Practitioner, Practitioner.user_id == User.id, isouter=True)
+            .join(
+                PractitionerRole,
+                (PractitionerRole.practitioner_id == Practitioner.id)
+                & PractitionerRole.period_end.is_(None),
+                isouter=True,
+            )
+            .where(
+                User.tenant_id == current_user.tenant_id,
+                User.is_active.is_(True),
+                User.role != Role.PATIENT,
+            )
+            .order_by(User.display_name)
+        )
+    ).all()
+    seen: set[tuple[UUID, str | None, str | None]] = set()
+    out: list[EnrollmentCandidate] = []
+    for user, code, specialty in rows:
+        role_code = code.value if code is not None else None
+        key = (user.id, role_code, specialty)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(
+            EnrollmentCandidate(
+                id=user.id,
+                display_name=user.display_name,
+                role=user.role.value,
+                practitioner_role=role_code,
+                specialty=specialty,
+            )
+        )
+    return out
 
 
 @router.get(

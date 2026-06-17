@@ -186,6 +186,30 @@ class CareTeamService:
         )
         return result.scalar_one_or_none() is not None
 
+    async def ensure_membership(self, actor: SessionUser, patient_id: UUID) -> None:
+        """Make the actor an open care-team member for the patient (idempotent).
+
+        Used when a write is authorised by another grant (carepath access on
+        enrollment) but the actor is not yet on the patient's care team —
+        enrolling a patient into a pathway makes the enroller a participant so
+        downstream writes satisfy the `edit` relation. Reuses the patient's
+        active care team, creating a default one only if none exists.
+        """
+
+        if await self.has_open_membership(actor.id, patient_id):
+            return
+        teams = await self.list_for_patient(actor.tenant_id, patient_id)
+        team = next((t for t in teams if t.deleted_at is None), None)
+        if team is None:
+            team = await self.create_for_patient(
+                actor, patient_id, CareTeamCreate(name="Zorgteam")
+            )
+        await self.add_participant(
+            actor,
+            team.id,
+            ParticipantCreate(user_id=actor.id, role_in_care=RoleInCare.CONSULTING),
+        )
+
     async def _build_participant(
         self, actor: SessionUser, payload: ParticipantCreate
     ) -> CareTeamParticipant:

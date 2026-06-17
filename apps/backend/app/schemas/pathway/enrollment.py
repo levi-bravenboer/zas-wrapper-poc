@@ -143,6 +143,22 @@ class EnrollDescriptor(BaseModel):
     clinical_dates: list[EnrollDescriptorClinicalDate] = Field(default_factory=list)
 
 
+class EnrollmentCandidate(BaseModel):
+    """An assignable user (caregiver/physician) for a participant slot —
+    served to the enroll dialog so a caregiver can resolve each block's
+    participant without admin-only `/users` access.
+
+    `practitioner_role` / `specialty` come from the user's open practitioner
+    role (when they have one) so the dialog can scope each dropdown to the
+    block's required role + specialty."""
+
+    id: UUID
+    display_name: str
+    role: str
+    practitioner_role: str | None = None
+    specialty: str | None = None
+
+
 class RuntimeTick(BaseModel):
     """Result of one runtime advance — drives the Temporal timer loop.
 
