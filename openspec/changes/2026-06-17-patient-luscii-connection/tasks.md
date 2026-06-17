@@ -50,24 +50,34 @@ are retired in §2 when the service is re-pointed.
   confirm with user / parallel worktrees first.
 - [ ] 1.7 Test: backfill count == pre-migration live luscii-identifier count.
 
-## §2 — Backend: aggregation rewrite (pathway-agnostic)
+## §2 — Backend: service rewrite (pathway-agnostic)
 
-- [ ] 2.1 Connection reads: `active_connections(patient_id)` +
-  `active_connection_luscii_ids(patient_id)`; replace `active_link_value`.
-  Once the service reads the connection table, retire the now-unused luscii
-  `PatientIdentifier` rows (migration soft-delete) — single source of truth.
-- [ ] 2.2 `link`: validate via Luscii; cross-patient active conflict ⇒
-  `LusciiIdAlreadyLinkedError`; upsert connection to `active` (reactivate
-  pair-row or insert); snapshot `program_id/name` from details.
-- [ ] 2.3 `unlink(connection_id)`: set that connection `inactive`
-  (idempotent). Replace `_soft_delete_active_links`.
+**Phase A (DONE)** — repoint linking onto the connection table, keep the
+single-active behaviour + response shape so nothing breaks:
+- [x] 2.1 `active_link_value` reads the active connection's `luscii_patient_id`.
+  (`active_connections` / `active_connection_luscii_ids` come with Phase B.)
+- [x] 2.2 `link`: validate via Luscii; cross-patient active conflict ⇒
+  `LusciiIdAlreadyLinkedError` (now checked against connections); deactivate
+  current active, upsert target to `active` (reactivate pair-row or insert);
+  snapshot `program_id/name`.
+- [x] 2.3 `unlink`: deactivate active connection(s) (idempotent). Replaced
+  `_soft_delete_active_links` with `_deactivate_active_connections`.
+- [x] 2.A Tests: router suite rewritten to assert on `PatientLusciiConnection`
+  (happy-path snapshot, relink keeps inactive history, link not in patient-read
+  identifiers). 15/15 + 256 service/schema green.
+- [ ] 2.B **Identifier retire DEFERRED** — soft-deleting the luscii
+  `PatientIdentifier` rows is a SHARED-DB hazard while other worktrees still
+  run the identifier-based service. Do it at ship/merge time, not in the dev
+  shared DB. (Stale rows are harmless: the service no longer reads/writes them.)
+
+**Phase B (TODO)** — multi-connection aggregation + breaking response reshape
+(cascades to §3 schema + §4 FE):
 - [ ] 2.4 `get_patient_data`: gather `get_patient` per active connection
   (refresh snapshot), one `get_measurements`, filter by id set, partition by
   `patientId`; per connection build planned actions + decoder + series (reuse
   existing builders); emit flat `ConnectionGroup[]`. **No pathway imports.**
 - [ ] 2.5 Tests: two active connections aggregate; one measurements call
-  regardless of count; inactive excluded from active aggregation; snapshot
-  refresh on program change.
+  regardless of count; inactive excluded; snapshot refresh on program change.
 
 ## §3 — Backend: API schemas + routes
 
