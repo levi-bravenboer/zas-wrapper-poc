@@ -1,32 +1,26 @@
 import { type Edge, MarkerType } from '@xyflow/react'
 import { useMemo } from 'react'
 
-import {
-  type BlockFitInput,
-  buildCanvasGeometry,
-  type CanvasGeometry,
-} from '@/modules/pathway/canvasLayout'
 import type { SmoothstepEdgeData } from '@/modules/pathway/components/canvas/edges/SmoothstepEdge'
 import { useFlowEdges } from '@/modules/pathway/components/canvas/useFlowEdges'
-import { computeBlockLayout, visibleLanes } from '@/modules/pathway/layout/computeBlockLayout'
+import { phaseTint } from '@/modules/pathway/constants/theme'
 import {
   legacyBlockType,
   type PathwayBlock,
   type PathwayBlockType,
   type PathwayEdge,
-  type PathwayLane,
   type PathwayPhase,
   type PathwayTimingValue,
 } from '@/modules/pathway/types'
 import { getBlockDimensions } from '@/modules/pathway/utils/blockDimensions'
 
 import type { RuntimeFlowNode } from './RuntimeBlockNode'
+import { computeRuntimeLayout } from './runtimeLayout'
 import type { RuntimeBlockStatus } from './runtimeState'
 
 export interface UseRuntimeGraphParams {
   blocks: PathwayBlock[]
   phases: PathwayPhase[]
-  lanes: PathwayLane[]
   edges: PathwayEdge[]
   timingValues: PathwayTimingValue[]
   blockTypes: PathwayBlockType[]
@@ -36,10 +30,22 @@ export interface UseRuntimeGraphParams {
   showSkipped: boolean
 }
 
+// A coloured phase band spanning the x-extent of its blocks in the auto-layout.
+export interface PhaseBand {
+  id: string
+  label: string
+  x: number
+  width: number
+  soft: string
+  ink: string
+}
+
 export interface RuntimeGraph {
   nodes: RuntimeFlowNode[]
   edges: Edge<SmoothstepEdgeData>[]
-  geometry: CanvasGeometry
+  phaseBands: PhaseBand[]
+  // Total laid-out height, for the playhead + bands.
+  height: number
   // Flow-x of the current position (centre of the furthest active block), for
   // the timeline playhead. Null when nothing is active.
   nowX: number | null
@@ -63,24 +69,20 @@ function edgeConditionLabel(edge: PathwayEdge): string | null {
 }
 
 // Shapes a published pathway version + runtime status into a read-only
-// ReactFlow graph. Reuses the builder's pure layout/geometry math and edge
-// derivation; the node + backdrop presentation is runtime-owned.
+// ReactFlow graph. Positions are auto-computed from the flow graph (business
+// logic), not the builder's block coordinates.
 export function useRuntimeGraph({
   blocks,
   phases,
-  lanes,
   edges,
   timingValues,
   blockTypes,
   statusByBlockId,
   showSkipped,
 }: UseRuntimeGraphParams): RuntimeGraph {
-  const layout = useMemo(() => computeBlockLayout(blocks), [blocks])
-  const lanesOnCanvas = useMemo(() => visibleLanes(lanes, blocks), [lanes, blocks])
   const typesByCode = useMemo(() => new Map(blockTypes.map((bt) => [bt.type, bt])), [blockTypes])
 
   // Dead-branch (skipped) blocks hidden unless the viewer may see them.
-  // Geometry/layout stay computed from all blocks so positions don't shift.
   const hiddenIds = useMemo(() => {
     const set = new Set<string>()
     if (!showSkipped) {
@@ -91,61 +93,74 @@ export function useRuntimeGraph({
     return set
   }, [blocks, statusByBlockId, showSkipped])
 
-  const fitInputs = useMemo<BlockFitInput[]>(
-    () =>
-      blocks.map((b) => {
-        const dims = getBlockDimensions(b, typesByCode.get(legacyBlockType(b)) ?? null)
-        const hasManualPosition = b.x !== 0 || b.y !== 0
-        const pos = hasManualPosition ? { x: b.x, y: b.y } : (layout.get(b.id) ?? { x: 0, y: 0 })
-        return { phase_id: b.phase_id, lane_id: b.lane_id, x: pos.x, y: pos.y, ...dims }
-      }),
-    [blocks, typesByCode, layout],
+  const visibleBlocks = useMemo(
+    () => blocks.filter((b) => !hiddenIds.has(b.id)),
+    [blocks, hiddenIds],
   )
 
-  const geometry = useMemo(
-    () => buildCanvasGeometry(phases, lanesOnCanvas, fitInputs),
-    [phases, lanesOnCanvas, fitInputs],
-  )
+  const layout = useMemo(() => {
+    const inputs = visibleBlocks.map((b) => {
+      const dims = getBlockDimensions(b, typesByCode.get(legacyBlockType(b)) ?? null)
+      return { id: b.id, width: dims.width, height: dims.height }
+    })
+    const layoutEdges = edges
+      .filter(
+        (e) =>
+          e.source_block_id != null &&
+          !hiddenIds.has(e.source_block_id) &&
+          !hiddenIds.has(e.target_block_id),
+      )
+      .map((e) => ({ source: e.source_block_id as string, target: e.target_block_id }))
+    return computeRuntimeLayout(inputs, layoutEdges)
+  }, [visibleBlocks, edges, hiddenIds, typesByCode])
 
   const nodes = useMemo<RuntimeFlowNode[]>(
     () =>
-      blocks
-        .filter((block) => !hiddenIds.has(block.id))
-        .map((block) => {
-          const blockType = typesByCode.get(legacyBlockType(block)) ?? null
-          const dims = getBlockDimensions(block, blockType)
-          const hasManualPosition = block.x !== 0 || block.y !== 0
-          const cell = hasManualPosition
-            ? { x: block.x, y: block.y }
-            : (layout.get(block.id) ?? { x: 0, y: 0 })
-          return {
-            id: block.id,
-            type: 'runtime',
-            position: {
-              x: geometry.phaseX(block.phase_id) + cell.x,
-              y: geometry.laneY(block.lane_id) + cell.y,
-            },
-            data: {
-              block,
-              blockType,
-              status: statusByBlockId.get(block.id),
-            },
-            width: dims.width,
-            height: dims.height,
-            // xyflow sizes the wrapper from `style`; `width`/`height` above are
-            // layout hints. Mirrors the builder's inline-style sizing.
-            style: { width: dims.width, height: dims.height },
-            draggable: false,
-            selectable: false,
-          }
-        }),
-    [blocks, hiddenIds, typesByCode, layout, geometry, statusByBlockId],
+      visibleBlocks.map((block) => {
+        const blockType = typesByCode.get(legacyBlockType(block)) ?? null
+        const dims = getBlockDimensions(block, blockType)
+        const pos = layout.positions.get(block.id) ?? { x: 0, y: 0 }
+        return {
+          id: block.id,
+          type: 'runtime',
+          position: pos,
+          data: { block, blockType, status: statusByBlockId.get(block.id) },
+          width: dims.width,
+          height: dims.height,
+          style: { width: dims.width, height: dims.height },
+          draggable: false,
+          selectable: false,
+        }
+      }),
+    [visibleBlocks, typesByCode, layout, statusByBlockId],
   )
+
+  // Phase bands: x-extent of each phase's blocks in the auto-layout. Phases may
+  // stretch (and overlap) to fit their content.
+  const phaseBands = useMemo<PhaseBand[]>(() => {
+    const extent = new Map<string, { minX: number; maxX: number }>()
+    for (const b of visibleBlocks) {
+      const pos = layout.positions.get(b.id)
+      if (!pos) continue
+      const dims = getBlockDimensions(b, typesByCode.get(legacyBlockType(b)) ?? null)
+      const e = extent.get(b.phase_id)
+      if (e) {
+        e.minX = Math.min(e.minX, pos.x)
+        e.maxX = Math.max(e.maxX, pos.x + dims.width)
+      } else {
+        extent.set(b.phase_id, { minX: pos.x, maxX: pos.x + dims.width })
+      }
+    }
+    const labelById = new Map(phases.map((p) => [p.id, p.label]))
+    const ordered = [...extent.entries()].sort((a, b) => a[1].minX - b[1].minX)
+    return ordered.map(([id, e], i) => {
+      const tint = phaseTint(i)
+      return { id, label: labelById.get(id) ?? '', x: e.minX, width: e.maxX - e.minX, ...tint }
+    })
+  }, [visibleBlocks, layout, phases, typesByCode])
 
   const derivedEdges = useFlowEdges({ edges, blocks, blockTypes, timingValues })
 
-  // Branch metadata keyed by the same id `useFlowEdges` builds, so we can label
-  // decision splits + colour their edges.
   const edgeMetaById = useMemo(() => {
     const map = new Map<string, { label: string | null; isBranch: boolean }>()
     for (const e of edges) {
@@ -155,9 +170,8 @@ export function useRuntimeGraph({
     return map
   }, [edges])
 
-  // Clean orthogonal edges, arrowheads for direction, branch labels + accent
-  // so a split reads as "walk this edge when <condition>". Drop edges touching
-  // a hidden (skipped) block.
+  // Clean orthogonal edges, arrowheads, branch labels + accent. Drop edges
+  // touching a hidden (skipped) block.
   const flowEdges = useMemo(
     () =>
       derivedEdges
@@ -166,7 +180,9 @@ export function useRuntimeGraph({
           const meta = edgeMetaById.get(edge.id)
           return {
             ...edge,
-            type: 'step',
+            // Straight (angled) lines: chains stay horizontal, splits fan out
+            // diagonally toward each target.
+            type: 'straight',
             label: meta?.label ?? undefined,
             labelBgPadding: [6, 2] as [number, number],
             labelBgBorderRadius: 6,
@@ -189,5 +205,5 @@ export function useRuntimeGraph({
     return x
   }, [nodes])
 
-  return { nodes, edges: flowEdges, geometry, nowX }
+  return { nodes, edges: flowEdges, phaseBands, height: layout.height, nowX }
 }

@@ -6,19 +6,34 @@ export interface RuntimePlayheadProps {
   height: number
 }
 
-// Video-editor style playhead: a vertical line marking the current position
-// (the active step) in the pathway. Rendered in flow coordinates.
+const HEAD_OFFSET = 40
+
+// Video-editor style playhead marking the current position (active step):
+// a labelled "Nu" head with a downward pointer, over a dashed vertical line.
 export function RuntimePlayhead({ x, height }: RuntimePlayheadProps): ReactElement {
   const { t } = useTranslation('patient-pathway')
   return (
     <div
-      className="pointer-events-none absolute -translate-x-1/2"
-      style={{ left: x, top: 0, height, zIndex: 5 }}
+      className="pointer-events-none absolute flex -translate-x-1/2 flex-col items-center"
+      style={{ left: x, top: -HEAD_OFFSET, zIndex: 6 }}
     >
-      <div className="mx-auto h-full w-0.5" style={{ backgroundColor: 'var(--color-primary)' }} />
-      <span className="absolute -top-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
+      <div className="flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary-foreground shadow-md">
         {t('timeline.state.next')}
-      </span>
+      </div>
+      <div
+        className="size-2 -translate-y-1/2 rotate-45 bg-primary"
+        style={{ borderRadius: 1 }}
+        aria-hidden
+      />
+      <div
+        className="w-px"
+        style={{
+          height,
+          backgroundImage:
+            'repeating-linear-gradient(to bottom, var(--color-primary) 0 6px, transparent 6px 12px)',
+        }}
+        aria-hidden
+      />
     </div>
   )
 }
