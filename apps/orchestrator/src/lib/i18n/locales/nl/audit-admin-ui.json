@@ -31,6 +31,22 @@
       "execute": "Uitgevoerd",
       "login": "Inloggen"
     },
+    "event_code": {
+      "pathway": {
+        "published": "Gepubliceerd"
+      },
+      "runtime": {
+        "enrolled": "Ingeschreven",
+        "block_executed": "Stap uitgevoerd",
+        "deferred_value_resolved": "Waarde ingevuld"
+      },
+      "patient": {
+        "dossier_viewed": "Dossier ingezien"
+      },
+      "auth": {
+        "login": "Inloggen"
+      }
+    },
     "result": {
       "success": "Gelukt",
       "failure": "Mislukt"

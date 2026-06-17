@@ -81,7 +81,14 @@ export function AuditListPage(): ReactElement {
       defineColumn<AuditEventRead>({
         id: 'action',
         header: t('column.action'),
-        cell: (row) => <Badge variant="soft">{t(`enum.action.${row.action}`)}</Badge>,
+        // Prefer a specific event-code label (e.g. pathway.published →
+        // "Gepubliceerd"); fall back to the generic CRUD/action verb.
+        cell: (row) => {
+          const specific = row.event_code
+            ? t(`enum.event_code.${row.event_code}`, { defaultValue: '' })
+            : ''
+          return <Badge variant="soft">{specific || t(`enum.action.${row.action}`)}</Badge>
+        },
       }),
       defineColumn<AuditEventRead>({
         id: 'event_code',
