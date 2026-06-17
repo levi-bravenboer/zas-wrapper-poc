@@ -50,6 +50,10 @@ function coerceValue(kind: string, raw: string): unknown {
   return raw
 }
 
+function isoFromMs(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10)
+}
+
 type PublishablePathway = PathwaySummary & { latest_published_version_id: string }
 
 function isPublishable(p: PathwaySummary): p is PublishablePathway {
@@ -93,6 +97,7 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
     queryFn: listPathways,
   })
 
+  const [todayMs] = useState(() => Date.now())
   const [pathwayId, setPathwayId] = useState<string>('')
   const [anchorDate, setAnchorDate] = useState<string>(todayIso)
   const [missing, setMissing] = useState<string[] | null>(null)
@@ -143,13 +148,11 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
       }))
     // Named clinical dates resolve `relative_to_date` timers; stored as a
     // deferred value keyed by the date name (resolution is by attr).
-    const clinicalDeferred = clinicalDateSlots
-      .filter((c) => (clinicalDates[c.name] ?? '') !== '')
-      .map((c) => ({
-        block_template_id: c.block_template_id,
-        attr: c.name,
-        value_json: clinicalDates[c.name] ?? '',
-      }))
+    const clinicalDeferred = clinicalDateSlots.map((c) => ({
+      block_template_id: c.block_template_id,
+      attr: c.name,
+      value_json: clinicalDates[c.name] ?? isoFromMs(todayMs + c.earliest_offset_days * 86_400_000),
+    }))
     const resolvedParticipants = participantSlots
       .filter((p) => (participants[p.block_template_id] ?? '') !== '')
       .map((p) => ({
@@ -234,17 +237,26 @@ function EnrollForm({ patientId, onClose }: EnrollFormProps): ReactElement {
         )
       })}
 
-      {clinicalDateSlots.map((c) => (
-        <div key={c.name} className="flex flex-col gap-1.5">
-          <Label htmlFor={`enroll-clinical-${c.name}`}>{c.name}</Label>
-          <Input
-            id={`enroll-clinical-${c.name}`}
-            type="date"
-            value={clinicalDates[c.name] ?? ''}
-            onChange={(e) => setClinicalDates((prev) => ({ ...prev, [c.name]: e.target.value }))}
-          />
-        </div>
-      ))}
+      {clinicalDateSlots.map((c) => {
+        const earliest = isoFromMs(todayMs + c.earliest_offset_days * 86_400_000)
+        return (
+          <div key={c.name} className="flex flex-col gap-1.5">
+            <Label htmlFor={`enroll-clinical-${c.name}`}>{c.name}</Label>
+            <Input
+              id={`enroll-clinical-${c.name}`}
+              type="date"
+              min={earliest}
+              value={clinicalDates[c.name] ?? earliest}
+              onChange={(e) => setClinicalDates((prev) => ({ ...prev, [c.name]: e.target.value }))}
+            />
+            {c.earliest_offset_days > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {t('enroll.earliestHint', { date: earliest })}
+              </p>
+            ) : null}
+          </div>
+        )
+      })}
 
       {participantSlots.map((p) => (
         <div key={p.block_template_id} className="flex flex-col gap-1.5">

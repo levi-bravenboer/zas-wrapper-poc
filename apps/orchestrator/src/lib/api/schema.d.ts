@@ -2351,6 +2351,11 @@ export interface components {
          *     blocks anchor to — collected at enrollment so their timers resolve (§5.5).
          *     `block_template_id` is a representative referencing block (for the
          *     deferred-value FK; resolution is by `name` across the enrollment).
+         *
+         *     `earliest_offset_days` is the largest `before` offset of any block
+         *     anchored to this date — the date cannot feasibly be earlier than
+         *     `today + earliest_offset_days` or that block's lead time can't be met
+         *     (§4.6 earliest-feasible).
          */
         EnrollDescriptorClinicalDate: {
             /** Name */
@@ -2360,6 +2365,11 @@ export interface components {
              * Format: uuid
              */
             block_template_id: string;
+            /**
+             * Earliest Offset Days
+             * @default 0
+             */
+            earliest_offset_days: number;
         };
         /**
          * EnrollDescriptorField
