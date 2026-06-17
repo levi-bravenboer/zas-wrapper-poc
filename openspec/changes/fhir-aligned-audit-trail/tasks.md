@@ -90,7 +90,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 - [x] 3.1 Add columns to `AuditEvent` (`app/db/models/audit/audit_event.py`): `event_code text?`, `patient_id uuid?` (NO FK), `purpose_of_use` (PurposeOfUse enum, nullable)
 - [x] 3.2 Add indexes: `ix_audit_events_patient (patient_id, created_at DESC)`, `ix_audit_events_event_code (event_code, created_at DESC)`
 - [x] 3.3 Alembic migration (`20260617_1200_fhir_aligned_audit_columns.py`, down_revision `md0outc0me01`) — written, NOT applied (see header)
-- [~] 3.4 Test written (`tests/db/test_audit_event_model.py`); run deferred
+- [x] 3.4 Tests PASS against test DB (:5433). Validated `alembic upgrade head` on a scratch DB: full merged DAG applies clean (his task_read_state add → our drop `b2d4f6a8c0e2` ordered correctly), 16 columns present, single head `bda68b3a235c`. `published` is a vestigial DB enum value (harmless)
 
 ## 4. Emit API extension (D6)
 
@@ -154,7 +154,7 @@ reshape his audit core). Reference: `gh pr diff 49 --repo reaktor/zas-poc`.
 - [x] 10.7 Migrations: kept his chain + our columns migration; converged 2 heads via merge migration `20260617_1436_merge_fhir_audit_columns_and_pr49_audit.py` (single head `bda68b3a235c`). NOTE: his `add_published_audit_action` migration left in place — adds a now-vestigial `published` DB enum value (harmless, like legacy `login`); cleanup optional
 - [x] 10.8 Kept our deletions of `task_read_state_repository.py` / `appointment_source.py`
 - [ ] 10.9 (FOLLOW-UP) Reconcile his openspec changes (`pathway-audit`, `audit-log-view`) with this change — both now present in tree; fold overlap, avoid duplicate `audit-trail-base` deltas
-- [x] 10.10 Backend `openapi.json` regenerated (AuditAction = created/read/updated/deleted/execute/login). Frontend types regenerated (`openapi-typescript` against the file; `pnpm install` done in worktree), `schemas.ts AUDIT_ACTIONS` aligned to CRUDE, his `AuditListPage` test fixtures updated with new fields. Orchestrator `tsc` clean (only pre-existing `baseUrl` deprecation). REMAINING: `alembic upgrade` on a clean DB not yet validated (ordering of his task_read_state add vs our drop) — needs DB
+- [x] 10.10 Backend `openapi.json` regenerated (AuditAction = created/read/updated/deleted/execute/login). Frontend types regenerated (`openapi-typescript` against the file; `pnpm install` done in worktree), `schemas.ts AUDIT_ACTIONS` aligned to CRUDE, his `AuditListPage` test fixtures updated with new fields. Orchestrator `tsc` clean (only pre-existing `baseUrl` deprecation). `alembic upgrade head` validated on scratch DB (see 3.4). DONE.
 
 ## 11. AGENTS audit-usage rules (FINAL task — write last, once the system is settled)
 
