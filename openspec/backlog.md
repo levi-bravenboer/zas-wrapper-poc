@@ -464,7 +464,7 @@ Note: After a carepath closes, users keep configurable read-only access per user
 - Tier: [mvp]
 - Source: Lastenboek REQ-FUN-122/128/129/130/131/156/161 (deferred from `access-entitlements`)
 
-Note: Structured access-event log (login, view/modify patient data, shielded-access attempts incl. denials, break-glass usage) with metadata (timestamp, user, active role, action, IP, entity), admin dashboard with filter/export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence (ordinary users cannot modify). PoC has row-level audit fields + stdout login log only. Break-glass grants (access-entitlements) already capture reason + grantor — the dashboard surfaces them.
+Note: Structured access-event log (login, view/modify patient data, shielded-access attempts incl. denials, break-glass usage) with metadata (timestamp, user, active role, action, IP, entity), admin dashboard with filter/export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence (ordinary users cannot modify). PoC now has an append-only `audit_events` store (`backend-audit-event-logging` + `pathway-audit`) plus a minimal **read-only** admin viewer carved out as `[poc]` via `audit-log-view` (2026-06-17). This entry retains the `[mvp]` heavyweight DASHBOARD scope: export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence, resource-name resolution/links, and access-enforcement events (shielded-access attempts/denials, break-glass usage). Break-glass grants (access-entitlements) already capture reason + grantor — the dashboard surfaces them.
 
 ### BL-070 — SCIM/IAM provisioning + AD/LDAP intake
 - Tier: [mvp]
