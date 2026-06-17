@@ -1310,6 +1310,180 @@
         }
       }
     },
+    "/patients/{patient_id}/luscii-connections": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "List Patient Luscii Connections",
+        "operationId": "list_patient_luscii_connections",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LusciiConnectionSummary"
+                  },
+                  "title": "Response List Patient Luscii Connections"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Add Patient Luscii Connection",
+        "operationId": "add_patient_luscii_connection",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LusciiLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LusciiConnectionSummary"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/patients/{patient_id}/luscii-connections/{connection_id}": {
+      "delete": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Deactivate Patient Luscii Connection",
+        "operationId": "deactivate_patient_luscii_connection",
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Connection Id"
+            }
+          },
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/appointments": {
       "get": {
         "tags": [
@@ -6933,6 +7107,77 @@
         "title": "CareTeamUpdate",
         "description": "`PATCH /care-teams/{id}` payload \u2014 team-level metadata only.\n\nParticipant changes are out of scope here; use the participant\nendpoints. Setting `status = inactive` or `period_end` closes the\nteam but does not auto-unassign participants \u2014 the service handles\nthat side-effect inside the same transaction."
       },
+      "ConnectionGroup": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "luscii_patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Luscii Patient Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status"
+          },
+          "program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiProgramView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiProtocolView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "planned_actions": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiPlannedActionView"
+            },
+            "type": "array",
+            "title": "Planned Actions"
+          },
+          "measurements": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementView"
+            },
+            "type": "array",
+            "title": "Measurements"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementSeries"
+            },
+            "type": "array",
+            "title": "Series"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connection_id",
+          "luscii_patient_id",
+          "status"
+        ],
+        "title": "ConnectionGroup",
+        "description": "Live Luscii data for one active connection (one Luscii patient).\n\nA patient may hold several connections at once (one per Luscii patient,\neach running one program). Each group carries its own program/protocol +\ndecoded measurements/series; `program_id` is provenance the FE matches to\na carepath. Display-only invariant holds \u2014 every field is a\npassthrough/join/decode, never a value-derived signal."
+      },
       "ConsentCreate": {
         "properties": {
           "scope": {
@@ -9001,6 +9246,58 @@
         "title": "LusciiCategoricalPoint",
         "description": "A single measurement point projected from a multiple-choice item."
       },
+      "LusciiConnectionSummary": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "luscii_patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Luscii Patient Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status"
+          },
+          "program_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Id"
+          },
+          "program_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Program Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connection_id",
+          "luscii_patient_id",
+          "status"
+        ],
+        "title": "LusciiConnectionSummary",
+        "description": "One row of `GET /patients/{id}/luscii-connections` \u2014 the edit-dialog\nlist item. Carries the stored program snapshot for display without a live\ncall."
+      },
       "LusciiFreeTextPoint": {
         "properties": {
           "observed_at": {
@@ -9721,6 +10018,13 @@
             },
             "type": "array",
             "title": "Series"
+          },
+          "connections": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionGroup"
+            },
+            "type": "array",
+            "title": "Connections"
           }
         },
         "type": "object",
@@ -9729,7 +10033,7 @@
           "window_days"
         ],
         "title": "LusciiPatientData",
-        "description": "`GET /patients/{id}/luscii-data` response."
+        "description": "`GET /patients/{id}/luscii-data` response.\n\n`connections[]` is the multi-connection view (one entry per active Luscii\nconnection). The top-level `program`/`protocol`/`planned_actions`/\n`unmatched_measurements`/`series` mirror the FIRST connection for backward\ncompatibility while the FE migrates to `connections[]`; they are removed\nonce no consumer reads them."
       },
       "LusciiPlannedActionView": {
         "properties": {

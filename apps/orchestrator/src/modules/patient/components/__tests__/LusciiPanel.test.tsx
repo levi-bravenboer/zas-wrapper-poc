@@ -4,22 +4,21 @@ import type { ReactNode } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { i18n } from '@/lib/i18n'
 import { apiError } from '@/lib/api/errors'
+import { i18n } from '@/lib/i18n'
 import type { LusciiPatientData } from '@/modules/patient/types'
 
 import { LusciiPanel } from '../LusciiPanel'
 
-const { useLusciiDataMock, useLinkLusciiMock, useUnlinkLusciiMock } = vi.hoisted(() => ({
+const { useLusciiDataMock, useUnlinkLusciiMock } = vi.hoisted(() => ({
   useLusciiDataMock: vi.fn(),
-  useLinkLusciiMock: vi.fn(),
   useUnlinkLusciiMock: vi.fn(),
 }))
 
 vi.mock('@/modules/patient/hooks', () => ({
   useLusciiData: useLusciiDataMock,
-  useLinkLuscii: useLinkLusciiMock,
   useUnlinkLuscii: useUnlinkLusciiMock,
+  usePatientCarepaths: () => [],
 }))
 
 const LINKED_DATA: LusciiPatientData = {
@@ -102,17 +101,13 @@ function renderPanel(): void {
   )
 }
 
-function mockIdleMutations(): { mutate: ReturnType<typeof vi.fn> } {
-  const link = { mutate: vi.fn(), isPending: false, error: null }
-  useLinkLusciiMock.mockReturnValue(link)
+function mockIdleMutations(): void {
   useUnlinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
-  return link
 }
 
 describe('LusciiPanel', () => {
   beforeEach(() => {
     useLusciiDataMock.mockReset()
-    useLinkLusciiMock.mockReset()
     useUnlinkLusciiMock.mockReset()
   })
 
@@ -146,8 +141,8 @@ describe('LusciiPanel', () => {
     expect(refetch).toHaveBeenCalled()
   })
 
-  it('renders link form for unlinked patient and submits UUID', () => {
-    const link = mockIdleMutations()
+  it('points unlinked patients to the edit dialog (no inline form)', () => {
+    mockIdleMutations()
     useLusciiDataMock.mockReturnValue({
       data: {
         state: 'not_linked',
@@ -160,39 +155,9 @@ describe('LusciiPanel', () => {
       refetch: vi.fn(),
     })
     renderPanel()
-    const input = screen.getByRole('textbox', { name: 'Luscii patiënt-ID' })
-    fireEvent.change(input, { target: { value: ' 7659dfb3-c089-4d12-95b7-46ff8ce1e7dd ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Koppelen' }))
-    expect(link.mutate).toHaveBeenCalledWith({
-      patientId: 'pat-1',
-      lusciiPatientId: '7659dfb3-c089-4d12-95b7-46ff8ce1e7dd',
-    })
-  })
-
-  it.each([
-    ['invalid.luscii.patient_not_found', 422, /niet gevonden of niet toegankelijk/],
-    ['conflict.luscii.already_linked', 409, /al gekoppeld aan een andere/],
-    ['unavailable.luscii.upstream', 502, /niet bereikbaar/],
-  ])('shows inline error for %s', (code, status, expected) => {
-    useLinkLusciiMock.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: apiError('link failed', status as number, code as string),
-    })
-    useUnlinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
-    useLusciiDataMock.mockReturnValue({
-      data: {
-        state: 'not_linked',
-        window_days: 30,
-        planned_actions: [],
-        unmatched_measurements: [],
-      },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    })
-    renderPanel()
-    expect(screen.getByRole('alert').textContent).toMatch(expected)
+    expect(screen.getByText(/Beheer Luscii-koppelingen via Bewerken/)).toBeTruthy()
+    // Linking moved to EditPatientDialog — no inline input here.
+    expect(screen.queryByRole('textbox')).toBeNull()
   })
 
   it('renders programme header, merged timeline, and decoded values', () => {
@@ -220,7 +185,6 @@ describe('LusciiPanel', () => {
 
   it('unlink calls the mutation', () => {
     const unlinkMutate = vi.fn()
-    useLinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
     useUnlinkLusciiMock.mockReturnValue({ mutate: unlinkMutate, isPending: false, error: null })
     useLusciiDataMock.mockReturnValue({
       data: LINKED_DATA,
@@ -231,5 +195,34 @@ describe('LusciiPanel', () => {
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Ontkoppelen' }))
     expect(unlinkMutate).toHaveBeenCalledWith('pat-1')
+  })
+
+  it('renders connection groups bucketed by carepath', () => {
+    mockIdleMutations()
+    useLusciiDataMock.mockReturnValue({
+      data: {
+        state: 'linked',
+        window_days: 30,
+        connections: [
+          {
+            connection_id: 'c-1',
+            luscii_patient_id: '7659dfb3-c089-4d12-95b7-46ff8ce1e7dd',
+            status: 'active',
+            program: { id: 'p-1', name: 'Hartfalen programma' },
+            protocol: null,
+            planned_actions: [],
+            measurements: [],
+            series: [],
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+    renderPanel()
+    // No enrollments mocked → no program match → unassigned bucket.
+    expect(screen.getByText(/Niet aan zorgpad gekoppeld/)).toBeTruthy()
+    expect(screen.getByText('Hartfalen programma')).toBeTruthy()
   })
 })

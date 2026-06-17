@@ -27,6 +27,7 @@ from app.db.base import TenantOwnedEntity
 
 if TYPE_CHECKING:
     from app.db.models.patient.patient_identifier import PatientIdentifier
+    from app.db.models.patient.patient_luscii_connection import PatientLusciiConnection
 
 
 class Patient(TenantOwnedEntity):
@@ -104,5 +105,18 @@ class Patient(TenantOwnedEntity):
         primaryjoin=(
             "and_(Patient.id == PatientIdentifier.patient_id, "
             "PatientIdentifier.deleted_at.is_(None))"
+        ),
+    )
+
+    # All non-deleted Luscii connections (active + inactive history). Callers
+    # filter by `status` for the live set; soft-deleted rows stay out.
+    luscii_connections: Mapped[list[PatientLusciiConnection]] = relationship(
+        "PatientLusciiConnection",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        primaryjoin=(
+            "and_(Patient.id == PatientLusciiConnection.patient_id, "
+            "PatientLusciiConnection.deleted_at.is_(None))"
         ),
     )

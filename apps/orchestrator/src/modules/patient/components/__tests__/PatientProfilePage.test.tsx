@@ -135,13 +135,13 @@ describe('PatientProfilePage', () => {
 
     expect(await screen.findByRole('heading', { name: /Bos, Eva/ })).toBeTruthy()
     expect(screen.getAllByText(/80051203412/).length).toBeGreaterThan(0)
+    expect(screen.getByRole('tab', { name: /Overzicht/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Zorgpad/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Metingen/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Labresultaten/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Afspraken/ })).toBeTruthy()
-    // Legacy meta tabs are gone per D10
-    expect(screen.queryByRole('tab', { name: /Overzicht/ })).toBeNull()
-    expect(screen.queryByRole('tab', { name: /Zorgteam/ })).toBeNull()
+    expect(screen.getByRole('tab', { name: /Zorgteam/ })).toBeTruthy()
+    // Geschiedenis lives in the kebab menu, not the tab strip
     expect(screen.queryByRole('tab', { name: /Geschiedenis/ })).toBeNull()
   })
 

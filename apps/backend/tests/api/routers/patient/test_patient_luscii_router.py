@@ -19,15 +19,16 @@ from app.adapters.luscii import (
     LusciiProgramRef,
     LusciiProtocolRef,
 )
+from app.core.enums.patient import LusciiConnectionStatus
 from app.core.identifiers import LUSCII_PATIENT_SYSTEM
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
     LusciiInstrumentLocalisationRow,
     LusciiItemResponseLocalisationRow,
 )
-from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.patient import Patient, PatientIdentifier, PatientLusciiConnection
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
-from scripts.seed_users import ADMIN_EMAIL
+from scripts.seed_users import ADMIN_EMAIL, ADMIN_USER_ID
 from tests.fakes.luscii import FakeLusciiClient
 
 
@@ -99,16 +100,16 @@ async def test_link_happy_path_persists_and_echoes_program(
 
     rows = (
         await db_session.scalars(
-            select(PatientIdentifier).where(
-                PatientIdentifier.patient_id == patient.id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
     ).all()
     assert len(rows) == 1
-    assert rows[0].value == LUSCII_ID
-    assert rows[0].use == "secondary"
+    assert str(rows[0].luscii_patient_id) == LUSCII_ID
+    assert rows[0].program_name == "Hartfalen programma"
 
 
 async def test_link_unknown_luscii_id_rejected_with_422(
@@ -162,15 +163,16 @@ async def test_relink_replaces_previous_link(
 
     rows = (
         await db_session.scalars(
-            select(PatientIdentifier).where(
-                PatientIdentifier.patient_id == patient.id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
     ).all()
-    active = [r for r in rows if r.deleted_at is None]
-    assert [r.value for r in active] == [OTHER_LUSCII_ID]
-    assert any(r.deleted_at is not None and r.value == LUSCII_ID for r in rows)
+    active = [r for r in rows if r.status == LusciiConnectionStatus.ACTIVE]
+    inactive = [r for r in rows if r.status == LusciiConnectionStatus.INACTIVE]
+    assert [str(r.luscii_patient_id) for r in active] == [OTHER_LUSCII_ID]
+    assert any(str(r.luscii_patient_id) == LUSCII_ID for r in inactive)
 
 
 async def test_link_conflict_when_luscii_id_linked_to_other_patient(
@@ -239,10 +241,12 @@ async def test_replaced_link_not_exposed_in_patient_read(
     await async_client.put(_link_url(patient), json={"luscii_patient_id": OTHER_LUSCII_ID})
     response = await async_client.get(f"/patients/{patient.id}")
     assert response.status_code == 200
+    # The Luscii link lives in `patient_luscii_connections`, not in FHIR
+    # identifiers — so it is never exposed on the patient read payload.
     luscii_values = [
         i["value"] for i in response.json()["identifiers"] if i["system"] == LUSCII_PATIENT_SYSTEM
     ]
-    assert luscii_values == [OTHER_LUSCII_ID]
+    assert luscii_values == []
 
 
 async def test_post_patients_rejects_luscii_system_identifier(
@@ -263,6 +267,65 @@ async def test_post_patients_rejects_luscii_system_identifier(
         },
     )
     assert response.status_code == 422
+
+
+# ---- multi-connection management -------------------------------------------
+
+
+def _connections_url(patient: Patient) -> str:
+    return f"/patients/{patient.id}/luscii-connections"
+
+
+async def test_add_connection_does_not_replace_existing(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+) -> None:
+    patient = seeded_zas_patients[0]
+    await _login(async_client, ADMIN_EMAIL)
+    url = _connections_url(patient)
+    assert (
+        await async_client.post(url, json={"luscii_patient_id": LUSCII_ID})
+    ).status_code == 201
+    assert (
+        await async_client.post(url, json={"luscii_patient_id": OTHER_LUSCII_ID})
+    ).status_code == 201
+
+    listing = await async_client.get(url)
+    assert listing.status_code == 200
+    assert {c["luscii_patient_id"] for c in listing.json()} == {LUSCII_ID, OTHER_LUSCII_ID}
+
+
+async def test_deactivate_connection_drops_from_active_list(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+) -> None:
+    patient = seeded_zas_patients[0]
+    await _login(async_client, ADMIN_EMAIL)
+    url = _connections_url(patient)
+    created = (await async_client.post(url, json={"luscii_patient_id": LUSCII_ID})).json()
+
+    response = await async_client.delete(f"{url}/{created['connection_id']}")
+    assert response.status_code == 204
+    assert (await async_client.get(url)).json() == []
+
+
+async def test_add_connection_conflict_across_patients(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+) -> None:
+    first, second = seeded_zas_patients[0], seeded_zas_patients[1]
+    await _login(async_client, ADMIN_EMAIL)
+    assert (
+        await async_client.post(_connections_url(first), json={"luscii_patient_id": LUSCII_ID})
+    ).status_code == 201
+    response = await async_client.post(
+        _connections_url(second), json={"luscii_patient_id": LUSCII_ID}
+    )
+    assert response.status_code == 409
+    assert response.json()["code"] == "conflict.luscii.already_linked"
 
 
 # ---- aggregation -------------------------------------------------------------
@@ -351,6 +414,58 @@ async def _seed_aggregation_fixtures(luscii: FakeLusciiClient, db_session: Async
         ]
     )
     await db_session.commit()
+
+
+async def test_luscii_data_aggregates_multiple_active_connections(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+    db_session: AsyncSession,
+) -> None:
+    patient = seeded_zas_patients[0]
+    await _seed_aggregation_fixtures(luscii, db_session)
+    # Two active connections at once (bypassing the single-active API
+    # replacement) — the multi-connection aggregation case.
+    db_session.add_all(
+        [
+            PatientLusciiConnection(
+                patient_id=patient.id,
+                luscii_patient_id=uuid.UUID(LUSCII_ID),
+                status=LusciiConnectionStatus.ACTIVE,
+                created_by=ADMIN_USER_ID,
+                updated_by=ADMIN_USER_ID,
+            ),
+            PatientLusciiConnection(
+                patient_id=patient.id,
+                luscii_patient_id=uuid.UUID(OTHER_LUSCII_ID),
+                status=LusciiConnectionStatus.ACTIVE,
+                created_by=ADMIN_USER_ID,
+                updated_by=ADMIN_USER_ID,
+            ),
+        ]
+    )
+    await db_session.commit()
+    await _login(async_client, ADMIN_EMAIL)
+    luscii.calls.clear()
+
+    response = await async_client.get(_data_url(patient))
+    assert response.status_code == 200, response.text
+    body = response.json()
+
+    assert body["state"] == "linked"
+    conns = body["connections"]
+    assert len(conns) == 2
+    assert {c["luscii_patient_id"] for c in conns} == {LUSCII_ID, OTHER_LUSCII_ID}
+    # One org-wide measurements call regardless of connection count.
+    assert luscii.calls.count("get_measurements") == 1
+    # Each connection only sees its own patient's measurements.
+    by_id = {c["luscii_patient_id"]: c for c in conns}
+    assert by_id[LUSCII_ID]["program"]["name"] == "Hartfalen programma"
+    other_measurement_ids = {
+        m["measurement_id"] for m in by_id[OTHER_LUSCII_ID]["measurements"]
+    }
+    assert "m-other" in other_measurement_ids
+    assert "m-1" not in other_measurement_ids
 
 
 async def test_luscii_data_merges_actions_and_measurements(
