@@ -35,12 +35,12 @@
 
 ## 6. Tests
 
-- [ ] 6.1 Per-method emission tests: create / publish / duplicate / restore / fork / delete each produce exactly one event with the correct `action`, `context.operation`, anchor, and actor.
-- [ ] 6.2 Anchoring test: a pathway's full history is returned by one `resource_type=Pathway` + `resource_id` query in `created_at` order; duplicate anchors to the new pathway with `source_pathway_id` in context.
-- [ ] 6.3 Coalescing tests: rapid autosaves within the window collapse to one `edited` event; edit after window → new event; different actor → new event; edit after an intervening publish → new event.
-- [ ] 6.4 Atomicity test: a rolled-back publish leaves no `published` event; a committed authoring action persists its event in the same transaction.
-- [ ] 6.5 Access tests: setting specialisms/practitioners emits one `updated` event with the correct `operation` and `added`/`removed` diff; a no-op re-save emits nothing; access events appear in the pathway's timeline interleaved with authoring events.
-- [ ] 6.6 Read-API test: `action=published` filter returns publishes; confirm there is no server-side `context.operation` filter.
+- [x] 6.1 Per-method emission tests: create / publish / duplicate / restore / fork / delete each produce exactly one event with the correct `action`, `context.operation`, anchor, and actor.
+- [x] 6.2 Anchoring test: a pathway's full history is returned by one `resource_type=Pathway` + `resource_id` query in `created_at` order; duplicate anchors to the new pathway with `source_pathway_id` in context.
+- [x] 6.3 Coalescing tests: rapid autosaves within the window collapse to one `edited` event; edit after window → new event; different actor → new event; edit after an intervening publish → new event.
+- [x] 6.4 Atomicity test: a rolled-back publish leaves no `published` event; a committed authoring action persists its event in the same transaction.
+- [x] 6.5 Access tests: setting specialisms/practitioners emits one `updated` event with the correct `operation` and `added`/`removed` diff; a no-op re-save emits nothing; access events appear in the pathway's timeline interleaved with authoring events.
+- [x] 6.6 Read-API test: `action=published` filter returns publishes; confirm there is no server-side `context.operation` filter.
 
 ## 7. Contract sync + verification
 
