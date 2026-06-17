@@ -35,5 +35,5 @@
 ## 7. Tests + verification
 
 - [x] 7.1 Add a component test for `AuditListPage` (mirror the existing admin list-page test pattern): renders rows from a mocked `GET /audit-events`, shows the action/result badges, expands a row to reveal context JSON, and applies an action filter.
-- [ ] 7.2 Run `/verify` for the orchestrator (lint + typecheck + tests) and confirm green. (Note: the branch has pre-existing, unrelated orchestrator typecheck failures in tasks-routing/charts; confirm this change introduces no new errors.)
-- [ ] 7.3 Launch the app and confirm the audit log renders for an admin: rows visible, a filter narrows results, a row expands to raw JSON, pagination works.
+- [x] 7.2 Run `/verify` for the orchestrator (lint + typecheck + tests) and confirm green. (Note: the branch has pre-existing, unrelated orchestrator typecheck failures in tasks-routing/charts; confirm this change introduces no new errors.)
+- [ ] 7.3 (remaining — manual, needs full stack) Launch the app and confirm the audit log renders for an admin: rows visible, a filter narrows results, a row expands to raw JSON, pagination works.
