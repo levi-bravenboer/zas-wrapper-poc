@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy import select
 
 from app.core.enums.user import Role
@@ -22,6 +22,7 @@ from app.services.access.permissions.deps import (
     PatientRelation,
     check_patient_permission,
 )
+from app.services.audit.access import record_denied_access
 from app.services.care_team.deps import CareTeamServiceDep
 from app.services.patient.errors import PatientNotFoundError
 from app.services.patient.patient_service import PatientService
@@ -63,18 +64,37 @@ def require_patient_relation(relation: PatientRelation):
         session: SessionDep,
         settings: SettingsDep,
         keto: KetoClientDep,
+        request: Request,
         current_user: SessionUser = Depends(require_role(Role.ADMIN, Role.CAREGIVER)),
     ) -> Patient:
-        return await _resolve_patient_with_relation(
-            patient_id,
-            service,
-            care_team_service,
-            session,
-            settings,
-            keto,
-            current_user,
-            relation=relation,
-        )
+        try:
+            return await _resolve_patient_with_relation(
+                patient_id,
+                service,
+                care_team_service,
+                session,
+                settings,
+                keto,
+                current_user,
+                relation=relation,
+            )
+        except PatientNotFoundError:
+            # Refused patient-data view = a denied-access event (NEN 7513, D10).
+            # Absent vs denied is intentionally indistinguishable here (existence
+            # hiding), so any refused `view` is recorded as one read+failure. The
+            # request's 404 rolls back its session, so this writes independently;
+            # best-effort — an audit hiccup must not change the 404.
+            if relation == "view":
+                try:
+                    await record_denied_access(
+                        request.app.state.session_factory,
+                        actor=current_user,
+                        patient_id=patient_id,
+                        event_code="patient.dossier_viewed",
+                    )
+                except Exception:
+                    logger.exception("failed to write denied-access audit event")
+            raise
 
     return _require
 
