@@ -23,7 +23,7 @@ export function PathwayTrailOverflow({
 }: PathwayTrailOverflowProps): ReactElement {
   return (
     <li className="flex min-w-[5rem] shrink-0 grow basis-[5rem] flex-col items-center">
-      <div className="flex w-full items-center">
+      <div className="flex h-9 w-full items-center">
         <TrailConnector on={leftOn} hide={leftHide} />
         <span className="grid size-8 shrink-0 place-items-center rounded-full border border-dashed border-[color:var(--color-border-strong)] text-[11px] font-semibold text-muted-foreground">
           +{count}
