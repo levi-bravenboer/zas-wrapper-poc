@@ -20,7 +20,7 @@ from typing import Any, TypeVar
 from uuid import UUID
 
 from pydantic import ValidationError
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.luscii import (
@@ -32,14 +32,13 @@ from app.adapters.luscii import (
     LusciiPatientNotFoundError,
     LusciiPlannedAction,
 )
-from app.core.identifiers import LUSCII_PATIENT_SYSTEM
-from app.db.audit import SESSION_ACTOR_KEY
+from app.core.enums.patient import LusciiConnectionStatus
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
     LusciiInstrumentLocalisationRow,
     LusciiItemResponseLocalisationRow,
 )
-from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.patient import Patient, PatientLusciiConnection
 from app.schemas.luscii.patient_data import (
     LusciiLinkResult,
     LusciiMeasurementValueView,
@@ -82,62 +81,82 @@ class LusciiPatientDataService:
         except LusciiApiError as exc:
             raise LusciiUnavailableError() from exc
 
+        # One Luscii patient maps to at most one of ours while active.
         other = await self._session.scalar(
-            select(PatientIdentifier.patient_id).where(
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.value == value,
-                PatientIdentifier.deleted_at.is_(None),
-                PatientIdentifier.patient_id != patient.id,
+            select(PatientLusciiConnection.patient_id).where(
+                PatientLusciiConnection.luscii_patient_id == luscii_patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
+                PatientLusciiConnection.patient_id != patient.id,
             )
         )
         if other is not None:
             raise LusciiIdAlreadyLinkedError()
 
-        # Replacement semantics: at most one active Luscii identifier per
-        # patient — soft-delete any previous link, then insert the new row.
-        await self._soft_delete_active_links(patient.id)
-        self._session.add(
-            PatientIdentifier(
-                patient_id=patient.id,
-                system=LUSCII_PATIENT_SYSTEM,
-                value=value,
-                use="secondary",
+        program = details.program
+        program_id = program.id if program else None
+        program_name = program.name if program else None
+
+        # Replacement semantics (single active per patient until the
+        # multi-connection UI lands): deactivate the current active
+        # connection, then upsert the target to active. Re-link reuses the
+        # existing `(patient, luscii patient)` row so history is not duplicated.
+        await self._deactivate_active_connections(patient.id)
+        existing = await self._session.scalar(
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.luscii_patient_id == luscii_patient_id,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
+        if existing is not None:
+            existing.status = LusciiConnectionStatus.ACTIVE
+            existing.program_id = program_id
+            existing.program_name = program_name
+        else:
+            self._session.add(
+                PatientLusciiConnection(
+                    patient_id=patient.id,
+                    luscii_patient_id=luscii_patient_id,
+                    status=LusciiConnectionStatus.ACTIVE,
+                    program_id=program_id,
+                    program_name=program_name,
+                )
+            )
         await self._session.flush()
         return LusciiLinkResult(
             luscii_patient_id=luscii_patient_id,
-            program_name=details.program.name if details.program else None,
+            program_name=program_name,
             protocol_name=details.protocol.name if details.protocol else None,
         )
 
     async def unlink(self, patient: Patient) -> None:
-        """Idempotent: succeeds whether or not a link exists."""
-        await self._soft_delete_active_links(patient.id)
+        """Idempotent: deactivates the active connection(s), keeps the rows."""
+        await self._deactivate_active_connections(patient.id)
         await self._session.flush()
 
-    async def _soft_delete_active_links(self, patient_id: UUID) -> None:
+    async def _deactivate_active_connections(self, patient_id: UUID) -> None:
         rows = await self._session.scalars(
-            select(PatientIdentifier).where(
-                PatientIdentifier.patient_id == patient_id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
-        actor = self._session.info.get(SESSION_ACTOR_KEY)
         for row in rows:
-            row.deleted_at = func.now()
-            if actor is not None:
-                row.deleted_by = actor.id
+            row.status = LusciiConnectionStatus.INACTIVE
 
     async def active_link_value(self, patient_id: UUID) -> str | None:
-        return await self._session.scalar(
-            select(PatientIdentifier.value).where(
-                PatientIdentifier.patient_id == patient_id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
+        luscii_id = await self._session.scalar(
+            select(PatientLusciiConnection.luscii_patient_id)
+            .where(
+                PatientLusciiConnection.patient_id == patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
+            .limit(1)
         )
+        return str(luscii_id) if luscii_id is not None else None
 
     # -- aggregation ----------------------------------------------------------
 

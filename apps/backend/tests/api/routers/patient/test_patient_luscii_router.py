@@ -19,13 +19,14 @@ from app.adapters.luscii import (
     LusciiProgramRef,
     LusciiProtocolRef,
 )
+from app.core.enums.patient import LusciiConnectionStatus
 from app.core.identifiers import LUSCII_PATIENT_SYSTEM
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
     LusciiInstrumentLocalisationRow,
     LusciiItemResponseLocalisationRow,
 )
-from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.patient import Patient, PatientIdentifier, PatientLusciiConnection
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
 from scripts.seed_users import ADMIN_EMAIL
 from tests.fakes.luscii import FakeLusciiClient
@@ -99,16 +100,16 @@ async def test_link_happy_path_persists_and_echoes_program(
 
     rows = (
         await db_session.scalars(
-            select(PatientIdentifier).where(
-                PatientIdentifier.patient_id == patient.id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
     ).all()
     assert len(rows) == 1
-    assert rows[0].value == LUSCII_ID
-    assert rows[0].use == "secondary"
+    assert str(rows[0].luscii_patient_id) == LUSCII_ID
+    assert rows[0].program_name == "Hartfalen programma"
 
 
 async def test_link_unknown_luscii_id_rejected_with_422(
@@ -162,15 +163,16 @@ async def test_relink_replaces_previous_link(
 
     rows = (
         await db_session.scalars(
-            select(PatientIdentifier).where(
-                PatientIdentifier.patient_id == patient.id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
     ).all()
-    active = [r for r in rows if r.deleted_at is None]
-    assert [r.value for r in active] == [OTHER_LUSCII_ID]
-    assert any(r.deleted_at is not None and r.value == LUSCII_ID for r in rows)
+    active = [r for r in rows if r.status == LusciiConnectionStatus.ACTIVE]
+    inactive = [r for r in rows if r.status == LusciiConnectionStatus.INACTIVE]
+    assert [str(r.luscii_patient_id) for r in active] == [OTHER_LUSCII_ID]
+    assert any(str(r.luscii_patient_id) == LUSCII_ID for r in inactive)
 
 
 async def test_link_conflict_when_luscii_id_linked_to_other_patient(
@@ -239,10 +241,12 @@ async def test_replaced_link_not_exposed_in_patient_read(
     await async_client.put(_link_url(patient), json={"luscii_patient_id": OTHER_LUSCII_ID})
     response = await async_client.get(f"/patients/{patient.id}")
     assert response.status_code == 200
+    # The Luscii link lives in `patient_luscii_connections`, not in FHIR
+    # identifiers — so it is never exposed on the patient read payload.
     luscii_values = [
         i["value"] for i in response.json()["identifiers"] if i["system"] == LUSCII_PATIENT_SYSTEM
     ]
-    assert luscii_values == [OTHER_LUSCII_ID]
+    assert luscii_values == []
 
 
 async def test_post_patients_rejects_luscii_system_identifier(
