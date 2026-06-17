@@ -40,6 +40,7 @@ from app.db.models.luscii import (
 )
 from app.db.models.patient import Patient, PatientLusciiConnection
 from app.schemas.luscii.patient_data import (
+    ConnectionGroup,
     LusciiLinkResult,
     LusciiMeasurementValueView,
     LusciiMeasurementView,
@@ -161,21 +162,24 @@ class LusciiPatientDataService:
     # -- aggregation ----------------------------------------------------------
 
     async def get_patient_data(self, patient: Patient, days: int) -> LusciiPatientData:
-        link_value = await self.active_link_value(patient.id)
-        if link_value is None:
+        connections = await self._active_connections(patient.id)
+        if not connections:
             return LusciiPatientData(state="not_linked", window_days=days)
 
         client = self._require_client()
         end = datetime.now(UTC).date()
         start = end - timedelta(days=days)
+        luscii_ids = [str(c.luscii_patient_id) for c in connections]
         try:
-            details, planned_actions, measurements = await asyncio.gather(
-                client.get_patient(link_value),
-                client.get_planned_actions(link_value, start, end),
-                client.get_measurements(start, end),
+            # One org-wide measurements call; per-connection details + planned
+            # actions in parallel.
+            measurements = await client.get_measurements(start, end)
+            details_list, actions_list = await asyncio.gather(
+                asyncio.gather(*(client.get_patient(v) for v in luscii_ids)),
+                asyncio.gather(*(client.get_planned_actions(v, start, end) for v in luscii_ids)),
             )
         except LusciiPatientNotFoundError as exc:
-            # Stale link: the Luscii patient vanished (or our token lost
+            # Stale link: a linked Luscii patient vanished (or our token lost
             # access) after linking. Upstream problem, not caller error.
             raise LusciiUnavailableError(
                 message="Linked Luscii patient is no longer accessible."
@@ -183,45 +187,49 @@ class LusciiPatientDataService:
         except LusciiApiError as exc:
             raise LusciiUnavailableError() from exc
 
-        own_measurements = [m for m in measurements if m.patient_id == link_value]
-        decoder = await self._build_decoder(own_measurements)
-        # Decode each measurement once; keep the (raw, view) pair so the
-        # planned-action join can still key on raw.planned_action_id while
-        # both the planned-actions block and the series projection consume
-        # the same decoded views.
-        decoded_pairs: list[tuple[LusciiMeasurement, LusciiMeasurementView]] = [
-            (raw, decoder.decode(raw)) for raw in own_measurements
+        id_set = set(luscii_ids)
+        relevant = [m for m in measurements if m.patient_id in id_set]
+        decoder = await self._build_decoder(relevant)
+
+        groups = [
+            _connection_group(
+                conn,
+                details,
+                planned_actions,
+                [m for m in relevant if m.patient_id == str(conn.luscii_patient_id)],
+                decoder,
+            )
+            for conn, details, planned_actions in zip(
+                connections, details_list, actions_list, strict=True
+            )
         ]
-        by_planned_action: dict[str, LusciiMeasurementView] = {
-            raw.planned_action_id: view for raw, view in decoded_pairs if raw.planned_action_id
-        }
-        matched_ids: set[str] = set()
-        action_views: list[LusciiPlannedActionView] = []
-        for action in planned_actions:
-            measurement_view = by_planned_action.get(action.id)
-            if measurement_view is not None:
-                matched_ids.add(action.id)
-            action_views.append(_action_view_from_decoded(action, measurement_view))
-        unmatched = [
-            view
-            for raw, view in decoded_pairs
-            if raw.planned_action_id is None or raw.planned_action_id not in matched_ids
-        ]
-        program = _program_view(details)
-        series = project_series(
-            [view for _raw, view in decoded_pairs],
-            program_id=program.id if program else None,
-        )
+
+        # Legacy single-connection fields mirror the first connection until the
+        # FE migrates to `connections[]` (see schema docstring).
+        primary = groups[0]
         return LusciiPatientData(
             state="linked",
-            luscii_patient_id=UUID(link_value),
+            luscii_patient_id=primary.luscii_patient_id,
             window_days=days,
-            program=program,
-            protocol=_protocol_view(details),
-            planned_actions=action_views,
-            unmatched_measurements=unmatched,
-            series=series,
+            program=primary.program,
+            protocol=primary.protocol,
+            planned_actions=primary.planned_actions,
+            unmatched_measurements=primary.measurements,
+            series=primary.series,
+            connections=groups,
         )
+
+    async def _active_connections(self, patient_id: UUID) -> list[PatientLusciiConnection]:
+        result = await self._session.scalars(
+            select(PatientLusciiConnection)
+            .where(
+                PatientLusciiConnection.patient_id == patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
+            )
+            .order_by(PatientLusciiConnection.created_at)
+        )
+        return list(result)
 
     async def _build_decoder(self, measurements: list[LusciiMeasurement]) -> _MeasurementDecoder:
         """Key-filtered lookups against the synced catalogue tables.
@@ -281,6 +289,50 @@ class LusciiPatientDataService:
         if self._client is None:
             raise LusciiNotConfiguredError()
         return self._client
+
+
+def _connection_group(
+    conn: PatientLusciiConnection,
+    details: LusciiPatientDetails,
+    planned_actions: list[LusciiPlannedAction],
+    own_measurements: list[LusciiMeasurement],
+    decoder: _MeasurementDecoder,
+) -> ConnectionGroup:
+    """Build one connection's group: decode its measurements, join planned
+    actions, project series. Pure given the decoder + live API objects."""
+    decoded_pairs: list[tuple[LusciiMeasurement, LusciiMeasurementView]] = [
+        (raw, decoder.decode(raw)) for raw in own_measurements
+    ]
+    by_planned_action: dict[str, LusciiMeasurementView] = {
+        raw.planned_action_id: view for raw, view in decoded_pairs if raw.planned_action_id
+    }
+    matched_ids: set[str] = set()
+    action_views: list[LusciiPlannedActionView] = []
+    for action in planned_actions:
+        measurement_view = by_planned_action.get(action.id)
+        if measurement_view is not None:
+            matched_ids.add(action.id)
+        action_views.append(_action_view_from_decoded(action, measurement_view))
+    unmatched = [
+        view
+        for raw, view in decoded_pairs
+        if raw.planned_action_id is None or raw.planned_action_id not in matched_ids
+    ]
+    program = _program_view(details)
+    series = project_series(
+        [view for _raw, view in decoded_pairs],
+        program_id=program.id if program else None,
+    )
+    return ConnectionGroup(
+        connection_id=conn.id,
+        luscii_patient_id=conn.luscii_patient_id,
+        status=conn.status.value,
+        program=program,
+        protocol=_protocol_view(details),
+        planned_actions=action_views,
+        measurements=unmatched,
+        series=series,
+    )
 
 
 def _program_view(details: LusciiPatientDetails) -> LusciiProgramView | None:

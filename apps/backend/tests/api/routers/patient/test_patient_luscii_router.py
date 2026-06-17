@@ -28,7 +28,7 @@ from app.db.models.luscii import (
 )
 from app.db.models.patient import Patient, PatientIdentifier, PatientLusciiConnection
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
-from scripts.seed_users import ADMIN_EMAIL
+from scripts.seed_users import ADMIN_EMAIL, ADMIN_USER_ID
 from tests.fakes.luscii import FakeLusciiClient
 
 
@@ -355,6 +355,58 @@ async def _seed_aggregation_fixtures(luscii: FakeLusciiClient, db_session: Async
         ]
     )
     await db_session.commit()
+
+
+async def test_luscii_data_aggregates_multiple_active_connections(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+    db_session: AsyncSession,
+) -> None:
+    patient = seeded_zas_patients[0]
+    await _seed_aggregation_fixtures(luscii, db_session)
+    # Two active connections at once (bypassing the single-active API
+    # replacement) — the multi-connection aggregation case.
+    db_session.add_all(
+        [
+            PatientLusciiConnection(
+                patient_id=patient.id,
+                luscii_patient_id=uuid.UUID(LUSCII_ID),
+                status=LusciiConnectionStatus.ACTIVE,
+                created_by=ADMIN_USER_ID,
+                updated_by=ADMIN_USER_ID,
+            ),
+            PatientLusciiConnection(
+                patient_id=patient.id,
+                luscii_patient_id=uuid.UUID(OTHER_LUSCII_ID),
+                status=LusciiConnectionStatus.ACTIVE,
+                created_by=ADMIN_USER_ID,
+                updated_by=ADMIN_USER_ID,
+            ),
+        ]
+    )
+    await db_session.commit()
+    await _login(async_client, ADMIN_EMAIL)
+    luscii.calls.clear()
+
+    response = await async_client.get(_data_url(patient))
+    assert response.status_code == 200, response.text
+    body = response.json()
+
+    assert body["state"] == "linked"
+    conns = body["connections"]
+    assert len(conns) == 2
+    assert {c["luscii_patient_id"] for c in conns} == {LUSCII_ID, OTHER_LUSCII_ID}
+    # One org-wide measurements call regardless of connection count.
+    assert luscii.calls.count("get_measurements") == 1
+    # Each connection only sees its own patient's measurements.
+    by_id = {c["luscii_patient_id"]: c for c in conns}
+    assert by_id[LUSCII_ID]["program"]["name"] == "Hartfalen programma"
+    other_measurement_ids = {
+        m["measurement_id"] for m in by_id[OTHER_LUSCII_ID]["measurements"]
+    }
+    assert "m-other" in other_measurement_ids
+    assert "m-1" not in other_measurement_ids
 
 
 async def test_luscii_data_merges_actions_and_measurements(
