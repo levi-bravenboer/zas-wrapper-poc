@@ -41,9 +41,9 @@
 ## 6. patient_id on write-diffs (Q1)
 
 - [x] 6.1 Extend `before_flush` diff capture (`_patient_of`) to resolve `patient_id` from the flushed instance (Patient→own id; any model with a `patient_id` column→that; parent-only links→null per Q1-sub)
-- [ ] 6.2 (WHERE phase) Add `__audited__ = True` opt-ins beyond the existing set (Patient/Note/Attachment/Enrollment/BlockExecution/Task already on): `Appointment`, `Pathway`, `PathwayBlock`
+- [x] 6.2 Add `__audited__ = True` opt-ins: `Appointment`, `Pathway`, `PathwayBlock` (Patient/Note/Attachment/Enrollment/BlockExecution/Task already on)
 - [~] 6.3 Test deferred
-- [ ] 6.4 (WHERE phase) Conformance test (D11): every patient-scoped `__audited__` model has a defined patient-resolution path; lands with the 6.2 opt-ins
+- [x] 6.4 Conformance test (D11): `_EXPECTED` updated; `test_patient_scoped_models_resolve_patient_id` guards patient axis; `PathwayBlockExecution` marked `_PATIENT_VIA_PARENT`
 
 ## 7. Domain-event emit sites — `audit-emit-coverage` (D-map)
 

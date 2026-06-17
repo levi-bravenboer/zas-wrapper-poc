@@ -89,5 +89,5 @@ The patient-centric query is only as trustworthy as `patient_id` population: a s
 
 ## Open questions
 
-- **Q1 (sub)** — for `Attachment`/`Note` reachable only via a parent (appointment → patient), is the patient resolvable without an extra query at flush time? If not, that model's events rely on `resource_type/resource_id` until the parent is loaded. Resolve during task 6.1 against the actual ORM relationships.
+- **Q1 (sub) → RESOLVED**: `Note`, `Attachment`, `Task`, `Appointment`, `PathwayEnrollment` all carry a direct `patient_id` column, so `_patient_of` resolves them at flush with no extra query. Only `PathwayBlockExecution` lacks the column (patient via its enrollment): its auto-diffs carry null `patient_id` and the patient axis is set by the explicit `runtime.block_executed` emit. Captured as `_PATIENT_VIA_PARENT` in the conformance test.
 - **Q4** — patient-actor emit surface: confirm which patient-facing backend endpoints exist today (mobile auth only?) so task 7 wires the real set and does not assume endpoints that aren't built.
