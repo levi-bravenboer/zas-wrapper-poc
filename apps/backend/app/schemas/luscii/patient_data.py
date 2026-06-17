@@ -35,6 +35,18 @@ class LusciiLinkResult(BaseModel):
     protocol_name: str | None = None
 
 
+class LusciiConnectionSummary(BaseModel):
+    """One row of `GET /patients/{id}/luscii-connections` — the edit-dialog
+    list item. Carries the stored program snapshot for display without a live
+    call."""
+
+    connection_id: UUID
+    luscii_patient_id: UUID
+    status: Literal["active", "inactive"]
+    program_id: str | None = None
+    program_name: str | None = None
+
+
 class LusciiProgramView(BaseModel):
     id: str | None = None
     name: str | None = None

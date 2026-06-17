@@ -269,6 +269,65 @@ async def test_post_patients_rejects_luscii_system_identifier(
     assert response.status_code == 422
 
 
+# ---- multi-connection management -------------------------------------------
+
+
+def _connections_url(patient: Patient) -> str:
+    return f"/patients/{patient.id}/luscii-connections"
+
+
+async def test_add_connection_does_not_replace_existing(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+) -> None:
+    patient = seeded_zas_patients[0]
+    await _login(async_client, ADMIN_EMAIL)
+    url = _connections_url(patient)
+    assert (
+        await async_client.post(url, json={"luscii_patient_id": LUSCII_ID})
+    ).status_code == 201
+    assert (
+        await async_client.post(url, json={"luscii_patient_id": OTHER_LUSCII_ID})
+    ).status_code == 201
+
+    listing = await async_client.get(url)
+    assert listing.status_code == 200
+    assert {c["luscii_patient_id"] for c in listing.json()} == {LUSCII_ID, OTHER_LUSCII_ID}
+
+
+async def test_deactivate_connection_drops_from_active_list(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+) -> None:
+    patient = seeded_zas_patients[0]
+    await _login(async_client, ADMIN_EMAIL)
+    url = _connections_url(patient)
+    created = (await async_client.post(url, json={"luscii_patient_id": LUSCII_ID})).json()
+
+    response = await async_client.delete(f"{url}/{created['connection_id']}")
+    assert response.status_code == 204
+    assert (await async_client.get(url)).json() == []
+
+
+async def test_add_connection_conflict_across_patients(
+    async_client: AsyncClient,
+    seeded_zas_patients: list[Patient],
+    luscii: FakeLusciiClient,
+) -> None:
+    first, second = seeded_zas_patients[0], seeded_zas_patients[1]
+    await _login(async_client, ADMIN_EMAIL)
+    assert (
+        await async_client.post(_connections_url(first), json={"luscii_patient_id": LUSCII_ID})
+    ).status_code == 201
+    response = await async_client.post(
+        _connections_url(second), json={"luscii_patient_id": LUSCII_ID}
+    )
+    assert response.status_code == 409
+    assert response.json()["code"] == "conflict.luscii.already_linked"
+
+
 # ---- aggregation -------------------------------------------------------------
 
 
