@@ -154,7 +154,7 @@ reshape his audit core). Reference: `gh pr diff 49 --repo reaktor/zas-poc`.
 - [x] 10.7 Migrations: kept his chain + our columns migration; converged 2 heads via merge migration `20260617_1436_merge_fhir_audit_columns_and_pr49_audit.py` (single head `bda68b3a235c`). NOTE: his `add_published_audit_action` migration left in place — adds a now-vestigial `published` DB enum value (harmless, like legacy `login`); cleanup optional
 - [x] 10.8 Kept our deletions of `task_read_state_repository.py` / `appointment_source.py`
 - [ ] 10.9 (FOLLOW-UP) Reconcile his openspec changes (`pathway-audit`, `audit-log-view`) with this change — both now present in tree; fold overlap, avoid duplicate `audit-trail-base` deltas
-- [~] 10.10 Backend `openapi.json` regenerated (AuditAction enum correct, new fields present). Frontend `pnpm run typegen` STILL NEEDED — blocked: needs `pnpm install` (node_modules absent in worktree) + backend on :18000; `schema.d.ts` still lists stale `published` (harmless unused union member). `alembic upgrade` on a clean DB not yet validated (ordering of his task_read_state add vs our drop)
+- [x] 10.10 Backend `openapi.json` regenerated (AuditAction = created/read/updated/deleted/execute/login). Frontend types regenerated (`openapi-typescript` against the file; `pnpm install` done in worktree), `schemas.ts AUDIT_ACTIONS` aligned to CRUDE, his `AuditListPage` test fixtures updated with new fields. Orchestrator `tsc` clean (only pre-existing `baseUrl` deprecation). REMAINING: `alembic upgrade` on a clean DB not yet validated (ordering of his task_read_state add vs our drop) — needs DB
 
 ## 11. AGENTS audit-usage rules (FINAL task — write last, once the system is settled)
 
