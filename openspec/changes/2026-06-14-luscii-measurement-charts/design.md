@@ -138,9 +138,88 @@ When an instrument has multiple numeric items (BP sys + dia), they render as ONE
 
 **Trade-off:** Instruments with items at wildly disparate scales (hypothetical: BMI + Watt in one instrument) would render badly. **Mitigation accepted**: such instruments don't exist in Luscii's catalogue today; if a future instrument does, the chart's auto-axis will compress one item into a flat line and the operator can split it manually.
 
-### D-PROGRAM — Sequential programmes, optional `program_id` per point
+### D-MEASUREMENT-REGISTRY — Per-measurement-type chart specs, hybrid-keyed
 
-Luscii's data model treats programmes as sequential — a patient is in one active programme at a time. Historical programme membership is implicit in the time-stamped measurements (a measurement created while the patient was on Programme A "belongs" to Programme A).
+Chart KIND is chosen **per measurement type** (the specific clinical concept),
+not generically per archetype. A blood pressure has a best-practice rendering
+that a wellbeing score does not. A curated registry maps a measurement to its
+chart spec; the archetype dispatch (D-CHART) is the **fallback** for anything
+not in the registry.
+
+**Three-level resolution (first match wins):**
+
+1. **Instrument-level composite** — group sibling items into one chart.
+   Keyed by instrument FHIR coding / `instrumentType`. (BP sys+dia → one
+   shared-axis chart, per D-MULTI-SERIES.)
+2. **Item-level spec** — the measurement's curated chart. Keyed **hybrid:
+   FHIR `coding` (LOINC) first, Luscii `item_id` fallback** for items Luscii
+   has not coded.
+3. **Archetype default** — line/bar/chip-stream/log per D-CHART, when no
+   registry entry matches.
+
+**Registry entry shape:**
+```
+{ match: { loinc?: string[]; lusciiItemId?: string[] },
+  chartKind, unit, axis?: { min, max, step, decimals }, composite?, labelKey }
+```
+
+**Seed scope = vitals + scores** (everything else → archetype fallback):
+
+| Measurement | LOINC (or id fallback) | Chart | Axis / unit |
+|---|---|---|---|
+| Blood pressure | 85354-9 (8480-6 sys / 8462-4 dia) | dual line, shared axis (composite) | mmHg |
+| Heart rate / pulse | 8867-4 | line | bpm |
+| Weight | 29463-7 | line | kg, 1 dec |
+| Body temperature | 8310-5 | line | °C, 1 dec |
+| SpO₂ | 59408-5 / 2708-6 | line | %, axis 85–100 |
+| Respiratory rate | 9279-1 | line | /min |
+| Pain (NRS) | 72514-3 | line | score, axis 0–10 |
+| NYHA class | id fallback (no clean LOINC) | dot / stepped | ordinal I–IV |
+| Wellbeing score | id fallback (questionnaire) | ordinal line | score |
+
+**Dependency:** the LOINC key requires the **structural catalogue** (`coding`
++ item `type`), which is NOT synced today (only the localisation strings are).
+This change must extend `sync_luscii_catalogue.py` to `/v1/instruments` +
+`/v1/instrument-items` (+ item-sets, responses) so `coding`/`type` are
+available. Until then the registry runs on the `lusciiItemId` fallback +
+archetype default. The authoritative `itemType` also replaces the
+`classify_archetype` heuristic (D-CLASSIFIER) for coded items.
+
+**Why hybrid, not LOINC-only:** Luscii does not code every item; id fallback
+keeps known-but-uncoded items (NYHA, org questionnaires) curatable. **Why not
+id-only:** LOINC is portable across orgs and survives Luscii id reissue.
+
+**MDR:** registry entries set chart kind, unit, and axis bounds (display
+scaffolding) only — **never** reference ranges, thresholds, colour-by-value,
+or any clinical interpretation. Axis min/max is the instrument's possible
+range, not a normal range. The display-only invariant (D-NO-DERIVED) holds.
+
+### D-CAREPATH-GROUPS — Outer sectioning by carepath (depends on patient-luscii-connection)
+
+With `patient-luscii-connection`, a patient holds many Luscii connections
+(one per Luscii patient/program), each attributable to a carepath. The panel
+gains an **outer section layer above the instrument cards**:
+
+```
+carepath group  (Huidig zorgpad / Historie / Niet gekoppeld)   ← outer
+  └─ instrument card  (per instrument_id)
+       └─ chart per series  (registry → archetype fallback)
+```
+
+Grouping is **layout only** — it sections the same instrument cards; it never
+changes a chart's kind. Bucketing (current/history/unassigned) is the FE
+attribution from `patient-luscii-connection` D5. Labels: `luscii.groups.*`
+(already in `nl/patient-profile.json`). This layer is gated on the connection
+change landing; until then the panel renders a single flat instrument list.
+
+### D-PROGRAM — Concurrent programmes via connections, optional `program_id` per point
+
+Per Luscii *patient* programmes are sequential — one active programme at a
+time. But one of OUR patients can hold several Luscii patients at once
+(`patient-luscii-connection`), so across our patient multiple programmes run
+**concurrently**, one per connection. A measurement attributes to a programme
+via its connection (`measurement.patient_id`); historical membership within a
+single connection stays implicit in the time-stamped measurements.
 
 `LusciiPatientData.program` stays singular (the current programme). Each `Point` gains an optional `program_id` so the FE can:
 
@@ -425,7 +504,7 @@ None. The change adds; it does not retire any current component.
 
 ## Resolved questions
 
-- **Programme concurrency:** sequential only (confirmed against Luscii data model). Wire stays singular `program`; per-point `program_id` is optional.
+- **Programme concurrency:** sequential PER Luscii patient, but concurrent across our patient via multiple connections (`patient-luscii-connection`). Per-point `program_id` stays optional provenance; carepath grouping handled by D-CAREPATH-GROUPS.
 - **Window URL persistence:** no, panel-local state in v1 (D-WINDOW-NOT-IN-URL).
 - **Chart library:** shadcn/ui Chart over Recharts (D-RECHARTS). Closed set widened in this change.
 - **Categorical rendering:** chip-stream timeline (matches sparse, free-form questionnaire data; distribution charts collapse the time dimension we explicitly want).
