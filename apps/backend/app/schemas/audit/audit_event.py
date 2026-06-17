@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from app.core.enums.audit import ActorType, AuditAction, AuditResult
+from app.core.enums.audit import ActorType, AuditAction, AuditResult, PurposeOfUse
 from app.services.audit.context import FieldChange
 
 
@@ -21,8 +21,11 @@ class AuditEventRead(BaseModel):
     tenant_id: UUID | None
     action: AuditAction
     result: AuditResult
+    event_code: str | None
     resource_type: str | None
     resource_id: UUID | None
     request_id: UUID | None
+    patient_id: UUID | None
+    purpose_of_use: PurposeOfUse | None
     changes: dict[str, FieldChange] | None
     context: dict[str, Any] | None

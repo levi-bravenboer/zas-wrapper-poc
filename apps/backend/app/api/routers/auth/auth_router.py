@@ -72,7 +72,8 @@ async def _emit_login_audit(
     try:
         await emit_committed(
             request.app.state.session_factory,
-            action=AuditAction.LOGIN,
+            action=AuditAction.EXECUTE,
+            event_code="auth.login",
             result=result,
             actor=actor,
             context=_audit_context(request, reason=reason),
