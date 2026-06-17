@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROTOTYPE — pathway-visuals v5 (adaptive summary)</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-background: oklch(1 0 0);
+      --color-surface-1: oklch(0.985 0.003 175);
+      --color-surface-2: oklch(0.97 0.01 175);
+      --color-foreground: oklch(0.21 0.04 265);
+      --color-foreground-muted: oklch(0.5 0.02 265);
+      --color-card: var(--color-background);
+      --color-primary: oklch(0.46 0.07 175);
+      --color-primary-soft: oklch(0.93 0.04 175);
+      --color-border: oklch(0.91 0.005 265);
+      --color-border-strong: oklch(0.82 0.01 265);
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+      --shadow-lg: 0 12px 32px oklch(0.21 0.04 265 / 0.10);
+      --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+    }
+  </style>
+  <style>
+    :root {
+      --ph-soft-1:#cfede8; --ph-soft-2:#ede9fe; --ph-soft-3:#dbeafe; --ph-soft-4:#fef3c7;
+      --ph-ink-1:#08453c; --ph-ink-2:#5b21b6; --ph-ink-3:#1d4ed8; --ph-ink-4:#92400e;
+      --lane-patient:#266b5e; --lane-caregiver:#2563eb; --lane-system:#7c3aed; --lane-external:#b45309;
+      --red-bg:#fde2dc; --red-ink:#b42318;
+    }
+    body { font-family: var(--font-sans); background:#f4f6f5; color: var(--color-foreground); }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!--
+    PROTOTYPE — patient Zorgpad SUMMARY BANNER v5 (adaptive / shape-agnostic)
+    Pathways are freely built and wildly different (3..30+ blocks, branches, parallel
+    fans, nested subpaths). So the banner SUMMARISES instead of enumerating:
+      - derived purely from buckets/counts + phases + the ACTIVE executions
+      - focus on NOW (1..many) + NEXT, never a per-block stepper that scrolls or lies about branches
+      - a fixed-width phase-progress rail gives whole-pathway sense regardless of block count
+      - "Volledig zorgpad" links to the full graph (the Zorgpad tab)
+    All values map to existing runtime fields — no datalayer change.
+    Two demo datasets (toggle top-right): a long branching oncology pathway, and a tiny 3-step one.
+    Zero fetches. DOM via createElement.
+  -->
+  <div class="mx-auto max-w-6xl px-8 py-6">
+
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">Claes, Jonas</h1>
+        <div class="mt-1 flex items-center gap-2 text-sm text-[--color-foreground-muted]">
+          <span class="rounded-md bg-[--color-surface-2] px-2 py-0.5 font-mono text-xs">INSZ: 02091852539</span>
+          <span>Geboren 18-09-2002</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] text-[--color-foreground-muted]">demo-pathway:</span>
+        <button data-ds="bladder" class="ds-btn rounded-md border border-[--color-border] bg-[--color-card] px-2.5 py-1 text-xs font-medium shadow-[--shadow-sm]">Blaaskanker (lang)</button>
+        <button data-ds="rehab" class="ds-btn rounded-md border border-[--color-border] bg-[--color-card] px-2.5 py-1 text-xs font-medium shadow-[--shadow-sm]">Rugrevalidatie (kort)</button>
+      </div>
+    </div>
+
+    <div class="mt-5 mb-2 flex items-center justify-between">
+      <h2 class="text-lg font-semibold tracking-tight">Zorgpad</h2>
+      <button class="rounded-md border border-[--color-border] bg-[--color-card] px-3 py-1.5 text-xs font-medium shadow-[--shadow-sm] hover:border-[--color-border-strong]">Nieuw zorgpad</button>
+    </div>
+
+    <!-- ===== ADAPTIVE SUMMARY BANNER ===== -->
+    <section id="banner" class="rounded-xl border border-[--color-border] bg-[--color-card] px-5 py-4 shadow-[--shadow-sm]"></section>
+
+    <div class="mt-4 flex gap-5 border-b border-[--color-border] px-1 text-sm">
+      <span class="border-b-2 border-[--color-primary] pb-2 font-medium text-[--color-foreground]">Overzicht</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Zorgpad</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Metingen</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Afspraken</span>
+    </div>
+
+    <p class="mt-4 text-center text-[11px] text-[--color-foreground-muted]">PROTOTYPE · pathway-visuals v5 (adaptive summary) · mock data · wissel pathway rechtsboven</p>
+  </div>
+
+  <div id="tip" class="pointer-events-none fixed z-50 hidden w-72 rounded-lg border border-[--color-border] bg-[--color-card] p-3 shadow-[--shadow-lg]"></div>
+
+  <script>
+    const LANE = { patient:'--lane-patient', caregiver:'--lane-caregiver', system:'--lane-system', external:'--lane-external' };
+
+    // ---- two very different mock enrollments (shape-agnostic input) ----
+    // Each step = a runtime execution: phase, lane, icon, name, bucket(finished|active|upcoming),
+    // role, does, completes, result?, due?/overdueDays?, date?
+    const DATASETS = {
+      bladder: {
+        name:'Blaaskanker (urologie)', start:'17-06-2026', state:'active',
+        anchors:[{label:'Operatie', date:'25 jun 2026'}],
+        // phases in order with per-phase done/total (derived; here precomputed for the demo)
+        phases:[
+          {name:'Onboarding', done:2, total:2},
+          {name:'Scans', done:2, total:2},
+          {name:'Besluit tot biopsie', done:1, total:3},
+          {name:'Pre-operatief', done:0, total:4},
+          {name:'Operatiedag', done:0, total:1},
+          {name:'Herstel & uitslag', done:0, total:4},
+          {name:'Diagnose & keuze', done:0, total:2},
+        ],
+        active:[
+          { lane:'caregiver', icon:'users', name:'MDO (diagnostisch)', kind:'MDO', phase:'Besluit tot biopsie',
+            role:'Uroloog (lead)', team:'+ radiologie · pathologie · oncologie', overdueDays:2,
+            does:'Multidisciplinair overleg; lead legt uitkomst vast (opereren / niets doen).', completes:'Lead besluit' },
+        ],
+        next:[
+          { lane:'caregiver', icon:'calendar', name:'Uitslag bespreken', kind:'Afspraak', phase:'Besluit tot biopsie',
+            role:'Uroloog', does:'Consult: MDO-uitslag met patiënt bespreken.', completes:'Patiënt aanwezig', ready:'Wacht op MDO' },
+        ],
+        lastDone:{ lane:'caregiver', icon:'list-checks', name:'Scan beoordelen', kind:'Taak', phase:'Scans',
+            role:'Uroloog', does:'Uroloog beoordeelt de scan.', completes:'Beoordeeld', result:'Afgerond · Dr. de Vries · 17 jun' },
+      },
+      rehab: {
+        name:'Rugrevalidatie', start:'02-06-2026', state:'active',
+        anchors:[],
+        phases:[ {name:'Intake', done:1, total:1}, {name:'Behandeling', done:1, total:3}, {name:'Evaluatie', done:0, total:1} ],
+        active:[
+          { lane:'caregiver', icon:'activity', name:'Oefenprogramma week 2', kind:'Taak', phase:'Behandeling',
+            role:'Fysiotherapeut', does:'Begeleide oefensessies; voortgang vastleggen.', completes:'Sessies afgerond', ready:'Loopt' },
+          { lane:'patient', icon:'clipboard-list', name:'Wekelijkse vragenlijst', kind:'Vragenlijst', phase:'Behandeling',
+            role:'Patiënt', does:'Patiënt vult pijn/mobiliteit-vragenlijst in (Luscii).', completes:'Ingevuld', ready:'Open' },
+        ],
+        next:[
+          { lane:'caregiver', icon:'calendar', name:'Evaluatieconsult', kind:'Afspraak', phase:'Evaluatie',
+            role:'Revalidatiearts', does:'Eindevaluatie en vervolgbesluit.', completes:'Patiënt aanwezig', ready:'Gepland 30 jun' },
+        ],
+        lastDone:{ lane:'caregiver', icon:'flag', name:'Intakegesprek', kind:'Afspraak', phase:'Intake',
+            role:'Revalidatiearts', does:'Intake en behandelplan opgesteld.', completes:'Afgerond', result:'Afgerond · 02 jun' },
+      },
+    };
+
+    function h(tag, props, ...kids) {
+      const node = document.createElement(tag);
+      if (props) for (const [k, v] of Object.entries(props)) {
+        if (v == null) continue;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = v;
+        else node.setAttribute(k, v);
+      }
+      for (const kid of kids) if (kid != null) node.append(kid);
+      return node;
+    }
+    const icon = (name, cls) => h('i', { 'data-lucide': name, class: cls || 'size-4' });
+    const PH = (i) => ({ soft:`var(--ph-soft-${(i%4)+1})`, ink:`var(--ph-ink-${(i%4)+1})` });
+
+    // ---- hover popover ----
+    const tip = document.getElementById('tip');
+    function buildTip(step, stateLabel) {
+      tip.replaceChildren();
+      const laneVar = `var(${LANE[step.lane]})`;
+      tip.append(
+        h('div', { class:'flex items-center gap-2' },
+          h('span', { class:'grid size-7 shrink-0 place-items-center rounded-sm', style:`background:color-mix(in srgb, ${laneVar} 14%, var(--color-card)); color:${laneVar}` }, icon(step.icon)),
+          h('div', { class:'min-w-0' },
+            h('p', { class:'truncate text-[13px] font-semibold tracking-tight', text: step.name }),
+            h('p', { class:'truncate text-[11px] font-medium text-[--color-foreground-muted]', text: `${step.kind} · ${step.phase}` }),
+          ),
+          h('span', { class:'ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold', style:'background:var(--color-surface-2); color:var(--color-foreground-muted)', text: stateLabel }),
+        ),
+      );
+      const rows = h('div', { class:'mt-2 space-y-1.5 text-[12px] leading-snug' });
+      const row = (l, v, s) => h('div', {}, h('span',{class:'mr-1 font-medium text-[--color-foreground-muted]', text:l}), h('span',{class:'text-[--color-foreground]', style:s||null, text:v}));
+      rows.append(row('Wie:', step.team ? `${step.role} ${step.team}` : step.role));
+      rows.append(row('Wat gebeurt er:', step.does));
+      rows.append(row('Klaar wanneer:', step.completes));
+      if (step.overdueDays) rows.append(row('Let op:', `${step.overdueDays} dagen te laat`, 'color:var(--red-ink)'));
+      if (step.result) rows.append(row('Resultaat:', step.result, `color:${laneVar}`));
+      else if (step.ready) rows.append(row('Status:', step.ready, `color:${laneVar}`));
+      tip.append(rows);
+    }
+    function showTip(step, stateLabel, anchor) {
+      buildTip(step, stateLabel);
+      tip.classList.remove('hidden');
+      const r = anchor.getBoundingClientRect(), tr = tip.getBoundingClientRect();
+      let left = Math.max(8, Math.min(r.left + r.width/2 - tr.width/2, window.innerWidth - tr.width - 8));
+      let top = r.top - tr.height - 10; if (top < 8) top = r.bottom + 10;
+      tip.style.left = left+'px'; tip.style.top = top+'px';
+    }
+    const hideTip = () => tip.classList.add('hidden');
+
+    // ---- a focus card (NOW / NEXT / last done) ----
+    function focusCard(step, opts) {
+      const laneVar = `var(${LANE[step.lane]})`;
+      const overdue = opts.overdue && step.overdueDays > 0;
+      const tile = h('span', { class:'my-auto grid size-8 shrink-0 place-items-center rounded-sm', style:`background:color-mix(in srgb, ${laneVar} 14%, var(--color-card)); color:${laneVar}` }, icon(step.icon));
+      const meta = h('p', { class:'truncate text-[11px] font-medium text-[--color-foreground-muted]', text: step.team ? `${step.role} ${step.team}` : step.role });
+      const titleRow = h('div', { class:'flex items-center gap-1.5' },
+        h('p', { class:'truncate text-[13px] font-semibold tracking-tight', text: step.name }),
+      );
+      const right = h('span', { class:'ml-auto shrink-0 self-start rounded-full px-2 py-0.5 text-[10px] font-semibold',
+        style: overdue ? 'background:var(--red-bg); color:var(--red-ink)' : (opts.tone==='now' ? `background:${laneVar}; color:#fff` : 'background:var(--color-surface-2); color:var(--color-foreground-muted)'),
+        text: overdue ? `${step.overdueDays}d te laat` : opts.badge });
+      const card = h('div', { class:'group flex min-w-0 flex-1 cursor-default items-stretch gap-2 rounded-md border bg-[--color-card] p-2.5',
+        style: opts.tone==='now' ? `border-color:${overdue?'var(--red-ink)':laneVar}; box-shadow:0 0 0 3px color-mix(in srgb, ${overdue?'var(--red-ink)':laneVar} 12%, transparent)` : 'border-color:var(--color-border)', tabindex:'0' },
+        h('span', { class:'w-1 shrink-0 rounded-full', style:`background:${laneVar}` }),
+        tile,
+        h('div', { class:'min-w-0 flex-1' }, titleRow, meta),
+        right,
+      );
+      const enter = () => showTip(step, opts.stateLabel, card);
+      card.addEventListener('mouseenter', enter); card.addEventListener('focus', enter);
+      card.addEventListener('mouseleave', hideTip); card.addEventListener('blur', hideTip);
+      return card;
+    }
+
+    function column(label, cards) {
+      return h('div', { class:'min-w-0 flex-1' },
+        h('p', { class:'mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[--color-foreground-muted]', text: label }),
+        h('div', { class:'flex flex-col gap-2' }, ...cards),
+      );
+    }
+
+    function phaseRail(phases, totalDone, totalAll) {
+      const wrap = h('div', { class:'mt-4' });
+      const segs = h('div', { class:'flex items-stretch gap-1' });
+      phases.forEach((p, i) => {
+        const t = PH(i);
+        const ratio = p.total ? p.done / p.total : 0;
+        const done = p.done === p.total && p.total > 0;
+        const seg = h('div', { class:'group relative flex-1 cursor-default', tabindex:'0', title:`${p.name}: ${p.done}/${p.total}` },
+          h('div', { class:'h-1.5 overflow-hidden rounded-full', style:`background:${t.soft}` },
+            h('div', { class:'h-full rounded-full', style:`width:${Math.round(ratio*100)}%; background:${t.ink}` })),
+          h('p', { class:'mt-1 truncate text-[10px] font-medium ' , style: done||ratio>0 ? `color:${t.ink}` : 'color:var(--color-foreground-muted)', text: p.name }),
+        );
+        segs.append(seg);
+      });
+      wrap.append(segs);
+      return wrap;
+    }
+
+    function renderBanner(ds) {
+      const banner = document.getElementById('banner');
+      banner.replaceChildren();
+      hideTip();
+      const totalDone = ds.phases.reduce((a,p)=>a+p.done,0);
+      const totalAll = ds.phases.reduce((a,p)=>a+p.total,0);
+      const currentPhase = ds.phases.find(p => p.done < p.total) || ds.phases[ds.phases.length-1];
+
+      // header
+      const header = h('div', { class:'flex flex-wrap items-center gap-x-2 gap-y-1' },
+        h('span', { class:'rounded-full bg-[--color-primary-soft] px-2.5 py-0.5 text-xs font-medium text-[--color-primary]', text: ds.state==='paused'?'Gepauzeerd':'Actief' }),
+        h('span', { class:'text-sm font-medium', text: ds.name }),
+        h('span', { class:'text-sm text-[--color-foreground-muted]', text:`· start ${ds.start}` }),
+      );
+      const right = h('div', { class:'ml-auto flex items-center gap-2' });
+      ds.anchors.forEach(a => right.append(h('span', { class:'inline-flex items-center gap-1 rounded-full border border-[--color-border] px-2.5 py-0.5 text-xs font-medium' }, icon('calendar-clock','size-3.5 text-[--color-primary]'), h('span',{text:`${a.label} ${a.date}`}))));
+      right.append(h('span', { class:'text-sm font-semibold', text:`${totalDone}/${totalAll} afgerond` }));
+      header.append(right);
+      banner.append(header);
+
+      // attention strip
+      const overdue = ds.active.filter(s => s.overdueDays > 0);
+      if (ds.state==='paused' || overdue.length) {
+        banner.append(h('div', { class:'mt-2 flex items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium', style:'background:var(--red-bg); color:var(--red-ink)' },
+          icon('alert-triangle','size-4'),
+          h('span', { text: ds.state==='paused' ? 'Zorgpad gepauzeerd' : `${overdue.length} stap te laat — ${overdue.map(s=>s.name).join(', ')}` }),
+        ));
+      }
+
+      // focus columns: NU (1..many) + Daarna + (compact) laatst afgerond
+      const cols = h('div', { class:'mt-3 grid gap-3 md:grid-cols-3' });
+      cols.append(column(ds.active.length>1?'Nu actief':'Nu', ds.active.map(s => focusCard(s, { tone:'now', overdue:true, badge:'NU', stateLabel:'Nu actief' }))));
+      cols.append(column('Daarna', ds.next.map(s => focusCard(s, { tone:'next', badge:'volgende', stateLabel:'Gepland' }))));
+      cols.append(column('Laatst afgerond', [ focusCard(ds.lastDone, { tone:'done', badge:'afgerond', stateLabel:'Afgerond' }) ]));
+      banner.append(cols);
+
+      // phase rail + link
+      banner.append(phaseRail(ds.phases, totalDone, totalAll));
+      banner.append(h('div', { class:'mt-2 flex items-center justify-between' },
+        h('p', { class:'text-[11px] text-[--color-foreground-muted]', text:`Fase ${currentPhase.name} · ${ds.phases.length} fases` }),
+        h('button', { class:'inline-flex items-center gap-1 text-[12px] font-medium text-[--color-primary]' }, h('span',{text:'Volledig zorgpad'}), icon('arrow-right','size-3.5')),
+      ));
+
+      lucide.createIcons();
+    }
+
+    let current = 'bladder';
+    function setActive() {
+      document.querySelectorAll('.ds-btn').forEach(b => {
+        const on = b.dataset.ds === current;
+        b.style.borderColor = on ? 'var(--color-primary)' : 'var(--color-border)';
+        b.style.color = on ? 'var(--color-primary)' : '';
+        b.style.background = on ? 'var(--color-primary-soft)' : 'var(--color-card)';
+      });
+    }
+    document.querySelectorAll('.ds-btn').forEach(b => b.addEventListener('click', () => { current = b.dataset.ds; setActive(); renderBanner(DATASETS[current]); }));
+    setActive();
+    renderBanner(DATASETS[current]);
+  </script>
+</body>
+</html>
