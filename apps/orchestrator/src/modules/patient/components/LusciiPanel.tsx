@@ -8,8 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 
-import { useLusciiData, useUnlinkLuscii } from '../hooks'
-import type { LusciiMeasurement, LusciiPatientData, LusciiPlannedAction } from '../types'
+import { usePatientCarepaths, useLusciiData, useUnlinkLuscii } from '../hooks'
+import { bucketConnections, type BucketedConnection } from '../lusciiCarepathMatch'
+import type {
+  LusciiConnectionGroup,
+  LusciiMeasurement,
+  LusciiPatientData,
+  LusciiPlannedAction,
+} from '../types'
 
 // Display-only invariant (luscii-patient-data spec): values render exactly as
 // Luscii reports them — no thresholds, no colour-coding by value, no derived
@@ -70,7 +76,123 @@ export function LusciiPanel({ patientId }: LusciiPanelProps): ReactElement {
     )
   }
 
-  return <LusciiDataView patientId={patientId} data={data} />
+  const connections = data.connections ?? []
+  // Pre-multi-connection payloads (or an empty list) fall back to the legacy
+  // single view; otherwise render the carepath-bucketed connection groups.
+  if (connections.length === 0) {
+    return <LusciiDataView patientId={patientId} data={data} />
+  }
+  return <LusciiConnectionsView patientId={patientId} data={data} />
+}
+
+function LusciiConnectionsView({
+  patientId,
+  data,
+}: {
+  patientId: string
+  data: LusciiPatientData
+}): ReactElement {
+  const { t } = useTranslation('patient-profile')
+  const carepaths = usePatientCarepaths(patientId)
+  const buckets = bucketConnections(data.connections ?? [], carepaths)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ConnectionBucket
+        title={t('luscii.groups.currentTitle')}
+        items={buckets.current}
+        defaultOpen
+      />
+      <ConnectionBucket
+        title={t('luscii.groups.unassignedTitle')}
+        items={buckets.unassigned}
+        hint={t('luscii.groups.unassignedHint')}
+      />
+      <ConnectionBucket title={t('luscii.groups.historyTitle')} items={buckets.history} />
+    </div>
+  )
+}
+
+function ConnectionBucket({
+  title,
+  items,
+  defaultOpen = false,
+  hint,
+}: {
+  title: string
+  items: BucketedConnection<LusciiConnectionGroup>[]
+  defaultOpen?: boolean
+  hint?: string
+}): ReactElement | null {
+  if (items.length === 0) return null
+  return (
+    <details open={defaultOpen} className="flex flex-col gap-2">
+      <summary className="cursor-pointer text-sm font-semibold text-foreground">
+        {title} ({items.length})
+      </summary>
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      <div className="mt-2 flex flex-col gap-3">
+        {items.map(({ connection, carepath }) => (
+          <ConnectionGroupCard
+            key={connection.connection_id}
+            group={connection}
+            carepathName={carepath?.pathwayName ?? null}
+          />
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function ConnectionGroupCard({
+  group,
+  carepathName,
+}: {
+  group: LusciiConnectionGroup
+  carepathName: string | null
+}): ReactElement {
+  const { t } = useTranslation('patient-profile')
+  const plannedActions = group.planned_actions ?? []
+  const measurements = group.measurements ?? []
+
+  return (
+    <Card>
+      <CardHeader className="flex-row flex-wrap items-center gap-2 space-y-0">
+        {group.program?.name ? (
+          <Badge variant="default">{group.program.name}</Badge>
+        ) : (
+          <Badge variant="soft">{t('luscii.noProgram')}</Badge>
+        )}
+        {carepathName ? <Badge variant="soft">{carepathName}</Badge> : null}
+        {group.protocol?.name ? (
+          <span className="text-xs text-muted-foreground">{group.protocol.name}</span>
+        ) : null}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {plannedActions.length > 0 ? (
+          <ul className="flex flex-col gap-2">
+            {plannedActions.map((action) => (
+              <PlannedActionRow key={action.id} action={action} />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('luscii.plannedActions.empty')}</p>
+        )}
+        {measurements.length > 0 ? (
+          <ul className="flex flex-col gap-2">
+            {measurements.map((measurement, index) => (
+              <li
+                key={measurement.measurement_id ?? `m-${index}`}
+                className="rounded-md border border-border px-3 py-2"
+              >
+                <MeasurementBlock measurement={measurement} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
 }
 
 function LusciiCardMessage({ title, message }: { title: string; message: string }): ReactElement {

@@ -1,4 +1,13 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query'
+
+import { getPathwayVersion } from '@/modules/pathway/api'
+import { usePatientEnrollments } from '@/modules/patient-pathway/hooks'
 
 import {
   addLusciiConnection,
@@ -13,6 +22,7 @@ import {
   updatePatient,
 } from './api'
 import { patientKeys } from './keys'
+import type { EnrollmentCarepath } from './lusciiCarepathMatch'
 import type {
   CareTeamRow,
   LusciiConnectionSummary,
@@ -155,5 +165,35 @@ export function useUnlinkLuscii() {
   return useMutation<void, Error, string>({
     mutationFn: (patientId) => unlinkLuscii(patientId),
     onSuccess: (_void, patientId) => invalidateLusciiCaches(qc, patientId),
+  })
+}
+
+// Resolves the patient's enrollments into `EnrollmentCarepath[]` for Luscii
+// connection → carepath attribution (presentation only — reads existing
+// enrollment + pathway-version APIs, never the pathway datalayer). One version
+// fetch per enrollment, cached.
+export function usePatientCarepaths(patientId: string | null): EnrollmentCarepath[] {
+  const enrollments = usePatientEnrollments(patientId)
+  const rows = enrollments.data ?? []
+  const versions = useQueries({
+    queries: rows.map((e) => ({
+      queryKey: ['pathway-version', e.pathway_id, e.pathway_version_id],
+      queryFn: () => getPathwayVersion(e.pathway_id, e.pathway_version_id),
+      staleTime: 5 * 60_000,
+    })),
+  })
+  return rows.map((enrollment, index) => {
+    const blocks = versions[index]?.data?.blocks ?? []
+    const programIds = blocks.flatMap((block) =>
+      block.kind === 'external_program' && block.provider === 'luscii' && block.program_id
+        ? [block.program_id]
+        : [],
+    )
+    return {
+      enrollmentId: enrollment.id,
+      pathwayName: versions[index]?.data?.label ?? null,
+      state: enrollment.state,
+      programIds,
+    }
   })
 }

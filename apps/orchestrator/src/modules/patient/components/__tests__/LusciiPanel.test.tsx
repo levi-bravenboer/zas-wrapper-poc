@@ -20,6 +20,7 @@ vi.mock('@/modules/patient/hooks', () => ({
   useLusciiData: useLusciiDataMock,
   useLinkLuscii: useLinkLusciiMock,
   useUnlinkLuscii: useUnlinkLusciiMock,
+  usePatientCarepaths: () => [],
 }))
 
 const LINKED_DATA: LusciiPatientData = {
@@ -201,5 +202,34 @@ describe('LusciiPanel', () => {
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Ontkoppelen' }))
     expect(unlinkMutate).toHaveBeenCalledWith('pat-1')
+  })
+
+  it('renders connection groups bucketed by carepath', () => {
+    mockIdleMutations()
+    useLusciiDataMock.mockReturnValue({
+      data: {
+        state: 'linked',
+        window_days: 30,
+        connections: [
+          {
+            connection_id: 'c-1',
+            luscii_patient_id: '7659dfb3-c089-4d12-95b7-46ff8ce1e7dd',
+            status: 'active',
+            program: { id: 'p-1', name: 'Hartfalen programma' },
+            protocol: null,
+            planned_actions: [],
+            measurements: [],
+            series: [],
+          },
+        ],
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+    renderPanel()
+    // No enrollments mocked → no program match → unassigned bucket.
+    expect(screen.getByText(/Niet aan zorgpad gekoppeld/)).toBeTruthy()
+    expect(screen.getByText('Hartfalen programma')).toBeTruthy()
   })
 })
