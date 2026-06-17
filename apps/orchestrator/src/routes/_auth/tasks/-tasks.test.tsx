@@ -33,8 +33,7 @@ vi.mock('@/modules/tasks/hooks', () => ({
 // Stub the shared collaboration panels: they pull in the real app router via
 // `useSession`, which conflicts with the test's memory router.
 vi.mock('@/modules/collaboration/components', () => ({
-  NotesPanel: () => null,
-  AttachmentsPanel: () => null,
+  ActivityFeed: () => null,
   CollaborationColumn: () => null,
 }))
 

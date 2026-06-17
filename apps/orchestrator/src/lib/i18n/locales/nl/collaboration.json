@@ -1,15 +1,16 @@
 {
   "notes": {
-    "title": "Notities",
-    "empty": "Nog geen notities.",
+    "title": "Activiteit",
+    "empty": "Nog geen activiteit.",
     "placeholder": "Voeg een notitie toe…",
-    "add": "Toevoegen",
+    "add": "Plaatsen",
+    "delete": "Verwijderen",
+    "directOnPatient": "Direct op patiënt",
     "hint": "⌘/Ctrl + Enter om te versturen"
   },
-  "attachments": {
-    "title": "Documenten",
-    "empty": "Nog geen documenten.",
-    "upload": "Document uploaden",
+  "files": {
+    "attach": "Bestand",
+    "uploading": "Uploaden…",
     "download": "Downloaden",
     "preview": "Bekijken",
     "noPreview": "Geen voorbeeld beschikbaar voor dit bestandstype.",

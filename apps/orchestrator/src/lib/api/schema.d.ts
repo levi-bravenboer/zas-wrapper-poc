@@ -433,33 +433,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/appointments/{appointment_id}/attachments": {
+    "/appointments/{appointment_id}/notes/{note_id}/url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Appointment Attachments */
-        get: operations["list_appointment_attachments_appointments__appointment_id__attachments_get"];
-        put?: never;
-        /** Create Appointment Attachment */
-        post: operations["create_appointment_attachment_appointments__appointment_id__attachments_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/appointments/{appointment_id}/attachments/{attachment_id}/url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Appointment Attachment Url */
-        get: operations["appointment_attachment_url_appointments__appointment_id__attachments__attachment_id__url_get"];
+        /** Appointment Note Url */
+        get: operations["appointment_note_url_appointments__appointment_id__notes__note_id__url_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -468,7 +450,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/appointments/{appointment_id}/attachments/{attachment_id}": {
+    "/appointments/{appointment_id}/notes/{note_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -478,8 +460,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Appointment Attachment */
-        delete: operations["delete_appointment_attachment_appointments__appointment_id__attachments__attachment_id__delete"];
+        /** Delete Appointment Note */
+        delete: operations["delete_appointment_note_appointments__appointment_id__notes__note_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -503,33 +485,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tasks/{task_id}/attachments": {
+    "/tasks/{task_id}/notes/{note_id}/url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Task Attachments */
-        get: operations["list_task_attachments_tasks__task_id__attachments_get"];
-        put?: never;
-        /** Create Task Attachment */
-        post: operations["create_task_attachment_tasks__task_id__attachments_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tasks/{task_id}/attachments/{attachment_id}/url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Task Attachment Url */
-        get: operations["task_attachment_url_tasks__task_id__attachments__attachment_id__url_get"];
+        /** Task Note Url */
+        get: operations["task_note_url_tasks__task_id__notes__note_id__url_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -538,7 +502,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tasks/{task_id}/attachments/{attachment_id}": {
+    "/tasks/{task_id}/notes/{note_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -548,8 +512,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Task Attachment */
-        delete: operations["delete_task_attachment_tasks__task_id__attachments__attachment_id__delete"];
+        /** Delete Task Note */
+        delete: operations["delete_task_note_tasks__task_id__notes__note_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -573,33 +537,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/pathway-steps/{execution_id}/attachments": {
+    "/pathway-steps/{execution_id}/notes/{note_id}/url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Pathway Step Attachments */
-        get: operations["list_pathway_step_attachments_pathway_steps__execution_id__attachments_get"];
-        put?: never;
-        /** Create Pathway Step Attachment */
-        post: operations["create_pathway_step_attachment_pathway_steps__execution_id__attachments_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/pathway-steps/{execution_id}/attachments/{attachment_id}/url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Pathway Step Attachment Url */
-        get: operations["pathway_step_attachment_url_pathway_steps__execution_id__attachments__attachment_id__url_get"];
+        /** Pathway Step Note Url */
+        get: operations["pathway_step_note_url_pathway_steps__execution_id__notes__note_id__url_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -608,7 +554,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/pathway-steps/{execution_id}/attachments/{attachment_id}": {
+    "/pathway-steps/{execution_id}/notes/{note_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -618,8 +564,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Pathway Step Attachment */
-        delete: operations["delete_pathway_step_attachment_pathway_steps__execution_id__attachments__attachment_id__delete"];
+        /** Delete Pathway Step Note */
+        delete: operations["delete_pathway_step_note_pathway_steps__execution_id__notes__note_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -643,33 +589,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/patients/{patient_id}/attachments": {
+    "/patients/{patient_id}/notes/{note_id}/url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Patient Attachments */
-        get: operations["list_patient_attachments_patients__patient_id__attachments_get"];
-        put?: never;
-        /** Create Patient Attachment */
-        post: operations["create_patient_attachment_patients__patient_id__attachments_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/patients/{patient_id}/attachments/{attachment_id}/url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Patient Attachment Url */
-        get: operations["patient_attachment_url_patients__patient_id__attachments__attachment_id__url_get"];
+        /** Patient Note Url */
+        get: operations["patient_note_url_patients__patient_id__notes__note_id__url_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -678,7 +606,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/patients/{patient_id}/attachments/{attachment_id}": {
+    "/patients/{patient_id}/notes/{note_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -688,8 +616,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Patient Attachment */
-        delete: operations["delete_patient_attachment_patients__patient_id__attachments__attachment_id__delete"];
+        /** Delete Patient Note */
+        delete: operations["delete_patient_note_patients__patient_id__notes__note_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1890,60 +1818,6 @@ export interface components {
              * @enum {string}
              */
             kind: "at_enrollment_picked_date";
-        };
-        /** AttachmentCreate */
-        AttachmentCreate: {
-            /** Filename */
-            filename: string;
-            /** Content Type */
-            content_type: string;
-            /** Size */
-            size: number;
-        };
-        /** AttachmentDownload */
-        AttachmentDownload: {
-            /** Url */
-            url: string;
-        };
-        /** AttachmentRead */
-        AttachmentRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            owner_type: components["schemas"]["OwnerType"];
-            /**
-             * Owner Id
-             * Format: uuid
-             */
-            owner_id: string;
-            /** Patient Id */
-            patient_id: string | null;
-            /** Filename */
-            filename: string;
-            /** Content Type */
-            content_type: string;
-            /** Size */
-            size: number;
-            /**
-             * Uploaded By
-             * Format: uuid
-             */
-            uploaded_by: string;
-            /** Uploader Display Name */
-            uploader_display_name: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** AttachmentUploadResponse */
-        AttachmentUploadResponse: {
-            attachment: components["schemas"]["AttachmentRead"];
-            /** Upload Url */
-            upload_url: string;
         };
         /**
          * AuditAction
@@ -3674,7 +3548,22 @@ export interface components {
         /** NoteCreate */
         NoteCreate: {
             /** Body */
-            body: string;
+            body?: string | null;
+            file?: components["schemas"]["NoteFileCreate"] | null;
+        };
+        /** NoteDownload */
+        NoteDownload: {
+            /** Url */
+            url: string;
+        };
+        /** NoteFileCreate */
+        NoteFileCreate: {
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Size */
+            size: number;
         };
         /** NoteRead */
         NoteRead: {
@@ -3699,7 +3588,13 @@ export interface components {
             /** Author Display Name */
             author_display_name: string;
             /** Body */
-            body: string;
+            body: string | null;
+            /** Filename */
+            filename: string | null;
+            /** Content Type */
+            content_type: string | null;
+            /** Size */
+            size: number | null;
             /**
              * Created At
              * Format: date-time
@@ -3707,6 +3602,12 @@ export interface components {
             created_at: string;
             /** Owner Label */
             owner_label?: string | null;
+        };
+        /** NoteUploadResponse */
+        NoteUploadResponse: {
+            note: components["schemas"]["NoteRead"];
+            /** Upload Url */
+            upload_url?: string | null;
         };
         /** OrganisationCreate */
         OrganisationCreate: {
@@ -6668,7 +6569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteRead"];
+                    "application/json": components["schemas"]["NoteUploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6682,11 +6583,12 @@ export interface operations {
             };
         };
     };
-    list_appointment_attachments_appointments__appointment_id__attachments_get: {
+    appointment_note_url_appointments__appointment_id__notes__note_id__url_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                note_id: string;
                 appointment_id: string;
             };
             cookie?: never;
@@ -6699,7 +6601,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttachmentRead"][];
+                    "application/json": components["schemas"]["NoteDownload"];
                 };
             };
             /** @description Validation Error */
@@ -6713,79 +6615,12 @@ export interface operations {
             };
         };
     };
-    create_appointment_attachment_appointments__appointment_id__attachments_post: {
+    delete_appointment_note_appointments__appointment_id__notes__note_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                appointment_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttachmentCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    appointment_attachment_url_appointments__appointment_id__attachments__attachment_id__url_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
-                appointment_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentDownload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_appointment_attachment_appointments__appointment_id__attachments__attachment_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
+                note_id: string;
                 appointment_id: string;
             };
             cookie?: never;
@@ -6862,7 +6697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteRead"];
+                    "application/json": components["schemas"]["NoteUploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6876,11 +6711,12 @@ export interface operations {
             };
         };
     };
-    list_task_attachments_tasks__task_id__attachments_get: {
+    task_note_url_tasks__task_id__notes__note_id__url_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                note_id: string;
                 task_id: string;
             };
             cookie?: never;
@@ -6893,7 +6729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttachmentRead"][];
+                    "application/json": components["schemas"]["NoteDownload"];
                 };
             };
             /** @description Validation Error */
@@ -6907,79 +6743,12 @@ export interface operations {
             };
         };
     };
-    create_task_attachment_tasks__task_id__attachments_post: {
+    delete_task_note_tasks__task_id__notes__note_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttachmentCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    task_attachment_url_tasks__task_id__attachments__attachment_id__url_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
-                task_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentDownload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_task_attachment_tasks__task_id__attachments__attachment_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
+                note_id: string;
                 task_id: string;
             };
             cookie?: never;
@@ -7056,7 +6825,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteRead"];
+                    "application/json": components["schemas"]["NoteUploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -7070,11 +6839,12 @@ export interface operations {
             };
         };
     };
-    list_pathway_step_attachments_pathway_steps__execution_id__attachments_get: {
+    pathway_step_note_url_pathway_steps__execution_id__notes__note_id__url_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                note_id: string;
                 execution_id: string;
             };
             cookie?: never;
@@ -7087,7 +6857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttachmentRead"][];
+                    "application/json": components["schemas"]["NoteDownload"];
                 };
             };
             /** @description Validation Error */
@@ -7101,79 +6871,12 @@ export interface operations {
             };
         };
     };
-    create_pathway_step_attachment_pathway_steps__execution_id__attachments_post: {
+    delete_pathway_step_note_pathway_steps__execution_id__notes__note_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                execution_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttachmentCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    pathway_step_attachment_url_pathway_steps__execution_id__attachments__attachment_id__url_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
-                execution_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentDownload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_pathway_step_attachment_pathway_steps__execution_id__attachments__attachment_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
+                note_id: string;
                 execution_id: string;
             };
             cookie?: never;
@@ -7250,7 +6953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteRead"];
+                    "application/json": components["schemas"]["NoteUploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -7264,11 +6967,12 @@ export interface operations {
             };
         };
     };
-    list_patient_attachments_patients__patient_id__attachments_get: {
+    patient_note_url_patients__patient_id__notes__note_id__url_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                note_id: string;
                 patient_id: string;
             };
             cookie?: never;
@@ -7281,7 +6985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttachmentRead"][];
+                    "application/json": components["schemas"]["NoteDownload"];
                 };
             };
             /** @description Validation Error */
@@ -7295,79 +6999,12 @@ export interface operations {
             };
         };
     };
-    create_patient_attachment_patients__patient_id__attachments_post: {
+    delete_patient_note_patients__patient_id__notes__note_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                patient_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttachmentCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patient_attachment_url_patients__patient_id__attachments__attachment_id__url_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
-                patient_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttachmentDownload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_patient_attachment_patients__patient_id__attachments__attachment_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attachment_id: string;
+                note_id: string;
                 patient_id: string;
             };
             cookie?: never;

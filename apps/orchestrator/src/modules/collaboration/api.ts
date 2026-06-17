@@ -2,11 +2,13 @@ import { api } from '@/lib/api/client'
 import { apiError } from '@/lib/api/errors'
 import { unwrapApi } from '@/lib/api/unwrap'
 
-import type { Attachment, AttachmentUploadResponse, Note, OwnerType } from './types'
+import type { Note, NoteUploadResponse, OwnerType } from './types'
 
-// openapi-fetch needs literal path keys, so branch per owner. The three owners
-// share the same nested notes/attachments surface; only the path segment +
-// path-param name differ.
+// openapi-fetch needs literal path keys, so branch per owner. The four owners
+// share the same nested notes surface; only the path segment + path-param name
+// differ. A note carries text and/or a file — one surface covers both.
+
+export type NewNoteFile = { filename: string; content_type: string; size: number }
 
 export async function fetchNotes(ownerType: OwnerType, ownerId: string): Promise<Note[]> {
   switch (ownerType) {
@@ -37,13 +39,19 @@ export async function fetchNotes(ownerType: OwnerType, ownerId: string): Promise
   }
 }
 
-export async function addNote(ownerType: OwnerType, ownerId: string, body: string): Promise<Note> {
+type NoteBody = { body?: string | null; file?: NewNoteFile | null }
+
+export async function addNote(
+  ownerType: OwnerType,
+  ownerId: string,
+  payload: NoteBody,
+): Promise<NoteUploadResponse> {
   switch (ownerType) {
     case 'appointment':
       return unwrapApi(
         api.POST('/appointments/{appointment_id}/notes', {
           params: { path: { appointment_id: ownerId } },
-          body: { body },
+          body: payload,
         }),
         'Note add failed',
       )
@@ -51,7 +59,7 @@ export async function addNote(ownerType: OwnerType, ownerId: string, body: strin
       return unwrapApi(
         api.POST('/tasks/{task_id}/notes', {
           params: { path: { task_id: ownerId } },
-          body: { body },
+          body: payload,
         }),
         'Note add failed',
       )
@@ -59,7 +67,7 @@ export async function addNote(ownerType: OwnerType, ownerId: string, body: strin
       return unwrapApi(
         api.POST('/patients/{patient_id}/notes', {
           params: { path: { patient_id: ownerId } },
-          body: { body },
+          body: payload,
         }),
         'Note add failed',
       )
@@ -67,145 +75,68 @@ export async function addNote(ownerType: OwnerType, ownerId: string, body: strin
       return unwrapApi(
         api.POST('/pathway-steps/{execution_id}/notes', {
           params: { path: { execution_id: ownerId } },
-          body: { body },
+          body: payload,
         }),
         'Note add failed',
       )
   }
 }
 
-export async function fetchAttachments(
+export async function getNoteFileUrl(
   ownerType: OwnerType,
   ownerId: string,
-): Promise<Attachment[]> {
-  switch (ownerType) {
-    case 'appointment':
-      return unwrapApi(
-        api.GET('/appointments/{appointment_id}/attachments', {
-          params: { path: { appointment_id: ownerId } },
-        }),
-        'Attachments fetch failed',
-      )
-    case 'task':
-      return unwrapApi(
-        api.GET('/tasks/{task_id}/attachments', { params: { path: { task_id: ownerId } } }),
-        'Attachments fetch failed',
-      )
-    case 'patient':
-      return unwrapApi(
-        api.GET('/patients/{patient_id}/attachments', {
-          params: { path: { patient_id: ownerId } },
-        }),
-        'Attachments fetch failed',
-      )
-    case 'pathway_step':
-      return unwrapApi(
-        api.GET('/pathway-steps/{execution_id}/attachments', {
-          params: { path: { execution_id: ownerId } },
-        }),
-        'Attachments fetch failed',
-      )
-  }
-}
-
-type NewFile = { filename: string; content_type: string; size: number }
-
-export async function createAttachment(
-  ownerType: OwnerType,
-  ownerId: string,
-  file: NewFile,
-): Promise<AttachmentUploadResponse> {
-  switch (ownerType) {
-    case 'appointment':
-      return unwrapApi(
-        api.POST('/appointments/{appointment_id}/attachments', {
-          params: { path: { appointment_id: ownerId } },
-          body: file,
-        }),
-        'Attachment create failed',
-      )
-    case 'task':
-      return unwrapApi(
-        api.POST('/tasks/{task_id}/attachments', {
-          params: { path: { task_id: ownerId } },
-          body: file,
-        }),
-        'Attachment create failed',
-      )
-    case 'patient':
-      return unwrapApi(
-        api.POST('/patients/{patient_id}/attachments', {
-          params: { path: { patient_id: ownerId } },
-          body: file,
-        }),
-        'Attachment create failed',
-      )
-    case 'pathway_step':
-      return unwrapApi(
-        api.POST('/pathway-steps/{execution_id}/attachments', {
-          params: { path: { execution_id: ownerId } },
-          body: file,
-        }),
-        'Attachment create failed',
-      )
-  }
-}
-
-export async function getAttachmentUrl(
-  ownerType: OwnerType,
-  ownerId: string,
-  attachmentId: string,
+  noteId: string,
 ): Promise<string> {
   const r = await (() => {
     switch (ownerType) {
       case 'appointment':
-        return api.GET('/appointments/{appointment_id}/attachments/{attachment_id}/url', {
-          params: { path: { appointment_id: ownerId, attachment_id: attachmentId } },
+        return api.GET('/appointments/{appointment_id}/notes/{note_id}/url', {
+          params: { path: { appointment_id: ownerId, note_id: noteId } },
         })
       case 'task':
-        return api.GET('/tasks/{task_id}/attachments/{attachment_id}/url', {
-          params: { path: { task_id: ownerId, attachment_id: attachmentId } },
+        return api.GET('/tasks/{task_id}/notes/{note_id}/url', {
+          params: { path: { task_id: ownerId, note_id: noteId } },
         })
       case 'patient':
-        return api.GET('/patients/{patient_id}/attachments/{attachment_id}/url', {
-          params: { path: { patient_id: ownerId, attachment_id: attachmentId } },
+        return api.GET('/patients/{patient_id}/notes/{note_id}/url', {
+          params: { path: { patient_id: ownerId, note_id: noteId } },
         })
       case 'pathway_step':
-        return api.GET('/pathway-steps/{execution_id}/attachments/{attachment_id}/url', {
-          params: { path: { execution_id: ownerId, attachment_id: attachmentId } },
+        return api.GET('/pathway-steps/{execution_id}/notes/{note_id}/url', {
+          params: { path: { execution_id: ownerId, note_id: noteId } },
         })
     }
   })()
-  if (!r.response.ok || !r.data) throw apiError('Attachment url failed', r.response.status)
+  if (!r.response.ok || !r.data) throw apiError('Note file url failed', r.response.status)
   return r.data.url
 }
 
-export async function deleteAttachment(
+export async function deleteNote(
   ownerType: OwnerType,
   ownerId: string,
-  attachmentId: string,
+  noteId: string,
 ): Promise<void> {
   const r = await (() => {
     switch (ownerType) {
       case 'appointment':
-        return api.DELETE('/appointments/{appointment_id}/attachments/{attachment_id}', {
-          params: { path: { appointment_id: ownerId, attachment_id: attachmentId } },
+        return api.DELETE('/appointments/{appointment_id}/notes/{note_id}', {
+          params: { path: { appointment_id: ownerId, note_id: noteId } },
         })
       case 'task':
-        return api.DELETE('/tasks/{task_id}/attachments/{attachment_id}', {
-          params: { path: { task_id: ownerId, attachment_id: attachmentId } },
+        return api.DELETE('/tasks/{task_id}/notes/{note_id}', {
+          params: { path: { task_id: ownerId, note_id: noteId } },
         })
       case 'patient':
-        return api.DELETE('/patients/{patient_id}/attachments/{attachment_id}', {
-          params: { path: { patient_id: ownerId, attachment_id: attachmentId } },
+        return api.DELETE('/patients/{patient_id}/notes/{note_id}', {
+          params: { path: { patient_id: ownerId, note_id: noteId } },
         })
       case 'pathway_step':
-        return api.DELETE('/pathway-steps/{execution_id}/attachments/{attachment_id}', {
-          params: { path: { execution_id: ownerId, attachment_id: attachmentId } },
+        return api.DELETE('/pathway-steps/{execution_id}/notes/{note_id}', {
+          params: { path: { execution_id: ownerId, note_id: noteId } },
         })
     }
   })()
-  if (!r.response.ok) throw apiError('Attachment delete failed', r.response.status)
+  if (!r.response.ok) throw apiError('Note delete failed', r.response.status)
 }
 
 export async function uploadToPresignedUrl(url: string, file: File): Promise<void> {

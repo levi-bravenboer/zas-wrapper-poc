@@ -6,16 +6,9 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 
-import {
-  addNote,
-  createAttachment,
-  deleteAttachment,
-  fetchAttachments,
-  fetchNotes,
-  uploadToPresignedUrl,
-} from './api'
-import { attachmentsKey, notesKey } from './keys'
-import type { Attachment, Note, OwnerType } from './types'
+import { addNote, deleteNote, fetchNotes, uploadToPresignedUrl } from './api'
+import { notesKey } from './keys'
+import type { Note, OwnerType } from './types'
 
 export function useNotes(ownerType: OwnerType, ownerId: string): UseQueryResult<Note[], Error> {
   return useQuery({
@@ -27,49 +20,45 @@ export function useNotes(ownerType: OwnerType, ownerId: string): UseQueryResult<
 export function useAddNote(
   ownerType: OwnerType,
   ownerId: string,
-): UseMutationResult<Note, Error, string> {
+): UseMutationResult<void, Error, string> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: string) => addNote(ownerType, ownerId, body),
+    mutationFn: async (body: string) => {
+      await addNote(ownerType, ownerId, { body })
+    },
     onSuccess: () => void qc.invalidateQueries({ queryKey: notesKey(ownerType, ownerId) }),
   })
 }
 
-export function useAttachments(
-  ownerType: OwnerType,
-  ownerId: string,
-): UseQueryResult<Attachment[], Error> {
-  return useQuery({
-    queryKey: attachmentsKey(ownerType, ownerId),
-    queryFn: () => fetchAttachments(ownerType, ownerId),
-  })
-}
-
-export function useUploadAttachment(
+/** Upload a file as a note: create the file note (presigned PUT), then push the
+ *  bytes straight to storage. */
+export function useUploadFileNote(
   ownerType: OwnerType,
   ownerId: string,
 ): UseMutationResult<void, Error, File> {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (file: File) => {
-      const { upload_url } = await createAttachment(ownerType, ownerId, {
-        filename: file.name,
-        content_type: file.type || 'application/octet-stream',
-        size: file.size,
+      const { upload_url } = await addNote(ownerType, ownerId, {
+        file: {
+          filename: file.name,
+          content_type: file.type || 'application/octet-stream',
+          size: file.size,
+        },
       })
-      await uploadToPresignedUrl(upload_url, file)
+      if (upload_url) await uploadToPresignedUrl(upload_url, file)
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: attachmentsKey(ownerType, ownerId) }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: notesKey(ownerType, ownerId) }),
   })
 }
 
-export function useDeleteAttachment(
+export function useDeleteNote(
   ownerType: OwnerType,
   ownerId: string,
 ): UseMutationResult<void, Error, string> {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (attachmentId: string) => deleteAttachment(ownerType, ownerId, attachmentId),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: attachmentsKey(ownerType, ownerId) }),
+    mutationFn: (noteId: string) => deleteNote(ownerType, ownerId, noteId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: notesKey(ownerType, ownerId) }),
   })
 }
