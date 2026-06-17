@@ -22,6 +22,9 @@ export interface DataTableToolbarProps<T> {
   className?: string
   searchPlaceholder?: string
   inlineLimit?: number
+  /** Hide the free-text search box (for lists whose backend has no
+   * searchable_fields — a visible box would be a misleading no-op). */
+  hideSearch?: boolean
 }
 
 export function DataTableToolbar<T>({
@@ -34,6 +37,7 @@ export function DataTableToolbar<T>({
   className,
   searchPlaceholder,
   inlineLimit = INLINE_LIMIT,
+  hideSearch = false,
 }: DataTableToolbarProps<T>) {
   const { t } = useTranslation('data-table')
   const defs = filterDefs ?? []
@@ -43,13 +47,15 @@ export function DataTableToolbar<T>({
 
   return (
     <Toolbar.Root {...(className ? { className } : {})}>
-      <Toolbar.Search>
-        <DebouncedSearch
-          value={q}
-          onChange={onSearchChange}
-          placeholder={searchPlaceholder ?? t('toolbar.search.placeholder')}
-        />
-      </Toolbar.Search>
+      {!hideSearch && (
+        <Toolbar.Search>
+          <DebouncedSearch
+            value={q}
+            onChange={onSearchChange}
+            placeholder={searchPlaceholder ?? t('toolbar.search.placeholder')}
+          />
+        </Toolbar.Search>
+      )}
       <Toolbar.Filters>
         {inline.map((def) => (
           <FilterPill key={def.key} def={def} value={filters[def.key]} onChange={onFilterChange} />

@@ -5,6 +5,12 @@ commits independently, so it survives a rolled-back / 4xx request (e.g. a failed
 login that returns 401). This is the single deliberate exception to the
 "services never commit" rule, contained here on purpose.
 
+`record_in_session()` is the in-band counterpart: it `session.add()`s a domain
+event onto the CURRENT request session so the event commits iff the mutation
+commits (a rolled-back op leaves no event). Use it for authoring/domain events
+that must be atomic with the change they describe — the opposite guarantee from
+`emit_committed()`.
+
 Automatic create/update/delete capture for `__audited__` models lives in the
 `before_flush` hook (`app.db.audit`), not here.
 """
@@ -16,10 +22,10 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.enums.audit import ActorType, AuditAction, AuditResult
+from app.core.enums.audit import ActorType, AuditAction, AuditResult, PurposeOfUse
 from app.schemas.auth.auth import SessionUser
 from app.services.audit.context import AuditContext, FieldChange
-from app.services.audit.registry import is_known_resource
+from app.services.audit.registry import is_known_event_code, is_known_resource
 from app.services.audit.serialize import json_safe
 
 
@@ -49,9 +55,12 @@ def _build(
     *,
     action: AuditAction,
     result: AuditResult,
+    event_code: str | None,
     resource_type: str | None,
     resource_id: UUID | None,
     request_id: UUID | None,
+    patient_id: UUID | None,
+    purpose_of_use: PurposeOfUse | None,
     changes: dict[str, FieldChange] | None,
     context: AuditContext | None,
     actor: SessionUser | None,
@@ -62,6 +71,15 @@ def _build(
         msg = f"unknown audit resource_type {resource_type!r}"
         raise ValueError(msg)
 
+    if event_code is not None and not is_known_event_code(event_code):
+        msg = f"unknown audit event_code {event_code!r}"
+        raise ValueError(msg)
+
+    # NEN 7513: a patient-data read with no stated purpose is itself a finding.
+    if action is AuditAction.READ and patient_id is not None and purpose_of_use is None:
+        msg = "purpose_of_use is required on a patient-data read event"
+        raise ValueError(msg)
+
     actor_type, actor_id, actor_label, tenant_id = _actor_fields(actor)
     return AuditEvent(
         actor_type=actor_type,
@@ -70,9 +88,12 @@ def _build(
         tenant_id=tenant_id,
         action=action,
         result=result,
+        event_code=event_code,
         resource_type=resource_type,
         resource_id=resource_id,
         request_id=request_id,
+        patient_id=patient_id,
+        purpose_of_use=purpose_of_use,
         changes=_changes_payload(changes),
         context=_context_payload(context),
     )
@@ -83,24 +104,31 @@ async def emit_committed(
     *,
     action: AuditAction,
     result: AuditResult = AuditResult.SUCCESS,
+    event_code: str | None = None,
     resource_type: str | None = None,
     resource_id: UUID | None = None,
     request_id: UUID | None = None,
+    patient_id: UUID | None = None,
+    purpose_of_use: PurposeOfUse | None = None,
     changes: dict[str, FieldChange] | None = None,
     context: AuditContext | None = None,
     actor: SessionUser | None = None,
 ) -> None:
-    """Record a security event in an independent, separately-committed session.
+    """Record an event in an independent, separately-committed session.
 
-    Survives a rolled-back / 4xx request — use for auth events.
+    Survives a rolled-back / 4xx request — use for auth events and for
+    denied-access (where the request itself returns 4xx).
     """
 
     event = _build(
         action=action,
         result=result,
+        event_code=event_code,
         resource_type=resource_type,
         resource_id=resource_id,
         request_id=request_id,
+        patient_id=patient_id,
+        purpose_of_use=purpose_of_use,
         changes=changes,
         context=context,
         actor=actor,
@@ -108,3 +136,58 @@ async def emit_committed(
     async with session_factory() as session:
         session.add(event)
         await session.commit()
+
+
+def record_in_session(
+    session: AsyncSession,
+    *,
+    action: AuditAction,
+    resource_type: str,
+    resource_id: UUID,
+    event_code: str | None = None,
+    operation: str | None = None,
+    patient_id: UUID | None = None,
+    purpose_of_use: PurposeOfUse | None = None,
+    context: dict[str, Any] | None = None,
+    result: AuditResult = AuditResult.SUCCESS,
+) -> Any:
+    """Record a domain event in-band on the current request `session`.
+
+    `session.add()`-ed onto the same session as the mutation, so it commits in
+    the same transaction — a rolled-back op leaves no event. The in-band
+    counterpart to `emit_committed()` (separate session, for auth/denied events
+    that must survive rollback). The actor is read from the session actor slot
+    (`session.info[SESSION_ACTOR_KEY]`), the same slot the `before_flush` hook
+    stamps from, so callers need not thread `SessionUser` through their
+    signatures.
+
+    `event_code` (FHIR `code`) is the queryable, vocabulary-validated event id;
+    the free-text `operation` is retained for display and merged into `context`
+    under the `operation` key. `patient_id` / `purpose_of_use` set the patient
+    axis and reason. All routes through `_build` for validation.
+    """
+
+    from app.db.audit import SESSION_ACTOR_KEY
+
+    payload: dict[str, Any] = {}
+    if operation is not None:
+        payload["operation"] = operation
+    if context:
+        payload.update({k: json_safe(v) for k, v in context.items() if v is not None})
+
+    actor = session.info.get(SESSION_ACTOR_KEY)
+    event = _build(
+        action=action,
+        result=result,
+        event_code=event_code,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        request_id=None,
+        patient_id=patient_id,
+        purpose_of_use=purpose_of_use,
+        changes=None,
+        context=AuditContext(**payload) if payload else None,
+        actor=actor,
+    )
+    session.add(event)
+    return event

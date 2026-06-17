@@ -26,7 +26,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.enums.audit import ActorType, AuditAction, AuditResult
+from app.core.enums.audit import ActorType, AuditAction, AuditResult, PurposeOfUse
 from app.db.base import Base
 
 _ENUM = dict(
@@ -54,6 +54,8 @@ class AuditEvent(Base):
             sa.text("created_at DESC"),
         ),
         sa.Index("ix_audit_events_request", "request_id"),
+        sa.Index("ix_audit_events_patient", "patient_id", sa.text("created_at DESC")),
+        sa.Index("ix_audit_events_event_code", "event_code", sa.text("created_at DESC")),
     )
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -81,9 +83,21 @@ class AuditEvent(Base):
         server_default=sa.text("'success'"),
     )
 
+    # FHIR `code` — most-specific domain event (validated via audit registry).
+    event_code: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
+
     resource_type: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
     resource_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
     request_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+
+    # FHIR R5 `AuditEvent.patient` — patient-centric query axis. NO FK: the row
+    # must outlive patient deletion / archival, like actor_id / tenant_id.
+    patient_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+    # FHIR `agent.authorization` / purposeOfUse. Required on patient-data reads.
+    purpose_of_use: Mapped[PurposeOfUse | None] = mapped_column(
+        sa.Enum(PurposeOfUse, name="purpose_of_use", **_ENUM),
+        nullable=True,
+    )
 
     changes: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     context: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

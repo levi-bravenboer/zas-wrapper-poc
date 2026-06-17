@@ -6283,6 +6283,7 @@
         "type": "string",
         "enum": [
           "user",
+          "patient",
           "system",
           "anonymous"
         ],
@@ -6672,8 +6673,10 @@
         "type": "string",
         "enum": [
           "created",
+          "read",
           "updated",
           "deleted",
+          "execute",
           "login"
         ],
         "title": "AuditAction"
@@ -6734,6 +6737,17 @@
           "result": {
             "$ref": "#/components/schemas/AuditResult"
           },
+          "event_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Code"
+          },
           "resource_type": {
             "anyOf": [
               {
@@ -6768,6 +6782,28 @@
               }
             ],
             "title": "Request Id"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Id"
+          },
+          "purpose_of_use": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PurposeOfUse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "changes": {
             "anyOf": [
@@ -6806,9 +6842,12 @@
           "tenant_id",
           "action",
           "result",
+          "event_code",
           "resource_type",
           "resource_id",
           "request_id",
+          "patient_id",
+          "purpose_of_use",
           "changes",
           "context"
         ],
@@ -14218,6 +14257,18 @@
           "kind"
         ],
         "title": "ProviderDescriptor"
+      },
+      "PurposeOfUse": {
+        "type": "string",
+        "enum": [
+          "treatment",
+          "operations",
+          "patient_request",
+          "emergency",
+          "break_the_glass"
+        ],
+        "title": "PurposeOfUse",
+        "description": "FHIR `agent.authorization` / purposeOfUse. Required on patient-data reads."
       },
       "ReadinessResponse": {
         "properties": {

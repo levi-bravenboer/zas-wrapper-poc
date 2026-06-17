@@ -1697,7 +1697,7 @@ export interface components {
          * ActorType
          * @enum {string}
          */
-        ActorType: "user" | "system" | "anonymous";
+        ActorType: "user" | "patient" | "system" | "anonymous";
         /** AppointmentBlockOut */
         AppointmentBlockOut: {
             /**
@@ -1858,7 +1858,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "created" | "updated" | "deleted" | "login";
+        AuditAction: "created" | "read" | "updated" | "deleted" | "execute" | "login";
         /** AuditEventRead */
         AuditEventRead: {
             /**
@@ -1880,12 +1880,17 @@ export interface components {
             tenant_id: string | null;
             action: components["schemas"]["AuditAction"];
             result: components["schemas"]["AuditResult"];
+            /** Event Code */
+            event_code: string | null;
             /** Resource Type */
             resource_type: string | null;
             /** Resource Id */
             resource_id: string | null;
             /** Request Id */
             request_id: string | null;
+            /** Patient Id */
+            patient_id: string | null;
+            purpose_of_use: components["schemas"]["PurposeOfUse"] | null;
             /** Changes */
             changes: {
                 [key: string]: components["schemas"]["FieldChange"];
@@ -5073,6 +5078,12 @@ export interface components {
              */
             kind: "password" | "oidc";
         };
+        /**
+         * PurposeOfUse
+         * @description FHIR `agent.authorization` / purposeOfUse. Required on patient-data reads.
+         * @enum {string}
+         */
+        PurposeOfUse: "treatment" | "operations" | "patient_request" | "emergency" | "break_the_glass";
         /** ReadinessResponse */
         ReadinessResponse: {
             /**
@@ -9751,7 +9762,7 @@ export const pathsAppointmentsGetParametersQueryOrderAnyOf0Values: ReadonlyArray
 export const pathsAuditEventsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/audit-events"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
 export const pathsPractitionerRolesGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/practitioner-roles"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
 export const pathsTasksGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/tasks"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
-export const actorTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ActorType"]> = ["user", "system", "anonymous"];
+export const actorTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ActorType"]> = ["user", "patient", "system", "anonymous"];
 export const appointmentBlockOutModeAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentBlockOut"]["mode"]> = ["in_person", "video", "phone"];
 export const appointmentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentBlockOut"]["kind"]> = ["appointment"];
 export const appointmentKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentKind"]> = ["consultation", "lab", "imaging", "procedure", "other"];
@@ -9759,7 +9770,7 @@ export const appointmentModalityValues: ReadonlyArray<FlattenedDeepRequired<comp
 export const appointmentParticipantRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentParticipantRole"]> = ["lead", "support", "observer"];
 export const appointmentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentStatus"]> = ["proposed", "pending", "booked", "arrived", "fulfilled", "cancelled", "noshow", "entered_in_error", "checked_in", "waitlist"];
 export const atEnrollmentPickedDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AtEnrollmentPickedDatePolicy"]["kind"]> = ["at_enrollment_picked_date"];
-export const auditActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditAction"]> = ["created", "updated", "deleted", "login"];
+export const auditActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditAction"]> = ["created", "read", "updated", "deleted", "execute", "login"];
 export const auditResultValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditResult"]> = ["success", "failure"];
 export const blockExecutionResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BlockExecutionResponse"]["state"]> = ["pending", "eligible", "active", "completed", "skipped", "failed"];
 export const careTeamStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CareTeamStatus"]> = ["active", "inactive"];
@@ -9818,6 +9829,7 @@ export const patientSourceValues: ReadonlyArray<FlattenedDeepRequired<components
 export const practitionerRoleCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PractitionerRoleCode"]> = ["gp", "physiotherapist", "psychologist", "nurse", "physician", "other"];
 export const predicateKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PredicateKind"]> = ["if_done", "has_data", "value_equals", "value_gt", "wait_after", "decision_output", "if_not_done_within", "event"];
 export const providerDescriptorKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderDescriptor"]["kind"]> = ["password", "oidc"];
+export const purposeOfUseValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PurposeOfUse"]> = ["treatment", "operations", "patient_request", "emergency", "break_the_glass"];
 export const readinessResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["status"]> = ["ready", "not_ready"];
 export const readinessResponseChecksValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["checks"][string]> = ["ok", "fail"];
 export const relativeToDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["kind"]> = ["relative_to_date"];

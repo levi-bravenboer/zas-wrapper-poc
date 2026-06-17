@@ -34,9 +34,11 @@ from app.domain.pathway.runtime.scheduling import (
     resolve_relative_to_date,
     schedule_from_anchor,
 )
+from app.core.enums.audit import AuditAction, PurposeOfUse
 from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.schemas.auth.auth import SessionUser
+from app.services.audit.emit import record_in_session
 from app.services.pathway.appointment_materializer import materialize_appointment
 from app.schemas.pathway.enrollment import (
     BlockExecutionResponse,
@@ -203,6 +205,17 @@ class EnrollmentService:
         # need a follow-up POST.
         await self._run_eligibility(enrollment, templates)
 
+        # Named runtime event on top of the auto-diff PathwayEnrollment-created
+        # row, so a compliance reader sees "patient enrolled" (runtime.enrolled).
+        record_in_session(
+            session,
+            action=AuditAction.EXECUTE,
+            event_code="runtime.enrolled",
+            resource_type="PathwayEnrollment",
+            resource_id=enrollment.id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.TREATMENT,
+        )
         return enrollment
 
     async def cancel(
@@ -490,6 +503,15 @@ class EnrollmentService:
         if end_fired and enrollment.state == "active":
             enrollment.state = "completed"
         await self._save_executions(enrollment_id, executions)
+        record_in_session(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.EXECUTE,
+            event_code="runtime.block_executed",
+            resource_type="PathwayBlockExecution",
+            resource_id=execution_id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.TREATMENT,
+        )
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 
     async def stamp_completion(
@@ -632,7 +654,23 @@ class EnrollmentService:
                 enrollment_id, execution_id, result=result, tenant_id=tenant_id, now=now
             )
             completed += 1
-        return await self.get(enrollment_id, tenant_id=tenant_id), completed
+
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        # Admin bulk-advance intent — the per-step completions are auto-captured
+        # as block-execution diffs, but the fast-forward as a single privileged
+        # action is not, so record it explicitly (runtime.fast_forwarded, D12).
+        # Actor is read from the session slot by record_in_session.
+        record_in_session(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.EXECUTE,
+            event_code="runtime.fast_forwarded",
+            resource_type="PathwayEnrollment",
+            resource_id=enrollment_id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.OPERATIONS,
+            context={"reason": f"fast-forward completed {completed} steps"},
+        )
+        return enrollment, completed
 
     async def patch_deferred_value(
         self,
@@ -684,6 +722,16 @@ class EnrollmentService:
         # the runtime timers of every block anchored to it (`relative_to_date`).
         await self._recompute_relative_timers(enrollment_id, templates)
         await self._run_eligibility(enrollment, templates, now=now)
+        record_in_session(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.EXECUTE,
+            event_code="runtime.deferred_value_resolved",
+            resource_type="PathwayEnrollment",
+            resource_id=enrollment_id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.TREATMENT,
+            context={"attr": attr},
+        )
         return row
 
     async def _recompute_relative_timers(

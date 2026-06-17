@@ -19,6 +19,8 @@ from app.db.base import TenantOwnedEntity
 class PathwayBlock(TenantOwnedEntity):
     __tablename__ = "pathway_block"
     __realtime_resource__: ClassVar[str | None] = None
+    # NOT __audited__: block edits are part of pathway authoring, captured as
+    # explicit `Pathway`-anchored domain events (OP_EDIT), not row auto-diff.
 
     pathway_version_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),

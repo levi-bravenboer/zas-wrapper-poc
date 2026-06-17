@@ -15,6 +15,9 @@ from app.db.base import TenantOwnedEntity
 class Pathway(TenantOwnedEntity):
     __tablename__ = "pathway"
     __realtime_resource__: ClassVar[str | None] = None
+    # NOT __audited__: pathway authoring is captured as explicit domain events
+    # (app/services/pathway/audit_events.py — create/edit/delete/publish/fork
+    # with event_code + edit coalescing), so auto-diff here would double-log.
 
     name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     clinical_goal: Mapped[str | None] = mapped_column(sa.Text, nullable=True)

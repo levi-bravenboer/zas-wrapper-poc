@@ -419,9 +419,40 @@ async def test_transitions_emit_audit_events(
         .scalars()
         .all()
     )
+    # Auto-diff CREATED row from the __audited__ enrollment...
     assert any(
         e.resource_type == "PathwayEnrollment" and e.action == AuditAction.CREATED for e in rows
     )
+    # ...plus exactly one named runtime.enrolled event with the patient axis (7.7).
+    enrolled = [e for e in rows if e.event_code == "runtime.enrolled"]
+    assert len(enrolled) == 1
+    assert enrolled[0].action == AuditAction.EXECUTE
+    assert enrolled[0].patient_id == patient.id  # type: ignore[union-attr]
+
+    # Completing the eligible block emits exactly one runtime.block_executed.
+    view = await service.get_view(enrollment.id, tenant_id=ZAS_TENANT_ID)
+    execution_id = view.executions[0].id
+    await service.complete_step(
+        enrollment.id,
+        execution_id,
+        result=None,
+        tenant_id=ZAS_TENANT_ID,
+        now=datetime(2026, 6, 10, tzinfo=UTC),
+    )
+    await db_session.commit()
+
+    executed = (
+        (
+            await db_session.execute(
+                _select(AuditEvent).where(AuditEvent.event_code == "runtime.block_executed")
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(executed) == 1
+    assert executed[0].resource_id == execution_id
+    assert executed[0].patient_id == patient.id  # type: ignore[union-attr]
 
 
 # ---- appointment materialization (§3.5) ----------------------------------

@@ -464,7 +464,7 @@ Note: After a carepath closes, users keep configurable read-only access per user
 - Tier: [mvp]
 - Source: Lastenboek REQ-FUN-122/128/129/130/131/156/161 (deferred from `access-entitlements`)
 
-Note: Structured access-event log (login, view/modify patient data, shielded-access attempts incl. denials, break-glass usage) with metadata (timestamp, user, active role, action, IP, entity), admin dashboard with filter/export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence (ordinary users cannot modify). PoC has row-level audit fields + stdout login log only. Break-glass grants (access-entitlements) already capture reason + grantor — the dashboard surfaces them.
+Note: Structured access-event log (login, view/modify patient data, shielded-access attempts incl. denials, break-glass usage) with metadata (timestamp, user, active role, action, IP, entity), admin dashboard with filter/export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence (ordinary users cannot modify). PoC now has an append-only `audit_events` store (`backend-audit-event-logging` + `pathway-audit`) plus a minimal **read-only** admin viewer carved out as `[poc]` via `audit-log-view` (2026-06-17). This entry retains the `[mvp]` heavyweight DASHBOARD scope: export (CSV/JSON), near-real-time suspicious-action warnings, configurable retention, tamper-evidence, resource-name resolution/links, and access-enforcement events (shielded-access attempts/denials, break-glass usage). Break-glass grants (access-entitlements) already capture reason + grantor — the dashboard surfaces them.
 
 ### BL-070 — SCIM/IAM provisioning + AD/LDAP intake
 - Tier: [mvp]
@@ -559,3 +559,35 @@ Note: Partial-completion aggregator on `InputLogic.aggregator` ("block eligible 
 - Source: Esthetic / scale concern raised during `pathway-completion` § A4 (treatment block); slot #1 `pathway-model-foundations` D2 chose single-table inheritance for ship speed
 
 Note: Today every block kind dumps its per-kind columns onto one wide `pathway_block` table (prefixed `appointment_*`, `treatment_*`, `task_*`, …). With 12 kinds × 4–6 columns each the table grows to ~60 nullable columns. Functionally fine on postgres, but ugly, hides per-kind constraints behind CHECKs, and complicates per-kind indexes. MVP refactor splits into a thin `pathway_block` envelope (`id`, `kind`, `name`, `lane_id`, `phase_id`, `input_logic`, `timing_policy`, audit) + one `pathway_block_<kind>` child table per concrete kind, joined on `id`. Mapper becomes a join + dispatch instead of column-prefix dispatch. Touch points: slot #1 mapper, every shipped kind's ORM block, alembic upgrade with backfill, all per-kind seed scripts, every test that hand-builds a `PathwayBlock` row. Do NOT attempt during PoC — refactor cost ≈ 1–2 days and resets the §A* + §B* implementation pipeline.
+
+## Filed by fhir-aligned-audit-trail (2026-06-17)
+
+### BL-085 — Audit trail tamper-evidence + retention
+- Tier: [mvp]
+- Source: `fhir-aligned-audit-trail` completeness review; deferred from `backend-audit-event-logging` (R4/R6)
+
+Note: The `audit_events` table is append-only at the **application** layer only — a privileged SQL `UPDATE`/`DELETE` can still rewrite history, and there is no retention policy. NEN 7513 requires audit logs be protected against tampering and retained for a defined period (typically multi-year). MVP work: (1) DB-level protection — revoke `UPDATE`/`DELETE` on `audit_events` from the app role, or an `ON UPDATE/DELETE` trigger that raises; optionally tamper-evident hash chaining (each row hashes the prior). (2) Retention + partitioning + archival export (also the base change's flagged R4 follow-up). (3) Optional forwarding to an external WORM/SIEM sink. Not PoC — PoC only needs the queryable trail, not the tamper/retention guarantees.
+
+### BL-086 — Audit export/disclosure events
+- Tier: [mvp]
+- Source: `fhir-aligned-audit-trail` completeness review (gap #3)
+
+Note: HIPAA/NEN weight *data leaving the system* (patient export, report/PDF download, HiX push of patient data) as high-scrutiny disclosure events. `fhir-aligned-audit-trail` ships the schema (`event_code`, `purpose_of_use`) that can carry them, but wires no export-emit sites because no export surface exists in PoC. When an export/disclosure feature lands, add `event_code = patient.exported` (or similar) emit calls with `action = read`, `patient_id`, and `purpose_of_use`. Tracking so disclosure logging isn't forgotten when export ships.
+
+### BL-087 — Audit Luscii vitals/measurement reads
+- Tier: [mvp]
+- Source: `fhir-aligned-audit-trail` read-scope decision (2026-06-17)
+
+Note: Viewing Luscii clinical data (`luscii_router` GET routes) is patient-data access and under NEN 7513 should be read-logged, but was excluded from `fhir-aligned-audit-trail`'s PoC read scope. The read seam + `event_code` (e.g. `patient.vitals_viewed`) already exist; MVP wires the seam onto the Luscii read routes. Tracking so clinical-data viewing audit isn't forgotten.
+
+### BL-088 — Named runtime + patient-actor audit events (sla / decision / mobile)
+- Tier: [mvp]
+- Source: `fhir-aligned-audit-trail` §7 deferral (2026-06-17)
+
+Note: Three named `event_code` events deferred from `fhir-aligned-audit-trail` because the data is ALREADY captured by `PathwayBlockExecution` auto-diff and the named layer needs a discrete seam that doesn't exist yet:
+- `runtime.sla_escalated` — no discrete escalation transition today; a `due_at` wake just re-runs `advance()` eligibility. Needs escalation semantics (detect first overdue crossing, track a flag to emit once) — runtime-behaviour work, not a logging hook.
+- `runtime.decision_branched` — `decision_output` is set inside the pure `RuntimeEngine`/`_apply_decision_fanout`; emitting needs before/after diffing of `decision_output` in `advance()` at the service boundary.
+- `runtime.fast_forwarded` is already done; these two are the remaining runtime verbs.
+- Patient-actor auth emit (`ActorType.patient` already shipped) — BLOCKED on a mobile/patient backend login endpoint (`feat/mobile-app-auth-setup`); lands with that auth work, no audit schema change needed.
+
+Do as a SEPARATE follow-up PR to keep the audit schema PR clean. Vocabulary codes already reserved in `KNOWN_EVENT_CODES`.
