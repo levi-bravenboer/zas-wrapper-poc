@@ -138,6 +138,7 @@ class PathwayBlock(TenantOwnedEntity):
     # Pathway-completion § A7: MdoBlock per-kind columns
     mdo_topic: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
     mdo_expected_attendees_note: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    mdo_outcomes: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 
     # Pathway-completion § A8: InformedConsentBlock per-kind columns
     informed_consent_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(

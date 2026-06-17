@@ -10625,6 +10625,13 @@
             ],
             "title": "Expected Attendees Note"
           },
+          "outcomes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Outcomes"
+          },
           "kind": {
             "type": "string",
             "const": "mdo",
