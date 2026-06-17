@@ -45,6 +45,17 @@ CAREGIVER_EMAIL = "caregiver@zas.local"
 CAREGIVER_DISPLAY_NAME = "Demo Caregiver"
 CAREGIVER_PASSWORD_ENV = "BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD"
 
+# Demo clinical cast (§6c.2): specialty caregivers the enroll-time participant
+# picker resolves against. `(email, display_name, specialty)`; their
+# `PractitionerRole` (code + specialty) is seeded by `seed_practitioners`.
+CLINICAL_CAST: tuple[tuple[str, str, str], ...] = (
+    ("uroloog@zas.local", "Dr. Uroloog", "urologie"),
+    ("radioloog@zas.local", "Dr. Radioloog", "radiologie"),
+    ("patholoog@zas.local", "Dr. Patholoog", "pathologie"),
+    ("oncoloog@zas.local", "Dr. Oncoloog", "oncologie"),
+    ("casemanager@zas.local", "Verpleegkundig Casemanager", "casemanagement"),
+)
+
 _PASSWORD_FALLBACK = "changeme"
 
 
@@ -142,6 +153,23 @@ async def seed_users(session: AsyncSession) -> list[User]:
             logger.info("seeded user email=%s role=%s", CAREGIVER_EMAIL, Role.CAREGIVER.value)
         else:
             logger.info("user email=%s already present", CAREGIVER_EMAIL)
+
+        # Specialty cast (§6c.2) — caregiver-role users for the participant picker.
+        cast_password = _resolve_password(CAREGIVER_PASSWORD_ENV, hasher)
+        for email, display_name, _specialty in CLINICAL_CAST:
+            if await user_repo.get_by_email(tenant.id, email) is not None:
+                logger.info("user email=%s already present", email)
+                continue
+            await user_repo.add(
+                User(
+                    email=email,
+                    password_hash=cast_password,
+                    display_name=display_name,
+                    role=Role.CAREGIVER,
+                    is_active=True,
+                )
+            )
+            logger.info("seeded user email=%s role=%s", email, Role.CAREGIVER.value)
     finally:
         if previous_actor is None:
             session.info.pop(SESSION_ACTOR_KEY, None)

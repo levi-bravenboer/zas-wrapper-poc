@@ -11,6 +11,7 @@ from scripts.seed_users import (
     ADMIN_EMAIL,
     ADMIN_USER_ID,
     CAREGIVER_EMAIL,
+    CLINICAL_CAST,
     _ZasTenantMissingError,
     seed_users,
 )
@@ -52,7 +53,8 @@ async def test_seed_users_is_idempotent(db_session: AsyncSession) -> None:
     await db_session.commit()
 
     count = (await db_session.execute(select(func.count()).select_from(User))).scalar_one()
-    assert count == 2
+    # admin + demo caregiver + the specialty cast (§6c.2).
+    assert count == 2 + len(CLINICAL_CAST)
 
 
 async def test_seed_users_requires_existing_tenant(db_session: AsyncSession) -> None:
