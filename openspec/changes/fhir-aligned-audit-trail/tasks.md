@@ -137,7 +137,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 
 ## 9. Scope + verify
 
-- [ ] 9.1 Update `openspec/scope.md`: schema + demo emit sites `[poc]`; exhaustive read coverage + purpose enforcement + full model opt-in `[mvp]`
+- [x] 9.1 `openspec/scope.md` F8 entry updated: FHIR schema + dossier-read + named runtime events `[poc]`; tamper/retention (BL-085), export (BL-086), Luscii reads (BL-087), exhaustive read coverage + purpose enforcement + SLA/decision events `[mvp]`
 - [ ] 9.2 `/verify` (backend lint + typecheck + tests); in-worktree run backend tests via direct `uv run python -m pytest` (moon cwd caveat) with the `BACKEND_DATABASE_URL` from the RESUME header
 
 ## 10. PR #49 integration (decided 2026-06-17 — see design "PR #49 reconciliation")
