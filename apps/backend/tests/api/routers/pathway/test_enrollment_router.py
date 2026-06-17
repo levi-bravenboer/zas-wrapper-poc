@@ -93,6 +93,8 @@ async def _autoclean_runtime_tables(
 
 
 async def _wipe(session: AsyncSession) -> None:
+    from app.db.models.care_team.care_team import CareTeam
+    from app.db.models.care_team.care_team_participant import CareTeamParticipant
     from app.db.models.collaboration.attachment import Attachment
     from app.db.models.collaboration.note import Note
 
@@ -102,6 +104,10 @@ async def _wipe(session: AsyncSession) -> None:
         PathwayDeferredFieldValue,
         PathwayBlockExecution,
         PathwayEnrollment,
+        # care_teams.patient_id -> patients is RESTRICT, so clear care teams
+        # (created by enrollment's `ensure_membership`) before patients.
+        CareTeamParticipant,
+        CareTeam,
         Patient,
         Organisation,
     ):
