@@ -90,9 +90,10 @@ top-level fields (the actual breaking step) once no consumer reads them.
 - [x] 3.1 `schemas/luscii/patient_data.py`: `ConnectionGroup` added;
   `connections[]` added to `LusciiPatientData` (legacy fields kept for now —
   dropped in Phase B2). Series points keep `program_id`.
-- [ ] 3.2 Routes: `PUT /patients/{id}/luscii-link` → connection upsert (done
-  via service); add per-connection deactivate (D9) + `GET
-  /patients/{id}/luscii-connections` for the dialog list — Phase B2.
+- [x] 3.2 Routes: `GET /patients/{id}/luscii-connections` (list),
+  `POST .../luscii-connections` (add, non-replacing), `DELETE
+  .../luscii-connections/{connection_id}` (deactivate, idempotent +
+  patient-scoped). Legacy `PUT/DELETE /luscii-link` kept. 19/19 router tests.
 - [x] 3.3 openapi.json + schema.d.ts regenerated (additive; FE compiles).
 
 ## §4 — Frontend: attribution + UI
