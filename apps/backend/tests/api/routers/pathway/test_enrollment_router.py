@@ -93,12 +93,10 @@ async def _autoclean_runtime_tables(
 
 
 async def _wipe(session: AsyncSession) -> None:
-    from app.db.models.collaboration.attachment import Attachment
     from app.db.models.collaboration.note import Note
 
     for model in (
         Note,
-        Attachment,
         PathwayDeferredFieldValue,
         PathwayBlockExecution,
         PathwayEnrollment,

@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.collaboration import OwnerType
+from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.appointment import Appointment
 from app.db.models.collaboration import Note
 from app.db.models.pathway.block import PathwayBlock
@@ -91,7 +92,11 @@ class NoteRepository:
         owner_id: UUID,
         patient_id: UUID | None,
         author_user_id: UUID,
-        body: str,
+        body: str | None,
+        filename: str | None = None,
+        content_type: str | None = None,
+        size: int | None = None,
+        storage_key: str | None = None,
     ) -> Note:
         note = Note(
             owner_type=owner_type,
@@ -99,7 +104,28 @@ class NoteRepository:
             patient_id=patient_id,
             author_user_id=author_user_id,
             body=body,
+            filename=filename,
+            content_type=content_type,
+            size=size,
+            storage_key=storage_key,
         )
         self._session.add(note)
         await self._session.flush()
         return note
+
+    async def get(self, *, note_id: UUID, tenant_id: UUID) -> Note | None:
+        result = await self._session.execute(
+            select(Note).where(
+                Note.id == note_id,
+                Note.tenant_id == tenant_id,
+                Note.deleted_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def soft_delete(self, note: Note) -> None:
+        note.deleted_at = func.now()
+        actor = self._session.info.get(SESSION_ACTOR_KEY)
+        if actor is not None:
+            note.deleted_by = actor.id
+        await self._session.flush()

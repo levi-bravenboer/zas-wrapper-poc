@@ -68,11 +68,12 @@ async def test_note_on_appointment_and_patient_aggregate(
     # note on appointment
     r1 = await async_client.post(f"/appointments/{appt.id}/notes", json={"body": "Op afspraak"})
     assert r1.status_code == 201, r1.text
-    assert r1.json()["owner_type"] == "appointment"
+    assert r1.json()["note"]["owner_type"] == "appointment"
+    assert r1.json()["upload_url"] is None
     # note on task
     r2 = await async_client.post(f"/tasks/{task.id}/notes", json={"body": "Op taak"})
     assert r2.status_code == 201, r2.text
-    assert r2.json()["owner_type"] == "task"
+    assert r2.json()["note"]["owner_type"] == "task"
 
     # patient aggregate spans owners (read as admin — tenant-wide patient access)
     await _login(async_client, ADMIN_EMAIL)
@@ -107,7 +108,7 @@ async def test_care_team_caregiver_can_author_without_being_participant(
     await _login(async_client, CAREGIVER_EMAIL)
     r = await async_client.post(f"/appointments/{appt.id}/notes", json={"body": "Via zorgteam"})
     assert r.status_code == 201, r.text
-    assert r.json()["author_user_id"] == str(
+    assert r.json()["note"]["author_user_id"] == str(
         _user(seeded_zas_users, CAREGIVER_EMAIL).id
     )
 
@@ -126,10 +127,10 @@ async def test_task_without_patient_allows_note_with_null_patient(
     await _login(async_client, CAREGIVER_EMAIL)
     r = await async_client.post(f"/tasks/{task.id}/notes", json={"body": "x"})
     assert r.status_code == 201, r.text
-    assert r.json()["patient_id"] is None
+    assert r.json()["note"]["patient_id"] is None
 
 
-async def test_attachment_upload_and_uploader_delete(
+async def test_file_note_upload_download_and_author_delete(
     async_client: AsyncClient,
     db_session: AsyncSession,
     seeded_zas_users: list[User],
@@ -147,22 +148,34 @@ async def test_attachment_upload_and_uploader_delete(
     await db_session.commit()
 
     await _login(async_client, CAREGIVER_EMAIL)
+    # a file is just a note with a file — POST the same /notes endpoint
     created = await async_client.post(
-        f"/appointments/{appt.id}/attachments",
-        json={"filename": "brief.pdf", "content_type": "application/pdf", "size": 1024},
+        f"/appointments/{appt.id}/notes",
+        json={
+            "file": {"filename": "brief.pdf", "content_type": "application/pdf", "size": 1024}
+        },
     )
     assert created.status_code == 201, created.text
     assert created.json()["upload_url"].startswith("http")
-    att_id = created.json()["attachment"]["id"]
+    note = created.json()["note"]
+    assert note["filename"] == "brief.pdf"
+    assert note["body"] is None
+    note_id = note["id"]
 
-    listed = await async_client.get(f"/appointments/{appt.id}/attachments")
-    assert len(listed.json()) == 1
-    # patient aggregate includes it (read as admin — tenant-wide patient access)
+    listed = await async_client.get(f"/appointments/{appt.id}/notes")
+    assert any(n["id"] == note_id and n["filename"] == "brief.pdf" for n in listed.json())
+
+    # download URL is presigned
+    url = await async_client.get(f"/appointments/{appt.id}/notes/{note_id}/url")
+    assert url.status_code == 200, url.text
+    assert url.json()["url"].startswith("http")
+
+    # patient aggregate includes the file note (admin — tenant-wide access)
     await _login(async_client, ADMIN_EMAIL)
-    agg = await async_client.get(f"/patients/{patient.id}/attachments")
-    assert any(a["id"] == att_id for a in agg.json())
+    agg = await async_client.get(f"/patients/{patient.id}/notes")
+    assert any(n["id"] == note_id for n in agg.json())
 
     await _login(async_client, CAREGIVER_EMAIL)
-    deleted = await async_client.delete(f"/appointments/{appt.id}/attachments/{att_id}")
+    deleted = await async_client.delete(f"/appointments/{appt.id}/notes/{note_id}")
     assert deleted.status_code == 204
-    assert (await async_client.get(f"/appointments/{appt.id}/attachments")).json() == []
+    assert all(n["id"] != note_id for n in (await async_client.get(f"/appointments/{appt.id}/notes")).json())

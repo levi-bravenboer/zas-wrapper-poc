@@ -1,7 +1,8 @@
-# Generic, append-only note attached to any owner entity (appointment, task,
+# Generic activity entry attached to any owner entity (appointment, task,
 # patient). `owner_type` + `owner_id` address the owner (no FK — polymorphic);
-# `patient_id` records the patient the note is about so a patient view can
-# aggregate everything concerning them. Authored + attributed; no edit/delete.
+# `patient_id` records the patient it concerns so a patient view can aggregate
+# everything. A note carries text (`body`) and/or a file (`storage_key` + file
+# metadata) — a file is just a note with a file. Authored + attributed.
 
 from __future__ import annotations
 
@@ -32,6 +33,11 @@ class Note(TenantOwnedEntity):
             "patient_id",
             postgresql_where=sa.text("deleted_at IS NULL"),
         ),
+        # A note must carry text or a file (or both) — never empty.
+        sa.CheckConstraint(
+            "body IS NOT NULL OR storage_key IS NOT NULL",
+            name="ck_notes_body_or_file",
+        ),
     )
 
     owner_type: Mapped[OwnerType] = mapped_column(
@@ -59,4 +65,13 @@ class Note(TenantOwnedEntity):
         nullable=False,
         index=True,
     )
-    body: Mapped[str] = mapped_column(sa.Text(), nullable=False)
+    # Text content. Nullable: a file-only note has no body.
+    body: Mapped[str | None] = mapped_column(sa.Text(), nullable=True)
+    # File payload (optional). Present together when the note carries a file;
+    # bytes live on S3 via presigned URLs.
+    filename: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    content_type: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    size: Mapped[int | None] = mapped_column(sa.Integer(), nullable=True)
+    storage_key: Mapped[str | None] = mapped_column(
+        sa.String(512), nullable=True, unique=True
+    )

@@ -3,19 +3,25 @@ from __future__ import annotations
 from app.core.errors import AppError
 
 
-class AttachmentTooLargeError(AppError):
-    code = "invalid.attachment.too_large"
+class NoteTooLargeError(AppError):
+    code = "invalid.note.file_too_large"
     status_code = 422
-    message = "Attachment exceeds the maximum allowed size."
+    message = "File exceeds the maximum allowed size."
 
 
-class AttachmentNotFoundError(AppError):
-    code = "not-found.attachment.not_found"
+class NoteNotFoundError(AppError):
+    code = "not-found.note.not_found"
     status_code = 404
-    message = "Attachment not found."
+    message = "Note not found."
 
 
-class AttachmentForbiddenError(AppError):
-    code = "forbidden.attachment.not_uploader"
+class NoteForbiddenError(AppError):
+    code = "forbidden.note.not_author"
     status_code = 403
-    message = "Only the uploader may delete this attachment."
+    message = "Only the author may delete this note."
+
+
+class NoteHasNoFileError(AppError):
+    code = "invalid.note.no_file"
+    status_code = 404
+    message = "This note has no file."

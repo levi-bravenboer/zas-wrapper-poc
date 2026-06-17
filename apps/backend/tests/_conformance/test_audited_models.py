@@ -10,7 +10,8 @@ import app.db.models  # noqa: F401  (register every model)
 from app.db.base import Entity
 
 # PathwayEnrollment + PathwayBlockExecution audit their runtime transitions
-# (pathway-runtime §3.7); Task/Note/Attachment from split-appointments-and-tasks.
+# (pathway-runtime §3.7); Task/Note from split-appointments-and-tasks. Notes
+# carry files too (attachments unified into notes).
 _EXPECTED = {
     "User",
     "Patient",
@@ -18,7 +19,6 @@ _EXPECTED = {
     "PathwayBlockExecution",
     "Task",
     "Note",
-    "Attachment",
 }
 
 
