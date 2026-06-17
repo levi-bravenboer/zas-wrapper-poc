@@ -503,6 +503,15 @@ class EnrollmentService:
         if end_fired and enrollment.state == "active":
             enrollment.state = "completed"
         await self._save_executions(enrollment_id, executions)
+        record_in_session(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.EXECUTE,
+            event_code="runtime.block_executed",
+            resource_type="PathwayBlockExecution",
+            resource_id=execution_id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.TREATMENT,
+        )
         return await self._repo.get_execution(execution_id, enrollment_id, tenant_id)  # type: ignore[return-value]
 
     async def stamp_completion(
@@ -713,6 +722,16 @@ class EnrollmentService:
         # the runtime timers of every block anchored to it (`relative_to_date`).
         await self._recompute_relative_timers(enrollment_id, templates)
         await self._run_eligibility(enrollment, templates, now=now)
+        record_in_session(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.EXECUTE,
+            event_code="runtime.deferred_value_resolved",
+            resource_type="PathwayEnrollment",
+            resource_id=enrollment_id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.TREATMENT,
+            context={"attr": attr},
+        )
         return row
 
     async def _recompute_relative_timers(

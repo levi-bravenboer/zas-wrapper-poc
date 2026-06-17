@@ -118,10 +118,10 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 
 - [x] 7.1 Builder: `pathway.published` emitted on publish — DONE via PR #49 merge (his `pathway_version_service` publish reshaped to `action=execute` + `event_code=pathway.published`)
 - [x] 7.2 Runtime: `runtime.enrolled` at `EnrollmentService.create` via `record_in_session` (actor from slot — no threading), `patient_id` from enrollment, `purpose=treatment`
-- [ ] 7.3 (WHERE) Runtime: `runtime.block_executed` at engine block execution (actor=system) — also sets patient_id for `PathwayBlockExecution` (parent-resolved)
-- [ ] 7.4 (WHERE) Runtime: `runtime.sla_escalated` at SLA escalation / due_at wake (actor=system)
-- [ ] 7.5 (WHERE) Runtime: `runtime.decision_branched` at decision resolution (actor=system)
-- [ ] 7.6 (WHERE) Runtime: `runtime.deferred_value_resolved` at deferred-value resolution
+- [x] 7.3 Runtime: `runtime.block_executed` at `EnrollmentService.complete_execution` via `record_in_session` (patient_id from enrollment). NOTE: covers the explicitly-completed execution; engine auto-fired sibling blocks (`_settle_auto_fire`) rely on auto-diff
+- [ ] 7.4 (DEFERRED) Runtime: `runtime.sla_escalated` — lives in the temporal workflow / due_at wake (no request session there); auto-diff on `PathwayBlockExecution` already records the state change. Wire when a session-bearing escalation seam exists
+- [ ] 7.5 (DEFERRED) Runtime: `runtime.decision_branched` — resolved inside the pure `RuntimeEngine`/`_apply_decision_fanout` (no session); `decision_output` change captured by auto-diff. Wire if a named event is needed at the service boundary
+- [x] 7.6 Runtime: `runtime.deferred_value_resolved` at `EnrollmentService.patch_deferred_value` via `record_in_session` (patient_id from enrollment, `context.attr`)
 - [x] 7.6b Runtime: `runtime.fast_forwarded` at `EnrollmentService.fast_forward` (actor=admin, purpose=operations, patient_id from enrollment) — one summary event; per-step completions already auto-captured (D12)
 - [ ] 7.7 Tests: each runtime transition emits exactly one event with correct `event_code` + `patient_id`
 - [x] 7.8 Auth: `_emit_login_audit` now writes `action=execute` + `event_code=auth.login` (`auth_router.py`). NOTE: existing auth-audit tests assert `action=login` and must be updated
