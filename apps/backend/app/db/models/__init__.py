@@ -26,7 +26,7 @@ from app.db.models.luscii import (
     LusciiItemResponseLocalisationRow,
 )
 from app.db.models.organisation import Organisation
-from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.patient import Patient, PatientIdentifier, PatientLusciiConnection
 from app.db.models.pathway import (
     Pathway,
     PathwayPractitioner,
@@ -87,6 +87,7 @@ __all__ = [
     "ExternalGrant",
     "Patient",
     "PatientIdentifier",
+    "PatientLusciiConnection",
     "PathwayPractitioner",
     "PathwaySpecialism",
     "Practitioner",
