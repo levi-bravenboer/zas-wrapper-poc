@@ -237,7 +237,6 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
         <RuntimeCanvas
           blocks={version.blocks ?? []}
           phases={version.phases ?? []}
-          lanes={version.lanes ?? []}
           edges={version.edges ?? []}
           timingValues={version.timing_values ?? []}
           blockTypes={blockTypesQuery.data}

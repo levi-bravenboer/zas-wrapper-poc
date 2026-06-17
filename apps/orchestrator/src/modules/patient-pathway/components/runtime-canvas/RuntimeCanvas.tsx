@@ -14,16 +14,21 @@ import type {
   PathwayBlock,
   PathwayBlockType,
   PathwayEdge,
-  PathwayLane,
   PathwayPhase,
   PathwayTimingValue,
 } from '@/modules/pathway/types'
 
 import { RuntimeBlockNode, type RuntimeFlowNode } from './RuntimeBlockNode'
-import { RuntimePhaseLayer } from './RuntimePhaseLayer'
+import { RuntimeNavigator } from './RuntimeNavigator'
+import { RuntimePhaseBands } from './RuntimePhaseBands'
 import { RuntimePlayhead } from './RuntimePlayhead'
-import type { RuntimeBlockStatus } from './runtimeState'
+import { RUNTIME_STATE_COLOR, type RuntimeBlockStatus } from './runtimeState'
 import { useRuntimeGraph } from './useRuntimeGraph'
+
+function miniMapNodeColor(node: RuntimeFlowNode): string {
+  const state = node.data?.status?.state
+  return state ? RUNTIME_STATE_COLOR[state] : 'var(--color-border)'
+}
 
 import '@xyflow/react/dist/style.css'
 
@@ -32,7 +37,6 @@ const NODE_TYPES = { runtime: RuntimeBlockNode } as const
 export interface RuntimeCanvasProps {
   blocks: PathwayBlock[]
   phases: PathwayPhase[]
-  lanes: PathwayLane[]
   edges: PathwayEdge[]
   timingValues: PathwayTimingValue[]
   blockTypes: PathwayBlockType[]
@@ -40,11 +44,11 @@ export interface RuntimeCanvasProps {
   showSkipped: boolean
 }
 
-// Read-only runtime view of a published pathway version. Builder-style layout
-// reused as pure model; nodes + phase bands are runtime-owned. No swimlanes,
-// straight edges.
+// Read-only runtime view of a published pathway version. Layout is auto-
+// computed from the flow graph (business logic), not builder coordinates: no
+// swimlanes, sequential chains in one line, step edges.
 export function RuntimeCanvas(props: RuntimeCanvasProps): ReactElement {
-  const { nodes: derivedNodes, edges, geometry, nowX } = useRuntimeGraph(props)
+  const { nodes: derivedNodes, edges, phaseBands, height, nowX } = useRuntimeGraph(props)
 
   // Local node state so ReactFlow can store measured dimensions (needed for
   // `fitView`); re-seed whenever the derived graph changes (status updates).
@@ -69,8 +73,6 @@ export function RuntimeCanvas(props: RuntimeCanvasProps): ReactElement {
         fitView
         fitViewOptions={{ padding: CANVAS_VIEWPORT.fitPadding }}
         onInit={(instance) => {
-          // Re-fit after the nodes have been measured (the initial `fitView`
-          // runs before measurement and lands on a stale, off-screen viewport).
           requestAnimationFrame(() => instance.fitView({ padding: CANVAS_VIEWPORT.fitPadding }))
         }}
         minZoom={CANVAS_VIEWPORT.minZoom}
@@ -81,9 +83,10 @@ export function RuntimeCanvas(props: RuntimeCanvasProps): ReactElement {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={inkAlpha(0.06)} />
+        <RuntimeNavigator nodeColor={miniMapNodeColor} />
         <ViewportPortal>
-          <RuntimePhaseLayer phases={props.phases} geometry={geometry} />
-          {nowX !== null ? <RuntimePlayhead x={nowX} height={geometry.flowHeight} /> : null}
+          <RuntimePhaseBands bands={phaseBands} height={height} />
+          {nowX !== null ? <RuntimePlayhead x={nowX} height={height} /> : null}
         </ViewportPortal>
       </ReactFlow>
     </div>
