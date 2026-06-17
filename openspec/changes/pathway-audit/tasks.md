@@ -44,5 +44,5 @@
 
 ## 7. Contract sync + verification
 
-- [ ] 7.1 Run `/openapi-sync` to regenerate `apps/backend/openapi.json` and orchestrator typegen for the new `published` enum value.
-- [ ] 7.2 Run `/verify` (lint + typecheck + tests for the backend) and confirm green before opening a PR.
+- [x] 7.1 Run `/openapi-sync` to regenerate `apps/backend/openapi.json` and orchestrator typegen for the new `published` enum value.
+- [x] 7.2 Run `/verify` (lint + typecheck + tests for the backend) and confirm green before opening a PR.
