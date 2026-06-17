@@ -48,11 +48,22 @@ the shared dev DB (applying mutates the stack other worktrees share — get the 
 It is additive/online-safe. Tests build schema via `Base.metadata.create_all`, so they do not
 need the migration applied.
 
+## ACTIVE PLAN — PR #49 integration (decided 2026-06-17)
+PR #49 (`feat/audit-logging-view`, Daniel Patty) shipped an admin audit-log **UI** + pathway
+authoring events in parallel. It leads on frontend; we lead on the schema/compliance model.
+**Integrate on this branch** (not a raw merge — his branch is stale-base; we reshape his core).
+Full decision record in `design.md` → "PR #49 reconciliation". Tasks in **§10**. Headlines:
+adopt his `record_in_session` (drop our `emit()`), keep our `event_code` (port his `operation`),
+drop his `PUBLISHED` verb (publish = `execute`+`event_code=pathway.published`), take his UI +
+scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage rules) is the LAST task.**
+
 ## Suggested next order
-1. §8.1/8.4 read-API filter params + tenant scoping (self-contained, high value), then §8.2 typegen.
-2. §5.2/5.3 wire `record_patient_read` / `record_denied_access` onto patient GET routes + guard.
-3. §7.1–7.6 explicit event_code emits (only if named-event legibility wanted; needs actor threading).
-4. Run the deferred tests + fix the auth-audit tests; §9 scope.md + `/verify`.
+1. **§10 PR #49 integration** (active plan above) — his UI + scoping in; reshape his pathway events + emit helper onto our model; collapse migrations.
+2. §8.1/8.4 read-API filter params + tenant scoping, then §8.2 typegen. (His UI may already cover some — check 10.1.)
+3. §5.2/5.3 wire `record_patient_read` / `record_denied_access` onto patient GET routes + guard.
+4. §7.1–7.6 explicit event_code emits via his `record_in_session` (now unblocked — actor from slot).
+5. Run the deferred tests + fix the auth-audit tests; §9 scope.md + `/verify`.
+6. **§11 (LAST) — AGENTS audit-usage rules.**
 
 ---
 
@@ -128,3 +139,29 @@ need the migration applied.
 
 - [ ] 9.1 Update `openspec/scope.md`: schema + demo emit sites `[poc]`; exhaustive read coverage + purpose enforcement + full model opt-in `[mvp]`
 - [ ] 9.2 `/verify` (backend lint + typecheck + tests); in-worktree run backend tests via direct `uv run python -m pytest` (moon cwd caveat) with the `BACKEND_DATABASE_URL` from the RESUME header
+
+## 10. PR #49 integration (decided 2026-06-17 — see design "PR #49 reconciliation")
+
+Integrate `feat/audit-logging-view` (PR #49) onto this branch. NOT a raw merge (stale base; we
+reshape his audit core). Reference: `gh pr diff 49 --repo reaktor/zas-poc`.
+
+- [ ] 10.1 Bring in his admin audit-log UI unchanged: `apps/orchestrator/src/modules/audit/*`, `routes/_auth/admin/audit-log.tsx`, `components/layout/navItems.ts` (audit nav), `lib/i18n/locales/nl/audit-admin-ui.json` + i18n index wiring, `modules/audit/schemas.ts`/`keys.ts`
+- [ ] 10.2 Bring in his scoping audit: `app/services/access/scoping/scoping_service.py` + tests (`tests/services/access/scoping/*`) — reconcile any `published`/`operation` usage to our model
+- [ ] 10.3 Adopt his `record_in_session` into `app/services/audit/emit.py` (actor from `session.info` slot); extend with `event_code`/`patient_id`/`purpose_of_use`; DELETE our `emit()`; keep `emit_committed`
+- [ ] 10.4 Port his `app/services/pathway/audit_events.py` to our model: `record_in_session` + `event_code` (e.g. `pathway.published`), `action=execute` for publish; DROP `AuditAction.PUBLISHED` usage. Update callers in `pathway_service.py` / `pathway_version_service.py`
+- [ ] 10.5 Update his pathway-audit tests (`tests/services/pathway/test_pathway_audit_events.py`) to assert `action=execute` + `event_code`, not `action=published`
+- [ ] 10.6 Point his admin UI event-type filter/column at `event_code` (was `context.operation`)
+- [ ] 10.7 Migrations: DROP his `20260617_1100_add_published_audit_action.py` (+ its merge migration); keep our `20260617_1200_fhir_aligned_audit_columns.py`. Verify single alembic head; add a merge migration only if his task_read_state migrations are still needed (they may be stale — confirm against our task-domain deletions)
+- [ ] 10.8 Keep OUR deletions of `task_read_state_repository.py` / `appointment_source.py` (his stale-base versions); do not reintroduce
+- [ ] 10.9 Reconcile his openspec changes (`pathway-audit`, `audit-log-view`) with this change — fold overlap, keep his UI spec (`audit-log-ui`), avoid duplicate `audit-trail-base` deltas
+- [ ] 10.10 `/openapi-sync` + verify after integration
+
+## 11. AGENTS audit-usage rules (FINAL task — write last, once the system is settled)
+
+- [ ] 11.1 Add an "Audit / event logging" section to `apps/backend/AGENTS.md` (near the existing audit notes ~L220–224): **when to add an audit event, when NOT to, and how**. Cover:
+  - **Auto vs explicit**: model state changes are captured automatically by `__audited__` + the `before_flush` hook — do NOT hand-emit create/update/delete; add `__audited__` to the model instead. Explicit `record_in_session` is ONLY for domain events that aren't a plain CRUD diff (e.g. `pathway.published`, runtime transitions).
+  - **read/access**: patient-data GETs use `record_patient_read`; admin/template/list reads are NOT logged.
+  - **errors are NOT audit**: exceptions/500s → structured logging/Sentry, never `audit_events`; only failed *audited actions* (denied access, failed login) get `result=failure`.
+  - **how**: `record_in_session` (in-band, actor from slot) vs `emit_committed` (rollback-surviving: auth/denied); set `event_code` from `KNOWN_EVENT_CODES` (add new codes there); set `patient_id` for patient-scoped events; set `purpose_of_use` on reads.
+  - **never log full clinical payloads** (reuse the existing `log_fhir_ref` rule).
+- [ ] 11.2 Cross-check `apps/orchestrator/AGENTS.md` for a short pointer to the admin audit-log UI if warranted

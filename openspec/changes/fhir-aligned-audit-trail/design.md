@@ -2,6 +2,33 @@
 
 Extends the shipped `audit-trail-base`. Read `openspec/changes/backend-audit-event-logging/` first — this document only covers the deltas.
 
+## PR #49 reconciliation (decided 2026-06-17)
+
+PR #49 (`feat/audit-logging-view`, Daniel Patty) shipped, in parallel, pathway authoring/access
+events + an admin **audit-log UI** + scoping audit. It leads on the frontend; our change leads on
+the schema/compliance model. Integration happens **on our branch** (`feat/add-event-logs-for-runtime`).
+His branch is on a stale base (pre task-domain/runtime refactor) so a raw merge is rejected; we keep
+our task-domain deletions over his stale versions.
+
+Decisions (small-bit review with the user):
+- **Take his clean wins wholesale**: admin audit-log UI (`apps/orchestrator/src/modules/audit/*`,
+  `routes/_auth/admin/audit-log.tsx`, nav, i18n) and scoping audit. The base change deferred the UI;
+  his fills it.
+- **`event_code` over his `context.operation`** — keep our indexed + vocabulary-validated `event_code`
+  column (his admin table filters by event type; an indexed column beats a JSONB scan). Port his
+  `record_in_session(operation=…)` calls to `event_code=…`.
+- **FHIR CRUDE action; DROP his `PUBLISHED` verb** — `pathway publish` = `action=execute` +
+  `event_code=pathway.published`. His `add_published_audit_action` migration is therefore dropped;
+  our additive-columns migration stands.
+- **Adopt his `record_in_session` emit helper** (reads actor from `session.info` slot — same source as
+  the `before_flush` hook, FHIR `agent.who` = authenticated requestor, no actor threading). Extend it
+  with `event_code`/`patient_id`/`purpose_of_use`. **Drop our `emit()`**. Keep `emit_committed` for
+  rollback-surviving auth/denied/read events.
+- **Keep all our additive compliance layer** (already built): `patient_id` axis, `read` action +
+  read-seam + denied-access, `purpose_of_use`, `ActorType.patient`. His PR has none of these.
+
+Net: his UI + scoping + reshaped pathway events, on our FHIR/NEN schema model.
+
 ## FHIR R5 AuditEvent mapping
 
 The driving constraint: every column maps to an HL7 FHIR R5 `AuditEvent` element so the trail is ATNA/NEN-mappable and could be exported as FHIR later without re-modelling.
