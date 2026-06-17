@@ -229,6 +229,28 @@ A model opts in by declaring `__realtime_resource__: ClassVar[str | None]` on th
 - **Soft delete is the default**: every `Entity` row carries `deleted_at`. Use `BaseRepository.list()` (filters `deleted_at IS NULL` by default) over hand-rolled `select(Model)`. Use `BaseRepository.soft_delete(entity)` over `session.delete(entity)`; the latter is reserved for `hard_delete` cases where retention rules forbid keeping the row. Custom repo queries MUST add `where(Model.deleted_at.is_(None))` unless they intentionally surface soft-deleted rows.
 - **PHI**: treat all clinical payloads as patient data. Never log full payloads — log resource type + id only.
 
+## Audit / event logging — when to add an audit event, when NOT, and how
+
+The append-only `audit_events` trail (FHIR R5 / NEN 7513-aligned) answers "who did what to which patient, when, why". Three feeds, one table. **Default to NOT hand-writing events** — most are automatic.
+
+**When NOT to add an event (the common case):**
+- **Model create/update/delete** is captured automatically. Mark the model `__audited__ = True` (on the `Entity` subclass) and the `before_flush` hook in `app/db/audit.py` emits a `created` / `updated` / `deleted` event with field diffs, the actor (from the session slot), and `patient_id` (resolved via `_patient_of`: the `Patient` row itself, or any model carrying a `patient_id` column). **Do NOT also hand-emit a domain event for a plain CRUD change** — that double-logs (a Pathway create that emits both an explicit event and an auto-diff is the bug this rule prevents; that is why `Pathway`/`PathwayBlock` are deliberately NOT `__audited__` — their authoring is owned by explicit events in `app/services/pathway/audit_events.py`).
+- **System errors / exceptions / 500s** are NOT audit events. They go to structured logging (`app.core.logging`) / Sentry. `audit_events` is for actor-on-subject events only. A *failed audited action* (denied access, failed login) IS an event — record it with `result=failure`, never an exception.
+- **Admin / template / list reads** (user admin, pathway catalogue, `list_*`) are NOT read-logged. Only patient-dossier reads are.
+
+**When to add an explicit event:**
+- A **domain transition that is not a plain CRUD diff**: pathway `published`, runtime `enrolled` / `block_executed` / `deferred_value_resolved` / `fast_forwarded`. These read as the real clinical/operational event to a compliance officer.
+- A **patient-data read** (NEN 7513): viewing the dossier. Wire `record_patient_read` (see below), scoped to patient-dossier GETs — one row per logical view, not per sub-resource.
+- A **denied patient-data access** (403): `record_denied_access` (already wired into the patient-access guard).
+
+**How:**
+- **In-band domain events** → `app/services/audit/emit.record_in_session(session, action=…, resource_type=…, resource_id=…, event_code=…, patient_id=…, purpose_of_use=…)`. Commits with the mutation (rolled-back op leaves no event). Actor is read from the session slot — do NOT thread `SessionUser` through service signatures.
+- **Rollback-surviving events** (auth, denied-access, reads on read-only requests) → `emit_committed(session_factory, …)` (independent session). Helpers `record_patient_read` / `record_denied_access` live in `app/services/audit/access.py`.
+- **`action`** is the fixed FHIR CRUDE set (`created/read/updated/deleted/execute`, + legacy `login`) — NEVER add a domain verb. Domain specificity goes in **`event_code`** (FHIR `code`), which MUST be added to `KNOWN_EVENT_CODES` in `app/services/audit/registry.py` (validated at emit; an unknown code raises).
+- **`patient_id`** — set on every event concerning a patient's dossier, even when the touched entity is not the Patient row (the patient-centric query depends on it; conformance test `tests/_conformance/test_audited_models.py` enforces every patient-scoped `__audited__` model resolves it).
+- **`purpose_of_use`** — required on patient-data reads (role-derived default `treatment`; `break_the_glass` for override access).
+- **Never** put full clinical payloads in `changes` / `context` (PHI rule above).
+
 ## Testing
 
 - **Mirror src tree exactly**: `tests/services/pathway/test_pathway_service.py` mirrors `app/services/pathway/pathway_service.py`, etc. Running `pytest tests/services/pathway/` exercises one domain end-to-end.

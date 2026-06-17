@@ -138,7 +138,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 ## 9. Scope + verify
 
 - [x] 9.1 `openspec/scope.md` F8 entry updated: FHIR schema + dossier-read + named runtime events `[poc]`; tamper/retention (BL-085), export (BL-086), Luscii reads (BL-087), exhaustive read coverage + purpose enforcement + SLA/decision events `[mvp]`
-- [~] 9.2 Full backend suite run (test DB :5433): **995 passed, 9 skipped**. Fixed the one real audit failure (login test → filter by `event_code=auth.login`). REMAINING: **38 errors in `tests/api/routers/pathway/` (enrollment_router + pathway_router run together)** — a PRE-EXISTING test-cleanup ordering bug, NOT audit: `IntegrityError: DELETE FROM patients violates care_teams_patient_id_fkey` (a cleanup fixture deletes patients before clearing care_teams). Evidence it is not ours: no conftest in our commits; audit_events has no FKs; both files pass in ISOLATION (pathway_router alone = 29 pass). Fix = clear `care_team`/`care_team_participant` before `patients` in the relevant cleanup fixture. Orchestrator vitest not run.
+- [x] 9.2 Full backend suite GREEN: **1032 passed, 9 skipped, 0 failed** (test DB :5433). Fixed: (a) login audit test → filter by `event_code=auth.login`; (b) a PRE-EXISTING cleanup-order bug (enrollment `_wipe` now clears `CareTeamParticipant`/`CareTeam` before `Patient` — was `IntegrityError: DELETE FROM patients violates care_teams_patient_id_fkey`, surfaced only when enrollment+pathway api tests ran together). NOTE: `test_care_team_history::test_change_role_produces_two_rows` is a PRE-EXISTING flake (passed 2/3 full runs + every isolation run; has a `period_start >= period_end` timestamp assert). Orchestrator **vitest still not run**.
 
 ## 10. PR #49 integration (decided 2026-06-17 — see design "PR #49 reconciliation")
 
@@ -158,10 +158,10 @@ reshape his audit core). Reference: `gh pr diff 49 --repo reaktor/zas-poc`.
 
 ## 11. AGENTS audit-usage rules (FINAL task — write last, once the system is settled)
 
-- [ ] 11.1 Add an "Audit / event logging" section to `apps/backend/AGENTS.md` (near the existing audit notes ~L220–224): **when to add an audit event, when NOT to, and how**. Cover:
+- [x] 11.1 Added "Audit / event logging" section to `apps/backend/AGENTS.md` (after the PHI note): when NOT to add (auto CRUD via `__audited__`, no double-log, errors→Sentry not audit, admin reads not logged), when to (domain transitions, patient reads, denied access), and how (`record_in_session` vs `emit_committed`, CRUDE action + `event_code` vocab, `patient_id`, `purpose_of_use`, no PHI payloads). Covers the items below:
   - **Auto vs explicit**: model state changes are captured automatically by `__audited__` + the `before_flush` hook — do NOT hand-emit create/update/delete; add `__audited__` to the model instead. Explicit `record_in_session` is ONLY for domain events that aren't a plain CRUD diff (e.g. `pathway.published`, runtime transitions).
   - **read/access**: patient-data GETs use `record_patient_read`; admin/template/list reads are NOT logged.
   - **errors are NOT audit**: exceptions/500s → structured logging/Sentry, never `audit_events`; only failed *audited actions* (denied access, failed login) get `result=failure`.
   - **how**: `record_in_session` (in-band, actor from slot) vs `emit_committed` (rollback-surviving: auth/denied); set `event_code` from `KNOWN_EVENT_CODES` (add new codes there); set `patient_id` for patient-scoped events; set `purpose_of_use` on reads.
   - **never log full clinical payloads** (reuse the existing `log_fhir_ref` rule).
-- [ ] 11.2 Cross-check `apps/orchestrator/AGENTS.md` for a short pointer to the admin audit-log UI if warranted
+- [x] 11.2 Evaluated `apps/orchestrator/AGENTS.md` — it documents conventions/typing/folder rules, not a module index; a UI pointer is not a "rule" there. NOT warranted, skipped.
