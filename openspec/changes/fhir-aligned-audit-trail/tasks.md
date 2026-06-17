@@ -116,7 +116,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 
 ## 7. Domain-event emit sites — `audit-emit-coverage` (D-map)
 
-- [ ] 7.1 (WHERE) Builder: explicit `emit()` `pathway.published` on pathway publish
+- [x] 7.1 Builder: `pathway.published` emitted on publish — DONE via PR #49 merge (his `pathway_version_service` publish reshaped to `action=execute` + `event_code=pathway.published`)
 - [ ] 7.2 (WHERE) Runtime: `runtime.enrolled` at `EnrollmentService.create` (patient_id from enrollment) — needs actor threaded in
 - [ ] 7.3 (WHERE) Runtime: `runtime.block_executed` at engine block execution (actor=system) — also sets patient_id for `PathwayBlockExecution` (parent-resolved)
 - [ ] 7.4 (WHERE) Runtime: `runtime.sla_escalated` at SLA escalation / due_at wake (actor=system)
