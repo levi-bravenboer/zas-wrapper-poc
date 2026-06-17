@@ -852,7 +852,7 @@ def _resolve_or_materialize_lane(
 
 
 _BLOCK_ENVELOPE_KEYS: frozenset[str] = frozenset(
-    {"name", "lane_kind", "input_logic", "timing_policy"}
+    {"name", "lane_kind", "input_logic", "timing_policy", "participant"}
 )
 
 

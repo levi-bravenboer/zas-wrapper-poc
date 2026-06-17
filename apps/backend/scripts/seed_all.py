@@ -29,6 +29,7 @@ from scripts.seed_access_entitlements import seed_access_entitlements
 from scripts.seed_appointments import seed_appointments
 from scripts.seed_collaboration import seed_collaboration
 from scripts.seed_tasks import seed_tasks
+from scripts.seed_bladder_cancer import seed_bladder_cancer
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
 from scripts.seed_luscii_demo import seed_luscii_demo
 from scripts.seed_patient_users import seed_patient_users
@@ -65,6 +66,7 @@ SEED_STEPS: list[SeedStep] = [
     seed_collaboration,
     seed_lane_kinds,
     seed_rugrevalidatie,
+    seed_bladder_cancer,
     # access-entitlements demo data (campuses, specialisms, carepath links,
     # external GP, multi-role human) — after pathways, before Kratos import
     seed_access_entitlements,
