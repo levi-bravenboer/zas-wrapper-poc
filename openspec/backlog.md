@@ -579,3 +579,15 @@ Note: HIPAA/NEN weight *data leaving the system* (patient export, report/PDF dow
 - Source: `fhir-aligned-audit-trail` read-scope decision (2026-06-17)
 
 Note: Viewing Luscii clinical data (`luscii_router` GET routes) is patient-data access and under NEN 7513 should be read-logged, but was excluded from `fhir-aligned-audit-trail`'s PoC read scope. The read seam + `event_code` (e.g. `patient.vitals_viewed`) already exist; MVP wires the seam onto the Luscii read routes. Tracking so clinical-data viewing audit isn't forgotten.
+
+### BL-088 — Named runtime + patient-actor audit events (sla / decision / mobile)
+- Tier: [mvp]
+- Source: `fhir-aligned-audit-trail` §7 deferral (2026-06-17)
+
+Note: Three named `event_code` events deferred from `fhir-aligned-audit-trail` because the data is ALREADY captured by `PathwayBlockExecution` auto-diff and the named layer needs a discrete seam that doesn't exist yet:
+- `runtime.sla_escalated` — no discrete escalation transition today; a `due_at` wake just re-runs `advance()` eligibility. Needs escalation semantics (detect first overdue crossing, track a flag to emit once) — runtime-behaviour work, not a logging hook.
+- `runtime.decision_branched` — `decision_output` is set inside the pure `RuntimeEngine`/`_apply_decision_fanout`; emitting needs before/after diffing of `decision_output` in `advance()` at the service boundary.
+- `runtime.fast_forwarded` is already done; these two are the remaining runtime verbs.
+- Patient-actor auth emit (`ActorType.patient` already shipped) — BLOCKED on a mobile/patient backend login endpoint (`feat/mobile-app-auth-setup`); lands with that auth work, no audit schema change needed.
+
+Do as a SEPARATE follow-up PR to keep the audit schema PR clean. Vocabulary codes already reserved in `KNOWN_EVENT_CODES`.

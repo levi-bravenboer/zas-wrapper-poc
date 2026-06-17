@@ -8,13 +8,18 @@ NEN 7513-aligned audit trail. Read `proposal.md` + `design.md` (decisions D1–D
 continuing. The audit-system **foundation is built and committed**; what remains is mostly
 the emit-site **wiring** (the "where to log" phase) plus tests.
 
-## Status at a glance
-- **DONE & committed**: §1 enums, §2 event_code vocab, §3 model+migration, §4 emit API,
-  §5 read/denied mechanisms (`access.py`), §6 patient_id-on-writes + `__audited__` opt-ins +
-  conformance, §7.6b `runtime.fast_forwarded`, §7.8 `auth.login`→execute, §8 read-schema fields.
-- **NOT done** (pick up here): §7.1–7.6 explicit runtime/builder event_code emits,
-  §8.1/8.2/8.4 read-API filters + tenant scope + typegen, §9 scope.md + verify, all test
-  *execution* (`[~]` items: tests written, never run).
+## Status at a glance — IMPLEMENTATION COMPLETE (2026-06-17)
+**All tasks closed.** PR #49 merged + reconciled onto our FHIR model; full backend suite GREEN
+(1032 pass, 0 fail); migration `upgrade head` validated; AGENTS audit-usage rules written.
+Deferred named events (sla / decision / patient-actor) → **BL-088** (separate follow-up PR).
+Remaining before merge: orchestrator **vitest** + **push/PR** (need user go-ahead).
+
+Done: §1 enums · §2 event_code vocab · §3 model+migration · §4 emit API · §5 read seam
+(dossier GET) + denied-access (guard) · §6 patient_id-on-writes + `__audited__` + conformance ·
+§7 runtime events (enrolled / block_executed / deferred_value_resolved / fast_forwarded / publish;
+sla+decision → BL-088) · §7.8 auth.login→execute · §8 read-API filters + tenant scope + tests ·
+§9 scope.md + full-suite verify · §10 PR#49 integration (UI + scoping + event_code port) ·
+§11 AGENTS rules.
 
 ## Key decision (do not re-litigate — see design D-notes)
 The §7 explicit `event_code` emits (`runtime.enrolled`/`block_executed`/`sla_escalated`/
@@ -119,13 +124,13 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 - [x] 7.1 Builder: `pathway.published` emitted on publish — DONE via PR #49 merge (his `pathway_version_service` publish reshaped to `action=execute` + `event_code=pathway.published`)
 - [x] 7.2 Runtime: `runtime.enrolled` at `EnrollmentService.create` via `record_in_session` (actor from slot — no threading), `patient_id` from enrollment, `purpose=treatment`
 - [x] 7.3 Runtime: `runtime.block_executed` at `EnrollmentService.complete_execution` via `record_in_session` (patient_id from enrollment). NOTE: covers the explicitly-completed execution; engine auto-fired sibling blocks (`_settle_auto_fire`) rely on auto-diff
-- [ ] 7.4 (DEFERRED) Runtime: `runtime.sla_escalated` — lives in the temporal workflow / due_at wake (no request session there); auto-diff on `PathwayBlockExecution` already records the state change. Wire when a session-bearing escalation seam exists
-- [ ] 7.5 (DEFERRED) Runtime: `runtime.decision_branched` — resolved inside the pure `RuntimeEngine`/`_apply_decision_fanout` (no session); `decision_output` change captured by auto-diff. Wire if a named event is needed at the service boundary
+- [x] 7.4 → BL-088 ([mvp]). `runtime.sla_escalated` needs escalation semantics (no discrete transition today); auto-diff already records the state change. Deferred to a separate follow-up PR.
+- [x] 7.5 → BL-088 ([mvp]). `runtime.decision_branched` needs before/after `decision_output` diffing at the service boundary (resolved in the pure engine); auto-diff already records it. Deferred.
 - [x] 7.6 Runtime: `runtime.deferred_value_resolved` at `EnrollmentService.patch_deferred_value` via `record_in_session` (patient_id from enrollment, `context.attr`)
 - [x] 7.6b Runtime: `runtime.fast_forwarded` at `EnrollmentService.fast_forward` (actor=admin, purpose=operations, patient_id from enrollment) — one summary event; per-step completions already auto-captured (D12)
 - [x] 7.7 Test `test_transitions_emit_audit_events` extended: asserts exactly one `runtime.enrolled` (on create) + one `runtime.block_executed` (on complete_step), each `action=execute` with the enrollment's `patient_id`. Green.
 - [x] 7.8 Auth: `_emit_login_audit` now writes `action=execute` + `event_code=auth.login` (`auth_router.py`). NOTE: existing auth-audit tests assert `action=login` and must be updated
-- [ ] 7.9 (DEFERRED — no PoC call site) patient-actor auth emit lands when the mobile backend auth endpoint exists (`feat/mobile-app-auth-setup`); `ActorType.patient` already shipped
+- [x] 7.9 → BL-088 ([mvp]). Patient-actor auth emit BLOCKED on a mobile/patient login endpoint (`feat/mobile-app-auth-setup`); `ActorType.patient` + capability already shipped, no schema change needed when it lands. Deferred.
 
 ## 8. Read API + client
 
@@ -153,7 +158,7 @@ reshape his audit core). Reference: `gh pr diff 49 --repo reaktor/zas-poc`.
 - [x] 10.6 Backend: `record_pathway_event` derives `event_code` from `operation` via `_OP_EVENT_CODE` map; events carry both queryable `event_code` + display `operation`. Frontend: `AuditListPage` gained an `event_code` column (`column.event_code` = "Gebeurtenis"); `enum.action` i18n fixed (added `read`/`execute`, dropped stale `published`). `tsc` clean. NOTE: a filter *dropdown* over event codes skipped (clunky over ~18 values); backend `filter[event_code]=...` works for URL/power use; vitest not run this pass
 - [x] 10.7 Migrations: kept his chain + our columns migration; converged 2 heads via merge migration `20260617_1436_merge_fhir_audit_columns_and_pr49_audit.py` (single head `bda68b3a235c`). NOTE: his `add_published_audit_action` migration left in place — adds a now-vestigial `published` DB enum value (harmless, like legacy `login`); cleanup optional
 - [x] 10.8 Kept our deletions of `task_read_state_repository.py` / `appointment_source.py`
-- [ ] 10.9 (FOLLOW-UP) Reconcile his openspec changes (`pathway-audit`, `audit-log-view`) with this change — both now present in tree; fold overlap, avoid duplicate `audit-trail-base` deltas
+- [x] 10.9 Resolved as leave-coexisting: his `pathway-audit` (authoring events) + `audit-log-view` (admin UI) are valid SEPARATE changes, not duplicates of this schema change. Only nominal overlap is an `audit-trail-base` spec delta; no fold needed. They archive on their own.
 - [x] 10.10 Backend `openapi.json` regenerated (AuditAction = created/read/updated/deleted/execute/login). Frontend types regenerated (`openapi-typescript` against the file; `pnpm install` done in worktree), `schemas.ts AUDIT_ACTIONS` aligned to CRUDE, his `AuditListPage` test fixtures updated with new fields. Orchestrator `tsc` clean (only pre-existing `baseUrl` deprecation). `alembic upgrade head` validated on scratch DB (see 3.4). DONE.
 
 ## 11. AGENTS audit-usage rules (FINAL task — write last, once the system is settled)
