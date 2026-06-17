@@ -4055,6 +4055,24 @@ export interface components {
              */
             supports_branches: boolean;
             /**
+             * Actor
+             * @description caregiver | patient | system | auto
+             * @default system
+             */
+            actor: string;
+            /**
+             * Runtime Phase
+             * @description build | enroll | runtime
+             * @default runtime
+             */
+            runtime_phase: string;
+            /**
+             * Completion
+             * @description caregiver_action | auto | decision | terminal
+             * @default auto
+             */
+            completion: string;
+            /**
              * Source
              * @description Provenance of this catalogue entry. Native blocks live in our own code-side `BLOCK_TYPES` registry; external blocks are contributed by per-vendor catalogue extensions (Luscii first). The frontend palette groups by `source` then by `provider`.
              * @default native
