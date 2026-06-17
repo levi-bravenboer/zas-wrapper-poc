@@ -145,16 +145,16 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 Integrate `feat/audit-logging-view` (PR #49) onto this branch. NOT a raw merge (stale base; we
 reshape his audit core). Reference: `gh pr diff 49 --repo reaktor/zas-poc`.
 
-- [ ] 10.1 Bring in his admin audit-log UI unchanged: `apps/orchestrator/src/modules/audit/*`, `routes/_auth/admin/audit-log.tsx`, `components/layout/navItems.ts` (audit nav), `lib/i18n/locales/nl/audit-admin-ui.json` + i18n index wiring, `modules/audit/schemas.ts`/`keys.ts`
-- [ ] 10.2 Bring in his scoping audit: `app/services/access/scoping/scoping_service.py` + tests (`tests/services/access/scoping/*`) — reconcile any `published`/`operation` usage to our model
-- [ ] 10.3 Adopt his `record_in_session` into `app/services/audit/emit.py` (actor from `session.info` slot); extend with `event_code`/`patient_id`/`purpose_of_use`; DELETE our `emit()`; keep `emit_committed`
-- [ ] 10.4 Port his `app/services/pathway/audit_events.py` to our model: `record_in_session` + `event_code` (e.g. `pathway.published`), `action=execute` for publish; DROP `AuditAction.PUBLISHED` usage. Update callers in `pathway_service.py` / `pathway_version_service.py`
-- [ ] 10.5 Update his pathway-audit tests (`tests/services/pathway/test_pathway_audit_events.py`) to assert `action=execute` + `event_code`, not `action=published`
-- [ ] 10.6 Point his admin UI event-type filter/column at `event_code` (was `context.operation`)
-- [ ] 10.7 Migrations: DROP his `20260617_1100_add_published_audit_action.py` (+ its merge migration); keep our `20260617_1200_fhir_aligned_audit_columns.py`. Verify single alembic head; add a merge migration only if his task_read_state migrations are still needed (they may be stale — confirm against our task-domain deletions)
-- [ ] 10.8 Keep OUR deletions of `task_read_state_repository.py` / `appointment_source.py` (his stale-base versions); do not reintroduce
-- [ ] 10.9 Reconcile his openspec changes (`pathway-audit`, `audit-log-view`) with this change — fold overlap, keep his UI spec (`audit-log-ui`), avoid duplicate `audit-trail-base` deltas
-- [ ] 10.10 `/openapi-sync` + verify after integration
+- [x] 10.1 His admin audit-log UI merged in (`apps/orchestrator/src/modules/audit/*`, `admin/audit-log.tsx`, nav, i18n)
+- [x] 10.2 His scoping audit merged (`app/services/access/scoping/scoping_service.py` + tests)
+- [x] 10.3 Unified on his `record_in_session` (actor from slot); extended with `event_code`/`patient_id`/`purpose_of_use`, routes through `_build`; deleted our `emit()`; kept `emit_committed`. Migrated our `fast_forward` emit + `enrollment_router` to `record_in_session` (dropped actor threading)
+- [x] 10.4 `pathway_version_service` publish → `action=execute` + `event_code=pathway.published`; `record_pathway_event` gained `event_code` passthrough; `AuditAction.PUBLISHED` removed from enum
+- [x] 10.5 His pathway-audit tests updated to assert `event_code=pathway.published` + `action=execute`
+- [ ] 10.6 (FOLLOW-UP) Full port of his create/edit/delete/fork events from `context.operation` to `event_code`, and point admin UI filter/column at `event_code` (publish already on event_code; CRUD events still use operation for display)
+- [x] 10.7 Migrations: kept his chain + our columns migration; converged 2 heads via merge migration `20260617_1436_merge_fhir_audit_columns_and_pr49_audit.py` (single head `bda68b3a235c`). NOTE: his `add_published_audit_action` migration left in place — adds a now-vestigial `published` DB enum value (harmless, like legacy `login`); cleanup optional
+- [x] 10.8 Kept our deletions of `task_read_state_repository.py` / `appointment_source.py`
+- [ ] 10.9 (FOLLOW-UP) Reconcile his openspec changes (`pathway-audit`, `audit-log-view`) with this change — both now present in tree; fold overlap, avoid duplicate `audit-trail-base` deltas
+- [~] 10.10 Backend `openapi.json` regenerated (AuditAction enum correct, new fields present). Frontend `pnpm run typegen` STILL NEEDED — blocked: needs `pnpm install` (node_modules absent in worktree) + backend on :18000; `schema.d.ts` still lists stale `published` (harmless unused union member). `alembic upgrade` on a clean DB not yet validated (ordering of his task_read_state add vs our drop)
 
 ## 11. AGENTS audit-usage rules (FINAL task — write last, once the system is settled)
 
