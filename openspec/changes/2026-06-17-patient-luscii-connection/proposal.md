@@ -159,9 +159,12 @@ history. Connection management moves into `<EditPatientDialog>`.
 ## Risks and mitigations
 
 - **R1 — FE attribution needs `external_program.program_id` per enrollment
-  from an EXISTING read API.** **Mitigation / open task**: verify it is
-  exposed. If not, PoC fallback = flat connection list with no carepath split
-  (adding to the pathway API is disallowed by the carepath-datalayer rule).
+  from an EXISTING read API.** **RESOLVED** (after merging
+  `feat/pathway-enrollment-runtime`): `GET /enrollments?patient_id=` gives
+  state + `pathway_version_id`; `GET /pathways/{id}/versions/{version_id}`
+  gives the blocks with `program_id` + pathway name. No pathway API change
+  needed (off-limits rule holds). Residual cost: N version fetches — cache per
+  `pathway_version_id`.
 - **R2 — N `get_patient` calls per active connection.** Parallel
   (`asyncio.gather`); counts are small. Measurements stay one call.
 - **R3 — Migration must not violate the active cross-patient index.** Existing

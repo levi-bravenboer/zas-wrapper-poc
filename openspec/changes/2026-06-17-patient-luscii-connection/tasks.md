@@ -10,13 +10,21 @@ FE still run on the single `PatientIdentifier` path until §2+. The migration
 therefore COPIES from the identifier rows and leaves them authoritative; they
 are retired in §2 when the service is re-pointed.
 
-## §0 — De-risk (do first)
+## §0 — De-risk (do first) ✓ RESOLVED — data available, no pathway API changes
 
-- [ ] 0.1 Confirm an EXISTING read API/hook exposes each enrollment's
-  `external_program` (provider=luscii) `program_id` + enrollment `state` +
-  pathway name to the patient profile FE. Record where. If absent → carepath
-  split degrades to a flat connection list (do NOT add to the pathway API;
-  carepath datalayer is off-limits).
+- [x] 0.1 Confirmed (after merging `feat/pathway-enrollment-runtime`): the FE
+  can derive carepath attribution from EXISTING read APIs — no pathway
+  datalayer changes, off-limits rule respected.
+  - Enrollment `state` + `pathway_id` + `pathway_version_id` →
+    `GET /enrollments?patient_id=` (`usePatientEnrollments`,
+    `modules/patient-pathway/hooks.ts`). `EnrollmentResponse.state` ∈
+    active|paused|completed|cancelled.
+  - `external_program` (luscii) `program_id` + pathway name →
+    `GET /pathways/{pathway_id}/versions/{version_id}`
+    (`modules/pathway/api.ts`); returns blocks with config, `PathwayBlock`
+    carries `program_id`.
+  - **Cost note**: N version fetches (one per enrollment) — cache per
+    `pathway_version_id`. No flat-list fallback needed.
 
 ## §1 — Backend: connection entity + migration ✓ DONE (not yet applied)
 

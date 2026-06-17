@@ -99,10 +99,11 @@ The Luscii service returns connection groups with `program`/`protocol`/
    connection + completed/cancelled ⇒ **history**; no match ⇒ **unassigned**;
    inactive connection ⇒ **history**.
 
-**Open dependency (R1)**: this requires `external_program.program_id` per
-enrollment to be available from an existing read API. Verify first. If absent,
-PoC fallback = render the flat connection list without the carepath split
-(adding to the pathway API is disallowed).
+**Data source (R1, RESOLVED)**: `program_id` per enrollment comes from
+existing reads — `GET /enrollments?patient_id=` (state + `pathway_version_id`)
++ `GET /pathways/{id}/versions/{version_id}` (blocks with `program_id` +
+pathway name). No pathway API change; off-limits rule holds. Cost: N version
+fetches — cache per `pathway_version_id`.
 
 ### D6 — Aggregation flow (backend)
 
@@ -157,7 +158,6 @@ param — settle in impl). `active_link_value` → `active_connection_luscii_ids
 
 - Per-connection deactivate endpoint shape (path vs body param).
 - Confirm `paused` enrollment counts as *current* (proposed: yes).
-- R1 data dependency — resolve before committing to the FE split.
 
 ## Follow-up (separate change)
 
