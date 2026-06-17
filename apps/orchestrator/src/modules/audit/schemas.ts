@@ -6,13 +6,14 @@ export type AuditEventRead = components['schemas']['AuditEventRead']
 export type AuditAction = components['schemas']['AuditAction']
 export type AuditResult = components['schemas']['AuditResult']
 
-/** Action verbs surfaced as filter options + badges. */
+/** Action verbs surfaced as filter options + badges (FHIR CRUDE + legacy login). */
 export const AUDIT_ACTIONS: readonly AuditAction[] = [
   'created',
+  'read',
   'updated',
   'deleted',
+  'execute',
   'login',
-  'published',
 ]
 
 export const AUDIT_RESULTS: readonly AuditResult[] = ['success', 'failure']
