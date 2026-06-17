@@ -138,7 +138,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 ## 9. Scope + verify
 
 - [x] 9.1 `openspec/scope.md` F8 entry updated: FHIR schema + dossier-read + named runtime events `[poc]`; tamper/retention (BL-085), export (BL-086), Luscii reads (BL-087), exhaustive read coverage + purpose enforcement + SLA/decision events `[mvp]`
-- [ ] 9.2 `/verify` (backend lint + typecheck + tests); in-worktree run backend tests via direct `uv run python -m pytest` (moon cwd caveat) with the `BACKEND_DATABASE_URL` from the RESUME header
+- [~] 9.2 Full backend suite run (test DB :5433): **995 passed, 9 skipped**. Fixed the one real audit failure (login test → filter by `event_code=auth.login`). REMAINING: **38 errors in `tests/api/routers/pathway/` (enrollment_router + pathway_router run together)** — a PRE-EXISTING test-cleanup ordering bug, NOT audit: `IntegrityError: DELETE FROM patients violates care_teams_patient_id_fkey` (a cleanup fixture deletes patients before clearing care_teams). Evidence it is not ours: no conftest in our commits; audit_events has no FKs; both files pass in ISOLATION (pathway_router alone = 29 pass). Fix = clear `care_team`/`care_team_participant` before `patients` in the relevant cleanup fixture. Orchestrator vitest not run.
 
 ## 10. PR #49 integration (decided 2026-06-17 — see design "PR #49 reconciliation")
 
