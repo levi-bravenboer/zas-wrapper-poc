@@ -1,15 +1,14 @@
-import { useState, type FormEvent, type ReactElement } from 'react'
+import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 
-import { useLinkLuscii, useLusciiData, useUnlinkLuscii } from '../hooks'
+import { useLusciiData, useUnlinkLuscii } from '../hooks'
 import type { LusciiMeasurement, LusciiPatientData, LusciiPlannedAction } from '../types'
 
 // Display-only invariant (luscii-patient-data spec): values render exactly as
@@ -66,7 +65,9 @@ export function LusciiPanel({ patientId }: LusciiPanelProps): ReactElement {
   }
 
   if (data.state === 'not_linked') {
-    return <LusciiLinkForm patientId={patientId} />
+    return (
+      <LusciiCardMessage title={t('luscii.title')} message={t('luscii.connection.setViaEdit')} />
+    )
   }
 
   return <LusciiDataView patientId={patientId} data={data} />
@@ -80,57 +81,6 @@ function LusciiCardMessage({ title, message }: { title: string; message: string 
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">{message}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
-function linkErrorKey(error: unknown): string {
-  if (isApiError(error)) {
-    if (error.code === 'invalid.luscii.patient_not_found') return 'luscii.link.errorNotFound'
-    if (error.code === 'conflict.luscii.already_linked') return 'luscii.link.errorAlreadyLinked'
-    if (error.code === NOT_CONFIGURED_CODE) return 'luscii.notConfigured'
-    if (error.status === 422) return 'luscii.link.errorInvalid'
-  }
-  return 'luscii.link.errorUpstream'
-}
-
-function LusciiLinkForm({ patientId }: { patientId: string }): ReactElement {
-  const { t } = useTranslation('patient-profile')
-  const [value, setValue] = useState('')
-  const link = useLinkLuscii()
-
-  const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    const lusciiPatientId = value.trim()
-    if (!lusciiPatientId) return
-    link.mutate({ patientId, lusciiPatientId })
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('luscii.title')}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">{t('luscii.link.empty')}</p>
-        <form className="flex flex-wrap items-center gap-2" onSubmit={onSubmit}>
-          <Input
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            placeholder={t('luscii.link.placeholder')}
-            aria-label={t('luscii.link.inputLabel')}
-            className="max-w-md font-mono"
-          />
-          <Button type="submit" disabled={link.isPending || value.trim().length === 0}>
-            {link.isPending ? t('luscii.link.submitting') : t('luscii.link.submit')}
-          </Button>
-        </form>
-        {link.error ? (
-          <p className="text-sm text-destructive" role="alert">
-            {t(linkErrorKey(link.error))}
-          </p>
-        ) : null}
       </CardContent>
     </Card>
   )

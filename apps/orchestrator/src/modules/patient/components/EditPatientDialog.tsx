@@ -1,4 +1,4 @@
-import { useEffect, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -21,8 +21,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useEntityForm } from '@/hooks/entity'
+import { isApiError } from '@/lib/api/errors'
 
-import { useUpdatePatient } from '../hooks'
+import {
+  useAddLusciiConnection,
+  useDeactivateLusciiConnection,
+  useLusciiConnections,
+  useUpdatePatient,
+} from '../hooks'
 import type { PatientGender, PatientRow, PatientUpdatePayload } from '../types'
 
 import { patientFormSchema, patientGenderEnum, type PatientFormValues } from './patientForm.schema'
@@ -180,6 +186,8 @@ export function EditPatientDialog({
             )}
           </form.Field>
 
+          <LusciiConnectionsSection patientId={patient.id} />
+
           <DialogFooter>
             <Button
               type="button"
@@ -233,4 +241,83 @@ function firstError(
         ? String((first as { message: unknown }).message)
         : String(first)
   return raw.startsWith('form.error.') ? t(raw) : raw
+}
+
+function connectionErrorKey(error: unknown): string {
+  if (isApiError(error)) {
+    if (error.code === 'invalid.luscii.patient_not_found') return 'luscii.link.errorNotFound'
+    if (error.code === 'conflict.luscii.already_linked') return 'luscii.link.errorAlreadyLinked'
+    if (error.code === 'unavailable.luscii.not_configured') return 'luscii.notConfigured'
+    if (error.status === 422) return 'luscii.link.errorInvalid'
+  }
+  return 'luscii.link.errorUpstream'
+}
+
+function LusciiConnectionsSection({ patientId }: { patientId: string }): ReactElement {
+  const { t } = useTranslation('patient-profile')
+  const connections = useLusciiConnections(patientId)
+  const add = useAddLusciiConnection()
+  const deactivate = useDeactivateLusciiConnection()
+  const [value, setValue] = useState('')
+
+  const onAdd = (): void => {
+    const lusciiPatientId = value.trim()
+    if (!lusciiPatientId) return
+    add.mutate({ patientId, lusciiPatientId }, { onSuccess: () => setValue('') })
+  }
+
+  const rows = connections.data ?? []
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-4">
+      <Label>{t('luscii.connection.title')}</Label>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('luscii.connection.empty')}</p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {rows.map((c) => (
+            <li
+              key={c.connection_id}
+              className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+            >
+              <span className="flex flex-col">
+                <span className="text-sm font-medium">
+                  {c.program_name ?? t('luscii.noProgram')}
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {c.luscii_patient_id}
+                </span>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => deactivate.mutate({ patientId, connectionId: c.connection_id })}
+                disabled={deactivate.isPending}
+              >
+                {t('luscii.connection.deactivate')}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={t('luscii.connection.addPlaceholder')}
+          aria-label={t('luscii.connection.addLabel')}
+          className="max-w-xs font-mono"
+        />
+        <Button type="button" onClick={onAdd} disabled={add.isPending || value.trim().length === 0}>
+          {t('luscii.connection.add')}
+        </Button>
+      </div>
+      {add.error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {t(connectionErrorKey(add.error))}
+        </p>
+      ) : null}
+    </div>
+  )
 }

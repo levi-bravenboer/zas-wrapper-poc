@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
 import {
+  addLusciiConnection,
+  deactivateLusciiConnection,
+  fetchLusciiConnections,
   fetchLusciiData,
   fetchPatient,
   fetchPatientCareTeams,
@@ -12,6 +15,7 @@ import {
 import { patientKeys } from './keys'
 import type {
   CareTeamRow,
+  LusciiConnectionSummary,
   LusciiLinkResult,
   LusciiPatientData,
   PatientRow,
@@ -90,9 +94,47 @@ async function invalidateLusciiCaches(qc: QueryClient, patientId: string): Promi
   await Promise.all([
     // Prefix invalidation so every active window (7d/30d/90d/365d) refreshes.
     qc.invalidateQueries({ queryKey: patientKeys.lusciiDataPrefix(patientId) }),
-    // The link lives in patient.identifiers — refresh the detail too.
+    qc.invalidateQueries({ queryKey: patientKeys.lusciiConnections(patientId) }),
     qc.invalidateQueries({ queryKey: patientKeys.detail(patientId) }),
   ])
+}
+
+export function useLusciiConnections(patientId: string | null) {
+  return useQuery<LusciiConnectionSummary[]>({
+    queryKey: patientKeys.lusciiConnections(patientId ?? ''),
+    queryFn: () => {
+      if (!patientId) return Promise.resolve([])
+      return fetchLusciiConnections(patientId)
+    },
+    enabled: !!patientId,
+  })
+}
+
+export interface AddLusciiConnectionVariables {
+  patientId: string
+  lusciiPatientId: string
+}
+
+export function useAddLusciiConnection() {
+  const qc = useQueryClient()
+  return useMutation<LusciiConnectionSummary, Error, AddLusciiConnectionVariables>({
+    mutationFn: ({ patientId, lusciiPatientId }) => addLusciiConnection(patientId, lusciiPatientId),
+    onSuccess: (_result, { patientId }) => invalidateLusciiCaches(qc, patientId),
+  })
+}
+
+export interface DeactivateLusciiConnectionVariables {
+  patientId: string
+  connectionId: string
+}
+
+export function useDeactivateLusciiConnection() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, DeactivateLusciiConnectionVariables>({
+    mutationFn: ({ patientId, connectionId }) =>
+      deactivateLusciiConnection(patientId, connectionId),
+    onSuccess: (_void, { patientId }) => invalidateLusciiCaches(qc, patientId),
+  })
 }
 
 export interface LinkLusciiVariables {
