@@ -8,10 +8,12 @@ import {
 } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { I18nextProvider } from 'react-i18next'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { i18n } from '@/lib/i18n'
+import { server } from '@/mocks/server'
 
 import { pathwayKeys } from '../../../../../keys'
 import type { PathwayBlock, PathwayChildSummary, PathwayWithVersion } from '../../../../../types'
@@ -139,6 +141,17 @@ function renderNode({
 
   return { qc, router, flush }
 }
+
+// Safety net: even when a test seeds the query cache, a target-bound render can
+// still fire the summary/detail queries. Without handlers these escape to the
+// happy-dom origin and MSW's `error` strategy rejects async — polluting a later
+// worker file. Wildcard origins so the handlers match regardless of base.
+beforeEach(() => {
+  server.use(
+    http.get('*/pathways/:pathwayId/summary', () => HttpResponse.json(summary())),
+    http.get('*/pathways/:pathwayId', () => HttpResponse.json(detail())),
+  )
+})
 
 describe('NestedPathwayBlockNode (8.2)', () => {
   describe('container rendering', () => {
