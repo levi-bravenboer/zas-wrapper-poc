@@ -35,11 +35,19 @@ export function AuditEventDetail({ event }: AuditEventDetailProps): ReactElement
       </div>
       <div className="md:col-span-2">
         <p className="mb-1 font-semibold text-foreground">{t('detail.context')}</p>
-        {event.context ? <JsonBlock value={event.context} /> : <p className="text-muted-foreground">{dash}</p>}
+        {event.context ? (
+          <JsonBlock value={event.context} />
+        ) : (
+          <p className="text-muted-foreground">{dash}</p>
+        )}
       </div>
       <div className="md:col-span-2">
         <p className="mb-1 font-semibold text-foreground">{t('detail.changes')}</p>
-        {event.changes ? <JsonBlock value={event.changes} /> : <p className="text-muted-foreground">{dash}</p>}
+        {event.changes ? (
+          <JsonBlock value={event.changes} />
+        ) : (
+          <p className="text-muted-foreground">{dash}</p>
+        )}
       </div>
     </div>
   )

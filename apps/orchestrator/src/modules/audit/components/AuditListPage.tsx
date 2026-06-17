@@ -74,7 +74,9 @@ export function AuditListPage(): ReactElement {
       defineColumn<AuditEventRead>({
         id: 'actor',
         header: t('column.actor'),
-        cell: (row) => <span className="truncate font-medium text-foreground">{actorLabel(row)}</span>,
+        cell: (row) => (
+          <span className="truncate font-medium text-foreground">{actorLabel(row)}</span>
+        ),
       }),
       defineColumn<AuditEventRead>({
         id: 'action',
@@ -88,7 +90,9 @@ export function AuditListPage(): ReactElement {
           row.resource_type ? (
             <span className="text-muted-foreground">
               {row.resource_type}
-              {row.resource_id ? <span className="text-xs"> ·{shortId(row.resource_id)}</span> : null}
+              {row.resource_id ? (
+                <span className="text-xs"> ·{shortId(row.resource_id)}</span>
+              ) : null}
             </span>
           ) : (
             <span className="text-muted-foreground">—</span>
