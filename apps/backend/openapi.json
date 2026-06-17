@@ -11910,6 +11910,24 @@
             "title": "Supports Branches",
             "default": false
           },
+          "actor": {
+            "type": "string",
+            "title": "Actor",
+            "description": "caregiver | patient | system | auto",
+            "default": "system"
+          },
+          "runtime_phase": {
+            "type": "string",
+            "title": "Runtime Phase",
+            "description": "build | enroll | runtime",
+            "default": "runtime"
+          },
+          "completion": {
+            "type": "string",
+            "title": "Completion",
+            "description": "caregiver_action | auto | decision | terminal",
+            "default": "auto"
+          },
           "source": {
             "type": "string",
             "enum": [

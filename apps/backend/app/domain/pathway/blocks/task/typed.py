@@ -14,6 +14,8 @@ TaskAssignee = Literal["caregiver"]
 
 class TaskBlock(BaseBlock):
     KIND: ClassVar[str] = "task"
+    ACTOR: ClassVar[str] = "caregiver"
+    COMPLETION: ClassVar[str] = "caregiver_action"
     TYPE_CODE: ClassVar[str] = "task"
     LABEL: ClassVar[str] = "Taak"
     DESCRIPTION: ClassVar[str] = "A work item assigned to the patient or a caregiver."

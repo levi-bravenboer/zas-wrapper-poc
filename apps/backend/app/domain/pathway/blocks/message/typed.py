@@ -14,6 +14,8 @@ MessageChannel = Literal["email", "sms", "push", "in_app"]
 
 class MessageBlock(BaseBlock):
     KIND: ClassVar[str] = "message"
+    ACTOR: ClassVar[str] = "auto"
+    COMPLETION: ClassVar[str] = "auto"
     TYPE_CODE: ClassVar[str] = "message"
     # Catalogue-expansion § A3: this kind doubles as the urology-flow
     # "notification" primitive — fire-and-forget message/notification

@@ -62,6 +62,8 @@ class MdoBlock(BaseBlock):
     """
 
     KIND: ClassVar[str] = "mdo"
+    ACTOR: ClassVar[str] = "caregiver"
+    COMPLETION: ClassVar[str] = "caregiver_action"
     TYPE_CODE: ClassVar[str] = "mdo"
     LABEL: ClassVar[str] = "MDO"
     DESCRIPTION: ClassVar[str] = (

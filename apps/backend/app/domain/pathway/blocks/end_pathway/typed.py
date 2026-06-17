@@ -27,6 +27,8 @@ class EndPathwayBlock(BaseBlock):
     """
 
     KIND: ClassVar[str] = "end_pathway"
+    ACTOR: ClassVar[str] = "auto"
+    COMPLETION: ClassVar[str] = "terminal"
     TYPE_CODE: ClassVar[str] = "end_pathway"
     LABEL: ClassVar[str] = "End"
     DESCRIPTION: ClassVar[str] = "Terminal block. First reachable end completes the enrollment."

@@ -80,6 +80,8 @@ class InformedConsentBlock(BaseBlock):
     """
 
     KIND: ClassVar[str] = "informed_consent"
+    ACTOR: ClassVar[str] = "patient"
+    COMPLETION: ClassVar[str] = "caregiver_action"
     TYPE_CODE: ClassVar[str] = "informed_consent"
     LABEL: ClassVar[str] = "Informed consent"
     DESCRIPTION: ClassVar[str] = (

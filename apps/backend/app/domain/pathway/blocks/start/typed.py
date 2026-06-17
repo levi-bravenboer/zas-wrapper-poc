@@ -28,6 +28,8 @@ class StartBlock(BaseBlock):
     """
 
     KIND: ClassVar[str] = "start"
+    ACTOR: ClassVar[str] = "auto"
+    COMPLETION: ClassVar[str] = "auto"
     TYPE_CODE: ClassVar[str] = "start"
     LABEL: ClassVar[str] = "Start"
     DESCRIPTION: ClassVar[str] = (
