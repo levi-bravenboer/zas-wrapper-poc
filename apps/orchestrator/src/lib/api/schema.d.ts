@@ -2097,6 +2097,41 @@ export interface components {
             /** Period End */
             period_end?: string | null;
         };
+        /**
+         * ConnectionGroup
+         * @description Live Luscii data for one active connection (one Luscii patient).
+         *
+         *     A patient may hold several connections at once (one per Luscii patient,
+         *     each running one program). Each group carries its own program/protocol +
+         *     decoded measurements/series; `program_id` is provenance the FE matches to
+         *     a carepath. Display-only invariant holds — every field is a
+         *     passthrough/join/decode, never a value-derived signal.
+         */
+        ConnectionGroup: {
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "inactive";
+            program?: components["schemas"]["LusciiProgramView"] | null;
+            protocol?: components["schemas"]["LusciiProtocolView"] | null;
+            /** Planned Actions */
+            planned_actions?: components["schemas"]["LusciiPlannedActionView"][];
+            /** Measurements */
+            measurements?: components["schemas"]["LusciiMeasurementView"][];
+            /** Series */
+            series?: components["schemas"]["LusciiMeasurementSeries"][];
+        };
         /** ConsentCreate */
         ConsentCreate: {
             /**
@@ -3362,6 +3397,12 @@ export interface components {
         /**
          * LusciiPatientData
          * @description `GET /patients/{id}/luscii-data` response.
+         *
+         *     `connections[]` is the multi-connection view (one entry per active Luscii
+         *     connection). The top-level `program`/`protocol`/`planned_actions`/
+         *     `unmatched_measurements`/`series` mirror the FIRST connection for backward
+         *     compatibility while the FE migrates to `connections[]`; they are removed
+         *     once no consumer reads them.
          */
         LusciiPatientData: {
             /**
@@ -3381,6 +3422,8 @@ export interface components {
             unmatched_measurements?: components["schemas"]["LusciiMeasurementView"][];
             /** Series */
             series?: components["schemas"]["LusciiMeasurementSeries"][];
+            /** Connections */
+            connections?: components["schemas"]["ConnectionGroup"][];
         };
         /** LusciiPlannedActionView */
         LusciiPlannedActionView: {
@@ -9896,6 +9939,7 @@ export const auditActionValues: ReadonlyArray<FlattenedDeepRequired<components>[
 export const auditResultValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditResult"]> = ["success", "failure"];
 export const blockExecutionResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BlockExecutionResponse"]["state"]> = ["pending", "eligible", "active", "completed", "skipped", "failed"];
 export const careTeamStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CareTeamStatus"]> = ["active", "inactive"];
+export const connectionGroupStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConnectionGroup"]["status"]> = ["active", "inactive"];
 export const consentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConsentStatus"]> = ["active", "revoked"];
 export const decisionBlockOutModeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionBlockOut"]["mode"]> = ["xor", "and"];
 export const decisionBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionBlockOut"]["kind"]> = ["decision"];

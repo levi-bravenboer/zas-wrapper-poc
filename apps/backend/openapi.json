@@ -7453,6 +7453,77 @@
         "title": "CareTeamUpdate",
         "description": "`PATCH /care-teams/{id}` payload \u2014 team-level metadata only.\n\nParticipant changes are out of scope here; use the participant\nendpoints. Setting `status = inactive` or `period_end` closes the\nteam but does not auto-unassign participants \u2014 the service handles\nthat side-effect inside the same transaction."
       },
+      "ConnectionGroup": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "luscii_patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Luscii Patient Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status"
+          },
+          "program": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiProgramView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LusciiProtocolView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "planned_actions": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiPlannedActionView"
+            },
+            "type": "array",
+            "title": "Planned Actions"
+          },
+          "measurements": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementView"
+            },
+            "type": "array",
+            "title": "Measurements"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/LusciiMeasurementSeries"
+            },
+            "type": "array",
+            "title": "Series"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connection_id",
+          "luscii_patient_id",
+          "status"
+        ],
+        "title": "ConnectionGroup",
+        "description": "Live Luscii data for one active connection (one Luscii patient).\n\nA patient may hold several connections at once (one per Luscii patient,\neach running one program). Each group carries its own program/protocol +\ndecoded measurements/series; `program_id` is provenance the FE matches to\na carepath. Display-only invariant holds \u2014 every field is a\npassthrough/join/decode, never a value-derived signal."
+      },
       "ConsentCreate": {
         "properties": {
           "scope": {
@@ -10241,6 +10312,13 @@
             },
             "type": "array",
             "title": "Series"
+          },
+          "connections": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionGroup"
+            },
+            "type": "array",
+            "title": "Connections"
           }
         },
         "type": "object",
@@ -10249,7 +10327,7 @@
           "window_days"
         ],
         "title": "LusciiPatientData",
-        "description": "`GET /patients/{id}/luscii-data` response."
+        "description": "`GET /patients/{id}/luscii-data` response.\n\n`connections[]` is the multi-connection view (one entry per active Luscii\nconnection). The top-level `program`/`protocol`/`planned_actions`/\n`unmatched_measurements`/`series` mirror the FIRST connection for backward\ncompatibility while the FE migrates to `connections[]`; they are removed\nonce no consumer reads them."
       },
       "LusciiPlannedActionView": {
         "properties": {
