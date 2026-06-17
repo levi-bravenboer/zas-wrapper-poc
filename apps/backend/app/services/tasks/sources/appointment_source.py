@@ -162,8 +162,6 @@ class AppointmentSource:
         if row is None:
             return None
         # Opening the detail marks the task read for this caller (idempotent).
-        await self._read_state.mark_opened(
-            user_id=caller.id, source=SOURCE_NAME, source_id=row.id
-        )
+        await self._read_state.mark_opened(user_id=caller.id, source=SOURCE_NAME, source_id=row.id)
         items = await self._assemble([row], caller=caller)
         return items[0] if items else None
