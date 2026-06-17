@@ -56,13 +56,16 @@ async def test_admin_login_is_recorded_and_filterable(
 
     response = await async_client.get(
         "/audit-events",
-        params={"filter[action][eq]": "login", "filter[result][eq]": "success"},
+        params={"filter[event_code][eq]": "auth.login", "filter[result][eq]": "success"},
     )
 
     assert response.status_code == 200
     items = response.json()["items"]
-    assert items, "admin login should have produced a login/success audit event"
-    assert all(item["action"] == "login" for item in items)
+    assert items, "admin login should have produced an auth.login/success audit event"
+    # login now writes FHIR `action=execute` + `event_code=auth.login` (legacy
+    # `login` action deprecated); outcome stays the orthogonal `result`.
+    assert all(item["event_code"] == "auth.login" for item in items)
+    assert all(item["action"] == "execute" for item in items)
     assert all(item["result"] == "success" for item in items)
 
 
