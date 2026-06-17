@@ -1949,7 +1949,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "created" | "updated" | "deleted" | "login";
+        AuditAction: "created" | "updated" | "deleted" | "login" | "published";
         /** AuditEventRead */
         AuditEventRead: {
             /**

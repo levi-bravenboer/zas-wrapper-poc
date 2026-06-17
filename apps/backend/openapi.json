@@ -7020,7 +7020,8 @@
           "created",
           "updated",
           "deleted",
-          "login"
+          "login",
+          "published"
         ],
         "title": "AuditAction"
       },

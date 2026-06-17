@@ -38,8 +38,7 @@ from app.core.enums.audit import AuditAction, PurposeOfUse
 from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.schemas.auth.auth import SessionUser
-from app.services.audit.context import AuditContext
-from app.services.audit.emit import emit
+from app.services.audit.emit import record_in_session
 from app.services.pathway.appointment_materializer import materialize_appointment
 from app.schemas.pathway.enrollment import (
     BlockExecutionResponse,
@@ -587,7 +586,6 @@ class EnrollmentService:
         self,
         enrollment_id: UUID,
         *,
-        actor: SessionUser,
         tenant_id: UUID,
         now: datetime,
         max_steps: int = 200,
@@ -641,16 +639,16 @@ class EnrollmentService:
         # Admin bulk-advance intent — the per-step completions are auto-captured
         # as block-execution diffs, but the fast-forward as a single privileged
         # action is not, so record it explicitly (runtime.fast_forwarded, D12).
-        await emit(
-            self._repo._session,
+        # Actor is read from the session slot by record_in_session.
+        record_in_session(
+            self._repo._session,  # noqa: SLF001
             action=AuditAction.EXECUTE,
             event_code="runtime.fast_forwarded",
             resource_type="PathwayEnrollment",
             resource_id=enrollment_id,
             patient_id=enrollment.patient_id,
             purpose_of_use=PurposeOfUse.OPERATIONS,
-            actor=actor,
-            context=AuditContext(reason=f"fast-forward completed {completed} steps"),
+            context={"reason": f"fast-forward completed {completed} steps"},
         )
         return enrollment, completed
 

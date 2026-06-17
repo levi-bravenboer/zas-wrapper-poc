@@ -397,7 +397,7 @@ async def fast_forward_enrollment(
     # Direct service mutation (not workflow-driven) — it advances the DB state
     # so the runtime view reflects the fast-forward immediately.
     await service.fast_forward(
-        enrollment_id, actor=current_user, tenant_id=current_user.tenant_id, now=_now()
+        enrollment_id, tenant_id=current_user.tenant_id, now=_now()
     )
     return await service.get_view(enrollment_id, tenant_id=current_user.tenant_id)
 
