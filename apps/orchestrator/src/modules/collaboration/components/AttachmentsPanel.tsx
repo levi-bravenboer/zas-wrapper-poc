@@ -1,5 +1,5 @@
 import { Download, Eye, FileText, FolderOpen, Trash2, UploadCloud } from 'lucide-react'
-import { useRef, useState, type DragEvent, type ReactElement } from 'react'
+import { type DragEvent, type ReactElement, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -59,19 +59,26 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <FolderOpen className="size-4 text-foreground-muted" aria-hidden />
+            <span className="grid size-7 place-items-center rounded-md bg-primary-soft/60 text-primary">
+              <FolderOpen className="size-4" aria-hidden />
+            </span>
             {t('collaboration:attachments.title', { defaultValue: 'Documenten' })}
+            {items.length > 0 ? (
+              <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-foreground-muted tabular-nums">
+                {items.length}
+              </span>
+            ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {items.length > 0 ? (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-1.5">
               {items.map((att) => (
                 <li
                   key={att.id}
-                  className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5 transition-colors hover:bg-surface-1"
+                  className="group flex items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border/60 hover:bg-surface-1"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-2 text-foreground-muted">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-soft/50 text-primary">
                     <FileText className="size-4" />
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col">
@@ -82,39 +89,44 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
                       {att.uploader_display_name} · {formatDateTimeOrDash(att.created_at, 'nl')}
                     </span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('collaboration:attachments.preview', {
-                      defaultValue: 'Bekijken',
-                    })}
-                    onClick={() => void openPreview(att)}
-                  >
-                    <Eye className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('collaboration:attachments.download', {
-                      defaultValue: 'Downloaden',
-                    })}
-                    onClick={() => void download(att.id)}
-                  >
-                    <Download className="size-4" />
-                  </Button>
-                  {att.uploaded_by === session.data?.id ? (
+                  <div className="flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={t('collaboration:attachments.delete', {
-                        defaultValue: 'Verwijderen',
+                      className="size-8"
+                      aria-label={t('collaboration:attachments.preview', {
+                        defaultValue: 'Bekijken',
                       })}
-                      disabled={remove.isPending}
-                      onClick={() => remove.mutate(att.id)}
+                      onClick={() => void openPreview(att)}
                     >
-                      <Trash2 className="size-4" />
+                      <Eye className="size-4" />
                     </Button>
-                  ) : null}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      aria-label={t('collaboration:attachments.download', {
+                        defaultValue: 'Downloaden',
+                      })}
+                      onClick={() => void download(att.id)}
+                    >
+                      <Download className="size-4" />
+                    </Button>
+                    {att.uploaded_by === session.data?.id ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-destructive hover:text-destructive"
+                        aria-label={t('collaboration:attachments.delete', {
+                          defaultValue: 'Verwijderen',
+                        })}
+                        disabled={remove.isPending}
+                        onClick={() => remove.mutate(att.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -141,23 +153,28 @@ export function AttachmentsPanel({ ownerType, ownerId }: AttachmentsPanelProps):
             onDrop={onDrop}
             disabled={upload.isPending}
             className={cn(
-              'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors',
+              'flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed text-center transition-colors',
+              items.length > 0 ? 'px-4 py-3.5' : 'px-4 py-8',
               dragging
                 ? 'border-primary bg-primary-soft/40'
                 : 'border-border hover:border-primary/50 hover:bg-surface-1',
             )}
           >
-            <UploadCloud className="size-6 text-foreground-muted" />
+            <UploadCloud
+              className={cn('text-foreground-muted', items.length > 0 ? 'size-5' : 'size-6')}
+            />
             <span className="text-sm font-medium text-foreground">
               {t('collaboration:attachments.dropTitle', {
                 defaultValue: 'Sleep documenten hierheen',
               })}
             </span>
-            <span className="text-[11px] text-foreground-muted">
-              {t('collaboration:attachments.dropHint', {
-                defaultValue: 'of klik om te bladeren · meerdere bestanden mogelijk',
-              })}
-            </span>
+            {items.length === 0 ? (
+              <span className="text-[11px] text-foreground-muted">
+                {t('collaboration:attachments.dropHint', {
+                  defaultValue: 'of klik om te bladeren · meerdere bestanden mogelijk',
+                })}
+              </span>
+            ) : null}
           </button>
         </CardContent>
       </Card>

@@ -44,7 +44,22 @@ class NoteService:
         )
 
     async def list_for_patient(self, *, tenant_id: UUID, patient_id: UUID) -> list[NoteRead]:
-        return _project(await self._repo.list_for_patient(tenant_id=tenant_id, patient_id=patient_id))
+        reads = _project(
+            await self._repo.list_for_patient(tenant_id=tenant_id, patient_id=patient_id)
+        )
+        # Aggregate view: tag each note with where it lives so the patient view
+        # shows the source. Patient-owned notes need no label (they're here).
+        ids_by_type: dict[OwnerType, set[UUID]] = {}
+        for read in reads:
+            if read.owner_type is OwnerType.PATIENT:
+                continue
+            ids_by_type.setdefault(read.owner_type, set()).add(read.owner_id)
+        if ids_by_type:
+            labels = await self._repo.owner_labels(tenant_id=tenant_id, ids_by_type=ids_by_type)
+            for read in reads:
+                if read.owner_type is not OwnerType.PATIENT:
+                    read.owner_label = labels.get(read.owner_id)
+        return reads
 
     async def add(
         self,

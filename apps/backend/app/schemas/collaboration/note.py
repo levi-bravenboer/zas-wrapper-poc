@@ -19,6 +19,10 @@ class NoteRead(BaseModel):
     author_display_name: str
     body: str
     created_at: datetime
+    # Where the note lives (appointment title / task title / pathway-step name).
+    # Resolved only in the patient aggregate so the patient view shows each
+    # note's source; null for patient-owned notes and per-owner lists.
+    owner_label: str | None = None
 
 
 class NoteCreate(BaseModel):

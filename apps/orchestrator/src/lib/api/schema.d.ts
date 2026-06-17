@@ -3705,6 +3705,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Owner Label */
+            owner_label?: string | null;
         };
         /** OrganisationCreate */
         OrganisationCreate: {
