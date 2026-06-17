@@ -36,7 +36,7 @@ Pathways are freely authored (3–30+ blocks, branches, parallel fans, nested su
 
 ## Visual language — match the runtime canvas, not the builder
 
-The merge of `feat/pathway-enrollment-runtime` landed the **detail tab as a runtime canvas** (`ZorgpadTab → EnrollmentCard → runtime-canvas/`: `RuntimeCanvas`, `RuntimeBlockNode`, `RuntimePhaseLayer`, `RuntimePlayhead`, `RuntimeLegend`, `useRuntimeGraph`, `runtimeState.ts`). That surface already set the **patient-side** block language, and it deliberately **drops lane swimlanes** — the rail conveys *runtime state*, not lane. The summary banner is that surface's compact sibling, so it adopts the **same language** (supersedes the lane-accent direction explored in prototypes v2–v8):
+The merge of `feat/pathway-enrollment-runtime` landed the **detail tab as a runtime canvas** (`ZorgpadTab → EnrollmentCard → runtime-canvas/`: `RuntimeCanvas`, `RuntimeBlockNode`, `RuntimePhaseBands`, `RuntimeNavigator`, `RuntimePlayhead`, `RuntimeLegend`, `useRuntimeGraph`, `runtimeLayout.ts`, `runtimeState.ts`). That surface already set the **patient-side** block language, and it deliberately **drops lane swimlanes** — the rail conveys *runtime state*, not lane. The summary banner is that surface's compact sibling, so it adopts the **same language** (supersedes the lane-accent direction explored in prototypes v2–v8):
 
 - Reuse `RUNTIME_STATE_COLOR` (`finished`=success, `active`=primary, `upcoming`/`pending`=border) + `BlockTypeIcon`, mirroring `RuntimeBlockNode`'s compact styling.
 - **Finished** — calm: success-tinted icon tile + success check badge; sub shows `completedAt · completedByName`.
@@ -63,34 +63,21 @@ The banner is **fluid**: pathways are freely authored (3–30+ blocks, branches/
 
 - `Card` (banner shell), `Badge` (status pill), `Button`, `Skeleton` (loading). All already in the closed primitive set — nothing to add (keeps the set lean per the project's primitive rule). The banner needs no Alert/Tooltip/Popover — that density lives in the detail tab.
 
-### Module restructure (decided) — `modules/pathway/{shared,builder,patient}`
+### Where it lives — no restructure, clean module boundary
 
-Today the pathway domain is split across two modules: `modules/pathway/` (builder) and `modules/patient-pathway/` (patient runtime view). They are two sides of one domain, with a shared visual/data vocabulary. Restructure into a single domain module with three sub-areas:
+The pathway domain already splits across two modules: `modules/pathway/` (builder / authoring) and `modules/patient-pathway/` (patient runtime view — runtime canvas, enrollment, summary). **That boundary is the split** — we keep it. No `shared/` folder, no bulk move, no Phase 0.
 
-```
-modules/pathway/
-  shared/    — cross-side vocab: types.ts, api.ts (getPathwayVersion), theme.ts
-               (laneAccent/phaseTint + lane/phase tokens), blockTypeIcon.tsx,
-               DayChip.tsx, BlockGlyph.tsx (new), blockCatalogue.utils.ts
-  builder/   — everything builder-only (canvas, dialog, dock, drawer, subbar,
-               topbar, version, shell, blockCatalogue.tsx, canvasLayout.ts, …)
-  patient/   — former modules/patient-pathway/ (api, hooks, keys, components/…,
-               utils/buckets.ts) + the new summary components below
-```
-
-Rules: `builder/` and `patient/` may both import `shared/`; they do **not** import each other. This kills the "patient reads builder internals" coupling and gives the block "face" a single home.
-
-This is a **behaviour-preserving move** — no logic changes, presentation modules only, **not** the carepath datalayer. Because most intra-module imports are relative, a bulk `git mv` keeps them valid; only absolute `@/modules/pathway/*` (≈6 files) and `@/modules/patient-pathway/*` (≈1 file) consumers + the shared-vocab importers (≈12, relative) need path fixups. **Do it as its own behaviour-preserving commit first** (see tasks Phase 0), then build the feature — and mind the 7 in-flight `pathway-*` branches when timing the merge.
+- The feature lands in `modules/patient-pathway/`, next to the runtime canvas it rhymes with.
+- It reuses the patient module's own `deriveBlockStatus` + `RUNTIME_STATE_COLOR` (same module) and `BlockTypeIcon` from `modules/pathway` (the existing cross-import the runtime canvas already uses).
+- If a piece turns out **genuinely generic and content-agnostic** (e.g. a windowed-stepper primitive), promote it to a reusable component under `components/` — not a pathway-specific shared folder. Domain bits (runtime colours, block icons) stay in the module.
+- No carepath datalayer changes.
 
 ### Layer 2 — Vocabulary the summary reuses
 
-- `BlockTypeIcon` (in `shared/` after the move) — block-kind → icon; already consumed by builder `BlockNode` **and** `RuntimeBlockNode`.
-- `RUNTIME_STATE_COLOR` + `deriveBlockStatus` (from `patient/.../runtime-canvas/runtimeState.ts`) — the patient runtime's state→colour map and status derivation; the summary reuses both so banner and detail tab agree.
-- (lane/phase theme + `DayChip` still move to `shared/` for the builder + runtime canvas, but the **summary banner does not use them**.)
+- `BlockTypeIcon` from `@/modules/pathway/blockCatalogue` — block-kind → icon (same import the runtime canvas already uses).
+- `RUNTIME_STATE_COLOR` + `deriveBlockStatus` from `./runtime-canvas/runtimeState` — the patient runtime's state→colour map and status derivation; the summary reuses both so banner and detail tab agree. No new `BlockGlyph`; the trail node is a compact variant of `RuntimeBlockNode`'s styling.
 
-No new `BlockGlyph` — the trail node is a compact variant of `RuntimeBlockNode`'s styling.
-
-### Layer 3 — Feature-local components (`modules/pathway/patient/components/`)
+### Layer 3 — Feature components (`modules/patient-pathway/components/`)
 
 Compose Layer 1 + 2; live only here:
 

@@ -34,10 +34,10 @@ It is a **front-end presentation change only**. The runtime data contract, the t
 
 ## Impact
 
-- **Module restructure (behaviour-preserving, Phase 0)**: `modules/pathway/` + `modules/patient-pathway/` → `modules/pathway/{shared,builder,patient}`. Bulk `git mv` (relative imports survive); fix ≈6 `@/modules/pathway/*` consumers, ≈1 `@/modules/patient-pathway/*` (`PatientProfilePage`), ≈12 shared-vocab importers. No logic change. **Mind the 7 in-flight `pathway-*` branches** when timing the merge.
-- **Feature (Phase 1), frontend only** (`modules/pathway/patient/`):
+- **No module restructure, no `shared/` folder.** The existing `modules/pathway/` (builder) ↔ `modules/patient-pathway/` (patient runtime) boundary is the split; the feature lands in `modules/patient-pathway/`. Genuinely generic, content-agnostic bits may be promoted to a reusable `components/` primitive — domain bits stay in the module.
+- **Frontend only** (`modules/patient-pathway/`):
   - new `summary.ts` (reuses `deriveBlockStatus`), `components/{PathwayEnrollmentSummary,PathwaySummaryHeader,PathwayTrailNode,PathwayTrailOverflow}.tsx` + tests; `components/PathwayTimeline.tsx` rewires `PathwayProgress` → `PathwayEnrollmentSummary`.
-  - reuses existing runtime vocab (`BlockTypeIcon`, `RUNTIME_STATE_COLOR`, `deriveBlockStatus`) — no new `BlockGlyph`, no builder restyle.
+  - reuses existing vocab — `deriveBlockStatus` + `RUNTIME_STATE_COLOR` (own runtime-canvas) and `BlockTypeIcon` (`@/modules/pathway/blockCatalogue`). No new `BlockGlyph`, no builder restyle, no module move.
   - `lib/i18n/locales/nl/patient-pathway.json`: new keys.
 - **No backend, no DB, no migration, no API change, no `runtimeState.ts`/`utils/buckets.ts` change.** Pure presentation.
 - **HTML prototypes**: `openspec/changes/patient-pathway-visuals/prototypes/pathway-visuals/vN.html` (v8 = locked look). Iterate as new `vN.html`; never edit prior versions.
