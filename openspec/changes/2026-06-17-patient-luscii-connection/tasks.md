@@ -70,24 +70,30 @@ single-active behaviour + response shape so nothing breaks:
   run the identifier-based service. Do it at ship/merge time, not in the dev
   shared DB. (Stale rows are harmless: the service no longer reads/writes them.)
 
-**Phase B (TODO)** — multi-connection aggregation + breaking response reshape
-(cascades to §3 schema + §4 FE):
-- [ ] 2.4 `get_patient_data`: gather `get_patient` per active connection
-  (refresh snapshot), one `get_measurements`, filter by id set, partition by
-  `patientId`; per connection build planned actions + decoder + series (reuse
-  existing builders); emit flat `ConnectionGroup[]`. **No pathway imports.**
-- [ ] 2.5 Tests: two active connections aggregate; one measurements call
-  regardless of count; inactive excluded; snapshot refresh on program change.
+**Phase B1 (DONE)** — multi-connection aggregation, ADDITIVE (keep legacy
+fields, add `connections[]`) so the FE stays green until it migrates:
+- [x] 2.4 `get_patient_data`: `_active_connections`, one org-wide
+  `get_measurements`, per-connection `get_patient` + planned actions in
+  parallel, decode once, `_connection_group` per connection → `connections[]`.
+  Legacy top-level fields mirror the first connection. No pathway imports.
+- [x] 2.5 Test `test_luscii_data_aggregates_multiple_active_connections`: two
+  active connections → 2 groups, one measurements call, per-connection
+  measurement isolation. 16/16 router + 40/40 FE patient green.
+- [ ] 2.6 Snapshot refresh on program change — DEFERRED (avoid write-in-GET;
+  revisit with per-connection caching).
+
+**Phase B2 (TODO)** — FE migrates to `connections[]`, then remove legacy
+top-level fields (the actual breaking step) once no consumer reads them.
 
 ## §3 — Backend: API schemas + routes
 
-- [ ] 3.1 `schemas/luscii/patient_data.py`: `ConnectionGroup`, flat
-  `LusciiPatientData` (drop single-program/`state` fields). Connection list +
-  link/unlink request/response schemas. Series points keep `program_id`.
-- [ ] 3.2 Routes: `PUT /patients/{id}/luscii-link` → connection upsert; add
-  per-connection deactivate (path or body param — D9); optional `GET
-  /patients/{id}/luscii-connections` for the dialog list.
-- [ ] 3.3 `/openapi-sync` — regenerate (breaking reshape).
+- [x] 3.1 `schemas/luscii/patient_data.py`: `ConnectionGroup` added;
+  `connections[]` added to `LusciiPatientData` (legacy fields kept for now —
+  dropped in Phase B2). Series points keep `program_id`.
+- [ ] 3.2 Routes: `PUT /patients/{id}/luscii-link` → connection upsert (done
+  via service); add per-connection deactivate (D9) + `GET
+  /patients/{id}/luscii-connections` for the dialog list — Phase B2.
+- [x] 3.3 openapi.json + schema.d.ts regenerated (additive; FE compiles).
 
 ## §4 — Frontend: attribution + UI
 
