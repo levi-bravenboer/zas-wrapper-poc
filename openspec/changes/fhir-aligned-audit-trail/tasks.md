@@ -130,10 +130,10 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 ## 8. Read API + client
 
 - [x] 8.0 `AuditEventRead` schema returns `event_code`, `patient_id`, `purpose_of_use` (`app/schemas/audit/audit_event.py`)
-- [ ] 8.1 (WHERE) Extend `GET /audit-events` *filter params* with `patient_id`, `event_code`, `purpose_of_use` (`audit_router.py` uses generic `ListQueryParamsDep` + `repo.list_page`; inspect `app/api/_list` + `AuditEventRepository` to add filters)
+- [x] 8.1 `GET /audit-events` filters extended via `AuditEventRepository.filterable_fields`: `patient_id` (eq), `event_code` (eq/in), `purpose_of_use` (eq/in) — usable as `filter[patient_id]=...` etc.
 - [ ] 8.2 `/openapi-sync` — regenerate `openapi.json` + orchestrator typegen
 - [ ] 8.3 Test: filter by `patient_id` / `purpose_of_use=break_the_glass`
-- [ ] 8.4 (WHERE) `GET /audit-events` SHALL scope rows by the caller's `tenant_id` (admin is tenant-scoped) — no cross-tenant audit leak; test a second-tenant caller
+- [x] 8.4 `AuditEventRepository._tenant_predicate` override scopes the trail to the caller's `tenant_id` (AuditEvent isn't TenantOwnedEntity so base hook skipped it; reads actor from session slot). NULL-tenant rows (anonymous/system) excluded. Test still pending
 
 ## 9. Scope + verify
 
