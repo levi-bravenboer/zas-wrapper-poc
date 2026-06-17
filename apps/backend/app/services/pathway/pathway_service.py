@@ -941,16 +941,31 @@ def _derive_edges_for_response(blocks: list[PathwayBlock]) -> list[DerivedEdge]:
     return edges
 
 
+def _decision_outputs_by_block(blocks: list[PathwayBlockIn]) -> dict[UUID, set[str]]:
+    """Map each `decision` block id to its declared `outputs` keys."""
+    out: dict[UUID, set[str]] = {}
+    for block in blocks:
+        if block.kind != "decision":
+            continue
+        config = block.config or {}
+        outputs = config.get("outputs")
+        out[block.id] = {str(o) for o in outputs} if isinstance(outputs, list) else set()
+    return out
+
+
 def _validate_input_logic_node_refs(
     blocks: list[PathwayBlockIn],
     block_ids: set[UUID],
 ) -> None:
-    """Reject payloads whose `input_logic.node` refs miss a block (§3.4).
+    """Reject payloads whose `input_logic.node` refs miss a block (§3.4) or
+    whose `decision_output` predicate points at a non-decision block or an
+    output key the referenced decision does not declare (§2.7).
 
     Each rule references a producer block by id; the rule's typed
     `args` carry the same id. Any reference that does not resolve to
     a block in the same pathway version is a publish blocker.
     """
+    decision_outputs = _decision_outputs_by_block(blocks)
     for block in blocks:
         # The payload still arrives in the slot #1 wire shape (`config`
         # bag with an `input_logic` key); the new typed aggregate is
@@ -979,3 +994,23 @@ def _validate_input_logic_node_refs(
                     field=f"blocks[{block.id}].input_logic.rules[{idx}].node",
                     reason=f"node {node} not present in payload blocks",
                 )
+            # §2.7: a `decision_output` predicate must reference a decision
+            # block and an output key it actually declares.
+            args = rule.get("args")
+            if isinstance(args, dict) and args.get("predicate") == "decision_output":
+                after = args.get("after_block", node)
+                try:
+                    after_id = UUID(str(after))
+                except (TypeError, ValueError):
+                    after_id = node
+                if after_id not in decision_outputs:
+                    raise PathwayValidationError(
+                        field=f"blocks[{block.id}].input_logic.rules[{idx}].args.after_block",
+                        reason=f"decision_output references block {after_id} which is not a decision",
+                    )
+                output_key = str(args.get("output_key", ""))
+                if output_key not in decision_outputs[after_id]:
+                    raise PathwayValidationError(
+                        field=f"blocks[{block.id}].input_logic.rules[{idx}].args.output_key",
+                        reason=(f"output_key {output_key!r} not declared by decision {after_id}"),
+                    )

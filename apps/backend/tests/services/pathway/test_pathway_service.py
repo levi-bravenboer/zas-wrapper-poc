@@ -916,3 +916,52 @@ async def test_get_version_definition_unknown_version_raises(
         await service.get_version_definition(
             empty_pathway.id, uuid.uuid4(), empty_pathway.tenant_id
         )
+
+
+async def test_decision_output_predicate_rejects_unknown_key(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """§2.7: a downstream block gated on a decision output the decision does
+    not declare is a publish blocker."""
+    service = _service(db_session)
+    phase = _phase()
+    system_lane = _lane(code="system")
+    caregiver_lane = _lane(code="caregiver", ord_=1, is_default=False)
+    decision_id = uuid.uuid4()
+    decision = PathwayBlockIn(
+        id=decision_id,
+        phase_id=phase.id,
+        lane_id=system_lane.id,
+        kind="decision",
+        config={"question": "Goed?", "outputs": ["goed"], "mode": "xor"},
+    )
+    downstream = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=caregiver_lane.id,
+        kind="appointment",
+        config={
+            "title": "Extra",
+            "input_logic": {
+                "rules": [
+                    {
+                        "node": str(decision_id),
+                        "args": {
+                            "predicate": "decision_output",
+                            "after_block": str(decision_id),
+                            "output_key": "onbekend",
+                        },
+                    }
+                ],
+                "aggregator": "all_of",
+            },
+        },
+    )
+    with pytest.raises(PathwayValidationError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(
+                phases=[phase], lanes=[system_lane, caregiver_lane], blocks=[decision, downstream]
+            ),
+        )
