@@ -34,9 +34,12 @@ from app.domain.pathway.runtime.scheduling import (
     resolve_relative_to_date,
     schedule_from_anchor,
 )
+from app.core.enums.audit import AuditAction, PurposeOfUse
 from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.schemas.auth.auth import SessionUser
+from app.services.audit.context import AuditContext
+from app.services.audit.emit import emit
 from app.services.pathway.appointment_materializer import materialize_appointment
 from app.schemas.pathway.enrollment import (
     BlockExecutionResponse,
@@ -584,6 +587,7 @@ class EnrollmentService:
         self,
         enrollment_id: UUID,
         *,
+        actor: SessionUser,
         tenant_id: UUID,
         now: datetime,
         max_steps: int = 200,
@@ -632,7 +636,23 @@ class EnrollmentService:
                 enrollment_id, execution_id, result=result, tenant_id=tenant_id, now=now
             )
             completed += 1
-        return await self.get(enrollment_id, tenant_id=tenant_id), completed
+
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        # Admin bulk-advance intent — the per-step completions are auto-captured
+        # as block-execution diffs, but the fast-forward as a single privileged
+        # action is not, so record it explicitly (runtime.fast_forwarded, D12).
+        await emit(
+            self._repo._session,
+            action=AuditAction.EXECUTE,
+            event_code="runtime.fast_forwarded",
+            resource_type="PathwayEnrollment",
+            resource_id=enrollment_id,
+            patient_id=enrollment.patient_id,
+            purpose_of_use=PurposeOfUse.OPERATIONS,
+            actor=actor,
+            context=AuditContext(reason=f"fast-forward completed {completed} steps"),
+        )
+        return enrollment, completed
 
     async def patch_deferred_value(
         self,
