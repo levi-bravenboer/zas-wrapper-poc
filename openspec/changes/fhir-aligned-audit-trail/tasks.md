@@ -101,7 +101,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 ## 5. Read-capture seam (D5)
 
 - [x] 5.1 Read-capture mechanism `record_patient_read(...)` in `app/services/audit/access.py`
-- [ ] 5.2 (WHERE) Wire `record_patient_read` onto patient-data GET routes: patient profile/dossier, pathway runtime, notes, appointments, collaboration
+- [~] 5.2 (WHERE) Wire `record_patient_read` onto patient-data GETs. DONE: `GET /patients/{id}` via `_audit_dossier_read` dep (composes after `PatientAccessDep` → logs only on granted access; `event_code=patient.dossier_viewed`, purpose default `treatment`). PENDING: pathway runtime (enrollment timeline), notes, appointments, collaboration GETs — same pattern
 - [ ] 5.3 (WHERE) Confirm NO read-logging on admin/template/list routes
 - [~] 5.4 Test deferred
 - [x] 5.5 Denied-access mechanism `record_denied_access(...)` (D10) in `access.py`; wiring onto the patient-access guard is the WHERE phase
