@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from jsonschema import Draft202012Validator
 
+from app.core.enums.audit import AuditAction
 from app.db.models.pathway import (
     Pathway,
     PathwayBlock,
@@ -63,6 +64,14 @@ from app.schemas.pathway.pathway import (
     PathwayWithVersionResponse,
 )
 from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut, out_class_for_kind
+from app.services.pathway.audit_events import (
+    OP_CREATE,
+    OP_DELETE,
+    OP_DUPLICATE,
+    OP_EDIT,
+    edit_starts_new_session,
+    record_pathway_event,
+)
 from app.services.pathway.nesting import assert_no_nested_pathway_cycles
 from app.services.pathway.pathway_version_service import PathwayVersionService
 from app.services.pathway.errors import (
@@ -304,6 +313,13 @@ class PathwayService:
                 )
             )
         await session.flush()
+        record_pathway_event(
+            session,
+            action=AuditAction.CREATED,
+            pathway_id=pathway.id,
+            operation=OP_CREATE,
+            context={"version_no": version.version_no},
+        )
         definition = await self._build_version_definition(version)
         return PathwayWithVersionResponse(
             pathway=PathwayBare.model_validate(pathway),
@@ -352,6 +368,18 @@ class PathwayService:
         session = self._repo._session  # noqa: SLF001
         await session.refresh(pathway, ["updated_at"])
         await session.refresh(concept, ["updated_at"])
+
+        # One `edited` event per editing session — autosave fires this endpoint
+        # repeatedly, so coalesce all but the first edit by the same actor
+        # within the quiet window.
+        if await edit_starts_new_session(session, pathway_id=pathway_id):
+            record_pathway_event(
+                session,
+                action=AuditAction.UPDATED,
+                pathway_id=pathway_id,
+                operation=OP_EDIT,
+                context={"version_no": concept.version_no, "version_id": concept.id},
+            )
 
         definition = await self._build_version_definition(concept)
         return PathwayWithVersionResponse(
@@ -441,6 +469,17 @@ class PathwayService:
 
         session = self._repo._session  # noqa: SLF001
         await session.flush()
+        record_pathway_event(
+            session,
+            action=AuditAction.CREATED,
+            pathway_id=new_pathway.id,
+            operation=OP_DUPLICATE,
+            context={
+                "version_no": new_version.version_no,
+                "source_pathway_id": pathway_id,
+                "source_version_id": source_version_id,
+            },
+        )
 
         summaries = await self.list_summaries(tenant_id)
         return next(s for s in summaries if s.id == new_pathway.id)
@@ -455,6 +494,13 @@ class PathwayService:
                 referrers=[{"id": str(r.id), "name": r.name} for r in referrers]
             )
         await self._repo.soft_delete(pathway)
+        record_pathway_event(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.DELETED,
+            pathway_id=pathway.id,
+            operation=OP_DELETE,
+            context={"name": pathway.name},
+        )
 
     # ---- Helpers ---------------------------------------------------------
 

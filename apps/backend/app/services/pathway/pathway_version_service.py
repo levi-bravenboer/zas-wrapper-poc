@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import select
 
+from app.core.enums.audit import AuditAction
 from app.db.models.pathway import (
     PathwayBlock,
     PathwayBlockBranch,
@@ -56,6 +57,11 @@ from app.services.pathway.errors import (
     NoConceptVersionError,
     PathwayNotFoundError,
     PathwayVersionNotFoundError,
+)
+from app.services.pathway.audit_events import (
+    OP_FORK,
+    OP_RESTORE,
+    record_pathway_event,
 )
 from app.services.pathway.nesting import resolve_pathway_link_snapshots
 
@@ -122,6 +128,17 @@ class PathwayVersionService:
             published_by=actor_id,
             label=payload.label,
             note=payload.note,
+        )
+        record_pathway_event(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.PUBLISHED,
+            pathway_id=pathway_id,
+            context={
+                "version_no": concept.version_no,
+                "version_id": concept.id,
+                "label": payload.label,
+                "note": payload.note,
+            },
         )
         actors = await self._fetch_actors({concept.created_by, actor_id})
         return self._to_summary(concept, actors)
@@ -368,6 +385,17 @@ class PathwayVersionService:
         await self._copy_children(source.id, new_version.id)
         session = self._repo._session  # noqa: SLF001
         await session.refresh(new_version, ["created_at", "updated_at"])
+        record_pathway_event(
+            session,
+            action=AuditAction.CREATED,
+            pathway_id=pathway_id,
+            operation=OP_FORK if require_published_source else OP_RESTORE,
+            context={
+                "version_no": new_version.version_no,
+                "source_version_id": source.id,
+                "source_version_no": source.version_no,
+            },
+        )
         actors = await self._fetch_actors({new_version.created_by})
         return self._to_summary(new_version, actors)
 
