@@ -83,6 +83,8 @@
       "open": "MDO afronden",
       "notesLabel": "Notities",
       "notesPlaceholder": "Besproken en besloten…",
+      "outcomeLabel": "Uitkomst",
+      "outcomePlaceholder": "Kies een uitkomst",
       "confirm": "Afronden"
     },
     "appointment": {

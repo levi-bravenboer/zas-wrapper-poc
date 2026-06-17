@@ -3504,6 +3504,8 @@ export interface components {
             topic: string;
             /** Expected Attendees Note */
             expected_attendees_note?: string | null;
+            /** Outcomes */
+            outcomes?: string[];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}

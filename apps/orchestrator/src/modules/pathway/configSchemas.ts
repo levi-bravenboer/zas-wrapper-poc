@@ -165,6 +165,7 @@ const InformedConsentConfig = z.object({
 const MdoConfig = z.object({
   topic: z.string().min(1).max(500).nullable().optional(),
   expected_attendees_note: z.string().max(2000).nullable().optional(),
+  outcomes: z.array(z.string().min(1).max(64)).optional(),
 })
 
 export const CONFIG_SCHEMAS = {

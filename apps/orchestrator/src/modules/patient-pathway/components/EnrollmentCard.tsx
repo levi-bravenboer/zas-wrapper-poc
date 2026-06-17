@@ -135,7 +135,8 @@ export function EnrollmentCard({ patientId, enrollment }: EnrollmentCardProps): 
       return (
         <MdoAction
           disabled={completeStep.isPending}
-          onConfirm={(result) => handleComplete(execution, result)}
+          outcomes={block.outcomes ?? []}
+          onConfirm={(result) => handleComplete(execution, { ...result })}
         />
       )
     }
