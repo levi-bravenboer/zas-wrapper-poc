@@ -148,6 +148,48 @@
       "title": "Overige metingen",
       "unknownInstrument": "Onbekend instrument",
       "noValues": "Geen waarden"
+    },
+    "groups": {
+      "currentTitle": "Huidig zorgpad",
+      "historyTitle": "Historie",
+      "unassignedTitle": "Niet aan zorgpad gekoppeld",
+      "historyToggle": "Historie tonen",
+      "unassignedHint": "Programma niet teruggevonden in een zorgpad van deze patiënt."
+    },
+    "connection": {
+      "title": "Luscii-koppelingen",
+      "empty": "Nog geen Luscii-koppelingen.",
+      "setViaEdit": "Beheer Luscii-koppelingen via Bewerken.",
+      "add": "Koppeling toevoegen",
+      "addLabel": "Luscii patiënt-ID",
+      "addPlaceholder": "Luscii patiënt-ID (UUID)",
+      "deactivate": "Deactiveren",
+      "statusActive": "Actief",
+      "statusInactive": "Inactief",
+      "programLabel": "Programma"
+    },
+    "archetype": {
+      "numeric": "Numeriek",
+      "ordinal": "Schaalscore",
+      "categorical": "Keuze",
+      "free_text": "Vrije tekst",
+      "unknown": "Onbekend"
+    },
+    "instrumentType": {
+      "numerical": "Meetwaarde",
+      "questionnaire": "Vragenlijst",
+      "knowledge": "Educatie",
+      "bloodpressure": "Bloeddruk",
+      "scripted": "Script"
+    },
+    "itemType": {
+      "numeric": "Getal",
+      "text": "Tekst",
+      "multiple-choice-single-select": "Meerkeuze (één antwoord)",
+      "multiple-choice-multi-select": "Meerkeuze (meerdere antwoorden)",
+      "file-picker": "Bestand",
+      "external": "Extern",
+      "result": "Resultaat"
     }
   },
   "charts": {
