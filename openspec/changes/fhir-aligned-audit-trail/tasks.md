@@ -123,7 +123,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 - [ ] 7.5 (DEFERRED) Runtime: `runtime.decision_branched` — resolved inside the pure `RuntimeEngine`/`_apply_decision_fanout` (no session); `decision_output` change captured by auto-diff. Wire if a named event is needed at the service boundary
 - [x] 7.6 Runtime: `runtime.deferred_value_resolved` at `EnrollmentService.patch_deferred_value` via `record_in_session` (patient_id from enrollment, `context.attr`)
 - [x] 7.6b Runtime: `runtime.fast_forwarded` at `EnrollmentService.fast_forward` (actor=admin, purpose=operations, patient_id from enrollment) — one summary event; per-step completions already auto-captured (D12)
-- [ ] 7.7 Tests: each runtime transition emits exactly one event with correct `event_code` + `patient_id`
+- [x] 7.7 Test `test_transitions_emit_audit_events` extended: asserts exactly one `runtime.enrolled` (on create) + one `runtime.block_executed` (on complete_step), each `action=execute` with the enrollment's `patient_id`. Green.
 - [x] 7.8 Auth: `_emit_login_audit` now writes `action=execute` + `event_code=auth.login` (`auth_router.py`). NOTE: existing auth-audit tests assert `action=login` and must be updated
 - [ ] 7.9 (DEFERRED — no PoC call site) patient-actor auth emit lands when the mobile backend auth endpoint exists (`feat/mobile-app-auth-setup`); `ActorType.patient` already shipped
 
@@ -131,8 +131,8 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 
 - [x] 8.0 `AuditEventRead` schema returns `event_code`, `patient_id`, `purpose_of_use` (`app/schemas/audit/audit_event.py`)
 - [x] 8.1 `GET /audit-events` filters extended via `AuditEventRepository.filterable_fields`: `patient_id` (eq), `event_code` (eq/in), `purpose_of_use` (eq/in) — usable as `filter[patient_id]=...` etc.
-- [ ] 8.2 `/openapi-sync` — regenerate `openapi.json` + orchestrator typegen
-- [ ] 8.3 Test: filter by `patient_id` / `purpose_of_use=break_the_glass`
+- [x] 8.2 `openapi.json` regenerated (`uv run python -m app.openapi`) + orchestrator types regenerated (`openapi-typescript` against the file) — both done manually this session; AuditAction enum + new fields correct on both ends
+- [x] 8.3 Test `test_filter_by_patient_id_and_break_the_glass`: seeds tenant-scoped rows, asserts `filter[patient_id]` returns the patient-centric trail and `filter[purpose_of_use]=break_the_glass` isolates override access. Green.
 - [x] 8.4 `AuditEventRepository._tenant_predicate` override scopes the trail to the caller's `tenant_id` (AuditEvent isn't TenantOwnedEntity so base hook skipped it; reads actor from session slot). NULL-tenant rows (anonymous/system) excluded. Test still pending
 
 ## 9. Scope + verify
