@@ -2,12 +2,12 @@
 
 - [x] 1.1 Add `PUBLISHED = "published"` to `AuditAction` in `app/core/enums/audit.py`; update the module docstring to note that new verbs are added only for non-create/update/delete state transitions (cite `published`).
 - [x] 1.2 Generate the migration via `moon run backend:make-migration` (message: "add published audit action") and edit it to `ALTER TYPE audit_action ADD VALUE 'published'` in its own step; document the down-migration as a type-rebuild or explicit no-op stub (Postgres cannot drop an enum value).
-- [ ] 1.3 Apply the migration locally and confirm the enum value exists (`SELECT enum_range(NULL::audit_action)`); confirm existing audit read/write paths still work.
+- [ ] 1.3 (remaining — needs dev stack) Apply the migration locally and confirm the enum value exists (`SELECT enum_range(NULL::audit_action)`); confirm existing audit read/write paths still work.
 
 ## 2. In-band emit helper
 
 - [x] 2.1 Add an in-band recorder in `app/services/audit/` (analogous to `emit_committed()` but `session.add()`-ing the `AuditEvent` onto the **current** request session) that builds the event from action, optional `context.operation`, `resource_type`/`resource_id`, `context`, and the `SessionUser` actor (actor_type=user, actor_id, actor_label, tenant_id).
-- [ ] 2.2 Unit-test the helper: it adds the event to the passed session (commits with the transaction) and does NOT open a separate session.
+- [x] 2.2 Unit-test the helper: it adds the event to the passed session (commits with the transaction) and does NOT open a separate session.
 
 ## 3. Pathway authoring emit wiring
 
@@ -25,7 +25,7 @@
 - [x] 4.1 Add a named quiet-window constant (default 15 minutes) in the audit/pathway service config.
 - [x] 4.2 In `PathwayService.replace_definition`, before emitting, look up the most recent audit event for `(resource_type="Pathway", resource_id)` (single indexed read).
 - [x] 4.3 Suppress a new `edited` event when the latest event is an `edited` event by the **same** actor within the quiet window; otherwise emit `updated` / `operation=edit` with `version_no` + `version_id`.
-- [ ] 4.4 Verify the emit path for the three reset conditions: window elapsed, different actor, intervening lifecycle event.
+- [x] 4.4 Verify the emit path for the three reset conditions: window elapsed, different actor, intervening lifecycle event.
 
 ## 5. Pathway access emit wiring
 
