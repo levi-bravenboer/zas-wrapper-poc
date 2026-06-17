@@ -16,6 +16,9 @@ const { useUpdatePatientMock, mutateAsync } = vi.hoisted(() => ({
 
 vi.mock('../../hooks', () => ({
   useUpdatePatient: useUpdatePatientMock,
+  useLusciiConnections: () => ({ data: [] }),
+  useAddLusciiConnection: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+  useDeactivateLusciiConnection: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 const PATIENT = {

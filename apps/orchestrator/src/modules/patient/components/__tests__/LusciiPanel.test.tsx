@@ -4,8 +4,8 @@ import type { ReactNode } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { i18n } from '@/lib/i18n'
 import { apiError } from '@/lib/api/errors'
+import { i18n } from '@/lib/i18n'
 import type { LusciiPatientData } from '@/modules/patient/types'
 
 import { LusciiPanel } from '../LusciiPanel'
@@ -146,8 +146,8 @@ describe('LusciiPanel', () => {
     expect(refetch).toHaveBeenCalled()
   })
 
-  it('renders link form for unlinked patient and submits UUID', () => {
-    const link = mockIdleMutations()
+  it('points unlinked patients to the edit dialog (no inline form)', () => {
+    mockIdleMutations()
     useLusciiDataMock.mockReturnValue({
       data: {
         state: 'not_linked',
@@ -160,39 +160,9 @@ describe('LusciiPanel', () => {
       refetch: vi.fn(),
     })
     renderPanel()
-    const input = screen.getByRole('textbox', { name: 'Luscii patiënt-ID' })
-    fireEvent.change(input, { target: { value: ' 7659dfb3-c089-4d12-95b7-46ff8ce1e7dd ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Koppelen' }))
-    expect(link.mutate).toHaveBeenCalledWith({
-      patientId: 'pat-1',
-      lusciiPatientId: '7659dfb3-c089-4d12-95b7-46ff8ce1e7dd',
-    })
-  })
-
-  it.each([
-    ['invalid.luscii.patient_not_found', 422, /niet gevonden of niet toegankelijk/],
-    ['conflict.luscii.already_linked', 409, /al gekoppeld aan een andere/],
-    ['unavailable.luscii.upstream', 502, /niet bereikbaar/],
-  ])('shows inline error for %s', (code, status, expected) => {
-    useLinkLusciiMock.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: apiError('link failed', status as number, code as string),
-    })
-    useUnlinkLusciiMock.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null })
-    useLusciiDataMock.mockReturnValue({
-      data: {
-        state: 'not_linked',
-        window_days: 30,
-        planned_actions: [],
-        unmatched_measurements: [],
-      },
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    })
-    renderPanel()
-    expect(screen.getByRole('alert').textContent).toMatch(expected)
+    expect(screen.getByText(/Beheer Luscii-koppelingen via Bewerken/)).toBeTruthy()
+    // Linking moved to EditPatientDialog — no inline input here.
+    expect(screen.queryByRole('textbox')).toBeNull()
   })
 
   it('renders programme header, merged timeline, and decoded values', () => {
