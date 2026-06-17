@@ -59,6 +59,11 @@ from app.services.pathway.errors import (
 )
 from app.services.pathway.runtime.engine import RuntimeEngine
 
+# Block kinds the admin fast-forward auto-completes; everything else either
+# self-fires (message/start/external_program/end_pathway) or halts the loop
+# for a manual choice (decision/mdo).
+_FAST_FORWARD_KINDS = frozenset({"task", "appointment", "treatment"})
+
 
 class EnrollmentService:
     def __init__(
@@ -574,6 +579,60 @@ class EnrollmentService:
             tenant_id=tenant_id,
             now=now,
         )
+
+    async def fast_forward(
+        self,
+        enrollment_id: UUID,
+        *,
+        tenant_id: UUID,
+        now: datetime,
+        max_steps: int = 200,
+    ) -> tuple[PathwayEnrollment, int]:
+        """Admin test tool: auto-complete every non-choice step (firing timers
+        immediately) until the run ends or it reaches a decision/MDO that needs
+        a manual outcome. Returns the (refreshed enrollment, steps completed).
+
+        `task` / `appointment` / `treatment` are completed with a default
+        result; `message` / `start` / `external_program` / `end_pathway`
+        self-fire via `advance`; `decision` / `mdo` halt the loop so a human
+        picks the branch.
+        """
+
+        enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+        children = await self._pathway_repo.fetch_children(enrollment.pathway_version_id)
+        templates: dict[UUID, BaseBlock] = {
+            row.id: block_row_to_domain(row) for row in children.blocks
+        }
+        completed = 0
+        for _ in range(max_steps):
+            enrollment = await self.get(enrollment_id, tenant_id=tenant_id)
+            if enrollment.state != "active":
+                break
+            # Fire any time-gated auto blocks at `now` before scanning.
+            await self.advance(enrollment_id, tenant_id=tenant_id, now=now)
+            executions = await self._load_executions(enrollment_id)
+            target: tuple[UUID, BaseBlock] | None = None
+            for execution in executions.values():
+                if execution.state not in ("eligible", "active"):
+                    continue
+                block = templates.get(execution.block_template_id)
+                if block is None or block.KIND not in _FAST_FORWARD_KINDS:
+                    continue
+                target = (execution.id, block)
+                break
+            if target is None:
+                # Nothing auto-completable left: run is done or blocked on a
+                # manual choice (decision / mdo).
+                break
+            execution_id, block = target
+            result = (
+                {"performed_at": now.isoformat()} if block.KIND == "treatment" else None
+            )
+            await self.complete_step(
+                enrollment_id, execution_id, result=result, tenant_id=tenant_id, now=now
+            )
+            completed += 1
+        return await self.get(enrollment_id, tenant_id=tenant_id), completed
 
     async def patch_deferred_value(
         self,

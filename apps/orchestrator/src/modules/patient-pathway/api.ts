@@ -79,6 +79,16 @@ export async function cancelEnrollment(enrollmentId: string): Promise<Enrollment
   return result.data
 }
 
+export async function fastForwardEnrollment(enrollmentId: string): Promise<Enrollment> {
+  const result = await api.POST('/enrollments/{enrollment_id}:fast-forward', {
+    params: { path: { enrollment_id: enrollmentId } },
+  })
+  if (!result.data) {
+    throw enrollmentError('Failed to fast-forward enrollment', result.response.status)
+  }
+  return result.data
+}
+
 export async function pauseEnrollment(enrollmentId: string): Promise<Enrollment> {
   const result = await api.POST('/enrollments/{enrollment_id}:pause', {
     params: { path: { enrollment_id: enrollmentId } },

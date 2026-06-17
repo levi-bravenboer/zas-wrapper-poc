@@ -382,6 +382,25 @@ async def resume_enrollment(
 
 
 @router.post(
+    "/{enrollment_id}:fast-forward",
+    operation_id="fast_forward_enrollment",
+    response_model=EnrollmentResponse,
+    responses=_ERRORS_404,
+)
+async def fast_forward_enrollment(
+    enrollment_id: UUID,
+    service: EnrollmentServiceDep,
+    current_user: SessionUser = Depends(require_role(Role.ADMIN)),
+) -> EnrollmentResponse:
+    # Admin-only test tool: auto-complete non-choice steps and fire timers
+    # until the run ends or hits a decision/MDO needing a manual outcome.
+    # Direct service mutation (not workflow-driven) — it advances the DB state
+    # so the runtime view reflects the fast-forward immediately.
+    await service.fast_forward(enrollment_id, tenant_id=current_user.tenant_id, now=_now())
+    return await service.get_view(enrollment_id, tenant_id=current_user.tenant_id)
+
+
+@router.post(
     "/{enrollment_id}/executions/{execution_id}:start",
     operation_id="start_block_execution",
     response_model=BlockExecutionResponse,
