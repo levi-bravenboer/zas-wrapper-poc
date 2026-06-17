@@ -1,0 +1,47 @@
+{
+  "list": {
+    "title": "Auditlog",
+    "sub": "Alle systeemgebeurtenissen: wie deed wat, en wanneer.",
+    "empty": "Geen auditgebeurtenissen gevonden."
+  },
+  "column": {
+    "created_at": "Wanneer",
+    "actor": "Wie",
+    "action": "Actie",
+    "resource": "Resource",
+    "result": "Resultaat"
+  },
+  "filter": {
+    "action": "Actie",
+    "result": "Resultaat",
+    "resource_type": "Resourcetype",
+    "created_at": "Periode"
+  },
+  "actor": {
+    "system": "(systeem)",
+    "anonymous": "(anoniem)"
+  },
+  "enum": {
+    "action": {
+      "created": "Aangemaakt",
+      "updated": "Bijgewerkt",
+      "deleted": "Verwijderd",
+      "login": "Inloggen",
+      "published": "Gepubliceerd"
+    },
+    "result": {
+      "success": "Gelukt",
+      "failure": "Mislukt"
+    }
+  },
+  "detail": {
+    "resource": "Resource",
+    "request_id": "Request-ID",
+    "changes": "Wijzigingen",
+    "context": "Context",
+    "none": "—"
+  },
+  "toast": {
+    "error": "Auditlog kon niet worden geladen."
+  }
+}

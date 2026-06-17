@@ -1,4 +1,13 @@
-import { Building2, Home, Inbox, Settings, Users, UsersRound, Workflow } from 'lucide-react'
+import {
+  Building2,
+  Home,
+  Inbox,
+  ScrollText,
+  Settings,
+  Users,
+  UsersRound,
+  Workflow,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import type { Role } from '@/modules/auth/schemas'
@@ -64,6 +73,13 @@ export const navGroups: readonly NavGroup[] = [
         labelKey: 'caregiver-shell:nav.practitionerRoles',
         icon: UsersRound,
         order: 30,
+        requiresRole: ['admin'],
+      },
+      {
+        to: '/admin/audit-log',
+        labelKey: 'caregiver-shell:nav.auditLog',
+        icon: ScrollText,
+        order: 40,
         requiresRole: ['admin'],
       },
     ],

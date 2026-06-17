@@ -2,6 +2,7 @@ import i18next from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
 import appointment from './locales/nl/appointment.json'
+import auditAdminUi from './locales/nl/audit-admin-ui.json'
 import auth from './locales/nl/auth.json'
 import careTeamsUi from './locales/nl/care-teams-ui.json'
 import caregiverShell from './locales/nl/caregiver-shell.json'
@@ -36,6 +37,7 @@ void i18next.use(initReactI18next).init({
   ns: [
     'common',
     'appointment',
+    'audit-admin-ui',
     'auth',
     'care-teams-ui',
     'caregiver-shell',
@@ -57,6 +59,7 @@ void i18next.use(initReactI18next).init({
     nl: {
       common,
       appointment,
+      'audit-admin-ui': auditAdminUi,
       auth,
       'care-teams-ui': careTeamsUi,
       'caregiver-shell': caregiverShell,
