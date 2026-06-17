@@ -46,9 +46,10 @@ are retired in §2 when the service is re-pointed.
   left in place** (service still reads them — retired in §2, not here).
   Downgrade drops table + enum. **Migration written, NOT yet applied** (shared
   docker DB).
-- [ ] 1.6 Apply migration against the shared stack (`alembic upgrade`) — gated;
-  confirm with user / parallel worktrees first.
-- [ ] 1.7 Test: backfill count == pre-migration live luscii-identifier count.
+- [x] 1.6 Migration applied to the shared stack (`alembic upgrade head`,
+  revision `lscconn00001`).
+- [ ] 1.7 Test: backfill count == pre-migration live luscii-identifier count
+  (verified manually 5==5; not yet an automated test).
 
 ## §2 — Backend: service rewrite (pathway-agnostic)
 
@@ -113,9 +114,9 @@ top-level fields (the actual breaking step) once no consumer reads them.
   `useDeactivateLusciiConnection`. **Needs browser verification.**
 - [x] 4.4 hooks/api/types/keys for connection list + add/deactivate; i18n
   already in `nl/patient-profile.json`.
-- [ ] 4.5 Tests: [x] `lusciiCarepathMatch`; [x] `LusciiPanel.test.tsx`
-  (no inline input, edit pointer); [x] `EditPatientDialog.test.tsx` (hooks
-  mocked); bucketed-render test pending §4.2.
+- [x] 4.5 Tests: `lusciiCarepathMatch`; `LusciiPanel.test.tsx` (no inline
+  input, edit pointer, bucketed-render); `EditPatientDialog.test.tsx` (hooks
+  mocked).
 - [x] 4.6 Wiring: `usePatientCarepaths` resolves enrollments → N cached
   `getPathwayVersion` fetches → `EnrollmentCarepath[]` (program ids from
   `external_program` luscii blocks, pathway name from version label) → fed to
