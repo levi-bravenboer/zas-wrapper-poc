@@ -86,6 +86,14 @@
       "cancelled": "Geannuleerd"
     }
   },
+  "summary": {
+    "phase": "Fase {{phase}}",
+    "progress": "{{done}}/{{total}} afgerond",
+    "done": "afgerond",
+    "toGo": "te gaan",
+    "overdueDays_one": "{{count}} dag te laat",
+    "overdueDays_other": "{{count}} dagen te laat"
+  },
   "values": {
     "header": "Waarden",
     "save": "Opslaan",
