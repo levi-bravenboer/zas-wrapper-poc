@@ -4,6 +4,7 @@ import {
   cancelEnrollment,
   completeStep,
   createEnrollment,
+  fastForwardEnrollment,
   listPatientEnrollments,
   patchDeferredValue,
   pauseEnrollment,
@@ -60,6 +61,14 @@ export function useResumeEnrollment(patientId: string) {
   const qc = useQueryClient()
   return useMutation<Enrollment, Error, string>({
     mutationFn: (enrollmentId) => resumeEnrollment(enrollmentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
+  })
+}
+
+export function useFastForwardEnrollment(patientId: string) {
+  const qc = useQueryClient()
+  return useMutation<Enrollment, Error, string>({
+    mutationFn: (enrollmentId) => fastForwardEnrollment(enrollmentId),
     onSuccess: () => qc.invalidateQueries({ queryKey: patientPathwayKeys.enrollments(patientId) }),
   })
 }

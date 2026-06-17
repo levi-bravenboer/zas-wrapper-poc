@@ -5,6 +5,10 @@
   "timeline": {
     "title": "Zorgpad",
     "manage": "Beheer zorgpad",
+    "controlsTitle": "Zorgpad beheer",
+    "fastForward": "Doorspoelen",
+    "fastForwardToast": "Zorgpad doorgespoeld tot volgende keuze",
+    "fastForwardError": "Doorspoelen mislukt",
     "hide": "Verberg beheer",
     "enrollAnother": "Nieuw zorgpad",
     "noSteps": "Nog geen stappen",

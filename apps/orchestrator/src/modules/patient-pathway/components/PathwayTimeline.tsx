@@ -17,7 +17,6 @@ import type { BlockExecution, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
 
 import { EnrollDialog } from './EnrollDialog'
-import { EnrollmentCard } from './EnrollmentCard'
 
 export interface PathwayTimelineProps {
   patientId: string
@@ -26,7 +25,6 @@ export interface PathwayTimelineProps {
 export function PathwayTimeline({ patientId }: PathwayTimelineProps): ReactElement {
   const { t, i18n } = useTranslation('patient-pathway')
   const [enrollOpen, setEnrollOpen] = useState(false)
-  const [manageId, setManageId] = useState<string | null>(null)
   const query = usePatientEnrollments(patientId)
 
   if (query.isLoading) {
@@ -70,19 +68,8 @@ export function PathwayTimeline({ patientId }: PathwayTimelineProps): ReactEleme
                 <span className="text-sm text-muted-foreground">
                   {t('card.anchor')}: {formatDateOrDash(enrollment.anchor_date, i18n.language)}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="ml-auto"
-                  onClick={() => setManageId((id) => (id === enrollment.id ? null : enrollment.id))}
-                >
-                  {manageId === enrollment.id ? t('timeline.hide') : t('timeline.manage')}
-                </Button>
               </div>
               <PathwayProgress enrollment={enrollment} />
-              {manageId === enrollment.id ? (
-                <EnrollmentCard patientId={patientId} enrollment={enrollment} />
-              ) : null}
             </Card>
           ))}
         </>

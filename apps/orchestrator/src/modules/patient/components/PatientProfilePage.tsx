@@ -16,6 +16,7 @@ import { api } from '@/lib/api/client'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 import { PathwayTimeline } from '@/modules/patient-pathway/components/PathwayTimeline'
+import { ZorgpadTab } from '@/modules/patient-pathway/components/ZorgpadTab'
 
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
@@ -133,6 +134,11 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
                 value: 'overview',
                 label: t('tabs.overview'),
                 content: <PatientOverviewTab patientId={patient.id} onNavigate={setActiveTab} />,
+              },
+              {
+                value: 'pathway',
+                label: t('tabs.pathway'),
+                content: <ZorgpadTab patientId={patient.id} />,
               },
               {
                 value: 'measurements',
