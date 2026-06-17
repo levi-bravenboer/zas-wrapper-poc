@@ -8,6 +8,7 @@
     "created_at": "Wanneer",
     "actor": "Wie",
     "action": "Actie",
+    "event_code": "Gebeurtenis",
     "resource": "Resource",
     "result": "Resultaat"
   },
@@ -24,10 +25,11 @@
   "enum": {
     "action": {
       "created": "Aangemaakt",
+      "read": "Gelezen",
       "updated": "Bijgewerkt",
       "deleted": "Verwijderd",
-      "login": "Inloggen",
-      "published": "Gepubliceerd"
+      "execute": "Uitgevoerd",
+      "login": "Inloggen"
     },
     "result": {
       "success": "Gelukt",

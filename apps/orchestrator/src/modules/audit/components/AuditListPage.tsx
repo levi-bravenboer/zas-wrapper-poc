@@ -84,6 +84,16 @@ export function AuditListPage(): ReactElement {
         cell: (row) => <Badge variant="soft">{t(`enum.action.${row.action}`)}</Badge>,
       }),
       defineColumn<AuditEventRead>({
+        id: 'event_code',
+        header: t('column.event_code'),
+        cell: (row) =>
+          row.event_code ? (
+            <span className="font-mono text-xs text-muted-foreground">{row.event_code}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      }),
+      defineColumn<AuditEventRead>({
         id: 'resource',
         header: t('column.resource'),
         cell: (row) =>
