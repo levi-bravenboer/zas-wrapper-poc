@@ -7,10 +7,13 @@ import { BlockTypeIcon } from '@/modules/pathway/blockCatalogue'
 import type { SummaryStepState } from '../summary'
 
 import { RUNTIME_STATE_COLOR } from './runtime-canvas/runtimeState'
+import { TrailConnector } from './TrailConnector'
 
 export interface PathwayTrailNodeProps {
   name: string
   state: SummaryStepState
+  /** Localised state label, for the node's accessible name. */
+  stateLabel: string
   icon: string | null
   sub: string | null
   overdue: boolean
@@ -19,15 +22,6 @@ export interface PathwayTrailNodeProps {
   rightOn: boolean
   leftHide: boolean
   rightHide: boolean
-}
-
-function connector(on: boolean, hide: boolean): ReactElement {
-  return (
-    <span
-      className={cn('h-px flex-1', hide ? 'opacity-0' : on ? 'bg-success' : 'bg-border')}
-      aria-hidden
-    />
-  )
 }
 
 function Circle({
@@ -72,6 +66,7 @@ function Circle({
 export function PathwayTrailNode({
   name,
   state,
+  stateLabel,
   icon,
   sub,
   overdue,
@@ -82,11 +77,14 @@ export function PathwayTrailNode({
 }: PathwayTrailNodeProps): ReactElement {
   const current = state === 'active'
   return (
-    <li className="flex min-w-[6.5rem] shrink-0 grow basis-[6.5rem] flex-col items-center">
+    <li
+      aria-label={`${name} — ${stateLabel}`}
+      className="flex min-w-[6.5rem] shrink-0 grow basis-[6.5rem] flex-col items-center"
+    >
       <div className="flex w-full items-center">
-        {connector(leftOn, leftHide)}
+        <TrailConnector on={leftOn} hide={leftHide} />
         <Circle state={state} icon={icon} overdue={overdue} />
-        {connector(rightOn, rightHide)}
+        <TrailConnector on={rightOn} hide={rightHide} />
       </div>
       <span
         title={name}

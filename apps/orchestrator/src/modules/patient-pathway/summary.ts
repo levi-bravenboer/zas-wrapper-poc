@@ -109,7 +109,7 @@ export function deriveSummary(params: {
   const anchor =
     steps[nowIndex] ??
     steps.find((s) => s.state === 'upcoming') ??
-    [...steps].reverse().find((s) => s.state === 'finished') ??
+    steps.findLast((s) => s.state === 'finished') ??
     null
   const phaseName = anchor?.phaseId ? (phaseNameById.get(anchor.phaseId) ?? null) : null
 

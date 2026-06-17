@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react'
 
-import { cn } from '@/lib/style/cn'
+import { TrailConnector } from './TrailConnector'
 
 export interface PathwayTrailOverflowProps {
   count: number
@@ -9,15 +9,6 @@ export interface PathwayTrailOverflowProps {
   rightOn: boolean
   leftHide: boolean
   rightHide: boolean
-}
-
-function connector(on: boolean, hide: boolean): ReactElement {
-  return (
-    <span
-      className={cn('h-px flex-1', hide ? 'opacity-0' : on ? 'bg-success' : 'bg-border')}
-      aria-hidden
-    />
-  )
 }
 
 // End cap of the trail window: collapses the steps that fall outside the
@@ -33,11 +24,11 @@ export function PathwayTrailOverflow({
   return (
     <li className="flex min-w-[5rem] shrink-0 grow basis-[5rem] flex-col items-center">
       <div className="flex w-full items-center">
-        {connector(leftOn, leftHide)}
+        <TrailConnector on={leftOn} hide={leftHide} />
         <span className="grid size-8 shrink-0 place-items-center rounded-full border border-dashed border-[color:var(--color-border-strong)] text-[11px] font-semibold text-muted-foreground">
           +{count}
         </span>
-        {connector(rightOn, rightHide)}
+        <TrailConnector on={rightOn} hide={rightHide} />
       </div>
       <span className="mt-1.5 text-[11px] font-medium leading-tight text-muted-foreground">
         {label}

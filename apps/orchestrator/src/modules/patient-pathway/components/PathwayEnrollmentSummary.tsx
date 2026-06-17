@@ -58,8 +58,11 @@ export function PathwayEnrollmentSummary({
     })
   }, [version, blockTypes, enrollment.executions, now])
 
+  const STATE_LABEL_KEY = { finished: 'finished', active: 'next', upcoming: 'upcoming' } as const
+  const stateLabel = (step: SummaryStep): string => t(`timeline.state.${STATE_LABEL_KEY[step.state]}`)
+
   const stepSub = (step: SummaryStep): string | null => {
-    const typeLabel = tp(`blockType.${step.legacyType}`, { defaultValue: step.legacyType })
+    const typeLabel = tp(`blockType.${step.legacyType}`)
     if (step.state === 'finished') {
       const date = step.completedAt ? formatDateOrDash(step.completedAt, i18n.language) : null
       const parts = [date, step.completedByName].filter(Boolean)
@@ -118,6 +121,7 @@ export function PathwayEnrollmentSummary({
                 key={cell.step.id}
                 name={cell.step.name}
                 state={cell.step.state}
+                stateLabel={stateLabel(cell.step)}
                 icon={cell.step.icon}
                 sub={stepSub(cell.step)}
                 overdue={cell.step.overdue}
