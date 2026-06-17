@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 class Appointment(TenantOwnedEntity):
     __tablename__ = "appointments"
     __realtime_resource__: ClassVar[str | None] = "appointments"
+    __audited__: ClassVar[bool] = True
     __table_args__ = (
         sa.CheckConstraint("ends_at > starts_at", name="ck_appointments_ends_after_starts"),
         sa.Index(
