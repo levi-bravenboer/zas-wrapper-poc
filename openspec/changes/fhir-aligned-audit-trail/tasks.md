@@ -53,7 +53,7 @@
 - [ ] 7.4 Runtime: `runtime.sla_escalated` at SLA escalation / due_at wake (actor=system)
 - [ ] 7.5 Runtime: `runtime.decision_branched` at decision resolution (actor=system)
 - [ ] 7.6 Runtime: `runtime.deferred_value_resolved` at deferred-value resolution
-- [ ] 7.6b Runtime: `runtime.fast_forwarded` at `EnrollmentService.fast_forward` (actor=admin, purpose=operations, patient_id from enrollment) — one summary event alongside the per-step `runtime.block_executed` its loop triggers (D12)
+- [x] 7.6b Runtime: `runtime.fast_forwarded` at `EnrollmentService.fast_forward` (actor=admin, purpose=operations, patient_id from enrollment) — one summary event; per-step completions already auto-captured as block-execution diffs (D12)
 - [ ] 7.7 Tests: each runtime transition emits exactly one event with correct `event_code` + `patient_id`
 - [ ] 7.8 Auth (caregiver/admin): migrate login/logout emits to `action=execute` + `event_code=auth.login`/`auth.logout` (Q2; keep legacy `login` rows valid)
 - [ ] 7.9 DEFERRED (no PoC call site): patient-actor auth emit (`auth.login`/`auth.logout`, `actor_type=patient`) lands when the mobile backend auth endpoint exists (`feat/mobile-app-auth-setup`). This change ships only the `ActorType.patient` value + capability so wiring needs no schema change
