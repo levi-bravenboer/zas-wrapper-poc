@@ -9,6 +9,7 @@ Practitioner as its LEAD participant (pathway-runtime §2.6/§5.4).
 
 from __future__ import annotations
 
+from typing import ClassVar
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -20,6 +21,8 @@ from app.db.base import TenantOwnedEntity
 
 class PathwayEnrollmentParticipant(TenantOwnedEntity):
     __tablename__ = "pathway_enrollment_participant"
+    # Enroll-time binding; not streamed to clients.
+    __realtime_resource__: ClassVar[str | None] = None
     __table_args__ = (
         sa.Index(
             "uq_pathway_enrollment_participant_live",
