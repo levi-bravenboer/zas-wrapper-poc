@@ -102,7 +102,7 @@ scoping wholesale, keep our task-domain deletions. **§11 (AGENTS audit-usage ru
 
 - [x] 5.1 Read-capture mechanism `record_patient_read(...)` in `app/services/audit/access.py`
 - [x] 5.2 Wire `record_patient_read` onto the canonical dossier GET: `GET /patients/{id}` via `_audit_dossier_read` dep (composes after `PatientAccessDep` → logs only on granted access; `event_code=patient.dossier_viewed`, purpose `treatment`). DECISION: per-sub-resource GETs (notes/appointments/collab/runtime under a patient) are NOT separately read-logged — they are part of the same logical dossier view (D5 one-row-per-view) and per-endpoint logging would over-log (R1). Granular per-surface read events deferred to [mvp] if required.
-- [ ] 5.3 (WHERE) Confirm NO read-logging on admin/template/list routes
+- [x] 5.3 Confirmed: `AuditedPatientReadDep` is used ONLY on `GET /patients/{id}` (get_patient). `list_patients`, admin routes (users/orgs/roles), and pathway catalogue have NO read seam — read-logging is scoped to the single dossier view.
 - [~] 5.4 Test deferred
 - [x] 5.5 Denied-access wired (D10): `require_patient_relation._require` (the dep wrapper, NOT the shared `_resolve_patient_with_relation`) injects `request`, catches `PatientNotFoundError`, and for `relation=="view"` emits `record_denied_access` (read+failure, `patient.dossier_viewed`) via the independent session (survives the 404 rollback), best-effort. Absent-vs-denied is intentionally conflated (existence hiding) — any refused view = one denied-read row. 111 patient/access/audit tests pass (no regression). NOTE: a test asserting the denied row is written is still worth adding
 - [~] 5.6 Test deferred
