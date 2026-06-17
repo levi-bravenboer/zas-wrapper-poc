@@ -98,6 +98,18 @@ def _capture(session: Session, actor: Any) -> None:
             return obj.tenant_id
         return actor_tenant_id
 
+    def _patient_of(obj: Entity) -> UUID | None:
+        # FHIR R5 AuditEvent.patient — set when the row concerns a patient's
+        # dossier, even if the touched entity is not the Patient row itself.
+        # The Patient model resolves to its own id; any model carrying a
+        # `patient_id` column resolves to that. Parent-only links (e.g. a Note
+        # reachable only via an appointment) are not resolved here (Q1-sub) and
+        # fall back to null + resource_type/resource_id.
+        if type(obj).__name__ == "Patient":
+            return obj.id
+        patient_id = getattr(obj, "patient_id", None)
+        return patient_id if isinstance(patient_id, UUID) else None
+
     def _new(obj: Entity, action: AuditAction, changes: dict[str, Any] | None) -> AuditEvent:
         # `id` carries a client-side `default=uuid4` that SQLAlchemy only
         # applies during the INSERT (after this hook). Materialise it now so a
@@ -113,6 +125,7 @@ def _capture(session: Session, actor: Any) -> None:
             result=AuditResult.SUCCESS,
             resource_type=type(obj).__name__,
             resource_id=obj.id,
+            patient_id=_patient_of(obj),
             changes=changes,
         )
 
