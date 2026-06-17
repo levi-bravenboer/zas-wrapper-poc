@@ -1,4 +1,26 @@
 {
+  "list": {
+    "title": "Patiënten",
+    "sub": "Patiënten in jouw zorgteams",
+    "search": "Zoek op naam",
+    "column": {
+      "name": "Naam",
+      "birth_date": "Geboortedatum",
+      "gender": "Geslacht"
+    }
+  },
+  "overview": {
+    "info": "Patiëntgegevens",
+    "measurements": "Laatste metingen",
+    "appointments": "Recente afspraken",
+    "notes": "Laatste notities",
+    "notesEmpty": "Nog geen notities",
+    "viewAll": "Alles bekijken",
+    "gender": "Geslacht",
+    "birthDate": "Geboortedatum",
+    "organisation": "Organisatie",
+    "insz": "INSZ"
+  },
   "header": {
     "insz": "INSZ",
     "noInsz": "Geen INSZ",
@@ -7,6 +29,8 @@
     "actions": "Acties"
   },
   "tabs": {
+    "overview": "Overzicht",
+    "zorgteam": "Zorgteam",
     "measurements": "Metingen",
     "lab_results": "Labresultaten",
     "appointments": {

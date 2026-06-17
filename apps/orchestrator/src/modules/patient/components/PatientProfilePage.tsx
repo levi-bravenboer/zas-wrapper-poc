@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { FlaskConical } from 'lucide-react'
-import { useMemo, type ReactElement } from 'react'
+import { type ReactElement, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { api } from '@/lib/api/client'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
-import { PathwayTab } from '@/modules/patient-pathway/components/PathwayTab'
+import { PathwayTimeline } from '@/modules/patient-pathway/components/PathwayTimeline'
 
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
@@ -26,6 +26,7 @@ import { MeasurementCharts } from './MeasurementCharts'
 import { PatientAppointmentsTab } from './PatientAppointmentsTab'
 import { PatientCollaborationTab } from './PatientCollaborationTab'
 import { PatientKebab } from './PatientKebab'
+import { PatientOverviewTab } from './PatientOverviewTab'
 
 const ORG_CACHE_STALE_MS = 5 * 60_000
 
@@ -61,7 +62,7 @@ export interface PatientProfilePageProps {
  */
 export function PatientProfilePage({ patientId }: PatientProfilePageProps): ReactElement {
   const { t, i18n } = useTranslation('patient-profile')
-  const { t: pathwayT } = useTranslation('patient-pathway')
+  const [activeTab, setActiveTab] = useState('overview')
 
   const patientQuery = usePatient(patientId)
   const organisationsQuery = useQuery({
@@ -123,13 +124,15 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
       actions={<PatientKebab patient={patient} />}
       body={
         <>
-          <CareTeamSlot patientId={patient.id} />
+          <PathwayTimeline patientId={patient.id} />
           <EntityDetailTabs
+            value={activeTab}
+            onValueChange={setActiveTab}
             tabs={[
               {
-                value: 'pathway',
-                label: pathwayT('tab.label'),
-                content: <PathwayTab patientId={patient.id} />,
+                value: 'overview',
+                label: t('tabs.overview'),
+                content: <PatientOverviewTab patientId={patient.id} onNavigate={setActiveTab} />,
               },
               {
                 value: 'measurements',
@@ -151,6 +154,11 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
                 value: 'appointments',
                 label: t('tabs.appointments.label', { defaultValue: 'Afspraken' }),
                 content: <PatientAppointmentsTab patientId={patient.id} />,
+              },
+              {
+                value: 'zorgteam',
+                label: t('tabs.zorgteam'),
+                content: <CareTeamSlot patientId={patient.id} />,
               },
               {
                 value: 'collaboration',
