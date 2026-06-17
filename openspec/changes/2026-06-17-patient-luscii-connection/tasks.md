@@ -98,23 +98,26 @@ top-level fields (the actual breaking step) once no consumer reads them.
 
 ## §4 — Frontend: attribution + UI
 
-- [ ] 4.1 Presentation util `lusciiCarepathMatch.ts`: map connection
-  `program_id` → carepath using the §0 enrollment data; bucket
-  current/history/unassigned (D5). Pure, unit-tested. Fallback: all into one
-  flat bucket if program ids unavailable.
-- [ ] 4.2 `<LusciiPanel>`: render buckets — `current` prominent, `history` +
-  `unassigned` collapsible; each group headed by program (+ carepath name when
-  matched). Remove `<LusciiLinkForm>`.
-- [ ] 4.3 `<EditPatientDialog>`: active-connection list (Luscii id + program
-  name), add (paste id → link), deactivate per connection; inline link errors
-  (`linkErrorKey`); fire link calls only on change.
-- [ ] 4.4 hooks/api/types for connection list + connection-group data; i18n
-  `nl/patient-profile.json` (`luscii.connection.*`, `luscii.groups.*`,
-  `edit.fields.luscii*`); remove orphaned form keys.
-- [ ] 4.5 Tests: `lusciiCarepathMatch` (match/tie-break/no-match/fallback);
-  `LusciiPanel.test.tsx` (bucketed render, no inline input);
-  `EditPatientDialog.test.tsx` (add/deactivate); update
-  `PatientProfilePage.test.tsx` if shape assumptions changed.
+- [x] 4.1 Presentation util `lusciiCarepathMatch.ts`: pure
+  `matchCarepath` + `bucketConnections` (current/history/unassigned, paused=
+  current, inactive→history, tie-break prefers active). 5 unit tests.
+- [ ] 4.2 `<LusciiPanel>`: **PARTIAL** — inline `<LusciiLinkForm>` removed;
+  not-linked → `luscii.connection.setViaEdit` message. **TODO**: render
+  `connections[]` as bucketed groups (current/history/unassigned) using §4.1 +
+  the enrollment-program-id wiring (below). Still renders the legacy single
+  view. Needs browser verification.
+- [x] 4.3 `<EditPatientDialog>`: active-connection list (program name + id),
+  add (POST, non-replacing), deactivate per connection; inline add errors.
+  Hooks `useLusciiConnections` / `useAddLusciiConnection` /
+  `useDeactivateLusciiConnection`. **Needs browser verification.**
+- [x] 4.4 hooks/api/types/keys for connection list + add/deactivate; i18n
+  already in `nl/patient-profile.json`.
+- [ ] 4.5 Tests: [x] `lusciiCarepathMatch`; [x] `LusciiPanel.test.tsx`
+  (no inline input, edit pointer); [x] `EditPatientDialog.test.tsx` (hooks
+  mocked); bucketed-render test pending §4.2.
+- [ ] 4.6 **Wiring (TODO)**: resolve enrollment `program_id`s (N
+  `GET /pathways/{id}/versions/{version_id}` fetches, cached) →
+  `EnrollmentCarepath[]` → feed `bucketConnections` in `<LusciiPanel>`.
 
 ## §5 — Verify
 
