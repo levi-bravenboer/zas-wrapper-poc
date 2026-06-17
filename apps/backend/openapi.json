@@ -7958,6 +7958,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Block Template Id"
+          },
+          "earliest_offset_days": {
+            "type": "integer",
+            "title": "Earliest Offset Days",
+            "default": 0
           }
         },
         "type": "object",
@@ -7966,7 +7971,7 @@
           "block_template_id"
         ],
         "title": "EnrollDescriptorClinicalDate",
-        "description": "A named clinical date (e.g. `operation_date`) that `relative_to_date`\nblocks anchor to \u2014 collected at enrollment so their timers resolve (\u00a75.5).\n`block_template_id` is a representative referencing block (for the\ndeferred-value FK; resolution is by `name` across the enrollment)."
+        "description": "A named clinical date (e.g. `operation_date`) that `relative_to_date`\nblocks anchor to \u2014 collected at enrollment so their timers resolve (\u00a75.5).\n`block_template_id` is a representative referencing block (for the\ndeferred-value FK; resolution is by `name` across the enrollment).\n\n`earliest_offset_days` is the largest `before` offset of any block\nanchored to this date \u2014 the date cannot feasibly be earlier than\n`today + earliest_offset_days` or that block's lead time can't be met\n(\u00a74.6 earliest-feasible)."
       },
       "EnrollDescriptorField": {
         "properties": {

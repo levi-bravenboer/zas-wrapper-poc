@@ -30,6 +30,7 @@ from app.domain.pathway.runtime.execution import (
     InvalidTransitionError,
 )
 from app.domain.pathway.runtime.scheduling import (
+    parse_iso_duration_days,
     resolve_relative_to_date,
     schedule_from_anchor,
 )
@@ -308,13 +309,17 @@ class EnrollmentService:
         fields: list[EnrollDescriptorField] = []
         participants: list[EnrollDescriptorParticipant] = []
         clinical_dates: dict[str, UUID] = {}
+        clinical_earliest: dict[str, int] = {}
         for row in children.blocks:
             template = block_row_to_domain(row)
             policy = template.timing_policy
             if policy is not None and getattr(policy, "kind", None) == "relative_to_date":
                 name = getattr(policy, "date_name", None)
-                if isinstance(name, str) and name and name not in clinical_dates:
-                    clinical_dates[name] = row.id
+                if isinstance(name, str) and name:
+                    clinical_dates.setdefault(name, row.id)
+                    if getattr(policy, "direction", "before") == "before":
+                        days = parse_iso_duration_days(str(getattr(policy, "offset_iso", "PT0S")))
+                        clinical_earliest[name] = max(clinical_earliest.get(name, 0), days)
             for spec in template.DEFERRED_FIELDS:
                 fields.append(
                     EnrollDescriptorField(
@@ -341,7 +346,11 @@ class EnrollmentService:
             fields=fields,
             participants=participants,
             clinical_dates=[
-                EnrollDescriptorClinicalDate(name=name, block_template_id=block_id)
+                EnrollDescriptorClinicalDate(
+                    name=name,
+                    block_template_id=block_id,
+                    earliest_offset_days=clinical_earliest.get(name, 0),
+                )
                 for name, block_id in clinical_dates.items()
             ],
         )

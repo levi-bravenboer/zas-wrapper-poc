@@ -646,4 +646,5 @@ async def test_enroll_descriptor_lists_clinical_dates(
         version.id,  # type: ignore[union-attr]
         tenant_id=ZAS_TENANT_ID,
     )
-    assert any(c.name == "operation_date" for c in descriptor.clinical_dates)
+    op_date = next(c for c in descriptor.clinical_dates if c.name == "operation_date")
+    assert op_date.earliest_offset_days == 2

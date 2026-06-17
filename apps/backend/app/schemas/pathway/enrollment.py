@@ -120,10 +120,16 @@ class EnrollDescriptorClinicalDate(BaseModel):
     """A named clinical date (e.g. `operation_date`) that `relative_to_date`
     blocks anchor to — collected at enrollment so their timers resolve (§5.5).
     `block_template_id` is a representative referencing block (for the
-    deferred-value FK; resolution is by `name` across the enrollment)."""
+    deferred-value FK; resolution is by `name` across the enrollment).
+
+    `earliest_offset_days` is the largest `before` offset of any block
+    anchored to this date — the date cannot feasibly be earlier than
+    `today + earliest_offset_days` or that block's lead time can't be met
+    (§4.6 earliest-feasible)."""
 
     name: str
     block_template_id: UUID
+    earliest_offset_days: int = 0
 
 
 class EnrollDescriptor(BaseModel):
