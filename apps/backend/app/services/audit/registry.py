@@ -32,7 +32,15 @@ def is_known_resource(resource_type: str) -> bool:
 # Grows per feature; add the code here when a new emit site lands.
 KNOWN_EVENT_CODES: frozenset[str] = frozenset(
     {
+        "pathway.created",
+        "pathway.edited",
+        "pathway.duplicated",
+        "pathway.deleted",
+        "pathway.forked",
+        "pathway.restored",
         "pathway.published",
+        "pathway.scope_specialisms",
+        "pathway.assign_practitioners",
         "runtime.enrolled",
         "runtime.block_executed",
         "runtime.sla_escalated",

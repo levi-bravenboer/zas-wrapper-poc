@@ -36,6 +36,21 @@ OP_DELETE = "delete"
 OP_SCOPE_SPECIALISMS = "scope_specialisms"
 OP_ASSIGN_PRACTITIONERS = "assign_practitioners"
 
+# Each authoring/access operation has a queryable, vocabulary-validated FHIR
+# `event_code` (indexed column) alongside the human-display `operation` in
+# `context`. Callers keep passing `operation=`; the event_code is derived here
+# so the audit list can filter by event type without a JSONB scan.
+_OP_EVENT_CODE: dict[str, str] = {
+    OP_CREATE: "pathway.created",
+    OP_EDIT: "pathway.edited",
+    OP_DUPLICATE: "pathway.duplicated",
+    OP_RESTORE: "pathway.restored",
+    OP_FORK: "pathway.forked",
+    OP_DELETE: "pathway.deleted",
+    OP_SCOPE_SPECIALISMS: "pathway.scope_specialisms",
+    OP_ASSIGN_PRACTITIONERS: "pathway.assign_practitioners",
+}
+
 # One `edited` event per editing session. The builder autosaves on an ~800ms
 # debounce, so a session emits many `replace_definition` calls; we suppress all
 # but the first while the most recent event is an edit by the same actor within
@@ -52,7 +67,11 @@ def record_pathway_event(
     operation: str | None = None,
     context: dict[str, Any] | None = None,
 ) -> Any:
-    """Emit a pathway audit event anchored to `pathway_id`."""
+    """Emit a pathway audit event anchored to `pathway_id`. `event_code` is
+    derived from `operation` when not given explicitly."""
+
+    if event_code is None and operation is not None:
+        event_code = _OP_EVENT_CODE.get(operation)
 
     return record_in_session(
         session,
