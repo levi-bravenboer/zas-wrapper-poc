@@ -1,6 +1,8 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   Building2,
   Calendar,
+  Contact,
   Home,
   Inbox,
   Settings,
@@ -8,7 +10,6 @@ import {
   UsersRound,
   Workflow,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 
 import type { Role } from '@/modules/auth/schemas'
 
@@ -43,6 +44,7 @@ export const navGroups: readonly NavGroup[] = [
     placement: 'main',
     items: [
       { to: '/', labelKey: 'nav:dashboard', icon: Home, order: 10 },
+      { to: '/patients', labelKey: 'nav:patients', icon: Contact, order: 12 },
       { to: '/appointments', labelKey: 'nav:appointments', icon: Calendar, order: 15 },
       { to: '/tasks', labelKey: 'nav:tasks', icon: Inbox, order: 20 },
       { to: '/pathways', labelKey: 'nav:pathways', icon: Workflow, order: 40 },
