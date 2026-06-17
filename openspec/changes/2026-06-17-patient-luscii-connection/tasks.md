@@ -101,11 +101,12 @@ top-level fields (the actual breaking step) once no consumer reads them.
 - [x] 4.1 Presentation util `lusciiCarepathMatch.ts`: pure
   `matchCarepath` + `bucketConnections` (current/history/unassigned, paused=
   current, inactive→history, tie-break prefers active). 5 unit tests.
-- [ ] 4.2 `<LusciiPanel>`: **PARTIAL** — inline `<LusciiLinkForm>` removed;
-  not-linked → `luscii.connection.setViaEdit` message. **TODO**: render
-  `connections[]` as bucketed groups (current/history/unassigned) using §4.1 +
-  the enrollment-program-id wiring (below). Still renders the legacy single
-  view. Needs browser verification.
+- [x] 4.2 `<LusciiPanel>`: inline `<LusciiLinkForm>` removed (not-linked →
+  `luscii.connection.setViaEdit`); renders `connections[]` as bucketed
+  `<details>` groups (current open, unassigned + history collapsible) via
+  §4.1; per-group card reuses planned-action + measurement rows. Empty
+  `connections[]` falls back to the legacy single view. **Needs browser
+  verification.**
 - [x] 4.3 `<EditPatientDialog>`: active-connection list (program name + id),
   add (POST, non-replacing), deactivate per connection; inline add errors.
   Hooks `useLusciiConnections` / `useAddLusciiConnection` /
@@ -115,9 +116,10 @@ top-level fields (the actual breaking step) once no consumer reads them.
 - [ ] 4.5 Tests: [x] `lusciiCarepathMatch`; [x] `LusciiPanel.test.tsx`
   (no inline input, edit pointer); [x] `EditPatientDialog.test.tsx` (hooks
   mocked); bucketed-render test pending §4.2.
-- [ ] 4.6 **Wiring (TODO)**: resolve enrollment `program_id`s (N
-  `GET /pathways/{id}/versions/{version_id}` fetches, cached) →
-  `EnrollmentCarepath[]` → feed `bucketConnections` in `<LusciiPanel>`.
+- [x] 4.6 Wiring: `usePatientCarepaths` resolves enrollments → N cached
+  `getPathwayVersion` fetches → `EnrollmentCarepath[]` (program ids from
+  `external_program` luscii blocks, pathway name from version label) → fed to
+  `bucketConnections` in `<LusciiPanel>`.
 
 ## §5 — Verify
 
