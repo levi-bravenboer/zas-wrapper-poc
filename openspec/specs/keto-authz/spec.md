@@ -1,7 +1,7 @@
 # keto-authz Specification
 
 ## Purpose
-TBD - created by archiving change access-management-ory. Update Purpose after archive.
+Defines Ory Keto as the relation-based access-management engine for patient-scoped authorization: the OPL namespace model (Organisation, CareTeam, Specialism, Carepath, Patient), the two-tier `view` / `view_shielded` permits, and the single `require_patient_access` check wiring, with patient-list scoping derived in SQL from the same domain facts. Gated by `AUTHZ_KETO_ENABLED`, degrading to role-only guards when off.
 ## Requirements
 ### Requirement: Keto runs as the Access Management Engine
 The platform SHALL run Ory Keto (pinned version, OPL config under `infra/ory/keto/`) as the relation-tuple store for patient-scoped authorization. Local development SHALL provide `keto` + `keto-migrate` compose services; deployed environments run Keto as a Forge app with a dedicated PG project. Keto outage or the feature flag `AUTHZ_KETO_ENABLED=false` MUST degrade to the pre-existing role-only guards (fail-closed on relation routes is NOT acceptable while the flag is off).
@@ -12,7 +12,7 @@ The platform SHALL run Ory Keto (pinned version, OPL config under `infra/ory/ket
 
 #### Scenario: Flag on enforces relation checks
 - **WHEN** `AUTHZ_KETO_ENABLED=true` and a caregiver without any relation to patient P requests P's detail
-- **THEN** the response is 403
+- **THEN** the response is 404 (the existence-hiding contract — denials never surface as 403)
 
 ### Requirement: Namespace model mirrors the domain
 The OPL config SHALL define namespaces `Organisation` (relations: `parent`, `member` with subject-set inheritance down the tree), `CareTeam` (relation: `member`), `Specialism` (relation: `practitioner`), `Carepath` (relations: `specialism`, `assigned`, `owner_org`), and `Patient` (relations: `treating_org`, `care_team`, `break_glass`, `external_reader`, `external_writer`, `external_recorder`, `external_messager`) with permits:
