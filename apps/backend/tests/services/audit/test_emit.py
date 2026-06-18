@@ -7,20 +7,19 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
 from app.core.enums.audit import ActorType, AuditAction, AuditResult
-from app.core.enums.user import Role
 from app.db.models.audit import AuditEvent
 from app.schemas.auth.auth import SessionUser
 from app.services.audit.context import AuditContext
 from app.services.audit.emit import emit_committed
+from tests._rbac import make_session_user
 
 
 def _actor() -> SessionUser:
-    return SessionUser(
-        id=uuid.uuid4(),
+    return make_session_user(
+        tenant_id=uuid.uuid4(),
         email="actor@example.test",
         display_name="Emit Actor",
-        tenant_id=uuid.uuid4(),
-        role=Role.ADMIN,
+        admin=True,
     )
 
 

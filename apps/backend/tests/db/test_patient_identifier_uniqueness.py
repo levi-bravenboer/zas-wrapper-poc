@@ -7,32 +7,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.core.identifiers import INSZ_SYSTEM
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient, PatientIdentifier
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
+from tests.db.conftest import seed_admin_user
 
 
 async def _bootstrap(session: AsyncSession) -> tuple[Tenant, User, Organisation]:
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
-    actor_id = uuid.uuid4()
-    actor = User(
-        id=actor_id,
-        tenant_id=tenant.id,
-        created_by=actor_id,
-        updated_by=actor_id,
-        email="a@example.test",
-        password_hash="hash",
-        display_name="a",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(actor)
-    await session.flush()
+    actor = await seed_admin_user(session, tenant_id=tenant.id)
     org = Organisation(
         id=uuid.uuid4(),
         tenant_id=tenant.id,

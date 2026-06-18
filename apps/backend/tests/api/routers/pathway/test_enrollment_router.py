@@ -21,7 +21,6 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.pathway import (
@@ -43,7 +42,9 @@ from scripts.seed_users import (
     ADMIN_DISPLAY_NAME,
     ADMIN_EMAIL,
     ADMIN_USER_ID,
+    admin_role_id,
 )
+from tests._rbac import make_session_user
 
 _PASSWORD = "changeme"
 
@@ -60,12 +61,13 @@ def session_actor() -> SessionUser:
     in-test SA inserts without each row passing them explicitly.
     """
 
-    return SessionUser(
+    return make_session_user(
         id=ADMIN_USER_ID,
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        admin=True,
+        role_id=admin_role_id(ZAS_TENANT_ID),
     )
 
 
@@ -93,6 +95,7 @@ async def _autoclean_runtime_tables(
 
 
 async def _wipe(session: AsyncSession) -> None:
+    from app.db.models.care_team import CareTeam, CareTeamParticipant
     from app.db.models.collaboration.note import Note
 
     for model in (
@@ -100,6 +103,8 @@ async def _wipe(session: AsyncSession) -> None:
         PathwayDeferredFieldValue,
         PathwayBlockExecution,
         PathwayEnrollment,
+        CareTeamParticipant,
+        CareTeam,
         Patient,
         Organisation,
     ):

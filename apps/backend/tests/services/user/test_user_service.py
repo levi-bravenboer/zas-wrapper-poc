@@ -5,7 +5,6 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.enums.user import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
@@ -14,6 +13,7 @@ from app.services.access.identity.password import PasswordHasher
 from app.services.practitioner.practitioner_service import PractitionerService
 from app.services.user.errors import CrossTenantAccessError, UserNotFoundError
 from app.services.user.user_service import UserService
+from tests._rbac import ensure_roles, make_session_user
 from tests.fakes.kratos import FakeKratosClient
 
 
@@ -40,10 +40,11 @@ async def _make_user(
     *,
     tenant: Tenant,
     email: str,
-    role: Role = Role.CAREGIVER,
+    role_slug: str = "default",
     is_active: bool = True,
 ) -> User:
     user_id = uuid.uuid4()
+    roles = await ensure_roles(session, tenant.id)
     user = User(
         id=user_id,
         tenant_id=tenant.id,
@@ -52,7 +53,7 @@ async def _make_user(
         email=email,
         password_hash="hash",
         display_name=email,
-        role=role,
+        role_id=roles[role_slug].id,
         is_active=is_active,
     )
     session.add(user)
@@ -60,19 +61,28 @@ async def _make_user(
     return user
 
 
+async def _role_id(session: AsyncSession, tenant: Tenant, slug: str) -> uuid.UUID:
+    roles = await ensure_roles(session, tenant.id)
+    return roles[slug].id
+
+
 def _actor(user: User) -> SessionUser:
-    return SessionUser(
+    # Admin-capable actor: full catalog so the crown-floor guard on
+    # `assign_role` admits assigning the admin / patient.accessAll roles.
+    # The seeded admin in these tests is always the actor.
+    return make_session_user(
         id=user.id,
         email=user.email,
         display_name=user.display_name,
         tenant_id=user.tenant_id,
-        role=user.role,
+        admin=True,
+        role_id=user.role_id,
     )
 
 
 async def test_get_returns_tenant_scoped_user(db_session: AsyncSession) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
@@ -85,7 +95,7 @@ async def test_get_returns_tenant_scoped_user(db_session: AsyncSession) -> None:
 async def test_get_rejects_cross_tenant(db_session: AsyncSession) -> None:
     zas = await _make_tenant(db_session, "zas")
     other = await _make_tenant(db_session, "other")
-    admin = await _make_user(db_session, tenant=zas, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=zas, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=other, email="user@other.local")
     await db_session.commit()
 
@@ -96,7 +106,7 @@ async def test_get_rejects_cross_tenant(db_session: AsyncSession) -> None:
 
 async def test_get_raises_for_missing(db_session: AsyncSession) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     await db_session.commit()
 
     service = _make_service(db_session)
@@ -106,15 +116,16 @@ async def test_get_raises_for_missing(db_session: AsyncSession) -> None:
 
 async def test_assign_role_updates_target(db_session: AsyncSession) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
     service = _make_service(db_session)
-    updated = await service.assign_role(_actor(admin), target.id, Role.ADMIN)
+    admin_role_id = await _role_id(db_session, tenant, "admin")
+    updated = await service.assign_role(_actor(admin), target.id, admin_role_id)
     await db_session.commit()
 
-    assert updated.role is Role.ADMIN
+    assert updated.role_id == admin_role_id
 
 
 async def test_assign_role_rejects_cross_tenant_target(
@@ -122,38 +133,41 @@ async def test_assign_role_rejects_cross_tenant_target(
 ) -> None:
     zas = await _make_tenant(db_session, "zas")
     other = await _make_tenant(db_session, "other")
-    admin = await _make_user(db_session, tenant=zas, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=zas, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=other, email="user@other.local")
     await db_session.commit()
 
     service = _make_service(db_session)
+    admin_role_id = await _role_id(db_session, zas, "admin")
     with pytest.raises(CrossTenantAccessError):
-        await service.assign_role(_actor(admin), target.id, Role.ADMIN)
+        await service.assign_role(_actor(admin), target.id, admin_role_id)
 
 
 async def test_assign_role_raises_for_missing_target(
     db_session: AsyncSession,
 ) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     await db_session.commit()
 
     service = _make_service(db_session)
+    default_role_id = await _role_id(db_session, tenant, "default")
     with pytest.raises(UserNotFoundError):
-        await service.assign_role(_actor(admin), uuid.uuid4(), Role.CAREGIVER)
+        await service.assign_role(_actor(admin), uuid.uuid4(), default_role_id)
 
 
 async def test_assign_role_permits_self_target(db_session: AsyncSession) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     await db_session.commit()
 
     service = _make_service(db_session)
-    updated = await service.assign_role(_actor(admin), admin.id, Role.CAREGIVER)
+    default_role_id = await _role_id(db_session, tenant, "default")
+    updated = await service.assign_role(_actor(admin), admin.id, default_role_id)
     await db_session.commit()
 
     assert updated.id == admin.id
-    assert updated.role is Role.CAREGIVER
+    assert updated.role_id == default_role_id
 
 
 async def test_assign_role_audit_hook_stamps_updated_by(
@@ -168,14 +182,15 @@ async def test_assign_role_audit_hook_stamps_updated_by(
     from app.db.audit import SESSION_ACTOR_KEY
 
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
     service = _make_service(db_session)
+    admin_role_id = await _role_id(db_session, tenant, "admin")
     db_session.info[SESSION_ACTOR_KEY] = _actor(admin)
     try:
-        await service.assign_role(_actor(admin), target.id, Role.ADMIN)
+        await service.assign_role(_actor(admin), target.id, admin_role_id)
         await db_session.commit()
     finally:
         db_session.info.pop(SESSION_ACTOR_KEY, None)
@@ -186,7 +201,7 @@ async def test_assign_role_audit_hook_stamps_updated_by(
 
 async def test_set_active_toggles(db_session: AsyncSession) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=tenant, email="user@zas.local")
     await db_session.commit()
 
@@ -203,7 +218,7 @@ async def test_set_active_toggles(db_session: AsyncSession) -> None:
 async def test_set_active_rejects_cross_tenant_target(db_session: AsyncSession) -> None:
     zas = await _make_tenant(db_session, "zas")
     other = await _make_tenant(db_session, "other")
-    admin = await _make_user(db_session, tenant=zas, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=zas, email="admin@zas.local", role_slug="admin")
     target = await _make_user(db_session, tenant=other, email="user@other.local")
     await db_session.commit()
 
@@ -214,7 +229,7 @@ async def test_set_active_rejects_cross_tenant_target(db_session: AsyncSession) 
 
 async def test_set_active_raises_for_missing(db_session: AsyncSession) -> None:
     tenant = await _make_tenant(db_session, "zas")
-    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role=Role.ADMIN)
+    admin = await _make_user(db_session, tenant=tenant, email="admin@zas.local", role_slug="admin")
     await db_session.commit()
 
     service = _make_service(db_session)

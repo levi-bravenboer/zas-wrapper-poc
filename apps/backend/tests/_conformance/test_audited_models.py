@@ -19,6 +19,7 @@ _EXPECTED = {
     "PathwayBlockExecution",
     "Task",
     "Note",
+    "Role",
 }
 
 

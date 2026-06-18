@@ -6,8 +6,10 @@ from collections.abc import AsyncIterator
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.organisation import organisation_router
+from app.core.enums import Permission
 from app.db.models.user import User
 from scripts.seed_organisations import (
     ORTHO_DEPT_ORG_ID,
@@ -15,7 +17,9 @@ from scripts.seed_organisations import (
     ZAS_ROOT_ORG_ID,
     seed_organisations,
 )
+from scripts.seed_roles import DEFAULT_ROLE_SLUG
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from tests._rbac import grant_to_role
 
 _DEFAULT_PASSWORD = "changeme"
 
@@ -78,9 +82,14 @@ async def test_list_organisations_orders_by_sort_index(
 
 
 async def test_list_organisations_allows_caregiver(
-    async_client: AsyncClient, seeded_zas_orgs: list
+    async_client: AsyncClient, db_session: AsyncSession, seeded_zas_orgs: list
 ) -> None:
     del seeded_zas_orgs
+    # A caregiver granted `organisation.read` can list (the seeded default role
+    # is minimal; org-list is permission-gated, not authenticated-only).
+    await grant_to_role(
+        db_session, role_slug=DEFAULT_ROLE_SLUG, permission=Permission.ORGANISATION_READ
+    )
     await _login(async_client, CAREGIVER_EMAIL)
 
     response = await async_client.get("/organisations")

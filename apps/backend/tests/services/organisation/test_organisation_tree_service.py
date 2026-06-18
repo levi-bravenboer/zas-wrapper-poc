@@ -7,7 +7,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTypeCode
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.organisation import Organisation
 from app.db.models.tenant import Tenant
@@ -20,6 +19,7 @@ from app.services.organisation.errors import (
     OrganisationTreeCycleError,
 )
 from app.services.organisation.organisation_tree_service import OrganisationTreeService
+from tests._rbac import ensure_roles, make_session_user
 
 
 async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
@@ -31,6 +31,7 @@ async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
 
 async def _make_actor(session: AsyncSession, tenant: Tenant) -> User:
     user_id = uuid.uuid4()
+    roles = await ensure_roles(session, tenant.id)
     user = User(
         id=user_id,
         tenant_id=tenant.id,
@@ -39,7 +40,7 @@ async def _make_actor(session: AsyncSession, tenant: Tenant) -> User:
         email=f"{uuid.uuid4()}@example.test",
         password_hash="hash",
         display_name="actor",
-        role=Role.ADMIN,
+        role_id=roles["admin"].id,
         is_active=True,
     )
     session.add(user)
@@ -74,12 +75,13 @@ async def _make_org(
 
 
 def _session_user(actor: User) -> SessionUser:
-    return SessionUser(
+    return make_session_user(
         id=actor.id,
         email=actor.email,
         display_name=actor.display_name,
         tenant_id=actor.tenant_id,
-        role=actor.role,
+        admin=True,
+        role_id=actor.role_id,
     )
 
 

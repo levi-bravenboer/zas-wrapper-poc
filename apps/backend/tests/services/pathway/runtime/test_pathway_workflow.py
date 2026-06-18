@@ -19,7 +19,6 @@ from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.pathway import (
@@ -40,8 +39,15 @@ from app.services.pathway.enrollment_service import EnrollmentService
 from app.temporal.activities import advance_runtime, cancel_runtime, complete_step
 from app.temporal.types import EnrollmentWorkflowInput
 from app.temporal.workflows import PathwayEnrollmentWorkflow
-from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
+from scripts.seed_roles import ADMIN_ROLE_SLUG
+from scripts.seed_users import (
+    ADMIN_DISPLAY_NAME,
+    ADMIN_EMAIL,
+    ADMIN_USER_ID,
+    admin_role_id,
+)
 from scripts.seed_tenant import ZAS_TENANT_ID
+from tests._rbac import ALL_PERMISSIONS
 
 _TASK_QUEUE = "test-pathway-runtime"
 
@@ -52,7 +58,9 @@ def _actor() -> SessionUser:
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        role_id=admin_role_id(ZAS_TENANT_ID),
+        role_slug=ADMIN_ROLE_SLUG,
+        permissions=ALL_PERMISSIONS,
     )
 
 

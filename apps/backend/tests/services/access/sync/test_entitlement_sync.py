@@ -10,7 +10,6 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.access.access_grant import AccessGrant
 from app.db.models.care_team import CareTeam
 from app.db.models.pathway import Pathway
@@ -26,15 +25,14 @@ from app.services.access.sync.relay import process_pending
 from app.services.access.sync.sweep import sweep_expired_grants
 from scripts.seed_practitioners import seed_practitioners
 from scripts.seed_users import ADMIN_USER_ID, CAREGIVER_EMAIL
+from tests._rbac import ensure_roles
 from tests.fakes.keto import FakeKetoClient
 
 SeededDomain = tuple[list[Patient], list[CareTeam]]
 
 
 async def _caregiver(session: AsyncSession) -> User:
-    result = await session.execute(
-        select(User).where(User.email == CAREGIVER_EMAIL, User.role == Role.CAREGIVER)
-    )
+    result = await session.execute(select(User).where(User.email == CAREGIVER_EMAIL))
     return result.scalar_one()
 
 
@@ -134,10 +132,11 @@ async def test_break_glass_expiry_via_sweep(
     target = patients[0]
     # grantee deliberately has NO care-team/org relation to the patient —
     # break-glass must be the only thing granting (and losing) access
+    roles = await ensure_roles(db_session, target.tenant_id)
     substitute = User(
         email="substitute@zas.local",
         display_name="Substitute",
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         password_hash="x",
         is_active=True,
         tenant_id=target.tenant_id,

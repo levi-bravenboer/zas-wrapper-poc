@@ -6,13 +6,13 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
+from tests.db.conftest import admin_session_user, seed_admin_user
 
 
 @pytest.fixture
@@ -26,20 +26,7 @@ async def _bootstrap(session: AsyncSession) -> tuple[Tenant, User, Organisation]
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
-    actor_id = uuid.uuid4()
-    actor = User(
-        id=actor_id,
-        tenant_id=tenant.id,
-        created_by=actor_id,
-        updated_by=actor_id,
-        email="a@example.test",
-        password_hash="hash",
-        display_name="a",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(actor)
-    await session.flush()
+    actor = await seed_admin_user(session, tenant_id=tenant.id)
     org = Organisation(
         id=uuid.uuid4(),
         tenant_id=tenant.id,
@@ -56,13 +43,7 @@ async def _bootstrap(session: AsyncSession) -> tuple[Tenant, User, Organisation]
 
 async def test_audit_columns_stamped_when_actor_set(db_session: AsyncSession) -> None:
     tenant, actor, org = await _bootstrap(db_session)
-    db_session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=actor.id,
-        email=actor.email,
-        display_name=actor.display_name,
-        tenant_id=actor.tenant_id,
-        role=actor.role,
-    )
+    db_session.info[SESSION_ACTOR_KEY] = admin_session_user(actor)
     patient = Patient(
         primary_organisation_id=org.id,
         given_name="Hook",

@@ -8,9 +8,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.practitioner import practitioner_router
+from app.core.enums import Permission
 from app.db.models.practitioner import Practitioner
 from app.db.models.user import User
+from scripts.seed_roles import DEFAULT_ROLE_SLUG
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from tests._rbac import grant_to_role
 
 _DEFAULT_PASSWORD = "changeme"
 
@@ -140,6 +143,11 @@ async def test_caregiver_can_read_own_practitioner(
         )
     )
     await db_session.commit()
+    # Caregiver self-read is permission-gated (practitionerRole.read); grant it
+    # to the default role to simulate a configured caregiver.
+    await grant_to_role(
+        db_session, role_slug=DEFAULT_ROLE_SLUG, permission=Permission.PRACTITIONER_ROLE_READ
+    )
     await _login(async_client, CAREGIVER_EMAIL)
     response = await async_client.get(f"/practitioners/{caregiver.id}")
     assert response.status_code == 200, response.text

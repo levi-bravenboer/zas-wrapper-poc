@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.access import ConsentStatus
 from app.core.enums.practitioner_role import PractitionerRoleCode
-from app.core.enums.user import Role
 from app.core.settings import get_settings
 from app.db.models.access.consent import Consent
 from app.db.models.access.external_access import ExternalAccessProfile, ExternalGrant
@@ -20,6 +19,7 @@ from app.services.access.permissions.keto_client import RelationTuple, user_subj
 from app.services.access.sync.relay import process_pending
 from app.services.access.sync.reconciler import reconcile_all
 from scripts.seed_users import ADMIN_USER_ID, CAREGIVER_EMAIL
+from tests._rbac import ensure_roles
 from tests.fakes.keto import FakeKetoClient
 
 SeededDomain = tuple[list[Patient], list[CareTeam]]
@@ -104,10 +104,11 @@ async def test_external_grant_derives_verbs_not_shielded(
 
     patients, _ = seeded_domain
     target = patients[0]
+    roles = await ensure_roles(db_session, target.tenant_id)
     external_user = User(
         email="external.gp@example.org",
         display_name="External GP",
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         password_hash="x",
         is_active=True,
         tenant_id=target.tenant_id,
