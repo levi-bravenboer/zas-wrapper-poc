@@ -17,6 +17,7 @@ import pathway from './locales/nl/pathway.json'
 import patientPathway from './locales/nl/patient-pathway.json'
 import patientProfile from './locales/nl/patient-profile.json'
 import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
+import rolesAdminUi from './locales/nl/roles-admin-ui.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
 import tasks from './locales/nl/tasks.json'
@@ -53,6 +54,7 @@ void i18next.use(initReactI18next).init({
     'patient-pathway',
     'patient-profile',
     'practitioner-roles-admin-ui',
+    'roles-admin-ui',
     'shell',
     'smart',
     'tasks',
@@ -77,6 +79,7 @@ void i18next.use(initReactI18next).init({
       'patient-pathway': patientPathway,
       'patient-profile': patientProfile,
       'practitioner-roles-admin-ui': practitionerRolesAdminUi,
+      'roles-admin-ui': rolesAdminUi,
       shell,
       smart,
       tasks,

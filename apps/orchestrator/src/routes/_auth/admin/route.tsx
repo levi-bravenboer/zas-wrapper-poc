@@ -9,9 +9,23 @@ type AdminBeforeLoadArgs = {
   context: { queryClient: QueryClient }
 }
 
+// Any management permission grants the admin section; per-page guards + button
+// gating narrow it further. A `default` role granted, say, `user.read` reaches
+// admin without holding the `admin` role (dynamic-rbac D12).
+const ADMIN_SECTION_PERMISSIONS = [
+  'user.read',
+  'role.read',
+  'organisation.read',
+  'audit.read',
+  'practitionerRole.read',
+  'specialism.read',
+] as const
+
 export async function adminBeforeLoad({ context }: AdminBeforeLoadArgs) {
   const session = await requireSession(context.queryClient)
-  if (!session || session.role_slug !== 'admin') {
+  const allowed =
+    !!session && ADMIN_SECTION_PERMISSIONS.some((p) => session.permissions.includes(p))
+  if (!allowed) {
     throw redirect({ to: '/' })
   }
   return { session }

@@ -7,6 +7,7 @@ import {
   Inbox,
   ScrollText,
   Settings,
+  ShieldCheck,
   Users,
   UsersRound,
   Workflow,
@@ -63,6 +64,13 @@ export const navGroups: readonly NavGroup[] = [
         labelKey: 'caregiver-shell:nav.users',
         icon: Users,
         order: 10,
+        requiresRole: ['admin'],
+      },
+      {
+        to: '/admin/roles',
+        labelKey: 'caregiver-shell:nav.roles',
+        icon: ShieldCheck,
+        order: 11,
         requiresRole: ['admin'],
       },
       {

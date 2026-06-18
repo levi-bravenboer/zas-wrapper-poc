@@ -67,7 +67,7 @@ describe('admin route beforeLoad', () => {
           tenant_id: '00000000-0000-0000-0000-000000000001',
           role_id: 'a1111111-1111-4111-8111-1111111111a1',
           role_slug: 'admin',
-          permissions: [],
+          permissions: ['user.read', 'role.read', 'organisation.read', 'audit.read'],
           patient_id: null,
         }),
       ),

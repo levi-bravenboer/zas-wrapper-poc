@@ -1,6 +1,7 @@
 {
   "nav": {
     "users": "Gebruikers",
+    "roles": "Rollen",
     "organisations": "Organisaties",
     "practitionerRoles": "Affiliaties",
     "auditLog": "Auditlog",
