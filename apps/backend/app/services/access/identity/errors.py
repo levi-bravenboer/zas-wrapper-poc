@@ -37,6 +37,21 @@ class ForbiddenRoleError(AppError):
     message = "Caller role is not permitted for this resource."
 
 
+class ForbiddenPermissionError(AppError):
+    code = "forbidden.auth.permission"
+    status_code = 403
+    message = "Caller lacks the required permission for this resource."
+
+
+class PrivilegeEscalationError(AppError):
+    """Role-management write would amplify privilege or touch a crown
+    permission / system role without the admin role (D7/D7a)."""
+
+    code = "forbidden.auth.privilege_escalation"
+    status_code = 403
+    message = "This role or permission change exceeds your privileges."
+
+
 class RoleSelectionRequiredError(AppError):
     """Multi-role session without an active-role binding (REQ-NON-3)."""
 

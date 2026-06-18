@@ -10,10 +10,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import select
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.core.errors import ErrorResponse
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
+from app.db.models.access.role import Role as RoleModel
 from app.db.models.pathway import PathwayEnrollment
 from app.db.models.pathway.version import PathwayVersion
 from app.db.models.practitioner.practitioner import Practitioner
@@ -31,7 +32,8 @@ from app.schemas.pathway.enrollment import (
     EnrollmentResponse,
     ExecutionCompleteRequest,
 )
-from app.services.access.identity.deps import CurrentUserDep, require_role
+from app.services.access.identity.deps import CurrentUserDep
+from app.services.access.rbac.deps import require_permission
 from app.services.access.permissions.deps import (
     KetoClientDep,
     PatientRelation,
@@ -61,13 +63,6 @@ router = APIRouter(prefix="/enrollments", tags=["enrollments"])
 _ERRORS_404: dict[int | str, dict[str, Any]] = {404: {"model": ErrorResponse}}
 _ERRORS_422: dict[int | str, dict[str, Any]] = {422: {"model": ErrorResponse}}
 
-# Role tuple shared by every enrollment route's `require_role` gate and
-# by `require_carepath_access`'s own gate — keep them in lock-step so a
-# future role-set change doesn't drift between the route-level dep and
-# the inline call to `require_carepath_access` below.
-_ENROLLMENT_ROLES: tuple[Role, ...] = (Role.ADMIN, Role.CAREGIVER)
-
-
 # AUTH-HARDEN (chain slot #3 §5): patient verb + carepath scope on every
 # enrollment-keyed route. Resolves `patient_id` + `pathway_id` from the
 # enrollment row, then delegates to the same Keto-graduated helpers used
@@ -84,7 +79,7 @@ def _require_enrollment_access(
         session: SessionDep,
         settings: SettingsDep,
         keto: KetoClientDep,
-        current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+        current_user: CurrentUserDep,
     ) -> PathwayEnrollment:
         enrollment = await repo.get(enrollment_id, tenant_id=current_user.tenant_id)
         if enrollment is None:
@@ -110,11 +105,10 @@ def _require_enrollment_access(
             # enrollment. Refuse the call rather than silently skipping
             # carepath scope.
             raise PathwayNotFoundError()
-        # NOTE: `require_carepath_access` enforces its own role gate via a
-        # `require_role(ADMIN, CAREGIVER)` Depends default — only triggered
-        # when used as a Depends. Calling it directly we rely on the
-        # `_ENROLLMENT_ROLES` gate above; the module-level tuple keeps the
-        # two role sets in lock-step.
+        # NOTE: `require_carepath_access` enforces its own gate via a Depends
+        # default — only triggered when used as a Depends. Calling it directly
+        # here, the route is already authenticated (CurrentUserDep) and the
+        # carepath + patient-relation checks above carry the access guarantee.
         await require_carepath_access(pathway_id, session, settings, keto, current_user)
         return enrollment
 
@@ -145,7 +139,7 @@ async def create_enrollment(
     session: SessionDep,
     settings: SettingsDep,
     keto: KetoClientDep,
-    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+    current_user: CurrentUserDep,
 ) -> EnrollmentResponse:
     # AUTH-HARDEN (slot #3 §5): patient `view` + carepath scope before write.
     # Enrolling is itself the act by which a caregiver takes on a patient, so
@@ -171,9 +165,9 @@ async def create_enrollment(
     )
     if pathway_id is None:
         raise PathwayNotFoundError()
-    # NOTE: `require_carepath_access` enforces its own role gate via a Depends
-    # default; we rely on the route-level `_ENROLLMENT_ROLES` tuple above to
-    # carry the same guarantee for the direct call.
+    # NOTE: `require_carepath_access` enforces its own gate via a Depends
+    # default; called directly here the authenticated caller + the carepath
+    # check itself carry the access guarantee.
     await require_carepath_access(pathway_id, session, settings, keto, current_user)
     # Auto-join: enrolling makes the caregiver a care-team member so the
     # enrollment's downstream writes (complete step, materialise appointment)
@@ -209,7 +203,7 @@ async def list_enrollments_by_patient(
     session: SessionDep,
     settings: SettingsDep,
     keto: KetoClientDep,
-    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+    current_user: CurrentUserDep,
 ) -> list[EnrollmentResponse]:
     # AUTH-HARDEN (slot #3 §5): care-team `view` scope on the patient.
     # Query-keyed, so the route resolves the patient relation inline
@@ -241,7 +235,7 @@ async def get_enroll_descriptor(
     session: SessionDep,
     settings: SettingsDep,
     keto: KetoClientDep,
-    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+    current_user: CurrentUserDep,
 ) -> EnrollDescriptor:
     # Carepath scope on the version's pathway — same gate as create.
     pathway_id = await session.scalar(
@@ -260,7 +254,7 @@ async def get_enroll_descriptor(
 )
 async def list_enrollment_candidates(
     session: SessionDep,
-    current_user: SessionUser = Depends(require_role(*_ENROLLMENT_ROLES)),
+    current_user: CurrentUserDep,
 ) -> list[EnrollmentCandidate]:
     # Assignable users for participant slots: active, non-patient users in the
     # caller's tenant. Caregiver-accessible (unlike admin-only `/users`). The
@@ -268,7 +262,8 @@ async def list_enrollment_candidates(
     # dialog can scope each dropdown to the block's required role/specialty.
     rows = (
         await session.execute(
-            select(User, PractitionerRole.code, PractitionerRole.specialty)
+            select(User, PractitionerRole.code, PractitionerRole.specialty, RoleModel.slug)
+            .join(RoleModel, RoleModel.id == User.role_id)
             .join(Practitioner, Practitioner.user_id == User.id, isouter=True)
             .join(
                 PractitionerRole,
@@ -279,14 +274,14 @@ async def list_enrollment_candidates(
             .where(
                 User.tenant_id == current_user.tenant_id,
                 User.is_active.is_(True),
-                User.role != Role.PATIENT,
+                User.patient_id.is_(None),
             )
             .order_by(User.display_name)
         )
     ).all()
     seen: set[tuple[UUID, str | None, str | None]] = set()
     out: list[EnrollmentCandidate] = []
-    for user, code, specialty in rows:
+    for user, code, specialty, role_slug in rows:
         role_code = code.value if code is not None else None
         key = (user.id, role_code, specialty)
         if key in seen:
@@ -296,7 +291,7 @@ async def list_enrollment_candidates(
             EnrollmentCandidate(
                 id=user.id,
                 display_name=user.display_name,
-                role=user.role.value,
+                role=role_slug,
                 practitioner_role=role_code,
                 specialty=specialty,
             )
@@ -390,9 +385,11 @@ async def resume_enrollment(
 async def fast_forward_enrollment(
     enrollment_id: UUID,
     service: EnrollmentServiceDep,
-    current_user: SessionUser = Depends(require_role(Role.ADMIN)),
+    current_user: SessionUser = Depends(  # AUTH-HARDEN: pathway.manageRuntime
+        require_permission(Permission.PATHWAY_MANAGE_RUNTIME)
+    ),
 ) -> EnrollmentResponse:
-    # Admin-only test tool: auto-complete non-choice steps and fire timers
+    # Runtime-management test tool: auto-complete non-choice steps and fire timers
     # until the run ends or hits a decision/MDO needing a manual outcome.
     # Direct service mutation (not workflow-driven) — it advances the DB state
     # so the runtime view reflects the fast-forward immediately.

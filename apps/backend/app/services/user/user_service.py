@@ -5,7 +5,6 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
@@ -14,6 +13,8 @@ from app.schemas.user.user import UserCreate, UserUpdate
 from app.services.access.identity.deps import KRATOS_IDP
 from app.services.access.identity.kratos_client import KratosClient, KratosSchemaId
 from app.services.access.identity.password import PasswordHasher
+from app.services.access.rbac.guard import assert_can_assign_role
+from app.services.access.rbac.resolver import load_role_context
 from app.services.practitioner.practitioner_service import PractitionerService
 from app.services.user.errors import (
     CrossTenantAccessError,
@@ -53,9 +54,13 @@ class UserService:
             raise CrossTenantAccessError()
         return user
 
-    async def assign_role(self, actor: SessionUser, target_user_id: UUID, role: Role) -> User:
+    async def assign_role(self, actor: SessionUser, target_user_id: UUID, role_id: UUID) -> User:
         user = await self.get(actor, target_user_id)
-        user.role = role
+        target_slug, target_perms = await load_role_context(self._session, role_id)
+        assert_can_assign_role(
+            actor, target_role_slug=target_slug, target_role_permissions=target_perms
+        )
+        user.role_id = role_id
         return await self._repo.update(user)
 
     async def set_active(
@@ -88,13 +93,20 @@ class UserService:
         if existing is not None:
             raise EmailAlreadyExistsError()
 
-        if payload.role == Role.ADMIN:
-            # Validator guarantees display_name presence for the admin branch.
-            assert payload.display_name is not None
-            display_name = payload.display_name.strip()
-        else:
+        # Crown floor (D7a): assigning the admin role / a patient.accessAll role
+        # is admin-only, enforced at creation just as at re-assignment.
+        target_slug, target_perms = await load_role_context(self._session, payload.role_id)
+        assert_can_assign_role(
+            actor, target_role_slug=target_slug, target_role_permissions=target_perms
+        )
+
+        if payload.is_clinician:
             assert payload.given_name is not None and payload.family_name is not None
             display_name = f"{payload.given_name.strip()} {payload.family_name.strip()}"
+        else:
+            # Validator guarantees display_name presence for the non-clinician branch.
+            assert payload.display_name is not None
+            display_name = payload.display_name.strip()
 
         # Placeholder credential — admin onboards real auth via separate flow.
         # Random URL-safe token hashed with the standard hasher means the row
@@ -106,7 +118,7 @@ class UserService:
         # Kratos is the credential system of record: create the identity
         # first (placeholder hash — unusable for login since the random
         # secret is discarded), then persist the projection columns.
-        schema_id: KratosSchemaId = "default" if payload.role == Role.ADMIN else "practitioner"
+        schema_id: KratosSchemaId = "practitioner" if payload.is_clinician else "default"
         # One human = one Kratos identity (REQ-NON-3): a second role row for
         # an existing email links to the existing identity instead of
         # importing a duplicate (Kratos enforces email uniqueness anyway).
@@ -122,7 +134,7 @@ class UserService:
             tenant_id=actor.tenant_id,
             email=payload.email,
             display_name=display_name,
-            role=payload.role,
+            role_id=payload.role_id,
             is_active=True,
             password_hash=placeholder_hash,
             external_idp=KRATOS_IDP,
@@ -131,7 +143,7 @@ class UserService:
         self._session.add(user)
         await self._session.flush()
 
-        if payload.role == Role.CAREGIVER:
+        if payload.is_clinician:
             assert payload.given_name is not None and payload.family_name is not None
             await self._practitioner_service.create(
                 actor,

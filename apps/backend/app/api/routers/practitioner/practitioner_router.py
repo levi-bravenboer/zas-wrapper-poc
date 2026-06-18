@@ -5,20 +5,21 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.schemas.auth.auth import SessionUser
 from app.schemas.practitioner.practitioner import (
     PractitionerCreate,
     PractitionerRead,
     PractitionerUpdate,
 )
-from app.services.access.identity.deps import require_role
+from app.services.access.rbac.deps import require_permission
 from app.services.practitioner.deps import PractitionerServiceDep
 
 router = APIRouter(tags=["practitioners"])
 
-_ADMIN_GUARD = Depends(require_role(Role.ADMIN))
-_READ_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
+_CREATE_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_CREATE))
+_UPDATE_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_UPDATE))
+_READ_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_READ))
 
 
 @router.get(
@@ -29,7 +30,7 @@ _READ_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 async def get_practitioner(
     user_id: UUID,
     service: PractitionerServiceDep,
-    current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN: practitionerRole.read
 ) -> PractitionerRead:
     practitioner = await service.get_by_user_id(current_user, user_id)
     return PractitionerRead.model_validate(practitioner)
@@ -44,7 +45,7 @@ async def get_practitioner(
 async def create_practitioner(
     payload: PractitionerCreate,
     service: PractitionerServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _CREATE_GUARD],  # AUTH-HARDEN: practitionerRole.create
 ) -> PractitionerRead:
     practitioner = await service.create(current_user, payload)
     return PractitionerRead.model_validate(practitioner)
@@ -59,7 +60,7 @@ async def update_practitioner(
     user_id: UUID,
     payload: PractitionerUpdate,
     service: PractitionerServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _UPDATE_GUARD],  # AUTH-HARDEN: practitionerRole.update
 ) -> PractitionerRead:
     practitioner = await service.update(current_user, user_id, payload)
     return PractitionerRead.model_validate(practitioner)

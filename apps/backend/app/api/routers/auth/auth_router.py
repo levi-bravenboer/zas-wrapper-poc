@@ -6,12 +6,12 @@ from fastapi import APIRouter, Request, Response
 
 from app.api._request import client_ip, user_agent
 from app.core.enums.audit import AuditAction, AuditResult
-from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.repositories.user.deps import UserRepoDep
 from app.db.engine import SessionDep
 from app.schemas.auth.auth import (
     LoginRequest,
+    RoleOption,
     RoleSelectionRequiredResponse,
     RoleSelectRequest,
     SessionUser,
@@ -24,6 +24,7 @@ from app.services.access.identity.deps import (
     KratosClientDep,
     LoginProviderRegistryDep,
     OptionalCurrentUserDep,
+    role_options_for,
 )
 from app.services.access.identity.errors import (
     InvalidCredentialsError,
@@ -35,6 +36,7 @@ from app.services.access.identity.login_service import (
     authenticate_password,
 )
 from app.services.access.identity.role_binding import bind_session_role, get_bound_user_id
+from app.services.access.rbac.resolver import build_session_user
 from app.services.audit.context import AuditContext
 from app.services.audit.emit import emit_committed
 
@@ -119,7 +121,7 @@ async def login_password(
             email=payload.email,
             password=payload.password.get_secret_value(),
             tenant_id=ZAS_TENANT_ID,
-            role_filter=lambda r: r != Role.PATIENT,
+            user_filter=lambda u: u.patient_id is None,
             surface="caregiver",
             user_repo=user_repo,
             kratos=kratos,
@@ -158,10 +160,10 @@ async def login_password(
         await _emit_login_audit(
             request,
             result=AuditResult.SUCCESS,
-            actor=SessionUser.model_validate(result.roster[0]),
+            actor=await build_session_user(session, result.roster[0]),
         )
         return RoleSelectionRequiredResponse(
-            available_roles=sorted({u.role for u in result.roster})
+            available_roles=await role_options_for(session, result.roster)
         )
     log_auth_event(
         AuthEvent(
@@ -173,7 +175,7 @@ async def login_password(
             user_id=result.user.id,
         )
     )
-    session_user = SessionUser.model_validate(result.user)
+    session_user = await build_session_user(session, result.user)
     await _emit_login_audit(request, result=AuditResult.SUCCESS, actor=session_user)
     return session_user
 
@@ -181,17 +183,18 @@ async def login_password(
 @router.get(
     "/auth/session/roles",
     operation_id="list_session_roles",
-    response_model=list[Role],
+    response_model=list[RoleOption],
 )
 async def list_session_roles(
     request: Request,
     settings: SettingsDep,
+    session: SessionDep,
     user_repo: UserRepoDep,
     kratos: KratosClientDep,
-) -> list[Role]:
-    """The caller's selectable roles on this surface (REQ-NON-3) — drives
-    the role picker and the user-menu switcher. Single-role users get a
-    one-element list."""
+) -> list[RoleOption]:
+    """The caller's selectable rows on this surface (REQ-NON-3) — drives the
+    role picker and the user-menu switcher. Single-row users get a
+    one-element list. Staff surface excludes the patient row."""
 
     token = request.cookies.get(settings.session_cookie_name)
     if not token:
@@ -202,7 +205,8 @@ async def list_session_roles(
     roster = await user_repo.list_by_external_identity(
         ZAS_TENANT_ID, KRATOS_IDP, kratos_session.identity_id
     )
-    return sorted({u.role for u in roster if u.is_active and u.role != Role.PATIENT})
+    staff = [u for u in roster if u.is_active and u.patient_id is None]
+    return await role_options_for(session, staff)
 
 
 @router.post(
@@ -235,7 +239,7 @@ async def select_session_role(
         ZAS_TENANT_ID, KRATOS_IDP, kratos_session.identity_id
     )
     target = next(
-        (u for u in roster if u.role == payload.role and u.is_active and u.role != Role.PATIENT),
+        (u for u in roster if u.id == payload.user_id and u.is_active and u.patient_id is None),
         None,
     )
     if target is None:
@@ -244,13 +248,13 @@ async def select_session_role(
     previous_user_id = await get_bound_user_id(session, kratos_session.session_id)
     await bind_session_role(session, kratos_session_id=kratos_session.session_id, user_id=target.id)
     logger.info(
-        "auth.role.bound: session=%s user=%s role=%s previous_user=%s",
+        "auth.role.bound: session=%s user=%s role_id=%s previous_user=%s",
         kratos_session.session_id,
         target.id,
-        target.role,
+        target.role_id,
         previous_user_id,
     )
-    return SessionUser.model_validate(target)
+    return await build_session_user(session, target)
 
 
 @router.get(
@@ -269,7 +273,7 @@ async def get_current_user(current_user: CurrentUserDep) -> SessionUser:
     # Caregiver-surface `/auth/me` rejects patient sessions so a leaked
     # patient cookie cannot surface as a caregiver session in orchestrator
     # code paths. Mobile callers use `/mobile/auth/me` instead.
-    if current_user.role == Role.PATIENT:
+    if current_user.is_patient:
         raise UnauthenticatedError()
     return current_user
 

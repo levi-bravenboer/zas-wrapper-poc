@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response, status
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.schemas.auth.auth import SessionUser
 from app.schemas.organisation import (
     OrganisationCreate,
@@ -13,7 +13,7 @@ from app.schemas.organisation import (
     OrganisationTreeUpdate,
     OrganisationUpdate,
 )
-from app.services.access.identity.deps import AdminUserDep, require_role
+from app.services.access.rbac.deps import require_permission
 from app.services.organisation.deps import (
     OrganisationServiceDep,
     OrganisationTreeServiceDep,
@@ -21,7 +21,10 @@ from app.services.organisation.deps import (
 
 router = APIRouter(tags=["organisations"])
 
-_TENANT_MEMBER_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
+_TENANT_MEMBER_GUARD = Depends(require_permission(Permission.ORGANISATION_READ))
+_CREATE_GUARD = Depends(require_permission(Permission.ORGANISATION_CREATE))
+_UPDATE_GUARD = Depends(require_permission(Permission.ORGANISATION_UPDATE))
+_DELETE_GUARD = Depends(require_permission(Permission.ORGANISATION_DELETE))
 
 
 @router.get(
@@ -40,7 +43,7 @@ async def list_organisations(
     return OrganisationListResponse(items=[OrganisationRead.model_validate(o) for o in orgs])
 
 
-# AUTH-HARDEN: admin-only write — depends on require_role(Role.ADMIN) via AdminUserDep.
+# AUTH-HARDEN: write gated on `organisation.create` via require_permission.
 @router.post(
     "/organisations",
     operation_id="create_organisation",
@@ -50,13 +53,13 @@ async def list_organisations(
 async def create_organisation(
     payload: OrganisationCreate,
     service: OrganisationServiceDep,
-    admin: AdminUserDep,
+    admin: SessionUser = _CREATE_GUARD,
 ) -> OrganisationRead:
     org = await service.create(admin, payload)
     return OrganisationRead.model_validate(org)
 
 
-# AUTH-HARDEN: admin-only write — depends on require_role(Role.ADMIN) via AdminUserDep.
+# AUTH-HARDEN: write gated on `organisation.update` via require_permission.
 @router.patch(
     "/organisations/{organisation_id}",
     operation_id="update_organisation",
@@ -66,13 +69,13 @@ async def update_organisation(
     organisation_id: UUID,
     payload: OrganisationUpdate,
     service: OrganisationServiceDep,
-    admin: AdminUserDep,
+    admin: SessionUser = _UPDATE_GUARD,
 ) -> OrganisationRead:
     org = await service.update(admin, organisation_id, payload)
     return OrganisationRead.model_validate(org)
 
 
-# AUTH-HARDEN: admin-only atomic tree reparent + reorder.
+# AUTH-HARDEN: atomic tree reparent + reorder gated on `organisation.update`.
 @router.patch(
     "/admin/organisations/tree",
     operation_id="patch_organisation_tree",
@@ -81,13 +84,13 @@ async def update_organisation(
 async def patch_organisation_tree(
     payload: OrganisationTreeUpdate,
     service: OrganisationTreeServiceDep,
-    admin: AdminUserDep,
+    admin: SessionUser = _UPDATE_GUARD,
 ) -> OrganisationListResponse:
     orgs = await service.apply_tree_moves(admin, payload.moves)
     return OrganisationListResponse(items=[OrganisationRead.model_validate(o) for o in orgs])
 
 
-# AUTH-HARDEN: admin-only soft delete; rejects when references exist.
+# AUTH-HARDEN: soft delete gated on `organisation.delete`; rejects when references exist.
 @router.delete(
     "/organisations/{organisation_id}",
     operation_id="delete_organisation",
@@ -97,7 +100,7 @@ async def patch_organisation_tree(
 async def delete_organisation(
     organisation_id: UUID,
     service: OrganisationServiceDep,
-    admin: AdminUserDep,
+    admin: SessionUser = _DELETE_GUARD,
 ) -> Response:
     await service.soft_delete(admin, organisation_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

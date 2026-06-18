@@ -23,7 +23,7 @@ from app.schemas.pathway import (
     PathwayWithVersionResponse,
 )
 from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.services.access.identity.deps import CurrentUserDep
@@ -105,7 +105,9 @@ async def list_pathways(
     summaries = await service.list_summaries(current_user.tenant_id)
     # SQL mirror of the Carepath.view permit (REQ-NON-10): scoped carepaths
     # the caller cannot see are dropped from the list so list and detail agree.
-    if settings.authz_keto_enabled and current_user.role != Role.ADMIN:
+    if settings.authz_keto_enabled and not current_user.has_permission(
+        Permission.PATIENT_ACCESS_ALL
+    ):
         hidden = await hidden_carepath_ids(session, current_user.id)
         summaries = [s for s in summaries if s.id not in hidden]
     return summaries

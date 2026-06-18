@@ -7,6 +7,7 @@ from app.repositories.user.user_repository import UserRepository
 from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.authenticator import Authenticator
 from app.services.access.identity.errors import InvalidCredentialsError, UnauthenticatedError
+from app.services.access.rbac.resolver import build_session_user
 
 
 class AuthService:
@@ -33,14 +34,10 @@ class AuthService:
         result = await self._authenticator.authenticate(email=email, password=password)
         if result.user is None or result.reason is not None:
             raise InvalidCredentialsError()
-        return _to_session_user(result.user)
+        return await build_session_user(self._repo._session, result.user)
 
     async def load_session_user(self, user_id: UUID) -> SessionUser:
         user = await self._repo.get_by_id(user_id)
         if user is None or not user.is_active:
             raise UnauthenticatedError()
-        return _to_session_user(user)
-
-
-def _to_session_user(user: object) -> SessionUser:
-    return SessionUser.model_validate(user)
+        return await build_session_user(self._repo._session, user)

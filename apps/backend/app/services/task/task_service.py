@@ -9,8 +9,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums import Permission
 from app.core.enums.task import TaskStatus
-from app.core.enums.user import Role
 from app.db.models.task import Task
 from app.repositories.task import TaskRepository
 from app.schemas._list.list_query import ListQuery
@@ -24,7 +24,7 @@ class TaskService:
         self._session = session
 
     async def list_for_caller(self, caller: SessionUser, query: ListQuery) -> Page[Task]:
-        if caller.role == Role.ADMIN:
+        if caller.has_permission(Permission.PATIENT_ACCESS_ALL):
             return await self._repo.list_page(query)
         return await self._repo.with_assignee(caller.id).list_page(query)
 
@@ -32,7 +32,9 @@ class TaskService:
         task = await self._repo.get_by_id(caller.tenant_id, task_id)
         if task is None:
             return None
-        if caller.role != Role.ADMIN and task.assignee_user_id != caller.id:
+        if not caller.has_permission(Permission.PATIENT_ACCESS_ALL) and (
+            task.assignee_user_id != caller.id
+        ):
             return None
         return task
 

@@ -12,16 +12,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import select
 
-from app.core.enums.user import Role
 from app.db.engine import SessionDep
 from app.db.models.pathway.version import PathwayVersion
 from app.core.settings import SettingsDep
 from app.repositories.pathway.deps import EnrollmentRepoDep
-from app.schemas.auth.auth import SessionUser
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.access.permissions.deps import (
     KetoClientDep,
     require_carepath_access,
@@ -36,8 +33,6 @@ from app.services.pathway.errors import (
     EnrollmentNotFoundError,
     PathwayNotFoundError,
 )
-
-_ROLES: tuple[Role, ...] = (Role.ADMIN, Role.CAREGIVER)
 
 
 @dataclass(frozen=True)
@@ -54,7 +49,7 @@ async def require_pathway_step_access(
     session: SessionDep,
     settings: SettingsDep,
     keto: KetoClientDep,
-    current_user: SessionUser = Depends(require_role(*_ROLES)),
+    current_user: CurrentUserDep,
 ) -> PathwayStepOwner:
     execution = await repo.get_execution_by_id(execution_id, tenant_id=current_user.tenant_id)
     if execution is None:

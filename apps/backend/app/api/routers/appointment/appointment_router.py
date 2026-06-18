@@ -7,22 +7,16 @@ external grant-holders). No write routes ship here.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from app.api.deps import ListQueryParamsDep
-from app.core.enums.user import Role
 from app.schemas._list.page import Page
 from app.schemas.appointment.appointment import AppointmentRead, PatientAppointmentEntry
-from app.schemas.auth.auth import SessionUser
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.appointment.deps import AppointmentAccessDep, AppointmentReadServiceDep
 from app.services.patient.deps import PatientAccessDep
 
 router = APIRouter(tags=["appointments"])
-
-_CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 
 
 @router.get(
@@ -33,7 +27,7 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 async def list_appointments(
     service: AppointmentReadServiceDep,
     query: ListQueryParamsDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
+    current_user: CurrentUserDep,
 ) -> Page[AppointmentRead]:
     return await service.list_visible(
         current_user, page=query.page, page_size=query.page_size

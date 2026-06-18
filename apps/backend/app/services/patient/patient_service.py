@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.db.models.patient import Patient, PatientIdentifier
 from app.repositories.organisation.organisation_repository import OrganisationRepository
 from app.repositories.patient.patient_repository import PatientRepository
@@ -61,7 +61,7 @@ class PatientService:
         identifier: str | None = None,
     ) -> Page[Patient]:
         repo = self._repo.with_identifier(identifier)
-        if actor.role == Role.ADMIN:
+        if actor.has_permission(Permission.PATIENT_ACCESS_ALL):
             return await repo.list_page(query)
         via_care_team = await self._care_team_service.visible_patient_ids_for(actor)
         root_orgs = await practitioner_root_orgs_for(self._session, actor)
