@@ -5,7 +5,7 @@ Separates clinical identity from authentication identity along FHIR lines: a `pr
 ## Requirements
 ### Requirement: Practitioner table separates clinical identity from authentication identity
 
-The backend SHALL persist a `practitioners` table where each row represents the FHIR `Practitioner` resource for exactly one caregiver `User`. `Practitioner` SHALL inherit `TenantOwnedEntity` and carry inherited audit columns plus `user_id` (UUID, NOT NULL, FK `users.id` ON DELETE RESTRICT, UNIQUE), `family_name` (varchar 255, NOT NULL), `given_name` (varchar 255, NOT NULL), `qualification` (text, NULLABLE). Admin users SHALL NOT have a Practitioner row; only `User.role = caregiver` rows MAY have one. The 1:1 split exists so that authentication, session, and IdP code paths stay independent of clinical-identity fields, and so that future Practitioners without a login (e.g. HiX-referenced external clinicians) can be represented without forging User rows.
+The backend SHALL persist a `practitioners` table where each row represents the FHIR `Practitioner` resource for exactly one caregiver `User`. `Practitioner` SHALL inherit `TenantOwnedEntity` and carry inherited audit columns plus `user_id` (UUID, NOT NULL, FK `users.id` ON DELETE RESTRICT, UNIQUE), `family_name` (varchar 255, NOT NULL), `given_name` (varchar 255, NOT NULL), `qualification` (text, NULLABLE). With the `Role` enum removed (`user-base` / `rbac-roles`), **caregiver identity is defined by the presence of a Practitioner row** — it is no longer a role. Eligibility SHALL therefore exclude the other identity-types: a user bound to the `admin` role, or a user with `patient_id` set, MUST NOT have a Practitioner row. The 1:1 split keeps authentication, session, and IdP code paths independent of clinical-identity fields and lets future login-less Practitioners be represented without forging User rows.
 
 #### Scenario: Table created by migration
 
@@ -17,9 +17,9 @@ The backend SHALL persist a `practitioners` table where each row represents the 
 - **WHEN** an attempt is made to insert a second `practitioners` row for the same `user_id`
 - **THEN** the unique constraint MUST reject the insert
 
-#### Scenario: Admin user has no Practitioner row
+#### Scenario: Admin or patient user has no Practitioner row
 
-- **WHEN** the service creates a Practitioner for a `User` whose `role` is `admin`
+- **WHEN** the service attempts to create a Practitioner for a `User` bound to the `admin` role or a `User` with `patient_id` set
 - **THEN** the service layer MUST raise a domain error and the row MUST NOT persist
 
 ### Requirement: PractitionerRole table models M:N affiliations period-bounded
@@ -81,37 +81,17 @@ The service layer SHALL transactionally demote any existing open `is_primary` ro
 
 ### Requirement: Practitioner and PractitionerRole API expose tenant-scoped admin CRUD plus caregiver self-read
 
-The backend SHALL expose under `/practitioners` and `/practitioner-roles` the following routes, all guarded by `require_role(...)` and carrying `# AUTH-HARDEN` source comments:
-
-- `GET /practitioners/{user_id}` — Practitioner + embedded open and historical roles (ordered `is_primary DESC, period_start DESC`); allowed roles: `ADMIN`, `CAREGIVER` (caregiver MAY read only its own).
-- `POST /practitioners` — admin-only; creates a Practitioner for an existing caregiver `User`.
-- `PATCH /practitioners/{user_id}` — admin-only; edits `family_name`, `given_name`, `qualification`.
-- `GET /practitioner-roles` — admin-only list with filters `practitioner_id`, `organisation_id`, `is_open` (boolean).
-- `POST /practitioner-roles` — admin-only; opens a new role (enforces invariants from previous requirement).
-- `PATCH /practitioner-roles/{id}` — admin-only; edits `code`, `specialty`, `is_primary`, or sets `period_end`.
-- `DELETE /practitioner-roles/{id}` — admin-only; soft-close (sets `period_end = now()`).
-
-All routes SHALL be tenant-scoped via the session actor's `tenant_id`; cross-tenant reads SHALL return `404`, never `403`.
+The backend SHALL expose under `/practitioners` and `/practitioner-roles` admin CRUD plus caregiver self-read. Route guards SHALL use `require_permission(slug)` (`rbac-roles`) rather than the removed `require_role(Role.ADMIN/CAREGIVER)`: admin writes require `practitionerRole.create` / `practitionerRole.update` / `practitionerRole.delete` and `practitioner.*` equivalents; reads require the corresponding `*.read` slug, with a caregiver permitted to read only its own Practitioner. All routes SHALL stay tenant-scoped via the session actor's `tenant_id`; cross-tenant reads SHALL return `404`, never `403`. Every guarded route SHALL retain its `# AUTH-HARDEN` source comment.
 
 #### Scenario: Caregiver can read its own Practitioner only
 
 - **WHEN** a caregiver `C` calls `GET /practitioners/{user_id}` with `user_id != C.id`
 - **THEN** the API MUST respond `403 Forbidden`
 
-#### Scenario: Non-admin write rejected
+#### Scenario: Missing-permission write rejected
 
-- **WHEN** a caregiver calls `POST /practitioners` or any write on `/practitioner-roles/*`
+- **WHEN** a user whose role lacks `practitionerRole.create` calls `POST /practitioner-roles`
 - **THEN** the API MUST respond `403 Forbidden`
-
-#### Scenario: Promoting a new primary demotes via the API in one request
-
-- **WHEN** an admin issues `PATCH /practitioner-roles/{id}` setting `is_primary = TRUE` against an open role for practitioner `P` and an existing open primary `R1` already exists for `P`
-- **THEN** the request MUST succeed, `R1.is_primary` MUST be FALSE in the next read, and the request body MUST NOT need to mention `R1`
-
-#### Scenario: AUTH-HARDEN marker present on every guarded route
-
-- **WHEN** any source-level scan of `app/api/routers/practitioner/*` and `app/api/routers/practitioner_role/*` runs
-- **THEN** every route handler that applies a role or session guard MUST carry an `# AUTH-HARDEN` comment within its function body or as a leading guard-line comment
 
 ### Requirement: Practitioner seed materialises one primary affiliation per caregiver
 

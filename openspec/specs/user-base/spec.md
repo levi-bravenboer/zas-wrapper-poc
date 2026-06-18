@@ -5,81 +5,22 @@ TBD - created by archiving change backend-user-auth-base. Update Purpose after a
 ## Requirements
 ### Requirement: Users table persists tenant-scoped identities
 
-The backend SHALL persist a `users` table where each row represents an authenticatable identity belonging to exactly one tenant. `User` SHALL inherit `TenantOwnedEntity` (introduced in `backend-tenant-base`), so each row carries the inherited columns (`id`, `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by`, `tenant_id`) plus user-specific columns (`email`, `password_hash`, `display_name`, `role`, `is_active`, `external_idp`, `external_subject`). `password_hash` MUST be nullable so OIDC-only identities can persist without a credential; `external_idp` (varchar 64) and `external_subject` (varchar 255) MUST both be nullable so password-only identities (PoC) can persist without an IdP subject. A CHECK constraint `(password_hash IS NOT NULL) OR (external_subject IS NOT NULL)` MUST guarantee every row has at least one authentication path. A partial unique index on `(tenant_id, external_idp, external_subject) WHERE external_subject IS NOT NULL` MUST guarantee one external identity per (tenant, IdP) pair. `created_by` / `updated_by` (NOT NULL) and `deleted_by` (nullable) all reference `users.id` with `ON DELETE RESTRICT` — the FK is self-referential, and the bootstrap admin row breaks the cycle by self-referencing (`id = created_by = updated_by = ADMIN_USER_ID`).
+The backend SHALL persist a `users` table where each row represents an authenticatable identity belonging to exactly one tenant. `User` SHALL inherit `TenantOwnedEntity`, so each row carries the inherited columns (`id`, `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by`, `tenant_id`) plus user-specific columns (`email`, `password_hash`, `display_name`, `role_id`, `is_active`, `external_idp`, `external_subject`). The `role` enum column is REPLACED by `role_id` — a NOT NULL foreign key to `roles.id` (`rbac-roles`) — so a user's role is a row in the tenant-scoped `roles` table, not an enum value; the one-row-per-role model is preserved. `password_hash` MUST be nullable so OIDC-only identities can persist without a credential; `external_idp` (varchar 64) and `external_subject` (varchar 255) MUST both be nullable so password-only identities (PoC) can persist without an IdP subject. A CHECK constraint `(password_hash IS NOT NULL) OR (external_subject IS NOT NULL)` MUST guarantee every row has at least one authentication path. A partial unique index on `(tenant_id, external_idp, external_subject) WHERE external_subject IS NOT NULL` MUST guarantee one external identity per (tenant, IdP) pair. `created_by` / `updated_by` (NOT NULL) and `deleted_by` (nullable) all reference `users.id` with `ON DELETE RESTRICT`; the bootstrap admin row breaks the self-FK cycle by self-referencing.
 
 #### Scenario: Table created by migration
 
-- **WHEN** a fresh database is migrated to head (after `backend-tenant-base` and this change)
-- **THEN** a `users` table exists with columns `id` (UUID, primary key, not null), `tenant_id` (UUID, not null, references `tenants.id`, on delete RESTRICT), `created_by` (UUID, not null, references `users.id`, on delete RESTRICT), `updated_by` (UUID, not null, references `users.id`, on delete RESTRICT), `deleted_by` (UUID, nullable, references `users.id`, on delete RESTRICT), `email` (varchar 255, not null), `password_hash` (varchar 255, **nullable**), `display_name` (varchar 255, not null), `role` (enum `role`, not null), `is_active` (boolean, not null, default `true`), `external_idp` (varchar 64, nullable), `external_subject` (varchar 255, nullable), `created_at` (timestamptz, not null, default `now()`), `updated_at` (timestamptz, not null, default `now()`), `deleted_at` (timestamptz, nullable). The table MUST carry a CHECK constraint enforcing `(password_hash IS NOT NULL) OR (external_subject IS NOT NULL)`.
+- **WHEN** a fresh database is migrated to head
+- **THEN** a `users` table exists with `role_id` (UUID, not null, references `roles.id`, on delete RESTRICT) in place of the former `role` enum column, alongside the other identity, audit, and credential columns and the `(password_hash IS NOT NULL) OR (external_subject IS NOT NULL)` CHECK constraint
 
-#### Scenario: Bootstrap admin self-references audit columns
+#### Scenario: Bootstrap admin bound to the admin role
 
-- **WHEN** the bootstrap admin row is inserted by `scripts/seed_users.py`
-- **THEN** the row's `id`, `created_by`, and `updated_by` MUST all equal `ADMIN_USER_ID`, and the insert MUST succeed despite the self-FK cycle
+- **WHEN** the bootstrap admin row is inserted
+- **THEN** its `role_id` references the seeded `admin` role for its tenant
 
-#### Scenario: Caregiver audit fields auto-filled by hook
+#### Scenario: Uniqueness admits staff rows plus a patient row
 
-- **WHEN** `seed_users` inserts the demo caregiver after the admin exists and `session.info[SESSION_ACTOR_KEY]` is set to the admin's `SessionUser`
-- **THEN** the caregiver row's `tenant_id`, `created_by`, and `updated_by` MUST be stamped by the audit hook to the admin's `tenant_id` / `id` — the caregiver insert MUST NOT set those fields explicitly
-
-#### Scenario: Email is case-insensitive unique per tenant
-
-- **WHEN** an insert attempts to create a second row in the same tenant whose `lower(email)` matches an existing row's `lower(email)`
-- **THEN** the database MUST reject the insert with a unique-violation error
-
-#### Scenario: Same email reusable across tenants
-
-- **WHEN** two rows have identical `email` values but different `tenant_id` values
-- **THEN** both inserts MUST succeed
-
-#### Scenario: External subject unique per tenant and IdP
-
-- **WHEN** an insert attempts to create a second row in the same tenant whose `(external_idp, external_subject)` matches an existing non-null pair
-- **THEN** the database MUST reject the insert with a unique-violation error
-
-#### Scenario: External subject null does not collide
-
-- **WHEN** two rows in the same tenant both have `external_idp IS NULL` and `external_subject IS NULL` (the PoC default)
-- **THEN** both inserts MUST succeed (the partial unique index excludes null subjects)
-
-#### Scenario: Row with no credential rejected
-
-- **WHEN** an insert attempts to create a row with `password_hash IS NULL` and `external_subject IS NULL`
-- **THEN** the database MUST reject the insert with a CHECK-constraint violation
-
-#### Scenario: External-only row accepted
-
-- **WHEN** an insert sets `password_hash = NULL`, `external_idp = 'itsme'`, `external_subject = '<sub>'`
-- **THEN** the insert MUST succeed (the CHECK is satisfied by the non-null `external_subject`)
-
-#### Scenario: Password-only row accepted (PoC default)
-
-- **WHEN** an insert sets `password_hash = '<argon2>'`, `external_idp = NULL`, `external_subject = NULL`
-- **THEN** the insert MUST succeed (the CHECK is satisfied by the non-null `password_hash`)
-
-### Requirement: Role enum is a single canonical value
-
-The backend SHALL define exactly one Python `Role` enum at `app/core/enums/user.py` with values `admin`, `caregiver` (string-valued via `StrEnum`), re-exported from `app/core/enums/__init__.py`. The value `external` is REMOVED — the concept it conveyed (caregiver authority scoping) is now derived from organisation-tree comparison via `is_external_for(user, patient)` in `organisations-base`, not from the user's role. This enum MUST be the source of truth for the `role` column type (`sa.Enum(Role, name="role", native_enum=True, create_constraint=True)`) and for every Pydantic `role` field in `app/schemas/`.
-
-#### Scenario: ORM model imports Role from core
-
-- **WHEN** the `User` ORM model declares its `role` column
-- **THEN** it MUST import `Role` from `app.core.enums.user` and pass it to `sa.Enum(...)`
-
-#### Scenario: Pydantic schemas import Role from core
-
-- **WHEN** a Pydantic schema (e.g. `SessionUser`, `AssignRoleRequest`) types a `role` field
-- **THEN** it MUST import `Role` from `app.core.enums.user`
-
-#### Scenario: Postgres enum type created by migration
-
-- **WHEN** the migration runs against a fresh database (post-`organisations-base`)
-- **THEN** a Postgres `enum` type named `role` MUST exist with exactly the values `'admin'`, `'caregiver'`
-
-#### Scenario: Legacy `external` value is rejected
-
-- **WHEN** any insert or update sets `users.role = 'external'`
-- **THEN** the database MUST reject the operation (value not in enum)
+- **WHEN** a human maps to multiple user rows (staff rows plus an optional patient row)
+- **THEN** uniqueness is enforced by partial indexes — `UNIQUE (tenant_id, email, role_id) WHERE patient_id IS NULL` (one staff row per role) and `UNIQUE (tenant_id, email) WHERE patient_id IS NOT NULL` (one patient row) — so a patient row and staff rows can share an email (`multi-role-login`)
 
 ### Requirement: Bootstrap users seeded via script
 
