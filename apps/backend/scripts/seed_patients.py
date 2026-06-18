@@ -29,6 +29,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.access.rbac.resolver import build_session_user
 from app.core.enums.patient import Gender, PatientSource
 from app.core.identifiers import INSZ_SYSTEM
 from app.core.validators.insz import is_valid_insz
@@ -36,7 +37,6 @@ from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.patient import Patient, PatientIdentifier
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from scripts._db import run_script
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
 from scripts.seed_tenant import ZAS_TENANT_SLUG
@@ -122,13 +122,7 @@ async def seed_patients(session: AsyncSession) -> list[Patient]:
 
     rng = Random(SEED_RNG_SEED)
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=caregiver.id,
-        email=caregiver.email,
-        display_name=caregiver.display_name,
-        tenant_id=caregiver.tenant_id,
-        role=caregiver.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = await build_session_user(session, caregiver)
     try:
         seeded: list[Patient] = []
         for index, profile in enumerate(_PROFILES[:SEED_PATIENT_COUNT], start=1):

@@ -27,15 +27,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.practitioner_role import PractitionerRoleCode
-from app.core.enums.user import Role
 from app.core.settings import get_settings
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.access.consent import Consent
 from app.db.models.access.external_access import ExternalAccessProfile, ExternalGrant
+from app.db.models.access.role import Role as RoleModel
 from app.db.models.patient.patient import Patient
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
 from app.services.access.permissions.keto_client import KetoClient
+from app.services.access.rbac.guard import ADMIN_ROLE_SLUG
+from app.services.access.rbac.resolver import build_session_user
 from scripts._db import run_script
 
 logger = logging.getLogger(__name__)
@@ -48,19 +50,16 @@ async def _admin_actor(session: AsyncSession) -> SessionUser:
     admin = (
         (
             await session.execute(
-                select(User).where(User.role == Role.ADMIN, User.deleted_at.is_(None)).limit(1)
+                select(User)
+                .join(RoleModel, RoleModel.id == User.role_id)
+                .where(RoleModel.slug == ADMIN_ROLE_SLUG, User.deleted_at.is_(None))
+                .limit(1)
             )
         )
         .scalars()
         .one()
     )
-    return SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    return await build_session_user(session, admin)
 
 
 async def _ensure_profile(session: AsyncSession, tenant_id: UUID) -> None:

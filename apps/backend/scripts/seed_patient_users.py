@@ -15,16 +15,17 @@ import sys
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
+from app.db.models.access import Role
 from app.db.models.patient import Patient
 from app.db.models.user import User
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.password import PasswordHasher
+from app.services.access.rbac.resolver import build_session_user
 from scripts._db import run_script
 from scripts.seed_patients import SEED_EXTERNAL_SYSTEM
+from scripts.seed_roles import DEFAULT_ROLE_SLUG
 from scripts.seed_tenant import ZAS_TENANT_SLUG
 from scripts.seed_users import ADMIN_USER_ID
 
@@ -59,13 +60,18 @@ async def seed_patient_users(session: AsyncSession) -> list[User]:
         logger.error("cannot seed patient users: admin user missing — run seed_users first")
         raise RuntimeError("admin user missing — run seed_users first")
 
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = await build_session_user(session, admin)
+
+    # Patient rows carry the tenant `default` role (identity-type is derived
+    # from `patient_id`, not the role) — same role as caregivers.
+    default_role = (
+        await session.execute(
+            select(Role).where(Role.tenant_id == tenant.id, Role.slug == DEFAULT_ROLE_SLUG)
+        )
+    ).scalar_one_or_none()
+    if default_role is None:
+        logger.error("cannot seed patient users: default role missing — run seed_users first")
+        raise RuntimeError("default role missing — run seed_users first")
 
     # Pick the first seeded patient (deterministic by external_ref).
     patient = (
@@ -85,13 +91,14 @@ async def seed_patient_users(session: AsyncSession) -> list[User]:
         )
         raise RuntimeError("seeded patient not found — run seed_patients first")
 
-    # Idempotent: check by (tenant, email, role=patient).
+    # Idempotent: a patient row is the user carrying this patient_id (the
+    # identity-type discriminator), distinct from any staff row sharing email.
     existing = (
         await session.execute(
             select(User).where(
                 User.tenant_id == tenant.id,
                 User.email == PATIENT_EMAIL,
-                User.role == Role.PATIENT,
+                User.patient_id.is_not(None),
                 User.deleted_at.is_(None),
             )
         )
@@ -105,13 +112,13 @@ async def seed_patient_users(session: AsyncSession) -> list[User]:
         email=PATIENT_EMAIL,
         password_hash=hasher.hash(raw_password),
         display_name=f"{patient.given_name} {patient.family_name}",
-        role=Role.PATIENT,
+        role_id=default_role.id,
         is_active=True,
         patient_id=patient.id,
     )
     await user_repo.add(patient_user)
 
-    logger.info("seeded patient user email=%s role=%s", PATIENT_EMAIL, Role.PATIENT.value)
+    logger.info("seeded patient user email=%s role=%s", PATIENT_EMAIL, DEFAULT_ROLE_SLUG)
     print(f"Patient login: email={PATIENT_EMAIL} password=<{PATIENT_PASSWORD_ENV}>")  # noqa: T201
 
     return [patient_user]
