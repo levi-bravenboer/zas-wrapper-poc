@@ -173,7 +173,7 @@ For `numeric` and `ordinal` archetypes, the server SHALL parse `value` to a fini
 
 ## MODIFIED Requirements
 
-### Requirement: Display-only invariant reasserted
+### Requirement: Luscii data is display-only (non-MDR invariant)
 
 The aggregation payload SHALL contain only values, labels, units, timestamps, identifiers, **archetype structural metadata**, and Luscii's own status fields, passed through unmodified or projected/classified structurally (group-by, sort, parse-numeric, archetype-from-data-shape).
 
