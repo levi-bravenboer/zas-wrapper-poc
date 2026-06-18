@@ -134,7 +134,7 @@
           "auth"
         ],
         "summary": "List Session Roles",
-        "description": "The caller's selectable roles on this surface (REQ-NON-3) \u2014 drives\nthe role picker and the user-menu switcher. Single-role users get a\none-element list.",
+        "description": "The caller's selectable rows on this surface (REQ-NON-3) \u2014 drives the\nrole picker and the user-menu switcher. Single-row users get a\none-element list. Staff surface excludes the patient row.",
         "operationId": "list_session_roles",
         "responses": {
           "200": {
@@ -143,7 +143,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/Role"
+                    "$ref": "#/components/schemas/RoleOption"
                   },
                   "type": "array",
                   "title": "Response List Session Roles"
@@ -3339,6 +3339,223 @@
               "type": "string",
               "format": "uuid",
               "title": "Rule Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "List Permissions",
+        "operationId": "list_permissions",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Permissions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "List Roles",
+        "operationId": "list_roles",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoleRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Roles"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Create Role",
+        "operationId": "create_role",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/roles/{role_id}": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Get Role",
+        "operationId": "get_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Update Role",
+        "operationId": "update_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Delete Role",
+        "operationId": "delete_role",
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Role Id"
             }
           }
         ],
@@ -6627,13 +6844,15 @@
       },
       "AssignRoleRequest": {
         "properties": {
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Role Id"
           }
         },
         "type": "object",
         "required": [
-          "role"
+          "role_id"
         ],
         "title": "AssignRoleRequest"
       },
@@ -14334,14 +14553,32 @@
         "title": "RelativeToDatePolicy",
         "description": "Block fires relative to a **named clinical date** set at enrollment\n(e.g. `operation_date`), with an ISO 8601 offset applied `before`\n(e.g. `operation_date \u2212 P3D`) or `after`. Editing the named date at\nruntime recomputes the dependent timer (parent design D3a)."
       },
-      "Role": {
-        "type": "string",
-        "enum": [
-          "admin",
-          "caregiver",
-          "patient"
+      "RoleCreate": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "slug",
+          "name"
         ],
-        "title": "Role"
+        "title": "RoleCreate"
       },
       "RoleInCare": {
         "type": "string",
@@ -14352,15 +14589,85 @@
         ],
         "title": "RoleInCare"
       },
-      "RoleSelectRequest": {
+      "RoleOption": {
         "properties": {
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "role_slug": {
+            "type": "string",
+            "title": "Role Slug"
+          },
+          "is_patient": {
+            "type": "boolean",
+            "title": "Is Patient",
+            "default": false
           }
         },
         "type": "object",
         "required": [
-          "role"
+          "user_id",
+          "role_slug"
+        ],
+        "title": "RoleOption",
+        "description": "One selectable user row for a multi-row human. Identified by `user_id`\n(slugs collide when a human is both patient and caregiver \u2014 both `default`)\nand labelled by role slug + the patient facet."
+      },
+      "RoleRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "is_system": {
+            "type": "boolean",
+            "title": "Is System"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permissions"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "is_system",
+          "permissions",
+          "created_at"
+        ],
+        "title": "RoleRead"
+      },
+      "RoleSelectRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
         ],
         "title": "RoleSelectRequest"
       },
@@ -14374,7 +14681,7 @@
           },
           "available_roles": {
             "items": {
-              "$ref": "#/components/schemas/Role"
+              "$ref": "#/components/schemas/RoleOption"
             },
             "type": "array",
             "title": "Available Roles"
@@ -14385,7 +14692,39 @@
           "available_roles"
         ],
         "title": "RoleSelectionRequiredResponse",
-        "description": "Login succeeded but the human holds several roles on this surface\n(REQ-NON-3). The session cookie is set and live; protected routes answer\n409 until `POST /auth/session/role` binds one of `available_roles`."
+        "description": "Login succeeded but the human holds several user rows on this surface\n(REQ-NON-3). The session cookie is set and live; protected routes answer\n409 until `POST /auth/session/role` binds one of `available_roles`."
+      },
+      "RoleUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "permissions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permissions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RoleUpdate"
       },
       "RootResponse": {
         "properties": {
@@ -14425,8 +14764,34 @@
             "format": "uuid",
             "title": "Tenant Id"
           },
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Role Id"
+          },
+          "role_slug": {
+            "type": "string",
+            "title": "Role Slug"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true,
+            "title": "Permissions"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Id"
           }
         },
         "type": "object",
@@ -14435,9 +14800,12 @@
           "email",
           "display_name",
           "tenant_id",
-          "role"
+          "role_id",
+          "role_slug",
+          "permissions"
         ],
-        "title": "SessionUser"
+        "title": "SessionUser",
+        "description": "The bound actor for a request (`dynamic-rbac-roles-permissions`).\n\n`role` is no longer an enum \u2014 a user row points at a `roles` row\n(`role_id`) whose assigned permission slugs are resolved into\n`permissions` at actor-resolution time. `role_slug` is the bound role's\nstable slug (e.g. `admin`, `default`). `patient_id` is set iff this is a\npatient (mobile data-subject) row \u2014 identity-type is derived from data,\nnot the role."
       },
       "SetActiveRequest": {
         "properties": {
@@ -15176,8 +15544,10 @@
             "type": "string",
             "title": "Email"
           },
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Role Id"
           },
           "display_name": {
             "anyOf": [
@@ -15228,10 +15598,10 @@
         "type": "object",
         "required": [
           "email",
-          "role"
+          "role_id"
         ],
         "title": "UserCreate",
-        "description": "Role-discriminated admin-create payload.\n\n- `admin` branch: requires `display_name`; rejects clinical fields.\n- `caregiver` branch: requires `given_name` + `family_name`; rejects\n  `display_name` (the backend derives `user.display_name` from given+family).\n  `qualification` is optional.\n\nThe model_validator enforces mutual exclusion so a mixed payload is a 422,\nnot a silent half-fill."
+        "description": "Admin-create payload for a staff user (`dynamic-rbac-roles-permissions`).\n\n`role_id` is the RBAC role to bind. Identity-type is derived from data, so\nthe payload is discriminated by the *clinical* fields, not the role:\n\n- clinician branch (a `Practitioner` row will be created): requires\n  `given_name` + `family_name`; rejects `display_name` (derived from\n  given+family). `qualification` optional.\n- non-clinician branch (e.g. an admin user): requires `display_name`;\n  rejects clinical fields.\n\nPatients are NOT created here \u2014 they have no clinical fields and carry a\n`patient_id`, set only by the seeding / enrollment flow."
       },
       "UserDetail": {
         "properties": {
@@ -15248,8 +15618,10 @@
             "type": "string",
             "title": "Display Name"
           },
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Role Id"
           },
           "is_active": {
             "type": "boolean",
@@ -15305,7 +15677,7 @@
           "id",
           "email",
           "display_name",
-          "role",
+          "role_id",
           "is_active",
           "external_idp",
           "external_subject",
@@ -15329,8 +15701,10 @@
             "type": "string",
             "title": "Display Name"
           },
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Role Id"
           },
           "is_active": {
             "type": "boolean",
@@ -15359,7 +15733,7 @@
           "id",
           "email",
           "display_name",
-          "role",
+          "role_id",
           "is_active",
           "created_at"
         ],

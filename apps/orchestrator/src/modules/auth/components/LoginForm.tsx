@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { useLogin } from '@/modules/auth/hooks'
 
 import { safeRedirect } from '../redirect'
-import { loginSchema, type Role } from '../schemas'
+import { loginSchema, type RoleOption } from '../schemas'
 
 import { RolePicker } from './RolePicker'
 
@@ -30,7 +30,7 @@ export function LoginForm(): ReactElement {
   })
   const login = useLogin()
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null)
-  const [pendingRoles, setPendingRoles] = useState<Role[] | null>(null)
+  const [pendingRoles, setPendingRoles] = useState<RoleOption[] | null>(null)
 
   const form = useForm({
     defaultValues: { email: '', password: '' },

@@ -1,5 +1,8 @@
-## MODIFIED Requirements
+# patient-pathway-tab Specification
 
+## Purpose
+TBD - created by archiving change patient-pathway-visuals. Update Purpose after archive.
+## Requirements
 ### Requirement: Pathway summary banner shows a patient's enrollment at a glance
 
 For each **active** enrollment (completed/cancelled drop off), the patient detail view SHALL render a **compact, read-only glance banner above the tabs** that lets a caregiver see, at a glance, **what just happened, where the patient is now, and what is next**. It is a summary only — the full runtime graph, all dates, results, and the step controls live in the separate Zorgpad detail tab (the runtime canvas); the banner exposes no caregiver actions. The banner keeps a small, fixed footprint regardless of pathway size or shape (freely-built pathways vary widely):
@@ -34,3 +37,4 @@ For each **active** enrollment (completed/cancelled drop off), the patient detai
 
 - **WHEN** the enrollment's pathway fits within the window
 - **THEN** all its steps render in the trail with no overflow pills
+

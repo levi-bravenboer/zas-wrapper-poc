@@ -35,7 +35,10 @@ const STUB_USER = {
   email: 'caregiver@zas.local',
   display_name: 'Care',
   tenant_id: '00000000-0000-0000-0000-000000000001',
-  role: 'caregiver',
+  role_id: 'd2222222-2222-4222-8222-2222222222d1',
+  role_slug: 'default',
+  permissions: [],
+  patient_id: null,
 }
 
 function renderForm() {
@@ -144,12 +147,21 @@ describe('LoginForm multi-role', () => {
     server.use(
       http.post(`${baseUrl}/auth/login/password`, () =>
         HttpResponse.json(
-          { requires_role_selection: true, available_roles: ['admin', 'caregiver'] },
+          {
+            requires_role_selection: true,
+            available_roles: [
+              { user_id: 'u-admin', role_slug: 'admin', is_patient: false },
+              { user_id: 'u-care', role_slug: 'default', is_patient: false },
+            ],
+          },
           { status: 200 },
         ),
       ),
       http.post(`${baseUrl}/auth/session/role`, () =>
-        HttpResponse.json({ ...STUB_USER, id: 'u9', role: 'admin' }, { status: 200 }),
+        HttpResponse.json(
+          { ...STUB_USER, id: 'u9', role_id: 'a1111111-1111-4111-8111-1111111111a1', role_slug: 'admin' },
+          { status: 200 },
+        ),
       ),
     )
     currentRedirect = '/tasks'

@@ -20,6 +20,7 @@ from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
 from app.services.access.scoping.scoping_service import ScopingService
 from app.services.pathway.audit_events import OP_ASSIGN_PRACTITIONERS, OP_SCOPE_SPECIALISMS
+from scripts.seed_users import CAREGIVER_EMAIL
 
 
 async def _events(session: AsyncSession, resource_id: UUID) -> Sequence[AuditEvent]:
@@ -72,7 +73,7 @@ async def test_assign_practitioners_emits_diff(
     db_session: AsyncSession, seeded_zas_users: list[User], session_actor: SessionUser
 ) -> None:
     pathway = await _pathway(db_session)
-    caregiver = next(u for u in seeded_zas_users if u.role.value == "caregiver")
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
     service = ScopingService(db_session)
 
     await service.set_pathway_practitioners(

@@ -22,24 +22,20 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 
 from app.core.enums.collaboration import OwnerType
-from app.core.enums.user import Role
 from app.db.models.task import Task
-from app.schemas.auth.auth import SessionUser
 from app.schemas.collaboration.note import (
     NoteCreate,
     NoteDownload,
     NoteRead,
     NoteUploadResponse,
 )
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.appointment.deps import require_appointment_access
 from app.services.collaboration.deps import NoteServiceDep
 from app.services.patient.deps import PatientAccessDep
 from app.services.task.deps import require_task_access
 
 from app.api.routers.collaboration.pathway_step_dep import require_pathway_step_access
-
-_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 
 
 def _build_owner_collab_router(
@@ -63,7 +59,8 @@ def _build_owner_collab_router(
     """
     router = APIRouter(tags=[tag])
     owner_dep = Annotated[Any, Depends(access)]
-    guard = Annotated[SessionUser, _GUARD]
+    # AUTH-HARDEN: authenticated only; the owner access dep + Keto gate patient data (D12).
+    guard = CurrentUserDep
     base = f"/{prefix}/{{{id_param}}}"
 
     async def list_notes(owner, service, current_user):  # type: ignore[no-untyped-def]
@@ -220,7 +217,7 @@ async def add_patient_note(
     patient: PatientAccessDep,
     payload: NoteCreate,
     service: NoteServiceDep,
-    current_user: Annotated[SessionUser, _GUARD],
+    current_user: CurrentUserDep,
 ) -> NoteUploadResponse:
     return await service.add(
         owner_type=OwnerType.PATIENT,
@@ -255,7 +252,7 @@ async def delete_patient_note(
     patient: PatientAccessDep,
     note_id: UUID,
     service: NoteServiceDep,
-    current_user: Annotated[SessionUser, _GUARD],
+    current_user: CurrentUserDep,
 ) -> None:
     await service.delete(
         owner_type=OwnerType.PATIENT,

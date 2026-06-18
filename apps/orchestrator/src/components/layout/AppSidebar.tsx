@@ -50,7 +50,7 @@ function passesRole(role: Role | undefined, required: readonly Role[] | undefine
 
 function useResolvedNavGroups(): readonly NavGroup[] {
   const { data: session } = useSession()
-  const role = session?.role
+  const role = session?.role_slug
 
   return useMemo(() => {
     // Feature-registered items still inject into the top group, preserving
@@ -255,9 +255,9 @@ function UserBlock(): ReactElement {
   const selectRole = useSelectRole()
   const { data: sessionRoles } = useSessionRoles()
   const displayName = session?.display_name ?? session?.email ?? '—'
-  const role = session?.role ?? t('shell:user.roleFallback')
+  const role = session?.role_slug ?? t('shell:user.roleFallback')
   // multi-role humans can re-bind the session without re-login (REQ-NON-3)
-  const switchableRoles = (sessionRoles ?? []).filter((r) => r !== session?.role)
+  const switchableRoles = (sessionRoles ?? []).filter((r) => r.user_id !== session?.id)
 
   return (
     <SidebarMenu>
@@ -287,7 +287,7 @@ function UserBlock(): ReactElement {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild disabled={!session?.id}>
-              {session?.role === 'admin' ? (
+              {session?.role_slug === 'admin' ? (
                 <Link
                   to="/admin/users/$userId"
                   params={{ userId: session?.id ?? '' }}
@@ -314,14 +314,16 @@ function UserBlock(): ReactElement {
             {switchableRoles.length > 0 && <DropdownMenuSeparator />}
             {switchableRoles.map((target) => (
               <DropdownMenuItem
-                key={target}
+                key={target.user_id}
                 onSelect={() => {
-                  selectRole.mutate(target)
+                  selectRole.mutate(target.user_id)
                 }}
               >
                 <User aria-hidden="true" className="size-4" />
                 {t('auth:roleSwitch.label', {
-                  role: t(`auth:rolePicker.roles.${target}`, { defaultValue: target }),
+                  role: t(`auth:rolePicker.roles.${target.role_slug}`, {
+                    defaultValue: target.role_slug,
+                  }),
                 })}
               </DropdownMenuItem>
             ))}

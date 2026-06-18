@@ -10,12 +10,11 @@ import { initials } from '@/lib/utils/initials'
 
 import { formatTimestamp } from '../format'
 import { useAssignUserRole, useSetUserActive } from '../hooks'
-import { roleSchema, type Role, type UserRow } from '../schemas'
+import { EMPTY_ROLES, useRoles } from '../roles'
+import { type UserRow } from '../schemas'
 
 import { RoleBadge } from './RoleBadge'
 import { StatusPill } from './StatusPill'
-
-const ROLE_VALUES = roleSchema.options
 
 export function useUserColumns(): ReadonlyArray<BrandedColumnDef<UserRow>> {
   const { t } = useTranslation('users')
@@ -44,9 +43,9 @@ export function useUserColumns(): ReadonlyArray<BrandedColumnDef<UserRow>> {
       defineColumn<UserRow>({
         id: 'role',
         header: t('columns.role'),
-        sortKey: 'role',
-        filterKey: 'role',
-        cell: (row) => <RoleBadge role={row.role} withIcon />,
+        sortKey: 'role_id',
+        filterKey: 'role_id',
+        cell: (row) => <RoleBadge roleId={row.role_id} withIcon />,
       }),
       defineColumn<UserRow>({
         id: 'is_active',
@@ -70,13 +69,14 @@ export function useUserColumns(): ReadonlyArray<BrandedColumnDef<UserRow>> {
 
 export function useUserFilterDefs(): ReadonlyArray<DataTableFilter<UserRow>> {
   const { t } = useTranslation('users')
+  const roles = useRoles().data ?? EMPTY_ROLES
   return useMemo(
     () => [
       {
         type: 'multi',
-        key: 'role',
+        key: 'role_id',
         label: t('filters.role'),
-        options: ROLE_VALUES.map((value) => ({ value, label: t(`role.${value}`) })),
+        options: roles.map((r) => ({ value: r.id, label: r.name })),
       },
       {
         type: 'boolean',
@@ -86,7 +86,7 @@ export function useUserFilterDefs(): ReadonlyArray<DataTableFilter<UserRow>> {
         falseLabel: t('status.inactive'),
       },
     ],
-    [t],
+    [t, roles],
   )
 }
 
@@ -101,6 +101,10 @@ export function useUserRowActions(
   const { t } = useTranslation('users')
   const setActive = useSetUserActive()
   const assignRole = useAssignUserRole()
+  const roles = useRoles().data ?? EMPTY_ROLES
+  // Quick promote/demote toggles between the two system roles.
+  const adminRoleId = roles.find((r) => r.slug === 'admin')?.id
+  const defaultRoleId = roles.find((r) => r.slug === 'default')?.id
 
   return (row) => {
     const viewAction: DataTableRowAction = {
@@ -110,9 +114,9 @@ export function useUserRowActions(
     }
     if (row.id === params.currentUserId) return [viewAction]
 
-    const runRole = (role: Role) =>
+    const runRole = (role_id: string) =>
       assignRole.mutate(
-        { userId: row.id, role },
+        { userId: row.id, role_id },
         {
           onSuccess: () => toast.success(t('toast.role_updated')),
           onError: () => toast.error(t('toast.error')),
@@ -128,23 +132,26 @@ export function useUserRowActions(
         },
       )
 
-    const roleAction: DataTableRowAction =
-      row.role === 'admin'
-        ? {
-            label: t('actions.demote_to_caregiver'),
-            icon: <UserMinus className="h-4 w-4" aria-hidden />,
-            onClick: () => runRole('caregiver'),
-            confirm: {
-              title: t('confirm.demote.title'),
-              description: t('confirm.demote.description'),
-              confirmLabel: t('confirm.demote.confirmLabel'),
-            },
-          }
-        : {
-            label: t('actions.promote_to_admin'),
-            icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
-            onClick: () => runRole('admin'),
-          }
+    const isAdmin = row.role_id === adminRoleId
+    let roleAction: DataTableRowAction | null = null
+    if (isAdmin && defaultRoleId) {
+      roleAction = {
+        label: t('actions.demote_to_caregiver'),
+        icon: <UserMinus className="h-4 w-4" aria-hidden />,
+        onClick: () => runRole(defaultRoleId),
+        confirm: {
+          title: t('confirm.demote.title'),
+          description: t('confirm.demote.description'),
+          confirmLabel: t('confirm.demote.confirmLabel'),
+        },
+      }
+    } else if (!isAdmin && adminRoleId) {
+      roleAction = {
+        label: t('actions.promote_to_admin'),
+        icon: <ShieldCheck className="h-4 w-4" aria-hidden />,
+        onClick: () => runRole(adminRoleId),
+      }
+    }
 
     const activeAction: DataTableRowAction = row.is_active
       ? {
@@ -164,6 +171,6 @@ export function useUserRowActions(
           onClick: () => runActive(true),
         }
 
-    return [viewAction, roleAction, activeAction]
+    return [viewAction, ...(roleAction ? [roleAction] : []), activeAction]
   }
 }

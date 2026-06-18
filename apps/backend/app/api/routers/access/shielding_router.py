@@ -10,16 +10,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.db.engine import SessionDep
 from app.schemas.access.shielding import ShieldingRuleRead, ShieldingRuleUpsert
 from app.schemas.auth.auth import SessionUser
-from app.services.access.identity.deps import require_role
+from app.services.access.rbac.deps import require_permission
 from app.services.access.shielding.rules_service import ShieldingRulesService
 
 router = APIRouter(tags=["shielding"])
 
-_ADMIN_GUARD = Depends(require_role(Role.ADMIN))
+_READ_GUARD = Depends(require_permission(Permission.SHIELDING_RULE_READ))
+_UPDATE_GUARD = Depends(require_permission(Permission.SHIELDING_RULE_UPDATE))
 
 
 def get_shielding_rules_service(session: SessionDep) -> ShieldingRulesService:
@@ -36,7 +37,7 @@ ShieldingRulesServiceDep = Annotated[ShieldingRulesService, Depends(get_shieldin
 )
 async def list_shielding_rules(
     service: ShieldingRulesServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN: admin-only
+    current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN: shieldingRule.read
 ) -> list[ShieldingRuleRead]:
     rows = await service.list_rules(current_user.tenant_id)
     return [ShieldingRuleRead.model_validate(r) for r in rows]
@@ -50,7 +51,7 @@ async def list_shielding_rules(
 async def upsert_shielding_rule(
     payload: ShieldingRuleUpsert,
     service: ShieldingRulesServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN: admin-only
+    current_user: Annotated[SessionUser, _UPDATE_GUARD],  # AUTH-HARDEN: shieldingRule.update
 ) -> ShieldingRuleRead:
     rule = await service.upsert_rule(
         current_user,
@@ -70,6 +71,6 @@ async def upsert_shielding_rule(
 async def delete_shielding_rule(
     rule_id: UUID,
     service: ShieldingRulesServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN: admin-only
+    current_user: Annotated[SessionUser, _UPDATE_GUARD],  # AUTH-HARDEN: shieldingRule.update
 ) -> None:
     await service.delete_rule(current_user, rule_id)

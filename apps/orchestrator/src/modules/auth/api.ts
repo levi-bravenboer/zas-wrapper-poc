@@ -7,8 +7,8 @@ import {
   loginResultSchema,
   providerDescriptorSchema,
   type ProviderDescriptor,
-  type Role,
-  roleSchema,
+  type RoleOption,
+  roleOptionSchema,
   sessionUserSchema,
   type SessionUser,
 } from './schemas'
@@ -23,10 +23,10 @@ export async function login(input: LoginRequest): Promise<LoginResult> {
   return loginResultSchema.parse(result.data)
 }
 
-export async function selectSessionRole(role: Role): Promise<SessionUser> {
-  // the wire type excludes 'external' (legacy client-side value)
+export async function selectSessionRole(userId: string): Promise<SessionUser> {
+  // Multi-row humans select a specific user row by id (slugs can collide).
   const result = await api.POST('/auth/session/role', {
-    body: { role: role as 'admin' | 'caregiver' },
+    body: { user_id: userId },
   })
   if (!result.data) {
     throw apiError('Role selection failed', result.response.status)
@@ -34,12 +34,12 @@ export async function selectSessionRole(role: Role): Promise<SessionUser> {
   return sessionUserSchema.parse(result.data)
 }
 
-export async function fetchSessionRoles(): Promise<Role[]> {
+export async function fetchSessionRoles(): Promise<RoleOption[]> {
   const result = await api.GET('/auth/session/roles', {})
   if (!result.data) {
     throw apiError('Session roles fetch failed', result.response.status)
   }
-  return result.data.map((entry) => roleSchema.parse(entry))
+  return result.data.map((entry) => roleOptionSchema.parse(entry))
 }
 
 export async function logout(): Promise<void> {

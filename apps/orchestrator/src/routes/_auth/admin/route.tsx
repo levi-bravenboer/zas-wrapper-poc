@@ -11,7 +11,7 @@ type AdminBeforeLoadArgs = {
 
 export async function adminBeforeLoad({ context }: AdminBeforeLoadArgs) {
   const session = await requireSession(context.queryClient)
-  if (!session || session.role !== 'admin') {
+  if (!session || session.role_slug !== 'admin') {
     throw redirect({ to: '/' })
   }
   return { session }

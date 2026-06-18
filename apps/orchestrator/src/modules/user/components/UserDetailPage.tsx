@@ -23,7 +23,8 @@ import { useSession } from '@/modules/auth/hooks'
 
 import { formatTimestamp } from '../format'
 import { useSetUserActive, useUserDetail } from '../hooks'
-import type { Role, UserDetail } from '../schemas'
+import { useRoleMap } from '../roles'
+import type { UserDetail } from '../schemas'
 
 import { RoleBadge } from './RoleBadge'
 import { StatusPill } from './StatusPill'
@@ -51,10 +52,15 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
   const session = useSession()
   const userQuery = useUserDetail(userId)
   const setActive = useSetUserActive()
+  const roleMap = useRoleMap()
+  // Clinician = any non-admin role (interim: identity-type is data-derived; a
+  // practitioner row only exists for clinical users).
+  const isClinician =
+    !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
   const practitionerQuery = useQuery({
     queryKey: ['practitioner', userId],
     queryFn: () => fetchPractitioner(userId),
-    enabled: userQuery.data?.role === 'caregiver',
+    enabled: isClinician,
     staleTime: 30_000,
   })
 
@@ -76,7 +82,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
 
   const user = userQuery.data
   const practitioner = practitionerQuery.data ?? null
-  const showPractitioner = user.role === 'caregiver' && practitioner !== null
+  const showPractitioner = isClinician && practitioner !== null
   const isSelf = user.id === (session.data?.id ?? '')
 
   return (
@@ -84,7 +90,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
       title={user.display_name}
       subtitle={
         <span className="flex items-center gap-2 text-sm text-muted-foreground">
-          <RoleBadge role={user.role as Role} withIcon />
+          <RoleBadge roleId={user.role_id} withIcon />
           <span>{user.email}</span>
         </span>
       }
@@ -140,7 +146,7 @@ function UserHero({ user }: { user: UserDetail }): ReactElement {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h2 className="truncate text-xl font-semibold tracking-tight">{user.display_name}</h2>
-            <RoleBadge role={user.role as Role} withIcon />
+            <RoleBadge roleId={user.role_id} withIcon />
           </div>
           <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
             <AtSign className="size-3.5" aria-hidden />
@@ -165,7 +171,7 @@ function DemographicsBlock({ user }: { user: UserDetail }): ReactElement {
         <Field label={t('detail.card.demographics.field.email')} value={user.email} />
         <Field
           label={t('detail.card.demographics.field.role')}
-          value={<RoleBadge role={user.role as Role} />}
+          value={<RoleBadge roleId={user.role_id} />}
         />
         <Field
           label={t('detail.card.demographics.field.is_active')}

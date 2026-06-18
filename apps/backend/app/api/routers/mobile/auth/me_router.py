@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.core.enums.user import Role
 from app.repositories.patient.deps import PatientRepoDep
 from app.repositories.user.deps import UserRepoDep
 from app.schemas.auth.mobile_session import PatientSession
@@ -22,7 +21,7 @@ async def mobile_get_current_patient(
     user_repo: UserRepoDep,
     patient_repo: PatientRepoDep,
 ) -> PatientSession:
-    if current_user.role != Role.PATIENT:
+    if not current_user.is_patient:
         raise UnauthenticatedError()
 
     user = await user_repo.get_by_id(current_user.id)

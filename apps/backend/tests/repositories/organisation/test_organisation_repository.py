@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTypeCode
-from app.core.enums.user import Role
 from app.db.models.organisation import Organisation
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.organisation.organisation_repository import OrganisationRepository
+from scripts.seed_roles import bootstrap_admin_role
+from scripts.seed_users import admin_role_id
 
 
 async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
@@ -20,20 +22,29 @@ async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
 
 
 async def _make_user(session: AsyncSession, tenant: Tenant) -> User:
+    """Self-referencing admin user + its `admin` role (FK cycle, replica block)."""
     user_id = uuid.uuid4()
-    user = User(
-        id=user_id,
-        tenant_id=tenant.id,
-        created_by=user_id,
-        updated_by=user_id,
-        email=f"{uuid.uuid4()}@example.test",
-        password_hash="hash",
-        display_name="actor",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(user)
-    await session.flush()
+    role_id = admin_role_id(tenant.id)
+    await session.execute(text("SET session_replication_role = replica"))
+    try:
+        user = User(
+            id=user_id,
+            tenant_id=tenant.id,
+            created_by=user_id,
+            updated_by=user_id,
+            email=f"{uuid.uuid4()}@example.test",
+            password_hash="hash",
+            display_name="actor",
+            role_id=role_id,
+            is_active=True,
+        )
+        session.add(user)
+        await session.flush()
+        await bootstrap_admin_role(
+            session, role_id=role_id, tenant_id=tenant.id
+        )
+    finally:
+        await session.execute(text("SET session_replication_role = DEFAULT"))
     return user
 
 

@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
+from app.db.models.access import Role
 from app.db.models.appointment.appointment import Appointment
 from app.db.models.appointment.appointment_participant import AppointmentParticipant
 from app.db.models.organisation import Organisation
@@ -22,8 +22,15 @@ from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
 from app.domain.pathway import SEEDED_LANE_KINDS
+from scripts.seed_roles import ADMIN_ROLE_SLUG
 from scripts.seed_tenant import ZAS_TENANT_ID
-from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
+from scripts.seed_users import (
+    ADMIN_DISPLAY_NAME,
+    ADMIN_EMAIL,
+    ADMIN_USER_ID,
+    admin_role_id,
+)
+from tests._rbac import ALL_PERMISSIONS
 
 
 @pytest.fixture(autouse=True)
@@ -57,6 +64,7 @@ async def _wipe(session: AsyncSession) -> None:
     await session.execute(delete(Patient))
     await session.execute(delete(Organisation))
     await session.execute(delete(User))
+    await session.execute(delete(Role))
     await session.execute(delete(Tenant))
     await session.commit()
 
@@ -76,7 +84,9 @@ def session_actor() -> SessionUser:
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        role_id=admin_role_id(ZAS_TENANT_ID),
+        role_slug=ADMIN_ROLE_SLUG,
+        permissions=ALL_PERMISSIONS,
     )
 
 

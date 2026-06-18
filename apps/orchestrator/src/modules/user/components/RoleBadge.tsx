@@ -1,23 +1,25 @@
 import { ShieldCheck } from 'lucide-react'
 import { type ReactElement } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 
-import { type Role } from '../schemas'
+import { useRoleMap } from '../roles'
 
 export interface RoleBadgeProps {
-  role: Role
+  roleId: string
   withIcon?: boolean
 }
 
-export function RoleBadge({ role, withIcon = false }: RoleBadgeProps): ReactElement {
-  const { t } = useTranslation('users')
-  const isAdmin = role === 'admin'
+/** Resolves a user's `role_id` to the role's display name via the roles list.
+ *  The `admin` system role is emphasised (filled badge + shield). */
+export function RoleBadge({ roleId, withIcon = false }: RoleBadgeProps): ReactElement {
+  const roles = useRoleMap()
+  const role = roles.get(roleId)
+  const isAdmin = role?.slug === 'admin'
   return (
     <Badge variant={isAdmin ? 'default' : 'soft'} className={withIcon ? 'gap-1' : undefined}>
       {withIcon && isAdmin ? <ShieldCheck className="h-3 w-3" aria-hidden /> : null}
-      {t(`role.${role}`)}
+      {role?.name ?? '—'}
     </Badge>
   )
 }

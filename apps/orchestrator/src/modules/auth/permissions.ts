@@ -1,10 +1,9 @@
 import { useSession } from './hooks'
-import type { Role } from './schemas'
 
-// Capability-based UI gating. Define what each role may do in one place
-// instead of scattering `role === 'admin'` checks across components. Backend
-// authorization (Keto) remains the source of truth for data access; these are
-// presentation-layer affordances.
+// Capability-based UI gating, keyed by the bound role's slug. Backend
+// authorization (Keto + RBAC permissions) remains the source of truth for data
+// access; these are presentation-layer affordances. (Interim: a fuller
+// `can(slug)` over session `permissions` is dynamic-rbac Phase 8.)
 export type Capability =
   // Drive the pathway runtime: fast-forward, pause/cancel, complete steps,
   // edit deferred values.
@@ -12,17 +11,16 @@ export type Capability =
   // See steps that were skipped because a past decision branched away.
   | 'pathway.viewSkippedSteps'
 
-const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
+const ROLE_CAPABILITIES: Record<string, readonly Capability[]> = {
   admin: ['pathway.manageRuntime', 'pathway.viewSkippedSteps'],
-  caregiver: [],
-  external: [],
+  default: [],
 }
 
-export function can(role: Role | undefined, capability: Capability): boolean {
-  return role ? ROLE_CAPABILITIES[role].includes(capability) : false
+export function can(roleSlug: string | undefined, capability: Capability): boolean {
+  return roleSlug ? (ROLE_CAPABILITIES[roleSlug] ?? []).includes(capability) : false
 }
 
 export function useCan(capability: Capability): boolean {
   const session = useSession()
-  return can(session.data?.role, capability)
+  return can(session.data?.role_slug, capability)
 }

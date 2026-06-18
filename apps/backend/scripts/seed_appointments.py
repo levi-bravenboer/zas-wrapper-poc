@@ -22,6 +22,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.access.rbac.resolver import build_session_user
 from app.core.enums.appointment import (
     AppointmentKind,
     AppointmentModality,
@@ -33,7 +34,6 @@ from app.db.models.appointment import Appointment, AppointmentParticipant
 from app.db.models.patient import Patient
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from scripts._db import run_script
 from scripts.seed_tenant import ZAS_TENANT_SLUG
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
@@ -135,13 +135,7 @@ async def seed_appointments(session: AsyncSession) -> list[Appointment]:
 
     now = datetime.now(UTC)
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = await build_session_user(session, admin)
     try:
         seeded: list[Appointment] = []
         for patient, template in zip(patients, _TEMPLATES, strict=False):

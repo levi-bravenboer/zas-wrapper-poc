@@ -81,9 +81,9 @@ export interface paths {
         };
         /**
          * List Session Roles
-         * @description The caller's selectable roles on this surface (REQ-NON-3) — drives
-         *     the role picker and the user-menu switcher. Single-role users get a
-         *     one-element list.
+         * @description The caller's selectable rows on this surface (REQ-NON-3) — drives the
+         *     role picker and the user-menu switcher. Single-row users get a
+         *     one-element list. Staff surface excludes the patient row.
          */
         get: operations["list_session_roles"];
         put?: never;
@@ -916,6 +916,60 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Permissions */
+        get: operations["list_permissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Roles */
+        get: operations["list_roles"];
+        put?: never;
+        /** Create Role */
+        post: operations["create_role"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Role */
+        get: operations["get_role"];
+        put?: never;
+        post?: never;
+        /** Delete Role */
+        delete: operations["delete_role"];
+        options?: never;
+        head?: never;
+        /** Update Role */
+        patch: operations["update_role"];
         trace?: never;
     };
     "/audit-events": {
@@ -1832,7 +1886,11 @@ export interface components {
         AppointmentStatus: "proposed" | "pending" | "booked" | "arrived" | "fulfilled" | "cancelled" | "noshow" | "entered_in_error" | "checked_in" | "waitlist";
         /** AssignRoleRequest */
         AssignRoleRequest: {
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
         };
         /**
          * AssignedUserIdsUpdate
@@ -5123,23 +5181,75 @@ export interface components {
              */
             direction: "before" | "after";
         };
-        /**
-         * Role
-         * @enum {string}
-         */
-        Role: "admin" | "caregiver" | "patient";
+        /** RoleCreate */
+        RoleCreate: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Permissions
+             * @default []
+             */
+            permissions: string[];
+        };
         /**
          * RoleInCare
          * @enum {string}
          */
         RoleInCare: "primary" | "consulting" | "observer";
+        /**
+         * RoleOption
+         * @description One selectable user row for a multi-row human. Identified by `user_id`
+         *     (slugs collide when a human is both patient and caregiver — both `default`)
+         *     and labelled by role slug + the patient facet.
+         */
+        RoleOption: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Role Slug */
+            role_slug: string;
+            /**
+             * Is Patient
+             * @default false
+             */
+            is_patient: boolean;
+        };
+        /** RoleRead */
+        RoleRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Is System */
+            is_system: boolean;
+            /** Permissions */
+            permissions: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** RoleSelectRequest */
         RoleSelectRequest: {
-            role: components["schemas"]["Role"];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /**
          * RoleSelectionRequiredResponse
-         * @description Login succeeded but the human holds several roles on this surface
+         * @description Login succeeded but the human holds several user rows on this surface
          *     (REQ-NON-3). The session cookie is set and live; protected routes answer
          *     409 until `POST /auth/session/role` binds one of `available_roles`.
          */
@@ -5151,7 +5261,14 @@ export interface components {
              */
             requires_role_selection: true;
             /** Available Roles */
-            available_roles: components["schemas"]["Role"][];
+            available_roles: components["schemas"]["RoleOption"][];
+        };
+        /** RoleUpdate */
+        RoleUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Permissions */
+            permissions?: string[] | null;
         };
         /** RootResponse */
         RootResponse: {
@@ -5160,7 +5277,17 @@ export interface components {
             /** Version */
             version: string;
         };
-        /** SessionUser */
+        /**
+         * SessionUser
+         * @description The bound actor for a request (`dynamic-rbac-roles-permissions`).
+         *
+         *     `role` is no longer an enum — a user row points at a `roles` row
+         *     (`role_id`) whose assigned permission slugs are resolved into
+         *     `permissions` at actor-resolution time. `role_slug` is the bound role's
+         *     stable slug (e.g. `admin`, `default`). `patient_id` is set iff this is a
+         *     patient (mobile data-subject) row — identity-type is derived from data,
+         *     not the role.
+         */
         SessionUser: {
             /**
              * Id
@@ -5176,7 +5303,17 @@ export interface components {
              * Format: uuid
              */
             tenant_id: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
+            /** Role Slug */
+            role_slug: string;
+            /** Permissions */
+            permissions: string[];
+            /** Patient Id */
+            patient_id?: string | null;
         };
         /** SetActiveRequest */
         SetActiveRequest: {
@@ -5461,20 +5598,28 @@ export interface components {
         };
         /**
          * UserCreate
-         * @description Role-discriminated admin-create payload.
+         * @description Admin-create payload for a staff user (`dynamic-rbac-roles-permissions`).
          *
-         *     - `admin` branch: requires `display_name`; rejects clinical fields.
-         *     - `caregiver` branch: requires `given_name` + `family_name`; rejects
-         *       `display_name` (the backend derives `user.display_name` from given+family).
-         *       `qualification` is optional.
+         *     `role_id` is the RBAC role to bind. Identity-type is derived from data, so
+         *     the payload is discriminated by the *clinical* fields, not the role:
          *
-         *     The model_validator enforces mutual exclusion so a mixed payload is a 422,
-         *     not a silent half-fill.
+         *     - clinician branch (a `Practitioner` row will be created): requires
+         *       `given_name` + `family_name`; rejects `display_name` (derived from
+         *       given+family). `qualification` optional.
+         *     - non-clinician branch (e.g. an admin user): requires `display_name`;
+         *       rejects clinical fields.
+         *
+         *     Patients are NOT created here — they have no clinical fields and carry a
+         *     `patient_id`, set only by the seeding / enrollment flow.
          */
         UserCreate: {
             /** Email */
             email: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
             /** Display Name */
             display_name?: string | null;
             /** Given Name */
@@ -5495,7 +5640,11 @@ export interface components {
             email: string;
             /** Display Name */
             display_name: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
             /** Is Active */
             is_active: boolean;
             /** Patient Id */
@@ -5526,7 +5675,11 @@ export interface components {
             email: string;
             /** Display Name */
             display_name: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
             /** Is Active */
             is_active: boolean;
             /** Patient Id */
@@ -5763,7 +5916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Role"][];
+                    "application/json": components["schemas"]["RoleOption"][];
                 };
             };
         };
@@ -7883,6 +8036,174 @@ export interface operations {
             };
         };
     };
+    list_permissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    list_roles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"][];
+                };
+            };
+        };
+    };
+    create_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_audit_events: {
         parameters: {
             query?: {
@@ -9834,7 +10155,6 @@ export const readinessResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<
 export const readinessResponseChecksValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["checks"][string]> = ["ok", "fail"];
 export const relativeToDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["kind"]> = ["relative_to_date"];
 export const relativeToDatePolicyDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["direction"]> = ["before", "after"];
-export const roleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Role"]> = ["admin", "caregiver", "patient"];
 export const roleInCareValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RoleInCare"]> = ["primary", "consulting", "observer"];
 export const shieldingAudienceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ShieldingAudience"]> = ["representative", "external_professional", "patient_other_role"];
 export const startBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartBlockOut"]["kind"]> = ["start"];

@@ -24,15 +24,14 @@ from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.db.models.pathway.pathway_access import PathwayPractitioner, PathwaySpecialism
 from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.practitioner.practitioner_role import PractitionerRole
 from app.db.models.practitioner.specialism import PractitionerRoleSpecialism
-from app.schemas.auth.auth import SessionUser
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.access.permissions.keto_client import KetoClient, user_subject
 
 PatientRelation = Literal["view", "view_shielded", "edit", "record", "message"]
@@ -79,7 +78,7 @@ async def require_carepath_access(
     session: SessionDep,
     settings: SettingsDep,
     keto: KetoClientDep,
-    current_user: SessionUser = Depends(require_role(Role.ADMIN, Role.CAREGIVER)),
+    current_user: CurrentUserDep,
 ) -> None:
     """Enforce specialism/assignment scoping on a carepath route (REQ-NON-10/12).
 
@@ -90,7 +89,7 @@ async def require_carepath_access(
     (the route's own not-found error) by raising here.
     """
 
-    if not settings.authz_keto_enabled or current_user.role == Role.ADMIN:
+    if not settings.authz_keto_enabled or current_user.has_permission(Permission.PATIENT_ACCESS_ALL):
         return
 
     scoped = await session.scalar(

@@ -11,18 +11,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.schemas.access.access_grant import AccessGrantCreate, AccessGrantRead
 from app.schemas.auth.auth import SessionUser
 from app.services.access.grants.break_glass_service import BreakGlassService
-from app.services.access.identity.deps import require_role
+from app.services.access.rbac.deps import require_permission
 
 router = APIRouter(tags=["access-grants"])
 
-_CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
-_ADMIN_GUARD = Depends(require_role(Role.ADMIN))
+_REQUEST_GUARD = Depends(require_permission(Permission.BREAK_GLASS_REQUEST))
+_OVERSEE_GUARD = Depends(require_permission(Permission.BREAK_GLASS_OVERSEE))
 
 
 def get_break_glass_service(session: SessionDep, settings: SettingsDep) -> BreakGlassService:
@@ -42,7 +42,7 @@ async def create_access_grant(
     patient_id: UUID,
     payload: AccessGrantCreate,
     service: BreakGlassServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _REQUEST_GUARD],  # AUTH-HARDEN: breakGlass.request
 ) -> AccessGrantRead:
     grant = await service.create_grant(
         current_user, patient_id=patient_id, reason=payload.reason, hours=payload.hours
@@ -57,7 +57,7 @@ async def create_access_grant(
 )
 async def list_access_grants(
     service: BreakGlassServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN: admin oversight
+    current_user: Annotated[SessionUser, _OVERSEE_GUARD],  # AUTH-HARDEN: breakGlass.oversee
     active: Annotated[bool, Query(description="Only unexpired, unrevoked grants")] = True,
 ) -> list[AccessGrantRead]:
     grants = await service.list_grants(current_user.tenant_id, active_only=active)
@@ -72,7 +72,7 @@ async def list_access_grants(
 async def revoke_access_grant(
     grant_id: UUID,
     service: BreakGlassServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN: admin oversight
+    current_user: Annotated[SessionUser, _OVERSEE_GUARD],  # AUTH-HARDEN: breakGlass.oversee
 ) -> AccessGrantRead:
     grant = await service.revoke_grant(current_user, grant_id)
     return AccessGrantRead.model_validate(grant)

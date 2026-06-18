@@ -32,6 +32,7 @@ import { useSession } from '@/modules/auth/hooks'
 import { formatTimestamp } from '../format'
 import { useSetUserActive } from '../hooks'
 import { USERS_LIST_PATH } from '../keys'
+import { EMPTY_ROLES, useRoles } from '../roles'
 import type { UserRow } from '../schemas'
 
 import { RoleBadge } from './RoleBadge'
@@ -45,6 +46,7 @@ export function UserListPage(): ReactElement {
   const currentUserId = session.data?.id ?? ''
   const [state, dispatch] = useRouteSearchTableState()
   const setActive = useSetUserActive()
+  const roles = useRoles().data ?? EMPTY_ROLES
 
   const query = useMemo(
     () => ({
@@ -85,8 +87,8 @@ export function UserListPage(): ReactElement {
       defineColumn<UserRow>({
         id: 'role',
         header: t('list.column.role'),
-        sortKey: 'role',
-        cell: (row) => <RoleBadge role={row.role} withIcon />,
+        sortKey: 'role_id',
+        cell: (row) => <RoleBadge roleId={row.role_id} withIcon />,
       }),
       defineColumn<UserRow>({
         id: 'is_active',
@@ -110,12 +112,9 @@ export function UserListPage(): ReactElement {
     () => [
       {
         type: 'select',
-        key: 'role',
+        key: 'role_id',
         label: t('list.filter.role'),
-        options: [
-          { value: 'admin', label: t('role.admin') },
-          { value: 'caregiver', label: t('role.caregiver') },
-        ],
+        options: roles.map((r) => ({ value: r.id, label: r.name })),
       },
       {
         type: 'boolean',
@@ -125,7 +124,7 @@ export function UserListPage(): ReactElement {
         falseLabel: t('active.false'),
       },
     ],
-    [t],
+    [t, roles],
   )
 
   const rowActions = useMemo(

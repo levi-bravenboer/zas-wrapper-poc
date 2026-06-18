@@ -18,13 +18,13 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.access.rbac.resolver import build_session_user
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.pathway import Pathway, PathwayLaneKind, PathwayVersion
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from app.schemas.pathway.pathway import (
     PathwayBlockBranchIn,
     PathwayBlockIn,
@@ -315,13 +315,7 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
         logger.info("pathway id=%s already present", PATHWAY_ID)
         return existing
 
-    actor = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    actor = await build_session_user(session, admin)
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = actor
     try:

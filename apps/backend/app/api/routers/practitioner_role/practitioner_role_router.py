@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 
 from app.api._list.deps import ListQueryParamsDep
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.repositories.practitioner_role.deps import PractitionerRoleRepoDep
 from app.schemas._list.page import Page
 from app.schemas.auth.auth import SessionUser
@@ -15,13 +15,15 @@ from app.schemas.practitioner_role.practitioner_role import (
     PractitionerRoleRead,
     PractitionerRoleUpdate,
 )
-from app.services.access.identity.deps import require_role
+from app.services.access.rbac.deps import require_permission
 from app.services.practitioner_role.deps import PractitionerRoleServiceDep
 
 router = APIRouter(tags=["practitioner-roles"])
 
-_ADMIN_GUARD = Depends(require_role(Role.ADMIN))
-_READ_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
+_CREATE_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_CREATE))
+_UPDATE_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_UPDATE))
+_DELETE_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_DELETE))
+_READ_GUARD = Depends(require_permission(Permission.PRACTITIONER_ROLE_READ))
 
 
 @router.get(
@@ -32,7 +34,7 @@ _READ_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 async def list_practitioner_roles(
     query: ListQueryParamsDep,
     repo: PractitionerRoleRepoDep,
-    _current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN
+    _current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN: practitionerRole.read
 ) -> Page[PractitionerRoleRead]:
     # Repository yields Page[PractitionerRole] (ORM rows); FastAPI's response_model
     # converts to Page[PractitionerRoleRead] via Pydantic's `from_attributes`.
@@ -48,7 +50,7 @@ async def list_practitioner_roles(
 async def open_practitioner_role(
     payload: PractitionerRoleCreate,
     service: PractitionerRoleServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _CREATE_GUARD],  # AUTH-HARDEN: practitionerRole.create
 ) -> PractitionerRoleRead:
     row = await service.open_role(current_user, payload)
     return PractitionerRoleRead.model_validate(row)
@@ -63,7 +65,7 @@ async def update_practitioner_role(
     role_id: UUID,
     payload: PractitionerRoleUpdate,
     service: PractitionerRoleServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _UPDATE_GUARD],  # AUTH-HARDEN: practitionerRole.update
 ) -> PractitionerRoleRead:
     row = await service.update(current_user, role_id, payload)
     return PractitionerRoleRead.model_validate(row)
@@ -77,7 +79,7 @@ async def update_practitioner_role(
 async def close_practitioner_role(
     role_id: UUID,
     service: PractitionerRoleServiceDep,
-    current_user: Annotated[SessionUser, _ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: Annotated[SessionUser, _DELETE_GUARD],  # AUTH-HARDEN: practitionerRole.delete
 ) -> PractitionerRoleRead:
     row = await service.close_role(current_user, role_id)
     return PractitionerRoleRead.model_validate(row)

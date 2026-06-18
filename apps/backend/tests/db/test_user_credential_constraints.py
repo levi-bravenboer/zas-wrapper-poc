@@ -6,15 +6,23 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
+from tests.db.conftest import seed_admin_user
+
+# Per-tenant role id ({tenant_id: role_id}) so credential-constraint inserts
+# can FK a valid `role_id` (the deleted `Role` enum no longer exists).
+_TENANT_ROLE: dict[uuid.UUID, uuid.UUID] = {}
 
 
 async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
     tenant = Tenant(id=uuid.uuid4(), slug=slug, name=slug.upper())
     session.add(tenant)
     await session.flush()
+    # Seed a self-referencing admin + its role so plain user rows below have a
+    # valid `role_id` FK target.
+    admin = await seed_admin_user(session, tenant_id=tenant.id, email=f"admin-{slug}@zas.local")
+    _TENANT_ROLE[tenant.id] = admin.role_id
     return tenant
 
 
@@ -35,7 +43,7 @@ def _user(
         email=email,
         password_hash=password_hash,
         display_name=email,
-        role=Role.CAREGIVER,
+        role_id=_TENANT_ROLE[tenant_id],
         is_active=True,
         external_idp=external_idp,
         external_subject=external_subject,

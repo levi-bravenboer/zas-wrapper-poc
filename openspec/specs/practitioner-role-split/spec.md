@@ -1,7 +1,7 @@
 # practitioner-role-split Specification
 
 ## Purpose
-TBD - created by archiving change practitioner-role-split. Update Purpose after archive.
+Separates clinical identity from authentication identity along FHIR lines: a `practitioners` table (FHIR `Practitioner`, 1:1 with a caregiver `User`) and a period-bounded M:N `practitioner_roles` table (FHIR `PractitionerRole`, practitioner × organisation with a canonical role-code enum and primary-affiliation invariants). Patient visibility routes through open PractitionerRoles, keeping authentication/session/IdP code independent of clinical fields and allowing login-less external practitioners later.
 ## Requirements
 ### Requirement: Practitioner table separates clinical identity from authentication identity
 

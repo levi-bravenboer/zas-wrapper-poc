@@ -8,10 +8,10 @@ from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.patient import Patient
 from app.db.models.user import User
 from app.repositories.task import TaskRepository
-from app.schemas.auth.auth import SessionUser
 from app.services.task.task_service import TaskService
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from tests._rbac import make_session_user
 from tests.fixtures.appointment_factory import make_appointment
 
 _PASSWORD = "changeme"
@@ -28,9 +28,9 @@ def _user(users: list[User], email: str) -> User:
 
 async def _make_task(session: AsyncSession, *, actor: User, assignee: User, patient_id):  # type: ignore[no-untyped-def]
     prev = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
+    session.info[SESSION_ACTOR_KEY] = make_session_user(
         id=actor.id, email=actor.email, display_name=actor.display_name,
-        tenant_id=actor.tenant_id, role=actor.role,
+        tenant_id=actor.tenant_id, role_id=actor.role_id,
     )
     try:
         task = await TaskService(TaskRepository(session), session).create(

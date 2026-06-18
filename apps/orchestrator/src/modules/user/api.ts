@@ -7,7 +7,6 @@ import {
   userDetailSchema,
   userRowSchema,
   type AssignRoleRequest,
-  type Role,
   type SetActiveRequest,
   type UserCreatePayload,
   type UserDetail,
@@ -75,7 +74,6 @@ export async function updateUserDemographics(
 
 export type {
   AssignRoleRequest,
-  Role,
   SetActiveRequest,
   UserCreatePayload,
   UserDetail,

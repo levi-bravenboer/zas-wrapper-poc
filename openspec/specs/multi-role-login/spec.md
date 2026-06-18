@@ -1,7 +1,7 @@
 # multi-role-login Specification
 
 ## Purpose
-TBD - created by archiving change access-entitlements. Update Purpose after archive.
+One human is one Kratos identity that may map to several role-scoped `users` rows (one per role). Login resolves the roster and binds the session to exactly one active user row — automatically for single-role humans, after explicit `requires_role_selection` otherwise — so that authorization, audit attribution and shielding audiences always flow from a single bound row, never from the identity. Mirrors a FHIR Practitioner holding multiple PractitionerRoles with one active context per session.
 ## Requirements
 ### Requirement: One human, one Kratos identity, many role-scoped user rows
 A human SHALL be represented by exactly one Kratos identity (unique email) which MAY map to multiple local `users` rows — one per role (the existing tenant + email + role uniqueness). `external_identities` SHALL allow multiple user rows to share the same `(idp, external_subject)`. Authorization, audit attribution and shielding audiences SHALL always flow from a single bound user row, never from the identity. (REQ-NON-3, REQ-FUN-4)

@@ -5,7 +5,6 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.core.settings import Settings
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
@@ -14,6 +13,8 @@ from app.services.access.identity.auth_service import AuthService
 from app.services.access.identity.authenticator import PasswordAuthenticator
 from app.services.access.identity.errors import InvalidCredentialsError, UnauthenticatedError
 from app.services.access.identity.password import PasswordHasher
+from scripts.seed_roles import DEFAULT_ROLE_SLUG
+from tests._rbac import ensure_roles
 
 
 async def _seed(
@@ -23,6 +24,7 @@ async def _seed(
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
+    roles = await ensure_roles(session, tenant.id)
     user_id = uuid.uuid4()
     user = User(
         id=user_id,
@@ -32,7 +34,7 @@ async def _seed(
         email="user@zas.local",
         password_hash=hasher.hash(password),
         display_name="User",
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         is_active=is_active,
     )
     session.add(user)
@@ -58,7 +60,7 @@ async def test_login_returns_session_user_on_valid_credentials(
 
     assert actor.id == user.id
     assert actor.tenant_id == tenant.id
-    assert actor.role is Role.CAREGIVER
+    assert actor.role_slug == DEFAULT_ROLE_SLUG
 
 
 async def test_login_raises_invalid_credentials_on_wrong_password(
@@ -90,7 +92,7 @@ async def test_load_session_user_returns_active_user(
     actor = await service.load_session_user(user.id)
 
     assert actor.id == user.id
-    assert actor.role is Role.CAREGIVER
+    assert actor.role_slug == DEFAULT_ROLE_SLUG
 
 
 async def test_load_session_user_rejects_deactivated(

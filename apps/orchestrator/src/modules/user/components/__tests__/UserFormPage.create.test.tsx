@@ -17,7 +17,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiError } from '@/lib/api/errors'
 import { i18n } from '@/lib/i18n'
 
+import { rolesKey, type Role } from '../../roles'
 import { UserFormPage } from '../UserFormPage'
+
+const ROLES: Role[] = [
+  { id: 'd2222222-2222-4222-8222-2222222222d1', slug: 'default', name: 'Standaard', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
+  { id: 'a1111111-1111-4111-8111-1111111111a1', slug: 'admin', name: 'Admin', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
+]
 
 const { createUserMock, updateUserDemographicsMock } = vi.hoisted(() => ({
   createUserMock: vi.fn(),
@@ -31,6 +37,7 @@ vi.mock('../../api', () => ({
 
 function renderPage(): { router: AnyRouter } {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+  qc.setQueryData(rolesKey, ROLES)
   const Wrap = ({ children }: { children: ReactNode }) => (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={qc}>{children}</QueryClientProvider>
@@ -99,7 +106,7 @@ describe('UserFormPage (create mode)', () => {
       id: 'new-id',
       email: 'eva@zas.demo',
       display_name: 'Eva Bos',
-      role: 'caregiver',
+      role_id: 'd2222222-2222-4222-8222-2222222222d1',
       is_active: true,
       created_at: '2026-01-01T00:00:00Z',
     })

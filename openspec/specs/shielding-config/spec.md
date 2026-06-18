@@ -1,7 +1,7 @@
 # shielding-config Specification
 
 ## Purpose
-TBD - created by archiving change access-entitlements. Update Purpose after archive.
+Configurable patient-data shielding: per-carepath, per-category, per-audience release rules with default-deny, plus patient-initiated item-level overrides. Keto answers the subject tier (`view` vs `view_shielded`); this policy service answers response shape (which item categories serialize). The category/audience model aligns with FHIR security labelling (HL7 Confidentiality codes and Data-Segmentation-for-Privacy sensitivity labels).
 ## Requirements
 ### Requirement: Shielding is configurable per carepath, item category and audience with default-deny
 The platform SHALL store shielding release rules (`shielding_rules`: optional carepath, item category ∈ {questionnaire_answers, diary, attachments, parameters, documents}, audience ∈ {representative, external_professional, patient_other_role}, released flag) and evaluate them through a single policy service `shielding.is_released(category, audience, carepath)`. **Absence of a matching rule MUST mean shielded** (default-deny: data is shielded unless explicitly released to an audience). Carepath-specific rules SHALL override global rules. Rules SHALL be manageable by admins and changes SHALL be audit-attributed. (REQ-FUN-161)
@@ -16,6 +16,8 @@ The platform SHALL store shielding release rules (`shielding_rules`: optional ca
 
 ### Requirement: Shielding enforcement has one wiring point and clear division of labour
 Keto SHALL keep answering the subject-level question (two tiers: `view_shielded` vs `view`); the shielding policy service SHALL answer the response-shape question (which item categories appear). Response serialization for patient-scoped payloads SHALL pass through the policy service — routes MUST NOT hand-roll shielding decisions. Subjects holding `view_shielded` (care team, org chain, break-glass) SHALL see all categories regardless of release rules. (REQ-FUN-161)
+
+> **Integration status:** the policy service (`shielding.is_released` / `apply_shielding`) is the enforcement seam and is unit-tested, but the patient-scoped category serializers do not yet route through it — no live endpoint currently emits the five item categories, so the wiring lands as each payload surface ships. Patient-initiated `is_item_shielded` overrides are modelled and tested in isolation; `apply_shielding` filters at category granularity today, so item-level enforcement within a released category is likewise pending serializer integration.
 
 #### Scenario: Internal full sight unaffected by rules
 - **WHEN** a care-team member requests a patient's data on any carepath

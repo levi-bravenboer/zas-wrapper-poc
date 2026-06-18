@@ -22,6 +22,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.access.rbac.resolver import build_session_user
 from app.adapters.luscii.fixture import (
     FIXTURE_PATIENTS,
     INSTRUMENT_LOCALISATIONS_NL,
@@ -38,7 +39,6 @@ from app.db.models.luscii import (
 from app.db.models.patient import Patient, PatientIdentifier
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from scripts._db import run_script
 from scripts.seed_tenant import ZAS_TENANT_SLUG
 from scripts.seed_users import ADMIN_EMAIL
@@ -76,13 +76,7 @@ async def seed_luscii_demo(session: AsyncSession) -> None:
         raise _SeedUserMissingError("admin missing — run seed_users first")
 
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = await build_session_user(session, admin)
     try:
         # The patient query already limits to `len(FIXTURE_PATIENTS)`; strict=True
         # surfaces a future fixture-vs-patient length drift instead of silently

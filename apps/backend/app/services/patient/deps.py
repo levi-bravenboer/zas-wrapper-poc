@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import Depends, Request
 from sqlalchemy import select
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.db.models.access.access_grant import AccessGrant
@@ -16,7 +16,7 @@ from app.db.models.patient import Patient
 from app.repositories.organisation.deps import OrganisationRepoDep
 from app.repositories.patient.deps import PatientRepoDep
 from app.schemas.auth.auth import SessionUser
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.access.permissions.deps import (
     KetoClientDep,
     PatientRelation,
@@ -65,7 +65,7 @@ def require_patient_relation(relation: PatientRelation):
         settings: SettingsDep,
         keto: KetoClientDep,
         request: Request,
-        current_user: SessionUser = Depends(require_role(Role.ADMIN, Role.CAREGIVER)),
+        current_user: CurrentUserDep,
     ) -> Patient:
         try:
             return await _resolve_patient_with_relation(
@@ -128,7 +128,7 @@ async def _resolve_patient_with_relation(
     patient = await service.get_by_id(current_user.tenant_id, patient_id)
     if patient is None:
         raise PatientNotFoundError()
-    if current_user.role == Role.ADMIN:
+    if current_user.has_permission(Permission.PATIENT_ACCESS_ALL):
         return patient
 
     if settings.authz_keto_enabled:

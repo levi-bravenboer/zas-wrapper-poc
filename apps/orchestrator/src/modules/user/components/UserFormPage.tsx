@@ -10,7 +10,7 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
-import { useRef, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactElement, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -27,12 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { useDirtyGuard, useEntityForm, type UseEntityFormResult } from '@/hooks/entity'
 import type { ApiError } from '@/lib/api/errors'
 import { initials } from '@/lib/utils/initials'
 
 import { createUser, updateUserDemographics } from '../api'
-import type { Role, UserCreatePayload } from '../schemas'
+import { useRoles } from '../roles'
+import type { UserCreatePayload } from '../schemas'
 
 import { userFormSchema, type UserFormValues } from './userForm.schema'
 
@@ -41,17 +43,17 @@ function isApiError(e: unknown): e is ApiError {
 }
 
 function buildCreatePayload(values: UserFormValues): UserCreatePayload {
-  if (values.role === 'admin') {
+  if (!values.is_clinician) {
     return {
       email: values.email,
-      role: 'admin',
+      role_id: values.role_id,
       display_name: values.display_name,
     }
   }
   const qualification = values.qualification?.trim()
   return {
     email: values.email,
-    role: 'caregiver',
+    role_id: values.role_id,
     given_name: values.given_name,
     family_name: values.family_name,
     ...(qualification ? { qualification } : {}),
@@ -61,7 +63,8 @@ function buildCreatePayload(values: UserFormValues): UserCreatePayload {
 const mockEditDefaults: Record<string, UserFormValues> = {
   'u-care-1': {
     email: 'sanne.jansen@zas.demo',
-    role: 'caregiver',
+    role_id: '',
+    is_clinician: true,
     display_name: 'Sanne Jansen',
     given_name: 'Sanne',
     family_name: 'Jansen',
@@ -69,7 +72,8 @@ const mockEditDefaults: Record<string, UserFormValues> = {
   },
   'u-admin-self': {
     email: 'admin@zas.demo',
-    role: 'admin',
+    role_id: '',
+    is_clinician: false,
     display_name: 'Bo de Vries',
     given_name: '',
     family_name: '',
@@ -79,7 +83,8 @@ const mockEditDefaults: Record<string, UserFormValues> = {
 
 const CREATE_DEFAULTS: UserFormValues = {
   email: '',
-  role: 'caregiver',
+  role_id: '',
+  is_clinician: true,
   display_name: '',
   given_name: '',
   family_name: '',
@@ -164,10 +169,9 @@ function EditUserForm({ userId }: { userId: string }): ReactElement {
     schema: userFormSchema,
     defaultValues: defaults,
     onSubmit: async (values) => {
-      const display_name =
-        values.role === 'caregiver'
-          ? `${values.given_name.trim()} ${values.family_name.trim()}`.trim()
-          : values.display_name.trim()
+      const display_name = values.is_clinician
+        ? `${values.given_name.trim()} ${values.family_name.trim()}`.trim()
+        : values.display_name.trim()
       try {
         await updateUserDemographics(userId, { display_name })
       } catch (e) {
@@ -224,14 +228,28 @@ function UserFormShell({
   onCancel,
 }: ShellProps): ReactElement {
   const { t } = useTranslation('users-admin-ui')
-  const role = useStore(formApi.form.store, (s) => s.values.role)
+  const roles = useRoles().data ?? []
+  const roleId = useStore(formApi.form.store, (s) => s.values.role_id)
+  const isClinician = useStore(formApi.form.store, (s) => s.values.is_clinician)
   const displayName = useStore(formApi.form.store, (s) => s.values.display_name)
   const givenName = useStore(formApi.form.store, (s) => s.values.given_name)
   const familyName = useStore(formApi.form.store, (s) => s.values.family_name)
   const email = useStore(formApi.form.store, (s) => s.values.email)
   const editing = mode === 'edit'
-  const derivedName =
-    role === 'caregiver' ? [givenName, familyName].filter((s) => s?.trim()).join(' ') : displayName
+  const roleName = roles.find((r) => r.id === roleId)?.name ?? null
+
+  // Pre-select the `default` role once roles load so admins don't have to pick
+  // for the common case; they can still change it (create mode). Edit keeps the
+  // picker locked but still needs a bound value for validation.
+  const defaultRoleId = roles.find((r) => r.slug === 'default')?.id ?? roles[0]?.id
+  useEffect(() => {
+    if (!roleId && defaultRoleId) {
+      formApi.form.setFieldValue('role_id', defaultRoleId)
+    }
+  }, [roleId, defaultRoleId, formApi.form])
+  const derivedName = isClinician
+    ? [givenName, familyName].filter((s) => s?.trim()).join(' ')
+    : displayName
   const heroName = derivedName?.trim() || t('form.hero.placeholder_name')
   const heroEmail = email?.trim() || t('form.hero.placeholder_email')
   const heroInitials = derivedName?.trim() || '·'
@@ -260,7 +278,16 @@ function UserFormShell({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h2 className="truncate text-xl font-semibold tracking-tight">{heroName}</h2>
-                    <RoleBadge role={role} t={t} />
+                    {roleName ? (
+                      <Badge variant="soft" className="gap-1">
+                        {isClinician ? (
+                          <Stethoscope className="size-3" aria-hidden />
+                        ) : (
+                          <ShieldCheck className="size-3" aria-hidden />
+                        )}
+                        {roleName}
+                      </Badge>
+                    ) : null}
                   </div>
                   <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
                     <AtSign className="size-3.5" aria-hidden />
@@ -286,7 +313,7 @@ function UserFormShell({
                 />
               </CardHeader>
               <CardContent className="flex flex-col gap-5">
-                {role === 'caregiver' ? (
+                {isClinician ? (
                   <div className="grid gap-5 md:grid-cols-2">
                     <formApi.form.Field name="given_name">
                       {(field) => (
@@ -398,7 +425,7 @@ function UserFormShell({
                     )}
                   </formApi.form.Field>
 
-                  <formApi.form.Field name="role">
+                  <formApi.form.Field name="role_id">
                     {(field) => (
                       <FieldRow
                         htmlFor="user-role"
@@ -406,32 +433,57 @@ function UserFormShell({
                         label={t('form.field.role.label')}
                         hint={editing ? t('form.field.role.locked') : t('form.field.role.hint')}
                         locked={editing}
+                        required
+                        error={firstError(field.state.meta.errors, t)}
                       >
                         <Select
-                          value={field.state.value}
-                          onValueChange={(v) => field.handleChange(v as Role)}
+                          {...(field.state.value ? { value: field.state.value } : {})}
+                          onValueChange={(v) => field.handleChange(v)}
                           disabled={editing}
                         >
                           <SelectTrigger id="user-role">
-                            <SelectValue />
+                            <SelectValue placeholder={t('form.field.role.placeholder', { defaultValue: 'Kies een rol' })} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="caregiver">
-                              {t('form.field.role.option.caregiver')}
-                            </SelectItem>
-                            <SelectItem value="admin">
-                              {t('form.field.role.option.admin')}
-                            </SelectItem>
+                            {roles.map((r) => (
+                              <SelectItem key={r.id} value={r.id}>
+                                {r.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FieldRow>
                     )}
                   </formApi.form.Field>
                 </div>
+
+                <formApi.form.Field name="is_clinician">
+                  {(field) => (
+                    <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 px-3 py-2.5">
+                      <div className="flex min-w-0 flex-col">
+                        <Label htmlFor="user-clinician" className="inline-flex items-center gap-1.5 text-sm font-medium">
+                          <Stethoscope className="size-3.5 text-muted-foreground" aria-hidden />
+                          {t('form.field.clinician.label', { defaultValue: 'Zorgverlener' })}
+                        </Label>
+                        <span className="text-xs text-muted-foreground">
+                          {t('form.field.clinician.hint', {
+                            defaultValue: 'Maakt een practitioner aan met voor- en achternaam.',
+                          })}
+                        </span>
+                      </div>
+                      <Switch
+                        id="user-clinician"
+                        checked={field.state.value}
+                        onCheckedChange={(v) => field.handleChange(v)}
+                        disabled={editing}
+                      />
+                    </div>
+                  )}
+                </formApi.form.Field>
               </CardContent>
             </Card>
 
-            {role === 'caregiver' ? (
+            {isClinician ? (
               <Card>
                 <CardHeader>
                   <SectionHeader
@@ -504,20 +556,6 @@ function SectionHeader({
         <CardDescription className="mt-0.5">{sub}</CardDescription>
       </div>
     </div>
-  )
-}
-
-function RoleBadge({ role, t }: { role: Role; t: (key: string) => string }): ReactElement {
-  const isAdmin = role === 'admin'
-  return (
-    <Badge variant={isAdmin ? 'default' : 'soft'} className="gap-1">
-      {isAdmin ? (
-        <ShieldCheck className="size-3" aria-hidden />
-      ) : (
-        <Stethoscope className="size-3" aria-hidden />
-      )}
-      {t(`role.${role}`)}
-    </Badge>
   )
 }
 

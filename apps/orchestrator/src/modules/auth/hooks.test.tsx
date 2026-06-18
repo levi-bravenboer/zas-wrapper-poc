@@ -31,7 +31,10 @@ describe('useSession', () => {
           email: 'a@b.co',
           display_name: 'A',
           tenant_id: '00000000-0000-0000-0000-000000000001',
-          role: 'caregiver',
+          role_id: 'd2222222-2222-4222-8222-2222222222d1',
+          role_slug: 'default',
+          permissions: [],
+          patient_id: null,
         }),
       ),
     )
@@ -68,7 +71,10 @@ describe('useLogin', () => {
       email: 'l@b.co',
       display_name: 'L',
       tenant_id: '00000000-0000-0000-0000-000000000001',
-      role: 'caregiver',
+      role_id: 'd2222222-2222-4222-8222-2222222222d1',
+      role_slug: 'default',
+      permissions: [],
+      patient_id: null,
     }
     server.use(http.post(`${baseUrl}/auth/login/password`, () => HttpResponse.json(user)))
 

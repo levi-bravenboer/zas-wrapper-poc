@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.db.models.appointment import Appointment
 from app.repositories.appointment import AppointmentReadRepository
 from app.schemas._list.page import Page
@@ -27,7 +27,7 @@ class AppointmentReadService:
     async def list_visible(
         self, caller: SessionUser, *, page: int, page_size: int
     ) -> Page[AppointmentRead]:
-        admin = caller.role == Role.ADMIN
+        admin = caller.has_permission(Permission.PATIENT_ACCESS_ALL)
         total = await self._repo.count_visible(
             tenant_id=caller.tenant_id, caller_id=caller.id, admin=admin
         )

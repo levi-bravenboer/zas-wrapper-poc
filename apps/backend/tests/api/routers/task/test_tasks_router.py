@@ -7,10 +7,10 @@ from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.task import Task
 from app.db.models.user import User
 from app.repositories.task import TaskRepository
-from app.schemas.auth.auth import SessionUser
 from app.services.task.task_service import TaskService
 from httpx import AsyncClient
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from tests._rbac import make_session_user
 
 _PASSWORD = "changeme"
 
@@ -30,12 +30,12 @@ async def _create_task(
     session: AsyncSession, *, actor: User, assignee: User, title: str = "Taak"
 ) -> Task:
     previous = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
+    session.info[SESSION_ACTOR_KEY] = make_session_user(
         id=actor.id,
         email=actor.email,
         display_name=actor.display_name,
         tenant_id=actor.tenant_id,
-        role=actor.role,
+        role_id=actor.role_id,
     )
     try:
         service = TaskService(TaskRepository(session), session)

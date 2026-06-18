@@ -20,15 +20,18 @@ import type { SessionUser } from '@/modules/auth/schemas'
 
 import { AppSidebar } from '../AppSidebar'
 
-function mountSidebar(role: SessionUser['role'] | null): { queryClient: QueryClient } {
+function mountSidebar(roleSlug: string | null): { queryClient: QueryClient } {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  if (role) {
+  if (roleSlug) {
     queryClient.setQueryData<SessionUser>(authKeys.me(), {
       id: 'u1',
       email: 'a@b.co',
       display_name: 'A',
       tenant_id: '00000000-0000-0000-0000-000000000001',
-      role,
+      role_id: 'd2222222-2222-4222-8222-2222222222d1',
+      role_slug: roleSlug,
+      permissions: [],
+      patient_id: null,
     })
   }
 

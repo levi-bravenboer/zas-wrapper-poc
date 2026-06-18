@@ -469,10 +469,16 @@ async def test_completing_appointment_step_materializes_appointment(
     from sqlalchemy import select as _select
 
     from app.core.enums.appointment import AppointmentStatus
-    from app.core.enums.user import Role
     from app.db.models.appointment.appointment import Appointment
     from app.schemas.auth.auth import SessionUser
-    from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
+    from scripts.seed_roles import ADMIN_ROLE_SLUG
+    from scripts.seed_users import (
+        ADMIN_DISPLAY_NAME,
+        ADMIN_EMAIL,
+        ADMIN_USER_ID,
+        admin_role_id,
+    )
+    from tests._rbac import ALL_PERMISSIONS
 
     del seeded_zas_users
     service = _service(db_session)
@@ -498,7 +504,9 @@ async def test_completing_appointment_step_materializes_appointment(
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        role_id=admin_role_id(ZAS_TENANT_ID),
+        role_slug=ADMIN_ROLE_SLUG,
+        permissions=ALL_PERMISSIONS,
     )
     await service.complete_step(
         enrollment.id, exec_id, result=None, tenant_id=ZAS_TENANT_ID, now=_dt.now(_UTC)
@@ -526,9 +534,15 @@ async def test_stamp_completion_records_caregiver(
     from datetime import UTC as _UTC
     from datetime import datetime as _dt
 
-    from app.core.enums.user import Role
     from app.schemas.auth.auth import SessionUser
-    from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
+    from scripts.seed_roles import ADMIN_ROLE_SLUG
+    from scripts.seed_users import (
+        ADMIN_DISPLAY_NAME,
+        ADMIN_EMAIL,
+        ADMIN_USER_ID,
+        admin_role_id,
+    )
+    from tests._rbac import ALL_PERMISSIONS
 
     del seeded_zas_users
     service = _service(db_session)
@@ -553,7 +567,9 @@ async def test_stamp_completion_records_caregiver(
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        role_id=admin_role_id(ZAS_TENANT_ID),
+        role_slug=ADMIN_ROLE_SLUG,
+        permissions=ALL_PERMISSIONS,
     )
     await service.complete_step(
         enrollment.id, exec_id, result=None, tenant_id=ZAS_TENANT_ID, now=_dt.now(_UTC)
@@ -579,17 +595,19 @@ async def test_resolved_participant_becomes_appointment_lead(
 
     from sqlalchemy import select as _select
 
-    from app.core.enums.user import Role
     from app.db.models.appointment.appointment import Appointment
     from app.db.models.appointment.appointment_participant import AppointmentParticipant
     from app.schemas.auth.auth import SessionUser
     from app.schemas.pathway.enrollment import EnrollmentParticipantIn
+    from scripts.seed_roles import ADMIN_ROLE_SLUG
     from scripts.seed_users import (
         ADMIN_DISPLAY_NAME,
         ADMIN_EMAIL,
         ADMIN_USER_ID,
         CAREGIVER_EMAIL,
+        admin_role_id,
     )
+    from tests._rbac import ALL_PERMISSIONS
 
     caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)  # type: ignore[attr-defined]
     service = _service(db_session)
@@ -605,7 +623,7 @@ async def test_resolved_participant_becomes_appointment_lead(
             participants=[
                 EnrollmentParticipantIn(
                     block_template_id=block.id,  # type: ignore[union-attr]
-                    user_id=caregiver.id,
+                    user_id=caregiver.id,  # type: ignore[union-attr]
                     role="arts",
                 )
             ],
@@ -621,7 +639,9 @@ async def test_resolved_participant_becomes_appointment_lead(
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        role_id=admin_role_id(ZAS_TENANT_ID),
+        role_slug=ADMIN_ROLE_SLUG,
+        permissions=ALL_PERMISSIONS,
     )
     await service.complete_step(
         enrollment.id, exec_id, result=None, tenant_id=ZAS_TENANT_ID, now=_dt.now(_UTC)
@@ -642,7 +662,7 @@ async def test_resolved_participant_becomes_appointment_lead(
         )
     ).scalar_one()
     # The bound caregiver, not the completing admin actor.
-    assert lead == caregiver.id
+    assert lead == caregiver.id  # type: ignore[union-attr]
 
 
 # ---- descriptor surfaces named clinical dates (§5.5) ---------------------

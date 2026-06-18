@@ -6,17 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.patient import Gender, PatientSource
 from app.core.enums.practitioner_role import PractitionerRoleCode
-from app.core.enums.user import Role
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
-from app.schemas.auth.auth import SessionUser
 from app.services.practitioner_role.predicates import (
     patient_ids_under_roots,
     practitioner_root_orgs_for,
 )
+from tests._rbac import ensure_roles, make_session_user
 
 
 async def _bootstrap(
@@ -26,6 +25,7 @@ async def _bootstrap(
     session.add(tenant)
     await session.flush()
     actor_id = uuid.uuid4()
+    roles = await ensure_roles(session, tenant.id)
     actor = User(
         id=actor_id,
         tenant_id=tenant.id,
@@ -34,7 +34,7 @@ async def _bootstrap(
         email="c@example.test",
         password_hash="hash",
         display_name="c",
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         is_active=True,
     )
     session.add(actor)
@@ -120,12 +120,13 @@ async def test_root_orgs_returns_root_for_open_role(db_session: AsyncSession) ->
         )
     )
     await db_session.flush()
-    actor = SessionUser(
+    actor = make_session_user(
         id=user.id,
         email=user.email,
         display_name=user.display_name,
         tenant_id=tenant.id,
-        role=user.role,
+        role_id=user.role_id,
+        permissions=frozenset(),
     )
     roots = await practitioner_root_orgs_for(db_session, actor)
     assert roots == {root.id}
@@ -133,12 +134,13 @@ async def test_root_orgs_returns_root_for_open_role(db_session: AsyncSession) ->
 
 async def test_root_orgs_empty_when_no_open_role(db_session: AsyncSession) -> None:
     tenant, user, _ = await _bootstrap(db_session)
-    actor = SessionUser(
+    actor = make_session_user(
         id=user.id,
         email=user.email,
         display_name=user.display_name,
         tenant_id=tenant.id,
-        role=user.role,
+        role_id=user.role_id,
+        permissions=frozenset(),
     )
     roots = await practitioner_root_orgs_for(db_session, actor)
     assert roots == set()

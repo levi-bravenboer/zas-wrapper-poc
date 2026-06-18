@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from app.core.enums.user import Role
 from app.schemas.auth.auth import SessionUser
 from scripts.seed_tenant import ZAS_TENANT_ID
-from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID
+from scripts.seed_users import ADMIN_DISPLAY_NAME, ADMIN_EMAIL, ADMIN_USER_ID, admin_role_id
+from tests._rbac import make_session_user
 
 
 @pytest.fixture(autouse=True)
@@ -17,10 +17,11 @@ def _autoclean_tenants(clean_tenants: None) -> None:
 def session_actor() -> SessionUser:
     """Stamp rows + audit events with the bootstrap admin actor."""
 
-    return SessionUser(
+    return make_session_user(
         id=ADMIN_USER_ID,
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        admin=True,
+        role_id=admin_role_id(ZAS_TENANT_ID),
     )

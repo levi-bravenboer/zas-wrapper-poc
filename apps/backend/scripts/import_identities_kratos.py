@@ -23,8 +23,8 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.core.settings import get_settings
+from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.user import User
 from app.services.access.identity.kratos_client import KratosClient, KratosSchemaId
 from scripts._db import run_script
@@ -33,18 +33,24 @@ logger = logging.getLogger(__name__)
 
 KRATOS_IDP = "kratos"
 
-_SCHEMA_BY_ROLE: dict[Role, KratosSchemaId] = {
-    Role.ADMIN: "default",
-    Role.CAREGIVER: "practitioner",
-    Role.PATIENT: "patient",
-}
-
 
 async def import_identities(session: AsyncSession, kratos: KratosClient) -> tuple[int, int]:
     """Returns (imported, skipped) counts."""
 
     result = await session.execute(select(User).where(User.deleted_at.is_(None)))
     users = result.scalars().all()
+    # Schema is cosmetic (traits never carry authz). Derive it from data, not
+    # a role: patients by `patient_id`, clinicians by a Practitioner row, else
+    # the default schema. (`dynamic-rbac-roles-permissions`)
+    practitioner_user_ids = set(
+        (
+            await session.execute(
+                select(Practitioner.user_id).where(Practitioner.deleted_at.is_(None))
+            )
+        )
+        .scalars()
+        .all()
+    )
 
     imported = 0
     skipped = 0
@@ -57,7 +63,13 @@ async def import_identities(session: AsyncSession, kratos: KratosClient) -> tupl
             skipped += 1
             continue
 
-        schema_id = _SCHEMA_BY_ROLE[user.role]
+        schema_id: KratosSchemaId = (
+            "patient"
+            if user.patient_id is not None
+            else "practitioner"
+            if user.id in practitioner_user_ids
+            else "default"
+        )
         existing = await kratos.find_identity_by_email(email=user.email)
         if existing is not None:
             identity = existing

@@ -6,12 +6,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import ListQueryParamsDep
-from app.core.enums.user import Role
 from app.db.models.patient.patient import Patient
 from app.schemas._list.page import Page
-from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdate
-from app.services.access.identity.deps import CurrentUserDep, require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.audit.access import record_patient_read
 from app.services.patient.deps import (
     PatientAccessDep,
@@ -43,8 +41,6 @@ async def _audit_dossier_read(
 # GET dossier dep: access-checked + read-audited.
 AuditedPatientReadDep = Annotated[Patient, Depends(_audit_dossier_read)]
 
-_CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
-
 
 @router.get(
     "/patients",
@@ -54,7 +50,7 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 async def list_patients(
     query: ListQueryParamsDep,
     service: PatientServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
     identifier: Annotated[
         str | None,
         Query(description="FHIR Patient.identifier short-circuit; exact value match"),
@@ -97,7 +93,7 @@ async def get_patient(
 async def create_patient(
     payload: PatientCreate,
     service: PatientServiceDep,
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],  # AUTH-HARDEN
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> PatientRead:
     patient = await service.create(current_user, payload)
     return PatientRead.model_validate(patient)
@@ -113,7 +109,7 @@ async def update_patient(
     payload: PatientUpdate,
     service: PatientServiceDep,
     _patient: PatientEditDep,  # AUTH-HARDEN: Keto `edit` verb when AUTHZ_KETO_ENABLED (REQ-FUN-42)
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
+    current_user: CurrentUserDep,
 ) -> PatientRead:
     patient = await service.update(current_user, patient_id, payload)
     return PatientRead.model_validate(patient)
@@ -128,7 +124,7 @@ async def soft_delete_patient(
     patient_id: UUID,
     service: PatientServiceDep,
     _patient: PatientEditDep,  # AUTH-HARDEN: Keto `edit` verb when AUTHZ_KETO_ENABLED (REQ-FUN-42)
-    current_user: Annotated[SessionUser, _CAREGIVER_OR_ADMIN_GUARD],
+    current_user: CurrentUserDep,
 ) -> None:
     await service.soft_delete(current_user, patient_id)
 

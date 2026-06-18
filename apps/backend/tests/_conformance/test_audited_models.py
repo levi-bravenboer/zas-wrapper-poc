@@ -23,10 +23,11 @@ _EXPECTED = {
     "Task",
     "Note",
     "Appointment",
+    "Role",
 }
 
 # Audited models whose rows do NOT concern a single patient (no patient axis).
-_PATIENTLESS = {"User"}
+_PATIENTLESS = {"User", "Role"}
 
 # Patient-scoped but the patient is reached via a parent, not a direct column
 # (Q1-sub): `PathwayBlockExecution` resolves its patient through the enrollment.

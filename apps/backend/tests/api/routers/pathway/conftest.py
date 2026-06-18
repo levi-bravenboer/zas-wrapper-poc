@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models.access import Role
 from app.db.models.pathway import Pathway, PathwayLaneKind
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
@@ -32,6 +33,7 @@ async def _wipe(session: AsyncSession) -> None:
     await session.execute(delete(Pathway))
     await session.execute(delete(PathwayLaneKind))
     await session.execute(delete(User))
+    await session.execute(delete(Role))
     await session.execute(delete(Tenant))
     await session.commit()
 

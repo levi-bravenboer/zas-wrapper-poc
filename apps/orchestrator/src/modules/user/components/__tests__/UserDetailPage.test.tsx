@@ -15,7 +15,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { i18n } from '@/lib/i18n'
 
+import { rolesKey, type Role } from '../../roles'
 import { UserDetailPage } from '../UserDetailPage'
+
+const ROLES: Role[] = [
+  { id: 'd2222222-2222-4222-8222-2222222222d1', slug: 'default', name: 'Standaard', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
+  { id: 'a1111111-1111-4111-8111-1111111111a1', slug: 'admin', name: 'Admin', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
+]
 
 const { getMock, useUserDetailMock, useSetUserActiveMock, useSessionMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
@@ -39,7 +45,7 @@ const ADMIN_USER = {
   id: 'u-admin',
   email: 'admin@zas.demo',
   display_name: 'Bo de Vries',
-  role: 'admin' as const,
+  role_id: 'a1111111-1111-4111-8111-1111111111a1',
   is_active: true,
   external_idp: null,
   external_subject: null,
@@ -52,7 +58,7 @@ const CAREGIVER_USER = {
   id: 'u-care',
   email: 'eva@zas.demo',
   display_name: 'Eva Bos',
-  role: 'caregiver' as const,
+  role_id: 'd2222222-2222-4222-8222-2222222222d1',
 }
 
 const PRACTITIONER = {
@@ -85,6 +91,7 @@ const PRACTITIONER = {
 
 function renderPage(userId: string): { router: AnyRouter } {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+  qc.setQueryData(rolesKey, ROLES)
   const Wrap = ({ children }: { children: ReactNode }) => (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={qc}>{children}</QueryClientProvider>

@@ -11,7 +11,13 @@ import {
   selectSessionRole,
 } from './api'
 import { authKeys } from './keys'
-import type { LoginRequest, LoginResult, ProviderDescriptor, Role, SessionUser } from './schemas'
+import type {
+  LoginRequest,
+  LoginResult,
+  ProviderDescriptor,
+  RoleOption,
+  SessionUser,
+} from './schemas'
 
 export function useSession() {
   return useQuery<SessionUser | null>({
@@ -37,7 +43,7 @@ export function useLogin() {
 
 export function useSelectRole() {
   const qc = useQueryClient()
-  return useMutation<SessionUser, Error, Role>({
+  return useMutation<SessionUser, Error, string>({
     mutationFn: selectSessionRole,
     onSuccess: (user) => {
       qc.setQueryData(authKeys.me(), user)
@@ -48,7 +54,7 @@ export function useSelectRole() {
 }
 
 export function useSessionRoles() {
-  return useQuery<Role[]>({
+  return useQuery<RoleOption[]>({
     queryKey: authKeys.sessionRoles(),
     queryFn: fetchSessionRoles,
     staleTime: 60_000,
