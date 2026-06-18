@@ -26,7 +26,7 @@ zas-wrapper/
 ├── apps/
 │   ├── orchestrator/      # React 19 + Vite 8 + TS 6 — clinician composer (native vite)
 │   └── backend/           # FastAPI + uv + Python 3.13 — FHIR gateway, MCP host (docker)
-├── docker-compose.yml     # dev stack: zas_db + zas_backend
+├── docker-compose.yml     # dev stack: db + backend + worker + temporal + minio + kratos + keto
 ├── docker-compose.test.yml # test overlay: zas_test_db + zas_backend_test
 ├── moon.yml               # root orchestration tasks (:up, :down, :doctor, …)
 ├── scripts/doctor.sh      # host preflight check
@@ -71,7 +71,8 @@ Replace Docker Desktop with [OrbStack](https://orbstack.dev). Bind-mount filesys
 ```bash
 moon run :doctor       # verify host has the right versions + tooling
 moon run :install      # uv sync + pnpm install (host-side, so editor LSPs work)
-moon run :up           # boots zas_db + zas_backend (docker) + vite dev (native)
+moon run :up           # boots the docker stack (db + backend + temporal + worker
+                       #   + minio + kratos + keto) + vite dev (native)
 ```
 
 After `:up`:
@@ -80,7 +81,14 @@ After `:up`:
 - Backend healthcheck: <http://localhost:18000/healthz>
 - Swagger UI: <http://localhost:18000/docs>
 - Vite: <http://localhost:5173>
+- Temporal Web UI: <http://localhost:8233> (pathway-runtime workflows)
+- MinIO console: <http://localhost:9001> (object storage; `minioadmin` / `minioadmin`)
 - Postgres: `psql -h localhost -p 5434 -U zas zas` (or `moon run backend:psql`)
+
+The pathway runtime defaults to the **Temporal** engine in the stack (a
+`temporal` server + a `worker` process run alongside the backend, so durable
+timers auto-advance time-gated blocks). To run the engine inline instead (no
+worker), boot with `BACKEND_PATHWAY_RUNTIME_ENGINE=sync moon run :stack`.
 
 Teardown:
 
@@ -112,6 +120,9 @@ cp apps/orchestrator/.env.example apps/orchestrator/.env
 | `BACKEND_LUSCII_API_TOKEN` | Luscii bearer token (secret). Set ⇒ live patient-data fetches; unset ⇒ Luscii endpoints answer 503 `not_configured` and the rest of the app runs normally. | unset |
 | `BACKEND_LOG_LEVEL` | Native log level | `INFO` |
 | `BACKEND_PUBLIC_URL` | OpenAPI `servers` URL | unset |
+| `BACKEND_PATHWAY_RUNTIME_ENGINE` | `sync` (inline, no timers) / `temporal` (durable workflow + timers). Compose stack defaults to `temporal`. | `sync` |
+| `BACKEND_TEMPORAL_ADDRESS` | Temporal gRPC endpoint. Compose overrides to `temporal:7233`. | `localhost:7233` |
+| `BACKEND_S3_ENDPOINT_URL` | S3/MinIO endpoint for note attachments. Compose sets `http://minio:9000`. Unset ⇒ file uploads disabled. | unset |
 
 ### Orchestrator env vars (prefix `VITE_`)
 
@@ -135,6 +146,10 @@ The measurement-label catalogue needs no manual step: every backend boot (so any
 | Dev Postgres | `zas_db` | `5434` |
 | Test Postgres | `zas_test_db` | `5433` |
 | Backend API | `zas_backend` | `18000` |
+| Pathway worker | `zas_pathway_worker` | (no host port) |
+| Temporal gRPC | `zas_temporal` | `7233` |
+| Temporal Web UI | `zas_temporal` | `8233` |
+| MinIO API / console | `zas_minio` | `9000` / `9001` |
 | Vite dev server | (native, host) | `5173` |
 
 Ports are fixed (no auto-shifting). The dev DB binds `5434` (not the Postgres default `5432`) so it coexists with other local Postgres instances on `:5432`. Container-internal port is `5432`; only host-side mapping shifts.
@@ -151,7 +166,7 @@ moon run :install             # host deps (uv sync + pnpm install)
 Lifecycle:
 
 ```bash
-moon run :up                  # full stack (db + backend + vite)
+moon run :up                  # full stack (docker: db + backend + temporal + worker + … + vite)
 moon run :down                # stop containers, keep volumes
 moon run :reset               # stop + drop zas_pgdata
 moon run :stack               # docker stack only (no vite)
