@@ -16,10 +16,8 @@ function AppointmentsIndexRoute(): ReactElement {
     <div className="flex h-full items-center justify-center p-8">
       <RailSelectionEmptyState
         icon={<Calendar className="size-6" />}
-        title={t('appointment:selection.title', { defaultValue: 'Selecteer een afspraak' })}
-        body={t('appointment:selection.body', {
-          defaultValue: 'Kies links een afspraak om details te bekijken.',
-        })}
+        title={t('appointment:selection.title')}
+        body={t('appointment:selection.body')}
       />
     </div>
   )

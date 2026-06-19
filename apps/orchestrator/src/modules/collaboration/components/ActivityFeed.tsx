@@ -85,7 +85,7 @@ function FileBody({ note, actions }: { note: FileNote; actions: ItemActions }): 
           variant="ghost"
           size="icon"
           className="size-8"
-          aria-label={t('collaboration:files.preview', { defaultValue: 'Bekijken' })}
+          aria-label={t('collaboration:files.preview')}
           onClick={() => void actions.onPreview(note)}
         >
           <Eye className="size-4" />
@@ -94,7 +94,7 @@ function FileBody({ note, actions }: { note: FileNote; actions: ItemActions }): 
           variant="ghost"
           size="icon"
           className="size-8"
-          aria-label={t('collaboration:files.download', { defaultValue: 'Downloaden' })}
+          aria-label={t('collaboration:files.download')}
           onClick={() => void actions.onDownload(note)}
         >
           <Download className="size-4" />
@@ -104,7 +104,7 @@ function FileBody({ note, actions }: { note: FileNote; actions: ItemActions }): 
             variant="ghost"
             size="icon"
             className="size-8 text-destructive hover:text-destructive"
-            aria-label={t('collaboration:files.delete', { defaultValue: 'Verwijderen' })}
+            aria-label={t('collaboration:files.delete')}
             disabled={actions.deleting}
             onClick={() => actions.onDelete(note.id)}
           >
@@ -128,7 +128,7 @@ function TextBody({ note, actions }: { note: Note; actions: ItemActions }): Reac
           variant="ghost"
           size="icon"
           className="mt-0.5 size-7 shrink-0 text-destructive opacity-0 transition-opacity hover:text-destructive focus-within:opacity-100 group-hover:opacity-100"
-          aria-label={t('collaboration:notes.delete', { defaultValue: 'Verwijderen' })}
+          aria-label={t('collaboration:notes.delete')}
           disabled={actions.deleting}
           onClick={() => actions.onDelete(note.id)}
         >
@@ -257,7 +257,7 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
           <span className="grid size-7 place-items-center rounded-md bg-primary-soft/60 text-primary">
             <MessageSquareText className="size-4" aria-hidden />
           </span>
-          {t('collaboration:notes.title', { defaultValue: 'Activiteit' })}
+          {t('collaboration:notes.title')}
           {items.length > 0 ? (
             <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-foreground-muted tabular-nums">
               {items.length}
@@ -268,7 +268,7 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
       <CardContent className="flex flex-col gap-4">
         {items.length === 0 ? (
           <p className="text-sm text-foreground-muted">
-            {t('collaboration:notes.empty', { defaultValue: 'Nog geen activiteit.' })}
+            {t('collaboration:notes.empty')}
           </p>
         ) : groups ? (
           <div className="flex flex-col gap-5">
@@ -276,7 +276,7 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
               const GroupIcon = OWNER_ICON[group.ownerType] ?? MessageSquareText
               const label =
                 group.label ??
-                t('collaboration:notes.directOnPatient', { defaultValue: 'Direct op patiënt' })
+                t('collaboration:notes.directOnPatient')
               return (
                 <section key={group.key} className="flex flex-col gap-2.5">
                   <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
@@ -326,9 +326,7 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
             rows={2}
-            placeholder={t('collaboration:notes.placeholder', {
-              defaultValue: 'Voeg een notitie toe…',
-            })}
+            placeholder={t('collaboration:notes.placeholder')}
           />
           <div className="flex items-center justify-between gap-2">
             <Button
@@ -341,15 +339,15 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
             >
               <Paperclip className="size-4" />
               {uploadFile.isPending
-                ? t('collaboration:files.uploading', { defaultValue: 'Uploaden…' })
-                : t('collaboration:files.attach', { defaultValue: 'Bestand' })}
+                ? t('collaboration:files.uploading')
+                : t('collaboration:files.attach')}
             </Button>
             <div className="flex items-center gap-2">
               <span className="hidden text-[11px] text-foreground-muted sm:inline">
-                {t('collaboration:notes.hint', { defaultValue: '⌘/Ctrl + Enter om te versturen' })}
+                {t('collaboration:notes.hint')}
               </span>
               <Button size="sm" disabled={!draft.trim() || addNote.isPending} onClick={submit}>
-                {t('collaboration:notes.add', { defaultValue: 'Plaatsen' })}
+                {t('collaboration:notes.add')}
               </Button>
             </div>
           </div>

@@ -122,12 +122,17 @@
       },
       "role": {
         "label": "Rol",
+        "placeholder": "Kies een rol",
         "hint": "Beheerders mogen alles; zorgverleners alleen patiëntendata.",
         "locked": "Verander rol via een aparte actie.",
         "option": {
           "admin": "Beheerder",
           "caregiver": "Zorgverlener"
         }
+      },
+      "clinician": {
+        "label": "Zorgverlener",
+        "hint": "Maakt een practitioner aan met voor- en achternaam."
       },
       "qualification": {
         "label": "Kwalificatie",

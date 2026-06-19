@@ -38,13 +38,11 @@ function PreviewBody({ note, url }: { note: FileNote; url: string }): ReactEleme
   return (
     <div className="flex flex-col items-center gap-3 py-10 text-center">
       <p className="text-sm text-foreground-muted">
-        {t('collaboration:files.noPreview', {
-          defaultValue: 'Geen voorbeeld beschikbaar voor dit bestandstype.',
-        })}
+        {t('collaboration:files.noPreview')}
       </p>
       <Button asChild variant="outline" size="sm">
         <a href={url} target="_blank" rel="noopener noreferrer">
-          {t('collaboration:files.download', { defaultValue: 'Downloaden' })}
+          {t('collaboration:files.download')}
         </a>
       </Button>
     </div>

@@ -158,7 +158,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
               },
               {
                 value: 'appointments',
-                label: t('tabs.appointments.label', { defaultValue: 'Afspraken' }),
+                label: t('tabs.appointments.label'),
                 content: <PatientAppointmentsTab patientId={patient.id} />,
               },
               {
@@ -168,7 +168,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
               },
               {
                 value: 'collaboration',
-                label: t('tabs.collaboration', { defaultValue: 'Notities & documenten' }),
+                label: t('tabs.collaboration'),
                 content: <PatientCollaborationTab patientId={patient.id} />,
               },
             ]}

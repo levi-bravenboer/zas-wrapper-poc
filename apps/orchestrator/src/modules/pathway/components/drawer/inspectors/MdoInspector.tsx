@@ -38,20 +38,18 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
   return (
     <div className="flex flex-col gap-3">
       <InspectorField
-        label={t('inspector.mdo.topic', { defaultValue: 'Onderwerp' })}
+        label={t('inspector.mdo.topic')}
         htmlFor="mdo-topic"
       >
         <Input
           id="mdo-topic"
           value={config.topic ?? ''}
           onChange={(e) => onChange({ ...config, topic: e.target.value || undefined })}
-          placeholder={t('inspector.mdo.topicPlaceholder', {
-            defaultValue: 'Bijv. Bespreking pathologie-uitslag',
-          })}
+          placeholder={t('inspector.mdo.topicPlaceholder')}
         />
       </InspectorField>
       <InspectorField
-        label={t('inspector.mdo.attendeesNote', { defaultValue: 'Verwachte deelnemers' })}
+        label={t('inspector.mdo.attendeesNote')}
         htmlFor="mdo-attendees"
       >
         <Textarea
@@ -60,16 +58,12 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
           onChange={(e) =>
             onChange({ ...config, expected_attendees_note: e.target.value || undefined })
           }
-          placeholder={t('inspector.mdo.attendeesNotePlaceholder', {
-            defaultValue: 'Bijv. oncoloog + radioloog + chirurg (advies, vrij invulbaar)',
-          })}
+          placeholder={t('inspector.mdo.attendeesNotePlaceholder')}
         />
       </InspectorField>
       <InspectorField
-        label={t('inspector.mdo.outcomes', { defaultValue: 'Uitkomsten' })}
-        hint={t('inspector.mdo.outcomesHint', {
-          defaultValue: 'Optioneel — de voorzitter kiest één uitkomst bij afsluiten.',
-        })}
+        label={t('inspector.mdo.outcomes')}
+        hint={t('inspector.mdo.outcomesHint')}
       >
         <div className="flex flex-col gap-2">
           {outcomes.length > 0 && (
@@ -82,9 +76,7 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
                   {outcome}
                   <button
                     type="button"
-                    aria-label={t('inspector.mdo.removeOutcome', {
-                      defaultValue: 'Uitkomst verwijderen',
-                    })}
+                    aria-label={t('inspector.mdo.removeOutcome')}
                     onClick={() => removeOutcome(outcome)}
                     className="text-muted-foreground hover:text-destructive"
                   >
@@ -96,11 +88,9 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
           )}
           <div className="flex items-center gap-1.5">
             <Input
-              aria-label={t('inspector.mdo.newOutcome', { defaultValue: 'Nieuwe uitkomst' })}
+              aria-label={t('inspector.mdo.newOutcome')}
               value={pendingOutcome}
-              placeholder={t('inspector.mdo.newOutcomePlaceholder', {
-                defaultValue: 'bijv. operatie',
-              })}
+              placeholder={t('inspector.mdo.newOutcomePlaceholder')}
               onChange={(e) => setPendingOutcome(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -124,10 +114,7 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
       </InspectorField>
 
       <p className="text-[11px] text-muted-foreground">
-        {t('inspector.mdo.leadingHint', {
-          defaultValue:
-            'De hoofdbehandelaar van de patiënt zit het MDO voor en sluit het af; extra zorgverleners kunnen onbeperkt bijdragen.',
-        })}
+        {t('inspector.mdo.leadingHint')}
       </p>
     </div>
   )

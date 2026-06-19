@@ -53,7 +53,6 @@ function TaskDetailRoute(): ReactElement {
       </Badge>
       <span className="text-sm text-muted-foreground">
         {t('tasks:detail.due', {
-          defaultValue: 'Deadline: {{date}}',
           date: formatDateOrDash(task.due_at ?? null, i18n.language),
         })}
       </span>
@@ -72,8 +71,8 @@ function TaskDetailRoute(): ReactElement {
           onClick={() => setStatus.mutate(nextStatus)}
         >
           {done
-            ? t('tasks:detail.reopen', { defaultValue: 'Heropen' })
-            : t('tasks:detail.complete', { defaultValue: 'Markeer als afgerond' })}
+            ? t('tasks:detail.reopen')
+            : t('tasks:detail.complete')}
         </Button>
       }
       body={
@@ -82,31 +81,31 @@ function TaskDetailRoute(): ReactElement {
 
           <DetailCard
             icon={ClipboardList}
-            title={t('tasks:detail.tabs.info', { defaultValue: 'Details' })}
+            title={t('tasks:detail.tabs.info')}
           >
-            <DetailRow wide label={t('tasks:detail.reason', { defaultValue: 'Reden' })}>
+            <DetailRow wide label={t('tasks:detail.reason')}>
               {task.description ? (
                 <span className="whitespace-pre-wrap">{task.description}</span>
               ) : (
                 <span className="text-foreground-muted">
-                  {t('tasks:detail.noDescription', { defaultValue: 'Geen omschrijving.' })}
+                  {t('tasks:detail.noDescription')}
                 </span>
               )}
             </DetailRow>
-            <DetailRow label={t('tasks:detail.deadline', { defaultValue: 'Deadline' })}>
+            <DetailRow label={t('tasks:detail.deadline')}>
               {formatDateOrDash(task.due_at ?? null, i18n.language)}
             </DetailRow>
-            <DetailRow label={t('tasks:detail.status', { defaultValue: 'Status' })}>
+            <DetailRow label={t('tasks:detail.status')}>
               <Badge variant={done ? 'soft' : 'default'}>
                 {t(`tasks:status.${task.status}`, { defaultValue: task.status })}
               </Badge>
             </DetailRow>
             {task.source_ref ? (
-              <DetailRow label={t('tasks:detail.source', { defaultValue: 'Bron' })}>
+              <DetailRow label={t('tasks:detail.source')}>
                 {task.source_ref}
               </DetailRow>
             ) : null}
-            <DetailRow label={t('tasks:detail.created', { defaultValue: 'Aangemaakt' })}>
+            <DetailRow label={t('tasks:detail.created')}>
               {formatDateTimeOrDash(task.created_at, i18n.language)}
             </DetailRow>
           </DetailCard>

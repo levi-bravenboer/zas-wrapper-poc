@@ -69,7 +69,7 @@ function PatientHover({ patientId, name }: { patientId: string; name: string }):
   const { data: patient } = usePatient(patientId)
 
   const fullName = patient ? `${patient.family_name}, ${patient.given_name}` : name
-  const gender = patient ? t(`gender.${patient.gender}`, { defaultValue: patient.gender }) : undefined
+  const gender = patient ? t(`gender.${patient.gender}`) : undefined
   const age = patient ? ageFromBirthDate(patient.birth_date) : null
   const insz = patient ? pickInsz(patient.identifiers ?? []) : null
 
@@ -78,7 +78,7 @@ function PatientHover({ patientId, name }: { patientId: string; name: string }):
       <Header id={patientId} name={fullName} sub={gender} />
       {patient ? (
         <div className="grid grid-cols-2 gap-2">
-          <Fact label={t('field.birthDate', { defaultValue: 'Geboortedatum' })}>
+          <Fact label={t('field.birthDate')}>
             {age !== null
               ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
@@ -88,7 +88,7 @@ function PatientHover({ patientId, name }: { patientId: string; name: string }):
       ) : null}
       <Button asChild variant="outline" size="sm" className="w-full">
         <Link to="/patients/$patientId" params={{ patientId }}>
-          {t('openPatient', { defaultValue: 'Open patiënt' })}
+          {t('openPatient')}
           <ArrowUpRight className="size-4" />
         </Link>
       </Button>

@@ -32,7 +32,15 @@
     "complete": "Markeer als afgerond",
     "reopen": "Heropen",
     "noDescription": "Geen omschrijving.",
-    "openPatient": "Open patiënt"
+    "openPatient": "Open patiënt",
+    "tabs": {
+      "info": "Details"
+    },
+    "reason": "Reden",
+    "deadline": "Deadline",
+    "status": "Status",
+    "source": "Bron",
+    "created": "Aangemaakt"
   },
   "selection": {
     "title": "Selecteer een taak",

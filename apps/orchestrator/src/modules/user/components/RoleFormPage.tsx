@@ -115,15 +115,15 @@ function RoleForm({
           })
         }
       } catch (e) {
-        toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' }))
+        toast.error(t('toast.error'))
         throw e
       }
     },
     onSuccess: () => {
       toast.success(
         editing
-          ? t('toast.saved', { defaultValue: 'Rol opgeslagen' })
-          : t('toast.created', { defaultValue: 'Rol aangemaakt' }),
+          ? t('toast.saved')
+          : t('toast.created'),
       )
       void navigate({ to: '/admin/roles' })
     },
@@ -153,13 +153,13 @@ function RoleForm({
       mode={mode}
       title={
         editing
-          ? t('form.edit.title', { defaultValue: 'Rol bewerken' })
-          : t('form.create.title', { defaultValue: 'Nieuwe rol' })
+          ? t('form.edit.title')
+          : t('form.create.title')
       }
-      subtitle={t('form.sub', { defaultValue: 'Geef permissies aan deze rol.' })}
+      subtitle={t('form.sub')}
       back={{ to: '/admin/roles' }}
       form={formApi}
-      submitLabel={t('form.save', { defaultValue: 'Opslaan' })}
+      submitLabel={t('form.save')}
       onCancel={() => void navigate({ to: '/admin/roles' })}
       body={
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 py-2">
@@ -168,16 +168,14 @@ function RoleForm({
               <formApi.form.Field name="name">
                 {(field) => (
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="role-name">{t('form.field.name', { defaultValue: 'Naam' })}</Label>
+                    <Label htmlFor="role-name">{t('form.field.name')}</Label>
                     <Input
                       id="role-name"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
                       aria-invalid={field.state.meta.errors.length > 0}
-                      placeholder={t('form.field.namePlaceholder', {
-                        defaultValue: 'Bijv. Verpleegkundige',
-                      })}
+                      placeholder={t('form.field.namePlaceholder')}
                     />
                     {firstError(field.state.meta.errors, t) ? (
                       <p className="text-xs text-destructive" role="alert">
@@ -190,7 +188,7 @@ function RoleForm({
               <formApi.form.Field name="slug">
                 {(field) => (
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="role-slug">{t('form.field.slug', { defaultValue: 'Slug' })}</Label>
+                    <Label htmlFor="role-slug">{t('form.field.slug')}</Label>
                     <Input
                       id="role-slug"
                       value={field.state.value}
@@ -198,7 +196,7 @@ function RoleForm({
                       onBlur={field.handleBlur}
                       disabled={editing}
                       aria-invalid={field.state.meta.errors.length > 0}
-                      placeholder="verpleegkundige"
+                      placeholder={t('form.slugPlaceholder')}
                       className="font-mono"
                     />
                     {!editing && firstError(field.state.meta.errors, t) ? (
@@ -215,7 +213,7 @@ function RoleForm({
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                {t('form.permissions.title', { defaultValue: 'Permissies' })}
+                {t('form.permissions.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
@@ -241,7 +239,7 @@ function RoleForm({
                           <span className="font-mono text-xs">{perm.split('.')[1] ?? perm}</span>
                           {!grantable ? (
                             <Badge variant="soft" className="ml-auto text-[10px]">
-                              {t('form.permissions.locked', { defaultValue: 'vergrendeld' })}
+                              {t('form.permissions.locked')}
                             </Badge>
                           ) : null}
                         </label>
@@ -255,9 +253,7 @@ function RoleForm({
 
           {isSystem ? (
             <p className="text-xs text-muted-foreground">
-              {t('form.systemNote', {
-                defaultValue: 'Systeemrol — slug ligt vast en de rol is niet verwijderbaar.',
-              })}
+              {t('form.systemNote')}
             </p>
           ) : null}
         </div>

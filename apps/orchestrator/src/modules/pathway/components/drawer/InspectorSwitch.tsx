@@ -93,9 +93,7 @@ export function InspectorSwitch({
     case 'end_pathway':
       return (
         <p className="text-[11px] text-muted-foreground">
-          {t('inspector.structural.noConfig', {
-            defaultValue: 'Dit blok heeft geen instellingen — alleen een naam.',
-          })}
+          {t('inspector.structural.noConfig')}
         </p>
       )
     default: {

@@ -442,7 +442,7 @@ function UserFormShell({
                           disabled={editing}
                         >
                           <SelectTrigger id="user-role">
-                            <SelectValue placeholder={t('form.field.role.placeholder', { defaultValue: 'Kies een rol' })} />
+                            <SelectValue placeholder={t('form.field.role.placeholder')} />
                           </SelectTrigger>
                           <SelectContent>
                             {roles.map((r) => (
@@ -463,12 +463,10 @@ function UserFormShell({
                       <div className="flex min-w-0 flex-col">
                         <Label htmlFor="user-clinician" className="inline-flex items-center gap-1.5 text-sm font-medium">
                           <Stethoscope className="size-3.5 text-muted-foreground" aria-hidden />
-                          {t('form.field.clinician.label', { defaultValue: 'Zorgverlener' })}
+                          {t('form.field.clinician.label')}
                         </Label>
                         <span className="text-xs text-muted-foreground">
-                          {t('form.field.clinician.hint', {
-                            defaultValue: 'Maakt een practitioner aan met voor- en achternaam.',
-                          })}
+                          {t('form.field.clinician.hint')}
                         </span>
                       </div>
                       <Switch

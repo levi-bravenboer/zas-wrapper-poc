@@ -47,7 +47,7 @@ export function PatientOverviewTab({
             label={t('overview.gender')}
             value={
               patient?.gender
-                ? t(`gender.${patient.gender}`, { defaultValue: patient.gender })
+                ? t(`gender.${patient.gender}`)
                 : '—'
             }
           />

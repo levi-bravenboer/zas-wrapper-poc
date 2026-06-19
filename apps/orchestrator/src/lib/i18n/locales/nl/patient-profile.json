@@ -64,6 +64,18 @@
     "other": "Anders",
     "unknown": "Onbekend"
   },
+  "openPatient": "Open patiënt",
+  "field": {
+    "birthDate": "Geboortedatum",
+    "treatingClinician": "Hoofdbehandelaar",
+    "pathway": "Zorgpad",
+    "pathwayFallback": "Zorgpad"
+  },
+  "timeline": {
+    "state": {
+      "paused": "Gepauzeerd"
+    }
+  },
   "history": {
     "title": "Geschiedenis",
     "created": "Aangemaakt op {{date}} door {{by}}",
@@ -197,6 +209,9 @@
     }
   },
   "charts": {
+    "trend": {
+      "since_previous": "vs. vorige meting"
+    },
     "programme": {
       "label": "Programma",
       "fallback": "Geen programma",

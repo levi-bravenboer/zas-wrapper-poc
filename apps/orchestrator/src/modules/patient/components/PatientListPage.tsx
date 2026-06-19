@@ -70,7 +70,7 @@ export function PatientListPage(): ReactElement {
         header: t('list.column.gender'),
         cell: (row) => (
           <span className="text-muted-foreground">
-            {row.gender ? t(`gender.${row.gender}`, { defaultValue: row.gender }) : '—'}
+            {row.gender ? t(`gender.${row.gender}`) : '—'}
           </span>
         ),
       }),

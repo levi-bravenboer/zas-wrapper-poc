@@ -28,16 +28,14 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
   return (
     <div className="flex flex-col gap-3">
       <InspectorField
-        label={t('inspector.task.title', { defaultValue: 'Titel' })}
+        label={t('inspector.task.title')}
         htmlFor="task-title"
       >
         <Input
           id="task-title"
           value={config.title ?? ''}
           onChange={(e) => onChange({ ...config, title: e.target.value || undefined })}
-          placeholder={t('inspector.task.titlePlaceholder', {
-            defaultValue: 'Bijv. Bel patiënt',
-          })}
+          placeholder={t('inspector.task.titlePlaceholder')}
         />
       </InspectorField>
       <InspectorField label={t('inspector.task.assignee')}>
@@ -60,7 +58,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
         </Select>
       </InspectorField>
       <InspectorField
-        label={t('inspector.task.dueOffset', { defaultValue: 'Af te ronden binnen (dagen)' })}
+        label={t('inspector.task.dueOffset')}
         htmlFor="task-due-offset"
       >
         <Input
@@ -77,7 +75,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
         />
       </InspectorField>
       <InspectorField
-        label={t('inspector.task.notes', { defaultValue: 'Notities' })}
+        label={t('inspector.task.notes')}
         htmlFor="task-notes"
       >
         <Textarea

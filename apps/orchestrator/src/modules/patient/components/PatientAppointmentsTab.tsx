@@ -47,8 +47,8 @@ export function PatientAppointmentsTab({ patientId }: { patientId: string }): Re
     return (
       <EmptyState
         icon={Calendar}
-        title={t('tabs.empty.appointments.title', { defaultValue: 'Geen afspraken' })}
-        body={t('tabs.empty.appointments.body', { defaultValue: 'Het laden is niet gelukt.' })}
+        title={t('tabs.empty.appointments.title')}
+        body={t('tabs.empty.appointments.body')}
       />
     )
   }
@@ -58,10 +58,8 @@ export function PatientAppointmentsTab({ patientId }: { patientId: string }): Re
     return (
       <EmptyState
         icon={Calendar}
-        title={t('tabs.empty.appointments.title', { defaultValue: 'Geen afspraken' })}
-        body={t('tabs.empty.appointments.body', {
-          defaultValue: 'Afspraken over of met deze patiënt verschijnen hier.',
-        })}
+        title={t('tabs.empty.appointments.title')}
+        body={t('tabs.empty.appointments.body')}
       />
     )
   }
@@ -69,11 +67,11 @@ export function PatientAppointmentsTab({ patientId }: { patientId: string }): Re
   return (
     <div className="flex flex-col gap-4">
       <Group
-        label={t('tabs.appointments.about', { defaultValue: 'Over patiënt' })}
+        label={t('tabs.appointments.about')}
         entries={entries.filter((e) => e.relation === 'about')}
       />
       <Group
-        label={t('tabs.appointments.with', { defaultValue: 'Met patiënt' })}
+        label={t('tabs.appointments.with')}
         entries={entries.filter((e) => e.relation === 'with')}
       />
     </div>

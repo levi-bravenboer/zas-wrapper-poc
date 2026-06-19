@@ -321,9 +321,7 @@ function UserBlock(): ReactElement {
               >
                 <User aria-hidden="true" className="size-4" />
                 {t('auth:roleSwitch.label', {
-                  role: t(`auth:rolePicker.roles.${target.role_slug}`, {
-                    defaultValue: target.role_slug,
-                  }),
+                  role: t(`auth:rolePicker.roles.${target.role_slug}`),
                 })}
               </DropdownMenuItem>
             ))}

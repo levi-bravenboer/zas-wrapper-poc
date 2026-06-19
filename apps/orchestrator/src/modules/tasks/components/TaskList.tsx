@@ -40,7 +40,7 @@ function TaskListBody({ selectedTaskId }: { selectedTaskId: string | undefined }
         const due = group.items[0]?.due_at ?? null
         const label = due
           ? dayGroupLabel(t, due)
-          : t('tasks:group.none', { defaultValue: 'Geen datum' })
+          : t('tasks:group.none')
         return (
           <GroupedListSection key={group.key} label={label}>
             {group.items.map((item) => (

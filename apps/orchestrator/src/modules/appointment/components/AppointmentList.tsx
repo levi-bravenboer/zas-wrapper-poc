@@ -43,8 +43,8 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
     return (
       <EmptyState
         icon={Inbox}
-        title={t('appointment:error.title', { defaultValue: 'Er ging iets mis' })}
-        body={t('appointment:error.body', { defaultValue: 'Het laden is niet gelukt.' })}
+        title={t('appointment:error.title')}
+        body={t('appointment:error.body')}
       />
     )
   }
@@ -54,8 +54,8 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
     return (
       <EmptyState
         icon={Calendar}
-        title={t('appointment:empty.title', { defaultValue: 'Geen afspraken' })}
-        body={t('appointment:empty.body', { defaultValue: 'Geplande afspraken verschijnen hier.' })}
+        title={t('appointment:empty.title')}
+        body={t('appointment:empty.body')}
       />
     )
   }
@@ -113,10 +113,10 @@ export function AppointmentList(): ReactElement {
     <div className="flex h-full min-h-0 flex-col" data-testid="appointment-list">
       <header className="border-b border-border/60 px-4 py-4">
         <h1 className="text-lg font-semibold text-foreground">
-          {t('appointment:title', { defaultValue: 'Afspraken' })}
+          {t('appointment:title')}
         </h1>
         <p className="text-xs text-foreground-muted">
-          {t('appointment:subtitle', { defaultValue: 'Geplande afspraken' })}
+          {t('appointment:subtitle')}
         </p>
       </header>
       <div className="flex-1 overflow-y-auto">

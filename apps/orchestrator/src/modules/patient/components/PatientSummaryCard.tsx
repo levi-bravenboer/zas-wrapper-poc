@@ -64,27 +64,27 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
             <div className="flex min-w-0 flex-col">
               <span className="truncate text-lg font-semibold text-foreground">{fullName}</span>
               <span className="text-xs text-foreground-muted">
-                {t(`gender.${patient.gender}`, { defaultValue: patient.gender })}
+                {t(`gender.${patient.gender}`)}
               </span>
             </div>
           </div>
           <Button asChild variant="outline" size="sm" className="shrink-0">
             <Link to="/patients/$patientId" params={{ patientId: patient.id }}>
-              {t('openPatient', { defaultValue: 'Open patiënt' })}
+              {t('openPatient')}
               <ArrowUpRight className="size-4" />
             </Link>
           </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Fact label={t('field.birthDate', { defaultValue: 'Geboortedatum' })}>
+          <Fact label={t('field.birthDate')}>
             {age !== null
               ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
           </Fact>
           <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
           {lead ? (
-            <Fact label={t('field.treatingClinician', { defaultValue: 'Hoofdbehandelaar' })}>
+            <Fact label={t('field.treatingClinician')}>
               <span className="inline-flex min-w-0 items-center gap-1.5">
                 <PersonAvatar
                   size="sm"
@@ -110,19 +110,19 @@ function ZorgpadGlance({ glance }: { glance: EnrollmentGlance }): ReactElement {
   return (
     <div className="flex flex-col gap-1.5 border-t border-border/50 pt-3">
       <span className="text-[11px] uppercase tracking-wide text-foreground-muted">
-        {t('field.pathway', { defaultValue: 'Zorgpad' })}
+        {t('field.pathway')}
       </span>
       <div className="flex min-w-0 items-center gap-2">
         <Route className="size-4 shrink-0 text-primary" aria-hidden />
         <span className="truncate text-sm font-medium text-foreground">
-          {glance.label ?? t('field.pathwayFallback', { defaultValue: 'Zorgpad' })}
+          {glance.label ?? t('field.pathwayFallback')}
         </span>
         {glance.phaseName ? (
           <span className="truncate text-xs text-foreground-muted">· {glance.phaseName}</span>
         ) : null}
         {glance.state === 'paused' ? (
           <Badge variant="soft" className="shrink-0 text-[10px]">
-            {t('timeline.state.paused', { defaultValue: 'Gepauzeerd' })}
+            {t('timeline.state.paused')}
           </Badge>
         ) : null}
         <span className="ml-auto shrink-0 text-xs tabular-nums text-foreground-muted">

@@ -135,7 +135,7 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
         />
         {meta.isoField && (
           <Input
-            aria-label={t('timingPolicy.isoLabel', { defaultValue: 'ISO 8601 duur' })}
+            aria-label={t('timingPolicy.isoLabel')}
             value={iso}
             placeholder={meta.placeholder}
             onChange={(e) => onChange(buildPolicy(kind, e.target.value, relative))}
@@ -146,9 +146,9 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
       {kind === 'relative_to_date' && (
         <div className="flex items-center gap-2">
           <Input
-            aria-label={t('timingPolicy.dateNameLabel', { defaultValue: 'Klinische datum' })}
+            aria-label={t('timingPolicy.dateNameLabel')}
             value={dateName}
-            placeholder={t('timingPolicy.dateNamePlaceholder', { defaultValue: 'operation_date' })}
+            placeholder={t('timingPolicy.dateNamePlaceholder')}
             onChange={(e) =>
               onChange(buildPolicy(kind, iso, { dateName: e.target.value, direction }))
             }
@@ -158,9 +158,7 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
             value={direction}
             options={DIRECTIONS.map((d) => ({
               value: d,
-              label: t(`timingPolicy.direction.${d}`, {
-                defaultValue: d === 'before' ? 'voor' : 'na',
-              }),
+              label: t(`timingPolicy.direction.${d}`),
             }))}
             onChange={(next) =>
               onChange(buildPolicy(kind, iso, { dateName, direction: next as Direction }))
@@ -170,9 +168,7 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
         </div>
       )}
       <p className="text-[11px] text-muted-foreground">
-        {t('timingPolicy.hint', {
-          defaultValue: 'ISO 8601 duur: P1D = 1 dag, PT4H = 4 uur, P2W = 2 weken.',
-        })}
+        {t('timingPolicy.hint')}
       </p>
     </div>
   )

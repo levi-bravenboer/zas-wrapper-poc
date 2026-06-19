@@ -66,7 +66,7 @@ function AppointmentDetailRoute(): ReactElement {
       actions={
         <Button asChild variant="outline">
           <Link to="/patients/$patientId" params={{ patientId: patient.id }}>
-            {t('appointment:openPatient', { defaultValue: 'Open patiënt' })}
+            {t('appointment:openPatient')}
           </Link>
         </Button>
       }
@@ -76,26 +76,26 @@ function AppointmentDetailRoute(): ReactElement {
 
           <DetailCard
             icon={CalendarClock}
-            title={t('appointment:detail.title', { defaultValue: 'Details' })}
+            title={t('appointment:detail.title')}
           >
             {appt.description ? (
-              <DetailRow wide label={t('appointment:field.reason', { defaultValue: 'Reden' })}>
+              <DetailRow wide label={t('appointment:field.reason')}>
                 <span className="whitespace-pre-wrap">{appt.description}</span>
               </DetailRow>
             ) : null}
-            <DetailRow label={t('appointment:field.kind', { defaultValue: 'Soort' })}>
+            <DetailRow label={t('appointment:field.kind')}>
               {t(`appointment:kind.${appt.kind}`, { defaultValue: appt.kind })}
             </DetailRow>
-            <DetailRow label={t('appointment:field.when', { defaultValue: 'Wanneer' })}>
+            <DetailRow label={t('appointment:field.when')}>
               {when}
             </DetailRow>
-            <DetailRow label={t('appointment:field.modality', { defaultValue: 'Modaliteit' })}>
+            <DetailRow label={t('appointment:field.modality')}>
               {t(`appointment:modality.${appt.modality}`, { defaultValue: appt.modality })}
               {appt.location_text ? ` · ${appt.location_text}` : ''}
             </DetailRow>
             <DetailRow
               wide
-              label={t('appointment:field.participants', { defaultValue: 'Deelnemers' })}
+              label={t('appointment:field.participants')}
             >
               <ul className="flex flex-wrap gap-x-6 gap-y-2">
                 {appt.participants.map((p) => (
@@ -118,7 +118,7 @@ function AppointmentDetailRoute(): ReactElement {
                 ))}
               </ul>
             </DetailRow>
-            <DetailRow label={t('appointment:field.status', { defaultValue: 'Status' })}>
+            <DetailRow label={t('appointment:field.status')}>
               <Badge variant="soft">
                 {t(`appointment:status.${appt.status}`, { defaultValue: appt.status })}
               </Badge>

@@ -23,6 +23,7 @@ import { formatDateOrDash } from '@/lib/utils/datetime'
 import { useCan } from '@/modules/auth/permissions'
 import { getPathwayVersion, listBlockTypes } from '@/modules/pathway/api'
 import type { PathwayBlock } from '@/modules/pathway/types'
+
 import {
   useCancelEnrollment,
   useCompleteStep,
@@ -32,6 +33,7 @@ import {
 } from '../hooks'
 import type { BlockExecution, BlockExecutionState, Enrollment } from '../types'
 import { bucketExecutions, type StepBucket } from '../utils/buckets'
+
 import { DeferredValuesEditor } from './DeferredValuesEditor'
 import { MdoAction } from './MdoAction'
 import { deriveBlockStatus, RuntimeCanvas, RuntimeLegend } from './runtime-canvas'
@@ -454,5 +456,5 @@ function finishedSummary(execution: BlockExecution): string | null {
 function StateBadge({ state }: { state: BlockExecutionState }): ReactElement {
   const { t } = useTranslation('patient-pathway')
   const variant = STATE_BADGE_VARIANT[state] ?? 'outline'
-  return <Badge variant={variant}>{t(`step.stateBadge.${state}`, { defaultValue: state })}</Badge>
+  return <Badge variant={variant}>{t(`step.stateBadge.${state}`)}</Badge>
 }

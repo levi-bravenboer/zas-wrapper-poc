@@ -40,7 +40,7 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
         </span>
       }
       secondary={
-        item.due_at ? dueLabel(t, item.due_at) : t('tasks:due.none', { defaultValue: 'Geen datum' })
+        item.due_at ? dueLabel(t, item.due_at) : t('tasks:due.none')
       }
       trailing={
         <span

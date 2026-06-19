@@ -48,7 +48,7 @@ export function RoleDetailPage({ roleId }: RoleDetailPageProps): ReactElement {
         <span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span className="font-mono text-xs">{role.slug}</span>
           {role.is_system ? (
-            <Badge variant="soft">{t('list.systemBadge', { defaultValue: 'systeem' })}</Badge>
+            <Badge variant="soft">{t('list.systemBadge')}</Badge>
           ) : null}
         </span>
       }
@@ -58,26 +58,26 @@ export function RoleDetailPage({ roleId }: RoleDetailPageProps): ReactElement {
           <Button asChild variant="outline">
             <Link to="/admin/roles/$roleId/edit" params={{ roleId: role.id }}>
               <Pencil className="size-4" aria-hidden />
-              {t('detail.action.edit', { defaultValue: 'Bewerken' })}
+              {t('detail.action.edit')}
             </Link>
           </Button>
         ) : undefined
       }
       body={
         <EntityDetailSingleColumn>
-          <DetailCard icon={ShieldCheck} title={t('detail.card.role.title', { defaultValue: 'Rol' })}>
-            <DetailRow label={t('detail.card.role.name', { defaultValue: 'Naam' })}>
+          <DetailCard icon={ShieldCheck} title={t('detail.card.role.title')}>
+            <DetailRow label={t('detail.card.role.name')}>
               {role.name}
             </DetailRow>
-            <DetailRow label={t('detail.card.role.slug', { defaultValue: 'Slug' })}>
+            <DetailRow label={t('detail.card.role.slug')}>
               <span className="font-mono text-xs">{role.slug}</span>
             </DetailRow>
-            <DetailRow label={t('detail.card.role.type', { defaultValue: 'Type' })}>
+            <DetailRow label={t('detail.card.role.type')}>
               {role.is_system
-                ? t('detail.card.role.system', { defaultValue: 'Systeemrol' })
-                : t('detail.card.role.custom', { defaultValue: 'Aangepast' })}
+                ? t('detail.card.role.system')
+                : t('detail.card.role.custom')}
             </DetailRow>
-            <DetailRow label={t('detail.card.role.permCount', { defaultValue: 'Aantal permissies' })}>
+            <DetailRow label={t('detail.card.role.permCount')}>
               <span className="tabular-nums">{role.permissions.length}</span>
             </DetailRow>
           </DetailCard>
@@ -102,12 +102,12 @@ function PermissionSummary({ role }: { role: Role }): ReactElement {
   return (
     <DetailCard
       icon={ListChecks}
-      title={t('detail.card.permissions.title', { defaultValue: 'Permissies' })}
+      title={t('detail.card.permissions.title')}
     >
-      <DetailRow wide label={t('detail.card.permissions.granted', { defaultValue: 'Toegekend' })}>
+      <DetailRow wide label={t('detail.card.permissions.granted')}>
         {grouped.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {t('detail.card.permissions.none', { defaultValue: 'Geen permissies.' })}
+            {t('detail.card.permissions.none')}
           </p>
         ) : (
           <div className="flex flex-col gap-3">

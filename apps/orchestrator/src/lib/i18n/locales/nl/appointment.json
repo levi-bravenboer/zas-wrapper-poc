@@ -25,10 +25,17 @@
     "title": "Er ging iets mis",
     "body": "Het laden is niet gelukt."
   },
+  "detail": {
+    "title": "Details"
+  },
   "field": {
     "patient": "Patiënt",
     "modality": "Modaliteit",
     "lead": "Hoofdbehandelaar",
-    "status": "Status"
+    "status": "Status",
+    "reason": "Reden",
+    "kind": "Soort",
+    "when": "Wanneer",
+    "participants": "Deelnemers"
   }
 }

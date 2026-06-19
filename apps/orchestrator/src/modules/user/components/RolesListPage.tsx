@@ -27,7 +27,7 @@ function useRoleColumns(): ReadonlyArray<BrandedColumnDef<Role>> {
   return [
     defineColumn<Role>({
       id: 'name',
-      header: t('list.column.name', { defaultValue: 'Naam' }),
+      header: t('list.column.name'),
       sticky: true,
       cell: (role) => (
         <div className="flex items-center gap-3">
@@ -37,7 +37,7 @@ function useRoleColumns(): ReadonlyArray<BrandedColumnDef<Role>> {
           <span className="font-medium text-foreground">{role.name}</span>
           {role.is_system ? (
             <Badge variant="soft" className="text-[10px]">
-              {t('list.systemBadge', { defaultValue: 'systeem' })}
+              {t('list.systemBadge')}
             </Badge>
           ) : null}
         </div>
@@ -45,12 +45,12 @@ function useRoleColumns(): ReadonlyArray<BrandedColumnDef<Role>> {
     }),
     defineColumn<Role>({
       id: 'slug',
-      header: t('list.column.slug', { defaultValue: 'Slug' }),
+      header: t('list.column.slug'),
       cell: (role) => <span className="font-mono text-xs text-muted-foreground">{role.slug}</span>,
     }),
     defineColumn<Role>({
       id: 'permissions',
-      header: t('list.column.permissions', { defaultValue: 'Permissies' }),
+      header: t('list.column.permissions'),
       cell: (role) => (
         <span className="text-sm text-muted-foreground tabular-nums">{role.permissions.length}</span>
       ),
@@ -84,20 +84,18 @@ export function RolesListPage(): ReactElement {
     const actions: DataTableRowAction[] = []
     if (canDelete && !role.is_system) {
       actions.push({
-        label: t('list.action.delete', { defaultValue: 'Verwijderen' }),
+        label: t('list.action.delete'),
         icon: <Trash2 className="size-4" aria-hidden />,
         destructive: true,
         onClick: () =>
           deleteRole.mutate(role.id, {
-            onSuccess: () => toast.success(t('toast.deleted', { defaultValue: 'Rol verwijderd' })),
-            onError: () => toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' })),
+            onSuccess: () => toast.success(t('toast.deleted')),
+            onError: () => toast.error(t('toast.error')),
           }),
         confirm: {
-          title: t('delete.title', { defaultValue: 'Rol verwijderen?' }),
-          description: t('delete.description', {
-            defaultValue: 'Dit kan alleen als geen gebruiker deze rol heeft.',
-          }),
-          confirmLabel: t('delete.confirm', { defaultValue: 'Verwijderen' }),
+          title: t('delete.title'),
+          description: t('delete.description'),
+          confirmLabel: t('delete.confirm'),
         },
       })
     }
@@ -106,14 +104,14 @@ export function RolesListPage(): ReactElement {
 
   return (
     <FilterableListPage<Role>
-      title={t('list.title', { defaultValue: 'Rollen' })}
-      description={t('list.sub', { defaultValue: 'Beheer rollen en hun permissies.' })}
+      title={t('list.title')}
+      description={t('list.sub')}
       primaryAction={
         canCreate ? (
           <Button asChild>
             <Link to="/admin/roles/new">
               <Plus className="size-4" aria-hidden />
-              {t('list.cta.create', { defaultValue: 'Nieuwe rol' })}
+              {t('list.cta.create')}
             </Link>
           </Button>
         ) : undefined
@@ -141,7 +139,7 @@ export function RolesListPage(): ReactElement {
             ) : items.length === 0 ? (
               <EmptyRow
                 columnCount={totalColumns}
-                title={t('list.empty', { defaultValue: 'Geen rollen.' })}
+                title={t('list.empty')}
               />
             ) : (
               items.map((role) => (
@@ -172,7 +170,7 @@ export function RolesListPage(): ReactElement {
                           variant="ghost"
                           size="icon"
                           className="size-8"
-                          aria-label={t('list.action.edit', { defaultValue: 'Bewerken' })}
+                          aria-label={t('list.action.edit')}
                           onClick={() => openEdit(role.id)}
                         >
                           <Pencil className="size-4" />

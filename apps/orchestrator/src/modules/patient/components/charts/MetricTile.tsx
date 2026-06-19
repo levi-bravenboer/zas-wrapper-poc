@@ -43,7 +43,7 @@ export function MetricTile({ instrumentName, series, onSelect }: MetricTileProps
         {trend ? (
           <span
             className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-foreground-muted"
-            title={t('charts.trend.since_previous', { defaultValue: 'vs. vorige meting' })}
+            title={t('charts.trend.since_previous')}
           >
             <TrendIcon className="size-3" aria-hidden />
             {trend.dir !== 'flat' ? formatNumber(Math.abs(trend.delta)) : null}

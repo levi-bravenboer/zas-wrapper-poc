@@ -53,7 +53,7 @@ export function RolePicker({
               })
             }}
           >
-            {t(`rolePicker.roles.${role.role_slug}`, { defaultValue: role.role_slug })}
+            {t(`rolePicker.roles.${role.role_slug}`)}
           </Button>
         ))}
       </div>
