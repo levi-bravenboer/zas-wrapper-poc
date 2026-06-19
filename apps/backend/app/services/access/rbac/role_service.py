@@ -77,7 +77,7 @@ class RoleService:
         role, current = await self.get_role(actor.tenant_id, role_id)
         assert_can_edit_system_role(actor, is_system=role.is_system)
         if name is not None and name.strip():
-            role.name = name.strip()
+            await self._repo.rename(role, name.strip())
         if permissions is not None:
             new = set(permissions)
             self._validate_catalog(new)
@@ -89,7 +89,6 @@ class RoleService:
                 await self._repo.remove_permission(role_id, permission)
             for permission in new - current_set:
                 await self._repo.add_permission(role_id, permission)
-        await self._repo.flush()
         return role, await self._repo.permissions_for(role_id)
 
     async def delete_role(self, actor: SessionUser, role_id: UUID) -> None:

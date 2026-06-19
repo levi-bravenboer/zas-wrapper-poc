@@ -71,7 +71,8 @@ class RoleRepository(BaseRepository[Role]):
             await self._session.delete(row)
             await self._session.flush()
 
-    async def flush(self) -> None:
+    async def rename(self, role: Role, name: str) -> None:
+        role.name = name
         await self._session.flush()
 
 

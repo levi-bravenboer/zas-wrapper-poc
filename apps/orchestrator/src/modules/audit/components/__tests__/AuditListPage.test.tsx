@@ -1,23 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  type AnyRouter,
-} from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import type { ReactNode } from 'react'
-import { I18nextProvider } from 'react-i18next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { env } from '@/config/env'
-import { i18n } from '@/lib/i18n'
 import { server } from '@/mocks/server'
 import type { AuditEventRead } from '@/modules/audit/schemas'
+import { renderWithRoutes } from '@/test/renderWithRoutes'
 
 import { AuditListPage } from '../AuditListPage'
 
@@ -88,29 +77,10 @@ function serveEvents(items: AuditEventRead[]): void {
 }
 
 function renderPage() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
-  const Wrap = ({ children }: { children: ReactNode }) => (
-    <I18nextProvider i18n={i18n}>
-      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
-    </I18nextProvider>
-  )
-  const rootRoute = createRootRoute({
-    component: () => (
-      <Wrap>
-        <AuditListPage />
-      </Wrap>
-    ),
+  renderWithRoutes(<AuditListPage />, {
+    routes: ['/admin/audit-log'],
+    initialPath: '/admin/audit-log',
   })
-  const childRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/admin/audit-log',
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([childRoute]),
-    history: createMemoryHistory({ initialEntries: ['/admin/audit-log'] }),
-  })
-  render(<RouterProvider router={router as unknown as AnyRouter} />)
 }
 
 describe('AuditListPage', () => {
