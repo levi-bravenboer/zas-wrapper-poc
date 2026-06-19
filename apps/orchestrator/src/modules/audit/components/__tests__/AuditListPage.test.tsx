@@ -9,24 +9,28 @@ import {
 } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { HttpResponse, http } from 'msw'
 import type { ReactNode } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { env } from '@/config/env'
 import { i18n } from '@/lib/i18n'
+import { server } from '@/mocks/server'
 import type { AuditEventRead } from '@/modules/audit/schemas'
 
 import { AuditListPage } from '../AuditListPage'
 
-const { usePaginatedQueryMock, useRouteSearchTableStateMock, setFilterSpy } = vi.hoisted(() => ({
-  usePaginatedQueryMock: vi.fn(),
+const baseUrl = env.API_BASE_URL
+
+// `useRouteSearchTableState` is router-coupled UI state, not an HTTP boundary —
+// it stays mocked. The data itself is served over MSW (project rule: tests
+// intercept the network, never stub the query hook).
+const { useRouteSearchTableStateMock, setFilterSpy } = vi.hoisted(() => ({
   useRouteSearchTableStateMock: vi.fn(),
   setFilterSpy: vi.fn(),
 }))
 
-vi.mock('@/hooks/use-paginated-query', () => ({
-  usePaginatedQuery: usePaginatedQueryMock,
-}))
 vi.mock('@/hooks/use-route-search-table-state', () => ({
   useRouteSearchTableState: useRouteSearchTableStateMock,
 }))
@@ -69,6 +73,20 @@ const loginFailRow: AuditEventRead = {
   context: { ip: '1.2.3.4', reason: 'bad credentials' },
 }
 
+function serveEvents(items: AuditEventRead[]): void {
+  server.use(
+    http.get(`${baseUrl}/audit-events`, () =>
+      HttpResponse.json({
+        items,
+        page: 1,
+        page_size: 25,
+        total: items.length,
+        total_pages: 1,
+      }),
+    ),
+  )
+}
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   const Wrap = ({ children }: { children: ReactNode }) => (
@@ -97,7 +115,6 @@ function renderPage() {
 
 describe('AuditListPage', () => {
   beforeEach(() => {
-    usePaginatedQueryMock.mockReset()
     useRouteSearchTableStateMock.mockReset()
     setFilterSpy.mockReset()
 
@@ -113,22 +130,10 @@ describe('AuditListPage', () => {
         reset: vi.fn(),
       },
     ])
-    usePaginatedQueryMock.mockReturnValue({
-      data: {
-        items: [publishRow, loginFailRow],
-        page: 1,
-        page_size: 25,
-        total: 2,
-        total_pages: 1,
-      },
-      isLoading: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    })
   })
 
   it('renders events with action/result badges, actor fallback and resource', async () => {
+    serveEvents([publishRow, loginFailRow])
     renderPage()
     // Action badges (NL)
     expect(await screen.findByText('Gepubliceerd')).toBeInTheDocument()
@@ -144,6 +149,7 @@ describe('AuditListPage', () => {
   })
 
   it('expanding a row reveals the raw context JSON', async () => {
+    serveEvents([publishRow, loginFailRow])
     renderPage()
     await screen.findByText('Gepubliceerd')
     const toggles = screen.getAllByRole('button', { name: /rij uitklappen/i })
@@ -154,6 +160,7 @@ describe('AuditListPage', () => {
   })
 
   it('exposes the action / result / resource / period filters (no search box)', async () => {
+    serveEvents([publishRow, loginFailRow])
     renderPage()
     expect(await screen.findByRole('button', { name: /actie/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /resultaat/i })).toBeInTheDocument()
