@@ -26,12 +26,7 @@ export function useUserColumns(): ReadonlyArray<BrandedColumnDef<UserRow>> {
         sticky: true,
         cell: (row) => (
           <div className="flex items-center gap-3 min-w-0">
-            <PersonAvatar
-              size="sm"
-              name={row.display_name}
-              tintId={row.id}
-              person={{ kind: 'user', id: row.id }}
-            />
+            <PersonAvatar size="sm" name={row.display_name} tintId={row.id} />
             <span className="truncate font-medium text-foreground">{row.display_name}</span>
           </div>
         ),

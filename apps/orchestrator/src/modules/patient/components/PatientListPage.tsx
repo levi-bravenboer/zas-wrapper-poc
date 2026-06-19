@@ -50,12 +50,7 @@ export function PatientListPage(): ReactElement {
           const name = `${row.family_name}, ${row.given_name}`
           return (
             <div className="flex min-w-0 items-center gap-3">
-              <PersonAvatar
-                size="sm"
-                name={name}
-                tintId={row.id}
-                person={{ kind: 'patient', id: row.id }}
-              />
+              <PersonAvatar size="sm" name={name} tintId={row.id} />
               <span className="truncate font-medium text-foreground">{name}</span>
             </div>
           )
