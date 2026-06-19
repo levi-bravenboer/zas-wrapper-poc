@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { useCareTeamLead } from '@/modules/care-team/hooks'
 import { useActiveEnrollmentGlance, type EnrollmentGlance } from '@/modules/patient-pathway/hooks'
 
 import { usePatient } from '../hooks'
@@ -56,6 +57,7 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
   const query = usePatient(patientId)
   const patient = query.data
   const glance = useActiveEnrollmentGlance(patientId)
+  const lead = useCareTeamLead(patientId)
 
   if (query.isLoading || !patient) {
     return (
@@ -93,13 +95,21 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Fact label={t('field.birthDate', { defaultValue: 'Geboortedatum' })}>
             {age !== null
               ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
           </Fact>
           <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
+          {lead ? (
+            <Fact label={t('field.treatingClinician', { defaultValue: 'Behandelend arts' })}>
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <PersonAvatar size="sm" name={lead.displayName} tintId={lead.userId} />
+                <span className="truncate">{lead.displayName}</span>
+              </span>
+            </Fact>
+          ) : null}
         </div>
 
         {glance ? <ZorgpadGlance glance={glance} /> : null}

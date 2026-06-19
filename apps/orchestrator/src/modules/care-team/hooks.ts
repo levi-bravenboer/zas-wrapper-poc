@@ -1,6 +1,8 @@
-import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
+import { usePatientCareTeams } from '@/modules/patient/hooks'
 import { patientKeys } from '@/modules/patient/keys'
+import { fetchUserDetail } from '@/modules/user/api'
 
 import {
   addParticipant,
@@ -17,6 +19,32 @@ import type {
   ParticipantRoleChangePayload,
   ParticipantRow,
 } from './types'
+
+export interface CareTeamLead {
+  userId: string
+  displayName: string
+}
+
+/** The patient's treating clinician — the `primary` participant on an active
+ *  care team. Resolves the user's display name (single fetch; null on a missing
+ *  lead, while loading, or when the name can't be resolved). */
+export function useCareTeamLead(patientId: string | null): CareTeamLead | null {
+  const teams = usePatientCareTeams(patientId)
+  const active = (teams.data ?? []).find((tm) => !tm.period_end && tm.status === 'active')
+  const lead =
+    active?.participants.find((p) => p.role_in_care === 'primary' && !p.period_end) ?? null
+
+  const userQuery = useQuery({
+    queryKey: ['user-detail', lead?.user_id] as const,
+    queryFn: () => fetchUserDetail(lead!.user_id),
+    enabled: !!lead,
+    retry: false,
+    staleTime: 5 * 60_000,
+  })
+
+  if (!lead || !userQuery.data) return null
+  return { userId: lead.user_id, displayName: userQuery.data.display_name }
+}
 
 function invalidateCareTeams(qc: QueryClient, patientId: string) {
   return qc.invalidateQueries({ queryKey: patientKeys.careTeams(patientId) })

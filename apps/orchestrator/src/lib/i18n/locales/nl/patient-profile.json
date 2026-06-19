@@ -21,7 +21,8 @@
     "organisation": "Organisatie",
     "insz": "INSZ",
     "pathway": "Zorgpad",
-    "pathwayFallback": "Zorgpad"
+    "pathwayFallback": "Zorgpad",
+    "treatingClinician": "Behandelend arts"
   },
   "header": {
     "insz": "INSZ",
