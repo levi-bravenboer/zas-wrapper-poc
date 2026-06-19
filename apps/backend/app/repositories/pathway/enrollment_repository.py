@@ -13,16 +13,42 @@ from uuid import UUID
 
 from sqlalchemy import select
 
+from app.db.models.patient.patient import Patient
 from app.db.models.pathway import (
+    Pathway,
     PathwayBlockExecution,
     PathwayDeferredFieldValue,
     PathwayEnrollment,
+    PathwayVersion,
 )
 from app.repositories.base import BaseRepository
 
 
 class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
     model = PathwayEnrollment
+
+    async def patient_visible_to_tenant(self, patient_id: UUID, tenant_id: UUID) -> bool:
+        stmt = select(Patient.id).where(
+            Patient.id == patient_id,
+            Patient.tenant_id == tenant_id,
+            Patient.deleted_at.is_(None),
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none() is not None
+
+    async def pathway_version_visible_to_tenant(
+        self, pathway_version_id: UUID, tenant_id: UUID
+    ) -> bool:
+        stmt = (
+            select(PathwayVersion.id)
+            .join(Pathway, Pathway.id == PathwayVersion.pathway_id)
+            .where(
+                PathwayVersion.id == pathway_version_id,
+                Pathway.tenant_id == tenant_id,
+                PathwayVersion.deleted_at.is_(None),
+                Pathway.deleted_at.is_(None),
+            )
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none() is not None
 
     async def get(self, enrollment_id: UUID, tenant_id: UUID) -> PathwayEnrollment | None:
         stmt = select(PathwayEnrollment).where(

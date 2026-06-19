@@ -13,9 +13,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import select
 
-from app.db.models.patient import Patient
 from app.db.models.pathway import (
-    Pathway,
     PathwayBlockExecution,
     PathwayDeferredFieldValue,
     PathwayEnrollment,
@@ -771,13 +769,7 @@ class EnrollmentService:
         applies to its FKs. The patients table is tenant-owned, so
         any row visible inside this tenant has matching `tenant_id`.
         """
-        stmt = select(Patient.id).where(
-            Patient.id == patient_id,
-            Patient.tenant_id == tenant_id,
-            Patient.deleted_at.is_(None),
-        )
-        row = (await self._repo._session.execute(stmt)).scalar_one_or_none()  # noqa: SLF001
-        if row is None:
+        if not await self._repo.patient_visible_to_tenant(patient_id, tenant_id):
             raise CrossTenantReferenceError(
                 field="patient_id",
                 reason=f"patient {patient_id} not visible to caller's tenant",
@@ -793,18 +785,7 @@ class EnrollmentService:
         `pathway_version` itself is tenant-scoped via its parent
         `pathway`, so the join is what enforces the boundary.
         """
-        stmt = (
-            select(PathwayVersion.id)
-            .join(Pathway, Pathway.id == PathwayVersion.pathway_id)
-            .where(
-                PathwayVersion.id == pathway_version_id,
-                Pathway.tenant_id == tenant_id,
-                PathwayVersion.deleted_at.is_(None),
-                Pathway.deleted_at.is_(None),
-            )
-        )
-        row = (await self._repo._session.execute(stmt)).scalar_one_or_none()  # noqa: SLF001
-        if row is None:
+        if not await self._repo.pathway_version_visible_to_tenant(pathway_version_id, tenant_id):
             raise CrossTenantReferenceError(
                 field="pathway_version_id",
                 reason=(f"pathway_version {pathway_version_id} not visible to caller's tenant"),
