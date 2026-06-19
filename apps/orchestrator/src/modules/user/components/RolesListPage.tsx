@@ -1,150 +1,183 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
-import { type ReactElement, useState } from 'react'
+import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+  defineColumn,
+  EmptyRow,
+  LoadingRows,
+  RowActions,
+  Table,
+  type BrandedColumnDef,
+  type DataTableRowAction,
+} from '@/components/data-table'
+import { stickyFirst } from '@/components/data-table/styles'
+import { FilterableListPage } from '@/components/list/FilterableListPage'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/style/cn'
 import { useCan } from '@/modules/auth/permissions'
 
 import { useDeleteRole, useRoles, type Role } from '../roles'
+
+function useRoleColumns(): ReadonlyArray<BrandedColumnDef<Role>> {
+  const { t } = useTranslation('roles-admin-ui')
+  return [
+    defineColumn<Role>({
+      id: 'name',
+      header: t('list.column.name', { defaultValue: 'Naam' }),
+      sticky: true,
+      cell: (role) => (
+        <div className="flex items-center gap-3">
+          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary-soft/50 text-primary">
+            <ShieldCheck className="size-4" aria-hidden />
+          </span>
+          <span className="font-medium text-foreground">{role.name}</span>
+          {role.is_system ? (
+            <Badge variant="soft" className="text-[10px]">
+              {t('list.systemBadge', { defaultValue: 'systeem' })}
+            </Badge>
+          ) : null}
+        </div>
+      ),
+    }),
+    defineColumn<Role>({
+      id: 'slug',
+      header: t('list.column.slug', { defaultValue: 'Slug' }),
+      cell: (role) => <span className="font-mono text-xs text-muted-foreground">{role.slug}</span>,
+    }),
+    defineColumn<Role>({
+      id: 'permissions',
+      header: t('list.column.permissions', { defaultValue: 'Permissies' }),
+      cell: (role) => (
+        <span className="text-sm text-muted-foreground tabular-nums">{role.permissions.length}</span>
+      ),
+    }),
+  ]
+}
 
 /** Admin roles list — create / edit / delete the tenant's RBAC roles.
  *  System roles (admin, default) are never deletable. */
 export function RolesListPage(): ReactElement {
   const { t } = useTranslation('roles-admin-ui')
+  const { t: tTable } = useTranslation('data-table')
   const navigate = useNavigate()
   const roles = useRoles()
   const deleteRole = useDeleteRole()
   const canCreate = useCan('role.create')
   const canUpdate = useCan('role.update')
   const canDelete = useCan('role.delete')
-  const [pendingDelete, setPendingDelete] = useState<Role | null>(null)
+  const columns = useRoleColumns()
 
   const items = roles.data ?? []
+  const totalColumns = columns.length + 1
+
+  const openEdit = (id: string): void =>
+    void navigate({ to: '/admin/roles/$roleId/edit', params: { roleId: id } })
+
+  const rowActions = (role: Role): DataTableRowAction[] => {
+    const actions: DataTableRowAction[] = []
+    if (canUpdate) {
+      actions.push({
+        label: t('list.action.edit', { defaultValue: 'Bewerken' }),
+        icon: <Pencil className="size-4" aria-hidden />,
+        onClick: () => openEdit(role.id),
+      })
+    }
+    if (canDelete && !role.is_system) {
+      actions.push({
+        label: t('list.action.delete', { defaultValue: 'Verwijderen' }),
+        icon: <Trash2 className="size-4" aria-hidden />,
+        destructive: true,
+        onClick: () =>
+          deleteRole.mutate(role.id, {
+            onSuccess: () => toast.success(t('toast.deleted', { defaultValue: 'Rol verwijderd' })),
+            onError: () => toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' })),
+          }),
+        confirm: {
+          title: t('delete.title', { defaultValue: 'Rol verwijderen?' }),
+          description: t('delete.description', {
+            defaultValue: 'Dit kan alleen als geen gebruiker deze rol heeft.',
+          }),
+          confirmLabel: t('delete.confirm', { defaultValue: 'Verwijderen' }),
+        },
+      })
+    }
+    return actions
+  }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 py-6">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-0.5">
-          <h1 className="text-xl font-semibold text-foreground">
-            {t('list.title', { defaultValue: 'Rollen' })}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {t('list.sub', { defaultValue: 'Beheer rollen en hun permissies.' })}
-          </p>
-        </div>
-        {canCreate ? (
+    <FilterableListPage<Role>
+      title={t('list.title', { defaultValue: 'Rollen' })}
+      description={t('list.sub', { defaultValue: 'Beheer rollen en hun permissies.' })}
+      primaryAction={
+        canCreate ? (
           <Button asChild>
             <Link to="/admin/roles/new">
               <Plus className="size-4" aria-hidden />
               {t('list.cta.create', { defaultValue: 'Nieuwe rol' })}
             </Link>
           </Button>
-        ) : null}
-      </header>
-
-      {roles.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t('list.loading', { defaultValue: 'Laden…' })}</p>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('list.empty', { defaultValue: 'Geen rollen.' })}</p>
-      ) : (
-        <Card className="divide-y divide-border/60">
-          {items.map((role) => (
-            <div key={role.id} className="flex items-center gap-3 px-4 py-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary-soft/50 text-primary">
-                <ShieldCheck className="size-4" aria-hidden />
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-foreground">{role.name}</span>
-                  {role.is_system ? (
-                    <Badge variant="soft" className="text-[10px]">
-                      {t('list.systemBadge', { defaultValue: 'systeem' })}
-                    </Badge>
-                  ) : null}
-                </div>
-                <span className="truncate font-mono text-[11px] text-muted-foreground">
-                  {role.slug} · {t('list.permCount', {
-                    defaultValue: '{{count}} permissies',
-                    count: role.permissions.length,
-                  })}
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center">
-                {canUpdate ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    aria-label={t('list.action.edit', { defaultValue: 'Bewerken' })}
-                    onClick={() => void navigate({ to: '/admin/roles/$roleId/edit', params: { roleId: role.id } })}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                ) : null}
-                {canDelete && !role.is_system ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 text-destructive hover:text-destructive"
-                    aria-label={t('list.action.delete', { defaultValue: 'Verwijderen' })}
-                    onClick={() => setPendingDelete(role)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </Card>
-      )}
-
-      <AlertDialog open={pendingDelete !== null} onOpenChange={(o) => !o && setPendingDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('delete.title', { defaultValue: 'Rol verwijderen?' })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('delete.description', {
-                defaultValue: 'Dit kan alleen als geen gebruiker deze rol heeft.',
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('delete.cancel', { defaultValue: 'Annuleren' })}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (!pendingDelete) return
-                const role = pendingDelete
-                setPendingDelete(null)
-                deleteRole.mutate(role.id, {
-                  onSuccess: () => toast.success(t('toast.deleted', { defaultValue: 'Rol verwijderd' })),
-                  onError: () => toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' })),
-                })
-              }}
-            >
-              {t('delete.confirm', { defaultValue: 'Verwijderen' })}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      </div>
-    </div>
+        ) : undefined
+      }
+      table={
+        <Table.Root>
+          <Table.Header>
+            <Table.HeaderRow>
+              {columns.map((col, idx) => (
+                <Table.HeaderCell
+                  key={col.id}
+                  className={cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)}
+                >
+                  {typeof col.header === 'function' ? col.header({ columnId: col.id }) : col.header}
+                </Table.HeaderCell>
+              ))}
+              <Table.HeaderCell className="w-10">
+                <span className="sr-only">{tTable('actions.menu.aria')}</span>
+              </Table.HeaderCell>
+            </Table.HeaderRow>
+          </Table.Header>
+          <Table.Body>
+            {roles.isLoading ? (
+              <LoadingRows columnCount={totalColumns} />
+            ) : items.length === 0 ? (
+              <EmptyRow
+                columnCount={totalColumns}
+                title={t('list.empty', { defaultValue: 'Geen rollen.' })}
+              />
+            ) : (
+              items.map((role) => (
+                <Table.Row
+                  key={role.id}
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer"
+                  onClick={() => openEdit(role.id)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    openEdit(role.id)
+                  }}
+                >
+                  {columns.map((col, idx) => (
+                    <Table.Cell
+                      key={col.id}
+                      className={cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)}
+                    >
+                      {col.cell(role)}
+                    </Table.Cell>
+                  ))}
+                  <Table.Cell data-stop-row-click="" className="text-right">
+                    <RowActions actions={rowActions(role)} ariaLabel={tTable('actions.menu.aria')} />
+                  </Table.Cell>
+                </Table.Row>
+              ))
+            )}
+          </Table.Body>
+        </Table.Root>
+      }
+    />
   )
 }

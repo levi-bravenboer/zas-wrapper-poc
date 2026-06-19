@@ -1,57 +1,137 @@
+import { useStore } from '@tanstack/react-form'
 import { useNavigate } from '@tanstack/react-router'
-import { type ReactElement, useMemo, useState } from 'react'
+import { type ReactElement, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { z } from 'zod'
 
+import { EntityDetailSkeleton, EntityFormPage, EntityNotFound } from '@/components/entity'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useEntityForm } from '@/hooks/entity'
 import { useSession } from '@/modules/auth/hooks'
 
-import {
-  useCreateRole,
-  usePermissions,
-  useRole,
-  useUpdateRole,
-} from '../roles'
+import { useCreateRole, usePermissions, useRole, useUpdateRole } from '../roles'
 
 export interface RoleFormPageProps {
   mode: 'create' | 'edit'
   roleId?: string
 }
 
+interface RoleFormValues {
+  name: string
+  slug: string
+  permissions: string[]
+}
+
+const roleFormSchema = z.object({
+  name: z.string().trim().min(1, { message: 'form.error.required' }).max(120),
+  slug: z.string().trim().regex(/^[a-z][a-z0-9-]*$/, { message: 'form.error.slug' }),
+  permissions: z.array(z.string()),
+})
+
 function resourceOf(slug: string): string {
   return slug.split('.')[0] ?? slug
 }
 
+// Standard-Schema errors bubble as `{ message }`; our zod messages are i18n
+// keys (`form.error.*`) resolved here against the roles-admin-ui namespace.
+function firstError(
+  errors: ReadonlyArray<unknown>,
+  t: (key: string) => string,
+): string | undefined {
+  const first = errors[0]
+  if (first === undefined) return undefined
+  const raw =
+    typeof first === 'object' && first !== null && 'message' in first
+      ? String((first as { message: unknown }).message)
+      : String(first)
+  return raw.startsWith('form.error.') ? t(raw) : raw
+}
+
+/** Loads the role (edit) or seeds blank (create) before mounting the form so
+ *  `useEntityForm` gets stable defaults. */
 export function RoleFormPage({ mode, roleId }: RoleFormPageProps): ReactElement {
+  const existing = useRole(mode === 'edit' ? (roleId ?? '') : '')
+
+  if (mode === 'edit') {
+    if (existing.isLoading) return <EntityDetailSkeleton />
+    if (!existing.data) return <EntityNotFound backTo={{ to: '/admin/roles' }} />
+    return (
+      <RoleForm
+        mode="edit"
+        defaults={{
+          name: existing.data.name,
+          slug: existing.data.slug,
+          permissions: existing.data.permissions,
+        }}
+        roleId={existing.data.id}
+        isSystem={existing.data.is_system}
+      />
+    )
+  }
+  return <RoleForm mode="create" defaults={{ name: '', slug: '', permissions: [] }} />
+}
+
+function RoleForm({
+  mode,
+  defaults,
+  roleId,
+  isSystem = false,
+}: {
+  mode: 'create' | 'edit'
+  defaults: RoleFormValues
+  roleId?: string
+  isSystem?: boolean
+}): ReactElement {
   const { t } = useTranslation('roles-admin-ui')
   const navigate = useNavigate()
   const session = useSession()
   const catalog = usePermissions()
-  const existing = useRole(mode === 'edit' ? (roleId ?? '') : '')
   const createRole = useCreateRole()
   const updateRole = useUpdateRole(roleId ?? '')
+  const editing = mode === 'edit'
 
   const actorPerms = useMemo(
     () => new Set(session.data?.permissions ?? []),
     [session.data?.permissions],
   )
-  const editing = mode === 'edit'
-  const role = existing.data
 
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [selected, setSelected] = useState<Set<string> | null>(null)
-  // Initialise from the loaded role once (edit) — selected stays null until then.
-  const effectiveSelected =
-    selected ?? new Set(editing ? (role?.permissions ?? []) : [])
-  const effectiveName = name || (editing ? (role?.name ?? '') : '')
+  const formApi = useEntityForm<RoleFormValues>({
+    schema: roleFormSchema,
+    defaultValues: defaults,
+    onSubmit: async (values) => {
+      try {
+        if (editing) {
+          await updateRole.mutateAsync({ name: values.name.trim(), permissions: values.permissions })
+        } else {
+          await createRole.mutateAsync({
+            slug: values.slug,
+            name: values.name.trim(),
+            permissions: values.permissions,
+          })
+        }
+      } catch (e) {
+        toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' }))
+        throw e
+      }
+    },
+    onSuccess: () => {
+      toast.success(
+        editing
+          ? t('toast.saved', { defaultValue: 'Rol opgeslagen' })
+          : t('toast.created', { defaultValue: 'Rol aangemaakt' }),
+      )
+      void navigate({ to: '/admin/roles' })
+    },
+  })
 
-  const isSystem = editing && role?.is_system === true
+  const selected = useStore(formApi.form.store, (s) => s.values.permissions)
+  const selectedSet = useMemo(() => new Set(selected), [selected])
+
   const grouped = useMemo(() => {
     const map = new Map<string, string[]>()
     for (const slug of (catalog.data ?? []).toSorted()) {
@@ -62,145 +142,126 @@ export function RoleFormPage({ mode, roleId }: RoleFormPageProps): ReactElement 
   }, [catalog.data])
 
   function toggle(perm: string): void {
-    const next = new Set(effectiveSelected)
-    if (next.has(perm)) next.delete(perm)
-    else next.add(perm)
-    setSelected(next)
+    const next = selectedSet.has(perm)
+      ? selected.filter((p) => p !== perm)
+      : [...selected, perm]
+    formApi.form.setFieldValue('permissions', next)
   }
-
-  const valid = editing
-    ? effectiveName.trim().length > 0
-    : effectiveName.trim().length > 0 && /^[a-z][a-z0-9-]*$/.test(slug)
-
-  function submit(): void {
-    const permissions = [...effectiveSelected]
-    if (editing) {
-      updateRole.mutate(
-        { name: effectiveName.trim(), permissions },
-        {
-          onSuccess: () => {
-            toast.success(t('toast.saved', { defaultValue: 'Rol opgeslagen' }))
-            void navigate({ to: '/admin/roles' })
-          },
-          onError: () => toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' })),
-        },
-      )
-    } else {
-      createRole.mutate(
-        { slug, name: effectiveName.trim(), permissions },
-        {
-          onSuccess: () => {
-            toast.success(t('toast.created', { defaultValue: 'Rol aangemaakt' }))
-            void navigate({ to: '/admin/roles' })
-          },
-          onError: () => toast.error(t('toast.error', { defaultValue: 'Er ging iets mis' })),
-        },
-      )
-    }
-  }
-
-  const submitting = createRole.isPending || updateRole.isPending
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 py-6">
-      <header className="flex flex-col gap-0.5">
-        <h1 className="text-xl font-semibold text-foreground">
-          {editing
-            ? t('form.edit.title', { defaultValue: 'Rol bewerken' })
-            : t('form.create.title', { defaultValue: 'Nieuwe rol' })}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {t('form.sub', { defaultValue: 'Geef permissies aan deze rol.' })}
-        </p>
-      </header>
+    <EntityFormPage<RoleFormValues>
+      mode={mode}
+      title={
+        editing
+          ? t('form.edit.title', { defaultValue: 'Rol bewerken' })
+          : t('form.create.title', { defaultValue: 'Nieuwe rol' })
+      }
+      subtitle={t('form.sub', { defaultValue: 'Geef permissies aan deze rol.' })}
+      back={{ to: '/admin/roles' }}
+      form={formApi}
+      submitLabel={t('form.save', { defaultValue: 'Opslaan' })}
+      onCancel={() => void navigate({ to: '/admin/roles' })}
+      body={
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 py-2">
+          <Card>
+            <CardContent className="grid gap-4 pt-5 md:grid-cols-2">
+              <formApi.form.Field name="name">
+                {(field) => (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="role-name">{t('form.field.name', { defaultValue: 'Naam' })}</Label>
+                    <Input
+                      id="role-name"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={field.state.meta.errors.length > 0}
+                      placeholder={t('form.field.namePlaceholder', {
+                        defaultValue: 'Bijv. Verpleegkundige',
+                      })}
+                    />
+                    {firstError(field.state.meta.errors, t) ? (
+                      <p className="text-xs text-destructive" role="alert">
+                        {firstError(field.state.meta.errors, t)}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </formApi.form.Field>
+              <formApi.form.Field name="slug">
+                {(field) => (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="role-slug">{t('form.field.slug', { defaultValue: 'Slug' })}</Label>
+                    <Input
+                      id="role-slug"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value.toLowerCase())}
+                      onBlur={field.handleBlur}
+                      disabled={editing}
+                      aria-invalid={field.state.meta.errors.length > 0}
+                      placeholder="verpleegkundige"
+                      className="font-mono"
+                    />
+                    {!editing && firstError(field.state.meta.errors, t) ? (
+                      <p className="text-xs text-destructive" role="alert">
+                        {firstError(field.state.meta.errors, t)}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </formApi.form.Field>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardContent className="flex flex-col gap-4 pt-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="role-name">{t('form.field.name', { defaultValue: 'Naam' })}</Label>
-              <Input
-                id="role-name"
-                value={effectiveName}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('form.field.namePlaceholder', { defaultValue: 'Bijv. Verpleegkundige' })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="role-slug">{t('form.field.slug', { defaultValue: 'Slug' })}</Label>
-              <Input
-                id="role-slug"
-                value={editing ? (role?.slug ?? '') : slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase())}
-                disabled={editing}
-                placeholder="verpleegkundige"
-                className="font-mono"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                {t('form.permissions.title', { defaultValue: 'Permissies' })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-5">
+              {grouped.map(([resource, perms]) => (
+                <section key={resource} className="flex flex-col gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {resource}
+                  </h3>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {perms.map((perm) => {
+                      // No-amplification (D7): can only grant a permission you hold.
+                      const grantable = actorPerms.has(perm)
+                      return (
+                        <label
+                          key={perm}
+                          className="flex items-center gap-2 rounded-md border border-border/60 px-2.5 py-1.5 text-sm has-[:disabled]:opacity-50"
+                        >
+                          <Checkbox
+                            checked={selectedSet.has(perm)}
+                            disabled={!grantable}
+                            onCheckedChange={() => toggle(perm)}
+                          />
+                          <span className="font-mono text-xs">{perm.split('.')[1] ?? perm}</span>
+                          {!grantable ? (
+                            <Badge variant="soft" className="ml-auto text-[10px]">
+                              {t('form.permissions.locked', { defaultValue: 'vergrendeld' })}
+                            </Badge>
+                          ) : null}
+                        </label>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            {t('form.permissions.title', { defaultValue: 'Permissies' })}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          {grouped.map(([resource, perms]) => (
-            <section key={resource} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {resource}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {perms.map((perm) => {
-                  // No-amplification (D7): can only grant a permission you hold.
-                  const grantable = actorPerms.has(perm)
-                  const checked = effectiveSelected.has(perm)
-                  return (
-                    <label
-                      key={perm}
-                      className="flex items-center gap-2 rounded-md border border-border/60 px-2.5 py-1.5 text-sm has-[:disabled]:opacity-50"
-                    >
-                      <Checkbox
-                        checked={checked}
-                        disabled={!grantable}
-                        onCheckedChange={() => toggle(perm)}
-                      />
-                      <span className="font-mono text-xs">{perm.split('.')[1] ?? perm}</span>
-                      {!grantable ? (
-                        <Badge variant="soft" className="ml-auto text-[10px]">
-                          {t('form.permissions.locked', { defaultValue: 'vergrendeld' })}
-                        </Badge>
-                      ) : null}
-                    </label>
-                  )
-                })}
-              </div>
-            </section>
-          ))}
-        </CardContent>
-      </Card>
-
-      {isSystem ? (
-        <p className="text-xs text-muted-foreground">
-          {t('form.systemNote', {
-            defaultValue: 'Systeemrol — slug ligt vast en de rol is niet verwijderbaar.',
-          })}
-        </p>
-      ) : null}
-
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="ghost" onClick={() => void navigate({ to: '/admin/roles' })}>
-          {t('form.cancel', { defaultValue: 'Annuleren' })}
-        </Button>
-        <Button disabled={!valid || submitting} onClick={submit}>
-          {t('form.save', { defaultValue: 'Opslaan' })}
-        </Button>
-      </div>
-      </div>
-    </div>
+          {isSystem ? (
+            <p className="text-xs text-muted-foreground">
+              {t('form.systemNote', {
+                defaultValue: 'Systeemrol — slug ligt vast en de rol is niet verwijderbaar.',
+              })}
+            </p>
+          ) : null}
+        </div>
+      }
+    />
   )
 }
