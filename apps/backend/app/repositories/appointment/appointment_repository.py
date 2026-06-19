@@ -100,6 +100,16 @@ class AppointmentReadRepository:
         )
         return result.scalars().all()
 
+    async def exists_for_block_instance(self, execution_id: UUID) -> bool:
+        """Whether a pathway step already materialised an appointment (idempotency)."""
+        existing = await self._session.scalar(
+            select(Appointment.id).where(
+                Appointment.pathway_block_instance_id == execution_id,
+                Appointment.deleted_at.is_(None),
+            )
+        )
+        return existing is not None
+
     async def is_participant(self, *, appointment_id: UUID, user_id: UUID) -> bool:
         result = await self._session.execute(
             select(AppointmentParticipant.id)

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import ClassVar
+from uuid import UUID
 
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, select
 
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.audit import AuditEvent
@@ -28,6 +29,21 @@ class AuditEventRepository(BaseListRepository[AuditEvent]):
         "created_at": frozenset({"gte", "lte"}),
     }
     default_order: ClassVar[tuple[str, str]] = ("created_at", "desc")
+
+    async def latest_for_resource(
+        self, resource_type: str, resource_id: UUID
+    ) -> AuditEvent | None:
+        """Most recent event anchored to a resource (no tenant scoping — used by
+        in-band emit policy that runs before the actor's tenant is asserted)."""
+        return await self._session.scalar(
+            select(AuditEvent)
+            .where(
+                AuditEvent.resource_type == resource_type,
+                AuditEvent.resource_id == resource_id,
+            )
+            .order_by(AuditEvent.created_at.desc())
+            .limit(1)
+        )
 
     def _soft_delete_predicate(self) -> ColumnElement[bool] | None:
         # Append-only: no `deleted_at` column.

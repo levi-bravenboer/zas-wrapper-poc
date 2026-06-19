@@ -14,12 +14,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.audit import AuditAction
 from app.db.audit import SESSION_ACTOR_KEY
-from app.db.models.audit.audit_event import AuditEvent
+from app.repositories.audit.audit_event_repository import AuditEventRepository
 from app.services.audit.emit import record_in_session
 
 PATHWAY_RESOURCE_TYPE = "Pathway"
@@ -104,14 +103,8 @@ async def edit_starts_new_session(
     actor_id = getattr(actor, "id", None)
     now = now or datetime.now(timezone.utc)
 
-    latest = await session.scalar(
-        select(AuditEvent)
-        .where(
-            AuditEvent.resource_type == PATHWAY_RESOURCE_TYPE,
-            AuditEvent.resource_id == pathway_id,
-        )
-        .order_by(AuditEvent.created_at.desc())
-        .limit(1)
+    latest = await AuditEventRepository(session).latest_for_resource(
+        PATHWAY_RESOURCE_TYPE, pathway_id
     )
     if latest is None:
         return True

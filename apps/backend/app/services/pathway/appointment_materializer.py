@@ -13,7 +13,6 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.appointment import (
@@ -27,8 +26,9 @@ from app.db.models.appointment.appointment_participant import AppointmentPartici
 from app.db.models.pathway import (
     PathwayBlockExecution,
     PathwayEnrollment,
-    PathwayEnrollmentParticipant,
 )
+from app.repositories.appointment.appointment_repository import AppointmentReadRepository
+from app.repositories.pathway.enrollment_repository import EnrollmentRepository
 from app.domain.appointment.validator import (
     AppointmentParticipantSpec,
     AppointmentSpec,
@@ -74,23 +74,13 @@ async def materialize_appointment(
     if kind is None:
         return None
 
-    existing = await session.scalar(
-        select(Appointment.id).where(
-            Appointment.pathway_block_instance_id == execution.id,
-            Appointment.deleted_at.is_(None),
-        )
-    )
-    if existing is not None:
+    if await AppointmentReadRepository(session).exists_for_block_instance(execution.id):
         return None
 
     # §5.4: prefer the Practitioner bound for this block at enrollment; fall
     # back to the completing caregiver when none was resolved.
-    bound_user_id = await session.scalar(
-        select(PathwayEnrollmentParticipant.user_id).where(
-            PathwayEnrollmentParticipant.enrollment_id == enrollment.id,
-            PathwayEnrollmentParticipant.block_template_id == execution.block_template_id,
-            PathwayEnrollmentParticipant.deleted_at.is_(None),
-        )
+    bound_user_id = await EnrollmentRepository(session).bound_participant_user_id(
+        enrollment.id, execution.block_template_id
     )
     lead_user_id = bound_user_id or actor.id
 

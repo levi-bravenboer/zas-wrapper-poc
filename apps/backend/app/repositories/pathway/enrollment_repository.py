@@ -19,6 +19,7 @@ from app.db.models.pathway import (
     PathwayBlockExecution,
     PathwayDeferredFieldValue,
     PathwayEnrollment,
+    PathwayEnrollmentParticipant,
     PathwayVersion,
 )
 from app.repositories.base import BaseRepository
@@ -34,6 +35,18 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
             Patient.deleted_at.is_(None),
         )
         return (await self._session.execute(stmt)).scalar_one_or_none() is not None
+
+    async def bound_participant_user_id(
+        self, enrollment_id: UUID, block_template_id: UUID
+    ) -> UUID | None:
+        """The Practitioner bound for a block at enrollment time, if any."""
+        return await self._session.scalar(
+            select(PathwayEnrollmentParticipant.user_id).where(
+                PathwayEnrollmentParticipant.enrollment_id == enrollment_id,
+                PathwayEnrollmentParticipant.block_template_id == block_template_id,
+                PathwayEnrollmentParticipant.deleted_at.is_(None),
+            )
+        )
 
     async def pathway_version_visible_to_tenant(
         self, pathway_version_id: UUID, tenant_id: UUID
