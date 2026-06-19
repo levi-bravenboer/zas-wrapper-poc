@@ -33,6 +33,8 @@ services:
       BACKEND_HIX_MODE: stub
       BACKEND_LUSCII_MODE: stub
       BACKEND_LOG_LEVEL: WARNING
+      BACKEND_S3_ACCESS_KEY: test
+      BACKEND_S3_SECRET_KEY: test
     # Override the dev ENTRYPOINT — tests must not seed-all (test DB stays
     # empty; per-test fixtures build their own state). Pin pytest as the
     # entrypoint so passthrough args (`moon run backend:test -- tests/foo`)

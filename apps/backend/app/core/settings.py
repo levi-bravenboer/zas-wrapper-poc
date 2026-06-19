@@ -91,8 +91,11 @@ class Settings(BaseSettings):
     s3_public_url: str | None = None
     s3_bucket: str = "zas-attachments"
     s3_region: str = "eu-west-1"
-    s3_access_key: str = "minioadmin"
-    s3_secret_key: str = "minioadmin"
+    # No baked-in credential: supplied per-env (BACKEND_S3_ACCESS_KEY /
+    # BACKEND_S3_SECRET_KEY). Empty ⇒ boto raises at first S3 use, so a
+    # misconfigured prod fails loud instead of silently using a known default.
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
 
 
 @lru_cache

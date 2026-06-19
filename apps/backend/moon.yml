@@ -61,6 +61,8 @@ tasks:
     command: "uv run pytest"
     env:
       BACKEND_DATABASE_URL: "postgresql+asyncpg://zas:zas@localhost:5433/zas_test"
+      BACKEND_S3_ACCESS_KEY: "test"
+      BACKEND_S3_SECRET_KEY: "test"
     options:
       cache: false
       runInCI: false
