@@ -18,7 +18,11 @@ const numericSeries = (
   ({
     archetype: 'numeric',
     unit,
-    points: points.map((p) => ({ archetype: 'numeric', value: p.value, observed_at: p.observed_at })),
+    points: points.map((p) => ({
+      archetype: 'numeric',
+      value: p.value,
+      observed_at: p.observed_at,
+    })),
   }) as unknown as LusciiMeasurementSeries
 
 describe('formatNumber', () => {

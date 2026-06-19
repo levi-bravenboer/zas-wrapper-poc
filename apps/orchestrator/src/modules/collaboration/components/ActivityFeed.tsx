@@ -225,7 +225,8 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
 
   const actionsFor = (note: Note): ItemActions => ({
     canDelete: note.author_user_id === session.data?.id,
-    onPreview: async (n) => setPreview({ note: n, url: await getNoteFileUrl(ownerType, ownerId, n.id) }),
+    onPreview: async (n) =>
+      setPreview({ note: n, url: await getNoteFileUrl(ownerType, ownerId, n.id) }),
     onDownload: async (n) => {
       window.open(await getNoteFileUrl(ownerType, ownerId, n.id), '_blank', 'noopener')
     },
@@ -268,16 +269,12 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {items.length === 0 ? (
-          <p className="text-sm text-foreground-muted">
-            {t('collaboration:notes.empty')}
-          </p>
+          <p className="text-sm text-foreground-muted">{t('collaboration:notes.empty')}</p>
         ) : groups ? (
           <div className="flex flex-col gap-5">
             {groups.map((group) => {
               const GroupIcon = OWNER_ICON[group.ownerType] ?? MessageSquareText
-              const label =
-                group.label ??
-                t('collaboration:notes.directOnPatient')
+              const label = group.label ?? t('collaboration:notes.directOnPatient')
               return (
                 <section key={group.key} className="flex flex-col gap-2.5">
                   <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">

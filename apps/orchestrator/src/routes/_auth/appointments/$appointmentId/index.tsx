@@ -74,10 +74,7 @@ function AppointmentDetailRoute(): ReactElement {
         <div className="flex w-full flex-col gap-6">
           <PatientSummaryCard patientId={patient.id} />
 
-          <DetailCard
-            icon={CalendarClock}
-            title={t('appointment:detail.title')}
-          >
+          <DetailCard icon={CalendarClock} title={t('appointment:detail.title')}>
             {appt.description ? (
               <DetailRow wide label={t('appointment:field.reason')}>
                 <span className="whitespace-pre-wrap">{appt.description}</span>
@@ -86,17 +83,12 @@ function AppointmentDetailRoute(): ReactElement {
             <DetailRow label={t('appointment:field.kind')}>
               {t(`appointment:kind.${appt.kind}`, { defaultValue: appt.kind })}
             </DetailRow>
-            <DetailRow label={t('appointment:field.when')}>
-              {when}
-            </DetailRow>
+            <DetailRow label={t('appointment:field.when')}>{when}</DetailRow>
             <DetailRow label={t('appointment:field.modality')}>
               {t(`appointment:modality.${appt.modality}`, { defaultValue: appt.modality })}
               {appt.location_text ? ` · ${appt.location_text}` : ''}
             </DetailRow>
-            <DetailRow
-              wide
-              label={t('appointment:field.participants')}
-            >
+            <DetailRow wide label={t('appointment:field.participants')}>
               <ul className="flex flex-wrap gap-x-6 gap-y-2">
                 {appt.participants.map((p) => (
                   <li key={p.user_id} className="flex items-center gap-2">

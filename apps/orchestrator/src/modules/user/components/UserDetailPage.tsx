@@ -55,8 +55,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
   const roleMap = useRoleMap()
   // Clinician = any non-admin role (interim: identity-type is data-derived; a
   // practitioner row only exists for clinical users).
-  const isClinician =
-    !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
+  const isClinician = !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
   const practitionerQuery = useQuery({
     queryKey: ['practitioner', userId],
     queryFn: () => fetchPractitioner(userId),

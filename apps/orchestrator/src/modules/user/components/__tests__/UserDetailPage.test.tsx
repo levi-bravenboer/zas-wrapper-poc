@@ -19,8 +19,22 @@ import { rolesKey, type Role } from '../../roles'
 import { UserDetailPage } from '../UserDetailPage'
 
 const ROLES: Role[] = [
-  { id: 'd2222222-2222-4222-8222-2222222222d1', slug: 'default', name: 'Standaard', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
-  { id: 'a1111111-1111-4111-8111-1111111111a1', slug: 'admin', name: 'Admin', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
+  {
+    id: 'd2222222-2222-4222-8222-2222222222d1',
+    slug: 'default',
+    name: 'Standaard',
+    is_system: true,
+    permissions: [],
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'a1111111-1111-4111-8111-1111111111a1',
+    slug: 'admin',
+    name: 'Admin',
+    is_system: true,
+    permissions: [],
+    created_at: '2026-01-01T00:00:00Z',
+  },
 ]
 
 const { getMock, useUserDetailMock, useSetUserActiveMock, useSessionMock } = vi.hoisted(() => ({

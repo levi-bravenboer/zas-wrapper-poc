@@ -201,9 +201,7 @@ class CareTeamService:
         teams = await self.list_for_patient(actor.tenant_id, patient_id)
         team = next((t for t in teams if t.deleted_at is None), None)
         if team is None:
-            team = await self.create_for_patient(
-                actor, patient_id, CareTeamCreate(name="Zorgteam")
-            )
+            team = await self.create_for_patient(actor, patient_id, CareTeamCreate(name="Zorgteam"))
         await self.add_participant(
             actor,
             team.id,

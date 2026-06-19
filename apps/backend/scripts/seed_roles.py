@@ -49,9 +49,7 @@ async def _get_or_create_role(
     session: AsyncSession, *, tenant_id: UUID, slug: str, name: str
 ) -> Role:
     existing = (
-        await session.execute(
-            select(Role).where(Role.tenant_id == tenant_id, Role.slug == slug)
-        )
+        await session.execute(select(Role).where(Role.tenant_id == tenant_id, Role.slug == slug))
     ).scalar_one_or_none()
     if existing is not None:
         logger.info("role slug=%s already present", slug)

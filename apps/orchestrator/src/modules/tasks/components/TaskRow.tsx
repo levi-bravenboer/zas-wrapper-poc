@@ -39,9 +39,7 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
           {item.title}
         </span>
       }
-      secondary={
-        item.due_at ? dueLabel(t, item.due_at) : t('tasks:due.none')
-      }
+      secondary={item.due_at ? dueLabel(t, item.due_at) : t('tasks:due.none')}
       trailing={
         <span
           className={cn(

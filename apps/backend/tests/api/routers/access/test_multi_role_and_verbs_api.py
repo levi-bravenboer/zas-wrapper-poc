@@ -68,9 +68,7 @@ async def test_multi_role_login_requires_selection_then_binds(
     assert me.status_code == 409
     assert me.json()["code"] == "conflict.auth.role_selection_required"
 
-    picked = await async_client.post(
-        "/auth/session/role", json={"user_id": options["admin"]}
-    )
+    picked = await async_client.post("/auth/session/role", json={"user_id": options["admin"]})
     assert picked.status_code == 200, picked.text
     assert picked.json()["role_slug"] == "admin"
 
@@ -79,9 +77,7 @@ async def test_multi_role_login_requires_selection_then_binds(
     assert me.json()["role_slug"] == "admin"
 
     # mid-session switch: no re-authentication, next request acts as caregiver
-    switched = await async_client.post(
-        "/auth/session/role", json={"user_id": options["default"]}
-    )
+    switched = await async_client.post("/auth/session/role", json={"user_id": options["default"]})
     assert switched.status_code == 200
     me = await async_client.get("/auth/me")
     assert me.json()["role_slug"] == "default"
@@ -113,9 +109,7 @@ async def test_role_not_available_rejected(
         json={"email": "caregiver@zas.local", "password": _PASSWORD},
     )
     # A user_id outside the caller's roster cannot be bound (REQ-NON-3).
-    response = await async_client.post(
-        "/auth/session/role", json={"user_id": str(uuid4())}
-    )
+    response = await async_client.post("/auth/session/role", json={"user_id": str(uuid4())})
     assert response.status_code == 422
     assert response.json()["code"] == "invalid.auth.role_not_available"
 
@@ -129,9 +123,7 @@ async def test_external_verbs_read_but_not_write(
     patients, _ = seeded_access_domain
     target = patients[0]
     roles = await ensure_roles(db_session, target.tenant_id)
-    external = _user(
-        target.tenant_id, "huisarts@extern.be", roles["default"].id, "Greet Huisarts"
-    )
+    external = _user(target.tenant_id, "huisarts@extern.be", roles["default"].id, "Greet Huisarts")
     db_session.add(external)
     await db_session.flush()
     db_session.add(

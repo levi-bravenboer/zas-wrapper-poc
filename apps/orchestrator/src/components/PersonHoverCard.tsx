@@ -55,7 +55,13 @@ function Header({
   )
 }
 
-function Fact({ label, children }: { label: string; children: ReactElement | string }): ReactElement {
+function Fact({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactElement | string
+}): ReactElement {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[11px] uppercase tracking-wide text-foreground-muted">{label}</span>

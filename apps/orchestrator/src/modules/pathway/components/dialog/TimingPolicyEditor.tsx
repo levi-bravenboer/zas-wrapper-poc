@@ -167,9 +167,7 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
           />
         </div>
       )}
-      <p className="text-[11px] text-muted-foreground">
-        {t('timingPolicy.hint')}
-      </p>
+      <p className="text-[11px] text-muted-foreground">{t('timingPolicy.hint')}</p>
     </div>
   )
 }

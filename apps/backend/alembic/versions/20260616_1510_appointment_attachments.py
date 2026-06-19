@@ -5,6 +5,7 @@ Revises: c4e6a8b0d2f4
 Create Date: 2026-06-16 15:10:00.000000
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -32,8 +33,18 @@ def upgrade() -> None:
         sa.Column("updated_by", sa.UUID(), nullable=False),
         sa.Column("deleted_by", sa.UUID(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["appointment_id"], ["appointments.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["uploaded_by"], ["users.id"], ondelete="RESTRICT"),
@@ -44,9 +55,24 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("storage_key", name="uq_appointment_attachments_storage_key"),
     )
-    op.create_index(op.f("ix_appointment_attachments_tenant_id"), "appointment_attachments", ["tenant_id"], unique=False)
-    op.create_index(op.f("ix_appointment_attachments_appointment_id"), "appointment_attachments", ["appointment_id"], unique=False)
-    op.create_index(op.f("ix_appointment_attachments_uploaded_by"), "appointment_attachments", ["uploaded_by"], unique=False)
+    op.create_index(
+        op.f("ix_appointment_attachments_tenant_id"),
+        "appointment_attachments",
+        ["tenant_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_appointment_attachments_appointment_id"),
+        "appointment_attachments",
+        ["appointment_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_appointment_attachments_uploaded_by"),
+        "appointment_attachments",
+        ["uploaded_by"],
+        unique=False,
+    )
     op.create_index(
         "ix_appointment_attachments_appointment_open",
         "appointment_attachments",
@@ -57,8 +83,18 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_appointment_attachments_appointment_open", table_name="appointment_attachments", postgresql_where=sa.text("deleted_at IS NULL"))
-    op.drop_index(op.f("ix_appointment_attachments_uploaded_by"), table_name="appointment_attachments")
-    op.drop_index(op.f("ix_appointment_attachments_appointment_id"), table_name="appointment_attachments")
-    op.drop_index(op.f("ix_appointment_attachments_tenant_id"), table_name="appointment_attachments")
+    op.drop_index(
+        "ix_appointment_attachments_appointment_open",
+        table_name="appointment_attachments",
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
+    op.drop_index(
+        op.f("ix_appointment_attachments_uploaded_by"), table_name="appointment_attachments"
+    )
+    op.drop_index(
+        op.f("ix_appointment_attachments_appointment_id"), table_name="appointment_attachments"
+    )
+    op.drop_index(
+        op.f("ix_appointment_attachments_tenant_id"), table_name="appointment_attachments"
+    )
     op.drop_table("appointment_attachments")

@@ -29,7 +29,9 @@ export async function fetchRoles(): Promise<Role[]> {
 }
 
 export async function fetchRole(id: string): Promise<Role> {
-  const { data, response } = await api.GET('/roles/{role_id}', { params: { path: { role_id: id } } })
+  const { data, response } = await api.GET('/roles/{role_id}', {
+    params: { path: { role_id: id } },
+  })
   if (!response.ok || !data) throw apiError('Role fetch failed', response.status)
   return data
 }
@@ -61,7 +63,8 @@ export async function updateRole(id: string, payload: RoleUpdatePayload): Promis
 
 export async function deleteRole(id: string): Promise<void> {
   const { response } = await api.DELETE('/roles/{role_id}', { params: { path: { role_id: id } } })
-  if (!response.ok) throw apiError('Role delete failed', response.status, await readErrorCode(response))
+  if (!response.ok)
+    throw apiError('Role delete failed', response.status, await readErrorCode(response))
 }
 
 export function useRoles(): UseQueryResult<Role[], Error> {
@@ -92,9 +95,7 @@ export function useCreateRole(): UseMutationResult<Role, Error, RoleCreatePayloa
   return useMutation({ mutationFn: createRole, onSuccess: invalidate })
 }
 
-export function useUpdateRole(
-  id: string,
-): UseMutationResult<Role, Error, RoleUpdatePayload> {
+export function useUpdateRole(id: string): UseMutationResult<Role, Error, RoleUpdatePayload> {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: RoleUpdatePayload) => updateRole(id, payload),

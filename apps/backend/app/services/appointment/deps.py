@@ -22,9 +22,7 @@ def get_appointment_read_service(session: SessionDep) -> AppointmentReadService:
     return AppointmentReadService(AppointmentReadRepository(session))
 
 
-AppointmentReadServiceDep = Annotated[
-    AppointmentReadService, Depends(get_appointment_read_service)
-]
+AppointmentReadServiceDep = Annotated[AppointmentReadService, Depends(get_appointment_read_service)]
 
 
 async def require_appointment_access(

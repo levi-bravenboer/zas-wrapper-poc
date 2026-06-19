@@ -52,6 +52,7 @@ def admin_role_id(tenant_id: UUID) -> UUID:
 
     return uuid5(_ROLE_ID_NS, f"{tenant_id}:{ADMIN_ROLE_SLUG}")
 
+
 ADMIN_EMAIL = "admin@zas.local"
 ADMIN_DISPLAY_NAME = "ZAS Admin"
 ADMIN_PASSWORD_ENV = "BACKEND_BOOTSTRAP_ADMIN_PASSWORD"

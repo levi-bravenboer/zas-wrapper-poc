@@ -10,10 +10,7 @@ import { cn } from '@/lib/style/cn'
 
 import { useLusciiData, type LusciiWindowDays } from '../hooks'
 
-import {
-  InstrumentDetailDialog,
-  type InstrumentDetail,
-} from './charts/InstrumentDetailDialog'
+import { InstrumentDetailDialog, type InstrumentDetail } from './charts/InstrumentDetailDialog'
 import { MetricTile } from './charts/MetricTile'
 import type { LusciiMeasurementSeries } from './charts/types'
 import { LusciiPanel } from './LusciiPanel'

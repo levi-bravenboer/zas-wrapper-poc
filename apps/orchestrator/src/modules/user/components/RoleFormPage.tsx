@@ -29,7 +29,10 @@ interface RoleFormValues {
 
 const roleFormSchema = z.object({
   name: z.string().trim().min(1, { message: 'form.error.required' }).max(120),
-  slug: z.string().trim().regex(/^[a-z][a-z0-9-]*$/, { message: 'form.error.slug' }),
+  slug: z
+    .string()
+    .trim()
+    .regex(/^[a-z][a-z0-9-]*$/, { message: 'form.error.slug' }),
   permissions: z.array(z.string()),
 })
 
@@ -106,7 +109,10 @@ function RoleForm({
     onSubmit: async (values) => {
       try {
         if (editing) {
-          await updateRole.mutateAsync({ name: values.name.trim(), permissions: values.permissions })
+          await updateRole.mutateAsync({
+            name: values.name.trim(),
+            permissions: values.permissions,
+          })
         } else {
           await createRole.mutateAsync({
             slug: values.slug,
@@ -120,11 +126,7 @@ function RoleForm({
       }
     },
     onSuccess: () => {
-      toast.success(
-        editing
-          ? t('toast.saved')
-          : t('toast.created'),
-      )
+      toast.success(editing ? t('toast.saved') : t('toast.created'))
       void navigate({ to: '/admin/roles' })
     },
   })
@@ -142,20 +144,14 @@ function RoleForm({
   }, [catalog.data])
 
   function toggle(perm: string): void {
-    const next = selectedSet.has(perm)
-      ? selected.filter((p) => p !== perm)
-      : [...selected, perm]
+    const next = selectedSet.has(perm) ? selected.filter((p) => p !== perm) : [...selected, perm]
     formApi.form.setFieldValue('permissions', next)
   }
 
   return (
     <EntityFormPage<RoleFormValues>
       mode={mode}
-      title={
-        editing
-          ? t('form.edit.title')
-          : t('form.create.title')
-      }
+      title={editing ? t('form.edit.title') : t('form.create.title')}
       subtitle={t('form.sub')}
       back={{ to: '/admin/roles' }}
       form={formApi}
@@ -212,9 +208,7 @@ function RoleForm({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                {t('form.permissions.title')}
-              </CardTitle>
+              <CardTitle className="text-base">{t('form.permissions.title')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
               {grouped.map(([resource, perms]) => (
@@ -252,9 +246,7 @@ function RoleForm({
           </Card>
 
           {isSystem ? (
-            <p className="text-xs text-muted-foreground">
-              {t('form.systemNote')}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('form.systemNote')}</p>
           ) : null}
         </div>
       }

@@ -72,6 +72,4 @@ class Note(TenantOwnedEntity):
     filename: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     content_type: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     size: Mapped[int | None] = mapped_column(sa.Integer(), nullable=True)
-    storage_key: Mapped[str | None] = mapped_column(
-        sa.String(512), nullable=True, unique=True
-    )
+    storage_key: Mapped[str | None] = mapped_column(sa.String(512), nullable=True, unique=True)

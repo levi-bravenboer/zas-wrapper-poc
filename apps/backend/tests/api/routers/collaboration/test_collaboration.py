@@ -29,8 +29,11 @@ def _user(users: list[User], email: str) -> User:
 async def _make_task(session: AsyncSession, *, actor: User, assignee: User, patient_id):  # type: ignore[no-untyped-def]
     prev = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = make_session_user(
-        id=actor.id, email=actor.email, display_name=actor.display_name,
-        tenant_id=actor.tenant_id, role_id=actor.role_id,
+        id=actor.id,
+        email=actor.email,
+        display_name=actor.display_name,
+        tenant_id=actor.tenant_id,
+        role_id=actor.role_id,
     )
     try:
         task = await TaskService(TaskRepository(session), session).create(
@@ -108,9 +111,7 @@ async def test_care_team_caregiver_can_author_without_being_participant(
     await _login(async_client, CAREGIVER_EMAIL)
     r = await async_client.post(f"/appointments/{appt.id}/notes", json={"body": "Via zorgteam"})
     assert r.status_code == 201, r.text
-    assert r.json()["note"]["author_user_id"] == str(
-        _user(seeded_zas_users, CAREGIVER_EMAIL).id
-    )
+    assert r.json()["note"]["author_user_id"] == str(_user(seeded_zas_users, CAREGIVER_EMAIL).id)
 
 
 async def test_task_without_patient_allows_note_with_null_patient(
@@ -151,9 +152,7 @@ async def test_file_note_upload_download_and_author_delete(
     # a file is just a note with a file — POST the same /notes endpoint
     created = await async_client.post(
         f"/appointments/{appt.id}/notes",
-        json={
-            "file": {"filename": "brief.pdf", "content_type": "application/pdf", "size": 1024}
-        },
+        json={"file": {"filename": "brief.pdf", "content_type": "application/pdf", "size": 1024}},
     )
     assert created.status_code == 201, created.text
     assert created.json()["upload_url"].startswith("http")
@@ -178,4 +177,7 @@ async def test_file_note_upload_download_and_author_delete(
     await _login(async_client, CAREGIVER_EMAIL)
     deleted = await async_client.delete(f"/appointments/{appt.id}/notes/{note_id}")
     assert deleted.status_code == 204
-    assert all(n["id"] != note_id for n in (await async_client.get(f"/appointments/{appt.id}/notes")).json())
+    assert all(
+        n["id"] != note_id
+        for n in (await async_client.get(f"/appointments/{appt.id}/notes")).json()
+    )

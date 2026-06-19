@@ -265,7 +265,9 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
         )
 
         # demo caregiver: MULTI-specialism (REQ-FUN-28)
-        caregiver = await user_repo.get_by_email(tenant.id, CAREGIVER_EMAIL, role_id=default_role_id)
+        caregiver = await user_repo.get_by_email(
+            tenant.id, CAREGIVER_EMAIL, role_id=default_role_id
+        )
         if caregiver is None:
             raise RuntimeError("demo caregiver missing — run seed_users first")
         caregiver_role = await session.scalar(

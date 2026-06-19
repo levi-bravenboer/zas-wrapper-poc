@@ -89,7 +89,9 @@ async def require_carepath_access(
     (the route's own not-found error) by raising here.
     """
 
-    if not settings.authz_keto_enabled or current_user.has_permission(Permission.PATIENT_ACCESS_ALL):
+    if not settings.authz_keto_enabled or current_user.has_permission(
+        Permission.PATIENT_ACCESS_ALL
+    ):
         return
 
     scoped = await session.scalar(

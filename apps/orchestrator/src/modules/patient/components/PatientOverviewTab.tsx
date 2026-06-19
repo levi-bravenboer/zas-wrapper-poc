@@ -45,11 +45,7 @@ export function PatientOverviewTab({
           />
           <Field
             label={t('overview.gender')}
-            value={
-              patient?.gender
-                ? t(`gender.${patient.gender}`)
-                : '—'
-            }
+            value={patient?.gender ? t(`gender.${patient.gender}`) : '—'}
           />
           <Field label={t('overview.insz')} value={insz ?? '—'} mono />
         </dl>

@@ -112,12 +112,8 @@ export function AppointmentList(): ReactElement {
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="appointment-list">
       <header className="border-b border-border/60 px-4 py-4">
-        <h1 className="text-lg font-semibold text-foreground">
-          {t('appointment:title')}
-        </h1>
-        <p className="text-xs text-foreground-muted">
-          {t('appointment:subtitle')}
-        </p>
+        <h1 className="text-lg font-semibold text-foreground">{t('appointment:title')}</h1>
+        <p className="text-xs text-foreground-muted">{t('appointment:subtitle')}</p>
       </header>
       <div className="flex-1 overflow-y-auto">
         <AppointmentListBody selectedId={selectedId} />

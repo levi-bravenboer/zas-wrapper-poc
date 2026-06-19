@@ -52,7 +52,9 @@ function useRoleColumns(): ReadonlyArray<BrandedColumnDef<Role>> {
       id: 'permissions',
       header: t('list.column.permissions'),
       cell: (role) => (
-        <span className="text-sm text-muted-foreground tabular-nums">{role.permissions.length}</span>
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {role.permissions.length}
+        </span>
       ),
     }),
   ]
@@ -137,10 +139,7 @@ export function RolesListPage(): ReactElement {
             {roles.isLoading ? (
               <LoadingRows columnCount={totalColumns} />
             ) : items.length === 0 ? (
-              <EmptyRow
-                columnCount={totalColumns}
-                title={t('list.empty')}
-              />
+              <EmptyRow columnCount={totalColumns} title={t('list.empty')} />
             ) : (
               items.map((role) => (
                 <Table.Row

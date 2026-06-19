@@ -74,7 +74,9 @@ class NoteRepository:
                     out[owner_id] = label
         return out
 
-    async def _list(self, *predicates, tenant_id: UUID, ascending: bool) -> Sequence[tuple[Note, str]]:
+    async def _list(
+        self, *predicates, tenant_id: UUID, ascending: bool
+    ) -> Sequence[tuple[Note, str]]:
         order = Note.created_at.asc() if ascending else Note.created_at.desc()
         return await list_with_author_name(
             self._session,

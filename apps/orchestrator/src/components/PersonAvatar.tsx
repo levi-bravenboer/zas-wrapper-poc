@@ -2,12 +2,7 @@ import { type ReactElement } from 'react'
 
 import { PersonHoverCard, type PersonRef } from '@/components/PersonHoverCard'
 import { Avatar, AvatarFallback, type AvatarProps } from '@/components/ui/avatar'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { initials } from '@/lib/utils/initials'
 
 export type { PersonRef }

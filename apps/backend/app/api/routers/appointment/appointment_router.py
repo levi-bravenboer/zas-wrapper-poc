@@ -29,9 +29,7 @@ async def list_appointments(
     query: ListQueryParamsDep,
     current_user: CurrentUserDep,
 ) -> Page[AppointmentRead]:
-    return await service.list_visible(
-        current_user, page=query.page, page_size=query.page_size
-    )
+    return await service.list_visible(current_user, page=query.page, page_size=query.page_size)
 
 
 @router.get(

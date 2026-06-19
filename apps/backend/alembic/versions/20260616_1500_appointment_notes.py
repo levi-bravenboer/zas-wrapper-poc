@@ -5,6 +5,7 @@ Revises: b2d4f6a8c0e2
 Create Date: 2026-06-16 15:00:00.000000
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -29,8 +30,18 @@ def upgrade() -> None:
         sa.Column("updated_by", sa.UUID(), nullable=False),
         sa.Column("deleted_by", sa.UUID(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["appointment_id"], ["appointments.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["author_user_id"], ["users.id"], ondelete="RESTRICT"),
@@ -40,9 +51,21 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["updated_by"], ["users.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_appointment_notes_tenant_id"), "appointment_notes", ["tenant_id"], unique=False)
-    op.create_index(op.f("ix_appointment_notes_appointment_id"), "appointment_notes", ["appointment_id"], unique=False)
-    op.create_index(op.f("ix_appointment_notes_author_user_id"), "appointment_notes", ["author_user_id"], unique=False)
+    op.create_index(
+        op.f("ix_appointment_notes_tenant_id"), "appointment_notes", ["tenant_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_appointment_notes_appointment_id"),
+        "appointment_notes",
+        ["appointment_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_appointment_notes_author_user_id"),
+        "appointment_notes",
+        ["author_user_id"],
+        unique=False,
+    )
     op.create_index(
         "ix_appointment_notes_appointment_open",
         "appointment_notes",
@@ -53,7 +76,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_appointment_notes_appointment_open", table_name="appointment_notes", postgresql_where=sa.text("deleted_at IS NULL"))
+    op.drop_index(
+        "ix_appointment_notes_appointment_open",
+        table_name="appointment_notes",
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
     op.drop_index(op.f("ix_appointment_notes_author_user_id"), table_name="appointment_notes")
     op.drop_index(op.f("ix_appointment_notes_appointment_id"), table_name="appointment_notes")
     op.drop_index(op.f("ix_appointment_notes_tenant_id"), table_name="appointment_notes")

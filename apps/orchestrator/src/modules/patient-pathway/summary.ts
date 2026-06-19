@@ -132,11 +132,7 @@ export interface TrailWindow {
  * start when nothing is active). Steps outside collapse into the
  * before/after counts, so any pathway renders in a fixed footprint.
  */
-export function windowAround(
-  steps: SummaryStep[],
-  nowIndex: number,
-  radius: number,
-): TrailWindow {
+export function windowAround(steps: SummaryStep[], nowIndex: number, radius: number): TrailWindow {
   if (steps.length === 0) return { cells: [], beforeHidden: 0, afterHidden: 0 }
   const center = nowIndex >= 0 ? nowIndex : 0
   const start = Math.max(0, center - radius)

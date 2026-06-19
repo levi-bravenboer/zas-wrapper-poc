@@ -33,6 +33,7 @@ def _connection_summary(conn: PatientLusciiConnection) -> LusciiConnectionSummar
         program_name=conn.program_name,
     )
 
+
 router = APIRouter(tags=["patients"])
 
 _LINK_ERRORS: dict[int | str, dict[str, Any]] = {

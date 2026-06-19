@@ -85,10 +85,7 @@ describe('deriveSummary', () => {
 })
 
 describe('windowAround', () => {
-  const steps = Array.from(
-    { length: 9 },
-    (_, i) => ({ id: `s${i}` }) as unknown as SummaryStep,
-  )
+  const steps = Array.from({ length: 9 }, (_, i) => ({ id: `s${i}` }) as unknown as SummaryStep)
 
   it('bounds a long pathway to the window and collapses the rest into pills', () => {
     const w = windowAround(steps, 4, 2)

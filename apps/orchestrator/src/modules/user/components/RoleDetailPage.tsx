@@ -47,9 +47,7 @@ export function RoleDetailPage({ roleId }: RoleDetailPageProps): ReactElement {
       subtitle={
         <span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span className="font-mono text-xs">{role.slug}</span>
-          {role.is_system ? (
-            <Badge variant="soft">{t('list.systemBadge')}</Badge>
-          ) : null}
+          {role.is_system ? <Badge variant="soft">{t('list.systemBadge')}</Badge> : null}
         </span>
       }
       back={{ to: '/admin/roles' }}
@@ -66,16 +64,12 @@ export function RoleDetailPage({ roleId }: RoleDetailPageProps): ReactElement {
       body={
         <EntityDetailSingleColumn>
           <DetailCard icon={ShieldCheck} title={t('detail.card.role.title')}>
-            <DetailRow label={t('detail.card.role.name')}>
-              {role.name}
-            </DetailRow>
+            <DetailRow label={t('detail.card.role.name')}>{role.name}</DetailRow>
             <DetailRow label={t('detail.card.role.slug')}>
               <span className="font-mono text-xs">{role.slug}</span>
             </DetailRow>
             <DetailRow label={t('detail.card.role.type')}>
-              {role.is_system
-                ? t('detail.card.role.system')
-                : t('detail.card.role.custom')}
+              {role.is_system ? t('detail.card.role.system') : t('detail.card.role.custom')}
             </DetailRow>
             <DetailRow label={t('detail.card.role.permCount')}>
               <span className="tabular-nums">{role.permissions.length}</span>
@@ -100,15 +94,10 @@ function PermissionSummary({ role }: { role: Role }): ReactElement {
   }, [role.permissions])
 
   return (
-    <DetailCard
-      icon={ListChecks}
-      title={t('detail.card.permissions.title')}
-    >
+    <DetailCard icon={ListChecks} title={t('detail.card.permissions.title')}>
       <DetailRow wide label={t('detail.card.permissions.granted')}>
         {grouped.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t('detail.card.permissions.none')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('detail.card.permissions.none')}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {grouped.map(([resource, verbs]) => (

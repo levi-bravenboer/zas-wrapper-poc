@@ -30,9 +30,7 @@ class AuditEventRepository(BaseListRepository[AuditEvent]):
     }
     default_order: ClassVar[tuple[str, str]] = ("created_at", "desc")
 
-    async def latest_for_resource(
-        self, resource_type: str, resource_id: UUID
-    ) -> AuditEvent | None:
+    async def latest_for_resource(self, resource_type: str, resource_id: UUID) -> AuditEvent | None:
         """Most recent event anchored to a resource (no tenant scoping — used by
         in-band emit policy that runs before the actor's tenant is asserted)."""
         return await self._session.scalar(

@@ -62,7 +62,9 @@ async def list_external_access_profiles(
 async def upsert_external_access_profile(
     payload: ExternalAccessProfileUpsert,
     service: ExternalAccessServiceDep,
-    current_user: Annotated[SessionUser, _UPDATE_GUARD],  # AUTH-HARDEN: externalCollaboration.update
+    current_user: Annotated[
+        SessionUser, _UPDATE_GUARD
+    ],  # AUTH-HARDEN: externalCollaboration.update
 ) -> ExternalAccessProfileRead:
     profile = await service.upsert_profile(
         current_user,
@@ -85,7 +87,9 @@ async def create_consent(
     payload: ConsentCreate,
     service: ExternalAccessServiceDep,
     patient: PatientAccessDep,  # AUTH-HARDEN: patient relation required
-    current_user: Annotated[SessionUser, _CREATE_GUARD],  # AUTH-HARDEN: externalCollaboration.create
+    current_user: Annotated[
+        SessionUser, _CREATE_GUARD
+    ],  # AUTH-HARDEN: externalCollaboration.create
 ) -> ConsentRead:
     consent = await service.create_consent(current_user, patient_id=patient.id, scope=payload.scope)
     return ConsentRead.model_validate(consent)
@@ -100,7 +104,9 @@ async def revoke_consent(
     consent_id: UUID,
     service: ExternalAccessServiceDep,
     patient: PatientAccessDep,  # AUTH-HARDEN: patient relation required
-    current_user: Annotated[SessionUser, _DELETE_GUARD],  # AUTH-HARDEN: externalCollaboration.delete
+    current_user: Annotated[
+        SessionUser, _DELETE_GUARD
+    ],  # AUTH-HARDEN: externalCollaboration.delete
 ) -> ConsentRead:
     consent = await service.revoke_consent(current_user, consent_id)
     return ConsentRead.model_validate(consent)
@@ -130,7 +136,9 @@ async def create_external_grant(
     payload: ExternalGrantCreate,
     service: ExternalAccessServiceDep,
     patient: PatientAccessDep,  # AUTH-HARDEN: patient relation required
-    current_user: Annotated[SessionUser, _CREATE_GUARD],  # AUTH-HARDEN: externalCollaboration.create
+    current_user: Annotated[
+        SessionUser, _CREATE_GUARD
+    ],  # AUTH-HARDEN: externalCollaboration.create
 ) -> ExternalGrantRead:
     grant = await service.create_grant(
         current_user,
@@ -150,7 +158,9 @@ async def create_external_grant(
 async def end_external_grant(
     grant_id: UUID,
     service: ExternalAccessServiceDep,
-    current_user: Annotated[SessionUser, _DELETE_GUARD],  # AUTH-HARDEN: externalCollaboration.delete
+    current_user: Annotated[
+        SessionUser, _DELETE_GUARD
+    ],  # AUTH-HARDEN: externalCollaboration.delete
 ) -> ExternalGrantRead:
     grant = await service.end_grant(current_user, grant_id)
     return ExternalGrantRead.model_validate(grant)

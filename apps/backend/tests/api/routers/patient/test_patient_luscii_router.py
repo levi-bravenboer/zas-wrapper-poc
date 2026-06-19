@@ -284,9 +284,7 @@ async def test_add_connection_does_not_replace_existing(
     patient = seeded_zas_patients[0]
     await _login(async_client, ADMIN_EMAIL)
     url = _connections_url(patient)
-    assert (
-        await async_client.post(url, json={"luscii_patient_id": LUSCII_ID})
-    ).status_code == 201
+    assert (await async_client.post(url, json={"luscii_patient_id": LUSCII_ID})).status_code == 201
     assert (
         await async_client.post(url, json={"luscii_patient_id": OTHER_LUSCII_ID})
     ).status_code == 201
@@ -461,9 +459,7 @@ async def test_luscii_data_aggregates_multiple_active_connections(
     # Each connection only sees its own patient's measurements.
     by_id = {c["luscii_patient_id"]: c for c in conns}
     assert by_id[LUSCII_ID]["program"]["name"] == "Hartfalen programma"
-    other_measurement_ids = {
-        m["measurement_id"] for m in by_id[OTHER_LUSCII_ID]["measurements"]
-    }
+    other_measurement_ids = {m["measurement_id"] for m in by_id[OTHER_LUSCII_ID]["measurements"]}
     assert "m-other" in other_measurement_ids
     assert "m-1" not in other_measurement_ids
 

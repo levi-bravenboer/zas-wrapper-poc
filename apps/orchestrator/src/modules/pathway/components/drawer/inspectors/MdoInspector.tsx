@@ -37,10 +37,7 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
 
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.mdo.topic')}
-        htmlFor="mdo-topic"
-      >
+      <InspectorField label={t('inspector.mdo.topic')} htmlFor="mdo-topic">
         <Input
           id="mdo-topic"
           value={config.topic ?? ''}
@@ -48,10 +45,7 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
           placeholder={t('inspector.mdo.topicPlaceholder')}
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.mdo.attendeesNote')}
-        htmlFor="mdo-attendees"
-      >
+      <InspectorField label={t('inspector.mdo.attendeesNote')} htmlFor="mdo-attendees">
         <Textarea
           id="mdo-attendees"
           value={config.expected_attendees_note ?? ''}
@@ -61,10 +55,7 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
           placeholder={t('inspector.mdo.attendeesNotePlaceholder')}
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.mdo.outcomes')}
-        hint={t('inspector.mdo.outcomesHint')}
-      >
+      <InspectorField label={t('inspector.mdo.outcomes')} hint={t('inspector.mdo.outcomesHint')}>
         <div className="flex flex-col gap-2">
           {outcomes.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -113,9 +104,7 @@ export function MdoInspector({ config, onChange }: Props): ReactElement {
         </div>
       </InspectorField>
 
-      <p className="text-[11px] text-muted-foreground">
-        {t('inspector.mdo.leadingHint')}
-      </p>
+      <p className="text-[11px] text-muted-foreground">{t('inspector.mdo.leadingHint')}</p>
     </div>
   )
 }

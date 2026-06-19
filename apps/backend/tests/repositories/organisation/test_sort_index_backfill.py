@@ -60,9 +60,7 @@ async def _make_user(session: AsyncSession, tenant: Tenant) -> User:
         )
         session.add(user)
         await session.flush()
-        await bootstrap_admin_role(
-            session, role_id=role_id, tenant_id=tenant.id
-        )
+        await bootstrap_admin_role(session, role_id=role_id, tenant_id=tenant.id)
     finally:
         await session.execute(text("SET session_replication_role = DEFAULT"))
     return user

@@ -63,9 +63,7 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
             <PersonAvatar size="lg" name={fullName} tintId={patient.id} />
             <div className="flex min-w-0 flex-col">
               <span className="truncate text-lg font-semibold text-foreground">{fullName}</span>
-              <span className="text-xs text-foreground-muted">
-                {t(`gender.${patient.gender}`)}
-              </span>
+              <span className="text-xs text-foreground-muted">{t(`gender.${patient.gender}`)}</span>
             </div>
           </div>
           <Button asChild variant="outline" size="sm" className="shrink-0">
@@ -130,7 +128,10 @@ function ZorgpadGlance({ glance }: { glance: EnrollmentGlance }): ReactElement {
         </span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-        <div className="h-full rounded-full bg-success transition-[width]" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full rounded-full bg-success transition-[width]"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   )

@@ -61,8 +61,18 @@ async def seed_collaboration(session: AsyncSession) -> list[Note]:
         return []
 
     demo: list[tuple[OwnerType, object, object, str]] = [
-        (OwnerType.APPOINTMENT, appointment.id, appointment.patient_id, "Patiënt belde voor extra uitleg — opgevolgd."),
-        (OwnerType.PATIENT, appointment.patient_id, appointment.patient_id, "Algemene notitie over deze patiënt."),
+        (
+            OwnerType.APPOINTMENT,
+            appointment.id,
+            appointment.patient_id,
+            "Patiënt belde voor extra uitleg — opgevolgd.",
+        ),
+        (
+            OwnerType.PATIENT,
+            appointment.patient_id,
+            appointment.patient_id,
+            "Algemene notitie over deze patiënt.",
+        ),
     ]
 
     previous_actor = session.info.get(SESSION_ACTOR_KEY)

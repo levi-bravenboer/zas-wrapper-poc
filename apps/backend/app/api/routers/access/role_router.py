@@ -59,7 +59,9 @@ async def list_roles(
     service: RoleServiceDep,
     current_user: Annotated[SessionUser, _READ_GUARD],  # AUTH-HARDEN: role.read
 ) -> list[RoleRead]:
-    return [_to_read(role, perms) for role, perms in await service.list_roles(current_user.tenant_id)]
+    return [
+        _to_read(role, perms) for role, perms in await service.list_roles(current_user.tenant_id)
+    ]
 
 
 @router.get("/roles/{role_id}", operation_id="get_role", response_model=RoleRead)

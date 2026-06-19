@@ -40,7 +40,12 @@ class _Template:
 
 
 _TEMPLATES: tuple[_Template, ...] = (
-    _Template("Bel patiënt voor opvolging bloeddruk", "Controleer of de waarden stabiel zijn.", timedelta(days=1), TaskStatus.OPEN),
+    _Template(
+        "Bel patiënt voor opvolging bloeddruk",
+        "Controleer of de waarden stabiel zijn.",
+        timedelta(days=1),
+        TaskStatus.OPEN,
+    ),
     _Template("Verwijsbrief huisarts nakijken", None, timedelta(days=3), TaskStatus.OPEN),
     _Template("Labresultaten valideren", "Ontstekingswaarden bevestigen.", None, TaskStatus.OPEN),
     _Template("Revalidatieplan afgerond", None, timedelta(days=-2), TaskStatus.DONE),

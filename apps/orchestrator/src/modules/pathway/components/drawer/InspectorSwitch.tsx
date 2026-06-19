@@ -92,9 +92,7 @@ export function InspectorSwitch({
     case 'start':
     case 'end_pathway':
       return (
-        <p className="text-[11px] text-muted-foreground">
-          {t('inspector.structural.noConfig')}
-        </p>
+        <p className="text-[11px] text-muted-foreground">{t('inspector.structural.noConfig')}</p>
       )
     default: {
       // Exhaustiveness — if a new semantics is added without a case, the

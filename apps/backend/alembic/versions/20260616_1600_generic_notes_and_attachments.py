@@ -5,6 +5,7 @@ Revises: d6f8b0c2e4a6
 Create Date: 2026-06-16 16:00:00.000000
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -37,8 +38,18 @@ def _common_columns() -> list[sa.Column]:
     cols = [sa.Column(name, type_, nullable=nullable) for name, type_, nullable in _AUDIT_COLS]
     cols += [
         sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     ]
     return cols
@@ -55,15 +66,29 @@ def _audit_fks() -> list[sa.ForeignKeyConstraint]:
 
 def upgrade() -> None:
     # drop appointment-specific collaboration (replaced by generic)
-    op.drop_index("ix_appointment_notes_appointment_open", table_name="appointment_notes", postgresql_where=sa.text("deleted_at IS NULL"))
+    op.drop_index(
+        "ix_appointment_notes_appointment_open",
+        table_name="appointment_notes",
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
     op.drop_index(op.f("ix_appointment_notes_author_user_id"), table_name="appointment_notes")
     op.drop_index(op.f("ix_appointment_notes_appointment_id"), table_name="appointment_notes")
     op.drop_index(op.f("ix_appointment_notes_tenant_id"), table_name="appointment_notes")
     op.drop_table("appointment_notes")
-    op.drop_index("ix_appointment_attachments_appointment_open", table_name="appointment_attachments", postgresql_where=sa.text("deleted_at IS NULL"))
-    op.drop_index(op.f("ix_appointment_attachments_uploaded_by"), table_name="appointment_attachments")
-    op.drop_index(op.f("ix_appointment_attachments_appointment_id"), table_name="appointment_attachments")
-    op.drop_index(op.f("ix_appointment_attachments_tenant_id"), table_name="appointment_attachments")
+    op.drop_index(
+        "ix_appointment_attachments_appointment_open",
+        table_name="appointment_attachments",
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
+    op.drop_index(
+        op.f("ix_appointment_attachments_uploaded_by"), table_name="appointment_attachments"
+    )
+    op.drop_index(
+        op.f("ix_appointment_attachments_appointment_id"), table_name="appointment_attachments"
+    )
+    op.drop_index(
+        op.f("ix_appointment_attachments_tenant_id"), table_name="appointment_attachments"
+    )
     op.drop_table("appointment_attachments")
 
     _OWNER_TYPE.create(op.get_bind(), checkfirst=True)
@@ -84,8 +109,20 @@ def upgrade() -> None:
     op.create_index(op.f("ix_notes_tenant_id"), "notes", ["tenant_id"], unique=False)
     op.create_index(op.f("ix_notes_patient_id"), "notes", ["patient_id"], unique=False)
     op.create_index(op.f("ix_notes_author_user_id"), "notes", ["author_user_id"], unique=False)
-    op.create_index("ix_notes_owner_open", "notes", ["owner_type", "owner_id"], unique=False, postgresql_where=sa.text("deleted_at IS NULL"))
-    op.create_index("ix_notes_patient_open", "notes", ["patient_id"], unique=False, postgresql_where=sa.text("deleted_at IS NULL"))
+    op.create_index(
+        "ix_notes_owner_open",
+        "notes",
+        ["owner_type", "owner_id"],
+        unique=False,
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
+    op.create_index(
+        "ix_notes_patient_open",
+        "notes",
+        ["patient_id"],
+        unique=False,
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
 
     op.create_table(
         "attachments",
@@ -106,9 +143,23 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_attachments_tenant_id"), "attachments", ["tenant_id"], unique=False)
     op.create_index(op.f("ix_attachments_patient_id"), "attachments", ["patient_id"], unique=False)
-    op.create_index(op.f("ix_attachments_uploaded_by"), "attachments", ["uploaded_by"], unique=False)
-    op.create_index("ix_attachments_owner_open", "attachments", ["owner_type", "owner_id"], unique=False, postgresql_where=sa.text("deleted_at IS NULL"))
-    op.create_index("ix_attachments_patient_open", "attachments", ["patient_id"], unique=False, postgresql_where=sa.text("deleted_at IS NULL"))
+    op.create_index(
+        op.f("ix_attachments_uploaded_by"), "attachments", ["uploaded_by"], unique=False
+    )
+    op.create_index(
+        "ix_attachments_owner_open",
+        "attachments",
+        ["owner_type", "owner_id"],
+        unique=False,
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
+    op.create_index(
+        "ix_attachments_patient_open",
+        "attachments",
+        ["patient_id"],
+        unique=False,
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
 
 
 def downgrade() -> None:

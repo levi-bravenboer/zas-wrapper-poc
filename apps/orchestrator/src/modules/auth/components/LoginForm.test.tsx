@@ -159,7 +159,12 @@ describe('LoginForm multi-role', () => {
       ),
       http.post(`${baseUrl}/auth/session/role`, () =>
         HttpResponse.json(
-          { ...STUB_USER, id: 'u9', role_id: 'a1111111-1111-4111-8111-1111111111a1', role_slug: 'admin' },
+          {
+            ...STUB_USER,
+            id: 'u9',
+            role_id: 'a1111111-1111-4111-8111-1111111111a1',
+            role_slug: 'admin',
+          },
           { status: 200 },
         ),
       ),

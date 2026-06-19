@@ -39,9 +39,7 @@ class AppointmentReadService:
             limit=page_size,
         )
         items = await self._assemble(list(rows))
-        return Page[AppointmentRead].build(
-            items=items, page=page, page_size=page_size, total=total
-        )
+        return Page[AppointmentRead].build(items=items, page=page, page_size=page_size, total=total)
 
     async def is_participant(self, *, appointment_id: UUID, user_id: UUID) -> bool:
         return await self._repo.is_participant(appointment_id=appointment_id, user_id=user_id)

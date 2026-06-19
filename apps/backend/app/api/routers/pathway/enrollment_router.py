@@ -63,6 +63,7 @@ router = APIRouter(prefix="/enrollments", tags=["enrollments"])
 _ERRORS_404: dict[int | str, dict[str, Any]] = {404: {"model": ErrorResponse}}
 _ERRORS_422: dict[int | str, dict[str, Any]] = {422: {"model": ErrorResponse}}
 
+
 # AUTH-HARDEN (chain slot #3 §5): patient verb + carepath scope on every
 # enrollment-keyed route. Resolves `patient_id` + `pathway_id` from the
 # enrollment row, then delegates to the same Keto-graduated helpers used
@@ -393,9 +394,7 @@ async def fast_forward_enrollment(
     # until the run ends or hits a decision/MDO needing a manual outcome.
     # Direct service mutation (not workflow-driven) — it advances the DB state
     # so the runtime view reflects the fast-forward immediately.
-    await service.fast_forward(
-        enrollment_id, tenant_id=current_user.tenant_id, now=_now()
-    )
+    await service.fast_forward(enrollment_id, tenant_id=current_user.tenant_id, now=_now())
     return await service.get_view(enrollment_id, tenant_id=current_user.tenant_id)
 
 

@@ -645,9 +645,7 @@ class EnrollmentService:
                 # manual choice (decision / mdo).
                 break
             execution_id, block = target
-            result = (
-                {"performed_at": now.isoformat()} if block.KIND == "treatment" else None
-            )
+            result = {"performed_at": now.isoformat()} if block.KIND == "treatment" else None
             await self.complete_step(
                 enrollment_id, execution_id, result=result, tenant_id=tenant_id, now=now
             )

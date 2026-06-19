@@ -27,10 +27,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.task.title')}
-        htmlFor="task-title"
-      >
+      <InspectorField label={t('inspector.task.title')} htmlFor="task-title">
         <Input
           id="task-title"
           value={config.title ?? ''}
@@ -57,10 +54,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
           </SelectContent>
         </Select>
       </InspectorField>
-      <InspectorField
-        label={t('inspector.task.dueOffset')}
-        htmlFor="task-due-offset"
-      >
+      <InspectorField label={t('inspector.task.dueOffset')} htmlFor="task-due-offset">
         <Input
           id="task-due-offset"
           type="number"
@@ -74,10 +68,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
           }
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.task.notes')}
-        htmlFor="task-notes"
-      >
+      <InspectorField label={t('inspector.task.notes')} htmlFor="task-notes">
         <Textarea
           id="task-notes"
           value={config.notes ?? ''}

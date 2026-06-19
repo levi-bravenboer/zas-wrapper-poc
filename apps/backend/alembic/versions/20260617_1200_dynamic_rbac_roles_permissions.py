@@ -222,9 +222,7 @@ def downgrade() -> None:
         WHERE r.id = u.role_id
         """
     )
-    op.execute(
-        "UPDATE users SET role = 'patient'::role WHERE patient_id IS NOT NULL"
-    )
+    op.execute("UPDATE users SET role = 'patient'::role WHERE patient_id IS NOT NULL")
     op.alter_column("users", "role", existing_type=sa.Enum(name="role"), nullable=False)
 
     # Drop the new role_id-based indexes.

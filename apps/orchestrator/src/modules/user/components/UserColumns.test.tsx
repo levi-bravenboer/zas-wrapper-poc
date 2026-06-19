@@ -13,8 +13,22 @@ import { useUserColumns, useUserFilterDefs, useUserRowActions } from './UserColu
 const ADMIN_ROLE_ID = 'a1111111-1111-4111-8111-1111111111a1'
 const DEFAULT_ROLE_ID = 'd2222222-2222-4222-8222-2222222222d1'
 const ROLES: Role[] = [
-  { id: ADMIN_ROLE_ID, slug: 'admin', name: 'Admin', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
-  { id: DEFAULT_ROLE_ID, slug: 'default', name: 'Standaard', is_system: true, permissions: [], created_at: '2026-01-01T00:00:00Z' },
+  {
+    id: ADMIN_ROLE_ID,
+    slug: 'admin',
+    name: 'Admin',
+    is_system: true,
+    permissions: [],
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: DEFAULT_ROLE_ID,
+    slug: 'default',
+    name: 'Standaard',
+    is_system: true,
+    permissions: [],
+    created_at: '2026-01-01T00:00:00Z',
+  },
 ]
 
 function I18nWrap({ children }: { children: ReactNode }) {

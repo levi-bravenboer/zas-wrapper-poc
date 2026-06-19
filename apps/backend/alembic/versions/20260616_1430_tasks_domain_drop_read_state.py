@@ -5,6 +5,7 @@ Revises: a1c0d2e4f6b8
 Create Date: 2026-06-16 14:30:00.000000
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -41,8 +42,18 @@ def upgrade() -> None:
         sa.Column("updated_by", sa.UUID(), nullable=False),
         sa.Column("deleted_by", sa.UUID(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["assignee_user_id"], ["users.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="RESTRICT"),
@@ -85,14 +96,26 @@ def downgrade() -> None:
         sa.Column("user_id", sa.UUID(), nullable=False),
         sa.Column("source", sa.String(length=64), nullable=False),
         sa.Column("source_id", sa.UUID(), nullable=False),
-        sa.Column("opened_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "opened_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
         sa.Column("tenant_id", sa.UUID(), nullable=False),
         sa.Column("created_by", sa.UUID(), nullable=False),
         sa.Column("updated_by", sa.UUID(), nullable=False),
         sa.Column("deleted_by", sa.UUID(), nullable=True),
         sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["deleted_by"], ["users.id"], ondelete="RESTRICT"),
@@ -101,12 +124,32 @@ def downgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_task_read_state_tenant_id"), "task_read_state", ["tenant_id"], unique=False)
-    op.create_index(op.f("ix_task_read_state_user_id"), "task_read_state", ["user_id"], unique=False)
-    op.create_index("ix_task_read_state_user_source", "task_read_state", ["user_id", "source"], unique=False, postgresql_where=sa.text("deleted_at IS NULL"))
-    op.create_index("uq_task_read_state_user_source_open", "task_read_state", ["user_id", "source", "source_id"], unique=True, postgresql_where=sa.text("deleted_at IS NULL"))
+    op.create_index(
+        op.f("ix_task_read_state_tenant_id"), "task_read_state", ["tenant_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_task_read_state_user_id"), "task_read_state", ["user_id"], unique=False
+    )
+    op.create_index(
+        "ix_task_read_state_user_source",
+        "task_read_state",
+        ["user_id", "source"],
+        unique=False,
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
+    op.create_index(
+        "uq_task_read_state_user_source_open",
+        "task_read_state",
+        ["user_id", "source", "source_id"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
 
-    op.drop_index("ix_tasks_assignee_status_open", table_name="tasks", postgresql_where=sa.text("deleted_at IS NULL"))
+    op.drop_index(
+        "ix_tasks_assignee_status_open",
+        table_name="tasks",
+        postgresql_where=sa.text("deleted_at IS NULL"),
+    )
     op.drop_index(op.f("ix_tasks_patient_id"), table_name="tasks")
     op.drop_index(op.f("ix_tasks_assignee_user_id"), table_name="tasks")
     op.drop_index(op.f("ix_tasks_tenant_id"), table_name="tasks")

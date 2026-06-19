@@ -59,7 +59,8 @@ export function PathwayEnrollmentSummary({
   }, [version, blockTypes, enrollment.executions, now])
 
   const STATE_LABEL_KEY = { finished: 'finished', active: 'next', upcoming: 'upcoming' } as const
-  const stateLabel = (step: SummaryStep): string => t(`timeline.state.${STATE_LABEL_KEY[step.state]}`)
+  const stateLabel = (step: SummaryStep): string =>
+    t(`timeline.state.${STATE_LABEL_KEY[step.state]}`)
 
   const stepSub = (step: SummaryStep): string | null => {
     const typeLabel = tp(`blockType.${step.legacyType}`)

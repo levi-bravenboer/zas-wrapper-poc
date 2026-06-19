@@ -16,7 +16,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.appointment import AppointmentParticipantRole, AppointmentStatus
 from app.core.identifiers import INSZ_SYSTEM
-from app.db.models.appointment import Appointment, AppointmentParticipant, AppointmentPatientAttendee
+from app.db.models.appointment import (
+    Appointment,
+    AppointmentParticipant,
+    AppointmentPatientAttendee,
+)
 from app.db.models.patient import Patient
 from app.db.models.patient.patient_identifier import PatientIdentifier
 from app.db.models.user import User

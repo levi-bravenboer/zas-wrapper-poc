@@ -16,9 +16,7 @@ from app.repositories.access.role_repository import RoleRepository
 from app.schemas.auth.auth import SessionUser
 
 
-async def load_role_context(
-    session: AsyncSession, role_id: UUID
-) -> tuple[str, frozenset[str]]:
+async def load_role_context(session: AsyncSession, role_id: UUID) -> tuple[str, frozenset[str]]:
     """Return (role_slug, effective permission slugs) for a role."""
     return await RoleRepository(session).load_role_context(role_id)
 
