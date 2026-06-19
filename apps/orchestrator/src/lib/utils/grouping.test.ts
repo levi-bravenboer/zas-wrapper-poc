@@ -19,8 +19,8 @@ describe('groupConsecutiveByDay', () => {
     ]
     const groups = groupConsecutiveByDay(rows, iso)
     expect(groups).toHaveLength(2)
-    expect(groups[0].items.map((r) => r.id)).toEqual(['a', 'b'])
-    expect(groups[1].items.map((r) => r.id)).toEqual(['c'])
+    expect(groups[0]!.items.map((r) => r.id)).toEqual(['a', 'b'])
+    expect(groups[1]!.items.map((r) => r.id)).toEqual(['c'])
   })
 
   it('does NOT merge non-consecutive runs of the same day', () => {
@@ -41,6 +41,6 @@ describe('groupConsecutiveByDay', () => {
     ]
     const groups = groupConsecutiveByDay(rows, iso)
     expect(groups).toHaveLength(1)
-    expect(groups[0].key).toBe('none')
+    expect(groups[0]!.key).toBe('none')
   })
 })

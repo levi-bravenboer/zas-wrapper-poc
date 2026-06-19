@@ -226,8 +226,9 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
   const actionsFor = (note: Note): ItemActions => ({
     canDelete: note.author_user_id === session.data?.id,
     onPreview: async (n) => setPreview({ note: n, url: await getNoteFileUrl(ownerType, ownerId, n.id) }),
-    onDownload: async (n) =>
-      window.open(await getNoteFileUrl(ownerType, ownerId, n.id), '_blank', 'noopener'),
+    onDownload: async (n) => {
+      window.open(await getNoteFileUrl(ownerType, ownerId, n.id), '_blank', 'noopener')
+    },
     onDelete: (noteId) => removeNote.mutate(noteId),
     deleting: removeNote.isPending,
   })

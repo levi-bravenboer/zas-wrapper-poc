@@ -26,7 +26,7 @@ const customRole = {
   permissions: ['user.read', 'user.create', 'role.update'],
 }
 
-function serveRole(role: unknown): void {
+function serveRole(role: Record<string, unknown>): void {
   server.use(http.get(`${baseUrl}/roles/${ROLE_ID}`, () => HttpResponse.json(role)))
 }
 

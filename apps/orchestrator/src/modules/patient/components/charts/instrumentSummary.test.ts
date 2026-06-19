@@ -34,7 +34,7 @@ describe('formatNumber', () => {
 describe('formatPoint', () => {
   it('appends the unit for numeric points', () => {
     const s = numericSeries([{ value: 80, observed_at: '2026-06-01' }], 'bpm')
-    expect(formatPoint(s, s.points![0])).toBe('80 bpm')
+    expect(formatPoint(s, s.points![0]!)).toBe('80 bpm')
   })
 
   it('joins categorical responses', () => {
