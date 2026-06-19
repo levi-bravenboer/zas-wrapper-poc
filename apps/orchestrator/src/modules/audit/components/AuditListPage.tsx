@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from 'react'
+import { useCallback, useMemo, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -51,12 +51,15 @@ export function AuditListPage(): ReactElement {
     query,
   )
 
-  const actorLabel = (row: AuditEventRead): string => {
-    if (row.actor_label) return row.actor_label
-    if (row.actor_type === 'system') return t('actor.system')
-    if (row.actor_type === 'anonymous') return t('actor.anonymous')
-    return row.actor_id ?? '—'
-  }
+  const actorLabel = useCallback(
+    (row: AuditEventRead): string => {
+      if (row.actor_label) return row.actor_label
+      if (row.actor_type === 'system') return t('actor.system')
+      if (row.actor_type === 'anonymous') return t('actor.anonymous')
+      return row.actor_id ?? '—'
+    },
+    [t],
+  )
 
   const columns = useMemo<ReadonlyArray<BrandedColumnDef<AuditEventRead>>>(
     () => [
@@ -125,9 +128,7 @@ export function AuditListPage(): ReactElement {
         ),
       }),
     ],
-    // actorLabel closes over the stable `t` — safe to omit
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
+    [t, actorLabel],
   )
 
   const filterDefs = useMemo<ReadonlyArray<DataTableFilter<AuditEventRead>>>(

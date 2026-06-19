@@ -49,8 +49,8 @@ function formatBytes(bytes: number): string {
 
 type ItemActions = {
   canDelete: boolean
-  onPreview: (note: FileNote) => void
-  onDownload: (note: FileNote) => void
+  onPreview: (note: FileNote) => void | Promise<void>
+  onDownload: (note: FileNote) => void | Promise<void>
   onDelete: (noteId: string) => void
   deleting: boolean
 }

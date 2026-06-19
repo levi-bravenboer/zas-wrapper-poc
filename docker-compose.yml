@@ -100,7 +100,7 @@ services:
     networks: [zas_net]
 
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: zas_minio
     command: server /data --console-address ":9001"
     environment:
@@ -121,7 +121,7 @@ services:
   # One-shot bucket creation (mirrors zas_ory_db_init). Idempotent:
   # `mb --ignore-existing` is a no-op once the bucket exists.
   minio-init:
-    image: minio/mc
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: zas_minio_init
     entrypoint: ["/bin/sh", "-c"]
     command: >
@@ -228,7 +228,7 @@ services:
   # external DB) — fine for local/PoC; a production deploy points at a
   # persistent Temporal cluster instead. gRPC :7233, Web UI :8233.
   temporal:
-    image: temporalio/temporal:latest
+    image: temporalio/temporal:1.7.2
     container_name: zas_temporal
     command: ["server", "start-dev", "--ip", "0.0.0.0", "--namespace", "default"]
     ports:

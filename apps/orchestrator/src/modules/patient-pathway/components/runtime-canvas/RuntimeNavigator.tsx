@@ -9,6 +9,9 @@ import { CANVAS_VIEWPORT } from '@/modules/pathway/constants/canvas'
 
 import type { RuntimeFlowNode } from './RuntimeBlockNode'
 
+const MINIMAP_WIDTH = 220
+const MINIMAP_HEIGHT = 130
+
 export interface RuntimeNavigatorProps {
   nodeColor: (node: RuntimeFlowNode) => string
 }
@@ -33,7 +36,7 @@ export function RuntimeNavigator({ nodeColor }: RuntimeNavigatorProps): ReactEle
         maskColor="color-mix(in srgb, var(--color-foreground) 6%, transparent)"
         ariaLabel={t('minimap.label')}
         className="!relative !m-0 !rounded-none !border-0 !bg-transparent !shadow-none"
-        style={{ width: 220, height: 130 }}
+        style={{ width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT }}
       />
       <div className="flex items-center justify-end gap-0.5 border-t border-[color:var(--hairline)] bg-white/60 px-1 py-0.5">
         <Button

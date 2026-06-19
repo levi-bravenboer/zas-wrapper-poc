@@ -2,8 +2,7 @@
 
 Runs as a separate process from the API (same image): `python -m
 app.temporal.worker`. Registers the pathway workflows + activities and
-polls the task queue. Activities (materialization, projection, Luscii
-enroll, audit emit) land in later chunks.
+polls the task queue.
 """
 
 from __future__ import annotations

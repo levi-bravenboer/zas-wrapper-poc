@@ -4,7 +4,7 @@ from app.core.errors import AppError
 
 
 class RoleNotFoundError(AppError):
-    code = "not_found.role"
+    code = "not-found.role.not_found"
     status_code = 404
     message = "Role not found."
 
