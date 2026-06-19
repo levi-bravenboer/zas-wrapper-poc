@@ -103,7 +103,7 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
           </Fact>
           <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
           {lead ? (
-            <Fact label={t('field.treatingClinician', { defaultValue: 'Behandelend arts' })}>
+            <Fact label={t('field.treatingClinician', { defaultValue: 'Hoofdbehandelaar' })}>
               <span className="inline-flex min-w-0 items-center gap-1.5">
                 <PersonAvatar size="sm" name={lead.displayName} tintId={lead.userId} />
                 <span className="truncate">{lead.displayName}</span>

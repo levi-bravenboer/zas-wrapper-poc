@@ -22,7 +22,7 @@
     "insz": "INSZ",
     "pathway": "Zorgpad",
     "pathwayFallback": "Zorgpad",
-    "treatingClinician": "Behandelend arts"
+    "treatingClinician": "Hoofdbehandelaar"
   },
   "header": {
     "insz": "INSZ",
