@@ -74,6 +74,8 @@ export function RolesListPage(): ReactElement {
   const items = roles.data ?? []
   const totalColumns = columns.length + 1
 
+  const openDetail = (id: string): void =>
+    void navigate({ to: '/admin/roles/$roleId', params: { roleId: id } })
   const openEdit = (id: string): void =>
     void navigate({ to: '/admin/roles/$roleId/edit', params: { roleId: id } })
 
@@ -148,11 +150,11 @@ export function RolesListPage(): ReactElement {
                   role="button"
                   tabIndex={0}
                   className="cursor-pointer"
-                  onClick={() => openEdit(role.id)}
+                  onClick={() => openDetail(role.id)}
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter' && e.key !== ' ') return
                     e.preventDefault()
-                    openEdit(role.id)
+                    openDetail(role.id)
                   }}
                 >
                   {columns.map((col, idx) => (

@@ -10,6 +10,21 @@
     "column": { "name": "Naam", "slug": "Slug", "permissions": "Permissies" },
     "action": { "edit": "Bewerken", "delete": "Verwijderen" }
   },
+  "detail": {
+    "action": { "edit": "Bewerken" },
+    "card": {
+      "role": {
+        "title": "Rol",
+        "name": "Naam",
+        "slug": "Slug",
+        "type": "Type",
+        "system": "Systeemrol",
+        "custom": "Aangepast",
+        "permCount": "Aantal permissies"
+      },
+      "permissions": { "title": "Permissies", "granted": "Toegekend", "none": "Geen permissies." }
+    }
+  },
   "delete": {
     "title": "Rol verwijderen?",
     "description": "Dit kan alleen als geen gebruiker deze rol heeft.",
