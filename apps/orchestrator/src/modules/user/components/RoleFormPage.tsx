@@ -102,7 +102,8 @@ export function RoleFormPage({ mode, roleId }: RoleFormPageProps): ReactElement 
   const submitting = createRole.isPending || updateRole.isPending
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 py-6">
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 py-6">
       <header className="flex flex-col gap-0.5">
         <h1 className="text-xl font-semibold text-foreground">
           {editing
@@ -198,6 +199,7 @@ export function RoleFormPage({ mode, roleId }: RoleFormPageProps): ReactElement 
         <Button disabled={!valid || submitting} onClick={submit}>
           {t('form.save', { defaultValue: 'Opslaan' })}
         </Button>
+      </div>
       </div>
     </div>
   )

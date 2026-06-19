@@ -36,7 +36,8 @@ export function RolesListPage(): ReactElement {
   const items = roles.data ?? []
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 py-6">
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 py-6">
       <header className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-semibold text-foreground">
@@ -143,6 +144,7 @@ export function RolesListPage(): ReactElement {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   )
 }
