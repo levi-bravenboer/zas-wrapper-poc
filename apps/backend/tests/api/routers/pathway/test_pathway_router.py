@@ -127,8 +127,6 @@ async def test_list_block_types(
         "mdo",
         "form",
         "decision",
-        "milestone",
-        "wait",
         "pathway_link",
         LUSCII_PROGRAM_BLOCK_TYPE,
         "end_pathway",
@@ -145,8 +143,6 @@ async def test_list_block_types(
             "mdo",
             "form",
             "decision",
-            "milestone",
-            "wait",
             "pathway_link",
             "external_program",
         }

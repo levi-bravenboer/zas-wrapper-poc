@@ -18,7 +18,13 @@ from app.db.models.pathway.pathway_access import PathwayPractitioner, PathwaySpe
 from app.db.models.practitioner.practitioner_role import PractitionerRole
 from app.db.models.practitioner.specialism import PractitionerRoleSpecialism, Specialism
 from app.db.models.user import User
+from app.core.enums.audit import AuditAction
 from app.schemas.auth.auth import SessionUser
+from app.services.pathway.audit_events import (
+    OP_ASSIGN_PRACTITIONERS,
+    OP_SCOPE_SPECIALISMS,
+    record_pathway_event,
+)
 from app.services.access.scoping.errors import (
     SpecialismCodeTakenError,
     SpecialismInUseError,
@@ -153,11 +159,21 @@ class ScopingService:
             .scalars()
             .all()
         }
+        removed = sorted(existing.keys() - desired)
+        added = sorted(desired - existing.keys())
         for sid, link in existing.items():
             if sid not in desired:
                 await self._session.delete(link)
         for sid in desired - existing.keys():
             self._session.add(PathwaySpecialism(pathway_id=pathway_id, specialism_id=sid))
+        if added or removed:
+            record_pathway_event(
+                self._session,
+                action=AuditAction.UPDATED,
+                pathway_id=pathway_id,
+                operation=OP_SCOPE_SPECIALISMS,
+                context={"added": added, "removed": removed},
+            )
         await self._session.commit()
         rows = await self._session.execute(
             select(Specialism)
@@ -192,11 +208,21 @@ class ScopingService:
             .scalars()
             .all()
         }
+        removed = sorted(existing.keys() - desired)
+        added = sorted(desired - existing.keys())
         for uid, link in existing.items():
             if uid not in desired:
                 await self._session.delete(link)
         for uid in desired - existing.keys():
             self._session.add(PathwayPractitioner(pathway_id=pathway_id, user_id=uid))
+        if added or removed:
+            record_pathway_event(
+                self._session,
+                action=AuditAction.UPDATED,
+                pathway_id=pathway_id,
+                operation=OP_ASSIGN_PRACTITIONERS,
+                context={"added": added, "removed": removed},
+            )
         await self._session.commit()
         return sorted(desired)
 

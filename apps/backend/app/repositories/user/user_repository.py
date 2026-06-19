@@ -8,7 +8,6 @@ import sqlalchemy as sa
 from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.orm import InstrumentedAttribute
 
-from app.core.enums.user import Role
 from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.user import User
 from app.repositories.base import BaseListRepository
@@ -19,10 +18,10 @@ class UserRepository(BaseListRepository[User]):
     model = User
 
     orderable_fields: ClassVar[frozenset[str]] = frozenset(
-        {"display_name", "email", "role", "is_active", "created_at"}
+        {"display_name", "email", "role_id", "is_active", "created_at"}
     )
     filterable_fields: ClassVar[Mapping[str, frozenset[Operator]]] = {
-        "role": frozenset({"eq", "in", "not"}),
+        "role_id": frozenset({"eq", "in", "not"}),
         "is_active": frozenset({"eq"}),
         "has_practitioner": frozenset({"eq"}),
     }
@@ -58,15 +57,15 @@ class UserRepository(BaseListRepository[User]):
         return result.scalar_one_or_none()
 
     async def get_by_email(
-        self, tenant_id: UUID, email: str, *, role: Role | None = None
+        self, tenant_id: UUID, email: str, *, role_id: UUID | None = None
     ) -> User | None:
         filters = [
             User.tenant_id == tenant_id,
             func.lower(User.email) == email.lower(),
             User.deleted_at.is_(None),
         ]
-        if role is not None:
-            filters.append(User.role == role)
+        if role_id is not None:
+            filters.append(User.role_id == role_id)
         result = await self._session.execute(select(User).where(*filters))
         return result.scalar_one_or_none()
 
@@ -105,7 +104,7 @@ class UserRepository(BaseListRepository[User]):
                 User.external_subject == external_subject,
                 User.deleted_at.is_(None),
             )
-            .order_by(User.role)
+            .order_by(User.role_id)
         )
         return list(result.scalars().all())
 
@@ -119,7 +118,7 @@ class UserRepository(BaseListRepository[User]):
                 func.lower(User.email) == email.lower(),
                 User.deleted_at.is_(None),
             )
-            .order_by(User.role)
+            .order_by(User.role_id)
         )
         return list(result.scalars().all())
 

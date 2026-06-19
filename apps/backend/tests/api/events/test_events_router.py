@@ -9,7 +9,6 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from app.core.enums.user import Role
 from app.db.models.user import User
 from app.realtime.events import RealtimeEvent
 from app.realtime.pubsub import RealtimePubSub
@@ -27,7 +26,7 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 @pytest.fixture
 async def authed_admin(async_client: AsyncClient, seeded_zas_users: list[User]) -> User:
-    admin = next(u for u in seeded_zas_users if u.role is Role.ADMIN)
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     response = await async_client.post(
         "/auth/login/password", json={"email": ADMIN_EMAIL, "password": _PASSWORD}
     )

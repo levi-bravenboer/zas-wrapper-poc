@@ -61,12 +61,25 @@ class AtEnrollmentPickedDatePolicy(_PolicyBase):
     kind: Literal["at_enrollment_picked_date"] = "at_enrollment_picked_date"
 
 
+class RelativeToDatePolicy(_PolicyBase):
+    """Block fires relative to a **named clinical date** set at enrollment
+    (e.g. `operation_date`), with an ISO 8601 offset applied `before`
+    (e.g. `operation_date − P3D`) or `after`. Editing the named date at
+    runtime recomputes the dependent timer (parent design D3a)."""
+
+    kind: Literal["relative_to_date"] = "relative_to_date"
+    date_name: str
+    offset_iso: str = "PT0S"
+    direction: Literal["before", "after"] = "before"
+
+
 TimingPolicy = Annotated[
     Union[
         FixedDurationPolicy,
         WaitAfterPolicy,
         DueWithinPolicy,
         AtEnrollmentPickedDatePolicy,
+        RelativeToDatePolicy,
     ],
     Field(discriminator="kind"),
 ]
@@ -76,6 +89,7 @@ __all__ = [
     "AtEnrollmentPickedDatePolicy",
     "DueWithinPolicy",
     "FixedDurationPolicy",
+    "RelativeToDatePolicy",
     "TimingPolicy",
     "WaitAfterPolicy",
 ]

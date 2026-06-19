@@ -1,0 +1,24 @@
+{
+  "notes": {
+    "title": "Activiteit",
+    "empty": "Nog geen activiteit.",
+    "placeholder": "Voeg een notitie toe…",
+    "add": "Plaatsen",
+    "delete": "Verwijderen",
+    "directOnPatient": "Direct op patiënt",
+    "hint": "⌘/Ctrl + Enter om te versturen"
+  },
+  "files": {
+    "attach": "Bestand",
+    "uploading": "Uploaden…",
+    "download": "Downloaden",
+    "preview": "Bekijken",
+    "noPreview": "Geen voorbeeld beschikbaar voor dit bestandstype.",
+    "delete": "Verwijderen"
+  },
+  "owner": {
+    "appointment": "Op afspraak",
+    "task": "Op taak",
+    "patient": "Op patiënt"
+  }
+}

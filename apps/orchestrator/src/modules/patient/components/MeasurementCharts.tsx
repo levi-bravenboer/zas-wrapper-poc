@@ -10,8 +10,8 @@ import { cn } from '@/lib/style/cn'
 
 import { useLusciiData, type LusciiWindowDays } from '../hooks'
 
-import { InstrumentCard } from './charts/InstrumentCard'
-import { LatestValuesTable } from './charts/LatestValuesTable'
+import { InstrumentDetailDialog, type InstrumentDetail } from './charts/InstrumentDetailDialog'
+import { MetricTile } from './charts/MetricTile'
 import type { LusciiMeasurementSeries } from './charts/types'
 import { LusciiPanel } from './LusciiPanel'
 
@@ -33,6 +33,7 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
   const { t } = useTranslation('patient-profile')
   const [days, setDays] = useState<LusciiWindowDays>(30)
   const [plannedOpen, setPlannedOpen] = useState(false)
+  const [detail, setDetail] = useState<InstrumentDetail | null>(null)
 
   const dataQuery = useLusciiData(patientId, { days })
   const data = dataQuery.data
@@ -103,19 +104,22 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
             : {})}
         />
       ) : (
-        <>
-          <LatestValuesTable series={series} />
-          <section className="flex flex-col gap-3">
-            {groups.map((group) => (
-              <InstrumentCard
-                key={group.instrument_id}
-                instrumentId={group.instrument_id}
-                instrumentName={group.instrument_name}
-                series={group.series}
-              />
-            ))}
-          </section>
-        </>
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {groups.map((group) => (
+            <MetricTile
+              key={group.instrument_id}
+              instrumentName={group.instrument_name}
+              series={group.series}
+              onSelect={() =>
+                setDetail({
+                  instrumentId: group.instrument_id,
+                  instrumentName: group.instrument_name,
+                  series: group.series,
+                })
+              }
+            />
+          ))}
+        </section>
       )}
 
       {!showError && plannedCount > 0 ? (
@@ -142,6 +146,8 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
           ) : null}
         </Card>
       ) : null}
+
+      <InstrumentDetailDialog detail={detail} onClose={() => setDetail(null)} />
     </div>
   )
 }

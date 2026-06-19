@@ -1,4 +1,18 @@
 {
+  "participant": {
+    "role": "Rol",
+    "rolePlaceholder": "bijv. arts",
+    "specialty": "Specialisme",
+    "specialtyPlaceholder": "bijv. urologie"
+  },
+  "blockDialog": {
+    "participantHeader": "Betrokkene",
+    "addTitle": "Nieuw blok — {{type}}",
+    "editTitle": "Blok bewerken — {{type}}",
+    "configHeader": "Blok-instellingen",
+    "logicHeader": "Bedrijfslogica",
+    "timingHeader": "Timing"
+  },
   "overview": {
     "title": "Zorgpaden",
     "sub": "Beheer en ontwerp van klinische zorgpaden.",
@@ -132,7 +146,26 @@
         "admin": "Beheerder"
       },
       "description": "Omschrijving",
-      "descriptionPlaceholder": "Wat moet er gebeuren?"
+      "descriptionPlaceholder": "Wat moet er gebeuren?",
+      "title": "Titel",
+      "titlePlaceholder": "Bijv. Bel patiënt",
+      "dueOffset": "Af te ronden binnen (dagen)",
+      "notes": "Notities"
+    },
+    "structural": {
+      "noConfig": "Dit blok heeft geen instellingen — alleen een naam."
+    },
+    "mdo": {
+      "topic": "Onderwerp",
+      "topicPlaceholder": "Bijv. Bespreking pathologie-uitslag",
+      "attendeesNote": "Verwachte deelnemers",
+      "attendeesNotePlaceholder": "Bijv. oncoloog + radioloog + chirurg (advies, vrij invulbaar)",
+      "outcomes": "Uitkomsten",
+      "outcomesHint": "Optioneel — de voorzitter kiest één uitkomst bij afsluiten.",
+      "removeOutcome": "Uitkomst verwijderen",
+      "newOutcome": "Nieuwe uitkomst",
+      "newOutcomePlaceholder": "bijv. operatie",
+      "leadingHint": "De hoofdbehandelaar van de patiënt zit het MDO voor en sluit het af; extra zorgverleners kunnen onbeperkt bijdragen."
     },
     "message": {
       "channel": "Kanaal",
@@ -467,5 +500,26 @@
     "cancel": "Annuleren",
     "confirm": "Maak nieuwe versie",
     "error": "Nieuwe versie aanmaken mislukt."
+  },
+  "deleteBlock": {
+    "title": "Blok verwijderen?"
+  },
+  "timingPolicy": {
+    "kind": {
+      "none": "Geen timing",
+      "fixed_duration": "Vaste duur",
+      "wait_after": "Wacht na startmoment",
+      "due_within": "Af te ronden binnen",
+      "at_enrollment_picked_date": "Datum gekozen bij inschrijving",
+      "relative_to_date": "Relatief tot klinische datum"
+    },
+    "direction": {
+      "before": "voor",
+      "after": "na"
+    },
+    "isoLabel": "ISO 8601 duur",
+    "dateNameLabel": "Klinische datum",
+    "dateNamePlaceholder": "operation_date",
+    "hint": "ISO 8601 duur: P1D = 1 dag, PT4H = 4 uur, P2W = 2 weken."
   }
 }

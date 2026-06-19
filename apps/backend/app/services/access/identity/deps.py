@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import Depends, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.core.settings import Settings, SettingsDep
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.engine import SessionDep
+from app.db.models.access.role import Role
+from app.db.models.user.user import User
 from app.repositories.user.deps import UserRepoDep
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
+from app.schemas.auth.auth import RoleOption, SessionUser
 from app.services.access.identity.auth_service import AuthService
 from app.services.access.identity.authenticator import KratosAuthenticator
 from app.services.access.identity.errors import (
-    ForbiddenRoleError,
     RoleSelectionRequiredError,
     UnauthenticatedError,
 )
@@ -27,6 +27,7 @@ from app.services.access.identity.providers import (
     LoginProviderRegistry,
     PasswordLoginProvider,
 )
+from app.services.access.rbac.resolver import build_session_user
 
 # PoC is single-tenant (`zas`). Multi-tenant resolution lands at MVP.
 from scripts.seed_tenant import ZAS_TENANT_ID
@@ -85,13 +86,33 @@ async def resolve_actor_from_request(
         user = next((u for u in roster if u.id == bound_user_id), None)
         if user is None:
             request.state.role_selection_required = True
-            request.state.available_roles = sorted(
-                {u.role.value for u in roster if u.is_active and u.role != Role.PATIENT}
-            )
+            request.state.available_roles = [
+                opt.model_dump(mode="json")
+                for opt in await role_options_for(session, [u for u in roster if u.is_active])
+            ]
             return None
     if not user.is_active:
         return None
-    return SessionUser.model_validate(user)
+    return await build_session_user(session, user)
+
+
+async def role_options_for(session: AsyncSession, users: list[User]) -> list[RoleOption]:
+    """Selectable rows for a multi-row human (role-selection / login response).
+    Identified by user_id (slugs collide for patient+caregiver), labelled by
+    role slug + the patient facet."""
+    role_ids = {u.role_id for u in users}
+    slug_by_id: dict = {}
+    if role_ids:
+        rows = await session.execute(select(Role.id, Role.slug).where(Role.id.in_(role_ids)))
+        slug_by_id = {rid: slug for rid, slug in rows.all()}
+    return [
+        RoleOption(
+            user_id=u.id,
+            role_slug=slug_by_id.get(u.role_id, ""),
+            is_patient=u.patient_id is not None,
+        )
+        for u in users
+    ]
 
 
 def get_password_hasher() -> PasswordHasher:
@@ -120,9 +141,8 @@ def get_password_login_provider(
     user_repo: UserRepoDep,
     kratos: KratosClientDep,
 ) -> PasswordLoginProvider:
-    del session
     authenticator = KratosAuthenticator(user_repo, kratos, tenant_id=ZAS_TENANT_ID)
-    return PasswordLoginProvider(authenticator)
+    return PasswordLoginProvider(authenticator, session)
 
 
 PasswordLoginProviderDep = Annotated[PasswordLoginProvider, Depends(get_password_login_provider)]
@@ -163,25 +183,3 @@ async def get_current_user(
 
 
 CurrentUserDep = Annotated[SessionUser, Depends(get_current_user)]
-
-
-def require_role(*roles: Role) -> Callable[[SessionUser], SessionUser]:
-    """Return a Depends-compatible callable that enforces `current_user.role`
-    is one of `roles`. Empty `roles` is a wiring bug — raise immediately so
-    the misconfiguration surfaces at import / first request, not silently
-    permits everyone.
-    """
-
-    if not roles:
-        raise ValueError("require_role requires at least one Role")
-    allowed: frozenset[Role] = frozenset(roles)
-
-    def _guard(current_user: CurrentUserDep) -> SessionUser:
-        if current_user.role not in allowed:
-            raise ForbiddenRoleError()
-        return current_user
-
-    return _guard
-
-
-AdminUserDep = Annotated[SessionUser, Depends(require_role(Role.ADMIN))]

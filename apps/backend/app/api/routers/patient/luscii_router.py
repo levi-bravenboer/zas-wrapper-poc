@@ -8,17 +8,31 @@ builder-picker surface).
 from __future__ import annotations
 
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
 from app.core.errors import ErrorResponse
+from app.db.models.patient import PatientLusciiConnection
 from app.schemas.luscii.patient_data import (
+    LusciiConnectionSummary,
     LusciiLinkRequest,
     LusciiLinkResult,
     LusciiPatientData,
 )
 from app.services.luscii.deps import LusciiPatientDataServiceDep
 from app.services.patient.deps import PatientAccessDep, PatientEditDep
+
+
+def _connection_summary(conn: PatientLusciiConnection) -> LusciiConnectionSummary:
+    return LusciiConnectionSummary(
+        connection_id=conn.id,
+        luscii_patient_id=conn.luscii_patient_id,
+        status=conn.status.value,
+        program_id=conn.program_id,
+        program_name=conn.program_name,
+    )
+
 
 router = APIRouter(tags=["patients"])
 
@@ -72,6 +86,48 @@ async def get_patient_luscii_data(
     days: Annotated[int, Query(ge=1, le=365, description="Lookback window")] = 30,
 ) -> LusciiPatientData:
     return await service.get_patient_data(patient, days)
+
+
+@router.get(
+    "/patients/{patient_id}/luscii-connections",
+    operation_id="list_patient_luscii_connections",
+    response_model=list[LusciiConnectionSummary],
+)
+async def list_patient_luscii_connections(
+    patient: PatientAccessDep,
+    service: LusciiPatientDataServiceDep,
+) -> list[LusciiConnectionSummary]:
+    conns = await service.list_connections(patient.id)
+    return [_connection_summary(c) for c in conns]
+
+
+@router.post(
+    "/patients/{patient_id}/luscii-connections",
+    operation_id="add_patient_luscii_connection",
+    response_model=LusciiConnectionSummary,
+    status_code=status.HTTP_201_CREATED,
+    responses=_LINK_ERRORS,
+)
+async def add_patient_luscii_connection(
+    payload: LusciiLinkRequest,
+    patient: PatientEditDep,  # AUTH-HARDEN: Keto `edit` verb — same predicate as PATCH
+    service: LusciiPatientDataServiceDep,
+) -> LusciiConnectionSummary:
+    conn = await service.add_connection(patient, payload.luscii_patient_id)
+    return _connection_summary(conn)
+
+
+@router.delete(
+    "/patients/{patient_id}/luscii-connections/{connection_id}",
+    operation_id="deactivate_patient_luscii_connection",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def deactivate_patient_luscii_connection(
+    connection_id: UUID,
+    patient: PatientEditDep,  # AUTH-HARDEN: Keto `edit` verb — same predicate as PATCH
+    service: LusciiPatientDataServiceDep,
+) -> None:
+    await service.deactivate_connection(patient, connection_id)
 
 
 __all__ = ["router"]

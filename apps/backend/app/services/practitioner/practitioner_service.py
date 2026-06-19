@@ -6,11 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.enums.user import Role
 from app.db.models.practitioner import Practitioner
 from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
 from app.schemas.practitioner.practitioner import PractitionerCreate, PractitionerUpdate
+from app.services.access.rbac.guard import ADMIN_ROLE_SLUG
+from app.services.access.rbac.resolver import load_role_context
 from app.services.practitioner.errors import (
     CrossTenantPractitionerError,
     PractitionerAlreadyExistsError,
@@ -49,7 +50,10 @@ class PractitionerService:
         user = await self._load_user(payload.user_id)
         if user.tenant_id != actor.tenant_id:
             raise CrossTenantPractitionerError()
-        if user.role != Role.CAREGIVER:
+        # Caregiver identity = having a Practitioner row. Exclude the other
+        # identity-types: admin-role users and patients may not have one.
+        role_slug, _ = await load_role_context(self._session, user.role_id)
+        if role_slug == ADMIN_ROLE_SLUG or user.patient_id is not None:
             raise UserNotCaregiverError()
         existing = await self._session.execute(
             select(Practitioner.id).where(Practitioner.user_id == payload.user_id)

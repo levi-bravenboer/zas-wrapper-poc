@@ -1,4 +1,3 @@
-from app.repositories.task.appointment_task_repository import AppointmentTaskRepository
-from app.repositories.task.task_read_state_repository import TaskReadStateRepository
+from app.repositories.task.task_repository import TaskRepository
 
-__all__ = ["AppointmentTaskRepository", "TaskReadStateRepository"]
+__all__ = ["TaskRepository"]

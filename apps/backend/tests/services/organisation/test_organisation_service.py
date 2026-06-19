@@ -6,7 +6,6 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTypeCode
-from app.core.enums.user import Role
 from app.db.models.organisation import Organisation
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
@@ -16,6 +15,7 @@ from app.services.organisation.errors import (
     OrganisationNotFoundError,
 )
 from app.services.organisation.organisation_service import OrganisationService
+from tests._rbac import ensure_roles
 
 
 async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
@@ -27,6 +27,7 @@ async def _make_tenant(session: AsyncSession, slug: str) -> Tenant:
 
 async def _make_actor(session: AsyncSession, tenant: Tenant) -> User:
     user_id = uuid.uuid4()
+    roles = await ensure_roles(session, tenant.id)
     user = User(
         id=user_id,
         tenant_id=tenant.id,
@@ -35,7 +36,7 @@ async def _make_actor(session: AsyncSession, tenant: Tenant) -> User:
         email=f"{uuid.uuid4()}@example.test",
         password_hash="hash",
         display_name="actor",
-        role=Role.ADMIN,
+        role_id=roles["admin"].id,
         is_active=True,
     )
     session.add(user)

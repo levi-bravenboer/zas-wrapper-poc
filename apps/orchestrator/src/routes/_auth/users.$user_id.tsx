@@ -71,7 +71,7 @@ function DetailContent({ user }: { user: UserDetail }): ReactElement {
       </Section>
       <Section title={t('detail.section.access')}>
         <Field label={t('detail.field.role')}>
-          <RoleBadge role={user.role} />
+          <RoleBadge roleId={user.role_id} />
         </Field>
         <Field label={t('detail.field.is_active')}>
           <StatusPill active={user.is_active} />

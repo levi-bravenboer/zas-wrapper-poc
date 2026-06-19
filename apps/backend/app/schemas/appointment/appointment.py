@@ -7,11 +7,19 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from app.core.enums.appointment import AppointmentParticipantRole
+from app.core.enums.appointment import (
+    AppointmentKind,
+    AppointmentModality,
+    AppointmentParticipantRole,
+    AppointmentStatus,
+)
+from app.schemas.patient.patient import PatientInlineSummary
 
 
 class AppointmentParticipantInlineSummary(BaseModel):
@@ -27,3 +35,36 @@ class AppointmentParticipantInlineSummary(BaseModel):
     user_id: UUID
     role: AppointmentParticipantRole
     user_display_name: str
+
+
+class AppointmentRead(BaseModel):
+    """Read model for the first-class `/appointments` API."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    patient: PatientInlineSummary
+    title: str
+    description: str | None = None
+    kind: AppointmentKind
+    starts_at: datetime
+    ends_at: datetime
+    modality: AppointmentModality
+    location_text: str | None = None
+    status: AppointmentStatus
+    participants: list[AppointmentParticipantInlineSummary]
+
+
+# How a patient relates to an appointment on the patient profile:
+# `about` = the appointment's subject (`appointments.patient_id`);
+# `with` = the patient attends via `appointment_patient_attendees`.
+PatientAppointmentRelation = Literal["about", "with"]
+
+
+class PatientAppointmentEntry(BaseModel):
+    """An appointment in the patient-profile Afspraken tab, tagged by relation."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    relation: PatientAppointmentRelation
+    appointment: AppointmentRead

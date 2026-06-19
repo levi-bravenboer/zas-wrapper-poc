@@ -118,25 +118,31 @@ describe('PatientProfilePage', () => {
     useLusciiDataMock.mockReturnValue(stubQuery(null))
     useLinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
     useUnlinkLusciiMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false })
-    getMock.mockResolvedValue({
-      data: { items: [{ id: 'org-1', name: 'ZAS Mechelen' }] },
-      response: new Response(null, { status: 200 }),
+    getMock.mockImplementation((path: string) => {
+      if (path === '/enrollments') {
+        return Promise.resolve({ data: [], response: new Response(null, { status: 200 }) })
+      }
+      return Promise.resolve({
+        data: { items: [{ id: 'org-1', name: 'ZAS Mechelen' }] },
+        response: new Response(null, { status: 200 }),
+      })
     })
   })
 
-  it('renders header with name + INSZ + the two clinical tabs', async () => {
+  it('renders header with name + INSZ + the clinical tabs', async () => {
     usePatientMock.mockReturnValue(stubQuery(PATIENT))
     renderPage()
 
     expect(await screen.findByRole('heading', { name: /Bos, Eva/ })).toBeTruthy()
     expect(screen.getAllByText(/80051203412/).length).toBeGreaterThan(0)
+    expect(screen.getByRole('tab', { name: /Overzicht/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Zorgpad/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Metingen/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Labresultaten/ })).toBeTruthy()
-    // Legacy meta tabs are gone per D10
-    expect(screen.queryByRole('tab', { name: /Overzicht/ })).toBeNull()
-    expect(screen.queryByRole('tab', { name: /Zorgteam/ })).toBeNull()
+    expect(screen.getByRole('tab', { name: /Afspraken/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Zorgteam/ })).toBeTruthy()
+    // Geschiedenis lives in the kebab menu, not the tab strip
     expect(screen.queryByRole('tab', { name: /Geschiedenis/ })).toBeNull()
-    expect(screen.queryByRole('tab', { name: /Afspraken/ })).toBeNull()
   })
 
   it('back link points to /tasks', async () => {

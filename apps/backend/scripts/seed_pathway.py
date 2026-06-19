@@ -18,13 +18,13 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.access.rbac.resolver import build_session_user
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.pathway import Pathway, PathwayLaneKind, PathwayVersion
 from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from app.schemas.pathway.pathway import (
     PathwayBlockBranchIn,
     PathwayBlockIn,
@@ -64,9 +64,8 @@ LANE_EXTERNAL_ID: UUID = UUID("00000000-0000-4000-8000-000000000204")
 BLOCK_START_ID: UUID = UUID("00000000-0000-4000-8000-000000000300")
 BLOCK_INTAKE_ID: UUID = UUID("00000000-0000-4000-8000-000000000301")
 BLOCK_OPERATIE_ID: UUID = UUID("00000000-0000-4000-8000-000000000302")
-BLOCK_HERSTEL_ID: UUID = UUID("00000000-0000-4000-8000-000000000303")
+BLOCK_PREOP_REMINDER_ID: UUID = UUID("00000000-0000-4000-8000-000000000308")
 BLOCK_VOORTGANG_ID: UUID = UUID("00000000-0000-4000-8000-000000000304")
-BLOCK_ONTSLAG_ID: UUID = UUID("00000000-0000-4000-8000-000000000305")
 BLOCK_CONTROLE_ID: UUID = UUID("00000000-0000-4000-8000-000000000306")
 BLOCK_END_ID: UUID = UUID("00000000-0000-4000-8000-000000000307")
 
@@ -182,6 +181,31 @@ def _build_payload() -> PathwayDefinitionReplace:
                 x=0,
                 y=0,
             ),
+            # Pre-op reminder: auto-sent message timed two days before the
+            # named clinical date `operation_date` (supplied at enrollment).
+            # Exercises `relative_to_date` timing + `message` auto-fire on a
+            # durable timer.
+            PathwayBlockIn(
+                id=BLOCK_PREOP_REMINDER_ID,
+                phase_id=PHASE_PRE_OP_ID,
+                lane_id=LANE_PATIENT_ID,
+                kind="message",
+                label="Herinnering operatie",
+                config={
+                    "channel": "email",
+                    "subject": "Uw operatie nadert",
+                    "body": "Uw operatie staat over twee dagen gepland.",
+                    "input_logic": _gate_if_done(BLOCK_INTAKE_ID),
+                    "timing_policy": {
+                        "kind": "relative_to_date",
+                        "date_name": "operation_date",
+                        "offset_iso": "P2D",
+                        "direction": "before",
+                    },
+                },
+                x=0,
+                y=0,
+            ),
             # Pathway-completion § C7.1: the operation is a real
             # TreatmentBlock (typed result at completion), not a
             # milestone marker.
@@ -200,21 +224,10 @@ def _build_payload() -> PathwayDefinitionReplace:
                 x=0,
                 y=0,
             ),
-            PathwayBlockIn(
-                id=BLOCK_HERSTEL_ID,
-                phase_id=PHASE_RECOVERY_ID,
-                lane_id=LANE_SYSTEM_ID,
-                kind="wait",
-                label="Thuisrevalidatie periode",
-                config={
-                    "event_type": "external_data",
-                    "timeout_days": 42,
-                    "on_timeout": "continue",
-                    "input_logic": _gate_if_done(BLOCK_OPERATIE_ID),
-                },
-                x=0,
-                y=0,
-            ),
+            # Catalogue prune: the former `wait` recovery block + `milestone`
+            # discharge marker were removed. The recovery delay is now a
+            # relative timing concern on the decision (omitted here for the
+            # demo seed); the decision gates straight off the operation.
             PathwayBlockIn(
                 id=BLOCK_VOORTGANG_ID,
                 phase_id=PHASE_FOLLOW_UP_ID,
@@ -229,20 +242,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "question": "Verloopt het herstel volgens plan?",
                     "outputs": ["goed", "onvoldoende"],
                     "mode": "xor",
-                    "input_logic": _gate_if_done(BLOCK_HERSTEL_ID),
-                },
-                x=0,
-                y=0,
-            ),
-            PathwayBlockIn(
-                id=BLOCK_ONTSLAG_ID,
-                phase_id=PHASE_FOLLOW_UP_ID,
-                lane_id=LANE_SYSTEM_ID,
-                kind="milestone",
-                label="Ontslag",
-                config={
-                    "label": "Ontslag",
-                    "input_logic": _gate_decision_output(BLOCK_VOORTGANG_ID, "goed"),
+                    "input_logic": _gate_if_done(BLOCK_OPERATIE_ID),
                 },
                 x=0,
                 y=0,
@@ -270,7 +270,10 @@ def _build_payload() -> PathwayDefinitionReplace:
                 lane_id=LANE_SYSTEM_ID,
                 kind="end_pathway",
                 label="Einde",
-                config={"name": "Einde", "input_logic": _gate_if_done(BLOCK_ONTSLAG_ID)},
+                config={
+                    "name": "Einde",
+                    "input_logic": _gate_decision_output(BLOCK_VOORTGANG_ID, "goed"),
+                },
                 x=0,
                 y=0,
             ),
@@ -312,13 +315,7 @@ async def seed_rugrevalidatie(session: AsyncSession) -> Pathway:
         logger.info("pathway id=%s already present", PATHWAY_ID)
         return existing
 
-    actor = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    actor = await build_session_user(session, admin)
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
     session.info[SESSION_ACTOR_KEY] = actor
     try:

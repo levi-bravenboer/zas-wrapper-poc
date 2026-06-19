@@ -1,0 +1,65 @@
+{
+  "list": {
+    "title": "Auditlog",
+    "sub": "Alle systeemgebeurtenissen: wie deed wat, en wanneer.",
+    "empty": "Geen auditgebeurtenissen gevonden."
+  },
+  "column": {
+    "created_at": "Wanneer",
+    "actor": "Wie",
+    "action": "Actie",
+    "event_code": "Gebeurtenis",
+    "resource": "Resource",
+    "result": "Resultaat"
+  },
+  "filter": {
+    "action": "Actie",
+    "result": "Resultaat",
+    "resource_type": "Resourcetype",
+    "created_at": "Periode"
+  },
+  "actor": {
+    "system": "(systeem)",
+    "anonymous": "(anoniem)"
+  },
+  "enum": {
+    "action": {
+      "created": "Aangemaakt",
+      "read": "Gelezen",
+      "updated": "Bijgewerkt",
+      "deleted": "Verwijderd",
+      "execute": "Uitgevoerd",
+      "login": "Inloggen"
+    },
+    "event_code": {
+      "pathway": {
+        "published": "Gepubliceerd"
+      },
+      "runtime": {
+        "enrolled": "Ingeschreven",
+        "block_executed": "Stap uitgevoerd",
+        "deferred_value_resolved": "Waarde ingevuld"
+      },
+      "patient": {
+        "dossier_viewed": "Dossier ingezien"
+      },
+      "auth": {
+        "login": "Inloggen"
+      }
+    },
+    "result": {
+      "success": "Gelukt",
+      "failure": "Mislukt"
+    }
+  },
+  "detail": {
+    "resource": "Resource",
+    "request_id": "Request-ID",
+    "changes": "Wijzigingen",
+    "context": "Context",
+    "none": "—"
+  },
+  "toast": {
+    "error": "Auditlog kon niet worden geladen."
+  }
+}

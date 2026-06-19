@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROTOTYPE — pathway-visuals v10 (design-system fidelity)</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-background: oklch(1 0 0);
+      --color-surface-1: oklch(0.985 0.003 175);
+      --color-surface-2: oklch(0.97 0.01 175);
+      --color-foreground: oklch(0.21 0.04 265);
+      --color-foreground-muted: oklch(0.5 0.02 265);
+      --color-muted-foreground: oklch(0.5 0.02 265);
+      --color-card: oklch(1 0 0);
+      --color-card-foreground: var(--color-foreground);
+      --color-muted: oklch(0.97 0.01 175);
+      --color-primary: oklch(0.46 0.07 175);
+      --color-primary-foreground: oklch(1 0 0);
+      --color-primary-soft: oklch(0.93 0.04 175);
+      --color-success: oklch(0.55 0.1 175);
+      --color-success-foreground: oklch(1 0 0);
+      --color-destructive: oklch(0.6 0.22 30);
+      --color-border: oklch(0.91 0.005 265);
+      --color-border-strong: oklch(0.82 0.01 265);
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+      --shadow-md: 0 4px 12px oklch(0.21 0.04 265 / 0.08);
+      --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+    }
+  </style>
+  <style>
+    :root { --ph-1-ink:#08453c; --red-ink:#b42318; }
+    body { font-family: var(--font-sans); background:#f4f6f5; color: var(--color-foreground); -webkit-font-smoothing:antialiased; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!--
+    PROTOTYPE — patient Zorgpad SUMMARY BANNER v10 (design-system fidelity)
+    Same trail-window + runtime palette as v9, but built on the real design system:
+      - shadcn Card / Badge conventions + semantic token utilities (text-muted-foreground, bg-primary, text-success)
+      - finished tile mirrors RuntimeBlockNode (color-mix(success 14%) + success check)
+      - active = border-primary shadow-md; state colours from RUNTIME_STATE_COLOR
+      - inline legend like RuntimeLegend so banner + detail tab read as one family
+    Detail = Zorgpad runtime canvas tab. Toggle two pathways top-right. DOM via createElement.
+  -->
+  <div class="mx-auto max-w-6xl px-8 py-6">
+
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">Claes, Jonas</h1>
+        <div class="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <span class="rounded-md bg-muted px-2 py-0.5 font-mono text-xs">INSZ: 02091852539</span>
+          <span>Geboren 18-09-2002</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-muted-foreground">demo:</span>
+        <button data-ds="bladder" class="ds-btn rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium shadow-sm">Blaaskanker (lang)</button>
+        <button data-ds="rehab" class="ds-btn rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium shadow-sm">Rugrevalidatie (kort)</button>
+      </div>
+    </div>
+
+    <div class="mt-5 mb-2 flex items-center justify-between">
+      <h2 class="text-lg font-semibold leading-none tracking-tight">Zorgpad</h2>
+      <button class="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-sm hover:border-[color:var(--color-border-strong)]">Nieuw zorgpad</button>
+    </div>
+
+    <!-- Card (rounded-lg border border-border bg-card shadow-sm) -->
+    <section id="banner" class="rounded-lg border border-border bg-card text-card-foreground shadow-sm"></section>
+
+    <div class="mt-4 flex gap-5 border-b border-border px-1 text-sm">
+      <span class="border-b-2 border-primary pb-2 font-medium text-foreground">Overzicht</span>
+      <span class="pb-2 text-muted-foreground">Zorgpad</span>
+      <span class="pb-2 text-muted-foreground">Metingen</span>
+      <span class="pb-2 text-muted-foreground">Afspraken</span>
+    </div>
+
+    <p class="mt-4 text-center text-xs text-muted-foreground">PROTOTYPE · pathway-visuals v10 (design-system fidelity)</p>
+  </div>
+
+  <script>
+    const STATE_COLOR = {
+      finished: 'var(--color-success)',
+      active:   'var(--color-primary)',
+      upcoming: 'var(--color-border-strong)',
+      pending:  'var(--color-border)',
+    };
+    const WINDOW = 2;
+
+    const DATASETS = {
+      bladder: {
+        name:'Blaaskanker (urologie)', state:'active', phaseName:'Besluit tot biopsie',
+        steps:[
+          { icon:'activity',    name:'Luscii-programma', state:'finished', sub:'17 jun' },
+          { icon:'calendar',    name:'Afspraak: scan',   state:'finished', sub:'17 jun · Dr. de Vries' },
+          { icon:'list-checks', name:'Scan beoordelen',  state:'finished', sub:'17 jun · Dr. de Vries' },
+          { icon:'list-checks', name:'MDO voorbereiden', state:'finished', sub:'17 jun · Dr. de Vries' },
+          { icon:'users',       name:'MDO (diagnostisch)', state:'active', sub:'Uroloog · panel', overdue:'2 dagen te laat' },
+          { icon:'calendar',    name:'Uitslag bespreken', state:'upcoming' },
+          { icon:'git-branch',  name:'Besluit: opereren?', state:'upcoming' },
+          { icon:'stethoscope', name:'Operatie',          state:'upcoming', sub:'25 jun' },
+          { icon:'users',       name:'MDO (post-op)',     state:'upcoming' },
+        ],
+      },
+      rehab: {
+        name:'Rugrevalidatie', state:'active', phaseName:'Behandeling',
+        steps:[
+          { icon:'flag',        name:'Intakegesprek',         state:'finished', sub:'02 jun · Dr. Berg' },
+          { icon:'list-checks', name:'Behandelplan',          state:'finished', sub:'02 jun' },
+          { icon:'activity',    name:'Oefenprogramma week 2', state:'active', sub:'Fysiotherapeut' },
+          { icon:'calendar',    name:'Evaluatieconsult',      state:'upcoming', sub:'30 jun' },
+        ],
+      },
+    };
+
+    function h(tag, props, ...kids) {
+      const node = document.createElement(tag);
+      if (props) for (const [k, v] of Object.entries(props)) {
+        if (v == null) continue;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = v;
+        else node.setAttribute(k, v);
+      }
+      for (const kid of kids) if (kid != null) node.append(kid);
+      return node;
+    }
+    const icon = (name, cls) => h('i', { 'data-lucide': name, class: cls || 'size-4' });
+
+    function nodeCircle(step) {
+      if (step.state === 'finished')
+        return h('span', { class:'grid size-8 shrink-0 place-items-center rounded-full text-success', style:'background:color-mix(in srgb, var(--color-success) 14%, transparent)' }, icon('check'));
+      if (step.state === 'active') {
+        const ring = step.overdue ? 'var(--red-ink)' : 'var(--color-primary)';
+        return h('span', { class:'grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-md', style:`box-shadow:0 0 0 5px color-mix(in srgb, ${ring} 18%, transparent), var(--shadow-md)` }, icon(step.icon, 'size-[18px]'));
+      }
+      return h('span', { class:'grid size-8 shrink-0 place-items-center rounded-full border border-[color:var(--color-border-strong)] bg-card text-muted-foreground' }, icon(step.icon));
+    }
+    const hline = (on, hide) => h('span', { class:'h-px flex-1 ' + (hide ? 'opacity-0' : on ? 'bg-success' : 'bg-border') });
+
+    function cell(step, leftOn, rightOn, leftHide, rightHide) {
+      const current = step.state === 'active';
+      const top = h('div', { class:'flex w-full items-center' }, hline(leftOn, leftHide), nodeCircle(step), hline(rightOn, rightHide));
+      const name = h('span', { class:'mt-1.5 max-w-full truncate px-1 text-center text-xs leading-tight ' + (current ? 'font-semibold text-foreground' : 'text-muted-foreground'), text: step.name });
+      let sub;
+      if (current && step.overdue) sub = h('span', { class:'truncate text-[11px] font-semibold leading-tight text-[color:var(--red-ink)]', text: step.overdue });
+      else if (step.sub) sub = h('span', { class:'max-w-full truncate text-[11px] leading-tight text-muted-foreground', text: step.sub });
+      else sub = h('span', { class:'text-[11px] leading-tight text-transparent', text:'·' });
+      return h('li', { class:'flex min-w-[6.5rem] shrink-0 grow basis-[6.5rem] flex-col items-center' }, top, name, sub);
+    }
+    function pillCell(n, label, leftOn, rightOn, leftHide, rightHide) {
+      const top = h('div', { class:'flex w-full items-center' }, hline(leftOn, leftHide),
+        h('span', { class:'grid size-8 shrink-0 place-items-center rounded-full border border-dashed border-[color:var(--color-border-strong)] text-[11px] font-semibold text-muted-foreground', text:`+${n}` }),
+        hline(rightOn, rightHide));
+      return h('li', { class:'flex min-w-[5rem] shrink-0 grow basis-[5rem] flex-col items-center' }, top,
+        h('span', { class:'mt-1.5 text-[11px] font-medium leading-tight text-muted-foreground', text: label }),
+        h('span', { class:'text-[11px] leading-tight text-transparent', text:'·' }));
+    }
+
+    function legend() {
+      const items = [ ['finished','Afgerond'], ['active','Nu'], ['upcoming','Komt'] ];
+      const row = h('div', { class:'flex flex-wrap items-center gap-4 text-xs text-muted-foreground' });
+      items.forEach(([k,label]) => row.append(h('span', { class:'flex items-center gap-1.5' },
+        h('span', { class:'size-2.5 rounded-full', style:`background:${STATE_COLOR[k]}` }), h('span',{text:label}))));
+      return row;
+    }
+
+    function renderBanner(ds) {
+      const b = document.getElementById('banner');
+      b.replaceChildren();
+      // CardContent-like padding p-4 (compact)
+      const body = h('div', { class:'flex flex-col gap-3 p-4' });
+      const steps = ds.steps;
+      const nowIdx = steps.findIndex(s => s.state === 'active');
+      const done = steps.filter(s => s.state === 'finished').length;
+      const total = steps.length;
+      const pct = Math.round(done / total * 100);
+
+      // header row
+      body.append(h('div', { class:'flex flex-wrap items-center gap-x-2 gap-y-1' },
+        h('span', { class:'inline-flex items-center gap-1 rounded-full border border-transparent bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary', text: ds.state==='paused'?'Gepauzeerd':'Actief' }),
+        h('span', { class:'text-sm font-medium text-foreground', text: ds.name }),
+        h('span', { class:'text-sm text-muted-foreground' }, h('span',{text:'· Fase '}), h('span',{class:'font-medium text-foreground', text: ds.phaseName})),
+        h('span', { class:'ml-auto text-xs font-medium text-muted-foreground', text:`${done}/${total} afgerond` }),
+      ));
+      // meter
+      body.append(h('div', { class:'h-1 w-full overflow-hidden rounded-full bg-muted' }, h('div', { class:'h-full rounded-full bg-success', style:`width:${pct}%` })));
+
+      // trail
+      const start = Math.max(0, nowIdx - WINDOW);
+      const end = Math.min(total - 1, nowIdx + WINDOW);
+      const beforeHidden = start, afterHidden = total - 1 - end;
+      const ol = h('ol', { class:'mt-1 flex items-start' });
+      const cells = [];
+      if (beforeHidden > 0) cells.push({ pill:true, n:beforeHidden, label:'afgerond' });
+      for (let i = start; i <= end; i++) cells.push({ step: steps[i], idx: i });
+      if (afterHidden > 0) cells.push({ pill:true, n:afterHidden, label:'te gaan' });
+      cells.forEach((c, ci) => {
+        const isFirst = ci === 0, isLast = ci === cells.length - 1;
+        const leftOn = c.pill ? (c.label === 'afgerond') : (c.idx <= nowIdx);
+        const rightOn = c.pill ? (c.label === 'afgerond') : (c.idx < nowIdx);
+        ol.append(c.pill ? pillCell(c.n, c.label, leftOn, rightOn, isFirst, isLast) : cell(c.step, leftOn, rightOn, isFirst, isLast));
+      });
+      body.append(ol);
+
+      // legend (ties to detail-tab RuntimeLegend)
+      body.append(h('div', { class:'border-t border-border pt-2.5' }, legend()));
+
+      b.append(body);
+      lucide.createIcons();
+    }
+
+    let current = 'bladder';
+    function setActive() {
+      document.querySelectorAll('.ds-btn').forEach(x => {
+        const on = x.dataset.ds === current;
+        x.style.borderColor = on ? 'var(--color-primary)' : 'var(--color-border)';
+        x.style.color = on ? 'var(--color-primary)' : '';
+        x.style.background = on ? 'var(--color-primary-soft)' : 'var(--color-card)';
+      });
+    }
+    document.querySelectorAll('.ds-btn').forEach(x => x.addEventListener('click', () => { current = x.dataset.ds; setActive(); renderBanner(DATASETS[current]); }));
+    setActive();
+    renderBanner(DATASETS[current]);
+  </script>
+</body>
+</html>

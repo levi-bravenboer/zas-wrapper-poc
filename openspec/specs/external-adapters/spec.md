@@ -14,7 +14,9 @@ Each external system SHALL be modelled as a `typing.Protocol` in `app/adapters/<
 
 ### Requirement: Mode-driven adapter factories
 
-`get_hix_client` and `get_luscii_client` SHALL inspect `Settings.<vendor>_mode` and return the stub when `"stub"`, the live client when `"live"`. In this change, only `"stub"` is implemented; selecting `"live"` MUST raise `NotImplementedError` with a message naming the future change that adds the live client.
+`get_hix_client` SHALL inspect `Settings.hix_mode` and return the stub when `"stub"`, the live client when `"live"`. Only `"stub"` is implemented; selecting `"live"` MUST raise `NotImplementedError` with a message naming the future change that adds the live client.
+
+`get_luscii_client` SHALL NOT be mode-driven. It SHALL return a `LusciiHttpClient` when `Settings.luscii_api_token` is set and `None` when it is not (see `luscii-patient-data`). There SHALL be no `luscii_mode` setting and no `LusciiStubClient`.
 
 #### Scenario: Stub returned by default
 
@@ -25,6 +27,16 @@ Each external system SHALL be modelled as a `typing.Protocol` in `app/adapters/<
 
 - **WHEN** the app starts with `BACKEND_HIX_MODE=live`
 - **THEN** boot fails with `NotImplementedError("HIX live client lands in the hix-fhir-proxy change")`
+
+#### Scenario: Luscii factory keys on token presence
+
+- **WHEN** the app starts with `BACKEND_LUSCII_API_TOKEN` unset
+- **THEN** `get_luscii_client(settings)` returns `None` and boot succeeds without a Luscii readiness entry
+
+#### Scenario: Stale BACKEND_LUSCII_MODE ignored
+
+- **WHEN** a developer's `.env` still contains `BACKEND_LUSCII_MODE=stub`
+- **THEN** settings load succeeds and the variable has no effect (`extra="ignore"`)
 
 ### Requirement: Adapter `ping()` contract
 
@@ -44,17 +56,11 @@ Every stub adapter module SHALL carry a top-of-file `# POC ONLY` banner naming t
 - **WHEN** a developer opens `app/adapters/hix/stub.py`
 - **THEN** the first comment in the file reads `# POC ONLY — replaced by hix-fhir-proxy. Synthetic fixtures only.`
 
-### Requirement: Luscii stub serves program payloads from an in-memory constant
+### Requirement: Luscii builder picker serves program payloads from an in-memory constant
 
-The existing `LusciiStubClient` (`app/adapters/luscii/stub.py`) SHALL keep its single `ping()` method — no new methods, no new Protocol slices. Per-vendor block routes (`GET /luscii/programs`, `GET /luscii/programs/{id}`) SHALL read directly from `app/adapters/luscii/programs.py`, a `# POC ONLY` static module exporting `LUSCII_STUB_PROGRAMS: tuple[LusciiProgramData, ...]` and `LUSCII_STUB_PROGRAMS_BY_ID: dict[str, LusciiProgramData]`.
+Per-vendor block routes (`GET /luscii/programs`, `GET /luscii/programs/{id}`) SHALL read directly from `app/adapters/luscii/programs.py`, a `# POC ONLY` static module exporting `LUSCII_STUB_PROGRAMS: tuple[LusciiProgramData, ...]` and `LUSCII_STUB_PROGRAMS_BY_ID: dict[str, LusciiProgramData]`. These routes SHALL NOT depend on the live `LusciiHttpClient`; migrating the picker to live data is a named follow-up change.
 
 This deliberately avoids a cross-vendor `ExternalBlockClient` Protocol or factory. With one external vendor, the abstraction would be unused overhead. When a second external vendor ships block-shaped capabilities, the right shared abstraction is extracted *based on what both vendors need*, not on speculative symmetry today.
-
-#### Scenario: Luscii stub still implements only ping
-
-- **WHEN** `LusciiStubClient` is type-checked against the `LusciiClient` Protocol
-- **THEN** the only required method is `ping()`
-- **AND** no new abstract methods (`list_blocks`, `get_block_schema`, `resolve_block`) appear on either the Protocol or the stub
 
 #### Scenario: Static program constant validates against LusciiProgramData
 
@@ -63,9 +69,14 @@ This deliberately avoids a cross-vendor `ExternalBlockClient` Protocol or factor
 - **THEN** every entry in `LUSCII_STUB_PROGRAMS` validates against `LusciiProgramData` (enforced at module load via Pydantic construction)
 - **AND** `LUSCII_STUB_PROGRAMS_BY_ID` keys equal the set of `id` values across `LUSCII_STUB_PROGRAMS`
 
-#### Scenario: Future live-Luscii adapter replaces the constant without touching routes
+#### Scenario: Picker routes unaffected by Luscii configuration
 
-- **WHEN** the future live-Luscii-adapter change lands
+- **WHEN** `GET /luscii/programs` is called with `BACKEND_LUSCII_API_TOKEN` unset
+- **THEN** the route serves the static constant normally (no `503 unavailable.luscii.not_configured`)
+
+#### Scenario: Future live-picker change replaces the constant without touching routes
+
+- **WHEN** the future live-Luscii-picker change lands
 - **THEN** it replaces the in-memory constant with a real fetch + cache layer
 - **AND** the route shapes (`GET /luscii/programs`, `GET /luscii/programs/{id}`) and their response models (`LusciiProgramData`) stay unchanged
 

@@ -23,7 +23,10 @@ describe('admin route beforeLoad', () => {
           email: 'a@b.co',
           display_name: 'A',
           tenant_id: '00000000-0000-0000-0000-000000000001',
-          role: 'caregiver',
+          role_id: 'd2222222-2222-4222-8222-2222222222d1',
+          role_slug: 'default',
+          permissions: [],
+          patient_id: null,
         }),
       ),
     )
@@ -41,7 +44,10 @@ describe('admin route beforeLoad', () => {
           email: 'b@b.co',
           display_name: 'B',
           tenant_id: '00000000-0000-0000-0000-000000000001',
-          role: 'external',
+          role_id: 'e3333333-3333-4333-8333-3333333333e3',
+          role_slug: 'external',
+          permissions: [],
+          patient_id: null,
         }),
       ),
     )
@@ -59,12 +65,15 @@ describe('admin route beforeLoad', () => {
           email: 'c@b.co',
           display_name: 'C',
           tenant_id: '00000000-0000-0000-0000-000000000001',
-          role: 'admin',
+          role_id: 'a1111111-1111-4111-8111-1111111111a1',
+          role_slug: 'admin',
+          permissions: ['user.read', 'role.read', 'organisation.read', 'audit.read'],
+          patient_id: null,
         }),
       ),
     )
 
     const result = await adminBeforeLoad({ context: makeContext() })
-    expect(result).toMatchObject({ session: { id: 'u3', role: 'admin' } })
+    expect(result).toMatchObject({ session: { id: 'u3', role_slug: 'admin' } })
   })
 })

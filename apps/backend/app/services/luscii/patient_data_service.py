@@ -20,7 +20,7 @@ from typing import Any, TypeVar
 from uuid import UUID
 
 from pydantic import ValidationError
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.luscii import (
@@ -32,15 +32,15 @@ from app.adapters.luscii import (
     LusciiPatientNotFoundError,
     LusciiPlannedAction,
 )
-from app.core.identifiers import LUSCII_PATIENT_SYSTEM
-from app.db.audit import SESSION_ACTOR_KEY
+from app.core.enums.patient import LusciiConnectionStatus
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
     LusciiInstrumentLocalisationRow,
     LusciiItemResponseLocalisationRow,
 )
-from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.patient import Patient, PatientLusciiConnection
 from app.schemas.luscii.patient_data import (
+    ConnectionGroup,
     LusciiLinkResult,
     LusciiMeasurementValueView,
     LusciiMeasurementView,
@@ -82,81 +82,176 @@ class LusciiPatientDataService:
         except LusciiApiError as exc:
             raise LusciiUnavailableError() from exc
 
+        # One Luscii patient maps to at most one of ours while active.
         other = await self._session.scalar(
-            select(PatientIdentifier.patient_id).where(
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.value == value,
-                PatientIdentifier.deleted_at.is_(None),
-                PatientIdentifier.patient_id != patient.id,
+            select(PatientLusciiConnection.patient_id).where(
+                PatientLusciiConnection.luscii_patient_id == luscii_patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
+                PatientLusciiConnection.patient_id != patient.id,
             )
         )
         if other is not None:
             raise LusciiIdAlreadyLinkedError()
 
-        # Replacement semantics: at most one active Luscii identifier per
-        # patient — soft-delete any previous link, then insert the new row.
-        await self._soft_delete_active_links(patient.id)
-        self._session.add(
-            PatientIdentifier(
-                patient_id=patient.id,
-                system=LUSCII_PATIENT_SYSTEM,
-                value=value,
-                use="secondary",
+        program = details.program
+        program_id = program.id if program else None
+        program_name = program.name if program else None
+
+        # Replacement semantics (single active per patient until the
+        # multi-connection UI lands): deactivate the current active
+        # connection, then upsert the target to active. Re-link reuses the
+        # existing `(patient, luscii patient)` row so history is not duplicated.
+        await self._deactivate_active_connections(patient.id)
+        existing = await self._session.scalar(
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.luscii_patient_id == luscii_patient_id,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
+        if existing is not None:
+            existing.status = LusciiConnectionStatus.ACTIVE
+            existing.program_id = program_id
+            existing.program_name = program_name
+        else:
+            self._session.add(
+                PatientLusciiConnection(
+                    patient_id=patient.id,
+                    luscii_patient_id=luscii_patient_id,
+                    status=LusciiConnectionStatus.ACTIVE,
+                    program_id=program_id,
+                    program_name=program_name,
+                )
+            )
         await self._session.flush()
         return LusciiLinkResult(
             luscii_patient_id=luscii_patient_id,
-            program_name=details.program.name if details.program else None,
+            program_name=program_name,
             protocol_name=details.protocol.name if details.protocol else None,
         )
 
     async def unlink(self, patient: Patient) -> None:
-        """Idempotent: succeeds whether or not a link exists."""
-        await self._soft_delete_active_links(patient.id)
+        """Idempotent: deactivates the active connection(s), keeps the rows."""
+        await self._deactivate_active_connections(patient.id)
         await self._session.flush()
 
-    async def _soft_delete_active_links(self, patient_id: UUID) -> None:
+    async def _deactivate_active_connections(self, patient_id: UUID) -> None:
         rows = await self._session.scalars(
-            select(PatientIdentifier).where(
-                PatientIdentifier.patient_id == patient_id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
             )
         )
-        actor = self._session.info.get(SESSION_ACTOR_KEY)
         for row in rows:
-            row.deleted_at = func.now()
-            if actor is not None:
-                row.deleted_by = actor.id
+            row.status = LusciiConnectionStatus.INACTIVE
 
     async def active_link_value(self, patient_id: UUID) -> str | None:
-        return await self._session.scalar(
-            select(PatientIdentifier.value).where(
-                PatientIdentifier.patient_id == patient_id,
-                PatientIdentifier.system == LUSCII_PATIENT_SYSTEM,
-                PatientIdentifier.deleted_at.is_(None),
+        luscii_id = await self._session.scalar(
+            select(PatientLusciiConnection.luscii_patient_id)
+            .where(
+                PatientLusciiConnection.patient_id == patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
+            )
+            .limit(1)
+        )
+        return str(luscii_id) if luscii_id is not None else None
+
+    # -- multi-connection management ----------------------------------------
+
+    async def list_connections(self, patient_id: UUID) -> list[PatientLusciiConnection]:
+        return await self._active_connections(patient_id)
+
+    async def add_connection(
+        self, patient: Patient, luscii_patient_id: UUID
+    ) -> PatientLusciiConnection:
+        """Activate a connection WITHOUT deactivating the patient's others —
+        the multi-connection counterpart of `link`."""
+        client = self._require_client()
+        value = str(luscii_patient_id)
+        try:
+            details = await client.get_patient(value)
+        except LusciiPatientNotFoundError as exc:
+            raise LusciiLinkPatientNotFoundError(details={"luscii_patient_id": value}) from exc
+        except LusciiApiError as exc:
+            raise LusciiUnavailableError() from exc
+
+        other = await self._session.scalar(
+            select(PatientLusciiConnection.patient_id).where(
+                PatientLusciiConnection.luscii_patient_id == luscii_patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
+                PatientLusciiConnection.patient_id != patient.id,
             )
         )
+        if other is not None:
+            raise LusciiIdAlreadyLinkedError()
+
+        program = details.program
+        program_id = program.id if program else None
+        program_name = program.name if program else None
+
+        existing = await self._session.scalar(
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.luscii_patient_id == luscii_patient_id,
+                PatientLusciiConnection.deleted_at.is_(None),
+            )
+        )
+        if existing is not None:
+            existing.status = LusciiConnectionStatus.ACTIVE
+            existing.program_id = program_id
+            existing.program_name = program_name
+            conn = existing
+        else:
+            conn = PatientLusciiConnection(
+                patient_id=patient.id,
+                luscii_patient_id=luscii_patient_id,
+                status=LusciiConnectionStatus.ACTIVE,
+                program_id=program_id,
+                program_name=program_name,
+            )
+            self._session.add(conn)
+        await self._session.flush()
+        return conn
+
+    async def deactivate_connection(self, patient: Patient, connection_id: UUID) -> None:
+        """Idempotent + patient-scoped: deactivates one connection, keeps the
+        row. A connection_id belonging to another patient is a silent no-op."""
+        conn = await self._session.scalar(
+            select(PatientLusciiConnection).where(
+                PatientLusciiConnection.id == connection_id,
+                PatientLusciiConnection.patient_id == patient.id,
+                PatientLusciiConnection.deleted_at.is_(None),
+            )
+        )
+        if conn is not None:
+            conn.status = LusciiConnectionStatus.INACTIVE
+            await self._session.flush()
 
     # -- aggregation ----------------------------------------------------------
 
     async def get_patient_data(self, patient: Patient, days: int) -> LusciiPatientData:
-        link_value = await self.active_link_value(patient.id)
-        if link_value is None:
+        connections = await self._active_connections(patient.id)
+        if not connections:
             return LusciiPatientData(state="not_linked", window_days=days)
 
         client = self._require_client()
         end = datetime.now(UTC).date()
         start = end - timedelta(days=days)
+        luscii_ids = [str(c.luscii_patient_id) for c in connections]
         try:
-            details, planned_actions, measurements = await asyncio.gather(
-                client.get_patient(link_value),
-                client.get_planned_actions(link_value, start, end),
-                client.get_measurements(start, end),
+            # One org-wide measurements call; per-connection details + planned
+            # actions in parallel.
+            measurements = await client.get_measurements(start, end)
+            details_list, actions_list = await asyncio.gather(
+                asyncio.gather(*(client.get_patient(v) for v in luscii_ids)),
+                asyncio.gather(*(client.get_planned_actions(v, start, end) for v in luscii_ids)),
             )
         except LusciiPatientNotFoundError as exc:
-            # Stale link: the Luscii patient vanished (or our token lost
+            # Stale link: a linked Luscii patient vanished (or our token lost
             # access) after linking. Upstream problem, not caller error.
             raise LusciiUnavailableError(
                 message="Linked Luscii patient is no longer accessible."
@@ -164,45 +259,49 @@ class LusciiPatientDataService:
         except LusciiApiError as exc:
             raise LusciiUnavailableError() from exc
 
-        own_measurements = [m for m in measurements if m.patient_id == link_value]
-        decoder = await self._build_decoder(own_measurements)
-        # Decode each measurement once; keep the (raw, view) pair so the
-        # planned-action join can still key on raw.planned_action_id while
-        # both the planned-actions block and the series projection consume
-        # the same decoded views.
-        decoded_pairs: list[tuple[LusciiMeasurement, LusciiMeasurementView]] = [
-            (raw, decoder.decode(raw)) for raw in own_measurements
+        id_set = set(luscii_ids)
+        relevant = [m for m in measurements if m.patient_id in id_set]
+        decoder = await self._build_decoder(relevant)
+
+        groups = [
+            _connection_group(
+                conn,
+                details,
+                planned_actions,
+                [m for m in relevant if m.patient_id == str(conn.luscii_patient_id)],
+                decoder,
+            )
+            for conn, details, planned_actions in zip(
+                connections, details_list, actions_list, strict=True
+            )
         ]
-        by_planned_action: dict[str, LusciiMeasurementView] = {
-            raw.planned_action_id: view for raw, view in decoded_pairs if raw.planned_action_id
-        }
-        matched_ids: set[str] = set()
-        action_views: list[LusciiPlannedActionView] = []
-        for action in planned_actions:
-            measurement_view = by_planned_action.get(action.id)
-            if measurement_view is not None:
-                matched_ids.add(action.id)
-            action_views.append(_action_view_from_decoded(action, measurement_view))
-        unmatched = [
-            view
-            for raw, view in decoded_pairs
-            if raw.planned_action_id is None or raw.planned_action_id not in matched_ids
-        ]
-        program = _program_view(details)
-        series = project_series(
-            [view for _raw, view in decoded_pairs],
-            program_id=program.id if program else None,
-        )
+
+        # Legacy single-connection fields mirror the first connection until the
+        # FE migrates to `connections[]` (see schema docstring).
+        primary = groups[0]
         return LusciiPatientData(
             state="linked",
-            luscii_patient_id=UUID(link_value),
+            luscii_patient_id=primary.luscii_patient_id,
             window_days=days,
-            program=program,
-            protocol=_protocol_view(details),
-            planned_actions=action_views,
-            unmatched_measurements=unmatched,
-            series=series,
+            program=primary.program,
+            protocol=primary.protocol,
+            planned_actions=primary.planned_actions,
+            unmatched_measurements=primary.measurements,
+            series=primary.series,
+            connections=groups,
         )
+
+    async def _active_connections(self, patient_id: UUID) -> list[PatientLusciiConnection]:
+        result = await self._session.scalars(
+            select(PatientLusciiConnection)
+            .where(
+                PatientLusciiConnection.patient_id == patient_id,
+                PatientLusciiConnection.status == LusciiConnectionStatus.ACTIVE,
+                PatientLusciiConnection.deleted_at.is_(None),
+            )
+            .order_by(PatientLusciiConnection.created_at)
+        )
+        return list(result)
 
     async def _build_decoder(self, measurements: list[LusciiMeasurement]) -> _MeasurementDecoder:
         """Key-filtered lookups against the synced catalogue tables.
@@ -262,6 +361,50 @@ class LusciiPatientDataService:
         if self._client is None:
             raise LusciiNotConfiguredError()
         return self._client
+
+
+def _connection_group(
+    conn: PatientLusciiConnection,
+    details: LusciiPatientDetails,
+    planned_actions: list[LusciiPlannedAction],
+    own_measurements: list[LusciiMeasurement],
+    decoder: _MeasurementDecoder,
+) -> ConnectionGroup:
+    """Build one connection's group: decode its measurements, join planned
+    actions, project series. Pure given the decoder + live API objects."""
+    decoded_pairs: list[tuple[LusciiMeasurement, LusciiMeasurementView]] = [
+        (raw, decoder.decode(raw)) for raw in own_measurements
+    ]
+    by_planned_action: dict[str, LusciiMeasurementView] = {
+        raw.planned_action_id: view for raw, view in decoded_pairs if raw.planned_action_id
+    }
+    matched_ids: set[str] = set()
+    action_views: list[LusciiPlannedActionView] = []
+    for action in planned_actions:
+        measurement_view = by_planned_action.get(action.id)
+        if measurement_view is not None:
+            matched_ids.add(action.id)
+        action_views.append(_action_view_from_decoded(action, measurement_view))
+    unmatched = [
+        view
+        for raw, view in decoded_pairs
+        if raw.planned_action_id is None or raw.planned_action_id not in matched_ids
+    ]
+    program = _program_view(details)
+    series = project_series(
+        [view for _raw, view in decoded_pairs],
+        program_id=program.id if program else None,
+    )
+    return ConnectionGroup(
+        connection_id=conn.id,
+        luscii_patient_id=conn.luscii_patient_id,
+        status=conn.status.value,
+        program=program,
+        protocol=_protocol_view(details),
+        planned_actions=action_views,
+        measurements=unmatched,
+        series=series,
+    )
 
 
 def _program_view(details: LusciiPatientDetails) -> LusciiProgramView | None:

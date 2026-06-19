@@ -27,17 +27,12 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.task.title', { defaultValue: 'Titel' })}
-        htmlFor="task-title"
-      >
+      <InspectorField label={t('inspector.task.title')} htmlFor="task-title">
         <Input
           id="task-title"
           value={config.title ?? ''}
           onChange={(e) => onChange({ ...config, title: e.target.value || undefined })}
-          placeholder={t('inspector.task.titlePlaceholder', {
-            defaultValue: 'Bijv. Bel patiënt',
-          })}
+          placeholder={t('inspector.task.titlePlaceholder')}
         />
       </InspectorField>
       <InspectorField label={t('inspector.task.assignee')}>
@@ -53,18 +48,13 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
           <SelectContent>
             {TASK_ASSIGNEES.map((assignee) => (
               <SelectItem key={assignee} value={assignee}>
-                {t(`inspector.task.assigneeOption.${assignee}`, {
-                  defaultValue: assignee === 'patient' ? 'Patiënt' : 'Zorgteam',
-                })}
+                {t(`inspector.task.assigneeOption.${assignee}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </InspectorField>
-      <InspectorField
-        label={t('inspector.task.dueOffset', { defaultValue: 'Af te ronden binnen (dagen)' })}
-        htmlFor="task-due-offset"
-      >
+      <InspectorField label={t('inspector.task.dueOffset')} htmlFor="task-due-offset">
         <Input
           id="task-due-offset"
           type="number"
@@ -78,10 +68,7 @@ export function TaskInspector({ config, onChange }: Props): ReactElement {
           }
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.task.notes', { defaultValue: 'Notities' })}
-        htmlFor="task-notes"
-      >
+      <InspectorField label={t('inspector.task.notes')} htmlFor="task-notes">
         <Textarea
           id="task-notes"
           value={config.notes ?? ''}

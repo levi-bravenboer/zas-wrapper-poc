@@ -28,7 +28,7 @@ interface ChartRow {
  * outside the data.
  */
 export function BarChart({ series }: BarChartProps): ReactElement | null {
-  const { config, rows, ticks } = useMemo(() => buildChartData(series), [series])
+  const { config, rows, ticks, min, max } = useMemo(() => buildChartData(series), [series])
 
   if (rows.length === 0) return null
 
@@ -49,9 +49,9 @@ export function BarChart({ series }: BarChartProps): ReactElement | null {
           axisLine={false}
           tickMargin={8}
           width={40}
-          ticks={ticks}
           allowDecimals={false}
-          domain={[ticks[0] ?? 0, ticks.at(-1) ?? 1]}
+          domain={[min, max]}
+          {...(ticks.length ? { ticks } : {})}
           {...(series.unit
             ? { label: { value: series.unit, angle: -90, position: 'insideLeft', offset: 4 } }
             : {})}
@@ -81,6 +81,8 @@ interface BuiltBar {
   config: ChartConfig
   rows: ChartRow[]
   ticks: number[]
+  min: number
+  max: number
 }
 
 function buildChartData(series: OrdinalSeries): BuiltBar {
@@ -95,10 +97,16 @@ function buildChartData(series: OrdinalSeries): BuiltBar {
     value: p.value,
   }))
   const values = rows.map((r) => r.value)
-  const min = values.length ? Math.floor(Math.min(...values)) : 0
-  const max = values.length ? Math.ceil(Math.max(...values)) : 1
+  // Bars grow from a zero baseline (or below, for negative scores) so a single
+  // or constant point stays visible — a data-derived min would clip the bar to
+  // zero height (e.g. a lone "5" with domain [5,6]).
+  const min = values.length ? Math.min(0, Math.floor(Math.min(...values))) : 0
+  const max = values.length ? Math.max(1, Math.ceil(Math.max(...values))) : 1
+  // Integer ticks for tight ranges; defer to Recharts' auto ticks when the
+  // span is wide so the axis doesn't crowd.
   const ticks: number[] = []
-  for (let v = min; v <= max; v += 1) ticks.push(v)
-  if (ticks.length === 1) ticks.push(ticks[0]! + 1)
-  return { config, rows, ticks }
+  if (max - min <= 10) {
+    for (let v = min; v <= max; v += 1) ticks.push(v)
+  }
+  return { config, rows, ticks, min, max }
 }

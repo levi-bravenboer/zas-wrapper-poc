@@ -5,7 +5,7 @@ import { apiError, readErrorBody } from '@/lib/api/errors'
 
 import type {
   CareTeamRow,
-  LusciiLinkResult,
+  LusciiConnectionSummary,
   LusciiPatientData,
   PatientRow,
   PatientUpdatePayload,
@@ -99,25 +99,50 @@ export async function fetchLusciiData(
   return data
 }
 
-export async function linkLuscii(
-  patientId: string,
-  lusciiPatientId: string,
-): Promise<LusciiLinkResult> {
-  const { data, response } = await api.PUT('/patients/{patient_id}/luscii-link', {
-    params: { path: { patient_id: patientId } },
-    body: { luscii_patient_id: lusciiPatientId },
-  })
-  if (!response.ok || !data) {
-    return lusciiError('Luscii link failed', response)
-  }
-  return data
-}
-
 export async function unlinkLuscii(patientId: string): Promise<void> {
   const { response } = await api.DELETE('/patients/{patient_id}/luscii-link', {
     params: { path: { patient_id: patientId } },
   })
   if (!response.ok) {
     return lusciiError('Luscii unlink failed', response)
+  }
+}
+
+export async function fetchLusciiConnections(
+  patientId: string,
+): Promise<LusciiConnectionSummary[]> {
+  const { data, response } = await api.GET('/patients/{patient_id}/luscii-connections', {
+    params: { path: { patient_id: patientId } },
+  })
+  if (!response.ok || !data) {
+    return lusciiError('Luscii connections fetch failed', response)
+  }
+  return data
+}
+
+export async function addLusciiConnection(
+  patientId: string,
+  lusciiPatientId: string,
+): Promise<LusciiConnectionSummary> {
+  const { data, response } = await api.POST('/patients/{patient_id}/luscii-connections', {
+    params: { path: { patient_id: patientId } },
+    body: { luscii_patient_id: lusciiPatientId },
+  })
+  if (!response.ok || !data) {
+    return lusciiError('Luscii connection add failed', response)
+  }
+  return data
+}
+
+export async function deactivateLusciiConnection(
+  patientId: string,
+  connectionId: string,
+): Promise<void> {
+  const { response } = await api.DELETE(
+    '/patients/{patient_id}/luscii-connections/{connection_id}',
+    { params: { path: { patient_id: patientId, connection_id: connectionId } } },
+  )
+  if (!response.ok) {
+    return lusciiError('Luscii connection deactivate failed', response)
   }
 }

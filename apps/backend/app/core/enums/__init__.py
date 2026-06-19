@@ -8,14 +8,15 @@ from app.core.enums.appointment import (
     AppointmentParticipantRole,
     AppointmentStatus,
 )
-from app.core.enums.audit import ActorType, AuditAction, AuditResult
+from app.core.enums.audit import ActorType, AuditAction, AuditResult, PurposeOfUse
 from app.core.enums.care_team import CareTeamStatus, RoleInCare
 from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTypeCode
 from app.core.enums.patient import Gender, PatientSource
+from app.core.enums.permission import CROWN_PERMISSIONS, Permission
 from app.core.enums.practitioner_role import PractitionerRoleCode
-from app.core.enums.user import Role
 
 __all__ = [
+    "CROWN_PERMISSIONS",
     "ORGANISATION_TYPE_SYSTEM",
     "ActorType",
     "AppointmentKind",
@@ -28,7 +29,8 @@ __all__ = [
     "Gender",
     "OrganisationTypeCode",
     "PatientSource",
+    "Permission",
     "PractitionerRoleCode",
-    "Role",
+    "PurposeOfUse",
     "RoleInCare",
 ]

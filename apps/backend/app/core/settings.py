@@ -72,6 +72,31 @@ class Settings(BaseSettings):
     realtime_keepalive_seconds: int = 15
     realtime_idle_timeout_seconds: int = 30 * 60
 
+    # Temporal (pathway runtime). Localhost default targets the dev server
+    # (compose `temporal` service); deploy overrides the host.
+    temporal_address: str = "localhost:7233"
+    temporal_namespace: str = "default"
+    temporal_task_queue: str = "pathway-runtime"
+    # Runtime driver for enrollments. `sync` runs the engine inline in the
+    # request (no Temporal needed — used by tests + envs without a worker);
+    # `temporal` starts a `PathwayEnrollmentWorkflow` per enrollment and
+    # routes caregiver actions through Updates/Signals so durable timers
+    # advance time-gated blocks. Flip to `temporal` once a worker is deployed.
+    pathway_runtime_engine: Literal["sync", "temporal"] = "sync"
+    # S3-compatible object storage (MinIO locally, real AWS S3 in prod).
+    # `s3_endpoint_url` is the in-network endpoint used server-side;
+    # `s3_public_url` is the browser-reachable host presigned URLs are minted
+    # against (SigV4 signs the host). Both unset ⇒ real AWS S3 for the region.
+    s3_endpoint_url: str | None = None
+    s3_public_url: str | None = None
+    s3_bucket: str = "zas-attachments"
+    s3_region: str = "eu-west-1"
+    # No baked-in credential: supplied per-env (BACKEND_S3_ACCESS_KEY /
+    # BACKEND_S3_SECRET_KEY). Empty ⇒ boto raises at first S3 use, so a
+    # misconfigured prod fails loud instead of silently using a known default.
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

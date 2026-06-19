@@ -77,10 +77,6 @@ export function blockSemanticsSummary(
       return 'questions' in data && data.questions ? `${data.questions.length}` : undefined
     case 'decision':
       return 'question' in data ? (data.question ?? undefined) : undefined
-    case 'milestone':
-      return 'label' in data ? (data.label ?? undefined) : undefined
-    case 'wait':
-      return 'event_type' in data ? (data.event_type ?? undefined) : undefined
     case 'pathway_link':
       return 'mode' in data ? (data.mode ?? undefined) : undefined
     default:

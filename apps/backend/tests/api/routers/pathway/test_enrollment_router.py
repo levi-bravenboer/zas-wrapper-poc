@@ -21,7 +21,6 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.pathway import (
@@ -43,7 +42,9 @@ from scripts.seed_users import (
     ADMIN_DISPLAY_NAME,
     ADMIN_EMAIL,
     ADMIN_USER_ID,
+    admin_role_id,
 )
+from tests._rbac import make_session_user
 
 _PASSWORD = "changeme"
 
@@ -60,12 +61,13 @@ def session_actor() -> SessionUser:
     in-test SA inserts without each row passing them explicitly.
     """
 
-    return SessionUser(
+    return make_session_user(
         id=ADMIN_USER_ID,
         email=ADMIN_EMAIL,
         display_name=ADMIN_DISPLAY_NAME,
         tenant_id=ZAS_TENANT_ID,
-        role=Role.ADMIN,
+        admin=True,
+        role_id=admin_role_id(ZAS_TENANT_ID),
     )
 
 
@@ -93,10 +95,18 @@ async def _autoclean_runtime_tables(
 
 
 async def _wipe(session: AsyncSession) -> None:
+    from app.db.models.care_team import CareTeam, CareTeamParticipant
+    from app.db.models.collaboration.note import Note
+
     for model in (
+        Note,
         PathwayDeferredFieldValue,
         PathwayBlockExecution,
         PathwayEnrollment,
+        # care_teams.patient_id -> patients is RESTRICT, so clear care teams
+        # (created by enrollment's `ensure_membership`) before patients.
+        CareTeamParticipant,
+        CareTeam,
         Patient,
         Organisation,
     ):
@@ -293,6 +303,137 @@ async def test_create_enrollment_happy_path(
     body = response.json()
     assert body["patient_id"] == str(world["patient_id"])
     assert body["pathway_version_id"] == str(world["version_id"])
+
+
+async def test_list_enrollments_by_patient(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    response = await async_client.get(
+        "/enrollments",
+        params={"patient_id": str(world["patient_id"])},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["patient_id"] == str(world["patient_id"])
+    assert body[0]["pathway_id"] == str(world["pathway_id"])
+    assert body[0]["pathway_version_id"] == str(world["version_id"])
+    assert len(body[0]["executions"]) >= 1
+
+
+async def test_cancel_enrollment(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+    enrollment_id = created.json()["id"]
+
+    response = await async_client.post(f"/enrollments/{enrollment_id}:cancel")
+    assert response.status_code == 200, response.text
+    assert response.json()["state"] == "cancelled"
+
+    # Idempotent: cancelling again leaves it cancelled.
+    again = await async_client.post(f"/enrollments/{enrollment_id}:cancel")
+    assert again.status_code == 200, again.text
+    assert again.json()["state"] == "cancelled"
+
+
+async def test_pause_then_resume_enrollment(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+    enrollment_id = created.json()["id"]
+
+    paused = await async_client.post(f"/enrollments/{enrollment_id}:pause")
+    assert paused.status_code == 200, paused.text
+    assert paused.json()["state"] == "paused"
+
+    resumed = await async_client.post(f"/enrollments/{enrollment_id}:resume")
+    assert resumed.status_code == 200, resumed.text
+    assert resumed.json()["state"] == "active"
+
+
+async def test_pathway_step_notes_roundtrip(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    created = await async_client.post(
+        "/enrollments",
+        json={
+            "patient_id": str(world["patient_id"]),
+            "pathway_version_id": str(world["version_id"]),
+            "anchor_date": "2026-06-10",
+        },
+    )
+    assert created.status_code == 201, created.text
+    execution_id = created.json()["executions"][0]["id"]
+
+    note = await async_client.post(
+        f"/pathway-steps/{execution_id}/notes",
+        json={"body": "Besproken in MDO"},
+    )
+    assert note.status_code == 201, note.text
+
+    listed = await async_client.get(f"/pathway-steps/{execution_id}/notes")
+    assert listed.status_code == 200, listed.text
+    assert any(n["body"] == "Besproken in MDO" for n in listed.json())
+
+
+async def test_enroll_descriptor_returns_fields_list(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    lane_kinds: dict[str, PathwayLaneKind],
+) -> None:
+    world = await _seed_world(db_session, lane_kinds)
+    await _login(async_client)
+    response = await async_client.get(
+        "/enrollments/descriptor",
+        params={"pathway_version_id": str(world["version_id"])},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["pathway_version_id"] == str(world["version_id"])
+    assert isinstance(body["fields"], list)
 
 
 async def test_get_unknown_enrollment_returns_404(

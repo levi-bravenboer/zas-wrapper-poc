@@ -1,0 +1,56 @@
+{
+  "list": {
+    "title": "Rollen",
+    "sub": "Beheer rollen en hun permissies.",
+    "cta": { "create": "Nieuwe rol" },
+    "loading": "Laden…",
+    "empty": "Geen rollen.",
+    "systemBadge": "systeem",
+    "permCount": "{{count}} permissies",
+    "column": { "name": "Naam", "slug": "Slug", "permissions": "Permissies" },
+    "action": { "edit": "Bewerken", "delete": "Verwijderen" }
+  },
+  "detail": {
+    "action": { "edit": "Bewerken" },
+    "card": {
+      "role": {
+        "title": "Rol",
+        "name": "Naam",
+        "slug": "Slug",
+        "type": "Type",
+        "system": "Systeemrol",
+        "custom": "Aangepast",
+        "permCount": "Aantal permissies"
+      },
+      "permissions": { "title": "Permissies", "granted": "Toegekend", "none": "Geen permissies." }
+    }
+  },
+  "delete": {
+    "title": "Rol verwijderen?",
+    "description": "Dit kan alleen als geen gebruiker deze rol heeft.",
+    "cancel": "Annuleren",
+    "confirm": "Verwijderen"
+  },
+  "form": {
+    "create": { "title": "Nieuwe rol" },
+    "edit": { "title": "Rol bewerken" },
+    "sub": "Geef permissies aan deze rol.",
+    "field": {
+      "name": "Naam",
+      "namePlaceholder": "Bijv. Verpleegkundige",
+      "slug": "Slug"
+    },
+    "slugPlaceholder": "verpleegkundige",
+    "permissions": { "title": "Permissies", "locked": "vergrendeld" },
+    "systemNote": "Systeemrol — slug ligt vast en de rol is niet verwijderbaar.",
+    "error": { "required": "Verplicht", "slug": "Alleen kleine letters, cijfers en koppeltekens" },
+    "cancel": "Annuleren",
+    "save": "Opslaan"
+  },
+  "toast": {
+    "created": "Rol aangemaakt",
+    "saved": "Rol opgeslagen",
+    "deleted": "Rol verwijderd",
+    "error": "Er ging iets mis"
+  }
+}

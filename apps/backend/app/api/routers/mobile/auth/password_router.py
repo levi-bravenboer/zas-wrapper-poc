@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Request, Response
 
 from app.api._request import client_ip, user_agent
-from app.core.enums.user import Role
 from app.core.settings import SettingsDep
 from app.repositories.patient.deps import PatientRepoDep
 from app.repositories.tenant.deps import TenantRepoDep
@@ -47,14 +46,13 @@ async def mobile_login_password(
             email=payload.email,
             password=payload.password.get_secret_value(),
             tenant_id=tenant_id,
-            role_filter=lambda r: r == Role.PATIENT,
-            role=Role.PATIENT,
+            user_filter=lambda u: u.patient_id is not None,
             surface="mobile",
             user_repo=user_repo,
             kratos=kratos,
         )
-        # `role=PATIENT` narrows the roster to at most one row, so the
-        # multi-role pending state is unreachable on this surface.
+        # The patient_id filter narrows the roster to at most one row (one
+        # patient row per human), so the pending state is unreachable here.
         assert isinstance(result, AuthenticatedUser)
     except InvalidCredentialsError as exc:
         log_auth_event(

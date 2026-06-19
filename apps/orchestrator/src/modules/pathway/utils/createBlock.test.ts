@@ -15,6 +15,9 @@ function makeBlockType(overrides: Partial<PathwayBlockType> & { type: string }):
     config_schema: overrides.config_schema ?? {},
     ui_schema: overrides.ui_schema ?? {},
     supports_branches: overrides.supports_branches ?? false,
+    actor: overrides.actor ?? 'system',
+    runtime_phase: overrides.runtime_phase ?? 'runtime',
+    completion: overrides.completion ?? 'auto',
     source: overrides.source ?? 'native',
     provider: overrides.provider ?? null,
     kind: overrides.kind ?? null,
@@ -24,14 +27,17 @@ function makeBlockType(overrides: Partial<PathwayBlockType> & { type: string }):
 describe('createBlock', () => {
   it('produces empty config when schema has no required properties', () => {
     const block = createBlock({
-      blockType: makeBlockType({ type: 'wait', config_schema: { type: 'object', properties: {} } }),
+      blockType: makeBlockType({
+        type: 'message',
+        config_schema: { type: 'object', properties: {} },
+      }),
       phaseId: 'p1',
       laneId: 'l1',
       x: 10,
       y: 20,
     })
-    expect(block.kind).toBe('wait')
-    expect(block.name).toBe('wait')
+    expect(block.kind).toBe('message')
+    expect(block.name).toBe('message')
   })
 
   it('rounds non-integer coordinates', () => {
@@ -77,7 +83,7 @@ describe('createBlock', () => {
           type: 'object',
           properties: {
             title: { type: 'string', minLength: 1 },
-            assignee: { type: 'string', enum: ['patient', 'caregiver'] },
+            assignee: { type: 'string', enum: ['caregiver'] },
           },
           required: ['title', 'assignee'],
         },
@@ -88,7 +94,7 @@ describe('createBlock', () => {
       y: 0,
     })
     expect((block as unknown as { title: string; assignee: string }).title).toBe('Taak')
-    expect((block as unknown as { title: string; assignee: string }).assignee).toBe('patient')
+    expect((block as unknown as { title: string; assignee: string }).assignee).toBe('caregiver')
   })
 })
 
@@ -166,7 +172,7 @@ describe('buildDefaultBlockConfig', () => {
 describe('new block types — lane allowance', () => {
   const cases: Array<{ type: string; allowed: string[]; ok: string; bad: string }> = [
     { type: 'form', allowed: ['patient'], ok: 'patient', bad: 'system' },
-    { type: 'wait', allowed: ['system'], ok: 'system', bad: 'patient' },
+    { type: 'pathway_link', allowed: ['system'], ok: 'system', bad: 'patient' },
     { type: 'pathway_link', allowed: ['system'], ok: 'system', bad: 'caregiver' },
   ]
 

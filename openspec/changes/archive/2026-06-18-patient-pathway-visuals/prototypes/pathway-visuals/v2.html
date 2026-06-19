@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROTOTYPE — pathway-visuals v2 (compact banner)</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-background: oklch(1 0 0);
+      --color-surface-1: oklch(0.985 0.003 175);
+      --color-surface-2: oklch(0.97 0.01 175);
+      --color-foreground: oklch(0.21 0.04 265);
+      --color-foreground-muted: oklch(0.5 0.02 265);
+      --color-card: var(--color-background);
+      --color-primary: oklch(0.46 0.07 175);
+      --color-primary-soft: oklch(0.93 0.04 175);
+      --color-primary-foreground: oklch(1 0 0);
+      --color-border: oklch(0.91 0.005 265);
+      --color-border-strong: oklch(0.82 0.01 265);
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+      --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+    }
+  </style>
+  <style>
+    :root {
+      --ph-1-ink:#08453c; --ph-1-soft:#cfede8;
+      --ph-2-ink:#5b21b6; --ph-2-soft:#ede9fe;
+      --ph-3-ink:#1d4ed8; --ph-3-soft:#dbeafe;
+      --ph-4-ink:#92400e; --ph-4-soft:#fef3c7;
+      --lane-patient:#266b5e; --lane-caregiver:#2563eb; --lane-system:#7c3aed; --lane-external:#b45309;
+    }
+    body { font-family: var(--font-sans); background:#f4f6f5; color: var(--color-foreground); }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!--
+    PROTOTYPE — patient Zorgpad SUMMARY BANNER v2 (compact)
+    Restyle of PathwayTimeline rendered above the tabs (PatientProfilePage.tsx:127).
+    Stays compact: same banner footprint as today, ~+15% height.
+    Mock data: bladder-cancer seed; "NU" = MDO (diagnostisch). Zero fetches. DOM via createElement.
+  -->
+  <div class="mx-auto max-w-6xl px-8 py-6">
+
+    <!-- patient header chrome (context only) -->
+    <div class="mb-1 text-[11px] font-medium uppercase tracking-wide text-[--color-foreground-muted]">← Terug</div>
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">Claes, Jonas</h1>
+        <div class="mt-1 flex items-center gap-2 text-sm text-[--color-foreground-muted]">
+          <span class="rounded-md bg-[--color-surface-2] px-2 py-0.5 font-mono text-xs">INSZ: 02091852539</span>
+          <span>Geboren 18-09-2002</span>
+          <span class="rounded-full bg-[--color-primary-soft] px-2 py-0.5 text-xs font-medium text-[--color-primary]">Blaaskanker</span>
+        </div>
+      </div>
+      <button class="rounded-md bg-[--color-primary] px-4 py-2 text-sm font-medium text-white">Bewerken</button>
+    </div>
+
+    <div class="mt-5 mb-2 flex items-center justify-between">
+      <h2 class="text-lg font-semibold tracking-tight">Zorgpad</h2>
+      <button class="rounded-md border border-[--color-border] bg-[--color-card] px-3 py-1.5 text-xs font-medium shadow-[--shadow-sm] hover:border-[--color-border-strong]">Nieuw zorgpad</button>
+    </div>
+
+    <!-- ===== THE SUMMARY BANNER (target of this change) ===== -->
+    <section class="rounded-xl border border-[--color-border] bg-[--color-card] px-5 py-4 shadow-[--shadow-sm]">
+      <!-- header row: status + start date (left), progress line (right) -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full bg-[--color-primary-soft] px-2.5 py-0.5 text-xs font-medium text-[--color-primary]">Actief</span>
+        <span class="text-sm text-[--color-foreground-muted]">Startdatum 17-06-2026</span>
+        <span class="ml-auto text-sm font-semibold text-[--color-foreground]">Fase <span style="color:var(--ph-1-ink)">Besluit tot biopsie</span> · stap 5 van 9</span>
+      </div>
+
+      <!-- stepper row -->
+      <ol id="stepper" class="mt-3 flex items-start gap-0 overflow-x-auto pb-1"></ol>
+    </section>
+
+    <!-- faux tab bar (shows the banner sits above tabs, stays compact) -->
+    <div class="mt-4 flex gap-5 border-b border-[--color-border] px-1 text-sm">
+      <span class="border-b-2 border-[--color-primary] pb-2 font-medium text-[--color-foreground]">Overzicht</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Zorgpad</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Metingen</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Labresultaten</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Afspraken</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Zorgteam</span>
+    </div>
+
+    <p class="mt-4 text-center text-[11px] text-[--color-foreground-muted]">PROTOTYPE · pathway-visuals v2 (compact banner) · mock data</p>
+  </div>
+
+  <script>
+    const LANE = { patient:'--lane-patient', caregiver:'--lane-caregiver', system:'--lane-system', external:'--lane-external' };
+    // condensed summary: 9 milestone steps, current = MDO (index 4)
+    const STEPS = [
+      { lane:'external',  icon:'activity',    name:'Luscii-programma',     bucket:'finished' },
+      { lane:'caregiver', icon:'calendar',    name:'Afspraak: scan',       bucket:'finished' },
+      { lane:'caregiver', icon:'list-checks', name:'Scan beoordelen',      bucket:'finished' },
+      { lane:'system',    icon:'flag',        name:'Start',                bucket:'finished' },
+      { lane:'caregiver', icon:'users',       name:'MDO (diagnostisch)',   bucket:'next', chip:'vandaag' },
+      { lane:'caregiver', icon:'calendar',    name:'Uitslag bespreken',    bucket:'upcoming' },
+      { lane:'caregiver', icon:'git-branch',  name:'Besluit: opereren?',   bucket:'upcoming' },
+      { lane:'caregiver', icon:'stethoscope', name:'Operatie',             bucket:'upcoming', chip:'25 jun' },
+      { lane:'caregiver', icon:'users',       name:'MDO (post-op)',        bucket:'upcoming' },
+    ];
+
+    function h(tag, props, ...kids) {
+      const node = document.createElement(tag);
+      if (props) for (const [k, v] of Object.entries(props)) {
+        if (v == null) continue;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = v;
+        else node.setAttribute(k, v);
+      }
+      for (const kid of kids) if (kid != null) node.append(kid);
+      return node;
+    }
+    const icon = (name, cls) => h('i', { 'data-lucide': name, class: cls || 'size-4' });
+
+    // a node = [connector-left] (icon-circle) [connector-right]
+    function nodeCircle(step) {
+      const laneVar = `var(${LANE[step.lane]})`;
+      if (step.bucket === 'finished')
+        return h('span', { class:'grid size-9 shrink-0 place-items-center rounded-full text-white shadow-[--shadow-sm]', style:`background:${laneVar}` }, icon(step.icon));
+      if (step.bucket === 'next')
+        return h('span', { class:'grid size-9 shrink-0 place-items-center rounded-full text-white', style:`background:${laneVar}; box-shadow:0 0 0 4px color-mix(in srgb, ${laneVar} 22%, transparent)` }, icon(step.icon));
+      // upcoming: light tinted, lane-coloured icon
+      return h('span', { class:'grid size-9 shrink-0 place-items-center rounded-full border', style:`border-color:var(--color-border-strong); background:color-mix(in srgb, ${laneVar} 8%, var(--color-card)); color:${laneVar}` }, icon(step.icon));
+    }
+
+    function connector(active, hidden) {
+      return h('span', {
+        class:'h-0.5 flex-1 rounded-full' + (hidden ? ' opacity-0' : ''),
+        style: active ? 'background:var(--color-primary)' : 'background:var(--color-border)',
+      });
+    }
+
+    function badge(step) {
+      const laneVar = `var(${LANE[step.lane]})`;
+      if (step.bucket === 'next')
+        return h('span', { class:'rounded-full px-2 py-0.5 text-[10px] font-semibold text-white', style:`background:${laneVar}`, text: step.chip ? `NU · ${step.chip}` : 'NU' });
+      if (step.bucket === 'finished')
+        return h('span', { class:'inline-flex items-center gap-1 text-[10px] font-medium text-[--color-foreground-muted]' }, icon('check','size-3'), h('span',{text:'afgerond'}));
+      return h('span', { class:'rounded-full border border-[--color-border] px-2 py-0.5 text-[10px] font-medium text-[--color-foreground-muted]', text: step.chip || 'gepland' });
+    }
+
+    function render() {
+      const ol = document.getElementById('stepper');
+      const last = STEPS.length - 1;
+      STEPS.forEach((step, i) => {
+        const finished = step.bucket === 'finished';
+        const current = step.bucket === 'next';
+        const row = h('div', { class:'flex w-full items-center' },
+          connector(finished || current, i === 0),
+          nodeCircle(step),
+          connector(finished, i === last),
+        );
+        const li = h('li', { class:'flex min-w-[7rem] shrink-0 grow basis-[7rem] flex-col items-center gap-1.5' },
+          row,
+          h('span', {
+            class:'max-w-full truncate px-0.5 text-center text-[11px] leading-tight ' + (current ? 'font-semibold text-[--color-foreground]' : 'text-[--color-foreground-muted]'),
+            title: step.name, text: step.name,
+          }),
+          badge(step),
+        );
+        ol.append(li);
+      });
+      lucide.createIcons();
+    }
+    render();
+  </script>
+</body>
+</html>

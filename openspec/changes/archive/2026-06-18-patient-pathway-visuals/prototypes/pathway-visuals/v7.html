@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROTOTYPE — pathway-visuals v7 (trail window)</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5/index.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-background: oklch(1 0 0);
+      --color-surface-1: oklch(0.985 0.003 175);
+      --color-surface-2: oklch(0.97 0.01 175);
+      --color-foreground: oklch(0.21 0.04 265);
+      --color-foreground-muted: oklch(0.5 0.02 265);
+      --color-card: var(--color-background);
+      --color-primary: oklch(0.46 0.07 175);
+      --color-primary-soft: oklch(0.93 0.04 175);
+      --color-border: oklch(0.91 0.005 265);
+      --color-border-strong: oklch(0.82 0.01 265);
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --shadow-sm: 0 1px 2px oklch(0.21 0.04 265 / 0.06);
+      --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+    }
+  </style>
+  <style>
+    :root {
+      --ph-1-ink:#08453c;
+      --lane-patient:#266b5e; --lane-caregiver:#2563eb; --lane-system:#7c3aed; --lane-external:#b45309;
+      --red-ink:#b42318;
+    }
+    body { font-family: var(--font-sans); background:#f4f6f5; color: var(--color-foreground); }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!--
+    PROTOTYPE — patient Zorgpad SUMMARY BANNER v7 (trail window)
+    Glance shows a small WINDOW around the current step (a few done before → NOW → a few next),
+    with "+N afgerond" / "+N te gaan" pills at the ends so the journey + full size read at once.
+    Window is bounded (2 each side) → never scrolls, shape-agnostic. Detail lives in the Zorgpad tab.
+    Toggle two very different pathways top-right. Zero fetches. DOM via createElement.
+  -->
+  <div class="mx-auto max-w-6xl px-8 py-6">
+
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">Claes, Jonas</h1>
+        <div class="mt-1 flex items-center gap-2 text-sm text-[--color-foreground-muted]">
+          <span class="rounded-md bg-[--color-surface-2] px-2 py-0.5 font-mono text-xs">INSZ: 02091852539</span>
+          <span>Geboren 18-09-2002</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] text-[--color-foreground-muted]">demo:</span>
+        <button data-ds="bladder" class="ds-btn rounded-md border border-[--color-border] bg-[--color-card] px-2.5 py-1 text-xs font-medium shadow-[--shadow-sm]">Blaaskanker (lang)</button>
+        <button data-ds="rehab" class="ds-btn rounded-md border border-[--color-border] bg-[--color-card] px-2.5 py-1 text-xs font-medium shadow-[--shadow-sm]">Rugrevalidatie (kort)</button>
+      </div>
+    </div>
+
+    <div class="mt-5 mb-2 flex items-center justify-between">
+      <h2 class="text-lg font-semibold tracking-tight">Zorgpad</h2>
+      <button class="rounded-md border border-[--color-border] bg-[--color-card] px-3 py-1.5 text-xs font-medium shadow-[--shadow-sm] hover:border-[--color-border-strong]">Nieuw zorgpad</button>
+    </div>
+
+    <!-- ===== TRAIL-WINDOW BANNER ===== -->
+    <section id="banner" class="rounded-xl border border-[--color-border] bg-[--color-card] px-5 py-4 shadow-[--shadow-sm]"></section>
+
+    <div class="mt-4 flex gap-5 border-b border-[--color-border] px-1 text-sm">
+      <span class="border-b-2 border-[--color-primary] pb-2 font-medium text-[--color-foreground]">Overzicht</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Zorgpad</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Metingen</span>
+      <span class="pb-2 text-[--color-foreground-muted]">Afspraken</span>
+    </div>
+
+    <p class="mt-4 text-center text-[11px] text-[--color-foreground-muted]">PROTOTYPE · pathway-visuals v7 (trail window) · detail in de Zorgpad-tab</p>
+  </div>
+
+  <script>
+    const LANE = { patient:'--lane-patient', caregiver:'--lane-caregiver', system:'--lane-system', external:'--lane-external' };
+    const WINDOW = 2; // steps shown on each side of NOW
+
+    // ordered executions of the TAKEN path; state: finished | active | upcoming
+    const DATASETS = {
+      bladder: {
+        name:'Blaaskanker (urologie)', state:'active', phaseName:'Besluit tot biopsie',
+        steps:[
+          { lane:'external',  icon:'activity',    name:'Luscii-programma', state:'finished' },
+          { lane:'caregiver', icon:'calendar',    name:'Afspraak: scan',   state:'finished' },
+          { lane:'caregiver', icon:'list-checks', name:'Scan beoordelen',  state:'finished', sub:'Dr. de Vries · 17 jun' },
+          { lane:'caregiver', icon:'list-checks', name:'MDO voorbereiden', state:'finished', sub:'17 jun' },
+          { lane:'caregiver', icon:'users',       name:'MDO (diagnostisch)', state:'active', sub:'Uroloog (lead) + panel', overdue:'2 dagen te laat' },
+          { lane:'caregiver', icon:'calendar',    name:'Uitslag bespreken', state:'upcoming', sub:'Uroloog · consult' },
+          { lane:'caregiver', icon:'git-branch',  name:'Besluit: opereren?', state:'upcoming' },
+          { lane:'caregiver', icon:'stethoscope', name:'Operatie',          state:'upcoming', sub:'gepland 25 jun' },
+          { lane:'caregiver', icon:'users',       name:'MDO (post-op)',     state:'upcoming' },
+        ],
+      },
+      rehab: {
+        name:'Rugrevalidatie', state:'active', phaseName:'Behandeling',
+        steps:[
+          { lane:'caregiver', icon:'flag',          name:'Intakegesprek',         state:'finished', sub:'02 jun' },
+          { lane:'caregiver', icon:'list-checks',   name:'Behandelplan',          state:'finished' },
+          { lane:'caregiver', icon:'activity',      name:'Oefenprogramma week 2', state:'active', sub:'Fysiotherapeut' },
+          { lane:'caregiver', icon:'calendar',      name:'Evaluatieconsult',      state:'upcoming', sub:'gepland 30 jun' },
+        ],
+      },
+    };
+
+    function h(tag, props, ...kids) {
+      const node = document.createElement(tag);
+      if (props) for (const [k, v] of Object.entries(props)) {
+        if (v == null) continue;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = v;
+        else node.setAttribute(k, v);
+      }
+      for (const kid of kids) if (kid != null) node.append(kid);
+      return node;
+    }
+    const icon = (name, cls) => h('i', { 'data-lucide': name, class: cls || 'size-4' });
+
+    function nodeCircle(step) {
+      const laneVar = `var(${LANE[step.lane]})`;
+      if (step.state === 'finished')
+        return h('span', { class:'grid size-9 shrink-0 place-items-center rounded-full text-white shadow-[--shadow-sm]', style:`background:${laneVar}` }, icon('check'));
+      if (step.state === 'active') {
+        const ring = step.overdue ? 'var(--red-ink)' : laneVar;
+        return h('span', { class:'grid size-10 shrink-0 place-items-center rounded-full text-white', style:`background:${laneVar}; box-shadow:0 0 0 4px color-mix(in srgb, ${ring} 26%, transparent)` }, icon(step.icon, 'size-5'));
+      }
+      return h('span', { class:'grid size-9 shrink-0 place-items-center rounded-full border', style:`border-color:var(--color-border-strong); background:color-mix(in srgb, ${laneVar} 8%, var(--color-card)); color:${laneVar}` }, icon(step.icon));
+    }
+    function connector(filled) {
+      return h('span', { class:'h-0.5 w-6 shrink-0 rounded-full sm:w-10', style: filled ? 'background:var(--color-primary)' : 'background:var(--color-border)' });
+    }
+    function overflowPill(text) {
+      return h('div', { class:'flex shrink-0 flex-col items-center justify-center gap-1' },
+        h('span', { class:'grid size-9 place-items-center rounded-full border border-dashed border-[--color-border-strong] text-[11px] font-semibold text-[--color-foreground-muted]', text: text.n }),
+        h('span', { class:'text-[10px] font-medium text-[--color-foreground-muted]', text: text.label }),
+      );
+    }
+    function stepCell(step) {
+      const current = step.state === 'active';
+      const laneVar = `var(${LANE[step.lane]})`;
+      const name = h('span', { class:'mt-1 max-w-[8rem] truncate text-center text-[11px] leading-tight ' + (current ? 'font-semibold text-[--color-foreground]' : 'text-[--color-foreground-muted]'), text: step.name });
+      let sub = null;
+      if (current && step.overdue) sub = h('span', { class:'text-[10px] font-semibold', style:'color:var(--red-ink)', text: step.overdue });
+      else if (step.sub) sub = h('span', { class:'max-w-[8rem] truncate text-[10px] font-medium text-[--color-foreground-muted]', text: step.sub });
+      return h('div', { class:'flex shrink-0 flex-col items-center' }, nodeCircle(step), name, sub);
+    }
+
+    function renderBanner(ds) {
+      const b = document.getElementById('banner');
+      b.replaceChildren();
+      const steps = ds.steps;
+      const nowIdx = steps.findIndex(s => s.state === 'active');
+      const done = steps.filter(s => s.state === 'finished').length;
+      const total = steps.length;
+
+      // header
+      const pct = Math.round(done / total * 100);
+      b.append(h('div', { class:'flex flex-wrap items-center gap-x-2 gap-y-1' },
+        h('span', { class:'rounded-full bg-[--color-primary-soft] px-2.5 py-0.5 text-xs font-medium text-[--color-primary]', text: ds.state==='paused'?'Gepauzeerd':'Actief' }),
+        h('span', { class:'text-sm font-medium', text: ds.name }),
+        h('span', { class:'text-sm text-[--color-foreground-muted]' }, h('span',{text:'· Fase '}), h('span',{style:'color:var(--ph-1-ink); font-weight:600', text: ds.phaseName})),
+        h('span', { class:'ml-auto text-sm font-semibold', text:`${done}/${total} afgerond` }),
+      ));
+      b.append(h('div', { class:'mt-2 h-1 w-full overflow-hidden rounded-full bg-[--color-surface-2]' }, h('div', { class:'h-full rounded-full bg-[--color-primary]', style:`width:${pct}%` })));
+
+      // window around NOW
+      const start = Math.max(0, nowIdx - WINDOW);
+      const end = Math.min(total - 1, nowIdx + WINDOW);
+      const beforeHidden = start;                 // finished steps before window
+      const afterHidden = total - 1 - end;        // steps after window
+
+      const trail = h('div', { class:'mt-3 flex items-start justify-center gap-1 overflow-hidden' });
+      if (beforeHidden > 0) { trail.append(overflowPill({ n:`+${beforeHidden}`, label:'afgerond' })); trail.append(connector(true)); }
+      for (let i = start; i <= end; i++) {
+        trail.append(stepCell(steps[i]));
+        if (i < end) trail.append(connector(i < nowIdx)); // filled up to NOW
+      }
+      if (afterHidden > 0) { trail.append(connector(false)); trail.append(overflowPill({ n:`+${afterHidden}`, label:'te gaan' })); }
+      b.append(trail);
+
+      lucide.createIcons();
+    }
+
+    let current = 'bladder';
+    function setActive() {
+      document.querySelectorAll('.ds-btn').forEach(x => {
+        const on = x.dataset.ds === current;
+        x.style.borderColor = on ? 'var(--color-primary)' : 'var(--color-border)';
+        x.style.color = on ? 'var(--color-primary)' : '';
+        x.style.background = on ? 'var(--color-primary-soft)' : 'var(--color-card)';
+      });
+    }
+    document.querySelectorAll('.ds-btn').forEach(x => x.addEventListener('click', () => { current = x.dataset.ds; setActive(); renderBanner(DATASETS[current]); }));
+    setActive();
+    renderBanner(DATASETS[current]);
+  </script>
+</body>
+</html>

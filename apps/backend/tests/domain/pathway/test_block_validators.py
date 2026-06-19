@@ -115,9 +115,10 @@ def test_validate_lane_kind_rejects_disallowed_kind() -> None:
 
 
 def test_validate_lane_kind_multi_kind_subclass() -> None:
-    # TaskBlock allows patient or caregiver lanes; both pass.
-    validate_lane_kind(TaskBlock, LANE_KIND_PATIENT)
+    # TaskBlock is caregiver-only (catalogue prune); other lanes are rejected.
     validate_lane_kind(TaskBlock, LANE_KIND_CAREGIVER)
+    with pytest.raises(LaneKindNotAllowedError):
+        validate_lane_kind(TaskBlock, LANE_KIND_PATIENT)
     with pytest.raises(LaneKindNotAllowedError):
         validate_lane_kind(TaskBlock, LANE_KIND_EXTERNAL)
 

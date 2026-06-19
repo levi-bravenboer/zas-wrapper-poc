@@ -2,9 +2,11 @@ import i18next from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
 import appointment from './locales/nl/appointment.json'
+import auditAdminUi from './locales/nl/audit-admin-ui.json'
 import auth from './locales/nl/auth.json'
 import careTeamsUi from './locales/nl/care-teams-ui.json'
 import caregiverShell from './locales/nl/caregiver-shell.json'
+import collaboration from './locales/nl/collaboration.json'
 import common from './locales/nl/common.json'
 import dashboard from './locales/nl/dashboard.json'
 import dataTable from './locales/nl/data-table.json'
@@ -12,8 +14,10 @@ import entityPage from './locales/nl/entity-page.json'
 import nav from './locales/nl/nav.json'
 import organisationsAdminUi from './locales/nl/organisations-admin-ui.json'
 import pathway from './locales/nl/pathway.json'
+import patientPathway from './locales/nl/patient-pathway.json'
 import patientProfile from './locales/nl/patient-profile.json'
 import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
+import rolesAdminUi from './locales/nl/roles-admin-ui.json'
 import shell from './locales/nl/shell.json'
 import smart from './locales/nl/smart.json'
 import tasks from './locales/nl/tasks.json'
@@ -36,17 +40,21 @@ void i18next.use(initReactI18next).init({
   ns: [
     'common',
     'appointment',
+    'audit-admin-ui',
     'auth',
     'care-teams-ui',
     'caregiver-shell',
+    'collaboration',
     'dashboard',
     'data-table',
     'entity-page',
     'nav',
     'organisations-admin-ui',
     'pathway',
+    'patient-pathway',
     'patient-profile',
     'practitioner-roles-admin-ui',
+    'roles-admin-ui',
     'shell',
     'smart',
     'tasks',
@@ -57,17 +65,21 @@ void i18next.use(initReactI18next).init({
     nl: {
       common,
       appointment,
+      'audit-admin-ui': auditAdminUi,
       auth,
       'care-teams-ui': careTeamsUi,
       'caregiver-shell': caregiverShell,
+      collaboration,
       dashboard,
       'data-table': dataTable,
       'entity-page': entityPage,
       nav,
       'organisations-admin-ui': organisationsAdminUi,
       pathway,
+      'patient-pathway': patientPathway,
       'patient-profile': patientProfile,
       'practitioner-roles-admin-ui': practitionerRolesAdminUi,
+      'roles-admin-ui': rolesAdminUi,
       shell,
       smart,
       tasks,

@@ -305,10 +305,34 @@ async def test_block_on_disallowed_lane_raises(
         )
 
 
-async def test_task_block_accepted_on_patient_lane(
+async def test_task_block_accepted_on_caregiver_lane(
     db_session: AsyncSession, empty_pathway: Pathway
 ) -> None:
-    """task.allowed_lane_kind_codes = ['patient','caregiver']; patient lane is valid."""
+    """task.allowed_lane_kind_codes = ['caregiver']; caregiver lane is valid."""
+
+    service = _service(db_session)
+    phase = _phase()
+    caregiver_lane = _lane(code="caregiver")
+    task = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=caregiver_lane.id,
+        kind="task",
+        config={"title": "Hydrate", "assignee": "caregiver"},
+    )
+    result = await service.replace_definition(
+        empty_pathway.id,
+        empty_pathway.tenant_id,
+        _minimal_payload(phases=[phase], lanes=[caregiver_lane], blocks=[task]),
+    )
+    assert len(result.version.blocks) == 1
+    assert result.version.blocks[0].lane_id == caregiver_lane.id
+
+
+async def test_task_block_rejected_on_patient_lane(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """task is caregiver-only now (catalogue prune); patient lane is rejected."""
 
     service = _service(db_session)
     phase = _phase()
@@ -318,15 +342,14 @@ async def test_task_block_accepted_on_patient_lane(
         phase_id=phase.id,
         lane_id=patient_lane.id,
         kind="task",
-        config={"title": "Hydrate", "assignee": "patient"},
+        config={"title": "Hydrate", "assignee": "caregiver"},
     )
-    result = await service.replace_definition(
-        empty_pathway.id,
-        empty_pathway.tenant_id,
-        _minimal_payload(phases=[phase], lanes=[patient_lane], blocks=[task]),
-    )
-    assert len(result.version.blocks) == 1
-    assert result.version.blocks[0].lane_id == patient_lane.id
+    with pytest.raises(BlockLaneNotAllowedError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(phases=[phase], lanes=[patient_lane], blocks=[task]),
+        )
 
 
 async def test_block_config_validates_against_schema(
@@ -367,27 +390,6 @@ async def test_message_channel_outside_enum_raises(
         lane_id=lane.id,
         kind="message",
         config={"channel": "fax", "subject": "Hi", "body": "Welcome"},
-    )
-    with pytest.raises(BlockConfigError):
-        await service.replace_definition(
-            empty_pathway.id,
-            empty_pathway.tenant_id,
-            _minimal_payload(phases=[phase], lanes=[lane], blocks=[block]),
-        )
-
-
-async def test_wait_event_type_outside_enum_raises(
-    db_session: AsyncSession, empty_pathway: Pathway
-) -> None:
-    service = _service(db_session)
-    phase = _phase()
-    lane = _lane(code="system")
-    block = PathwayBlockIn(
-        id=uuid.uuid4(),
-        phase_id=phase.id,
-        lane_id=lane.id,
-        kind="wait",
-        config={"event_type": "not_a_real_event"},
     )
     with pytest.raises(BlockConfigError):
         await service.replace_definition(
@@ -815,9 +817,8 @@ async def test_replace_definition_overwrites_children(
         id=uuid.uuid4(),
         phase_id=new_phase.id,
         lane_id=new_lane.id,
-        kind="milestone",
-        label="Operatie",
-        config={"label": "Operatie"},
+        kind="end_pathway",
+        config={},
     )
     result = await service.replace_definition(
         empty_pathway.id,
@@ -914,4 +915,53 @@ async def test_get_version_definition_unknown_version_raises(
     with pytest.raises(PathwayVersionNotFoundError):
         await service.get_version_definition(
             empty_pathway.id, uuid.uuid4(), empty_pathway.tenant_id
+        )
+
+
+async def test_decision_output_predicate_rejects_unknown_key(
+    db_session: AsyncSession, empty_pathway: Pathway
+) -> None:
+    """§2.7: a downstream block gated on a decision output the decision does
+    not declare is a publish blocker."""
+    service = _service(db_session)
+    phase = _phase()
+    system_lane = _lane(code="system")
+    caregiver_lane = _lane(code="caregiver", ord_=1, is_default=False)
+    decision_id = uuid.uuid4()
+    decision = PathwayBlockIn(
+        id=decision_id,
+        phase_id=phase.id,
+        lane_id=system_lane.id,
+        kind="decision",
+        config={"question": "Goed?", "outputs": ["goed"], "mode": "xor"},
+    )
+    downstream = PathwayBlockIn(
+        id=uuid.uuid4(),
+        phase_id=phase.id,
+        lane_id=caregiver_lane.id,
+        kind="appointment",
+        config={
+            "title": "Extra",
+            "input_logic": {
+                "rules": [
+                    {
+                        "node": str(decision_id),
+                        "args": {
+                            "predicate": "decision_output",
+                            "after_block": str(decision_id),
+                            "output_key": "onbekend",
+                        },
+                    }
+                ],
+                "aggregator": "all_of",
+            },
+        },
+    )
+    with pytest.raises(PathwayValidationError):
+        await service.replace_definition(
+            empty_pathway.id,
+            empty_pathway.tenant_id,
+            _minimal_payload(
+                phases=[phase], lanes=[system_lane, caregiver_lane], blocks=[decision, downstream]
+            ),
         )

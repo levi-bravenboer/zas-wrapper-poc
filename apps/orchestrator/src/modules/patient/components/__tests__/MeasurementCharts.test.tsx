@@ -93,14 +93,18 @@ describe('MeasurementCharts', () => {
     expect(screen.getByRole('button', { name: /bekijk 90 dagen/i })).toBeInTheDocument()
   })
 
-  it('renders an instrument card per loaded series', async () => {
+  it('renders a metric tile per instrument with the latest value', async () => {
     useLusciiDataMock.mockReturnValue(stub(LOADED))
     renderPanel()
-    // "Gewicht" + "81 kg" each appear in BOTH the overview table AND the
-    // instrument card header — assert both copies render.
-    const gewichtMatches = await screen.findAllByText('Gewicht')
-    expect(gewichtMatches.length).toBeGreaterThanOrEqual(2)
-    expect(screen.getAllByText(/81 kg/i).length).toBeGreaterThanOrEqual(2)
+    expect(await screen.findByText('Gewicht')).toBeInTheDocument()
+    expect(screen.getByText(/81 kg/i)).toBeInTheDocument()
+  })
+
+  it('opens the detail dialog when a tile is clicked', async () => {
+    useLusciiDataMock.mockReturnValue(stub(LOADED))
+    renderPanel()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /gewicht/i }))
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })
 
   it('keeps the chrome and offers a retry on a panel-scoped error (D-STATES)', async () => {

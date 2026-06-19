@@ -4,13 +4,14 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.user import User
 from scripts.seed_tenant import ZAS_TENANT_ID, seed_zas_tenant
 from scripts.seed_users import (
     ADMIN_EMAIL,
     ADMIN_USER_ID,
     CAREGIVER_EMAIL,
+    CLINICAL_CAST,
+    admin_role_id,
     _ZasTenantMissingError,
     seed_users,
 )
@@ -30,13 +31,16 @@ async def test_seed_users_inserts_bootstrap_pair(db_session: AsyncSession) -> No
 
     assert admin.id == ADMIN_USER_ID
     assert admin.tenant_id == ZAS_TENANT_ID
-    assert admin.role is Role.ADMIN
+    # Admin is bound to the per-tenant `admin` role (was `role is Role.ADMIN`).
+    assert admin.role_id == admin_role_id(ZAS_TENANT_ID)
     # Self-FK for bootstrap admin: created_by / updated_by point at admin.
     assert admin.created_by == ADMIN_USER_ID
     assert admin.updated_by == ADMIN_USER_ID
 
     assert caregiver.tenant_id == ZAS_TENANT_ID
-    assert caregiver.role is Role.CAREGIVER
+    # Caregivers get the `default` role, not the admin role (was Role.CAREGIVER).
+    assert caregiver.role_id != admin_role_id(ZAS_TENANT_ID)
+    assert caregiver.patient_id is None
     # Audit hook stamped caregiver's `created_by` from the admin actor.
     assert caregiver.created_by == ADMIN_USER_ID
     assert caregiver.updated_by == ADMIN_USER_ID
@@ -52,7 +56,8 @@ async def test_seed_users_is_idempotent(db_session: AsyncSession) -> None:
     await db_session.commit()
 
     count = (await db_session.execute(select(func.count()).select_from(User))).scalar_one()
-    assert count == 2
+    # admin + demo caregiver + the specialty cast (§6c.2).
+    assert count == 2 + len(CLINICAL_CAST)
 
 
 async def test_seed_users_requires_existing_tenant(db_session: AsyncSession) -> None:

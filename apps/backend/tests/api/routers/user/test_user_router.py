@@ -8,11 +8,11 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.practitioner.practitioner import Practitioner
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from tests._rbac import ensure_roles
 
 _DEFAULT_PASSWORD = "changeme"
 
@@ -40,7 +40,7 @@ async def test_list_users_requires_admin_role(
     response = await async_client.get("/users")
 
     assert response.status_code == 403
-    assert response.json()["code"] == "forbidden.auth.role"
+    assert response.json()["code"] == "forbidden.auth.permission"
 
 
 async def test_list_users_returns_tenant_rows_for_admin(
@@ -83,17 +83,23 @@ async def test_list_users_filters_by_is_active(
 async def test_list_users_filters_by_role_in(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    admin_role_id = admin.role_id
+    default_role_id = caregiver.role_id
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.get(
         "/users",
-        params=[("filter[role]", Role.ADMIN.value), ("filter[role]", Role.CAREGIVER.value)],
+        params=[
+            ("filter[role_id]", str(admin_role_id)),
+            ("filter[role_id]", str(default_role_id)),
+        ],
     )
 
     assert response.status_code == 200
-    roles = {row["role"] for row in response.json()["items"]}
-    assert roles == {Role.ADMIN.value, Role.CAREGIVER.value}
+    roles = {row["role_id"] for row in response.json()["items"]}
+    assert roles == {str(admin_role_id), str(default_role_id)}
 
 
 async def test_list_users_search_matches_email_or_display_name(
@@ -206,6 +212,7 @@ async def test_list_users_is_tenant_scoped(
     other = Tenant(id=uuid.uuid4(), slug="other-list", name="OTHER")
     db_session.add(other)
     await db_session.flush()
+    other_roles = await ensure_roles(db_session, other.id)
     alien_id = uuid.uuid4()
     db_session.add(
         User(
@@ -216,7 +223,7 @@ async def test_list_users_is_tenant_scoped(
             email="alien@other.local",
             password_hash="hash",
             display_name="Alien",
-            role=Role.CAREGIVER,
+            role_id=other_roles["default"].id,
             is_active=True,
         )
     )
@@ -276,6 +283,7 @@ async def test_get_user_rejects_cross_tenant(
     other = Tenant(id=uuid.uuid4(), slug="other-detail", name="OTHER")
     db_session.add(other)
     await db_session.flush()
+    other_roles = await ensure_roles(db_session, other.id)
     alien_id = uuid.uuid4()
     alien = User(
         id=alien_id,
@@ -285,7 +293,7 @@ async def test_get_user_rejects_cross_tenant(
         email="alien@other.local",
         password_hash="hash",
         display_name="Alien",
-        role=Role.CAREGIVER,
+        role_id=other_roles["default"].id,
         is_active=True,
     )
     db_session.add(alien)
@@ -300,25 +308,28 @@ async def test_get_user_rejects_cross_tenant(
 async def test_update_role_changes_target(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    admin_role_id = admin.role_id
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.patch(
-        f"/users/{caregiver.id}/role", json={"role": Role.ADMIN.value}
+        f"/users/{caregiver.id}/role", json={"role_id": str(admin_role_id)}
     )
 
     assert response.status_code == 200
-    assert response.json()["role"] == Role.ADMIN.value
+    assert response.json()["role_id"] == str(admin_role_id)
 
 
 async def test_update_role_rejects_caregiver_caller(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
     await _login(async_client, CAREGIVER_EMAIL)
 
     response = await async_client.patch(
-        f"/users/{caregiver.id}/role", json={"role": Role.ADMIN.value}
+        f"/users/{caregiver.id}/role", json={"role_id": str(admin.role_id)}
     )
 
     assert response.status_code == 403
@@ -333,6 +344,7 @@ async def test_update_role_rejects_cross_tenant_target(
     other = Tenant(id=uuid.uuid4(), slug="other", name="OTHER")
     db_session.add(other)
     await db_session.flush()
+    other_roles = await ensure_roles(db_session, other.id)
     other_user_id = uuid.uuid4()
     other_user = User(
         id=other_user_id,
@@ -342,7 +354,7 @@ async def test_update_role_rejects_cross_tenant_target(
         email="alien@other.local",
         password_hash="hash",
         display_name="Alien",
-        role=Role.CAREGIVER,
+        role_id=other_roles["default"].id,
         is_active=True,
     )
     db_session.add(other_user)
@@ -350,7 +362,7 @@ async def test_update_role_rejects_cross_tenant_target(
 
     await _login(async_client, ADMIN_EMAIL)
     response = await async_client.patch(
-        f"/users/{other_user.id}/role", json={"role": Role.ADMIN.value}
+        f"/users/{other_user.id}/role", json={"role_id": str(other_roles["admin"].id)}
     )
 
     assert response.status_code == 403
@@ -360,11 +372,11 @@ async def test_update_role_rejects_cross_tenant_target(
 async def test_update_role_returns_404_for_missing_target(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.patch(
-        f"/users/{uuid.uuid4()}/role", json={"role": Role.ADMIN.value}
+        f"/users/{uuid.uuid4()}/role", json={"role_id": str(admin.role_id)}
     )
 
     assert response.status_code == 404
@@ -374,10 +386,11 @@ async def test_update_role_self_demotion_locks_out_admin_actions(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
     admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
     await _login(async_client, ADMIN_EMAIL)
 
     demote = await async_client.patch(
-        f"/users/{admin.id}/role", json={"role": Role.CAREGIVER.value}
+        f"/users/{admin.id}/role", json={"role_id": str(caregiver.role_id)}
     )
     assert demote.status_code == 200
 
@@ -415,14 +428,15 @@ async def test_set_user_active_rejects_caregiver_caller(
 async def test_create_user_admin_branch(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    admin_role_id = admin.role_id
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.post(
         "/users",
         json={
             "email": "new.admin@zas.local",
-            "role": Role.ADMIN.value,
+            "role_id": str(admin_role_id),
             "display_name": "New Admin",
         },
     )
@@ -431,20 +445,21 @@ async def test_create_user_admin_branch(
     body = response.json()
     assert body["email"] == "new.admin@zas.local"
     assert body["display_name"] == "New Admin"
-    assert body["role"] == Role.ADMIN.value
+    assert body["role_id"] == str(admin_role_id)
 
 
 async def test_create_user_caregiver_materialises_practitioner(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    caregiver = next(u for u in seeded_zas_users if u.email == CAREGIVER_EMAIL)
+    default_role_id = caregiver.role_id
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.post(
         "/users",
         json={
             "email": "new.care@zas.local",
-            "role": Role.CAREGIVER.value,
+            "role_id": str(default_role_id),
             "given_name": "Eva",
             "family_name": "Bos",
             "qualification": "Verpleegkundige",
@@ -467,14 +482,14 @@ async def test_create_user_caregiver_materialises_practitioner(
 async def test_create_user_rejects_mixed_branch_payload(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.post(
         "/users",
         json={
             "email": "mixed@zas.local",
-            "role": Role.ADMIN.value,
+            "role_id": str(admin.role_id),
             "display_name": "Mixed",
             "given_name": "Should",
             "family_name": "Fail",
@@ -487,14 +502,14 @@ async def test_create_user_rejects_mixed_branch_payload(
 async def test_create_user_rejects_duplicate_email(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     await _login(async_client, ADMIN_EMAIL)
 
     response = await async_client.post(
         "/users",
         json={
             "email": ADMIN_EMAIL,
-            "role": Role.ADMIN.value,
+            "role_id": str(admin.role_id),
             "display_name": "Dup",
         },
     )
@@ -506,14 +521,14 @@ async def test_create_user_rejects_duplicate_email(
 async def test_create_user_rejects_caregiver_caller(
     async_client: AsyncClient, seeded_zas_users: list[User]
 ) -> None:
-    del seeded_zas_users
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
     await _login(async_client, CAREGIVER_EMAIL)
 
     response = await async_client.post(
         "/users",
         json={
             "email": "denied@zas.local",
-            "role": Role.ADMIN.value,
+            "role_id": str(admin.role_id),
             "display_name": "Denied",
         },
     )
@@ -545,6 +560,7 @@ async def test_update_user_rejects_cross_tenant(
     other = Tenant(id=uuid.uuid4(), slug="other-update", name="OTHER")
     db_session.add(other)
     await db_session.flush()
+    other_roles = await ensure_roles(db_session, other.id)
     alien_id = uuid.uuid4()
     alien = User(
         id=alien_id,
@@ -554,7 +570,7 @@ async def test_update_user_rejects_cross_tenant(
         email="alien@other.local",
         password_hash="hash",
         display_name="Alien",
-        role=Role.CAREGIVER,
+        role_id=other_roles["default"].id,
         is_active=True,
     )
     db_session.add(alien)
@@ -587,6 +603,7 @@ async def test_set_user_active_rejects_cross_tenant(
     other = Tenant(id=uuid.uuid4(), slug="other-active", name="OTHER")
     db_session.add(other)
     await db_session.flush()
+    other_roles = await ensure_roles(db_session, other.id)
     alien_id = uuid.uuid4()
     alien = User(
         id=alien_id,
@@ -596,7 +613,7 @@ async def test_set_user_active_rejects_cross_tenant(
         email="alien@other.local",
         password_hash="hash",
         display_name="Alien",
-        role=Role.CAREGIVER,
+        role_id=other_roles["default"].id,
         is_active=True,
     )
     db_session.add(alien)

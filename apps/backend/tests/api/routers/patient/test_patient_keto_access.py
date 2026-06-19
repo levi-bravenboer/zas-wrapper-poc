@@ -7,13 +7,14 @@ settings fixture and populate the fake Keto through the real reconciler.
 
 from __future__ import annotations
 
+from uuid import UUID
+
 import pytest
 from httpx import AsyncClient
 from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.practitioner_role import PractitionerRoleCode
-from app.core.enums.user import Role
 from app.core.settings import Settings
 from app.db.models.care_team import CareTeam
 from app.db.models.patient import Patient
@@ -23,6 +24,7 @@ from app.services.access.identity.password import PasswordHasher
 from app.services.access.sync.reconciler import reconcile_all
 from scripts.seed_organisations import ZAS_ROOT_ORG_ID
 from scripts.seed_users import ADMIN_EMAIL, ADMIN_USER_ID
+from tests._rbac import ensure_roles
 from tests._settings import build_settings
 from tests.conftest import TEST_DATABASE_URL
 from tests.fakes.keto import FakeKetoClient
@@ -51,9 +53,10 @@ async def _login(client: AsyncClient, email: str, password: str = _DEFAULT_PASSW
 
 async def _seed_caregiver(
     db_session: AsyncSession,
-    tenant_id: object,
+    tenant_id: UUID,
     email: str,
 ) -> User:
+    roles = await ensure_roles(db_session, tenant_id)
     user = User(
         tenant_id=tenant_id,
         created_by=ADMIN_USER_ID,
@@ -61,7 +64,7 @@ async def _seed_caregiver(
         email=email,
         password_hash=PasswordHasher().hash(_DEFAULT_PASSWORD),
         display_name=email.split("@")[0],
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         is_active=True,
     )
     db_session.add(user)

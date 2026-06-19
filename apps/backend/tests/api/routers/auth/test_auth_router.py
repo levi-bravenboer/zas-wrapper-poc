@@ -32,7 +32,7 @@ async def test_login_password_sets_session_cookie(
     assert response.status_code == 200
     body = response.json()
     assert body["email"] == ADMIN_EMAIL
-    assert body["role"] == "admin"
+    assert body["role_slug"] == "admin"
     assert response.cookies.get(settings.session_cookie_name)
 
 

@@ -18,24 +18,40 @@ from __future__ import annotations
 
 import logging
 import os
-from uuid import UUID
+from uuid import UUID, uuid5
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.core.settings import get_settings
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.user import User
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.password import PasswordHasher
+from app.services.access.rbac.resolver import build_session_user
 from scripts._db import run_script
+from scripts.seed_roles import (
+    ADMIN_ROLE_SLUG,
+    DEFAULT_ROLE_SLUG,
+    bootstrap_admin_role,
+    seed_roles,
+)
 from scripts.seed_tenant import ZAS_TENANT_SLUG
 
 logger = logging.getLogger(__name__)
 
 ADMIN_USER_ID: UUID = UUID("00000000-0000-4000-8000-00000000ad11")
+
+# Stable namespace so the bootstrap admin role's id is known before its row is
+# flushed (the admin user references it via `role_id`).
+_ROLE_ID_NS: UUID = UUID("00000000-0000-4000-8000-0000000000fe")
+
+
+def admin_role_id(tenant_id: UUID) -> UUID:
+    """Deterministic id of the per-tenant `admin` role."""
+
+    return uuid5(_ROLE_ID_NS, f"{tenant_id}:{ADMIN_ROLE_SLUG}")
+
 
 ADMIN_EMAIL = "admin@zas.local"
 ADMIN_DISPLAY_NAME = "ZAS Admin"
@@ -44,6 +60,17 @@ ADMIN_PASSWORD_ENV = "BACKEND_BOOTSTRAP_ADMIN_PASSWORD"
 CAREGIVER_EMAIL = "caregiver@zas.local"
 CAREGIVER_DISPLAY_NAME = "Demo Caregiver"
 CAREGIVER_PASSWORD_ENV = "BACKEND_BOOTSTRAP_CAREGIVER_PASSWORD"
+
+# Demo clinical cast (§6c.2): specialty caregivers the enroll-time participant
+# picker resolves against. `(email, display_name, specialty)`; their
+# `PractitionerRole` (code + specialty) is seeded by `seed_practitioners`.
+CLINICAL_CAST: tuple[tuple[str, str, str], ...] = (
+    ("uroloog@zas.local", "Dr. Uroloog", "urologie"),
+    ("radioloog@zas.local", "Dr. Radioloog", "radiologie"),
+    ("patholoog@zas.local", "Dr. Patholoog", "pathologie"),
+    ("oncoloog@zas.local", "Dr. Oncoloog", "oncologie"),
+    ("casemanager@zas.local", "Verpleegkundig Casemanager", "casemanagement"),
+)
 
 _PASSWORD_FALLBACK = "changeme"
 
@@ -95,11 +122,15 @@ async def seed_users(session: AsyncSession) -> list[User]:
 
     hasher = PasswordHasher()
     user_repo = UserRepository(session)
+    bootstrap_admin_role_id = admin_role_id(tenant.id)
 
-    # 1. Admin first. The audit hook MUST stay idle for this flush so the
-    # self-FK survives; clear the slot before inserting.
+    # 1. Bootstrap the `admin` ROLE first (roles carry no user FKs, so no
+    # cycle), then the bootstrap admin USER, which self-references its audit
+    # columns (id = created_by = updated_by = ADMIN_USER_ID) and points at the
+    # admin role via `role_id`.
     previous_actor = session.info.pop(SESSION_ACTOR_KEY, None)
     try:
+        await bootstrap_admin_role(session, role_id=bootstrap_admin_role_id, tenant_id=tenant.id)
         admin = await user_repo.get_by_email(tenant.id, ADMIN_EMAIL)
         if admin is None:
             admin = User(
@@ -110,38 +141,53 @@ async def seed_users(session: AsyncSession) -> list[User]:
                 email=ADMIN_EMAIL,
                 password_hash=_resolve_password(ADMIN_PASSWORD_ENV, hasher),
                 display_name=ADMIN_DISPLAY_NAME,
-                role=Role.ADMIN,
+                role_id=bootstrap_admin_role_id,
                 is_active=True,
             )
             await user_repo.add(admin)
-            logger.info("seeded user email=%s role=%s", ADMIN_EMAIL, Role.ADMIN.value)
+            logger.info("seeded user email=%s role=%s", ADMIN_EMAIL, ADMIN_ROLE_SLUG)
         else:
             logger.info("user email=%s already present", ADMIN_EMAIL)
 
-        admin_actor = SessionUser(
-            id=admin.id,
-            email=admin.email,
-            display_name=admin.display_name,
-            tenant_id=admin.tenant_id,
-            role=admin.role,
-        )
+        # Admin actor (resolved role slug + permissions) for the audit hook.
+        admin_actor = await build_session_user(session, admin)
 
-        # 2. Caregiver second — audit hook stamps the audit columns from the
-        # admin actor; do NOT set them explicitly.
+        # 2. Seed the `default` role (+ permissions) and the demo caregivers,
+        # all under the admin actor so the audit hook stamps their columns.
         session.info[SESSION_ACTOR_KEY] = admin_actor
+        roles = await seed_roles(session, tenant_id=tenant.id)
+        default_role = roles[DEFAULT_ROLE_SLUG]
+
         caregiver = await user_repo.get_by_email(tenant.id, CAREGIVER_EMAIL)
         if caregiver is None:
             caregiver = User(
                 email=CAREGIVER_EMAIL,
                 password_hash=_resolve_password(CAREGIVER_PASSWORD_ENV, hasher),
                 display_name=CAREGIVER_DISPLAY_NAME,
-                role=Role.CAREGIVER,
+                role_id=default_role.id,
                 is_active=True,
             )
             await user_repo.add(caregiver)
-            logger.info("seeded user email=%s role=%s", CAREGIVER_EMAIL, Role.CAREGIVER.value)
+            logger.info("seeded user email=%s role=%s", CAREGIVER_EMAIL, DEFAULT_ROLE_SLUG)
         else:
             logger.info("user email=%s already present", CAREGIVER_EMAIL)
+
+        # Specialty cast (§6c.2) — caregivers (default role) for the picker.
+        cast_password = _resolve_password(CAREGIVER_PASSWORD_ENV, hasher)
+        for email, display_name, _specialty in CLINICAL_CAST:
+            if await user_repo.get_by_email(tenant.id, email) is not None:
+                logger.info("user email=%s already present", email)
+                continue
+            await user_repo.add(
+                User(
+                    email=email,
+                    password_hash=cast_password,
+                    display_name=display_name,
+                    role_id=default_role.id,
+                    is_active=True,
+                )
+            )
+            logger.info("seeded user email=%s role=%s", email, DEFAULT_ROLE_SLUG)
     finally:
         if previous_actor is None:
             session.info.pop(SESSION_ACTOR_KEY, None)

@@ -19,6 +19,8 @@ from app.db.base import TenantOwnedEntity
 class PathwayBlock(TenantOwnedEntity):
     __tablename__ = "pathway_block"
     __realtime_resource__: ClassVar[str | None] = None
+    # NOT __audited__: block edits are part of pathway authoring, captured as
+    # explicit `Pathway`-anchored domain events (OP_EDIT), not row auto-diff.
 
     pathway_version_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
@@ -86,9 +88,16 @@ class PathwayBlock(TenantOwnedEntity):
     # cleanup once every consumer reads off the typed columns.
     timing_policy: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     timing_policy_kind: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+
+    # FHIR action.participant {role, specialty} — round-trips as JSONB via
+    # the base-field mapper (like input_logic / timing_policy).
+    participant: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     timing_offset_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     timing_window_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
     timing_duration_iso: Mapped[str | None] = mapped_column(sa.String(63), nullable=True)
+    # `relative_to_date` timing (D3a): named clinical date + before/after.
+    timing_date_name: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    timing_direction: Mapped[str | None] = mapped_column(sa.String(8), nullable=True)
 
     # --- Per-kind nullable columns (single-table inheritance, mapper-dispatched) ---
     # Prefixed by kind to avoid collisions with each other and with the
@@ -131,6 +140,7 @@ class PathwayBlock(TenantOwnedEntity):
     # Pathway-completion § A7: MdoBlock per-kind columns
     mdo_topic: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
     mdo_expected_attendees_note: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    mdo_outcomes: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 
     # Pathway-completion § A8: InformedConsentBlock per-kind columns
     informed_consent_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(
@@ -150,15 +160,6 @@ class PathwayBlock(TenantOwnedEntity):
     form_questions: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
     form_submit_label: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
     form_confirmation_message: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
-
-    milestone_label: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
-    milestone_description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
-    milestone_icon: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
-
-    wait_event_type: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
-    wait_source_block_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
-    wait_timeout_days: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
-    wait_on_timeout: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
 
     pathway_link_target_pathway_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), nullable=True

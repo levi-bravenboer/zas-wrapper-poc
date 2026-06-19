@@ -38,7 +38,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums.access import ItemCategory, ShieldingAudience
 from app.core.enums.organisation import OrganisationTypeCode
 from app.core.enums.practitioner_role import PractitionerRoleCode
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.access.consent import Consent
 from app.db.models.access.external_access import ExternalAccessProfile, ExternalGrant
@@ -54,12 +53,13 @@ from app.repositories.pathway.pathway_repository import PathwayRepository
 from app.repositories.pathway.pathway_version_repository import PathwayVersionRepository
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.password import PasswordHasher
+from app.services.access.rbac.resolver import build_session_user
 from app.services.pathway.pathway_service import PathwayService
 from scripts._db import run_script
 from scripts.seed_organisations import ORTHO_DEPT_ORG_ID, ZAS_ROOT_ORG_ID
 from scripts.seed_pathway import PATHWAY_ID as RUGREVAL_PATHWAY_ID
+from scripts.seed_roles import ADMIN_ROLE_SLUG, DEFAULT_ROLE_SLUG, seed_roles
 from scripts.seed_tenant import ZAS_TENANT_SLUG
 from scripts.seed_users import ADMIN_USER_ID, CAREGIVER_EMAIL
 
@@ -92,14 +92,14 @@ async def _get_or_create_user(
     tenant_id: UUID,
     email: str,
     display_name: str,
-    role: Role,
+    role_id: UUID,
     password_hash: str,
 ) -> User:
     existing = await session.scalar(
         select(User).where(
             User.tenant_id == tenant_id,
             User.email == email,
-            User.role == role,
+            User.role_id == role_id,
             User.deleted_at.is_(None),
         )
     )
@@ -109,13 +109,13 @@ async def _get_or_create_user(
         tenant_id=tenant_id,
         email=email,
         display_name=display_name,
-        role=role,
+        role_id=role_id,
         is_active=True,
         password_hash=password_hash,
     )
     session.add(user)
     await session.flush()
-    logger.info("seeded user email=%s role=%s", email, role.value)
+    logger.info("seeded user email=%s role_id=%s", email, role_id)
     return user
 
 
@@ -213,17 +213,14 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
     admin = await user_repo.get_by_id(ADMIN_USER_ID)
     if admin is None:
         raise RuntimeError("bootstrap admin missing — run seed_users first")
+    roles = await seed_roles(session, tenant_id=tenant.id)
+    admin_role_id = roles[ADMIN_ROLE_SLUG].id
+    default_role_id = roles[DEFAULT_ROLE_SLUG].id
     hasher = PasswordHasher()
     demo_hash = _password_hash(hasher)
 
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = await build_session_user(session, admin)
     try:
         # ── 8.1 campuses + specialisms + role links ─────────────────────
         stuivenberg = await _get_or_create_campus(
@@ -268,7 +265,9 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
         )
 
         # demo caregiver: MULTI-specialism (REQ-FUN-28)
-        caregiver = await user_repo.get_by_email(tenant.id, CAREGIVER_EMAIL, role=Role.CAREGIVER)
+        caregiver = await user_repo.get_by_email(
+            tenant.id, CAREGIVER_EMAIL, role_id=default_role_id
+        )
         if caregiver is None:
             raise RuntimeError("demo caregiver missing — run seed_users first")
         caregiver_role = await session.scalar(
@@ -296,7 +295,7 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
             tenant_id=tenant.id,
             email=CAMPUS_DOCTOR_EMAIL,
             display_name="Karel Campusarts",
-            role=Role.CAREGIVER,
+            role_id=default_role_id,
             password_hash=demo_hash,
         )
         campus_role = await _get_or_create_practitioner_role(
@@ -315,7 +314,7 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
             tenant_id=tenant.id,
             email=CARDIOLOGIST_EMAIL,
             display_name="Carla Cardioloog",
-            role=Role.CAREGIVER,
+            role_id=default_role_id,
             password_hash=demo_hash,
         )
         cardio_role = await _get_or_create_practitioner_role(
@@ -381,7 +380,7 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
             tenant_id=tenant.id,
             email=EXTERNAL_GP_EMAIL,
             display_name="Greet Huisarts",
-            role=Role.CAREGIVER,  # platform role; externality = no org-tree role
+            role_id=default_role_id,  # platform role; externality = no org-tree role
             password_hash=demo_hash,
         )
         profile = await session.scalar(
@@ -458,7 +457,7 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
             tenant_id=tenant.id,
             email=MULTI_ROLE_EMAIL,
             display_name="Hilde Hoofdarts",
-            role=Role.CAREGIVER,
+            role_id=default_role_id,
             password_hash=demo_hash,
         )
         await _get_or_create_user(
@@ -466,7 +465,7 @@ async def seed_access_entitlements(session: AsyncSession) -> None:
             tenant_id=tenant.id,
             email=MULTI_ROLE_EMAIL,
             display_name="Hilde Hoofdarts",
-            role=Role.ADMIN,
+            role_id=admin_role_id,
             password_hash=demo_hash,
         )
         multi_role = await _get_or_create_practitioner_role(

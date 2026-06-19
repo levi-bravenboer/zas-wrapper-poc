@@ -15,12 +15,14 @@ const baseUrl = env.API_BASE_URL
 
 const USER_ID = '11111111-1111-4111-8111-111111111111'
 
+const ROLE_ID = '22222222-2222-4222-8222-222222222222'
+
 function makeRow(overrides: Record<string, unknown> = {}) {
   return {
     id: USER_ID,
     email: 'u@zas.local',
     display_name: 'U',
-    role: 'caregiver',
+    role_id: ROLE_ID,
     is_active: true,
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -112,19 +114,19 @@ describe('useAssignUserRole', () => {
   it('assigns role', async () => {
     server.use(
       http.patch(`${baseUrl}/users/${USER_ID}/role`, () =>
-        HttpResponse.json(makeRow({ role: 'admin' })),
+        HttpResponse.json(makeRow({ role_id: ROLE_ID })),
       ),
     )
 
     const { result } = renderHook(() => useAssignUserRole(), { wrapper })
-    const row = await result.current.mutateAsync({ userId: USER_ID, role: 'admin' })
-    expect(row.role).toBe('admin')
+    const row = await result.current.mutateAsync({ userId: USER_ID, role_id: ROLE_ID })
+    expect(row.role_id).toBe(ROLE_ID)
   })
 
   it('invalidates paginated users list and detail caches on success', async () => {
     server.use(
       http.patch(`${baseUrl}/users/${USER_ID}/role`, () =>
-        HttpResponse.json(makeRow({ role: 'admin' })),
+        HttpResponse.json(makeRow({ role_id: ROLE_ID })),
       ),
     )
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -135,7 +137,7 @@ describe('useAssignUserRole', () => {
     const { result } = renderHook(() => useAssignUserRole(), {
       wrapper: makeSharedWrapper(qc),
     })
-    await result.current.mutateAsync({ userId: USER_ID, role: 'admin' })
+    await result.current.mutateAsync({ userId: USER_ID, role_id: ROLE_ID })
 
     expect(qc.getQueryState(listKey)?.isInvalidated).toBe(true)
     expect(qc.getQueryState(userKeys.detail(USER_ID))?.isInvalidated).toBe(true)

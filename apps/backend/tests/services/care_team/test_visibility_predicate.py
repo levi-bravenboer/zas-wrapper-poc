@@ -7,18 +7,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.care_team import RoleInCare
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
-from app.schemas.auth.auth import SessionUser
 from app.services.care_team.care_team_service import CareTeamService
+from tests._rbac import ensure_roles, make_session_user
 
 
 async def _make_actor(session: AsyncSession, tenant: Tenant, email: str) -> User:
     actor_id = uuid.uuid4()
+    roles = await ensure_roles(session, tenant.id)
     user = User(
         id=actor_id,
         tenant_id=tenant.id,
@@ -27,7 +27,7 @@ async def _make_actor(session: AsyncSession, tenant: Tenant, email: str) -> User
         email=email,
         password_hash="hash",
         display_name=email,
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         is_active=True,
     )
     session.add(user)
@@ -90,6 +90,7 @@ async def _setup(session: AsyncSession) -> tuple[Tenant, Organisation, User]:
     session.add(tenant)
     await session.flush()
     admin_id = uuid.uuid4()
+    roles = await ensure_roles(session, tenant.id)
     admin = User(
         id=admin_id,
         tenant_id=tenant.id,
@@ -98,7 +99,7 @@ async def _setup(session: AsyncSession) -> tuple[Tenant, Organisation, User]:
         email="admin@example.test",
         password_hash="hash",
         display_name="admin",
-        role=Role.ADMIN,
+        role_id=roles["admin"].id,
         is_active=True,
     )
     session.add(admin)
@@ -129,12 +130,13 @@ async def test_visible_ids_returns_only_open_membership_patients(
     await _make_patient(db_session, tenant, org, "Unrelated")
 
     service = CareTeamService(db_session)
-    actor = SessionUser(
+    actor = make_session_user(
         id=caregiver.id,
         email=caregiver.email,
         display_name=caregiver.display_name,
         tenant_id=tenant.id,
-        role=caregiver.role,
+        role_id=caregiver.role_id,
+        permissions=frozenset(),
     )
     ids = await service.visible_patient_ids_for(actor)
     assert ids == {p_open.id}
@@ -153,6 +155,7 @@ async def test_visible_ids_respects_tenant_isolation(db_session: AsyncSession) -
     db_session.add(tenant_b)
     await db_session.flush()
     admin_b_id = uuid.uuid4()
+    roles_b = await ensure_roles(db_session, tenant_b.id)
     admin_b = User(
         id=admin_b_id,
         tenant_id=tenant_b.id,
@@ -161,7 +164,7 @@ async def test_visible_ids_respects_tenant_isolation(db_session: AsyncSession) -
         email="ab@example.test",
         password_hash="hash",
         display_name="admin_b",
-        role=Role.ADMIN,
+        role_id=roles_b["admin"].id,
         is_active=True,
     )
     db_session.add(admin_b)
@@ -181,12 +184,13 @@ async def test_visible_ids_respects_tenant_isolation(db_session: AsyncSession) -
     await _make_team_with_member(db_session, tenant_b, patient_b, caregiver_b)
 
     service = CareTeamService(db_session)
-    actor_a = SessionUser(
+    actor_a = make_session_user(
         id=caregiver_a.id,
         email=caregiver_a.email,
         display_name=caregiver_a.display_name,
         tenant_id=tenant_a.id,
-        role=caregiver_a.role,
+        role_id=caregiver_a.role_id,
+        permissions=frozenset(),
     )
     ids = await service.visible_patient_ids_for(actor_a)
     assert ids == {patient_a.id}

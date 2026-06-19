@@ -5,10 +5,10 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy import select
 
-from app.core.enums.user import Role
+from app.core.enums import Permission
 from app.core.settings import SettingsDep
 from app.db.engine import SessionDep
 from app.db.models.access.access_grant import AccessGrant
@@ -16,12 +16,13 @@ from app.db.models.patient import Patient
 from app.repositories.organisation.deps import OrganisationRepoDep
 from app.repositories.patient.deps import PatientRepoDep
 from app.schemas.auth.auth import SessionUser
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.access.permissions.deps import (
     KetoClientDep,
     PatientRelation,
     check_patient_permission,
 )
+from app.services.audit.access import record_denied_access
 from app.services.care_team.deps import CareTeamServiceDep
 from app.services.patient.errors import PatientNotFoundError
 from app.services.patient.patient_service import PatientService
@@ -63,18 +64,37 @@ def require_patient_relation(relation: PatientRelation):
         session: SessionDep,
         settings: SettingsDep,
         keto: KetoClientDep,
-        current_user: SessionUser = Depends(require_role(Role.ADMIN, Role.CAREGIVER)),
+        request: Request,
+        current_user: CurrentUserDep,
     ) -> Patient:
-        return await _resolve_patient_with_relation(
-            patient_id,
-            service,
-            care_team_service,
-            session,
-            settings,
-            keto,
-            current_user,
-            relation=relation,
-        )
+        try:
+            return await _resolve_patient_with_relation(
+                patient_id,
+                service,
+                care_team_service,
+                session,
+                settings,
+                keto,
+                current_user,
+                relation=relation,
+            )
+        except PatientNotFoundError:
+            # Refused patient-data view = a denied-access event (NEN 7513, D10).
+            # Absent vs denied is intentionally indistinguishable here (existence
+            # hiding), so any refused `view` is recorded as one read+failure. The
+            # request's 404 rolls back its session, so this writes independently;
+            # best-effort — an audit hiccup must not change the 404.
+            if relation == "view":
+                try:
+                    await record_denied_access(
+                        request.app.state.session_factory,
+                        actor=current_user,
+                        patient_id=patient_id,
+                        event_code="patient.dossier_viewed",
+                    )
+                except Exception:
+                    logger.exception("failed to write denied-access audit event")
+            raise
 
     return _require
 
@@ -108,7 +128,7 @@ async def _resolve_patient_with_relation(
     patient = await service.get_by_id(current_user.tenant_id, patient_id)
     if patient is None:
         raise PatientNotFoundError()
-    if current_user.role == Role.ADMIN:
+    if current_user.has_permission(Permission.PATIENT_ACCESS_ALL):
         return patient
 
     if settings.authz_keto_enabled:

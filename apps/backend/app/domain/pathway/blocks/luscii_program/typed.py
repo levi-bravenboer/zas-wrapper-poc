@@ -32,6 +32,8 @@ _BLOCKING_MODES: tuple[str, ...] = ("blocking", "fire_and_forget")
 
 class ExternalProgramBlock(BaseBlock):
     KIND: ClassVar[str] = "external_program"
+    ACTOR: ClassVar[str] = "auto"
+    COMPLETION: ClassVar[str] = "auto"
     # Wire-facing legacy `pathway_block.type` identifier. Diverges from
     # `KIND` because the legacy code stayed dotted (`luscii.program`)
     # while the typed-union discriminator is the kind-neutral

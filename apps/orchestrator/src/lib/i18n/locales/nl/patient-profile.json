@@ -1,4 +1,29 @@
 {
+  "list": {
+    "title": "Patiënten",
+    "sub": "Patiënten in jouw zorgteams",
+    "search": "Zoek op naam",
+    "column": {
+      "name": "Naam",
+      "birth_date": "Geboortedatum",
+      "gender": "Geslacht"
+    }
+  },
+  "overview": {
+    "info": "Patiëntgegevens",
+    "measurements": "Laatste metingen",
+    "appointments": "Recente afspraken",
+    "notes": "Laatste notities",
+    "notesEmpty": "Nog geen notities",
+    "viewAll": "Alles bekijken",
+    "gender": "Geslacht",
+    "birthDate": "Geboortedatum",
+    "organisation": "Organisatie",
+    "insz": "INSZ",
+    "pathway": "Zorgpad",
+    "pathwayFallback": "Zorgpad",
+    "treatingClinician": "Hoofdbehandelaar"
+  },
   "header": {
     "insz": "INSZ",
     "noInsz": "Geen INSZ",
@@ -7,12 +32,25 @@
     "actions": "Acties"
   },
   "tabs": {
+    "overview": "Overzicht",
+    "pathway": "Zorgpad",
+    "zorgteam": "Zorgteam",
     "measurements": "Metingen",
     "lab_results": "Labresultaten",
+    "appointments": {
+      "label": "Afspraken",
+      "about": "Over patiënt",
+      "with": "Met patiënt"
+    },
+    "collaboration": "Notities & documenten",
     "empty": {
       "lab_results": {
         "title": "Nog geen labresultaten gekoppeld",
         "body": "Wordt geleverd door de HiX-koppeling."
+      },
+      "appointments": {
+        "title": "Geen afspraken",
+        "body": "Afspraken over of met deze patiënt verschijnen hier."
       }
     }
   },
@@ -25,6 +63,18 @@
     "female": "Vrouw",
     "other": "Anders",
     "unknown": "Onbekend"
+  },
+  "openPatient": "Open patiënt",
+  "field": {
+    "birthDate": "Geboortedatum",
+    "treatingClinician": "Hoofdbehandelaar",
+    "pathway": "Zorgpad",
+    "pathwayFallback": "Zorgpad"
+  },
+  "timeline": {
+    "state": {
+      "paused": "Gepauzeerd"
+    }
   },
   "history": {
     "title": "Geschiedenis",
@@ -114,9 +164,54 @@
       "title": "Overige metingen",
       "unknownInstrument": "Onbekend instrument",
       "noValues": "Geen waarden"
+    },
+    "groups": {
+      "currentTitle": "Huidig zorgpad",
+      "historyTitle": "Historie",
+      "unassignedTitle": "Niet aan zorgpad gekoppeld",
+      "historyToggle": "Historie tonen",
+      "unassignedHint": "Programma niet teruggevonden in een zorgpad van deze patiënt."
+    },
+    "connection": {
+      "title": "Luscii-koppelingen",
+      "empty": "Nog geen Luscii-koppelingen.",
+      "setViaEdit": "Beheer Luscii-koppelingen via Bewerken.",
+      "add": "Koppeling toevoegen",
+      "addLabel": "Luscii patiënt-ID",
+      "addPlaceholder": "Luscii patiënt-ID (UUID)",
+      "deactivate": "Deactiveren",
+      "statusActive": "Actief",
+      "statusInactive": "Inactief",
+      "programLabel": "Programma"
+    },
+    "archetype": {
+      "numeric": "Numeriek",
+      "ordinal": "Schaalscore",
+      "categorical": "Keuze",
+      "free_text": "Vrije tekst",
+      "unknown": "Onbekend"
+    },
+    "instrumentType": {
+      "numerical": "Meetwaarde",
+      "questionnaire": "Vragenlijst",
+      "knowledge": "Educatie",
+      "bloodpressure": "Bloeddruk",
+      "scripted": "Script"
+    },
+    "itemType": {
+      "numeric": "Getal",
+      "text": "Tekst",
+      "multiple-choice-single-select": "Meerkeuze (één antwoord)",
+      "multiple-choice-multi-select": "Meerkeuze (meerdere antwoorden)",
+      "file-picker": "Bestand",
+      "external": "Extern",
+      "result": "Resultaat"
     }
   },
   "charts": {
+    "trend": {
+      "since_previous": "vs. vorige meting"
+    },
     "programme": {
       "label": "Programma",
       "fallback": "Geen programma",

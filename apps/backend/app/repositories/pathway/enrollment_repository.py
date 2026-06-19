@@ -13,16 +13,55 @@ from uuid import UUID
 
 from sqlalchemy import select
 
+from app.db.models.patient.patient import Patient
 from app.db.models.pathway import (
+    Pathway,
     PathwayBlockExecution,
     PathwayDeferredFieldValue,
     PathwayEnrollment,
+    PathwayEnrollmentParticipant,
+    PathwayVersion,
 )
 from app.repositories.base import BaseRepository
 
 
 class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
     model = PathwayEnrollment
+
+    async def patient_visible_to_tenant(self, patient_id: UUID, tenant_id: UUID) -> bool:
+        stmt = select(Patient.id).where(
+            Patient.id == patient_id,
+            Patient.tenant_id == tenant_id,
+            Patient.deleted_at.is_(None),
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none() is not None
+
+    async def bound_participant_user_id(
+        self, enrollment_id: UUID, block_template_id: UUID
+    ) -> UUID | None:
+        """The Practitioner bound for a block at enrollment time, if any."""
+        return await self._session.scalar(
+            select(PathwayEnrollmentParticipant.user_id).where(
+                PathwayEnrollmentParticipant.enrollment_id == enrollment_id,
+                PathwayEnrollmentParticipant.block_template_id == block_template_id,
+                PathwayEnrollmentParticipant.deleted_at.is_(None),
+            )
+        )
+
+    async def pathway_version_visible_to_tenant(
+        self, pathway_version_id: UUID, tenant_id: UUID
+    ) -> bool:
+        stmt = (
+            select(PathwayVersion.id)
+            .join(Pathway, Pathway.id == PathwayVersion.pathway_id)
+            .where(
+                PathwayVersion.id == pathway_version_id,
+                Pathway.tenant_id == tenant_id,
+                PathwayVersion.deleted_at.is_(None),
+                Pathway.deleted_at.is_(None),
+            )
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none() is not None
 
     async def get(self, enrollment_id: UUID, tenant_id: UUID) -> PathwayEnrollment | None:
         stmt = select(PathwayEnrollment).where(
@@ -31,6 +70,22 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
             PathwayEnrollment.deleted_at.is_(None),
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def list_by_patient(
+        self,
+        patient_id: UUID,
+        tenant_id: UUID,
+    ) -> list[PathwayEnrollment]:
+        stmt = (
+            select(PathwayEnrollment)
+            .where(
+                PathwayEnrollment.patient_id == patient_id,
+                PathwayEnrollment.tenant_id == tenant_id,
+                PathwayEnrollment.deleted_at.is_(None),
+            )
+            .order_by(PathwayEnrollment.created_at.asc())
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
 
     async def list_executions(self, enrollment_id: UUID) -> list[PathwayBlockExecution]:
         stmt = (
@@ -59,6 +114,18 @@ class EnrollmentRepository(BaseRepository[PathwayEnrollment]):
         stmt = select(PathwayBlockExecution).where(
             PathwayBlockExecution.id == execution_id,
             PathwayBlockExecution.enrollment_id == enrollment_id,
+            PathwayBlockExecution.tenant_id == tenant_id,
+            PathwayBlockExecution.deleted_at.is_(None),
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def get_execution_by_id(
+        self,
+        execution_id: UUID,
+        tenant_id: UUID,
+    ) -> PathwayBlockExecution | None:
+        stmt = select(PathwayBlockExecution).where(
+            PathwayBlockExecution.id == execution_id,
             PathwayBlockExecution.tenant_id == tenant_id,
             PathwayBlockExecution.deleted_at.is_(None),
         )

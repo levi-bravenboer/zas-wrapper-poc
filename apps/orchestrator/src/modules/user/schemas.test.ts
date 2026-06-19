@@ -2,19 +2,19 @@ import { describe, expect, it } from 'vitest'
 
 import {
   assignRoleRequestSchema,
-  roleSchema,
   setActiveRequestSchema,
   userDetailSchema,
   userRowSchema,
 } from './schemas'
 
 const UUID = '11111111-1111-4111-8111-111111111111'
+const ROLE_UUID = '22222222-2222-4222-8222-222222222222'
 
 const validRow = {
   id: UUID,
   email: 'u@zas.local',
   display_name: 'U',
-  role: 'caregiver',
+  role_id: ROLE_UUID,
   is_active: true,
   created_at: '2026-01-01T00:00:00Z',
 }
@@ -25,18 +25,6 @@ const validDetail = {
   external_subject: null,
   updated_at: '2026-01-02T00:00:00Z',
 }
-
-describe('roleSchema', () => {
-  it('accepts known roles', () => {
-    for (const r of ['admin', 'caregiver'] as const) {
-      expect(roleSchema.parse(r)).toBe(r)
-    }
-  })
-
-  it('rejects unknown role', () => {
-    expect(roleSchema.safeParse('owner').success).toBe(false)
-  })
-})
 
 describe('userRowSchema', () => {
   it('parses a valid row', () => {
@@ -85,8 +73,8 @@ describe('request schemas', () => {
     expect(setActiveRequestSchema.safeParse({ is_active: 'true' }).success).toBe(false)
   })
 
-  it('assignRoleRequestSchema accepts enum only', () => {
-    expect(assignRoleRequestSchema.safeParse({ role: 'admin' }).success).toBe(true)
-    expect(assignRoleRequestSchema.safeParse({ role: 'owner' }).success).toBe(false)
+  it('assignRoleRequestSchema requires a uuid role_id', () => {
+    expect(assignRoleRequestSchema.safeParse({ role_id: ROLE_UUID }).success).toBe(true)
+    expect(assignRoleRequestSchema.safeParse({ role_id: 'not-a-uuid' }).success).toBe(false)
   })
 })

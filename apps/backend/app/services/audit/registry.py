@@ -25,3 +25,34 @@ def known_resource_types() -> frozenset[str]:
 
 def is_known_resource(resource_type: str) -> bool:
     return resource_type in known_resource_types()
+
+
+# FHIR `AuditEvent.code` — the most-specific domain event, namespaced by surface.
+# Validated at emit so a misspelled code cannot produce an un-queryable trail.
+# Grows per feature; add the code here when a new emit site lands.
+KNOWN_EVENT_CODES: frozenset[str] = frozenset(
+    {
+        "pathway.created",
+        "pathway.edited",
+        "pathway.duplicated",
+        "pathway.deleted",
+        "pathway.forked",
+        "pathway.restored",
+        "pathway.published",
+        "pathway.scope_specialisms",
+        "pathway.assign_practitioners",
+        "runtime.enrolled",
+        "runtime.block_executed",
+        "runtime.sla_escalated",
+        "runtime.decision_branched",
+        "runtime.deferred_value_resolved",
+        "runtime.fast_forwarded",
+        "patient.dossier_viewed",
+        "auth.login",
+        "auth.logout",
+    }
+)
+
+
+def is_known_event_code(event_code: str) -> bool:
+    return event_code in KNOWN_EVENT_CODES

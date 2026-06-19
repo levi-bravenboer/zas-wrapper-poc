@@ -24,7 +24,7 @@ from datetime import datetime
 from typing import Any, ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.pathway._helpers import object_schema
 from app.domain.pathway.blocks.base import BaseBlock
@@ -44,6 +44,9 @@ class MdoResult(BaseModel):
     contributors: list[UUID]
     notes: str
     closed_at: datetime
+    # Chosen outcome at close — one of the block's authored `outcomes`,
+    # or `None` when the block declares no outcome choices.
+    outcome: str | None = None
 
 
 class MdoBlock(BaseBlock):
@@ -59,6 +62,8 @@ class MdoBlock(BaseBlock):
     """
 
     KIND: ClassVar[str] = "mdo"
+    ACTOR: ClassVar[str] = "caregiver"
+    COMPLETION: ClassVar[str] = "caregiver_action"
     TYPE_CODE: ClassVar[str] = "mdo"
     LABEL: ClassVar[str] = "MDO"
     DESCRIPTION: ClassVar[str] = (
@@ -74,15 +79,23 @@ class MdoBlock(BaseBlock):
         properties={
             "topic": {"type": "string", "minLength": 1, "maxLength": 500},
             "expected_attendees_note": {"type": "string", "maxLength": 2000},
+            "outcomes": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1, "maxLength": 64},
+                "uniqueItems": True,
+            },
         },
         required=["topic"],
     )
     UI_SCHEMA: ClassVar[dict[str, Any]] = {
-        "order": ["topic", "expected_attendees_note"],
+        "order": ["topic", "expected_attendees_note", "outcomes"],
     }
 
     topic: str
     expected_attendees_note: str | None = None
+    # Optional authored outcome choices (e.g. "operatie", "palliatief"); the
+    # leading caregiver picks one at close. Empty = free-form MDO, no choice.
+    outcomes: tuple[str, ...] = Field(default_factory=tuple)
 
 
 __all__ = ["MdoBlock", "MdoResult"]

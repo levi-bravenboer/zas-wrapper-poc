@@ -24,8 +24,6 @@ BlockSemanticsLiteral = Literal[
     "mdo",
     "form",
     "decision",
-    "milestone",
-    "wait",
     "pathway_link",
     "external_program",
     "end_pathway",
@@ -70,6 +68,14 @@ class PathwayBlockType(BaseModel):
         ),
     )
     supports_branches: bool = False
+    # Runtime-contract metadata (§2.3/§2.4): who acts, when the effect is
+    # decided, how it completes. Documents the contract without consumers
+    # hard-coding `semantics`.
+    actor: str = Field(default="system", description="caregiver | patient | system | auto")
+    runtime_phase: str = Field(default="runtime", description="build | enroll | runtime")
+    completion: str = Field(
+        default="auto", description="caregiver_action | auto | decision | terminal"
+    )
     source: BlockSourceLiteral = Field(
         default="native",
         description=(

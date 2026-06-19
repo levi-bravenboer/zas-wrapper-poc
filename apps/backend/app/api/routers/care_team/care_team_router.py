@@ -1,25 +1,20 @@
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 
-from app.core.enums.user import Role
-from app.schemas.auth.auth import SessionUser
 from app.schemas.care_team.care_team import CareTeamCreate, CareTeamRead, CareTeamUpdate
 from app.schemas.care_team.participant import (
     ParticipantCreate,
     ParticipantRead,
     ParticipantRoleChange,
 )
-from app.services.access.identity.deps import require_role
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.care_team.deps import CareTeamServiceDep
 from app.services.patient.deps import PatientAccessDep
 
 router = APIRouter(tags=["care-teams"])
-
-_CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 
 
 @router.get(
@@ -30,9 +25,7 @@ _CAREGIVER_OR_ADMIN_GUARD = Depends(require_role(Role.ADMIN, Role.CAREGIVER))
 async def list_patient_care_teams(
     patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
     service: CareTeamServiceDep,
-    _current_user: Annotated[
-        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
-    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
+    _current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> list[CareTeamRead]:
     teams = await service.list_for_patient(patient.tenant_id, patient.id)
     return [CareTeamRead.model_validate(t) for t in teams]
@@ -48,9 +41,7 @@ async def create_care_team(
     payload: CareTeamCreate,
     patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto view check when AUTHZ_KETO_ENABLED
     service: CareTeamServiceDep,
-    current_user: Annotated[
-        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
-    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> CareTeamRead:
     team = await service.create_for_patient(current_user, patient.id, payload)
     return CareTeamRead.model_validate(team)
@@ -65,9 +56,7 @@ async def update_care_team(
     care_team_id: UUID,
     payload: CareTeamUpdate,
     service: CareTeamServiceDep,
-    current_user: Annotated[
-        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
-    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> CareTeamRead:
     team = await service.update(current_user, care_team_id, payload)
     return CareTeamRead.model_validate(team)
@@ -83,9 +72,7 @@ async def add_care_team_participant(
     care_team_id: UUID,
     payload: ParticipantCreate,
     service: CareTeamServiceDep,
-    current_user: Annotated[
-        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
-    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> ParticipantRead:
     row = await service.add_participant(current_user, care_team_id, payload)
     return ParticipantRead.model_validate(row)
@@ -101,9 +88,7 @@ async def change_participant_role(
     user_id: UUID,
     payload: ParticipantRoleChange,
     service: CareTeamServiceDep,
-    current_user: Annotated[
-        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
-    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> ParticipantRead:
     row = await service.change_participant_role(
         current_user, care_team_id, user_id, payload.role_in_care
@@ -120,9 +105,7 @@ async def unassign_care_team_participant(
     care_team_id: UUID,
     user_id: UUID,
     service: CareTeamServiceDep,
-    current_user: Annotated[
-        SessionUser, _CAREGIVER_OR_ADMIN_GUARD
-    ],  # AUTH-HARDEN: role+tenant by design; CareTeam manage-relation is BL-051 (mvp)
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
 ) -> None:
     await service.unassign_participant(current_user, care_team_id, user_id)
 

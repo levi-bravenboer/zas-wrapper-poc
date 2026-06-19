@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/lib/i18n'
 
 import { TaskList } from './TaskList'
-import type { TaskItem } from '../types'
+import type { Task } from '../types'
 
 const { useTasksQueryMock, useParamsMock } = vi.hoisted(() => ({
   useTasksQueryMock: vi.fn(),
@@ -40,40 +40,21 @@ function isoAt(daysFromNow: number, hour = 10): string {
 function makeTask(
   id: string,
   daysFromNow: number,
-  family = 'Janssens',
-  opened = false,
-): TaskItem {
+  title = 'Taak',
+  status: Task['status'] = 'open',
+): Task {
   return {
     id,
-    source: 'appointment',
-    source_id: id,
+    assignee_user_id: `u-${id}`,
+    title,
+    description: null,
+    status,
     due_at: isoAt(daysFromNow),
-    title: 'Afspraak',
-    kind: 'consultation',
-    priority: null,
-    opened,
-    payload: {
-      id,
-      patient: {
-        id: `p-${id}`,
-        family_name: family,
-        given_name: 'Anke',
-        insz: null,
-        primary_organisation_id: 'org-1',
-      },
-      starts_at: isoAt(daysFromNow),
-      ends_at: isoAt(daysFromNow, 11),
-      kind: 'consultation',
-      modality: 'online',
-      location_text: null,
-      status: 'booked',
-      participants: [],
-    },
-    // reason: TS widens the `'consultation'` / `'online'` / `'booked'`
-    // string literals to `string` in the object-literal context, so the
-    // merged shape does not narrow back to the OpenAPI enum unions on
-    // `TaskItem.kind` / `payload.modality` / `payload.status`.
-  } as TaskItem
+    patient_id: null,
+    source_ref: null,
+    created_at: isoAt(0),
+    updated_at: isoAt(0),
+  }
 }
 
 function wrap(ui: React.ReactElement): React.ReactElement {
@@ -98,21 +79,21 @@ describe('TaskList', () => {
     render(wrap(<TaskList />))
 
     expect(screen.getByText('Geen taken')).toBeInTheDocument()
-    expect(screen.getByText('Nieuwe taken verschijnen automatisch')).toBeInTheDocument()
   })
 
-  it('renders one row per TaskItem with no pager chrome', () => {
+  it('renders one row per task showing the title', () => {
     useTasksQueryMock.mockReturnValue({
-      data: [makeTask('t-1', 0), makeTask('t-2', 0, 'Bakker')],
+      data: [
+        makeTask('t-1', 0, 'Bloeddruk controleren'),
+        makeTask('t-2', 0, 'Labresultaat nakijken'),
+      ],
       isLoading: false,
       isError: false,
     })
     render(wrap(<TaskList />))
 
-    expect(screen.getByText(/Janssens, Anke/)).toBeInTheDocument()
-    expect(screen.getByText(/Bakker, Anke/)).toBeInTheDocument()
-    expect(screen.queryByText(/Meer laden/i)).toBeNull()
-    expect(screen.queryByText(/Vorige|Volgende|Per pagina/i)).toBeNull()
+    expect(screen.getByText('Bloeddruk controleren')).toBeInTheDocument()
+    expect(screen.getByText('Labresultaat nakijken')).toBeInTheDocument()
   })
 
   it('groups rows under day headers (Vandaag / Morgen / day label)', () => {
@@ -127,21 +108,20 @@ describe('TaskList', () => {
     expect(headers).toHaveLength(3)
     expect(headers[0]).toHaveTextContent('Vandaag')
     expect(headers[1]).toHaveTextContent('Morgen')
-    // third header is a formatted day label, not a relative word
     expect(headers[2]).not.toHaveTextContent(/Vandaag|Morgen/)
   })
 
   it('marks the row matching the $taskId URL param active', () => {
     useParamsMock.mockReturnValue({ taskId: 't-2' })
     useTasksQueryMock.mockReturnValue({
-      data: [makeTask('t-1', 0), makeTask('t-2', 0, 'Bakker')],
+      data: [makeTask('t-1', 0, 'Eerste taak'), makeTask('t-2', 0, 'Tweede taak')],
       isLoading: false,
       isError: false,
     })
     render(wrap(<TaskList />))
 
-    const active = screen.getByRole('link', { name: /Bakker, Anke/ })
-    const inactive = screen.getByRole('link', { name: /Janssens, Anke/ })
+    const active = screen.getByRole('link', { name: /Tweede taak/ })
+    const inactive = screen.getByRole('link', { name: /Eerste taak/ })
     expect(active).toHaveAttribute('data-active', 'true')
     expect(inactive).not.toHaveAttribute('data-active')
   })

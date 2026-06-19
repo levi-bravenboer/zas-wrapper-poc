@@ -4,12 +4,12 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
 from app.services.access.identity.authenticator import PasswordAuthenticator
 from app.services.access.identity.password import PasswordHasher
+from tests._rbac import ensure_roles
 
 
 async def _seed(
@@ -22,6 +22,7 @@ async def _seed(
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
+    roles = await ensure_roles(session, tenant.id)
     user_id = uuid.uuid4()
     user = User(
         id=user_id,
@@ -31,7 +32,7 @@ async def _seed(
         email="user@zas.local",
         password_hash=hasher.hash(password) if password is not None else None,
         display_name="User",
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         is_active=is_active,
         external_idp="itsme" if password is None else None,
         external_subject="opaque-sub" if password is None else None,

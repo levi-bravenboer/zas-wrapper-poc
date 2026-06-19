@@ -180,6 +180,7 @@ function Inner({
           name: draft.name || pendingAddType.label,
           input_logic: draft.inputLogic,
           timing_policy: draft.timingPolicy,
+          participant: draft.participant,
         } as typeof base,
       })
       // add-block auto-selects the new block, which would immediately
@@ -203,6 +204,7 @@ function Inner({
           lane_id: draft.laneId,
           input_logic: draft.inputLogic,
           timing_policy: draft.timingPolicy,
+          participant: draft.participant,
         } as Record<string, unknown>,
       })
       dispatch({ type: 'select', selection: { kind: 'none' } })

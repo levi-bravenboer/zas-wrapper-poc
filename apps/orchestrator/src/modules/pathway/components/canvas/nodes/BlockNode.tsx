@@ -27,13 +27,11 @@ function translateSemanticsSummary(
   // appointment kind, form question count) pass through unchanged.
   switch (semantics) {
     case 'task':
-      return t(`inspector.task.assigneeOption.${value}`, { defaultValue: value })
+      return t(`inspector.task.assigneeOption.${value}`)
     case 'message':
-      return t(`inspector.message.channelOption.${value}`, { defaultValue: value })
-    case 'wait':
-      return t(`eventType.${value}`, { defaultValue: value })
+      return t(`inspector.message.channelOption.${value}`)
     case 'pathway_link':
-      return t(`inspector.pathwayLink.modeOption.${value}`, { defaultValue: value })
+      return t(`inspector.pathwayLink.modeOption.${value}`)
     default:
       return value
   }
@@ -60,9 +58,7 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
   const { t } = useTranslation('pathway')
   const accent = data.lane ? laneAccent(data.lane) : 'var(--color-primary)'
   const legacyType = legacyBlockType(data.block)
-  const typeLabel = t(`blockType.${legacyType}`, {
-    defaultValue: data.blockType?.label ?? legacyType,
-  })
+  const typeLabel = t(`blockType.${legacyType}`)
   const name = data.block.name?.trim() || typeLabel
   // Chain slot #1: `data.block.config` still mirrors the legacy bag
   // verbatim (see `pathway-model-foundations` §4.1 envelope notes).
@@ -94,7 +90,7 @@ function BlockNodeImpl({ data, selected }: NodeProps<BlockFlowNode>): ReactEleme
       {data.onRequestDelete && (
         <button
           type="button"
-          aria-label={t('deleteBlock.title', { defaultValue: 'Blok verwijderen?' })}
+          aria-label={t('deleteBlock.title')}
           onClick={(e) => {
             e.stopPropagation()
             data.onRequestDelete?.(data.block.id)

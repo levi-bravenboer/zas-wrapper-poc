@@ -31,12 +31,10 @@ from app.domain.pathway.blocks.informed_consent.typed import InformedConsentBloc
 from app.domain.pathway.blocks.luscii_program.typed import ExternalProgramBlock
 from app.domain.pathway.blocks.mdo.typed import MdoBlock
 from app.domain.pathway.blocks.message.typed import MessageBlock
-from app.domain.pathway.blocks.milestone.typed import MilestoneBlock
 from app.domain.pathway.blocks.pathway_link.typed import PathwayLinkBlock
 from app.domain.pathway.blocks.start.typed import StartBlock
 from app.domain.pathway.blocks.task.typed import TaskBlock
 from app.domain.pathway.blocks.treatment.typed import TreatmentBlock
-from app.domain.pathway.blocks.wait.typed import WaitBlock
 
 
 class _BlockEnvelopeFields(BaseModel):
@@ -95,14 +93,6 @@ class FormBlockOut(FormBlock, _BlockEnvelopeFields):
     kind: Literal["form"] = "form"
 
 
-class MilestoneBlockOut(MilestoneBlock, _BlockEnvelopeFields):
-    kind: Literal["milestone"] = "milestone"
-
-
-class WaitBlockOut(WaitBlock, _BlockEnvelopeFields):
-    kind: Literal["wait"] = "wait"
-
-
 class PathwayLinkBlockOut(PathwayLinkBlock, _BlockEnvelopeFields):
     kind: Literal["pathway_link"] = "pathway_link"
 
@@ -126,8 +116,6 @@ PathwayTypedBlockOut = Annotated[
         InformedConsentBlockOut,
         MdoBlockOut,
         FormBlockOut,
-        MilestoneBlockOut,
-        WaitBlockOut,
         PathwayLinkBlockOut,
         ExternalProgramBlockOut,
         EndPathwayBlockOut,
@@ -146,8 +134,6 @@ _OUT_BY_KIND: dict[str, type[BaseModel]] = {
     "informed_consent": InformedConsentBlockOut,
     "mdo": MdoBlockOut,
     "form": FormBlockOut,
-    "milestone": MilestoneBlockOut,
-    "wait": WaitBlockOut,
     "pathway_link": PathwayLinkBlockOut,
     "external_program": ExternalProgramBlockOut,
     "end_pathway": EndPathwayBlockOut,
@@ -203,14 +189,6 @@ class FormBlockIn(FormBlock, _BlockEnvelopeFields):
     kind: Literal["form"] = "form"
 
 
-class MilestoneBlockIn(MilestoneBlock, _BlockEnvelopeFields):
-    kind: Literal["milestone"] = "milestone"
-
-
-class WaitBlockIn(WaitBlock, _BlockEnvelopeFields):
-    kind: Literal["wait"] = "wait"
-
-
 class PathwayLinkBlockIn(PathwayLinkBlock, _BlockEnvelopeFields):
     kind: Literal["pathway_link"] = "pathway_link"
 
@@ -234,8 +212,6 @@ PathwayTypedBlockIn = Annotated[
         InformedConsentBlockIn,
         MdoBlockIn,
         FormBlockIn,
-        MilestoneBlockIn,
-        WaitBlockIn,
         PathwayLinkBlockIn,
         ExternalProgramBlockIn,
         EndPathwayBlockIn,
@@ -261,8 +237,6 @@ __all__ = [
     "MdoBlockOut",
     "MessageBlockIn",
     "MessageBlockOut",
-    "MilestoneBlockIn",
-    "MilestoneBlockOut",
     "PathwayLinkBlockIn",
     "PathwayLinkBlockOut",
     "PathwayTypedBlockIn",
@@ -273,8 +247,6 @@ __all__ = [
     "TaskBlockOut",
     "TreatmentBlockIn",
     "TreatmentBlockOut",
-    "WaitBlockIn",
-    "WaitBlockOut",
     "out_class_for_kind",
 ]
 

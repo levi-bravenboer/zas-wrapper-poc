@@ -14,16 +14,18 @@ from typing import ClassVar
 
 import pytest
 import sqlalchemy as sa
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, Mapped, mapped_column
 
-from app.core.enums.user import Role
 from app.db.base import TenantOwnedEntity
+from app.db.models.access import Role
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 from app.repositories.base import BaseListRepository
 from app.schemas._list.list_query import Operator
+from scripts.seed_roles import bootstrap_admin_role
+from scripts.seed_users import admin_role_id
 
 
 class _DemoModel(TenantOwnedEntity):
@@ -56,21 +58,36 @@ class _StubActor:
 
 
 async def _seed_admin(session: AsyncSession, tenant: Tenant) -> User:
-    """Insert a self-referencing admin user for FK audit columns."""
+    """Insert a self-referencing admin user + its `admin` role.
+
+    The user (`role_id` → admin role) and role (`created_by` → user) form a
+    true FK cycle, so both land inside a `session_replication_role = replica`
+    block with FK triggers off — mirroring `scripts.seed_users`.
+    """
     user_id = uuid.uuid4()
-    user = User(
-        id=user_id,
-        tenant_id=tenant.id,
-        created_by=user_id,
-        updated_by=user_id,
-        email=f"admin-{tenant.slug}@test.local",
-        password_hash="x",
-        display_name=f"Admin {tenant.slug}",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(user)
-    await session.flush()
+    role_id = admin_role_id(tenant.id)
+    await session.execute(text("SET session_replication_role = replica"))
+    try:
+        user = User(
+            id=user_id,
+            tenant_id=tenant.id,
+            created_by=user_id,
+            updated_by=user_id,
+            email=f"admin-{tenant.slug}@test.local",
+            password_hash="x",
+            display_name=f"Admin {tenant.slug}",
+            role_id=role_id,
+            is_active=True,
+        )
+        session.add(user)
+        await session.flush()
+        await bootstrap_admin_role(
+            session,
+            role_id=role_id,
+            tenant_id=tenant.id,
+        )
+    finally:
+        await session.execute(text("SET session_replication_role = DEFAULT"))
     return user
 
 
@@ -89,6 +106,7 @@ async def two_tenants(
     yield a, b, a_admin, b_admin
     await db_session.execute(delete(_DemoModel))
     await db_session.execute(delete(User).where(User.tenant_id.in_([a_id, b_id])))
+    await db_session.execute(delete(Role).where(Role.tenant_id.in_([a_id, b_id])))
     await db_session.execute(delete(Tenant).where(Tenant.id.in_([a_id, b_id])))
     await db_session.commit()
 

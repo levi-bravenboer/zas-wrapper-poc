@@ -1,7 +1,7 @@
 # authz-tuple-sync Specification
 
 ## Purpose
-TBD - created by archiving change access-management-ory. Update Purpose after archive.
+Keeps PostgreSQL the single source of truth for access facts while Keto holds a fully derived mirror: a transactional outbox enqueues tuple changes in the same commit, an in-process relay applies them in commit order, an expiry sweep closes time-bounded grants, and a reconciler re-derives the complete tuple set to detect and converge drift.
 ## Requirements
 ### Requirement: Postgres is the source of truth; Keto is derived
 All access-relevant facts (practitioner roles, care-team participation, organisation edges, external episodes) SHALL continue to live in Postgres. Keto tuples SHALL be derivable in full from Postgres at any time; no tuple may encode a fact absent from the domain database.
@@ -37,7 +37,7 @@ Closing an external grant (consent revoked, grant period ended explicitly, or la
 - **THEN** all dependent verb tuples for P are deleted after relay processing
 
 ### Requirement: Reconciler rebuilds and detects drift
-A reconciler SHALL derive the complete expected tuple set from Postgres and converge Keto to it (insert missing, delete orphaned). It SHALL run as the initial migration (first population), on demand, and on a schedule. A non-empty drift diff outside the initial run SHALL be logged as a warning with counts per namespace.
+A reconciler SHALL derive the complete expected tuple set from Postgres and converge Keto to it (insert missing, delete orphaned). It SHALL run as a one-shot cutover script for first population (`scripts/reconcile_authz_tuples.py`) and on demand; steady-state convergence is driven by the relay and sweep loops rather than a periodic reconcile (scheduled drift reconciliation is a follow-up). A non-empty drift diff outside the initial run SHALL be logged as a warning with inserted and orphan-deleted counts.
 
 #### Scenario: Initial population
 - **WHEN** the reconciler runs against a Keto with no tuples and a seeded domain database

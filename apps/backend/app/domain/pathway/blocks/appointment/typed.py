@@ -19,6 +19,8 @@ AppointmentMode = Literal["in_person", "video", "phone"]
 
 class AppointmentBlock(BaseBlock):
     KIND: ClassVar[str] = "appointment"
+    ACTOR: ClassVar[str] = "caregiver"
+    COMPLETION: ClassVar[str] = "caregiver_action"
     TYPE_CODE: ClassVar[str] = "appointment"
     LABEL: ClassVar[str] = "Afspraak"
     DESCRIPTION: ClassVar[str] = "A scheduled meeting with a caregiver or patient."

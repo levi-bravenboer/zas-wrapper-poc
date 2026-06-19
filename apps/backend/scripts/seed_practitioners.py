@@ -28,11 +28,11 @@ from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.db.models.user import User
 from app.repositories.tenant import TenantRepository
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
+from app.services.access.rbac.resolver import build_session_user
 from scripts._db import run_script
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
 from scripts.seed_tenant import ZAS_TENANT_SLUG
-from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL, CLINICAL_CAST
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +71,7 @@ async def seed_practitioners(session: AsyncSession) -> list[Practitioner]:
         raise _SeedUserMissingError("admin/caregiver missing — run seed_users first")
 
     previous_actor = session.info.get(SESSION_ACTOR_KEY)
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=admin.id,
-        email=admin.email,
-        display_name=admin.display_name,
-        tenant_id=admin.tenant_id,
-        role=admin.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = await build_session_user(session, admin)
     try:
         practitioner = await _get_or_create_practitioner(
             session, tenant_id=tenant.id, user=caregiver
@@ -88,6 +82,28 @@ async def seed_practitioners(session: AsyncSession) -> list[Practitioner]:
             practitioner_id=practitioner.id,
             organisation_id=RUGREVAL_TEAM_ORG_ID,
         )
+        # Specialty cast (§6c.2): each gets a Practitioner + role with its
+        # specialty (nurse for the casemanager, physician otherwise).
+        for email, _display_name, specialty in CLINICAL_CAST:
+            cast_user = await user_repo.get_by_email(tenant.id, email)
+            if cast_user is None:
+                continue
+            cast_practitioner = await _get_or_create_practitioner(
+                session, tenant_id=tenant.id, user=cast_user
+            )
+            code = (
+                PractitionerRoleCode.NURSE
+                if specialty == "casemanagement"
+                else PractitionerRoleCode.PHYSICIAN
+            )
+            await _get_or_create_open_primary_role(
+                session,
+                tenant_id=tenant.id,
+                practitioner_id=cast_practitioner.id,
+                organisation_id=RUGREVAL_TEAM_ORG_ID,
+                code=code,
+                specialty=specialty,
+            )
     finally:
         if previous_actor is None:
             session.info.pop(SESSION_ACTOR_KEY, None)
@@ -132,6 +148,8 @@ async def _get_or_create_open_primary_role(
     tenant_id,
     practitioner_id,
     organisation_id,
+    code: PractitionerRoleCode = PractitionerRoleCode.OTHER,
+    specialty: str | None = None,
 ) -> PractitionerRole:
     existing = (
         await session.execute(
@@ -155,7 +173,8 @@ async def _get_or_create_open_primary_role(
         tenant_id=tenant_id,
         practitioner_id=practitioner_id,
         organisation_id=organisation_id,
-        code=PractitionerRoleCode.OTHER,
+        code=code,
+        specialty=specialty,
         is_primary=True,
     )
     session.add(row)

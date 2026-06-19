@@ -81,9 +81,9 @@ export interface paths {
         };
         /**
          * List Session Roles
-         * @description The caller's selectable roles on this surface (REQ-NON-3) — drives
-         *     the role picker and the user-menu switcher. Single-role users get a
-         *     one-element list.
+         * @description The caller's selectable rows on this surface (REQ-NON-3) — drives the
+         *     role picker and the user-menu switcher. Single-row users get a
+         *     one-element list. Staff surface excludes the patient row.
          */
         get: operations["list_session_roles"];
         put?: never;
@@ -364,6 +364,300 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patient_id}/luscii-connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Luscii Connections */
+        get: operations["list_patient_luscii_connections"];
+        put?: never;
+        /** Add Patient Luscii Connection */
+        post: operations["add_patient_luscii_connection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/luscii-connections/{connection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Deactivate Patient Luscii Connection */
+        delete: operations["deactivate_patient_luscii_connection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Appointments */
+        get: operations["list_appointments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Appointment */
+        get: operations["get_appointment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Appointments */
+        get: operations["list_patient_appointments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointment_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Appointment Notes */
+        get: operations["list_appointment_notes_appointments__appointment_id__notes_get"];
+        put?: never;
+        /** Add Appointment Note */
+        post: operations["add_appointment_note_appointments__appointment_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointment_id}/notes/{note_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Appointment Note Url */
+        get: operations["appointment_note_url_appointments__appointment_id__notes__note_id__url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointment_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Appointment Note */
+        delete: operations["delete_appointment_note_appointments__appointment_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{task_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Task Notes */
+        get: operations["list_task_notes_tasks__task_id__notes_get"];
+        put?: never;
+        /** Add Task Note */
+        post: operations["add_task_note_tasks__task_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{task_id}/notes/{note_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Task Note Url */
+        get: operations["task_note_url_tasks__task_id__notes__note_id__url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{task_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Task Note */
+        delete: operations["delete_task_note_tasks__task_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathway-steps/{execution_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pathway Step Notes */
+        get: operations["list_pathway_step_notes_pathway_steps__execution_id__notes_get"];
+        put?: never;
+        /** Add Pathway Step Note */
+        post: operations["add_pathway_step_note_pathway_steps__execution_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathway-steps/{execution_id}/notes/{note_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pathway Step Note Url */
+        get: operations["pathway_step_note_url_pathway_steps__execution_id__notes__note_id__url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pathway-steps/{execution_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Pathway Step Note */
+        delete: operations["delete_pathway_step_note_pathway_steps__execution_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Notes */
+        get: operations["list_patient_notes_patients__patient_id__notes_get"];
+        put?: never;
+        /** Add Patient Note */
+        post: operations["add_patient_note_patients__patient_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/notes/{note_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Patient Note Url */
+        get: operations["patient_note_url_patients__patient_id__notes__note_id__url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Patient Note */
+        delete: operations["delete_patient_note_patients__patient_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/patients/{patient_id}/access-grants": {
         parameters: {
             query?: never;
@@ -624,6 +918,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Permissions */
+        get: operations["list_permissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Roles */
+        get: operations["list_roles"];
+        put?: never;
+        /** Create Role */
+        post: operations["create_role"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Role */
+        get: operations["get_role"];
+        put?: never;
+        post?: never;
+        /** Delete Role */
+        delete: operations["delete_role"];
+        options?: never;
+        head?: never;
+        /** Update Role */
+        patch: operations["update_role"];
+        trace?: never;
+    };
     "/audit-events": {
         parameters: {
             query?: never;
@@ -799,7 +1147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tasks/{source}/{source_id}": {
+    "/tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -813,7 +1161,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Task Status */
+        patch: operations["update_task_status"];
         trace?: never;
     };
     "/pathways/blocks": {
@@ -1081,10 +1430,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Enrollments By Patient */
+        get: operations["list_enrollments_by_patient"];
         put?: never;
         /** Create Enrollment */
         post: operations["create_enrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/descriptor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Enroll Descriptor */
+        get: operations["get_enroll_descriptor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Enrollment Candidates */
+        get: operations["list_enrollment_candidates"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1102,6 +1486,74 @@ export interface paths {
         get: operations["get_enrollment"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}:cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Enrollment */
+        post: operations["cancel_enrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}:pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause Enrollment */
+        post: operations["pause_enrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}:resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume Enrollment */
+        post: operations["resume_enrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrollments/{enrollment_id}:fast-forward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fast Forward Enrollment */
+        post: operations["fast_forward_enrollment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1299,7 +1751,7 @@ export interface components {
          * ActorType
          * @enum {string}
          */
-        ActorType: "user" | "system" | "anonymous";
+        ActorType: "user" | "patient" | "system" | "anonymous";
         /** AppointmentBlockOut */
         AppointmentBlockOut: {
             /**
@@ -1341,7 +1793,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /** Mode */
@@ -1394,20 +1847,21 @@ export interface components {
          */
         AppointmentParticipantRole: "lead" | "support" | "observer";
         /**
-         * AppointmentPayload
-         * @description Discriminated payload for `source = "appointment"`.
-         *
-         *     Carries the source row's data needed by the frontend without forcing
-         *     a follow-up `/appointments` fetch (which is also unavailable v1 — the
-         *     appointment domain ships without HTTP routes).
+         * AppointmentRead
+         * @description Read model for the first-class `/appointments` API.
          */
-        AppointmentPayload: {
+        AppointmentRead: {
             /**
              * Id
              * Format: uuid
              */
             id: string;
             patient: components["schemas"]["PatientInlineSummary"];
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            kind: components["schemas"]["AppointmentKind"];
             /**
              * Starts At
              * Format: date-time
@@ -1418,7 +1872,6 @@ export interface components {
              * Format: date-time
              */
             ends_at: string;
-            kind: components["schemas"]["AppointmentKind"];
             modality: components["schemas"]["AppointmentModality"];
             /** Location Text */
             location_text?: string | null;
@@ -1433,7 +1886,11 @@ export interface components {
         AppointmentStatus: "proposed" | "pending" | "booked" | "arrived" | "fulfilled" | "cancelled" | "noshow" | "entered_in_error" | "checked_in" | "waitlist";
         /** AssignRoleRequest */
         AssignRoleRequest: {
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
         };
         /**
          * AssignedUserIdsUpdate
@@ -1459,7 +1916,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "created" | "updated" | "deleted" | "login";
+        AuditAction: "created" | "read" | "updated" | "deleted" | "execute" | "login";
         /** AuditEventRead */
         AuditEventRead: {
             /**
@@ -1481,12 +1938,17 @@ export interface components {
             tenant_id: string | null;
             action: components["schemas"]["AuditAction"];
             result: components["schemas"]["AuditResult"];
+            /** Event Code */
+            event_code: string | null;
             /** Resource Type */
             resource_type: string | null;
             /** Resource Id */
             resource_id: string | null;
             /** Request Id */
             request_id: string | null;
+            /** Patient Id */
+            patient_id: string | null;
+            purpose_of_use: components["schemas"]["PurposeOfUse"] | null;
             /** Changes */
             changes: {
                 [key: string]: components["schemas"]["FieldChange"];
@@ -1532,6 +1994,8 @@ export interface components {
             } | null;
             /** Decision Output */
             decision_output?: string | null;
+            /** Completed By Name */
+            completed_by_name?: string | null;
         };
         /**
          * CareTeamCreate
@@ -1604,6 +2068,41 @@ export interface components {
             status?: components["schemas"]["CareTeamStatus"] | null;
             /** Period End */
             period_end?: string | null;
+        };
+        /**
+         * ConnectionGroup
+         * @description Live Luscii data for one active connection (one Luscii patient).
+         *
+         *     A patient may hold several connections at once (one per Luscii patient,
+         *     each running one program). Each group carries its own program/protocol +
+         *     decoded measurements/series; `program_id` is provenance the FE matches to
+         *     a carepath. Display-only invariant holds — every field is a
+         *     passthrough/join/decode, never a value-derived signal.
+         */
+        ConnectionGroup: {
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "inactive";
+            program?: components["schemas"]["LusciiProgramView"] | null;
+            protocol?: components["schemas"]["LusciiProtocolView"] | null;
+            /** Planned Actions */
+            planned_actions?: components["schemas"]["LusciiPlannedActionView"][];
+            /** Measurements */
+            measurements?: components["schemas"]["LusciiMeasurementView"][];
+            /** Series */
+            series?: components["schemas"]["LusciiMeasurementSeries"][];
         };
         /** ConsentCreate */
         ConsentCreate: {
@@ -1692,7 +2191,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Question */
             question: string;
             auto_resolve?: components["schemas"]["DecisionAutoResolve"] | null;
@@ -1859,12 +2359,123 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             kind: "end_pathway";
+        };
+        /**
+         * EnrollDescriptor
+         * @description Enroll-phase form descriptor for a pathway version — the deferred
+         *     fields a caregiver fills, the per-block participants to resolve, and the
+         *     named clinical dates to set (tasks 4.1/5.2/5.4/5.5).
+         */
+        EnrollDescriptor: {
+            /**
+             * Pathway Version Id
+             * Format: uuid
+             */
+            pathway_version_id: string;
+            /** Fields */
+            fields?: components["schemas"]["EnrollDescriptorField"][];
+            /** Participants */
+            participants?: components["schemas"]["EnrollDescriptorParticipant"][];
+            /** Clinical Dates */
+            clinical_dates?: components["schemas"]["EnrollDescriptorClinicalDate"][];
+        };
+        /**
+         * EnrollDescriptorClinicalDate
+         * @description A named clinical date (e.g. `operation_date`) that `relative_to_date`
+         *     blocks anchor to — collected at enrollment so their timers resolve (§5.5).
+         *     `block_template_id` is a representative referencing block (for the
+         *     deferred-value FK; resolution is by `name` across the enrollment).
+         *
+         *     `earliest_offset_days` is the largest `before` offset of any block
+         *     anchored to this date — the date cannot feasibly be earlier than
+         *     `today + earliest_offset_days` or that block's lead time can't be met
+         *     (§4.6 earliest-feasible).
+         */
+        EnrollDescriptorClinicalDate: {
+            /** Name */
+            name: string;
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /**
+             * Earliest Offset Days
+             * @default 0
+             */
+            earliest_offset_days: number;
+        };
+        /**
+         * EnrollDescriptorField
+         * @description One enrollment-time deferred field the enroll dialog must render.
+         */
+        EnrollDescriptorField: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Block Label */
+            block_label: string;
+            /** Attr */
+            attr: string;
+            /** Label */
+            label: string;
+            /** Kind */
+            kind: string;
+            /** Required */
+            required: boolean;
+            /** Help */
+            help?: string | null;
+        };
+        /**
+         * EnrollDescriptorParticipant
+         * @description A block that needs a Practitioner bound at enrollment (role + specialty).
+         */
+        EnrollDescriptorParticipant: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /** Block Label */
+            block_label: string;
+            /** Role */
+            role: string;
+            /** Specialty */
+            specialty?: string | null;
+        };
+        /**
+         * EnrollmentCandidate
+         * @description An assignable user (caregiver/physician) for a participant slot —
+         *     served to the enroll dialog so a caregiver can resolve each block's
+         *     participant without admin-only `/users` access.
+         *
+         *     `practitioner_role` / `specialty` come from the user's open practitioner
+         *     role (when they have one) so the dialog can scope each dropdown to the
+         *     block's required role + specialty.
+         */
+        EnrollmentCandidate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Display Name */
+            display_name: string;
+            /** Role */
+            role: string;
+            /** Practitioner Role */
+            practitioner_role?: string | null;
+            /** Specialty */
+            specialty?: string | null;
         };
         /**
          * EnrollmentCreate
@@ -1888,6 +2499,26 @@ export interface components {
             anchor_date: string;
             /** Deferred Values */
             deferred_values?: components["schemas"]["DeferredFieldValueIn"][];
+            /** Participants */
+            participants?: components["schemas"]["EnrollmentParticipantIn"][];
+        };
+        /**
+         * EnrollmentParticipantIn
+         * @description A Practitioner resolved for a block at enrollment (§5.4).
+         */
+        EnrollmentParticipantIn: {
+            /**
+             * Block Template Id
+             * Format: uuid
+             */
+            block_template_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Role */
+            role: string;
         };
         /** EnrollmentResponse */
         EnrollmentResponse: {
@@ -1901,6 +2532,11 @@ export interface components {
              * Format: uuid
              */
             patient_id: string;
+            /**
+             * Pathway Id
+             * Format: uuid
+             */
+            pathway_id: string;
             /**
              * Pathway Version Id
              * Format: uuid
@@ -2095,7 +2731,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Provider
              * @constant
@@ -2175,7 +2812,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /** Intro */
@@ -2350,7 +2988,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Questions */
             questions?: components["schemas"]["FormQuestion"][];
             /** Channels */
@@ -2465,6 +3104,33 @@ export interface components {
             responses?: string[];
             /** Program Id */
             program_id?: string | null;
+        };
+        /**
+         * LusciiConnectionSummary
+         * @description One row of `GET /patients/{id}/luscii-connections` — the edit-dialog
+         *     list item. Carries the stored program snapshot for display without a live
+         *     call.
+         */
+        LusciiConnectionSummary: {
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /**
+             * Luscii Patient Id
+             * Format: uuid
+             */
+            luscii_patient_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "inactive";
+            /** Program Id */
+            program_id?: string | null;
+            /** Program Name */
+            program_name?: string | null;
         };
         /**
          * LusciiFreeTextPoint
@@ -2730,6 +3396,12 @@ export interface components {
         /**
          * LusciiPatientData
          * @description `GET /patients/{id}/luscii-data` response.
+         *
+         *     `connections[]` is the multi-connection view (one entry per active Luscii
+         *     connection). The top-level `program`/`protocol`/`planned_actions`/
+         *     `unmatched_measurements`/`series` mirror the FIRST connection for backward
+         *     compatibility while the FE migrates to `connections[]`; they are removed
+         *     once no consumer reads them.
          */
         LusciiPatientData: {
             /**
@@ -2749,6 +3421,8 @@ export interface components {
             unmatched_measurements?: components["schemas"]["LusciiMeasurementView"][];
             /** Series */
             series?: components["schemas"]["LusciiMeasurementSeries"][];
+            /** Connections */
+            connections?: components["schemas"]["ConnectionGroup"][];
         };
         /** LusciiPlannedActionView */
         LusciiPlannedActionView: {
@@ -2935,11 +3609,14 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Topic */
             topic: string;
             /** Expected Attendees Note */
             expected_attendees_note?: string | null;
+            /** Outcomes */
+            outcomes?: string[];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -2987,7 +3664,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Channel
              * @enum {string}
@@ -3006,60 +3684,6 @@ export interface components {
              * @enum {string}
              */
             kind: "message";
-        };
-        /** MilestoneBlockOut */
-        MilestoneBlockOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Phase Id
-             * Format: uuid
-             */
-            phase_id: string;
-            /**
-             * Lane Id
-             * Format: uuid
-             */
-            lane_id: string;
-            /** Duration Value Id */
-            duration_value_id?: string | null;
-            /**
-             * X
-             * @default 0
-             */
-            x: number;
-            /**
-             * Y
-             * @default 0
-             */
-            y: number;
-            /** Name */
-            name: string;
-            /** Lane Kind */
-            lane_kind?: string | null;
-            /**
-             * @default {
-             *       "rules": [],
-             *       "aggregator": "all_of"
-             *     }
-             */
-            input_logic: components["schemas"]["InputLogic"];
-            /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
-            /** Label */
-            label: string;
-            /** Description */
-            description?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "milestone";
         };
         /**
          * MobileHealthResponse
@@ -3088,6 +3712,70 @@ export interface components {
         /** MobileLoginResponse */
         MobileLoginResponse: {
             session: components["schemas"]["PatientSession"];
+        };
+        /** NoteCreate */
+        NoteCreate: {
+            /** Body */
+            body?: string | null;
+            file?: components["schemas"]["NoteFileCreate"] | null;
+        };
+        /** NoteDownload */
+        NoteDownload: {
+            /** Url */
+            url: string;
+        };
+        /** NoteFileCreate */
+        NoteFileCreate: {
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Size */
+            size: number;
+        };
+        /** NoteRead */
+        NoteRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            owner_type: components["schemas"]["OwnerType"];
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Patient Id */
+            patient_id: string | null;
+            /**
+             * Author User Id
+             * Format: uuid
+             */
+            author_user_id: string;
+            /** Author Display Name */
+            author_display_name: string;
+            /** Body */
+            body: string | null;
+            /** Filename */
+            filename: string | null;
+            /** Content Type */
+            content_type: string | null;
+            /** Size */
+            size: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Owner Label */
+            owner_label?: string | null;
+        };
+        /** NoteUploadResponse */
+        NoteUploadResponse: {
+            note: components["schemas"]["NoteRead"];
+            /** Upload Url */
+            upload_url?: string | null;
         };
         /** OrganisationCreate */
         OrganisationCreate: {
@@ -3157,6 +3845,24 @@ export interface components {
             name?: string | null;
             type?: components["schemas"]["OrganisationType"] | null;
         };
+        /**
+         * OwnerType
+         * @enum {string}
+         */
+        OwnerType: "appointment" | "task" | "patient" | "pathway_step";
+        /** Page[AppointmentRead] */
+        Page_AppointmentRead_: {
+            /** Items */
+            items: components["schemas"]["AppointmentRead"][];
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** Page[AuditEventRead] */
         Page_AuditEventRead_: {
             /** Items */
@@ -3196,10 +3902,10 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** Page[TaskItem] */
-        Page_TaskItem_: {
+        /** Page[TaskRead] */
+        Page_TaskRead_: {
             /** Items */
-            items: components["schemas"]["TaskItem"][];
+            items: components["schemas"]["TaskRead"][];
             /** Page */
             page: number;
             /** Page Size */
@@ -3281,6 +3987,13 @@ export interface components {
          */
         ParticipantRoleChange: {
             role_in_care: components["schemas"]["RoleInCare"];
+        };
+        /** ParticipantSpec */
+        ParticipantSpec: {
+            /** Role */
+            role: string;
+            /** Specialty */
+            specialty?: string | null;
         };
         /**
          * PathwayActorRef
@@ -3444,7 +4157,7 @@ export interface components {
              * @description Runtime dispatch key. Multiple types may share semantics in the future (e.g. appointment subtypes) without forcing per-type branching.
              * @enum {string}
              */
-            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "mdo" | "form" | "decision" | "milestone" | "wait" | "pathway_link" | "external_program" | "end_pathway";
+            semantics: "start" | "appointment" | "treatment" | "task" | "message" | "informed_consent" | "mdo" | "form" | "decision" | "pathway_link" | "external_program" | "end_pathway";
             /**
              * Icon
              * @description Lucide icon name. Resolved client-side via a single lookup.
@@ -3471,6 +4184,24 @@ export interface components {
              * @default false
              */
             supports_branches: boolean;
+            /**
+             * Actor
+             * @description caregiver | patient | system | auto
+             * @default system
+             */
+            actor: string;
+            /**
+             * Runtime Phase
+             * @description build | enroll | runtime
+             * @default runtime
+             */
+            runtime_phase: string;
+            /**
+             * Completion
+             * @description caregiver_action | auto | decision | terminal
+             * @default auto
+             */
+            completion: string;
             /**
              * Source
              * @description Provenance of this catalogue entry. Native blocks live in our own code-side `BLOCK_TYPES` registry; external blocks are contributed by per-vendor catalogue extensions (Luscii first). The frontend palette groups by `source` then by `provider`.
@@ -3681,7 +4412,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * Target Pathway Id
              * Format: uuid
@@ -3960,7 +4692,7 @@ export interface components {
             /** Timing Values */
             timing_values?: components["schemas"]["PathwayTimingValueOut"][];
             /** Blocks */
-            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
+            blocks?: (components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"])[];
             /** Branches */
             branches?: components["schemas"]["PathwayBlockBranchOut"][];
             /** Edges */
@@ -4023,6 +4755,18 @@ export interface components {
         PathwayWithVersionResponse: {
             pathway: components["schemas"]["PathwayBare"];
             version: components["schemas"]["PathwayVersionDefinition"];
+        };
+        /**
+         * PatientAppointmentEntry
+         * @description An appointment in the patient-profile Afspraken tab, tagged by relation.
+         */
+        PatientAppointmentEntry: {
+            /**
+             * Relation
+             * @enum {string}
+             */
+            relation: "about" | "with";
+            appointment: components["schemas"]["AppointmentRead"];
         };
         /**
          * PatientCreate
@@ -4392,6 +5136,12 @@ export interface components {
              */
             kind: "password" | "oidc";
         };
+        /**
+         * PurposeOfUse
+         * @description FHIR `agent.authorization` / purposeOfUse. Required on patient-data reads.
+         * @enum {string}
+         */
+        PurposeOfUse: "treatment" | "operations" | "patient_request" | "emergency" | "break_the_glass";
         /** ReadinessResponse */
         ReadinessResponse: {
             /**
@@ -4405,22 +5155,101 @@ export interface components {
             };
         };
         /**
-         * Role
-         * @enum {string}
+         * RelativeToDatePolicy
+         * @description Block fires relative to a **named clinical date** set at enrollment
+         *     (e.g. `operation_date`), with an ISO 8601 offset applied `before`
+         *     (e.g. `operation_date − P3D`) or `after`. Editing the named date at
+         *     runtime recomputes the dependent timer (parent design D3a).
          */
-        Role: "admin" | "caregiver" | "patient";
+        RelativeToDatePolicy: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "relative_to_date";
+            /** Date Name */
+            date_name: string;
+            /**
+             * Offset Iso
+             * @default PT0S
+             */
+            offset_iso: string;
+            /**
+             * Direction
+             * @default before
+             * @enum {string}
+             */
+            direction: "before" | "after";
+        };
+        /** RoleCreate */
+        RoleCreate: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Permissions
+             * @default []
+             */
+            permissions: string[];
+        };
         /**
          * RoleInCare
          * @enum {string}
          */
         RoleInCare: "primary" | "consulting" | "observer";
+        /**
+         * RoleOption
+         * @description One selectable user row for a multi-row human. Identified by `user_id`
+         *     (slugs collide when a human is both patient and caregiver — both `default`)
+         *     and labelled by role slug + the patient facet.
+         */
+        RoleOption: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Role Slug */
+            role_slug: string;
+            /**
+             * Is Patient
+             * @default false
+             */
+            is_patient: boolean;
+        };
+        /** RoleRead */
+        RoleRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Is System */
+            is_system: boolean;
+            /** Permissions */
+            permissions: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** RoleSelectRequest */
         RoleSelectRequest: {
-            role: components["schemas"]["Role"];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /**
          * RoleSelectionRequiredResponse
-         * @description Login succeeded but the human holds several roles on this surface
+         * @description Login succeeded but the human holds several user rows on this surface
          *     (REQ-NON-3). The session cookie is set and live; protected routes answer
          *     409 until `POST /auth/session/role` binds one of `available_roles`.
          */
@@ -4432,7 +5261,14 @@ export interface components {
              */
             requires_role_selection: true;
             /** Available Roles */
-            available_roles: components["schemas"]["Role"][];
+            available_roles: components["schemas"]["RoleOption"][];
+        };
+        /** RoleUpdate */
+        RoleUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Permissions */
+            permissions?: string[] | null;
         };
         /** RootResponse */
         RootResponse: {
@@ -4441,7 +5277,17 @@ export interface components {
             /** Version */
             version: string;
         };
-        /** SessionUser */
+        /**
+         * SessionUser
+         * @description The bound actor for a request (`dynamic-rbac-roles-permissions`).
+         *
+         *     `role` is no longer an enum — a user row points at a `roles` row
+         *     (`role_id`) whose assigned permission slugs are resolved into
+         *     `permissions` at actor-resolution time. `role_slug` is the bound role's
+         *     stable slug (e.g. `admin`, `default`). `patient_id` is set iff this is a
+         *     patient (mobile data-subject) row — identity-type is derived from data,
+         *     not the role.
+         */
         SessionUser: {
             /**
              * Id
@@ -4457,7 +5303,17 @@ export interface components {
              * Format: uuid
              */
             tenant_id: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
+            /** Role Slug */
+            role_slug: string;
+            /** Permissions */
+            permissions: string[];
+            /** Patient Id */
+            patient_id?: string | null;
         };
         /** SetActiveRequest */
         SetActiveRequest: {
@@ -4570,7 +5426,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -4618,14 +5475,15 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /**
              * Assignee
-             * @enum {string}
+             * @constant
              */
-            assignee: "patient" | "caregiver";
+            assignee: "caregiver";
             /** Due Offset Days */
             due_offset_days?: number | null;
             /** Requires Completion */
@@ -4638,47 +5496,48 @@ export interface components {
              */
             kind: "task";
         };
-        /**
-         * TaskItem
-         * @description Unified envelope returned by `GET /tasks` and `GET /tasks/{source}/{source_id}`.
-         *
-         *     Sortable by `due_at` (which v1 always maps to `appointment.starts_at`).
-         *     `priority` is reserved for future sources; v1 appointment source
-         *     always emits `null`.
-         */
-        TaskItem: {
+        /** TaskRead */
+        TaskRead: {
             /**
              * Id
              * Format: uuid
              */
             id: string;
             /**
-             * Source
-             * @constant
-             */
-            source: "appointment";
-            /**
-             * Source Id
+             * Assignee User Id
              * Format: uuid
              */
-            source_id: string;
-            /**
-             * Due At
-             * Format: date-time
-             */
-            due_at: string;
+            assignee_user_id: string;
             /** Title */
             title: string;
-            /** Kind */
-            kind?: string | null;
-            /** Priority */
-            priority?: ("low" | "normal" | "high" | "urgent") | null;
+            /** Description */
+            description?: string | null;
+            status: components["schemas"]["TaskStatus"];
+            /** Due At */
+            due_at?: string | null;
+            /** Patient Id */
+            patient_id?: string | null;
+            /** Source Ref */
+            source_ref?: string | null;
             /**
-             * Opened
-             * @default false
+             * Created At
+             * Format: date-time
              */
-            opened: boolean;
-            payload: components["schemas"]["AppointmentPayload"];
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "open" | "done";
+        /** TaskStatusUpdate */
+        TaskStatusUpdate: {
+            status: components["schemas"]["TaskStatus"];
         };
         /** TreatmentBlockOut */
         TreatmentBlockOut: {
@@ -4721,7 +5580,8 @@ export interface components {
              */
             input_logic: components["schemas"]["InputLogic"];
             /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
+            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"] | components["schemas"]["RelativeToDatePolicy"]) | null;
+            participant?: components["schemas"]["ParticipantSpec"] | null;
             /** Title */
             title: string;
             /** Location */
@@ -4738,20 +5598,28 @@ export interface components {
         };
         /**
          * UserCreate
-         * @description Role-discriminated admin-create payload.
+         * @description Admin-create payload for a staff user (`dynamic-rbac-roles-permissions`).
          *
-         *     - `admin` branch: requires `display_name`; rejects clinical fields.
-         *     - `caregiver` branch: requires `given_name` + `family_name`; rejects
-         *       `display_name` (the backend derives `user.display_name` from given+family).
-         *       `qualification` is optional.
+         *     `role_id` is the RBAC role to bind. Identity-type is derived from data, so
+         *     the payload is discriminated by the *clinical* fields, not the role:
          *
-         *     The model_validator enforces mutual exclusion so a mixed payload is a 422,
-         *     not a silent half-fill.
+         *     - clinician branch (a `Practitioner` row will be created): requires
+         *       `given_name` + `family_name`; rejects `display_name` (derived from
+         *       given+family). `qualification` optional.
+         *     - non-clinician branch (e.g. an admin user): requires `display_name`;
+         *       rejects clinical fields.
+         *
+         *     Patients are NOT created here — they have no clinical fields and carry a
+         *     `patient_id`, set only by the seeding / enrollment flow.
          */
         UserCreate: {
             /** Email */
             email: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
             /** Display Name */
             display_name?: string | null;
             /** Given Name */
@@ -4772,7 +5640,11 @@ export interface components {
             email: string;
             /** Display Name */
             display_name: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
             /** Is Active */
             is_active: boolean;
             /** Patient Id */
@@ -4803,7 +5675,11 @@ export interface components {
             email: string;
             /** Display Name */
             display_name: string;
-            role: components["schemas"]["Role"];
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
             /** Is Active */
             is_active: boolean;
             /** Patient Id */
@@ -4913,62 +5789,6 @@ export interface components {
              * @default PT0S
              */
             offset_iso: string;
-        };
-        /** WaitBlockOut */
-        WaitBlockOut: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Phase Id
-             * Format: uuid
-             */
-            phase_id: string;
-            /**
-             * Lane Id
-             * Format: uuid
-             */
-            lane_id: string;
-            /** Duration Value Id */
-            duration_value_id?: string | null;
-            /**
-             * X
-             * @default 0
-             */
-            x: number;
-            /**
-             * Y
-             * @default 0
-             */
-            y: number;
-            /** Name */
-            name: string;
-            /** Lane Kind */
-            lane_kind?: string | null;
-            /**
-             * @default {
-             *       "rules": [],
-             *       "aggregator": "all_of"
-             *     }
-             */
-            input_logic: components["schemas"]["InputLogic"];
-            /** Timing Policy */
-            timing_policy?: (components["schemas"]["FixedDurationPolicy"] | components["schemas"]["WaitAfterPolicy"] | components["schemas"]["DueWithinPolicy"] | components["schemas"]["AtEnrollmentPickedDatePolicy"]) | null;
-            /** Event Type */
-            event_type: string;
-            /** Source Block Id */
-            source_block_id?: string | null;
-            /** Timeout Days */
-            timeout_days?: number | null;
-            /** On Timeout */
-            on_timeout?: ("continue" | "escalate") | null;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            kind: "wait";
         };
     };
     responses: never;
@@ -5096,7 +5916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Role"][];
+                    "application/json": components["schemas"]["RoleOption"][];
                 };
             };
         };
@@ -5864,6 +6684,743 @@ export interface operations {
             };
         };
     };
+    list_patient_luscii_connections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiConnectionSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_patient_luscii_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LusciiLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LusciiConnectionSummary"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deactivate_patient_luscii_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_appointments: {
+        parameters: {
+            query?: {
+                /** @description 1-indexed page number */
+                page?: number;
+                /** @description Items per page (1..100) */
+                page_size?: number;
+                /** @description Free-text search query; whitespace-only is treated as absent */
+                q?: string | null;
+                /** @description Sort field; may appear at most once */
+                order_by?: string[] | null;
+                /** @description Sort direction; may appear at most once */
+                order?: ("asc" | "desc")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AppointmentRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_appointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_appointments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientAppointmentEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_appointment_notes_appointments__appointment_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_appointment_note_appointments__appointment_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    appointment_note_url_appointments__appointment_id__notes__note_id__url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_appointment_note_appointments__appointment_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_task_notes_tasks__task_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_task_note_tasks__task_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    task_note_url_tasks__task_id__notes__note_id__url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_task_note_tasks__task_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pathway_step_notes_pathway_steps__execution_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_pathway_step_note_pathway_steps__execution_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pathway_step_note_url_pathway_steps__execution_id__notes__note_id__url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pathway_step_note_pathway_steps__execution_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                execution_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_notes_patients__patient_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_patient_note_patients__patient_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patient_note_url_patients__patient_id__notes__note_id__url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteDownload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_patient_note_patients__patient_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_access_grant: {
         parameters: {
             query?: never;
@@ -6479,6 +8036,174 @@ export interface operations {
             };
         };
     };
+    list_permissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    list_roles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"][];
+                };
+            };
+        };
+    };
+    create_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_audit_events: {
         parameters: {
             query?: {
@@ -6985,7 +8710,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Page_TaskItem_"];
+                    "application/json": components["schemas"]["Page_TaskRead_"];
                 };
             };
             /** @description Validation Error */
@@ -7004,8 +8729,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                source: string;
-                source_id: string;
+                task_id: string;
             };
             cookie?: never;
         };
@@ -7017,7 +8741,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TaskItem"];
+                    "application/json": components["schemas"]["TaskRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskRead"];
                 };
             };
             /** @description Validation Error */
@@ -7446,7 +9205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["MilestoneBlockOut"] | components["schemas"]["WaitBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
+                    "application/json": components["schemas"]["StartBlockOut"] | components["schemas"]["AppointmentBlockOut"] | components["schemas"]["TreatmentBlockOut"] | components["schemas"]["TaskBlockOut"] | components["schemas"]["DecisionBlockOut"] | components["schemas"]["MessageBlockOut"] | components["schemas"]["InformedConsentBlockOut"] | components["schemas"]["MdoBlockOut"] | components["schemas"]["FormBlockOut"] | components["schemas"]["PathwayLinkBlockOut"] | components["schemas"]["ExternalProgramBlockOut"] | components["schemas"]["EndPathwayBlockOut"];
                 };
             };
             /** @description Not Found */
@@ -7703,6 +9462,46 @@ export interface operations {
             };
         };
     };
+    list_enrollments_by_patient: {
+        parameters: {
+            query: {
+                patient_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_enrollment: {
         parameters: {
             query?: never;
@@ -7745,7 +9544,227 @@ export interface operations {
             };
         };
     };
+    get_enroll_descriptor: {
+        parameters: {
+            query: {
+                pathway_version_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollDescriptor"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_enrollment_candidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentCandidate"][];
+                };
+            };
+        };
+    };
     get_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_enrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fast_forward_enrollment: {
         parameters: {
             query?: never;
             header?: never;
@@ -8050,3 +10069,100 @@ export interface operations {
         };
     };
 }
+type FlattenedDeepRequired<T> = {
+    [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
+};
+type ReadonlyArray<T> = [
+    Exclude<T, undefined>
+] extends [
+    unknown[]
+] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const pathsUsersGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/users"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsPatientsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/patients"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsAppointmentsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/appointments"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsAuditEventsGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/audit-events"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsPractitionerRolesGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/practitioner-roles"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const pathsTasksGetParametersQueryOrderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<paths>["/tasks"]["get"]["parameters"]["query"]["order"]> = ["asc", "desc"];
+export const actorTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ActorType"]> = ["user", "patient", "system", "anonymous"];
+export const appointmentBlockOutModeAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentBlockOut"]["mode"]> = ["in_person", "video", "phone"];
+export const appointmentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentBlockOut"]["kind"]> = ["appointment"];
+export const appointmentKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentKind"]> = ["consultation", "lab", "imaging", "procedure", "other"];
+export const appointmentModalityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentModality"]> = ["online", "on_site"];
+export const appointmentParticipantRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentParticipantRole"]> = ["lead", "support", "observer"];
+export const appointmentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AppointmentStatus"]> = ["proposed", "pending", "booked", "arrived", "fulfilled", "cancelled", "noshow", "entered_in_error", "checked_in", "waitlist"];
+export const atEnrollmentPickedDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AtEnrollmentPickedDatePolicy"]["kind"]> = ["at_enrollment_picked_date"];
+export const auditActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditAction"]> = ["created", "read", "updated", "deleted", "execute", "login"];
+export const auditResultValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AuditResult"]> = ["success", "failure"];
+export const blockExecutionResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BlockExecutionResponse"]["state"]> = ["pending", "eligible", "active", "completed", "skipped", "failed"];
+export const careTeamStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CareTeamStatus"]> = ["active", "inactive"];
+export const connectionGroupStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConnectionGroup"]["status"]> = ["active", "inactive"];
+export const consentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConsentStatus"]> = ["active", "revoked"];
+export const decisionBlockOutModeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionBlockOut"]["mode"]> = ["xor", "and"];
+export const decisionBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionBlockOut"]["kind"]> = ["decision"];
+export const decisionOutputArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DecisionOutputArgs"]["predicate"]> = ["decision_output"];
+export const dueWithinPolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DueWithinPolicy"]["kind"]> = ["due_within"];
+export const endPathwayBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EndPathwayBlockOut"]["kind"]> = ["end_pathway"];
+export const enrollmentResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EnrollmentResponse"]["state"]> = ["active", "paused", "completed", "cancelled"];
+export const eventArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EventArgs"]["predicate"]> = ["event"];
+export const externalProgramBlockOutModeAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ExternalProgramBlockOut"]["mode"]> = ["blocking", "fire_and_forget"];
+export const externalProgramBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ExternalProgramBlockOut"]["kind"]> = ["external_program"];
+export const fixedDurationPolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["FixedDurationPolicy"]["kind"]> = ["fixed_duration"];
+export const formBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["FormBlockOut"]["kind"]> = ["form"];
+export const formQuestionTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["FormQuestion"]["type"]> = ["text", "long_text", "single_choice", "multi_choice", "scale", "date", "file"];
+export const genderValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Gender"]> = ["male", "female", "other", "unknown"];
+export const hasDataArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["HasDataArgs"]["predicate"]> = ["has_data"];
+export const ifDoneArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["IfDoneArgs"]["predicate"]> = ["if_done"];
+export const ifNotDoneWithinArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["IfNotDoneWithinArgs"]["predicate"]> = ["if_not_done_within"];
+export const informedConsentBlockOutChannelsValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["InformedConsentBlockOut"]["channels"]> = ["email", "sms", "push", "in_app"];
+export const informedConsentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["InformedConsentBlockOut"]["kind"]> = ["informed_consent"];
+export const inputLogicAggregatorValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["InputLogic"]["aggregator"]> = ["all_of", "any_of"];
+export const itemCategoryValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ItemCategory"]> = ["questionnaire_answers", "diary", "attachments", "parameters", "documents"];
+export const lusciiCategoricalPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiCategoricalPoint"]["archetype"]> = ["categorical"];
+export const lusciiConnectionSummaryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiConnectionSummary"]["status"]> = ["active", "inactive"];
+export const lusciiFreeTextPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiFreeTextPoint"]["archetype"]> = ["free_text"];
+export const lusciiLayoutLaneKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiLayoutLane"]["kind"]> = ["patient", "caregiver", "external", "system"];
+export const lusciiLayoutNodeTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiLayoutNode"]["type"]> = ["appointment", "task", "message", "form", "questionnaire", "measurement", "decision", "milestone", "education"];
+export const lusciiMeasurementSeriesArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiMeasurementSeries"]["archetype"]> = ["numeric", "ordinal", "categorical", "free_text", "unknown"];
+export const lusciiMeasurementValueViewArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiMeasurementValueView"]["archetype"]> = ["numeric", "ordinal", "categorical", "free_text", "unknown"];
+export const lusciiNumericPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiNumericPoint"]["archetype"]> = ["numeric"];
+export const lusciiOrdinalPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiOrdinalPoint"]["archetype"]> = ["ordinal"];
+export const lusciiPatientDataStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiPatientData"]["state"]> = ["linked", "not_linked"];
+export const lusciiUnknownPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiUnknownPoint"]["archetype"]> = ["unknown"];
+export const mdoBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MdoBlockOut"]["kind"]> = ["mdo"];
+export const messageBlockOutChannelValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["channel"]> = ["email", "sms", "push", "in_app"];
+export const messageBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["kind"]> = ["message"];
+export const ownerTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["OwnerType"]> = ["appointment", "task", "patient", "pathway_step"];
+export const pathwayBlockTypeSemanticsValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["semantics"]> = ["start", "appointment", "treatment", "task", "message", "informed_consent", "mdo", "form", "decision", "pathway_link", "external_program", "end_pathway"];
+export const pathwayBlockTypeSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["source"]> = ["native", "external", "internal"];
+export const pathwayBlockTypeNested_renderAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayBlockType"]["nested_render"]> = ["inline_preview", "collapsed_card"];
+export const pathwayEdgeTimingKindKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayEdgeTimingKind"]["kind"]> = ["completion", "marker", "immediate", "branch"];
+export const pathwayLinkBlockOutModeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayLinkBlockOut"]["mode"]> = ["blocking", "fire_and_forget"];
+export const pathwayLinkBlockOutVersion_pinValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayLinkBlockOut"]["version_pin"]> = ["latest_published", "specific"];
+export const pathwayLinkBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayLinkBlockOut"]["kind"]> = ["pathway_link"];
+export const pathwayTimingValueInKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayTimingValueIn"]["kind"]> = ["fixed", "enrollment"];
+export const pathwayTimingValueOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayTimingValueOut"]["kind"]> = ["fixed", "enrollment"];
+export const pathwayVersionDefinitionStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionDefinition"]["status"]> = ["concept", "published", "archived"];
+export const pathwayVersionDefinitionKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionDefinition"]["kind"]> = ["initial", "fork-from-publish", "restore-from-version"];
+export const pathwayVersionSummaryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionSummary"]["status"]> = ["concept", "published", "archived"];
+export const pathwayVersionSummaryKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PathwayVersionSummary"]["kind"]> = ["initial", "fork-from-publish", "restore-from-version"];
+export const patientAppointmentEntryRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PatientAppointmentEntry"]["relation"]> = ["about", "with"];
+export const patientSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PatientSource"]> = ["local", "hix", "luscii"];
+export const practitionerRoleCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PractitionerRoleCode"]> = ["gp", "physiotherapist", "psychologist", "nurse", "physician", "other"];
+export const predicateKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PredicateKind"]> = ["if_done", "has_data", "value_equals", "value_gt", "wait_after", "decision_output", "if_not_done_within", "event"];
+export const providerDescriptorKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ProviderDescriptor"]["kind"]> = ["password", "oidc"];
+export const purposeOfUseValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PurposeOfUse"]> = ["treatment", "operations", "patient_request", "emergency", "break_the_glass"];
+export const readinessResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["status"]> = ["ready", "not_ready"];
+export const readinessResponseChecksValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReadinessResponse"]["checks"][string]> = ["ok", "fail"];
+export const relativeToDatePolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["kind"]> = ["relative_to_date"];
+export const relativeToDatePolicyDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelativeToDatePolicy"]["direction"]> = ["before", "after"];
+export const roleInCareValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RoleInCare"]> = ["primary", "consulting", "observer"];
+export const shieldingAudienceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ShieldingAudience"]> = ["representative", "external_professional", "patient_other_role"];
+export const startBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartBlockOut"]["kind"]> = ["start"];
+export const taskBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskBlockOut"]["kind"]> = ["task"];
+export const taskStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TaskStatus"]> = ["open", "done"];
+export const treatmentBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TreatmentBlockOut"]["kind"]> = ["treatment"];
+export const valueEqualsArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ValueEqualsArgs"]["predicate"]> = ["value_equals"];
+export const valueGtArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ValueGtArgs"]["predicate"]> = ["value_gt"];
+export const waitAfterArgsPredicateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WaitAfterArgs"]["predicate"]> = ["wait_after"];
+export const waitAfterArgsDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WaitAfterArgs"]["direction"]> = ["before", "after"];
+export const waitAfterPolicyKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WaitAfterPolicy"]["kind"]> = ["wait_after"];

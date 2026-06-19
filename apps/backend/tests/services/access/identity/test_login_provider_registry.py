@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.services.access.identity.providers import (
     LoginProvider,
     LoginProviderRegistry,
@@ -8,7 +13,7 @@ from app.services.access.identity.providers import (
 
 
 def test_registry_lists_password_provider_in_poc() -> None:
-    provider = PasswordLoginProvider(authenticator=_NullAuthenticator())
+    provider = PasswordLoginProvider(_NullAuthenticator(), cast("AsyncSession", None))
     registry = LoginProviderRegistry([provider])
 
     entries = registry.list()
@@ -19,7 +24,7 @@ def test_registry_lists_password_provider_in_poc() -> None:
 
 
 def test_registry_get_by_key() -> None:
-    provider = PasswordLoginProvider(authenticator=_NullAuthenticator())
+    provider = PasswordLoginProvider(_NullAuthenticator(), cast("AsyncSession", None))
     registry = LoginProviderRegistry([provider])
 
     assert registry.get("password") is provider
@@ -27,7 +32,7 @@ def test_registry_get_by_key() -> None:
 
 
 def test_password_provider_satisfies_protocol() -> None:
-    provider = PasswordLoginProvider(authenticator=_NullAuthenticator())
+    provider = PasswordLoginProvider(_NullAuthenticator(), cast("AsyncSession", None))
     assert isinstance(provider, LoginProvider)
 
 

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 
 import { assignUserRole, fetchUserDetail, setUserActive } from './api'
 import { USERS_LIST_PATH, userKeys } from './keys'
-import type { Role, UserDetail, UserRow } from './schemas'
+import type { UserDetail, UserRow } from './schemas'
 
 export function useUserDetail(userId: string) {
   return useQuery<UserDetail>({
@@ -35,13 +35,13 @@ export function useSetUserActive() {
 
 export interface AssignRoleVariables {
   userId: string
-  role: Role
+  role_id: string
 }
 
 export function useAssignUserRole() {
   const qc = useQueryClient()
   return useMutation<UserRow, Error, AssignRoleVariables>({
-    mutationFn: ({ userId, role }) => assignUserRole(userId, { role }),
+    mutationFn: ({ userId, role_id }) => assignUserRole(userId, { role_id }),
     onSuccess: (_row, { userId }) => invalidateUserCaches(qc, userId),
   })
 }

@@ -20,15 +20,16 @@ from app.core.settings import get_settings
 from app.services.access.identity.kratos_client import KratosClient
 from app.services.access.permissions.keto_client import KetoClient
 from app.services.access.sync.reconciler import reconcile_all
-from app.services.luscii.catalogue_snapshot import import_catalogue_snapshots_if_empty
 from scripts._db import run_script
 from scripts.import_identities_kratos import import_identities
 from scripts.seed_care_teams import seed_care_teams
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_access_entitlements import seed_access_entitlements
 from scripts.seed_appointments import seed_appointments
+from scripts.seed_collaboration import seed_collaboration
+from scripts.seed_tasks import seed_tasks
+from scripts.seed_bladder_cancer import seed_bladder_cancer
 from scripts.seed_pathway import seed_lane_kinds, seed_rugrevalidatie
-from scripts.seed_luscii_demo import seed_luscii_demo
 from scripts.seed_patient_users import seed_patient_users
 from scripts.seed_patients import seed_patients
 from scripts.seed_practitioners import seed_practitioners
@@ -53,21 +54,21 @@ SEED_STEPS: list[SeedStep] = [
     seed_patients,
     seed_patient_users,
     seed_care_teams,
-    # demo appointments → caregiver tasks (caregiver is each appointment's
-    # `lead` participant, the link `/tasks` keys off). After care_teams so
-    # the same patients carry both a team and tasks.
+    # demo appointments (caregiver is each appointment's `lead` participant,
+    # so they surface in the Afspraken view). After care_teams so the same
+    # patients carry both a team and appointments.
     seed_appointments,
+    # demo tasks assigned to the caregiver so the Taken inbox is not empty.
+    seed_tasks,
+    # demo collaboration notes (appointment + patient owners) for the panels.
+    seed_collaboration,
     seed_lane_kinds,
     seed_rugrevalidatie,
+    seed_bladder_cancer,
     # access-entitlements demo data (campuses, specialisms, carepath links,
     # external GP, multi-role human) — after pathways, before Kratos import
     seed_access_entitlements,
-    # Luscii fixture-mode demo links + localisations — wires the first N
-    # seeded patients to the canned UUIDs served by `LusciiFixtureClient`
-    # when `BACKEND_LUSCII_FIXTURES=true` and no real token is configured.
-    # Harmless in production-with-token: the link rows just point at UUIDs
-    # the real Luscii API doesn't recognise.
-    seed_luscii_demo,
+    # NB: Luscii demo seeding dropped (decision: drop Luscii data seeding).
 ]
 
 logger = logging.getLogger(__name__)
@@ -113,11 +114,7 @@ async def _reconcile_authz_tuples(session: AsyncSession) -> None:
 async def _seed(session: AsyncSession) -> None:
     for step in SEED_STEPS:
         await step(session)
-    # Luscii label catalogue from the committed snapshots — vendor reference
-    # data, independent of the tenant steps above. Imports only into empty
-    # tables (boot re-runs stay cheap, a fresher manual sync is never
-    # clobbered); skips with a warning when snapshots are absent.
-    await import_catalogue_snapshots_if_empty(session)
+    # NB: Luscii catalogue snapshot import dropped (Luscii data seeding removed).
     await _import_kratos_identities(session)
     # Keto tuples last: derived from the rows seeded above, so the access
     # plane matches Postgres for `AUTHZ_KETO_ENABLED` deployments.

@@ -3,10 +3,11 @@ reason + duration validation, admin oversight."""
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.models.care_team import CareTeam
 from app.db.models.patient import Patient
 from app.db.models.user import User
@@ -14,6 +15,7 @@ from app.services.access.identity.password import PasswordHasher
 from app.services.access.sync.reconciler import reconcile_all
 from app.services.access.sync.relay import process_pending
 from scripts.seed_users import ADMIN_EMAIL, ADMIN_USER_ID
+from tests._rbac import ensure_roles
 from tests.fakes.keto import FakeKetoClient
 
 _PASSWORD = "changeme"
@@ -27,7 +29,8 @@ async def _login(client: AsyncClient, email: str) -> None:
     assert response.status_code == 200, response.text
 
 
-async def _seed_substitute(db_session: AsyncSession, tenant_id: object) -> User:
+async def _seed_substitute(db_session: AsyncSession, tenant_id: UUID) -> User:
+    roles = await ensure_roles(db_session, tenant_id)
     user = User(
         tenant_id=tenant_id,
         created_by=ADMIN_USER_ID,
@@ -35,7 +38,7 @@ async def _seed_substitute(db_session: AsyncSession, tenant_id: object) -> User:
         email="substitute@zas.local",
         password_hash=PasswordHasher().hash(_PASSWORD),
         display_name="Substitute",
-        role=Role.CAREGIVER,
+        role_id=roles["default"].id,
         is_active=True,
     )
     db_session.add(user)

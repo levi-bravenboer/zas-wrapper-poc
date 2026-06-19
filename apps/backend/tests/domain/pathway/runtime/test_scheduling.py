@@ -9,8 +9,30 @@ import pytest
 from app.domain.pathway.runtime.scheduling import (
     InvalidIsoDurationError,
     parse_iso_duration_days,
+    resolve_relative_to_date,
     schedule_from_anchor,
 )
+
+
+def test_relative_to_date_defers_at_enrollment() -> None:
+    scheduled, due = schedule_from_anchor(
+        date(2026, 6, 10),
+        {"kind": "relative_to_date", "date_name": "operation_date", "direction": "before"},
+    )
+    assert scheduled is None
+    assert due is None
+
+
+def test_resolve_relative_to_date_before_and_after() -> None:
+    op = date(2026, 7, 1)
+    before = resolve_relative_to_date(
+        {"kind": "relative_to_date", "offset_iso": "P2D", "direction": "before"}, op
+    )
+    after = resolve_relative_to_date(
+        {"kind": "relative_to_date", "offset_iso": "P5D", "direction": "after"}, op
+    )
+    assert before == datetime(2026, 6, 29, tzinfo=UTC)
+    assert after == datetime(2026, 7, 6, tzinfo=UTC)
 
 
 def test_parse_pt0s_is_zero_days() -> None:

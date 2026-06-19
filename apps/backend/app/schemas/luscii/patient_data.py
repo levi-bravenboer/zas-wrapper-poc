@@ -35,6 +35,18 @@ class LusciiLinkResult(BaseModel):
     protocol_name: str | None = None
 
 
+class LusciiConnectionSummary(BaseModel):
+    """One row of `GET /patients/{id}/luscii-connections` — the edit-dialog
+    list item. Carries the stored program snapshot for display without a live
+    call."""
+
+    connection_id: UUID
+    luscii_patient_id: UUID
+    status: Literal["active", "inactive"]
+    program_id: str | None = None
+    program_name: str | None = None
+
+
 class LusciiProgramView(BaseModel):
     id: str | None = None
     name: str | None = None
@@ -171,8 +183,35 @@ class LusciiMeasurementSeries(BaseModel):
     points: list[LusciiMeasurementPoint] = Field(default_factory=list)
 
 
+class ConnectionGroup(BaseModel):
+    """Live Luscii data for one active connection (one Luscii patient).
+
+    A patient may hold several connections at once (one per Luscii patient,
+    each running one program). Each group carries its own program/protocol +
+    decoded measurements/series; `program_id` is provenance the FE matches to
+    a carepath. Display-only invariant holds — every field is a
+    passthrough/join/decode, never a value-derived signal.
+    """
+
+    connection_id: UUID
+    luscii_patient_id: UUID
+    status: Literal["active", "inactive"]
+    program: LusciiProgramView | None = None
+    protocol: LusciiProtocolView | None = None
+    planned_actions: list[LusciiPlannedActionView] = Field(default_factory=list)
+    measurements: list[LusciiMeasurementView] = Field(default_factory=list)
+    series: list[LusciiMeasurementSeries] = Field(default_factory=list)
+
+
 class LusciiPatientData(BaseModel):
-    """`GET /patients/{id}/luscii-data` response."""
+    """`GET /patients/{id}/luscii-data` response.
+
+    `connections[]` is the multi-connection view (one entry per active Luscii
+    connection). The top-level `program`/`protocol`/`planned_actions`/
+    `unmatched_measurements`/`series` mirror the FIRST connection for backward
+    compatibility while the FE migrates to `connections[]`; they are removed
+    once no consumer reads them.
+    """
 
     state: Literal["linked", "not_linked"]
     luscii_patient_id: UUID | None = None
@@ -184,3 +223,5 @@ class LusciiPatientData(BaseModel):
     # Time-series projection for chart consumers. Always present; empty for
     # not-linked patients or windows with no measurements.
     series: list[LusciiMeasurementSeries] = Field(default_factory=list)
+    # Multi-connection view. Empty when not linked.
+    connections: list[ConnectionGroup] = Field(default_factory=list)

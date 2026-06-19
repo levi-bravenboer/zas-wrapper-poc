@@ -7,13 +7,20 @@ from app.db.models.access import (
     Consent,
     ExternalAccessProfile,
     ExternalGrant,
+    Role,
+    RolePermission,
     SessionRoleBinding,
     ShieldedItem,
     ShieldingRule,
 )
-from app.db.models.appointment import Appointment, AppointmentParticipant
+from app.db.models.appointment import (
+    Appointment,
+    AppointmentParticipant,
+    AppointmentPatientAttendee,
+)
 from app.db.models.audit import AuditEvent
 from app.db.models.authz import AuthzOutbox
+from app.db.models.collaboration import Note
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.luscii import (
     LusciiInstrumentItemLocalisationRow,
@@ -21,7 +28,7 @@ from app.db.models.luscii import (
     LusciiItemResponseLocalisationRow,
 )
 from app.db.models.organisation import Organisation
-from app.db.models.patient import Patient, PatientIdentifier
+from app.db.models.patient import Patient, PatientIdentifier, PatientLusciiConnection
 from app.db.models.pathway import (
     Pathway,
     PathwayPractitioner,
@@ -45,7 +52,7 @@ from app.db.models.practitioner import (
     PractitionerRoleSpecialism,
     Specialism,
 )
-from app.db.models.task import TaskReadState
+from app.db.models.task import Task
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
@@ -53,6 +60,7 @@ __all__ = [
     "AccessGrant",
     "Appointment",
     "AppointmentParticipant",
+    "AppointmentPatientAttendee",
     "AuditEvent",
     "AuthzOutbox",
     "CareTeam",
@@ -60,6 +68,7 @@ __all__ = [
     "LusciiInstrumentItemLocalisationRow",
     "LusciiInstrumentLocalisationRow",
     "LusciiItemResponseLocalisationRow",
+    "Note",
     "Organisation",
     "Pathway",
     "PathwayBlock",
@@ -79,16 +88,19 @@ __all__ = [
     "ExternalGrant",
     "Patient",
     "PatientIdentifier",
+    "PatientLusciiConnection",
     "PathwayPractitioner",
     "PathwaySpecialism",
     "Practitioner",
     "PractitionerRole",
     "PractitionerRoleSpecialism",
+    "Role",
+    "RolePermission",
     "SessionRoleBinding",
     "ShieldedItem",
     "ShieldingRule",
     "Specialism",
-    "TaskReadState",
+    "Task",
     "Tenant",
     "User",
 ]

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useSelectRole } from '@/modules/auth/hooks'
 
 import { safeRedirect } from '../redirect'
-import type { Role } from '../schemas'
+import type { RoleOption } from '../schemas'
 
 /**
  * Multi-role humans pick their active role after credentials are verified
@@ -17,7 +17,7 @@ export function RolePicker({
   roles,
   redirect,
 }: {
-  roles: Role[]
+  roles: RoleOption[]
   redirect?: string | undefined
 }): ReactElement {
   const { t } = useTranslation('auth')
@@ -36,14 +36,14 @@ export function RolePicker({
       <div className="flex flex-col gap-3">
         {roles.map((role) => (
           <Button
-            key={role}
+            key={role.user_id}
             type="button"
             variant="outline"
             className="w-full"
             disabled={selectRole.isPending}
             onClick={() => {
               setError(false)
-              selectRole.mutate(role, {
+              selectRole.mutate(role.user_id, {
                 onSuccess: () => {
                   void navigate({ to: safeRedirect(redirect) })
                 },
@@ -53,7 +53,7 @@ export function RolePicker({
               })
             }}
           >
-            {t(`rolePicker.roles.${role}`, { defaultValue: role })}
+            {t(`rolePicker.roles.${role.role_slug}`)}
           </Button>
         ))}
       </div>

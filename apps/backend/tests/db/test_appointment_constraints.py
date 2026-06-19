@@ -14,37 +14,24 @@ from app.core.enums.appointment import (
     AppointmentStatus,
 )
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.appointment import Appointment, AppointmentParticipant
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
+from tests.db.conftest import seed_admin_user
 
 
 async def _bootstrap(session: AsyncSession) -> tuple[Tenant, User, Patient]:
-    # Tenant + admin User self-bootstrap explicitly per the seed_users.py
-    # precedent. Once the actor exists, wire `session.info[SESSION_ACTOR_KEY]`
-    # so the audit `before_flush` hook owns tenant_id/created_by/updated_by
-    # on every subsequent row.
+    # Tenant + admin User self-bootstrap (now via `seed_admin_user`, which also
+    # seeds the `admin` role the user FKs to). Once the actor exists, wire
+    # `session.info[SESSION_ACTOR_KEY]` so the audit `before_flush` hook owns
+    # tenant_id/created_by/updated_by on every subsequent row.
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
-    actor_id = uuid.uuid4()
-    actor = User(
-        id=actor_id,
-        tenant_id=tenant.id,
-        created_by=actor_id,
-        updated_by=actor_id,
-        email="a@example.test",
-        password_hash="hash",
-        display_name="a",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(actor)
-    await session.flush()
+    actor = await seed_admin_user(session, tenant_id=tenant.id)
     session.info[SESSION_ACTOR_KEY] = actor
     org = Organisation(
         name="root",
@@ -123,7 +110,7 @@ async def test_partial_unique_lead_rejects_second_active_lead(
         email="b@example.test",
         password_hash="hash",
         display_name="b",
-        role=Role.CAREGIVER,
+        role_id=actor.role_id,
         is_active=True,
     )
     db_session.add(other)
@@ -220,7 +207,7 @@ async def test_partial_unique_lead_allows_reopen_after_soft_delete(
         email="c@example.test",
         password_hash="hash",
         display_name="c",
-        role=Role.CAREGIVER,
+        role_id=actor.role_id,
         is_active=True,
     )
     db_session.add(new_lead_user)

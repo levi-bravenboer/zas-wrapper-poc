@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from jsonschema import Draft202012Validator
 
+from app.core.enums.audit import AuditAction
 from app.db.models.pathway import (
     Pathway,
     PathwayBlock,
@@ -63,6 +64,14 @@ from app.schemas.pathway.pathway import (
     PathwayWithVersionResponse,
 )
 from app.schemas.pathway.typed_blocks import PathwayTypedBlockOut, out_class_for_kind
+from app.services.pathway.audit_events import (
+    OP_CREATE,
+    OP_DELETE,
+    OP_DUPLICATE,
+    OP_EDIT,
+    edit_starts_new_session,
+    record_pathway_event,
+)
 from app.services.pathway.nesting import assert_no_nested_pathway_cycles
 from app.services.pathway.pathway_version_service import PathwayVersionService
 from app.services.pathway.errors import (
@@ -304,6 +313,13 @@ class PathwayService:
                 )
             )
         await session.flush()
+        record_pathway_event(
+            session,
+            action=AuditAction.CREATED,
+            pathway_id=pathway.id,
+            operation=OP_CREATE,
+            context={"version_no": version.version_no},
+        )
         definition = await self._build_version_definition(version)
         return PathwayWithVersionResponse(
             pathway=PathwayBare.model_validate(pathway),
@@ -352,6 +368,18 @@ class PathwayService:
         session = self._repo._session  # noqa: SLF001
         await session.refresh(pathway, ["updated_at"])
         await session.refresh(concept, ["updated_at"])
+
+        # One `edited` event per editing session — autosave fires this endpoint
+        # repeatedly, so coalesce all but the first edit by the same actor
+        # within the quiet window.
+        if await edit_starts_new_session(session, pathway_id=pathway_id):
+            record_pathway_event(
+                session,
+                action=AuditAction.UPDATED,
+                pathway_id=pathway_id,
+                operation=OP_EDIT,
+                context={"version_no": concept.version_no, "version_id": concept.id},
+            )
 
         definition = await self._build_version_definition(concept)
         return PathwayWithVersionResponse(
@@ -441,6 +469,17 @@ class PathwayService:
 
         session = self._repo._session  # noqa: SLF001
         await session.flush()
+        record_pathway_event(
+            session,
+            action=AuditAction.CREATED,
+            pathway_id=new_pathway.id,
+            operation=OP_DUPLICATE,
+            context={
+                "version_no": new_version.version_no,
+                "source_pathway_id": pathway_id,
+                "source_version_id": source_version_id,
+            },
+        )
 
         summaries = await self.list_summaries(tenant_id)
         return next(s for s in summaries if s.id == new_pathway.id)
@@ -455,6 +494,13 @@ class PathwayService:
                 referrers=[{"id": str(r.id), "name": r.name} for r in referrers]
             )
         await self._repo.soft_delete(pathway)
+        record_pathway_event(
+            self._repo._session,  # noqa: SLF001
+            action=AuditAction.DELETED,
+            pathway_id=pathway.id,
+            operation=OP_DELETE,
+            context={"name": pathway.name},
+        )
 
     # ---- Helpers ---------------------------------------------------------
 
@@ -852,7 +898,7 @@ def _resolve_or_materialize_lane(
 
 
 _BLOCK_ENVELOPE_KEYS: frozenset[str] = frozenset(
-    {"name", "lane_kind", "input_logic", "timing_policy"}
+    {"name", "lane_kind", "input_logic", "timing_policy", "participant"}
 )
 
 
@@ -941,16 +987,31 @@ def _derive_edges_for_response(blocks: list[PathwayBlock]) -> list[DerivedEdge]:
     return edges
 
 
+def _decision_outputs_by_block(blocks: list[PathwayBlockIn]) -> dict[UUID, set[str]]:
+    """Map each `decision` block id to its declared `outputs` keys."""
+    out: dict[UUID, set[str]] = {}
+    for block in blocks:
+        if block.kind != "decision":
+            continue
+        config = block.config or {}
+        outputs = config.get("outputs")
+        out[block.id] = {str(o) for o in outputs} if isinstance(outputs, list) else set()
+    return out
+
+
 def _validate_input_logic_node_refs(
     blocks: list[PathwayBlockIn],
     block_ids: set[UUID],
 ) -> None:
-    """Reject payloads whose `input_logic.node` refs miss a block (§3.4).
+    """Reject payloads whose `input_logic.node` refs miss a block (§3.4) or
+    whose `decision_output` predicate points at a non-decision block or an
+    output key the referenced decision does not declare (§2.7).
 
     Each rule references a producer block by id; the rule's typed
     `args` carry the same id. Any reference that does not resolve to
     a block in the same pathway version is a publish blocker.
     """
+    decision_outputs = _decision_outputs_by_block(blocks)
     for block in blocks:
         # The payload still arrives in the slot #1 wire shape (`config`
         # bag with an `input_logic` key); the new typed aggregate is
@@ -979,3 +1040,23 @@ def _validate_input_logic_node_refs(
                     field=f"blocks[{block.id}].input_logic.rules[{idx}].node",
                     reason=f"node {node} not present in payload blocks",
                 )
+            # §2.7: a `decision_output` predicate must reference a decision
+            # block and an output key it actually declares.
+            args = rule.get("args")
+            if isinstance(args, dict) and args.get("predicate") == "decision_output":
+                after = args.get("after_block", node)
+                try:
+                    after_id = UUID(str(after))
+                except (TypeError, ValueError):
+                    after_id = node
+                if after_id not in decision_outputs:
+                    raise PathwayValidationError(
+                        field=f"blocks[{block.id}].input_logic.rules[{idx}].args.after_block",
+                        reason=f"decision_output references block {after_id} which is not a decision",
+                    )
+                output_key = str(args.get("output_key", ""))
+                if output_key not in decision_outputs[after_id]:
+                    raise PathwayValidationError(
+                        field=f"blocks[{block.id}].input_logic.rules[{idx}].args.output_key",
+                        reason=(f"output_key {output_key!r} not declared by decision {after_id}"),
+                    )

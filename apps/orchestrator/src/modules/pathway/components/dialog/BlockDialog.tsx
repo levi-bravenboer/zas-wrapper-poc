@@ -23,13 +23,14 @@ import { BlockIdentityFields } from './BlockIdentityFields'
 import { DialogHero } from './DialogHero'
 import { DialogSection } from './DialogSection'
 import { InputLogicEditor } from './InputLogicEditor'
+import { ParticipantEditor } from './ParticipantEditor'
 import { TimingPolicyEditor } from './TimingPolicyEditor'
 
 export type { BlockDraft } from '../../hooks/useBlockDraft'
 
-const TITLE_KEY: Record<BlockDialogMode, { key: string; fallback: string }> = {
-  add: { key: 'blockDialog.addTitle', fallback: 'Nieuw blok — {{type}}' },
-  edit: { key: 'blockDialog.editTitle', fallback: 'Blok bewerken — {{type}}' },
+const TITLE_KEY: Record<BlockDialogMode, { key: string }> = {
+  add: { key: 'blockDialog.addTitle' },
+  edit: { key: 'blockDialog.editTitle' },
 }
 
 type Props = {
@@ -75,17 +76,17 @@ export function BlockDialog({
     lanes,
   })
 
-  const typeLabel = t(`blockType.${blockType.type}`, { defaultValue: blockType.label })
-  const typeDescription = t(`blockTypeDescription.${blockType.type}`, { defaultValue: '' })
+  const typeLabel = t(`blockType.${blockType.type}`)
+  const typeDescription = t(`blockTypeDescription.${blockType.type}`)
   const upstreamBlocks = blocks.filter((b) => b.id !== block?.id)
-  const title = t(TITLE_KEY[mode].key, { defaultValue: TITLE_KEY[mode].fallback, type: typeLabel })
+  const title = t(TITLE_KEY[mode].key, { type: typeLabel })
 
   // Adding a section = one entry.
   const sections: Array<{ id: string; visible: boolean; header: string; body: ReactNode }> = [
     {
       id: 'config',
       visible: true,
-      header: t('blockDialog.configHeader', { defaultValue: 'Blok-instellingen' }),
+      header: t('blockDialog.configHeader'),
       body: parsed.success ? (
         <InspectorSwitch
           blockType={blockType}
@@ -111,7 +112,7 @@ export function BlockDialog({
     {
       id: 'logic',
       visible: features.allowsLogic,
-      header: t('blockDialog.logicHeader', { defaultValue: 'Bedrijfslogica' }),
+      header: t('blockDialog.logicHeader'),
       body: (
         <InputLogicEditor
           value={draft.inputLogic}
@@ -123,11 +124,22 @@ export function BlockDialog({
     {
       id: 'timing',
       visible: features.allowsTiming,
-      header: t('blockDialog.timingHeader', { defaultValue: 'Timing' }),
+      header: t('blockDialog.timingHeader'),
       body: (
         <TimingPolicyEditor
           value={draft.timingPolicy}
           onChange={(timingPolicy) => setDraft({ ...draft, timingPolicy })}
+        />
+      ),
+    },
+    {
+      id: 'participant',
+      visible: features.allowsParticipant,
+      header: t('blockDialog.participantHeader'),
+      body: (
+        <ParticipantEditor
+          value={draft.participant}
+          onChange={(participant) => setDraft({ ...draft, participant })}
         />
       ),
     },

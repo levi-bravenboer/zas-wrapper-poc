@@ -61,6 +61,8 @@ class TreatmentBlock(BaseBlock):
     """
 
     KIND: ClassVar[str] = "treatment"
+    ACTOR: ClassVar[str] = "caregiver"
+    COMPLETION: ClassVar[str] = "caregiver_action"
     TYPE_CODE: ClassVar[str] = "treatment"
     LABEL: ClassVar[str] = "Behandeling"
     DESCRIPTION: ClassVar[str] = (

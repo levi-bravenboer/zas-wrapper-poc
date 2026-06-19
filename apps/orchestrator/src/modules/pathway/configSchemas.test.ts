@@ -33,8 +33,6 @@ describe('CONFIG_SCHEMAS — every BlockSemantics has a schema', () => {
     'message',
     'form',
     'decision',
-    'milestone',
-    'wait',
     'pathway_link',
   ]
 
@@ -95,15 +93,6 @@ describe('parseBlockConfig — valid configs round-trip', () => {
     expect(parsed.questions[1]?.options).toEqual(['ja', 'nee'])
   })
 
-  it('parses a wait config', () => {
-    const parsed = parseBlockConfig(
-      fakeBlock({ event_type: 'lab_result', timeout_days: 3, on_timeout: 'escalate' }),
-      'wait',
-    )
-    expect(parsed.event_type).toBe('lab_result')
-    expect(parsed.timeout_days).toBe(3)
-  })
-
   it('parses a pathway_link config and defaults context_mapping', () => {
     const parsed = parseBlockConfig(
       fakeBlock({
@@ -128,11 +117,6 @@ describe('parseBlockConfig — valid configs round-trip', () => {
     expect(parsed.question).toBe('Herstel volgens plan?')
     expect(parsed.outputs).toEqual(['goed', 'onvoldoende'])
     expect(parsed.mode).toBe('xor')
-  })
-
-  it('parses a milestone config', () => {
-    const parsed = parseBlockConfig(fakeBlock({ label: 'Start herstelfase' }), 'milestone')
-    expect(parsed.label).toBe('Start herstelfase')
   })
 })
 
@@ -169,23 +153,9 @@ describe('parseBlockConfig — accepts null for nullable BE fields', () => {
     expect(parsed.title).toBe('Intake')
     expect(parsed.mode).toBeNull()
   })
-
-  it('milestone accepts null on description/icon', () => {
-    const parsed = parseBlockConfig(
-      fakeBlock({ label: 'Operatie', description: null, icon: null }),
-      'milestone',
-    )
-    expect(parsed.label).toBe('Operatie')
-  })
 })
 
 describe('parseBlockConfig — invalid configs throw with the right path', () => {
-  it('wait rejects unknown event_type', () => {
-    expect(() => parseBlockConfig(fakeBlock({ event_type: 'mystery_event' }), 'wait')).toThrow(
-      /event_type/,
-    )
-  })
-
   it('message rejects unknown channel', () => {
     expect(() => parseBlockConfig(fakeBlock({ channel: 'carrier_pigeon' }), 'message')).toThrow(
       /channel/,
@@ -212,12 +182,6 @@ describe('parseBlockConfig — invalid configs throw with the right path', () =>
       ),
     ).toThrow(/mode/)
   })
-
-  it('wait rejects non-positive timeout_days', () => {
-    expect(() =>
-      parseBlockConfig(fakeBlock({ event_type: 'lab_result', timeout_days: 0 }), 'wait'),
-    ).toThrow(/timeout_days/)
-  })
 })
 
 describe('AnyBlockConfig — type coverage smoke', () => {
@@ -230,8 +194,6 @@ describe('AnyBlockConfig — type coverage smoke', () => {
       message: { channel: 'email' },
       form: { questions: [] },
       decision: { question: 'x', outputs: ['ja', 'nee'] },
-      milestone: { label: 'm' },
-      wait: { event_type: 'lab_result' },
       pathway_link: {
         target_pathway_id: '11111111-1111-4111-8111-111111111111',
         mode: 'blocking',
@@ -246,6 +208,6 @@ describe('AnyBlockConfig — type coverage smoke', () => {
       mdo: { topic: 'Bespreking pathologie' },
       end_pathway: { name: 'End' },
     }
-    expect(Object.keys(sample)).toHaveLength(14)
+    expect(Object.keys(sample)).toHaveLength(12)
   })
 })

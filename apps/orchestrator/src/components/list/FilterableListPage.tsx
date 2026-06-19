@@ -48,7 +48,7 @@ export function FilterableListPage<_T>({
   return (
     <>
       <PageHeader title={title} sub={description} />
-      <div className="relative flex flex-col gap-3 px-6 pb-8">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-8">
         {accent && (
           <div
             aria-hidden

@@ -8,17 +8,16 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.patient import Patient
 from app.db.models.user import User
 from app.repositories.user.user_repository import UserRepository
-from app.schemas.auth.auth import SessionUser
 from app.services.access.identity.password import PasswordHasher
 from scripts.seed_organisations import seed_organisations
 from scripts.seed_patients import seed_patients
 from scripts.seed_tenant import seed_zas_tenant
 from scripts.seed_users import ADMIN_EMAIL, seed_users
+from tests._rbac import ensure_roles, make_session_user
 
 PATIENT_PASSWORD = "patient-pass"
 PATIENT_EMAIL = "patient@zas.local"
@@ -61,17 +60,25 @@ async def seeded_zas_patient_user(db_session: AsyncSession) -> SeededPatientLogi
 
     admin = next(u for u in users if u.email == ADMIN_EMAIL)
     patient = patients[0]
+    roles = await ensure_roles(db_session, patient.tenant_id)
 
     repo = UserRepository(db_session)
     hasher = PasswordHasher()
-    db_session.info[SESSION_ACTOR_KEY] = SessionUser.model_validate(admin)
+    db_session.info[SESSION_ACTOR_KEY] = make_session_user(
+        tenant_id=admin.tenant_id,
+        id=admin.id,
+        email=admin.email,
+        display_name=admin.display_name,
+        admin=True,
+        role_id=admin.role_id,
+    )
     try:
         patient_user = User(
             tenant_id=patient.tenant_id,
             email=PATIENT_EMAIL,
             password_hash=hasher.hash(PATIENT_PASSWORD),
             display_name=f"{patient.given_name} {patient.family_name}",
-            role=Role.PATIENT,
+            role_id=roles["default"].id,
             is_active=True,
             patient_id=patient.id,
         )

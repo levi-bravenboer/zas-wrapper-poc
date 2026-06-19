@@ -49,7 +49,7 @@ export function EntityFormPage<TValues>({
 
   return (
     <form
-      className="flex min-h-full flex-col"
+      className="flex h-full min-h-0 flex-col"
       onSubmit={(event) => {
         event.preventDefault()
         void form.form.handleSubmit()
@@ -57,7 +57,7 @@ export function EntityFormPage<TValues>({
       noValidate
     >
       <PageHeader eyebrow={eyebrow} title={title} sub={subtitle} />
-      <div className="flex flex-1 flex-col gap-3 px-6 pb-24">{body}</div>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-24">{body}</div>
       <div
         className="sticky bottom-0 z-10 flex justify-end gap-2 border-t bg-background/95 px-6 py-3 backdrop-blur"
         data-slot="entity-form-footer"

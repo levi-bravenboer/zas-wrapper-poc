@@ -7,34 +7,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.care_team import RoleInCare
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.models.care_team import CareTeam, CareTeamParticipant
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
-from app.db.models.user import User
 from app.schemas.auth.auth import SessionUser
 from app.services.care_team.care_team_service import CareTeamService
+from tests.db.conftest import admin_session_user, seed_admin_user
 
 
 async def _setup(session: AsyncSession) -> tuple[SessionUser, CareTeam]:
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
-    actor_id = uuid.uuid4()
-    actor = User(
-        id=actor_id,
-        tenant_id=tenant.id,
-        created_by=actor_id,
-        updated_by=actor_id,
-        email="a@example.test",
-        password_hash="hash",
-        display_name="a",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(actor)
-    await session.flush()
+    actor = await seed_admin_user(session, tenant_id=tenant.id)
     org = Organisation(
         tenant_id=tenant.id,
         created_by=actor.id,
@@ -76,16 +62,7 @@ async def _setup(session: AsyncSession) -> tuple[SessionUser, CareTeam]:
         )
     )
     await session.flush()
-    return (
-        SessionUser(
-            id=actor.id,
-            email=actor.email,
-            display_name=actor.display_name,
-            tenant_id=tenant.id,
-            role=actor.role,
-        ),
-        team,
-    )
+    return admin_session_user(actor), team
 
 
 async def test_change_role_produces_two_rows(db_session: AsyncSession) -> None:

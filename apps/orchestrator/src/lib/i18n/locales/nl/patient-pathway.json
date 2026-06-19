@@ -1,0 +1,153 @@
+{
+  "tab": {
+    "label": "Zorgpad"
+  },
+  "timeline": {
+    "title": "Zorgpad",
+    "manage": "Beheer zorgpad",
+    "controlsTitle": "Zorgpad beheer",
+    "fastForward": "Doorspoelen",
+    "fastForwardToast": "Zorgpad doorgespoeld tot volgende keuze",
+    "fastForwardError": "Doorspoelen mislukt",
+    "hide": "Verberg beheer",
+    "enrollAnother": "Nieuw zorgpad",
+    "noSteps": "Nog geen stappen",
+    "state": {
+      "finished": "Afgerond",
+      "next": "Nu",
+      "upcoming": "Gepland"
+    }
+  },
+  "empty": {
+    "title": "Geen actief zorgpad",
+    "body": "Deze patiënt volgt nog geen zorgpad. Schrijf de patiënt in om te beginnen.",
+    "enroll": "Inschrijven op zorgpad"
+  },
+  "enroll": {
+    "title": "Inschrijven op zorgpad",
+    "description": "Kies een gepubliceerd zorgpad en stel de startdatum in.",
+    "pathwayLabel": "Zorgpad",
+    "pathwayPlaceholder": "Kies een zorgpad",
+    "anchorLabel": "Startdatum",
+    "participantPlaceholder": "Kies een zorgverlener",
+    "earliestHint": "Vroegst haalbaar: {{date}}",
+    "noPublished": "Er zijn nog geen gepubliceerde zorgpaden om op in te schrijven.",
+    "cancel": "Annuleren",
+    "submit": "Inschrijven",
+    "next": "Volgende",
+    "back": "Vorige",
+    "stepIndicator": "Stap {{current}} van {{total}}",
+    "earlierSteps": "eerder",
+    "laterSteps": "later",
+    "locationLabel": "Locatie afspraak",
+    "practitionerLabel": "Behandelaar",
+    "step": {
+      "setup": "Zorgpad & data",
+      "review": "Controleren"
+    },
+    "review": {
+      "title": "Controleer en bevestig",
+      "pathway": "Zorgpad",
+      "anchor": "Startdatum",
+      "unset": "—"
+    },
+    "toast": {
+      "success": "Patiënt ingeschreven op zorgpad",
+      "error": "Inschrijven mislukt"
+    },
+    "validationTitle": "Inschrijven geblokkeerd"
+  },
+  "pause": {
+    "pause": "Pauzeren",
+    "resume": "Hervatten",
+    "toast": {
+      "paused": "Zorgpad gepauzeerd",
+      "resumed": "Zorgpad hervat",
+      "error": "Actie mislukt"
+    }
+  },
+  "cancel": {
+    "action": "Annuleren",
+    "title": "Zorgpad annuleren?",
+    "description": "De inschrijving wordt gestopt. Deze actie kan niet ongedaan worden gemaakt.",
+    "dismiss": "Terug",
+    "confirm": "Zorgpad annuleren",
+    "toast": {
+      "success": "Zorgpad geannuleerd",
+      "error": "Annuleren mislukt"
+    }
+  },
+  "card": {
+    "anchor": "Startdatum",
+    "state": {
+      "active": "Actief",
+      "paused": "Gepauzeerd",
+      "completed": "Afgerond",
+      "cancelled": "Geannuleerd"
+    }
+  },
+  "summary": {
+    "phase": "Fase {{phase}}",
+    "progress": "{{done}}/{{total}} afgerond",
+    "done": "afgerond",
+    "toGo": "te gaan",
+    "overdueDays_one": "{{count}} dag te laat",
+    "overdueDays_other": "{{count}} dagen te laat"
+  },
+  "values": {
+    "header": "Waarden",
+    "save": "Opslaan",
+    "locked": "Vastgezet",
+    "toast": {
+      "success": "Waarde bijgewerkt",
+      "error": "Bijwerken mislukt"
+    }
+  },
+  "buckets": {
+    "upcoming": "Aankomend",
+    "next": "Nu te doen",
+    "finished": "Afgerond",
+    "emptyUpcoming": "Geen aankomende stappen",
+    "emptyNext": "Geen openstaande stappen",
+    "emptyFinished": "Nog niets afgerond"
+  },
+  "step": {
+    "readyOn": "Klaar op {{date}}",
+    "scheduledFor": "Gepland op {{date}}",
+    "completedOn": "Afgerond op {{date}}",
+    "unknownBlock": "Onbekende stap",
+    "done": "Gedaan",
+    "doneToast": {
+      "success": "Stap afgerond",
+      "error": "Stap afronden mislukt"
+    },
+    "mdo": {
+      "open": "MDO afronden",
+      "notesLabel": "Notities",
+      "notesPlaceholder": "Besproken en besloten…",
+      "outcomeLabel": "Uitkomst",
+      "outcomePlaceholder": "Kies een uitkomst",
+      "confirm": "Afronden"
+    },
+    "appointment": {
+      "perform": "Markeer uitgevoerd"
+    },
+    "treatment": {
+      "open": "Resultaat vastleggen",
+      "performedAt": "Uitgevoerd op",
+      "notes": "Notities",
+      "notesPlaceholder": "Verloop van de behandeling…",
+      "complications": "Complicaties",
+      "complicationsPlaceholder": "Indien van toepassing…",
+      "confirm": "Vastleggen"
+    },
+    "stateBadge": {
+      "active": "Bezig",
+      "eligible": "Beschikbaar",
+      "completed": "Afgerond",
+      "skipped": "Overgeslagen",
+      "failed": "Mislukt"
+    }
+  },
+  "loadError": "Zorgpad kon niet worden geladen"
+}

@@ -32,3 +32,17 @@ class PatientSource(StrEnum):
     LOCAL = "local"
     HIX = "hix"
     LUSCII = "luscii"
+
+
+class LusciiConnectionStatus(StrEnum):
+    """Lifecycle of a `patient_luscii_connections` row.
+
+    A patient may carry many connections (one per linked Luscii patient).
+    `active` rows are the live links; `inactive` rows are retained for
+    history. Deactivation flips the status and keeps the row — `deleted_at`
+    stays reserved for true deletion. Persisted as the Postgres enum
+    `luscii_connection_status`.
+    """
+
+    ACTIVE = "active"
+    INACTIVE = "inactive"

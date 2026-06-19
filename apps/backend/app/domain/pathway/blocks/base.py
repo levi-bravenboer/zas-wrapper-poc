@@ -31,6 +31,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.domain.pathway.blocks.deferred import DeferredFieldSpec
 from app.domain.pathway.input_logic import InputLogic
+from app.domain.pathway.participant import ParticipantSpec
 from app.domain.pathway.timing import TimingPolicy
 from app.schemas.pathway.blocks import BlockSourceLiteral, NestedRenderLiteral
 
@@ -81,6 +82,11 @@ class BaseBlock(BaseModel):
     # round-trips through `model_validate` on read.
     timing_policy: TimingPolicy | None = None
 
+    # FHIR `action.participant` (role + optional specialty) — the required
+    # performer for a materializing block, resolved to a Practitioner at
+    # enrollment. `None` for non-materializing blocks (start/end/decision…).
+    participant: ParticipantSpec | None = None
+
     # --- CLASS: per-kind metadata, no instance state, no DB columns ---
     KIND: ClassVar[str] = ""
     LABEL: ClassVar[str] = ""
@@ -101,6 +107,18 @@ class BaseBlock(BaseModel):
 
     # Whether the block supports authored output branches (e.g. DecisionBlock).
     SUPPORTS_BRANCHES: ClassVar[bool] = False
+
+    # Runtime-contract metadata (pathway-runtime §2.3/§2.4): documents who
+    # acts, when the block's effect is decided, and how it completes — surfaced
+    # in the block catalogue so clients can reason about a block without
+    # hard-coding its kind.
+    #   ACTOR:         caregiver | patient | system | auto
+    #   RUNTIME_PHASE: build (authoring-only) | enroll (resolved at enrollment)
+    #                  | runtime (executes during the run)
+    #   COMPLETION:    caregiver_action | auto | decision | terminal
+    ACTOR: ClassVar[str] = "system"
+    RUNTIME_PHASE: ClassVar[str] = "runtime"
+    COMPLETION: ClassVar[str] = "auto"
 
     # Wire-facing `pathway_block.type` identifier exposed via the block
     # catalogue and surfaced on the legacy slot-#1 compat envelope.

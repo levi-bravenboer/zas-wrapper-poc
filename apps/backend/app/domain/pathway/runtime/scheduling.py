@@ -85,6 +85,7 @@ def schedule_from_anchor(
     | `fixed_duration`                | anchor                         | None                |
     | `due_within`                    | anchor                         | anchor + window_iso |
     | `at_enrollment_picked_date`     | None (mirrored from def field) | None                |
+    | `relative_to_date`              | None (resolved from named date)| None                |
     | None (no policy)                | anchor                         | None                |
     """
     anchor_dt = datetime(anchor.year, anchor.month, anchor.day, tzinfo=UTC)
@@ -103,11 +104,37 @@ def schedule_from_anchor(
         return anchor_dt, anchor_dt + timedelta(days=window)
     if kind == "at_enrollment_picked_date":
         return None, None
+    if kind == "relative_to_date":
+        # Anchored to a named clinical date supplied as a deferred value
+        # (e.g. `operation_date − P2D`). The date may not be known at
+        # enrollment, so the base computation defers; the service resolves
+        # `scheduled_at` once the named date lands and recomputes on edit.
+        return None, None
     raise InvalidIsoDurationError(f"unknown TimingPolicy kind: {kind!r}")
+
+
+def resolve_relative_to_date(
+    policy: dict[str, Any],
+    date_value: date | datetime,
+) -> datetime:
+    """Resolve a `relative_to_date` policy against a known clinical date.
+
+    `scheduled_at = date_value ± offset_iso`, where the sign follows
+    `direction` (`before` subtracts, `after` adds). The clinical date is
+    pegged to midnight UTC when only a calendar date is supplied.
+    """
+    if isinstance(date_value, datetime):
+        base = date_value if date_value.tzinfo is not None else date_value.replace(tzinfo=UTC)
+    else:
+        base = datetime(date_value.year, date_value.month, date_value.day, tzinfo=UTC)
+    offset = parse_iso_duration_timedelta(str(policy.get("offset_iso", "PT0S")))
+    direction = policy.get("direction", "before")
+    return base - offset if direction == "before" else base + offset
 
 
 __all__ = [
     "InvalidIsoDurationError",
+    "resolve_relative_to_date",
     "parse_iso_duration_days",
     "parse_iso_duration_timedelta",
     "schedule_from_anchor",

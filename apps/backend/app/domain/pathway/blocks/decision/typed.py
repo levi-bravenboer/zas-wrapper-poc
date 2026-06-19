@@ -29,6 +29,8 @@ class DecisionAutoResolve(BaseModel):
 
 class DecisionBlock(BaseBlock):
     KIND: ClassVar[str] = "decision"
+    ACTOR: ClassVar[str] = "system"
+    COMPLETION: ClassVar[str] = "decision"
     TYPE_CODE: ClassVar[str] = "decision"
     LABEL: ClassVar[str] = "Beslissing"
     DESCRIPTION: ClassVar[str] = (

@@ -9,34 +9,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums.audit import ActorType, AuditAction
 from app.core.enums.patient import Gender, PatientSource
-from app.core.enums.user import Role
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.audit import AuditEvent
 from app.db.models.organisation import Organisation
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
-from app.schemas.auth.auth import SessionUser
+from tests.db.conftest import admin_session_user, seed_admin_user
 
 
 async def _bootstrap(session: AsyncSession) -> tuple[Tenant, User, Organisation]:
     tenant = Tenant(id=uuid.uuid4(), slug="zas", name="ZAS")
     session.add(tenant)
     await session.flush()
-    actor_id = uuid.uuid4()
-    actor = User(
-        id=actor_id,
-        tenant_id=tenant.id,
-        created_by=actor_id,
-        updated_by=actor_id,
-        email="a@example.test",
-        password_hash="hash",
-        display_name="Audit Actor",
-        role=Role.ADMIN,
-        is_active=True,
-    )
-    session.add(actor)
-    await session.flush()
+    actor = await seed_admin_user(session, tenant_id=tenant.id, email="a@example.test")
     org = Organisation(
         id=uuid.uuid4(),
         tenant_id=tenant.id,
@@ -48,13 +34,7 @@ async def _bootstrap(session: AsyncSession) -> tuple[Tenant, User, Organisation]
     )
     session.add(org)
     await session.flush()
-    session.info[SESSION_ACTOR_KEY] = SessionUser(
-        id=actor.id,
-        email=actor.email,
-        display_name=actor.display_name,
-        tenant_id=actor.tenant_id,
-        role=actor.role,
-    )
+    session.info[SESSION_ACTOR_KEY] = admin_session_user(actor)
     return tenant, actor, org
 
 
@@ -90,7 +70,7 @@ async def test_create_emits_created_event(db_session: AsyncSession) -> None:
     assert event.resource_type == "Patient"
     assert event.actor_type == ActorType.USER
     assert event.actor_id == actor.id
-    assert event.actor_label == "Audit Actor"
+    assert event.actor_label == "Admin Actor"
     assert event.changes is not None
     assert event.changes["given_name"] == {"old": None, "new": "Hook"}
     # JSON-safe: UUID column serialised to str
@@ -147,7 +127,7 @@ async def test_no_recursion_on_audit_event(db_session: AsyncSession) -> None:
 
 
 async def test_user_excludes_password_hash(db_session: AsyncSession) -> None:
-    tenant, _, _ = await _bootstrap(db_session)
+    tenant, actor, _ = await _bootstrap(db_session)
     new_id = uuid.uuid4()
     user = User(
         id=new_id,
@@ -155,7 +135,7 @@ async def test_user_excludes_password_hash(db_session: AsyncSession) -> None:
         email="b@example.test",
         password_hash="secret-hash",
         display_name="B",
-        role=Role.CAREGIVER,
+        role_id=actor.role_id,
         is_active=True,
     )
     db_session.add(user)

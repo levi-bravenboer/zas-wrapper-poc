@@ -1,5 +1,17 @@
-import { Building2, Home, Inbox, Settings, Users, UsersRound, Workflow } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import {
+  Building2,
+  Calendar,
+  Contact,
+  Home,
+  Inbox,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Users,
+  UsersRound,
+  Workflow,
+} from 'lucide-react'
 
 import type { Role } from '@/modules/auth/schemas'
 
@@ -34,6 +46,8 @@ export const navGroups: readonly NavGroup[] = [
     placement: 'main',
     items: [
       { to: '/', labelKey: 'nav:dashboard', icon: Home, order: 10 },
+      { to: '/patients', labelKey: 'nav:patients', icon: Contact, order: 12 },
+      { to: '/appointments', labelKey: 'nav:appointments', icon: Calendar, order: 15 },
       { to: '/tasks', labelKey: 'nav:tasks', icon: Inbox, order: 20 },
       { to: '/pathways', labelKey: 'nav:pathways', icon: Workflow, order: 40 },
     ],
@@ -53,6 +67,13 @@ export const navGroups: readonly NavGroup[] = [
         requiresRole: ['admin'],
       },
       {
+        to: '/admin/roles',
+        labelKey: 'caregiver-shell:nav.roles',
+        icon: ShieldCheck,
+        order: 11,
+        requiresRole: ['admin'],
+      },
+      {
         to: '/admin/organisations',
         labelKey: 'caregiver-shell:nav.organisations',
         icon: Building2,
@@ -64,6 +85,13 @@ export const navGroups: readonly NavGroup[] = [
         labelKey: 'caregiver-shell:nav.practitionerRoles',
         icon: UsersRound,
         order: 30,
+        requiresRole: ['admin'],
+      },
+      {
+        to: '/admin/audit-log',
+        labelKey: 'caregiver-shell:nav.auditLog',
+        icon: ScrollText,
+        order: 40,
         requiresRole: ['admin'],
       },
     ],
