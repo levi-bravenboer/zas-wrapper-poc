@@ -100,7 +100,12 @@ function AppointmentDetailRoute(): ReactElement {
               <ul className="flex flex-wrap gap-x-6 gap-y-2">
                 {appt.participants.map((p) => (
                   <li key={p.user_id} className="flex items-center gap-2">
-                    <PersonAvatar size="sm" name={p.user_display_name} tintId={p.user_id} />
+                    <PersonAvatar
+                      size="sm"
+                      name={p.user_display_name}
+                      tintId={p.user_id}
+                      person={{ kind: 'user', id: p.user_id }}
+                    />
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate text-sm text-foreground">
                         {p.user_display_name}

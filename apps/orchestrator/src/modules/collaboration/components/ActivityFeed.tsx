@@ -154,6 +154,7 @@ function ActivityItem({
         size="sm"
         name={note.author_display_name}
         tintId={note.author_user_id}
+        person={{ kind: 'user', id: note.author_user_id }}
         className="mt-0.5"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">

@@ -5,8 +5,7 @@ import { toast } from 'sonner'
 
 import { defineColumn, type BrandedColumnDef } from '@/components/data-table'
 import { type DataTableFilter, type DataTableRowAction } from '@/components/data-table'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { initials } from '@/lib/utils/initials'
+import { PersonAvatar } from '@/components/PersonAvatar'
 
 import { formatTimestamp } from '../format'
 import { useAssignUserRole, useSetUserActive } from '../hooks'
@@ -27,9 +26,12 @@ export function useUserColumns(): ReadonlyArray<BrandedColumnDef<UserRow>> {
         sticky: true,
         cell: (row) => (
           <div className="flex items-center gap-3 min-w-0">
-            <Avatar size="sm">
-              <AvatarFallback>{initials(row.display_name)}</AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              size="sm"
+              name={row.display_name}
+              tintId={row.id}
+              person={{ kind: 'user', id: row.id }}
+            />
             <span className="truncate font-medium text-foreground">{row.display_name}</span>
           </div>
         ),

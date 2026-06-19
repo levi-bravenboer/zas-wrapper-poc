@@ -13,26 +13,7 @@ import { useCareTeamLead } from '@/modules/care-team/hooks'
 import { useActiveEnrollmentGlance, type EnrollmentGlance } from '@/modules/patient-pathway/hooks'
 
 import { usePatient } from '../hooks'
-import type { PatientIdentifierRow } from '../types'
-
-function pickInsz(identifiers: ReadonlyArray<PatientIdentifierRow>): string | null {
-  const match = identifiers.find((id) => {
-    if (id.use === 'official') return true
-    const system = id.system?.toLowerCase() ?? ''
-    return system.includes('ssin') || system.includes('insz') || system.includes('2.16.56')
-  })
-  return match?.value ?? null
-}
-
-function ageFromBirthDate(iso: string | null | undefined): number | null {
-  if (!iso) return null
-  const birth = new Date(iso)
-  const now = new Date()
-  let age = now.getFullYear() - birth.getFullYear()
-  const monthDelta = now.getMonth() - birth.getMonth()
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < birth.getDate())) age -= 1
-  return age
-}
+import { ageFromBirthDate, pickInsz } from '../patientFacts'
 
 function Fact({
   label,
@@ -105,7 +86,12 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
           {lead ? (
             <Fact label={t('field.treatingClinician', { defaultValue: 'Hoofdbehandelaar' })}>
               <span className="inline-flex min-w-0 items-center gap-1.5">
-                <PersonAvatar size="sm" name={lead.displayName} tintId={lead.userId} />
+                <PersonAvatar
+                  size="sm"
+                  name={lead.displayName}
+                  tintId={lead.userId}
+                  person={{ kind: 'user', id: lead.userId }}
+                />
                 <span className="truncate">{lead.displayName}</span>
               </span>
             </Fact>

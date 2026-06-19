@@ -13,13 +13,12 @@ import {
 } from '@/components/data-table'
 import { stickyFirst } from '@/components/data-table/styles'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PersonAvatar } from '@/components/PersonAvatar'
 import { ErrorState } from '@/components/states'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
 import { cn } from '@/lib/style/cn'
 import { formatDateOrDash } from '@/lib/utils/datetime'
-import { initials } from '@/lib/utils/initials'
 
 import { PATIENTS_PATH } from '../api'
 import type { PatientRow } from '../types'
@@ -51,9 +50,12 @@ export function PatientListPage(): ReactElement {
           const name = `${row.family_name}, ${row.given_name}`
           return (
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar size="sm">
-                <AvatarFallback>{initials(name)}</AvatarFallback>
-              </Avatar>
+              <PersonAvatar
+                size="sm"
+                name={name}
+                tintId={row.id}
+                person={{ kind: 'patient', id: row.id }}
+              />
               <span className="truncate font-medium text-foreground">{name}</span>
             </div>
           )

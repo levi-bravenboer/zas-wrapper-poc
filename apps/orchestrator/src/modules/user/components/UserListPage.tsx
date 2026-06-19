@@ -20,13 +20,12 @@ import {
 } from '@/components/data-table'
 import { stickyFirst } from '@/components/data-table/styles'
 import { FilterableListPage } from '@/components/list/FilterableListPage'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { PersonAvatar } from '@/components/PersonAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
 import { cn } from '@/lib/style/cn'
-import { initials } from '@/lib/utils/initials'
 import { useSession } from '@/modules/auth/hooks'
 
 import { formatTimestamp } from '../format'
@@ -71,9 +70,12 @@ export function UserListPage(): ReactElement {
         sticky: true,
         cell: (row) => (
           <div className="flex items-center gap-3 min-w-0">
-            <Avatar size="sm">
-              <AvatarFallback>{initials(row.display_name)}</AvatarFallback>
-            </Avatar>
+            <PersonAvatar
+              size="sm"
+              name={row.display_name}
+              tintId={row.id}
+              person={{ kind: 'user', id: row.id }}
+            />
             <span className="truncate font-medium text-foreground">{row.display_name}</span>
           </div>
         ),
