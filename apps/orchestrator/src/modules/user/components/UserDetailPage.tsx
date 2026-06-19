@@ -1,24 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { AtSign, Pencil, UserMinus } from 'lucide-react'
+import { ClipboardList, Pencil, Stethoscope, UserMinus } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import {
+  DetailCard,
+  DetailRow,
   EntityDetailPage,
   EntityDetailSingleColumn,
   EntityDetailSkeleton,
   EntityErrorCard,
   EntityNotFound,
 } from '@/components/entity'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api } from '@/lib/api/client'
 import type { components } from '@/lib/api/schema'
-import { initials } from '@/lib/utils/initials'
+import { cn } from '@/lib/style/cn'
 import { useSession } from '@/modules/auth/hooks'
 
 import { formatTimestamp } from '../format'
@@ -89,8 +89,9 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
     <EntityDetailPage
       title={user.display_name}
       subtitle={
-        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <RoleBadge roleId={user.role_id} withIcon />
+          <StatusPill active={user.is_active} />
           <span>{user.email}</span>
         </span>
       }
@@ -123,7 +124,6 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
       }
       body={
         <EntityDetailSingleColumn>
-          <UserHero user={user} />
           <DemographicsBlock user={user} />
           {showPractitioner ? <PractitionerBlock practitioner={practitioner} /> : null}
         </EntityDetailSingleColumn>
@@ -132,57 +132,24 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
   )
 }
 
-function UserHero({ user }: { user: UserDetail }): ReactElement {
-  return (
-    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-background to-background p-6">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
-      />
-      <div className="relative flex items-center gap-5">
-        <Avatar size="lg" className="size-16 ring-4 ring-background shadow-sm">
-          <AvatarFallback className="text-lg">{initials(user.display_name)}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="truncate text-xl font-semibold tracking-tight">{user.display_name}</h2>
-            <RoleBadge roleId={user.role_id} withIcon />
-          </div>
-          <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
-            <AtSign className="size-3.5" aria-hidden />
-            <span className="truncate">{user.email}</span>
-          </p>
-        </div>
-        <StatusPill active={user.is_active} />
-      </div>
-    </div>
-  )
-}
-
 function DemographicsBlock({ user }: { user: UserDetail }): ReactElement {
   const { t } = useTranslation('users-admin-ui')
   return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-foreground">
-        {t('detail.card.demographics.title')}
-      </h3>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-        <Field label={t('detail.card.demographics.field.display_name')} value={user.display_name} />
-        <Field label={t('detail.card.demographics.field.email')} value={user.email} />
-        <Field
-          label={t('detail.card.demographics.field.role')}
-          value={<RoleBadge roleId={user.role_id} />}
-        />
-        <Field
-          label={t('detail.card.demographics.field.is_active')}
-          value={<StatusPill active={user.is_active} />}
-        />
-        <Field
-          label={t('detail.card.demographics.field.created_at')}
-          value={formatTimestamp(user.created_at)}
-        />
-      </dl>
-    </section>
+    <DetailCard icon={ClipboardList} title={t('detail.card.demographics.title')}>
+      <DetailRow label={t('detail.card.demographics.field.display_name')}>
+        {user.display_name}
+      </DetailRow>
+      <DetailRow label={t('detail.card.demographics.field.email')}>{user.email}</DetailRow>
+      <DetailRow label={t('detail.card.demographics.field.role')}>
+        <RoleBadge roleId={user.role_id} />
+      </DetailRow>
+      <DetailRow label={t('detail.card.demographics.field.is_active')}>
+        <StatusPill active={user.is_active} />
+      </DetailRow>
+      <DetailRow label={t('detail.card.demographics.field.created_at')}>
+        {formatTimestamp(user.created_at)}
+      </DetailRow>
+    </DetailCard>
   )
 }
 
@@ -194,82 +161,58 @@ function PractitionerBlock({ practitioner }: { practitioner: PractitionerRead })
   })
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('detail.card.practitioner.title')}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <dl className="grid grid-cols-3 gap-x-6 gap-y-3 text-sm">
-          <Field
-            label={t('detail.card.practitioner.field.family_name')}
-            value={practitioner.family_name}
-          />
-          <Field
-            label={t('detail.card.practitioner.field.given_name')}
-            value={practitioner.given_name}
-          />
-          <Field
-            label={t('detail.card.practitioner.field.qualification')}
-            value={practitioner.qualification ?? '—'}
-          />
-        </dl>
-        <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('detail.card.practitioner.roles.title')}
-          </h4>
-          {sorted.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t('detail.card.practitioner.roles.empty')}
-            </p>
-          ) : (
-            <ul className="divide-y rounded-md border">
-              {sorted.map((role) => {
-                const closed = role.period_end != null
-                return (
-                  <li
-                    key={role.id}
-                    className={
-                      closed
-                        ? 'flex items-center justify-between gap-3 px-3 py-2 text-sm text-muted-foreground'
-                        : 'flex items-center justify-between gap-3 px-3 py-2 text-sm'
-                    }
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="font-mono text-xs">{role.code}</span>
-                      <span className="truncate">{role.organisation_id}</span>
-                      {role.is_primary ? (
-                        <Badge variant="soft">
-                          {t('detail.card.practitioner.roles.primary_chip')}
-                        </Badge>
-                      ) : null}
-                      {closed ? (
-                        <Badge variant="outline">
-                          {t('detail.card.practitioner.roles.closed_chip')}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <span className="font-mono text-xs">
-                      {role.period_start.slice(0, 10)} –{' '}
-                      {role.period_end
-                        ? role.period_end.slice(0, 10)
-                        : t('detail.card.practitioner.roles.open')}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function Field({ label, value }: { label: string; value: ReactElement | string }): ReactElement {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="text-sm text-foreground">{value}</dd>
-    </div>
+    <DetailCard icon={Stethoscope} title={t('detail.card.practitioner.title')}>
+      <DetailRow label={t('detail.card.practitioner.field.family_name')}>
+        {practitioner.family_name}
+      </DetailRow>
+      <DetailRow label={t('detail.card.practitioner.field.given_name')}>
+        {practitioner.given_name}
+      </DetailRow>
+      <DetailRow label={t('detail.card.practitioner.field.qualification')}>
+        {practitioner.qualification ?? '—'}
+      </DetailRow>
+      <DetailRow wide label={t('detail.card.practitioner.roles.title')}>
+        {sorted.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t('detail.card.practitioner.roles.empty')}
+          </p>
+        ) : (
+          <ul className="divide-y rounded-md border">
+            {sorted.map((role) => {
+              const closed = role.period_end != null
+              return (
+                <li
+                  key={role.id}
+                  className={cn(
+                    'flex items-center justify-between gap-3 px-3 py-2 text-sm',
+                    closed && 'text-muted-foreground',
+                  )}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="font-medium">{role.code}</span>
+                    {role.is_primary ? (
+                      <Badge variant="soft">
+                        {t('detail.card.practitioner.roles.primary_chip')}
+                      </Badge>
+                    ) : null}
+                    {closed ? (
+                      <Badge variant="outline">
+                        {t('detail.card.practitioner.roles.closed_chip')}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <span className="font-mono text-xs">
+                    {role.period_start.slice(0, 10)} –{' '}
+                    {role.period_end
+                      ? role.period_end.slice(0, 10)
+                      : t('detail.card.practitioner.roles.open')}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </DetailRow>
+    </DetailCard>
   )
 }
