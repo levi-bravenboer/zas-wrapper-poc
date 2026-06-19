@@ -77,15 +77,9 @@ export function RolesListPage(): ReactElement {
   const openEdit = (id: string): void =>
     void navigate({ to: '/admin/roles/$roleId/edit', params: { roleId: id } })
 
+  // Edit is a dedicated inline icon next to the kebab; the kebab keeps delete.
   const rowActions = (role: Role): DataTableRowAction[] => {
     const actions: DataTableRowAction[] = []
-    if (canUpdate) {
-      actions.push({
-        label: t('list.action.edit', { defaultValue: 'Bewerken' }),
-        icon: <Pencil className="size-4" aria-hidden />,
-        onClick: () => openEdit(role.id),
-      })
-    }
     if (canDelete && !role.is_system) {
       actions.push({
         label: t('list.action.delete', { defaultValue: 'Verwijderen' }),
@@ -170,7 +164,23 @@ export function RolesListPage(): ReactElement {
                     </Table.Cell>
                   ))}
                   <Table.Cell data-stop-row-click="" className="text-right">
-                    <RowActions actions={rowActions(role)} ariaLabel={tTable('actions.menu.aria')} />
+                    <div className="flex items-center justify-end">
+                      {canUpdate ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          aria-label={t('list.action.edit', { defaultValue: 'Bewerken' })}
+                          onClick={() => openEdit(role.id)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      ) : null}
+                      <RowActions
+                        actions={rowActions(role)}
+                        ariaLabel={tTable('actions.menu.aria')}
+                      />
+                    </div>
                   </Table.Cell>
                 </Table.Row>
               ))
