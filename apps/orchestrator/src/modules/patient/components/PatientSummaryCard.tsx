@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Route } from 'lucide-react'
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { useActiveEnrollmentGlance, type EnrollmentGlance } from '@/modules/patient-pathway/hooks'
 
 import { usePatient } from '../hooks'
 import type { PatientIdentifierRow } from '../types'
@@ -54,6 +55,7 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
   const { t, i18n } = useTranslation(['patient-profile'])
   const query = usePatient(patientId)
   const patient = query.data
+  const glance = useActiveEnrollmentGlance(patientId)
 
   if (query.isLoading || !patient) {
     return (
@@ -91,18 +93,49 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3">
           <Fact label={t('field.birthDate', { defaultValue: 'Geboortedatum' })}>
             {age !== null
               ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
           </Fact>
           <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
-          <Fact label={t('field.source', { defaultValue: 'Bron' })}>
-            <Badge variant="soft">{patient.source}</Badge>
-          </Fact>
         </div>
+
+        {glance ? <ZorgpadGlance glance={glance} /> : null}
       </CardContent>
     </Card>
+  )
+}
+
+function ZorgpadGlance({ glance }: { glance: EnrollmentGlance }): ReactElement {
+  const { t } = useTranslation(['patient-profile'])
+  const pct = glance.total > 0 ? Math.round((glance.done / glance.total) * 100) : 0
+  return (
+    <div className="flex flex-col gap-1.5 border-t border-border/50 pt-3">
+      <span className="text-[11px] uppercase tracking-wide text-foreground-muted">
+        {t('field.pathway', { defaultValue: 'Zorgpad' })}
+      </span>
+      <div className="flex min-w-0 items-center gap-2">
+        <Route className="size-4 shrink-0 text-primary" aria-hidden />
+        <span className="truncate text-sm font-medium text-foreground">
+          {glance.label ?? t('field.pathwayFallback', { defaultValue: 'Zorgpad' })}
+        </span>
+        {glance.phaseName ? (
+          <span className="truncate text-xs text-foreground-muted">· {glance.phaseName}</span>
+        ) : null}
+        {glance.state === 'paused' ? (
+          <Badge variant="soft" className="shrink-0 text-[10px]">
+            {t('timeline.state.paused', { defaultValue: 'Gepauzeerd' })}
+          </Badge>
+        ) : null}
+        <span className="ml-auto shrink-0 text-xs tabular-nums text-foreground-muted">
+          {glance.done}/{glance.total}
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+        <div className="h-full rounded-full bg-success transition-[width]" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
   )
 }

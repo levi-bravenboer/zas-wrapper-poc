@@ -1,4 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+
+import { getPathwayVersion, listBlockTypes } from '@/modules/pathway/api'
 
 import {
   cancelEnrollment,
@@ -11,7 +14,8 @@ import {
   resumeEnrollment,
 } from './api'
 import { patientPathwayKeys } from './keys'
-import type { BlockExecution, Enrollment, EnrollmentCreate } from './types'
+import { deriveSummary } from './summary'
+import type { BlockExecution, Enrollment, EnrollmentCreate, EnrollmentState } from './types'
 
 const ENROLLMENTS_STALE_MS = 30_000
 
@@ -25,6 +29,55 @@ export function usePatientEnrollments(patientId: string | null) {
     enabled: !!patientId,
     staleTime: ENROLLMENTS_STALE_MS,
   })
+}
+
+export interface EnrollmentGlance {
+  /** Pathway name (version label), null when the version carries none. */
+  label: string | null
+  phaseName: string | null
+  done: number
+  total: number
+  state: EnrollmentState
+}
+
+/** Compact view-model of a patient's active (or paused) pathway for at-a-glance
+ *  surfaces: pathway name + current phase + done/total. Returns null when the
+ *  patient has no active enrollment (or while loading). */
+export function useActiveEnrollmentGlance(patientId: string | null): EnrollmentGlance | null {
+  const [now] = useState(() => Date.now())
+  const enrollments = usePatientEnrollments(patientId)
+  const active =
+    (enrollments.data ?? []).find((e) => e.state === 'active' || e.state === 'paused') ?? null
+
+  const versionQuery = useQuery({
+    queryKey: ['pathway-version', active?.pathway_id, active?.pathway_version_id] as const,
+    queryFn: () => getPathwayVersion(active!.pathway_id, active!.pathway_version_id),
+    enabled: !!active,
+    staleTime: 5 * 60_000,
+  })
+  const blockTypesQuery = useQuery({
+    queryKey: ['block-types'],
+    queryFn: listBlockTypes,
+    enabled: !!active,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+  if (!active || !versionQuery.data || !blockTypesQuery.data) return null
+
+  const summary = deriveSummary({
+    executions: active.executions ?? [],
+    blocks: versionQuery.data.blocks ?? [],
+    phases: versionQuery.data.phases ?? [],
+    blockTypes: blockTypesQuery.data,
+    now,
+  })
+  return {
+    label: versionQuery.data.label ?? null,
+    phaseName: summary.phaseName,
+    done: summary.done,
+    total: summary.total,
+    state: active.state,
+  }
 }
 
 export function useCreateEnrollment(patientId: string) {

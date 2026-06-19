@@ -19,7 +19,9 @@
     "gender": "Geslacht",
     "birthDate": "Geboortedatum",
     "organisation": "Organisatie",
-    "insz": "INSZ"
+    "insz": "INSZ",
+    "pathway": "Zorgpad",
+    "pathwayFallback": "Zorgpad"
   },
   "header": {
     "insz": "INSZ",
