@@ -4,20 +4,15 @@ import { useTranslation } from 'react-i18next'
 
 import {
   type BrandedColumnDef,
+  DataTable,
   DataTablePagination,
   DataTableToolbar,
   defineColumn,
-  EmptyRow,
-  LoadingRows,
-  Table,
 } from '@/components/data-table'
-import { stickyFirst } from '@/components/data-table/styles'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { FilterableListPage } from '@/components/list/FilterableListPage'
 import { PersonAvatar } from '@/components/PersonAvatar'
-import { ErrorState } from '@/components/states'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
-import { cn } from '@/lib/style/cn'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 
 import { PATIENTS_PATH } from '../api'
@@ -38,7 +33,10 @@ export function PatientListPage(): ReactElement {
     filters: state.filters,
   }
 
-  const { data, isLoading, error, refetch } = usePaginatedQuery<PatientRow>(PATIENTS_PATH, query)
+  const { data, isLoading, isFetching, error, refetch } = usePaginatedQuery<PatientRow>(
+    PATIENTS_PATH,
+    query,
+  )
 
   const columns = useMemo<ReadonlyArray<BrandedColumnDef<PatientRow>>>(
     () => [
@@ -79,94 +77,52 @@ export function PatientListPage(): ReactElement {
   )
 
   const rows = data?.items ?? []
-  const totalColumns = columns.length
+  const isEmpty = !isLoading && rows.length === 0
+  const displayError = error ? new Error(tTable('error.retry')) : null
 
-  if (error) {
-    return (
-      <>
-        <PageHeader title={t('list.title')} sub={t('list.sub')} />
-        <div className="px-6 pb-8">
-          <ErrorState
-            title={tTable('error.retry')}
-            onRetry={() => void refetch()}
-            retryLabel={tTable('error.retry')}
-          />
-        </div>
-      </>
-    )
-  }
+  const filters = (
+    <DataTableToolbar<PatientRow>
+      q={state.q}
+      filters={state.filters}
+      filterDefs={[]}
+      onSearchChange={(q) => dispatch.setSearch(q)}
+      onFilterChange={() => {}}
+      onClearFilters={() => dispatch.clearAll()}
+    />
+  )
 
   return (
-    <>
-      <PageHeader title={t('list.title')} sub={t('list.sub')} />
-      <div className="flex flex-col gap-3 px-6 pb-8">
-        <DataTableToolbar<PatientRow>
-          q={state.q}
-          filters={state.filters}
-          filterDefs={[]}
-          onSearchChange={(q) => dispatch.setSearch(q)}
-          onFilterChange={() => {}}
-          onClearFilters={() => dispatch.clearAll()}
-        />
-        <Table.Root ariaLabelledBy="page-title">
-          <Table.Header>
-            <Table.HeaderRow>
-              {columns.map((col, idx) => (
-                <Table.HeaderCell
-                  key={col.id}
-                  className={cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)}
-                >
-                  {typeof col.header === 'function' ? col.header({ columnId: col.id }) : col.header}
-                </Table.HeaderCell>
-              ))}
-            </Table.HeaderRow>
-          </Table.Header>
-          <Table.Body>
-            {isLoading ? (
-              <LoadingRows columnCount={totalColumns} />
-            ) : rows.length === 0 ? (
-              <EmptyRow
-                columnCount={totalColumns}
-                title={tTable('empty.title')}
-                body={tTable('empty.body')}
-              />
-            ) : (
-              rows.map((row) => (
-                <Table.Row
-                  key={row.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() =>
-                    void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key !== 'Enter' && e.key !== ' ') return
-                    e.preventDefault()
-                    void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
-                  }}
-                  className="cursor-pointer"
-                >
-                  {columns.map((col, idx) => (
-                    <Table.Cell
-                      key={col.id}
-                      className={cn(col.className, (col.sticky ?? idx === 0) && stickyFirst)}
-                    >
-                      {col.cell(row)}
-                    </Table.Cell>
-                  ))}
-                </Table.Row>
-              ))
-            )}
-          </Table.Body>
-        </Table.Root>
-        <DataTablePagination
-          page={state.page}
-          pageSize={state.pageSize}
-          totalPages={data?.total_pages ?? 1}
-          onPageChange={(page) => dispatch.setPage(page)}
-          onPageSizeChange={(pageSize) => dispatch.setPageSize(pageSize)}
-        />
-      </div>
-    </>
+    <FilterableListPage<PatientRow>
+      title={t('list.title')}
+      description={t('list.sub')}
+      filters={filters}
+      isEmpty={isEmpty}
+      table={
+        <>
+          <DataTable<PatientRow>
+            data={rows}
+            columns={columns}
+            getRowId={(r) => r.id}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            error={displayError}
+            onRetry={() => void refetch()}
+            selectable={false}
+            state={state}
+            onStateChange={(next) => dispatch.reset(next)}
+            onRowClick={(row) =>
+              void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
+            }
+          />
+          <DataTablePagination
+            page={state.page}
+            pageSize={state.pageSize}
+            totalPages={data?.total_pages ?? 1}
+            onPageChange={(page) => dispatch.setPage(page)}
+            onPageSizeChange={(pageSize) => dispatch.setPageSize(pageSize)}
+          />
+        </>
+      }
+    />
   )
 }
