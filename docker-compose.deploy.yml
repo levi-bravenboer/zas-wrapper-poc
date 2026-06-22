@@ -146,6 +146,9 @@ services:
       POSTGRES_SEEDS: db
       DBNAME: temporal
       VISIBILITY_DBNAME: temporal_visibility
+      # Bind all interfaces (incl loopback) so the 127.0.0.1 healthcheck works
+      # and service-DNS clients (backend/worker) reach it.
+      BIND_ON_IP: 0.0.0.0
     depends_on:
       db:
         condition: service_healthy
