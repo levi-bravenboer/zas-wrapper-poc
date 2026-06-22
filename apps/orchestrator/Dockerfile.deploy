@@ -12,7 +12,9 @@ ARG VITE_API_MODE=live
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL} \
     VITE_API_MODE=${VITE_API_MODE}
 
-RUN corepack enable
+# Install pnpm directly — corepack in node:22.13 can't verify newer pnpm
+# signing keys ("Cannot find matching keyid").
+RUN npm install -g pnpm@9.15.1
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .

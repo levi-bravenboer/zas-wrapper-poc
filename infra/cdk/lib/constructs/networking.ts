@@ -20,7 +20,7 @@ export class Networking extends Construct {
     this.securityGroup = new ec2.SecurityGroup(this, "Sg", {
       vpc: this.vpc,
       allowAllOutbound: true,
-      description: "zas demo — 80/443 only; SSM for shell",
+      description: "zas demo - 80/443 only; SSM for shell",
     });
     const peer = ec2.Peer.ipv4(props.allowedCidr);
     this.securityGroup.addIngressRule(peer, ec2.Port.tcp(80), "http + ACME challenge");
