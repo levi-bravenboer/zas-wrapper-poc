@@ -17,6 +17,7 @@ import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 import { PathwayTimeline } from '@/modules/patient-pathway/components/PathwayTimeline'
 import { ZorgpadTab } from '@/modules/patient-pathway/components/ZorgpadTab'
+import { PatientTasksPanel } from '@/modules/tasks/components/PatientTasksPanel'
 
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
@@ -126,6 +127,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
       body={
         <>
           <PathwayTimeline patientId={patient.id} />
+          <PatientTasksPanel patientId={patient.id} />
           <EntityDetailTabs
             value={activeTab}
             onValueChange={setActiveTab}
