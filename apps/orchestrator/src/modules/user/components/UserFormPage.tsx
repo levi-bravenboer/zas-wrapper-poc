@@ -1,5 +1,5 @@
 import { useStore } from '@tanstack/react-form'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import {
   AtSign,
@@ -14,7 +14,12 @@ import { useEffect, useRef, type ReactElement, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { EntityFormPage } from '@/components/entity'
+import {
+  EntityDetailSkeleton,
+  EntityErrorCard,
+  EntityFormPage,
+  EntityNotFound,
+} from '@/components/entity'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,10 +34,13 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useDirtyGuard, useEntityForm, type UseEntityFormResult } from '@/hooks/entity'
+import { api } from '@/lib/api/client'
 import type { ApiError } from '@/lib/api/errors'
+import type { components } from '@/lib/api/schema'
 import { initials } from '@/lib/utils/initials'
 
 import { createUser, updateUserDemographics } from '../api'
+import { useUserDetail } from '../hooks'
 import { useRoles } from '../roles'
 import type { UserCreatePayload } from '../schemas'
 
@@ -60,25 +68,17 @@ function buildCreatePayload(values: UserFormValues): UserCreatePayload {
   }
 }
 
-const mockEditDefaults: Record<string, UserFormValues> = {
-  'u-care-1': {
-    email: 'sanne.jansen@zas.demo',
-    role_id: '',
-    is_clinician: true,
-    display_name: 'Sanne Jansen',
-    given_name: 'Sanne',
-    family_name: 'Jansen',
-    qualification: 'Huisarts',
-  },
-  'u-admin-self': {
-    email: 'admin@zas.demo',
-    role_id: '',
-    is_clinician: false,
-    display_name: 'Bo de Vries',
-    given_name: '',
-    family_name: '',
-    qualification: '',
-  },
+type PractitionerRead = components['schemas']['PractitionerRead']
+
+async function fetchPractitioner(userId: string): Promise<PractitionerRead | null> {
+  const { data, response } = await api.GET('/practitioners/{user_id}', {
+    params: { path: { user_id: userId } },
+  })
+  if (response.status === 404) return null
+  if (!response.ok || !data) {
+    throw new Error(`Practitioner fetch failed (${response.status})`)
+  }
+  return data
 }
 
 const CREATE_DEFAULTS: UserFormValues = {
@@ -160,10 +160,59 @@ function CreateUserForm(): ReactElement {
 }
 
 function EditUserForm({ userId }: { userId: string }): ReactElement {
+  const userQuery = useUserDetail(userId)
+  const rolesQuery = useRoles()
+  const roleMap = new Map((rolesQuery.data ?? []).map((r) => [r.id, r]))
+  // Clinician = any non-admin role (mirrors UserDetailPage); a practitioner row
+  // only exists for clinical users, so given/family/qualification come from there.
+  const isClinician =
+    !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
+  const practitionerQuery = useQuery({
+    queryKey: ['practitioner', userId],
+    queryFn: () => fetchPractitioner(userId),
+    enabled: isClinician,
+    staleTime: 30_000,
+  })
+
+  if (userQuery.isLoading || rolesQuery.isLoading || (isClinician && practitionerQuery.isLoading)) {
+    return <EntityDetailSkeleton />
+  }
+  if (userQuery.error) {
+    const status = (userQuery.error as { status?: number } | null)?.status
+    if (status === 404) {
+      return <EntityNotFound backTo={{ to: '/admin/users' }} />
+    }
+    return <EntityErrorCard onRetry={() => void userQuery.refetch()} />
+  }
+  if (!userQuery.data) {
+    return <EntityNotFound backTo={{ to: '/admin/users' }} />
+  }
+
+  const user = userQuery.data
+  const practitioner = practitionerQuery.data ?? null
+  const defaults: UserFormValues = {
+    email: user.email,
+    role_id: user.role_id,
+    is_clinician: isClinician,
+    display_name: user.display_name,
+    given_name: practitioner?.given_name ?? '',
+    family_name: practitioner?.family_name ?? '',
+    qualification: practitioner?.qualification ?? '',
+  }
+
+  return <EditUserFormLoaded userId={userId} defaults={defaults} />
+}
+
+function EditUserFormLoaded({
+  userId,
+  defaults,
+}: {
+  userId: string
+  defaults: UserFormValues
+}): ReactElement {
   const { t } = useTranslation('users-admin-ui')
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const defaults = mockEditDefaults[userId] ?? { ...CREATE_DEFAULTS }
 
   const formApi = useEntityForm<UserFormValues>({
     schema: userFormSchema,
