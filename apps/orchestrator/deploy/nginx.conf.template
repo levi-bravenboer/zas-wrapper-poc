@@ -1,0 +1,58 @@
+# Rendered by entrypoint via envsubst. Two hosts on one box:
+#   ${APP_HOST}  → SPA + same-origin /.ory proxy to Kratos public
+#   ${API_HOST}  → backend API
+# Port 80 serves the ACME http-01 challenge and 301s everything else to 443.
+
+server {
+    listen 80;
+    server_name ${APP_HOST} ${API_HOST};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${APP_HOST};
+
+    ssl_certificate     /etc/letsencrypt/live/${APP_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_HOST}/privkey.pem;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Same-origin Ory: SPA self-service flows hit /.ory → Kratos public.
+    location /.ory/ {
+        proxy_pass ${KRATOS_PUBLIC_UPSTREAM}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # SPA history fallback.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${API_HOST};
+
+    ssl_certificate     /etc/letsencrypt/live/${APP_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_HOST}/privkey.pem;
+
+    location / {
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # SSE/streaming endpoints (sse-starlette) need buffering off.
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+    }
+}
