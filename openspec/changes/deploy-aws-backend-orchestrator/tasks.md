@@ -10,7 +10,7 @@
 - [x] 1.7 URLs — internal stay docker service names (`BACKEND_KRATOS_ADMIN_URL=http://kratos:4434`, `_PUBLIC_URL=http://kratos:4433`, `BACKEND_KETO_READ_URL=http://keto:4466`, `_WRITE_URL=http://keto:4467`, `BACKEND_AUTHZ_KETO_ENABLED=true`); browser-facing → domain (Kratos `serve.public.base_url=https://app.../.ory`, SPA API base `https://api...`, backend CORS `https://app...`)
 - [x] 1.8 `.env.deploy.example` documenting every required var (Postgres/Kratos/Keto/MinIO/Temporal creds + hostnames + `ECR_REGISTRY` + `IMAGE_TAG`)
 - [x] 1.9 Ensure `apps/orchestrator/.env` (real `VITE_*`) exists for the build; document in `.env.deploy.example`
-- [ ] 1.10 Verify the deploy compose boots locally against locally-built images
+- [x] 1.10 Verify the deploy compose boots locally against locally-built images
 
 ## 2. CDK app (`infra/cdk/`)
 - [x] 2.1 Scaffold CDK TS app (`cdk init app --language typescript`), pin to repo Node 22
@@ -35,15 +35,15 @@
 - [x] 3.7 `scripts/{start,stop}.ts` — EC2 start/stop (pause billing, keep data+EIP)
 - [x] 3.8 `scripts/url.ts` — print app/api URLs from stack outputs
 - [x] 3.9 Wrap every command in try/catch with typed failure message + nonzero exit
-- [ ] 3.10 `cdk bootstrap` (account/region eu-west-1) — one-time prerequisite
+- [x] 3.10 `cdk bootstrap` (account/region eu-west-1) — one-time prerequisite
 - [x] 3.11 DB reachability (no task): keep Postgres published `127.0.0.1:5432` on box so ad-hoc SSM port-forward / `docker exec psql` works when needed
 
 ## 4. Deploy + validate
-- [ ] 4.1 `moon run deploy:up`; confirm A-records resolve + all containers healthy (`moon run deploy:status`)
-- [ ] 4.2 Confirm certbot issued the SAN cert (valid HTTPS on both hosts, no warning)
+- [x] 4.1 `moon run deploy:up`; confirm A-records resolve + all containers healthy (`moon run deploy:status`)
+- [x] 4.2 Confirm certbot issued the SAN cert (valid HTTPS on both hosts, no warning)
 - [ ] 4.3 Smoke test: SPA loads at `app.`, **Kratos `--dev` login works over HTTPS** (watch cookie/CSRF), authz check via Keto, API call to `api.`, a Temporal-backed action. If login breaks → fallback proper kratos config (drop `--dev`)
 - [ ] 4.4 Confirm Temporal persists: trigger a workflow, restart temporal container, state survives (Postgres-backed)
-- [ ] 4.5 Confirm Postgres/Temporal/Keto/MinIO ports are NOT internet-reachable
+- [x] 4.5 Confirm Postgres/Temporal/Keto/MinIO ports are NOT internet-reachable
 - [ ] 4.6 Verify stop/start preserves data + DNS (EIP keeps A-records valid)
 
 ## 5. Seeding (minimal demo profile)
@@ -53,7 +53,7 @@
 - [x] 5.4 Add to `.env.deploy.example`: `BACKEND_BOOTSTRAP_ADMIN_EMAIL` (`levi.bravenboer@reaktor.com`) + `_NAME` + `_PASSWORD`, `SEED_PROFILE=demo`, `BACKEND_AUTHZ_KETO_ENABLED=true`, internal Kratos/Keto URLs (secrets via S3)
 - [x] 5.5 Entrypoint selects demo profile (`SEED_PROFILE=demo`) instead of `seed_all`; keeps `alembic upgrade head` → seed → backend order
 - [x] 5.6 Compose boot ordering: backend `depends_on` db + kratos + keto **healthy** (add healthchecks) so seed's Kratos-import + Keto-reconcile don't no-op; idempotent on restart
-- [ ] 5.7 Propagation verify: Postgres rows present, Kratos identity exists for admin (login works), Keto tuples reconciled + relay loop running (`BACKEND_AUTHZ_KETO_ENABLED=true`)
+- [x] 5.7 Propagation verify: Postgres rows present, Kratos identity exists for admin (login works), Keto tuples reconciled + relay loop running (`BACKEND_AUTHZ_KETO_ENABLED=true`)
 - [ ] 5.8 Smoke: log in as `levi.bravenboer@reaktor.com`, confirm admin sees everything + bladder pathway present, no demo patients/practitioners
 
 ## 7. Lifecycle + docs
