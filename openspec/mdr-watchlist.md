@@ -38,6 +38,12 @@ Stop. Add an entry. Propose a non-MDR alternative. Get a decision before proceed
 - **Non-MDR alternative:** already chosen — `qualification` is free text (not a registry credential we validate); `code` is a closed administrative enum; clinical reasoning stays out of this table. Widening to free `CodeableConcept` queued as BL-062.
 - **Decision:** chosen — landed as-is. Re-verify if `code` ever drives clinical authority (e.g. prescribing rights) or if `qualification` becomes a validated credential.
 
+### 2026-06-22 — Luscii alert-flag passthrough in Metingen replica (source: luscii-measurements-view)
+- **Trigger:** colouring measurement points/rows by Luscii's fired alert flag (red/orange) in the replica view — revisits the "no alerts" line of the 2026-06-10 decision.
+- **Why wanted:** the replica must visually match Luscii's own Metingen screen, where measurements that crossed a threshold show a red/orange status dot. Caregivers expect the same cue.
+- **Non-MDR alternative:** passthrough of Luscii's OWN fired alert flag, verbatim, joined by `measurementId` from `/v1/alerts`. We do NOT compute the flag, do NOT fetch or assert threshold ranges (the API exposes none), and do NOT shade threshold bands. Alerting logic stays entirely in Luscii; we only echo the flag Luscii already raised — same shape as echoing Luscii's labels/units. Threshold bands are explicitly dropped (no data + would be us asserting clinical ranges).
+- **Decision:** escalated — engineering (Levi) requested; ships behind default-off frontend flag `VITE_LUSCII_METINGEN_REPLICA`, so nothing reaches caregivers until the PO confirms this passthrough is acceptable and the flag is flipped. Re-confirm with PO before enabling.
+
 ### 2026-06-10 — Luscii measurement display in patient view (source: luscii-patient-enrichment)
 - **Trigger:** rendering Luscii measurement data (values, planned actions, programme/protocol) inside the Orchestrator patient view — adjacent to "interpreting Luscii measurements ourselves".
 - **Why wanted:** caregivers need to see a linked patient's Luscii monitoring data without switching tools (BL-008, promoted to PoC).
