@@ -1,0 +1,33 @@
+{
+  "name": "@zas/deploy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "cdk": "cdk",
+    "deploy:up": "tsx scripts/deploy.ts",
+    "deploy:images": "tsx scripts/images.ts",
+    "deploy:down": "tsx scripts/destroy.ts",
+    "deploy:status": "tsx scripts/status.ts",
+    "deploy:logs": "tsx scripts/logs.ts",
+    "deploy:ssh": "tsx scripts/ssh.ts",
+    "deploy:start": "tsx scripts/start.ts",
+    "deploy:stop": "tsx scripts/stop.ts",
+    "deploy:url": "tsx scripts/url.ts",
+    "deploy:preflight": "tsx scripts/lib/preflight.ts"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "aws-cdk": "^2.170.0",
+    "execa": "^9.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

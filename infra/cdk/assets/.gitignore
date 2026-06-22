@@ -1,0 +1,5 @@
+# Populated by deploy.ts at deploy time (compose + ory/nginx configs + the
+# staged secrets.env). Never commit — secrets.env contains real credentials.
+*
+!.gitignore
+!.gitkeep
