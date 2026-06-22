@@ -5,5 +5,5 @@ import { RolesListPage } from '@/modules/user/components/RolesListPage'
 
 export const Route = createFileRoute('/_auth/admin/roles/')({
   component: RolesListPage,
-  staticData: { breadcrumb: 'Rollen' },
+  staticData: { breadcrumb: 'header.crumb.roles' },
 })

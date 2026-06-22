@@ -13,5 +13,24 @@
   },
   "masterDetail": {
     "openMaster": "Lijst tonen"
+  },
+  "pickers": {
+    "organisation": {
+      "placeholder": "Selecteer organisatie",
+      "search": "Zoek organisatie",
+      "empty": "Geen organisaties gevonden"
+    },
+    "practitioner": {
+      "placeholder": "Selecteer zorgverlener",
+      "search": "Zoek zorgverlener",
+      "empty": "Geen zorgverleners gevonden"
+    },
+    "role": {
+      "placeholder": "Selecteer rol",
+      "search": "Zoek rol",
+      "empty": "Geen rollen gevonden",
+      "primarySuffix": "(Primair)"
+    },
+    "loading": "Laden…"
   }
 }
