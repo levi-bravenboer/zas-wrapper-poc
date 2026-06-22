@@ -53,10 +53,10 @@ export function RouteBreadcrumbs({ className }: RouteBreadcrumbsProps): ReactEle
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 {crumb.isLast ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  <BreadcrumbPage>{t(crumb.label)}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link to={crumb.to}>{crumb.label}</Link>
+                    <Link to={crumb.to}>{t(crumb.label)}</Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>

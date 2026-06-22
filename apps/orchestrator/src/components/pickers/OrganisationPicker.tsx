@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useOrganisations } from '@/modules/organisation/hooks'
 import type { OrganisationRead } from '@/modules/organisation/schemas'
@@ -68,15 +69,16 @@ export function OrganisationPicker({
   value,
   onChange,
   disabledIds,
-  placeholder = 'Selecteer organisatie',
-  searchPlaceholder = 'Zoek organisatie',
-  emptyLabel = 'Geen organisaties gevonden',
-  loadingLabel = 'Laden…',
+  placeholder,
+  searchPlaceholder,
+  emptyLabel,
+  loadingLabel,
   disabled,
   ariaLabel,
   rootId,
   inline,
 }: OrganisationPickerProps): ReactElement {
+  const { t } = useTranslation('common')
   const [search, setSearch] = useState('')
   const { data, isLoading } = useOrganisations()
 
@@ -112,10 +114,10 @@ export function OrganisationPicker({
       search={search}
       onSearchChange={setSearch}
       onSelect={(o) => onChange(o.id, o)}
-      placeholder={placeholder}
-      searchPlaceholder={searchPlaceholder}
-      emptyLabel={emptyLabel}
-      loadingLabel={loadingLabel}
+      placeholder={placeholder ?? t('pickers.organisation.placeholder')}
+      searchPlaceholder={searchPlaceholder ?? t('pickers.organisation.search')}
+      emptyLabel={emptyLabel ?? t('pickers.organisation.empty')}
+      loadingLabel={loadingLabel ?? t('pickers.loading')}
       isLoading={isLoading}
       disabled={disabled}
       disabledIds={disabledIds}

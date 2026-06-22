@@ -14,13 +14,13 @@
     "timingHeader": "Timing"
   },
   "overview": {
-    "title": "Zorgpaden",
-    "sub": "Beheer en ontwerp van klinische zorgpaden.",
-    "createButton": "Nieuw zorgpad",
+    "title": "Zorgtrajecten",
+    "sub": "Beheer en ontwerp van klinische zorgtrajecten.",
+    "createButton": "Nieuw zorgtraject",
     "empty": {
-      "title": "Nog geen zorgpaden",
-      "body": "Maak je eerste zorgpad aan om te beginnen.",
-      "action": "Nieuw zorgpad"
+      "title": "Nog geen zorgtrajecten",
+      "body": "Maak je eerste zorgtraject aan om te beginnen.",
+      "action": "Nieuw zorgtraject"
     },
     "table": {
       "name": "Naam",
@@ -49,11 +49,11 @@
         }
       }
     },
-    "loadError": "Kon zorgpaden niet laden."
+    "loadError": "Kon zorgtrajecten niet laden."
   },
   "create": {
-    "title": "Nieuw zorgpad",
-    "sub": "Geef je zorgpad een naam en omschrijf de klinische en patiëntdoelen.",
+    "title": "Nieuw zorgtraject",
+    "sub": "Geef je zorgtraject een naam en omschrijf de klinische en patiëntdoelen.",
     "nameLabel": "Naam",
     "namePlaceholder": "Bijv. Rugrevalidatie",
     "clinicalGoalLabel": "Klinisch doel",
@@ -64,23 +64,23 @@
     "cancel": "Annuleren",
     "error": "Aanmaken mislukt."
   },
-  "crumbRoot": "ZORGPADEN",
+  "crumbRoot": "ZORGTRAJECTEN",
   "stubTitle": "Builder komt in fase 3",
-  "stubBody": "Het zorgpad is aangemaakt. De canvas-editor volgt in een latere fase.",
+  "stubBody": "Het zorgtraject is aangemaakt. De canvas-editor volgt in een latere fase.",
   "clinicalGoal": "Klinisch doel",
   "patientGoal": "Patiëntdoel",
   "blocks": "Blokken",
   "phases": "Fasen",
   "editedAt": "bewerkt {{time}}",
-  "loading": "Zorgpad laden…",
+  "loading": "Zorgtraject laden…",
   "notFound": {
-    "title": "Zorgpad niet gevonden",
-    "body": "Dit zorgpad bestaat niet of is verwijderd.",
+    "title": "Zorgtraject niet gevonden",
+    "body": "Dit zorgtraject bestaat niet of is verwijderd.",
     "back": "Terug naar overzicht"
   },
   "error": {
-    "title": "Kan zorgpad niet laden",
-    "body": "Er ging iets mis bij het laden van dit zorgpad.",
+    "title": "Kan zorgtraject niet laden",
+    "body": "Er ging iets mis bij het laden van dit zorgtraject.",
     "retry": "Opnieuw proberen",
     "back": "Terug naar overzicht"
   },
@@ -90,7 +90,7 @@
     "redo": "Opnieuw",
     "history": "Geschiedenis",
     "publish": "Versie publiceren",
-    "delete": "Zorgpad verwijderen"
+    "delete": "Zorgtraject verwijderen"
   },
   "status": {
     "clean": "Automatisch opgeslagen",
@@ -238,9 +238,9 @@
     },
     "pathwayLink": {
       "headerLabel": "Subpath",
-      "target": "Doel-zorgpad",
-      "targetPlaceholder": "Kies een zorgpad",
-      "noPublishedPathways": "Geen gepubliceerde zorgpaden beschikbaar.",
+      "target": "Doel-zorgtraject",
+      "targetPlaceholder": "Kies een zorgtraject",
+      "noPublishedPathways": "Geen gepubliceerde zorgtrajecten beschikbaar.",
       "mode": "Modus",
       "modePlaceholder": "Kies modus",
       "modeOption": {
@@ -249,7 +249,7 @@
       },
       "emptyAria": "Genest subpath, nog geen doel",
       "emptyTitle": "Subpath · geen doel",
-      "emptyHint": "Kies een doel-zorgpad in het rechterpaneel.",
+      "emptyHint": "Kies een doel-zorgtraject in het rechterpaneel.",
       "summaryLoading": "Samenvatting laden…",
       "summaryError": "Kon samenvatting niet laden.",
       "summary": {
@@ -257,9 +257,9 @@
         "blocks": "Blokken",
         "publishedId": "Laatste publicatie"
       },
-      "openChild": "Open sub-zorgpad",
+      "openChild": "Open sub-zorgtraject",
       "contextMapping": "Context-koppeling",
-      "contextMappingHint": "Sleutel-waarde paren die meegegeven worden aan het sub-zorgpad.",
+      "contextMappingHint": "Sleutel-waarde paren die meegegeven worden aan het sub-zorgtraject.",
       "contextMappingEmpty": "Nog geen koppelingen.",
       "contextKeyPlaceholder": "Sleutel",
       "contextValuePlaceholder": "Waarde",
@@ -352,7 +352,7 @@
     "task": "Actie voor het zorgteam.",
     "message": "Bericht naar de patiënt of zorgverlener (e-mail, sms, push, in-app).",
     "form": "Vragenlijst voor de patiënt.",
-    "pathway_link": "Koppel naar een ander zorgpad."
+    "pathway_link": "Koppel naar een ander zorgtraject."
   },
   "edgeTiming": {
     "completion": { "label": "Bij voltooiing" },
@@ -377,11 +377,11 @@
     "external": "Extern"
   },
   "canvas": {
-    "label": "Zorgpad-canvas",
+    "label": "Zorgtraject-canvas",
     "emptyTitle": "Begin met een blok",
     "emptyBody": "Klik op een blok in het palet hieronder om er één toe te voegen.",
     "emptyNoScaffoldTitle": "Voeg een fase toe",
-    "emptyNoScaffold": "Klik op + Fase bovenin om je zorgpad op te bouwen.",
+    "emptyNoScaffold": "Klik op + Fase bovenin om je zorgtraject op te bouwen.",
     "needPhaseFirst": "Voeg eerst een fase toe voordat je een blok plaatst.",
     "invalidLaneDrop": "Dit blok past niet in deze rij.",
     "handle": {
@@ -400,11 +400,11 @@
   },
   "delete": {
     "success": "Blok verwijderd.",
-    "pathwaySuccess": "Zorgpad \"{{name}}\" verwijderd.",
-    "confirmTitle": "Zorgpad \"{{name}}\" verwijderen?",
+    "pathwaySuccess": "Zorgtraject \"{{name}}\" verwijderd.",
+    "confirmTitle": "Zorgtraject \"{{name}}\" verwijderen?",
     "confirmDescription": "Deze actie is niet ongedaan te maken.",
-    "blockedTitle": "Zorgpad kan niet verwijderd worden",
-    "blockedDescription": "\"{{name}}\" wordt gebruikt als sub-zorgpad door andere zorgpaden. Verwijder eerst die koppelingen.",
+    "blockedTitle": "Zorgtraject kan niet verwijderd worden",
+    "blockedDescription": "\"{{name}}\" wordt gebruikt als sub-zorgtraject door andere zorgtrajecten. Verwijder eerst die koppelingen.",
     "checking": "Referenties controleren…",
     "confirm": "Verwijder",
     "cancel": "Annuleren",
@@ -485,13 +485,13 @@
   },
   "duplicate": {
     "action": "Dupliceren",
-    "title": "Zorgpad dupliceren",
+    "title": "Zorgtraject dupliceren",
     "sub": "Kies een versie om te dupliceren als nieuw concept.",
     "versionLabel": "Versie",
     "versionPlaceholder": "Kies een versie",
     "submit": "Dupliceren",
     "cancel": "Annuleren",
-    "success": "Zorgpad gedupliceerd.",
+    "success": "Zorgtraject gedupliceerd.",
     "error": "Dupliceren mislukt."
   },
   "forkOnEdit": {

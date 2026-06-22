@@ -6,7 +6,7 @@ import { RoleDetailPage } from '@/modules/user/components/RoleDetailPage'
 
 export const Route = createFileRoute('/_auth/admin/roles/$roleId/')({
   component: AdminRoleDetailRoute,
-  staticData: { breadcrumb: 'Rol' },
+  staticData: { breadcrumb: 'header.crumb.role' },
 })
 
 function AdminRoleDetailRoute(): ReactElement {

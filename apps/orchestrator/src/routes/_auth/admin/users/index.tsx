@@ -5,5 +5,5 @@ import { UserListPage } from '@/modules/user/components/UserListPage'
 
 export const Route = createFileRoute('/_auth/admin/users/')({
   component: UserListPage,
-  staticData: { breadcrumb: 'Gebruikers' },
+  staticData: { breadcrumb: 'header.crumb.users' },
 })

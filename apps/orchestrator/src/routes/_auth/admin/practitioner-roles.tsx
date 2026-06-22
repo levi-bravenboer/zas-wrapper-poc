@@ -20,5 +20,5 @@ export const Route = createFileRoute('/_auth/admin/practitioner-roles')({
     return out
   },
   component: PractitionerRoleListPage,
-  staticData: { breadcrumb: 'Affiliaties' },
+  staticData: { breadcrumb: 'header.crumb.affiliations' },
 })
