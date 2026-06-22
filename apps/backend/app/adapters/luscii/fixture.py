@@ -26,6 +26,7 @@ from random import Random
 from typing import Final
 
 from app.adapters.luscii.api_models import (
+    LusciiAlert,
     LusciiInstrumentItemLocalisation,
     LusciiInstrumentLocalisation,
     LusciiItemResponseLocalisation,
@@ -300,6 +301,11 @@ class LusciiFixtureClient:
             for snap in _snapshots().values()
             for m in _within_window(snap.measurements, start_date, end_date)
         ]
+
+    async def get_alerts(self, start_date: date, end_date: date) -> list[LusciiAlert]:
+        # Fixture data carries no fired alerts; measurements render unflagged.
+        del start_date, end_date
+        return []
 
     async def get_instrument_localisations(
         self, *, expected_total: int | None = None

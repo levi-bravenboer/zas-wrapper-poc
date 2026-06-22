@@ -253,5 +253,24 @@
       "show_more": "meer tonen",
       "show_less": "minder tonen"
     }
+  },
+  "replica": {
+    "filter": {
+      "custom": "Aangepast",
+      "custom_hint": "Aangepaste periode volgt later",
+      "range_label": "Periode",
+      "add": "Meting toevoegen",
+      "view": "Weergave",
+      "soon": "Binnenkort beschikbaar"
+    },
+    "stats": {
+      "average": "Gemiddeld",
+      "minimum": "Minimum",
+      "maximum": "Maximum",
+      "latest": "Nieuwste"
+    },
+    "card": {
+      "menu": "Meer opties"
+    }
   }
 }

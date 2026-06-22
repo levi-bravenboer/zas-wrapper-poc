@@ -380,3 +380,29 @@ def test_series_id_matches_compute_series_id_for_its_pair() -> None:
     )
     series = project_series([measurement])
     assert series[0].series_id == compute_series_id("inst-w", "item-w")
+
+
+# ── alert flag passthrough ────────────────────────────────────────────────
+
+
+def test_project_series_threads_alert_flag_onto_points() -> None:
+    """Luscii's own alert flag rides verbatim onto every point of the
+    measurement it belongs to (passthrough, not computed)."""
+    view = LusciiMeasurementView(
+        measurement_id="m1",
+        instrument_id="inst-bp",
+        instrument_name="Bloeddrukmeting",
+        created_at=_ts(),
+        processed_at=_ts(),
+        values=[_value()],
+        alert_flag="red",
+    )
+    series = project_series([view])
+    assert series
+    assert all(point.alert_flag == "red" for point in series[0].points)
+
+
+def test_project_series_unflagged_points_carry_no_flag() -> None:
+    series = project_series([_measurement(observed_at=_ts(), values=[_value()])])
+    assert series
+    assert all(point.alert_flag is None for point in series[0].points)

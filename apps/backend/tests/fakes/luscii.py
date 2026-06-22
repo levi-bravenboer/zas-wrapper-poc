@@ -18,6 +18,7 @@ from app.adapters.luscii import (
     LusciiPatientNotFoundError,
     LusciiPlannedAction,
 )
+from app.adapters.luscii.api_models import LusciiAlert
 
 
 class FakeLusciiClient:
@@ -28,7 +29,11 @@ class FakeLusciiClient:
         self.instrument_localisations: list[LusciiInstrumentLocalisation] = []
         self.instrument_item_localisations: list[LusciiInstrumentItemLocalisation] = []
         self.item_response_localisations: list[LusciiItemResponseLocalisation] = []
+        self.alerts: list[LusciiAlert] = []
         self.fail = False
+        # Fail only the alerts call — to exercise the non-fatal alert path
+        # while the rest of the payload still resolves.
+        self.alerts_fail = False
         self.calls: list[str] = []
 
     def _gate(self, name: str) -> None:
@@ -55,6 +60,12 @@ class FakeLusciiClient:
     async def get_measurements(self, start_date: date, end_date: date) -> list[LusciiMeasurement]:
         self._gate("get_measurements")
         return list(self.measurements)
+
+    async def get_alerts(self, start_date: date, end_date: date) -> list[LusciiAlert]:
+        self.calls.append("get_alerts")
+        if self.fail or self.alerts_fail:
+            raise LusciiApiError("fake Luscii failure in get_alerts")
+        return list(self.alerts)
 
     async def get_instrument_localisations(
         self, *, expected_total: int | None = None

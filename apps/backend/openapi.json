@@ -9495,6 +9495,17 @@
               }
             ],
             "title": "Program Id"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           }
         },
         "type": "object",
@@ -9534,6 +9545,17 @@
               }
             ],
             "title": "Program Id"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           },
           "program_name": {
             "anyOf": [
@@ -9583,6 +9605,17 @@
               }
             ],
             "title": "Program Id"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           }
         },
         "type": "object",
@@ -10131,6 +10164,17 @@
             },
             "type": "array",
             "title": "Values"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           }
         },
         "type": "object",
@@ -10163,6 +10207,17 @@
               }
             ],
             "title": "Program Id"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           }
         },
         "type": "object",
@@ -10200,6 +10255,17 @@
               }
             ],
             "title": "Program Id"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           }
         },
         "type": "object",
@@ -10665,6 +10731,17 @@
               }
             ],
             "title": "Program Id"
+          },
+          "alert_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Flag"
           }
         },
         "type": "object",

@@ -12,6 +12,7 @@ from datetime import date
 from typing import Protocol
 
 from app.adapters.luscii.api_models import (
+    LusciiAlert,
     LusciiInstrumentItemLocalisation,
     LusciiInstrumentLocalisation,
     LusciiItemResponseLocalisation,
@@ -40,6 +41,11 @@ class LusciiClient(Protocol):
 
     async def get_measurements(self, start_date: date, end_date: date) -> list[LusciiMeasurement]:
         """`GET /v1/measurements` — org-wide; the caller filters by patient."""
+        ...
+
+    async def get_alerts(self, start_date: date, end_date: date) -> list[LusciiAlert]:
+        """`GET /v1/alerts` — org-wide; the caller joins to a patient via
+        measurementId. Failures are non-fatal at the service layer."""
         ...
 
     async def get_instrument_localisations(

@@ -15,6 +15,7 @@ import httpx
 from pydantic import BaseModel, SecretStr, ValidationError
 
 from app.adapters.luscii.api_models import (
+    LusciiAlert,
     LusciiInstrumentItemLocalisation,
     LusciiInstrumentLocalisation,
     LusciiItemResponseLocalisation,
@@ -93,6 +94,17 @@ class LusciiHttpClient:
         return await self._paginate(
             "/v1/measurements",
             LusciiMeasurement,
+            params={
+                "startDate": start_date.isoformat(),
+                "endDate": end_date.isoformat(),
+            },
+        )
+
+    async def get_alerts(self, start_date: date, end_date: date) -> list[LusciiAlert]:
+        """Org-wide fired alerts; caller joins to a patient via measurementId."""
+        return await self._paginate(
+            "/v1/alerts",
+            LusciiAlert,
             params={
                 "startDate": start_date.isoformat(),
                 "endDate": end_date.isoformat(),
