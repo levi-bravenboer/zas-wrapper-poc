@@ -5,5 +5,5 @@ import { OrganisationsAdminPage } from '@/modules/organisation/components/Organi
 
 export const Route = createFileRoute('/_auth/admin/organisations')({
   component: OrganisationsAdminPage,
-  staticData: { breadcrumb: 'Organisaties' },
+  staticData: { breadcrumb: 'header.crumb.organisations' },
 })

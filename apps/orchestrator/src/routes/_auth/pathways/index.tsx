@@ -23,7 +23,7 @@ import type { PathwaySummary } from '@/modules/pathway/types'
 
 export const Route = createFileRoute('/_auth/pathways/')({
   component: PathwayOverviewPage,
-  staticData: { breadcrumb: 'Zorgpaden' },
+  staticData: { breadcrumb: 'header.crumb.pathways' },
 })
 
 type PathwayStatus = 'concept' | 'conceptOnPublished' | 'published' | 'draft'

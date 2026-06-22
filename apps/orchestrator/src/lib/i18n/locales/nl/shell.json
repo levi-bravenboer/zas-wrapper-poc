@@ -22,7 +22,15 @@
   },
   "header": {
     "crumb": {
-      "home": "Home"
+      "home": "Home",
+      "pathways": "Zorgtrajecten",
+      "builder": "Builder",
+      "organisations": "Organisaties",
+      "affiliations": "Affiliaties",
+      "auditLog": "Auditlog",
+      "roles": "Rollen",
+      "role": "Rol",
+      "users": "Gebruikers"
     }
   }
 }

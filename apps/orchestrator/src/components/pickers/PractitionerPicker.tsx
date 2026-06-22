@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { USERS_LIST_PATH } from '@/modules/user/keys'
@@ -36,16 +37,17 @@ export function PractitionerPicker({
   value,
   onChange,
   disabledIds,
-  placeholder = 'Selecteer zorgverlener',
-  searchPlaceholder = 'Zoek zorgverlener',
-  emptyLabel = 'Geen zorgverleners gevonden',
-  loadingLabel = 'Laden…',
+  placeholder,
+  searchPlaceholder,
+  emptyLabel,
+  loadingLabel,
   disabled,
   pageSize = DEFAULT_PAGE_SIZE,
   ariaLabel,
   hasPractitioner = true,
   inline,
 }: PractitionerPickerProps): ReactElement {
+  const { t } = useTranslation('common')
   const [search, setSearch] = useState('')
   const query = useMemo(
     () => ({
@@ -77,10 +79,10 @@ export function PractitionerPicker({
       search={search}
       onSearchChange={setSearch}
       onSelect={(u) => onChange(u.id, u)}
-      placeholder={placeholder}
-      searchPlaceholder={searchPlaceholder}
-      emptyLabel={emptyLabel}
-      loadingLabel={loadingLabel}
+      placeholder={placeholder ?? t('pickers.practitioner.placeholder')}
+      searchPlaceholder={searchPlaceholder ?? t('pickers.practitioner.search')}
+      emptyLabel={emptyLabel ?? t('pickers.practitioner.empty')}
+      loadingLabel={loadingLabel ?? t('pickers.loading')}
       isLoading={isLoading}
       disabled={disabled}
       disabledIds={disabledIds}
