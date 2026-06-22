@@ -75,7 +75,7 @@ def project_series(
         for value in measurement.values:
             if not value.instrument_id or not value.item_id:
                 continue
-            point = _build_point(value, observed_at, program_id)
+            point = _build_point(value, observed_at, program_id, measurement.alert_flag)
             if point is None:
                 continue
             key = (value.instrument_id, value.item_id)
@@ -126,8 +126,12 @@ def _build_point(
     value: LusciiMeasurementValueView,
     observed_at: datetime,
     program_id: str | None,
+    alert_flag: str | None,
 ) -> LusciiMeasurementPoint | None:
     """Build the archetype-specific point or return `None` to drop the value.
+
+    `alert_flag` is Luscii's own fired flag for the source measurement, passed
+    through verbatim onto the point (never computed here).
 
     Drop reasons (point excluded from the series, series survives):
     - numeric/ordinal: `value` does not parse as a finite float;
@@ -149,7 +153,9 @@ def _build_point(
                 },
             )
             return None
-        return LusciiNumericPoint(observed_at=observed_at, value=parsed, program_id=program_id)
+        return LusciiNumericPoint(
+            observed_at=observed_at, value=parsed, program_id=program_id, alert_flag=alert_flag
+        )
     if archetype == "ordinal":
         parsed = parse_numeric(value.value)
         if parsed is None:
@@ -161,21 +167,28 @@ def _build_point(
                 },
             )
             return None
-        return LusciiOrdinalPoint(observed_at=observed_at, value=parsed, program_id=program_id)
+        return LusciiOrdinalPoint(
+            observed_at=observed_at, value=parsed, program_id=program_id, alert_flag=alert_flag
+        )
     if archetype == "categorical":
         return LusciiCategoricalPoint(
             observed_at=observed_at,
             responses=list(value.response_texts),
             program_id=program_id,
+            alert_flag=alert_flag,
         )
     if archetype == "free_text":
         text = (value.value or "").strip()
         if not text:
             return None
-        return LusciiFreeTextPoint(observed_at=observed_at, text=text, program_id=program_id)
+        return LusciiFreeTextPoint(
+            observed_at=observed_at, text=text, program_id=program_id, alert_flag=alert_flag
+        )
     # archetype == "unknown" — keep the raw value so the FE can still render
     # a dated row in the UnknownLog renderer.
-    return LusciiUnknownPoint(observed_at=observed_at, raw=value.value, program_id=program_id)
+    return LusciiUnknownPoint(
+        observed_at=observed_at, raw=value.value, program_id=program_id, alert_flag=alert_flag
+    )
 
 
 @dataclass
