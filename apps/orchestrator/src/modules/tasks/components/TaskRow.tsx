@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { RailRow } from '@/components/rail'
 import { cn } from '@/lib/style/cn'
+import { usePatient } from '@/modules/patient/hooks'
 
 import { dueLabel } from '../dueLabel'
 import type { Task } from '../types'
@@ -25,6 +26,10 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
   const done = item.status === 'done'
   const StatusIcon = done ? CheckCircle2 : Circle
 
+  const { data: patient } = usePatient(item.patient_id ?? null)
+  const patientName = patient ? `${patient.family_name}, ${patient.given_name}` : null
+  const dueText = item.due_at ? dueLabel(t, item.due_at) : t('tasks:due.none')
+
   return (
     <RailRow
       selected={selected ?? false}
@@ -39,7 +44,19 @@ export function TaskRow({ item, selected }: TaskRowProps): ReactElement {
           {item.title}
         </span>
       }
-      secondary={item.due_at ? dueLabel(t, item.due_at) : t('tasks:due.none')}
+      secondary={
+        patientName ? (
+          <span className="flex items-center gap-1.5">
+            <span className="text-foreground">{patientName}</span>
+            <span aria-hidden className="text-foreground-muted/50">
+              ·
+            </span>
+            <span className="text-foreground-muted">{dueText}</span>
+          </span>
+        ) : (
+          dueText
+        )
+      }
       trailing={
         <span
           className={cn(
