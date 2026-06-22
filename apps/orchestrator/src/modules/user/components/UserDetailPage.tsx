@@ -16,32 +16,21 @@ import {
 } from '@/components/entity'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { api } from '@/lib/api/client'
 import type { components } from '@/lib/api/schema'
 import { cn } from '@/lib/style/cn'
 import { useSession } from '@/modules/auth/hooks'
 
+import { fetchPractitioner, type PractitionerRead } from '../api'
 import { formatTimestamp } from '../format'
 import { useSetUserActive, useUserDetail } from '../hooks'
+import { practitionerKeys } from '../keys'
 import { useRoleMap } from '../roles'
 import type { UserDetail } from '../schemas'
 
 import { RoleBadge } from './RoleBadge'
 import { StatusPill } from './StatusPill'
 
-type PractitionerRead = components['schemas']['PractitionerRead']
 type PractitionerRoleRead = components['schemas']['PractitionerRoleRead']
-
-async function fetchPractitioner(userId: string): Promise<PractitionerRead | null> {
-  const { data, response } = await api.GET('/practitioners/{user_id}', {
-    params: { path: { user_id: userId } },
-  })
-  if (response.status === 404) return null
-  if (!response.ok || !data) {
-    throw new Error(`Practitioner fetch failed (${response.status})`)
-  }
-  return data
-}
 
 export interface UserDetailPageProps {
   userId: string
@@ -57,7 +46,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps): ReactElement {
   // practitioner row only exists for clinical users).
   const isClinician = !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
   const practitionerQuery = useQuery({
-    queryKey: ['practitioner', userId],
+    queryKey: practitionerKeys.detail(userId),
     queryFn: () => fetchPractitioner(userId),
     enabled: isClinician,
     staleTime: 30_000,

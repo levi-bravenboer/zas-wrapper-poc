@@ -34,14 +34,13 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useDirtyGuard, useEntityForm, type UseEntityFormResult } from '@/hooks/entity'
-import { api } from '@/lib/api/client'
 import type { ApiError } from '@/lib/api/errors'
-import type { components } from '@/lib/api/schema'
 import { initials } from '@/lib/utils/initials'
 
-import { createUser, updateUserDemographics } from '../api'
+import { createUser, fetchPractitioner, updateUserDemographics } from '../api'
 import { useUserDetail } from '../hooks'
-import { useRoles } from '../roles'
+import { practitionerKeys } from '../keys'
+import { useRoleMap, useRoles } from '../roles'
 import type { UserCreatePayload } from '../schemas'
 
 import { userFormSchema, type UserFormValues } from './userForm.schema'
@@ -66,19 +65,6 @@ function buildCreatePayload(values: UserFormValues): UserCreatePayload {
     family_name: values.family_name,
     ...(qualification ? { qualification } : {}),
   }
-}
-
-type PractitionerRead = components['schemas']['PractitionerRead']
-
-async function fetchPractitioner(userId: string): Promise<PractitionerRead | null> {
-  const { data, response } = await api.GET('/practitioners/{user_id}', {
-    params: { path: { user_id: userId } },
-  })
-  if (response.status === 404) return null
-  if (!response.ok || !data) {
-    throw new Error(`Practitioner fetch failed (${response.status})`)
-  }
-  return data
 }
 
 const CREATE_DEFAULTS: UserFormValues = {
@@ -162,13 +148,12 @@ function CreateUserForm(): ReactElement {
 function EditUserForm({ userId }: { userId: string }): ReactElement {
   const userQuery = useUserDetail(userId)
   const rolesQuery = useRoles()
-  const roleMap = new Map((rolesQuery.data ?? []).map((r) => [r.id, r]))
+  const roleMap = useRoleMap()
   // Clinician = any non-admin role (mirrors UserDetailPage); a practitioner row
   // only exists for clinical users, so given/family/qualification come from there.
-  const isClinician =
-    !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
+  const isClinician = !!userQuery.data && roleMap.get(userQuery.data.role_id)?.slug !== 'admin'
   const practitionerQuery = useQuery({
-    queryKey: ['practitioner', userId],
+    queryKey: practitionerKeys.detail(userId),
     queryFn: () => fetchPractitioner(userId),
     enabled: isClinician,
     staleTime: 30_000,

@@ -16,7 +16,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { i18n } from '@/lib/i18n'
 
-import { userKeys } from '../../keys'
+import { practitionerKeys, userKeys } from '../../keys'
 import { rolesKey, type Role } from '../../roles'
 import type { UserDetail } from '../../schemas'
 import { UserFormPage } from '../UserFormPage'
@@ -72,8 +72,8 @@ function renderEdit(): { router: AnyRouter } {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   qc.setQueryData(rolesKey, ROLES)
   qc.setQueryData(userKeys.detail(USER_ID), USER_DETAIL)
-  qc.setQueryData(['practitioner', USER_ID], {
-    id: 'p1111111-1111-4111-8111-1111111111p1',
+  qc.setQueryData(practitionerKeys.detail(USER_ID), {
+    id: 'b1111111-1111-4111-8111-1111111111b1',
     user_id: USER_ID,
     given_name: 'Sanne',
     family_name: 'Jansen',
