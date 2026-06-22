@@ -1,4 +1,5 @@
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
 import * as ecr from "aws-cdk-lib/aws-ecr";
 import type { Construct } from "constructs";
@@ -25,7 +26,8 @@ export class ZasAppStack extends Stack {
     const ecrRegistry = `${account}.dkr.ecr.${region}.amazonaws.com`;
 
     // Assets uploaded to S3: compose + ory/nginx configs + staged secrets.env.
-    const assetDir = path.join(__dirname, "..", "assets");
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const assetDir = path.join(here, "..", "assets");
     const configBucket = new ConfigBucket(this, "Config", assetDir);
 
     const net = new Networking(this, "Net", { allowedCidr: props.allowedCidr });

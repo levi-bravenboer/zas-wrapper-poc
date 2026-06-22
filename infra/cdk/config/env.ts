@@ -3,9 +3,13 @@
 // residency). fromLookup (VPC, HostedZone) needs an explicit env, so this is
 // required, not env-agnostic.
 
+// Region pinned (EU data residency) — do NOT read CDK_DEFAULT_REGION, since the
+// CLI default may be elsewhere (e.g. eu-central-1). Account from the SSO session.
+export const REGION = "eu-west-1";
+
 export const cdkEnv = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.CDK_DEFAULT_REGION ?? "eu-west-1",
+  region: REGION,
 };
 
 export const config = {
