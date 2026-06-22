@@ -34,6 +34,8 @@ export type BuilderAction =
   | { type: 'add-block'; block: PathwayBlock }
   | { type: 'delete-block'; blockId: string }
   | { type: 'add-phase'; phase: PathwayPhase }
+  | { type: 'rename-phase'; phaseId: string; label: string }
+  | { type: 'delete-phase'; phaseId: string }
   | { type: 'reorder-phase'; phaseId: string; toIndex: number }
   | { type: 'resize-phase'; phaseId: string; width: number }
   | { type: 'resize-lane'; laneId: string; height: number }
@@ -120,6 +122,25 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
       const history = pushHistory(state)
       const phases = sortByOrd([...(state.version.phases ?? []), action.phase])
       return { ...state, version: { ...state.version, phases }, history }
+    }
+    case 'rename-phase': {
+      const label = action.label.trim()
+      if (!label) return state
+      const history = pushHistory(state)
+      const phases = (state.version.phases ?? []).map((p) =>
+        p.id === action.phaseId ? { ...p, label } : p,
+      )
+      return { ...state, version: { ...state.version, phases }, history }
+    }
+    case 'delete-phase': {
+      if (!(state.version.phases ?? []).some((p) => p.id === action.phaseId)) return state
+      const history = pushHistory(state)
+      return {
+        ...state,
+        version: cascadeDeletePhase(state.version, action.phaseId),
+        history,
+        selection: { kind: 'none' },
+      }
     }
     case 'resize-phase': {
       const history = pushHistory(state)
@@ -215,6 +236,32 @@ export function cascadeDeleteBlock(
   )
   const branches = (version.branches ?? []).filter((br) => br.block_id !== blockId)
   return { ...version, blocks, edges, branches }
+}
+
+/** Blocks placed in a phase — enumerated in the delete-confirm dialog and
+ * cascade-removed with the phase (they have nowhere to live once the column
+ * is gone). */
+export function blocksInPhase(blocks: PathwayBlock[], phaseId: string): PathwayBlock[] {
+  return blocks.filter((b) => b.phase_id === phaseId)
+}
+
+/** Cascade-delete a phase: drop the phase column and every block placed in it,
+ * reusing {@link cascadeDeleteBlock} so each removed block also strips the
+ * input-logic rules, branches, and derived edges that reference it. Concept
+ * version template only (the reducer guards published versions). */
+export function cascadeDeletePhase(
+  version: PathwayVersionDefinition,
+  phaseId: string,
+): PathwayVersionDefinition {
+  const removedIds = blocksInPhase((version.blocks ?? []) as PathwayBlock[], phaseId).map(
+    (b) => b.id,
+  )
+  let next = version
+  for (const id of removedIds) {
+    next = cascadeDeleteBlock(next, id)
+  }
+  const phases = (next.phases ?? []).filter((p) => p.id !== phaseId)
+  return { ...next, phases }
 }
 
 const DEFAULT_LANE_SCAFFOLD: Array<{

@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
 import type { PathwayBlock, PathwayVersionDefinition } from './types'
-import { cascadeDeleteBlock, dependentBlocks } from './useBuilderState'
+import {
+  blocksInPhase,
+  cascadeDeleteBlock,
+  cascadeDeletePhase,
+  dependentBlocks,
+} from './useBuilderState'
 
-function stubBlock(id: string, after: string[] = []): PathwayBlock {
+function stubBlock(id: string, after: string[] = [], phaseId = 'phase-1'): PathwayBlock {
   return {
     id,
     kind: 'task',
     name: `Block ${id}`,
-    phase_id: 'phase-1',
+    phase_id: phaseId,
     lane_id: 'lane-1',
     x: 0,
     y: 0,
@@ -93,5 +98,51 @@ describe('cascadeDeleteBlock', () => {
     const next = cascadeDeleteBlock(version, 'a')
     expect(next.edges).toHaveLength(1)
     expect(next.edges?.[0]?.source_block_id).toBe('x')
+  })
+})
+
+function stubPhasedVersion(blocks: PathwayBlock[]): PathwayVersionDefinition {
+  return {
+    ...stubVersion(blocks),
+    phases: [
+      { id: 'phase-1', label: 'Voorbereiding', ord: 10, width_px: 380 },
+      { id: 'phase-2', label: 'Behandeling', ord: 20, width_px: 380 },
+    ],
+  } as unknown as PathwayVersionDefinition
+}
+
+describe('blocksInPhase', () => {
+  it('returns only blocks placed in the phase', () => {
+    const blocks = [stubBlock('a', [], 'phase-1'), stubBlock('b', [], 'phase-2')]
+    expect(blocksInPhase(blocks, 'phase-1').map((b) => b.id)).toEqual(['a'])
+  })
+})
+
+describe('cascadeDeletePhase', () => {
+  it('drops the phase and every block placed in it', () => {
+    const version = stubPhasedVersion([
+      stubBlock('a', [], 'phase-1'),
+      stubBlock('b', [], 'phase-2'),
+    ])
+    const next = cascadeDeletePhase(version, 'phase-1')
+    expect((next.phases ?? []).map((p) => p.id)).toEqual(['phase-2'])
+    expect((next.blocks ?? []).map((b) => b.id)).toEqual(['b'])
+  })
+
+  it('strips rules in surviving blocks that referenced a removed block', () => {
+    const version = stubPhasedVersion([
+      stubBlock('a', [], 'phase-1'),
+      stubBlock('b', ['a'], 'phase-2'),
+    ])
+    const next = cascadeDeletePhase(version, 'phase-1')
+    const b = (next.blocks ?? []).find((x) => x.id === 'b')
+    expect(b?.input_logic?.rules ?? []).toHaveLength(0)
+  })
+
+  it('removes an empty phase without touching blocks', () => {
+    const version = stubPhasedVersion([stubBlock('a', [], 'phase-1')])
+    const next = cascadeDeletePhase(version, 'phase-2')
+    expect((next.phases ?? []).map((p) => p.id)).toEqual(['phase-1'])
+    expect((next.blocks ?? []).map((b) => b.id)).toEqual(['a'])
   })
 })

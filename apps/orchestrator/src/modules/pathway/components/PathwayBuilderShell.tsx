@@ -19,7 +19,12 @@ import {
   type PathwayPhaseTemplate,
   type PathwayVersionDefinition,
 } from '../types'
-import { dependentBlocks, useBuilderState, type BuilderAction } from '../useBuilderState'
+import {
+  blocksInPhase,
+  dependentBlocks,
+  useBuilderState,
+  type BuilderAction,
+} from '../useBuilderState'
 import { useCollapsedSidebar } from '../useCollapsedSidebar'
 import { createBlock } from '../utils/createBlock'
 import { defaultLaneKindCode } from '../utils/laneRules'
@@ -30,6 +35,7 @@ import { BuilderFlushProvider } from './canvas/BuilderFlushContext'
 import { DeletePathwayDialog } from './DeletePathwayDialog'
 import { BlockDialog, type BlockDraft } from './dialog/BlockDialog'
 import { ConfirmDeleteBlockDialog } from './dialog/ConfirmDeleteBlockDialog'
+import { ConfirmDeletePhaseDialog } from './dialog/ConfirmDeletePhaseDialog'
 import { BuilderDock } from './dock/BuilderDock'
 import { GeschiedenisDrawer } from './drawer/GeschiedenisDrawer'
 import { ReadOnlyBanner } from './shell/ReadOnlyBanner'
@@ -141,6 +147,8 @@ function Inner({
   const [pendingAddType, setPendingAddType] = useState<PathwayBlockType | null>(null)
   // § C5.2: delete goes through a confirm dialog enumerating dependents.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  // Phase delete also confirms, enumerating the blocks cascade-removed with it.
+  const [pendingDeletePhaseId, setPendingDeletePhaseId] = useState<string | null>(null)
 
   const onAddBlock = useCallback(
     (blockType: PathwayBlockType) => {
@@ -231,6 +239,13 @@ function Inner({
     [phases, dispatch, t],
   )
 
+  const onRenamePhase = useCallback(
+    (phaseId: string, label: string) => {
+      dispatch({ type: 'rename-phase', phaseId, label })
+    },
+    [dispatch],
+  )
+
   const selectedBlock = findSelectedBlock(state.selection, blocks)
   const selectedBlockType =
     catalogue.find((c) => selectedBlock && c.type === legacyBlockType(selectedBlock)) ?? null
@@ -273,6 +288,8 @@ function Inner({
         onJumpToPhase={onJumpToPhase}
         onAddPhase={onAddPhase}
         onReorderPhase={(phaseId, toIndex) => dispatch({ type: 'reorder-phase', phaseId, toIndex })}
+        onRenamePhase={onRenamePhase}
+        onRequestDeletePhase={setPendingDeletePhaseId}
       />
       <main role="main" className="relative min-h-0 overflow-hidden">
         <BuilderFlushProvider flush={flush} saveState={saveState}>
@@ -339,6 +356,23 @@ function Inner({
             })()}
         </BuilderFlushProvider>
       </main>
+      {pendingDeletePhaseId &&
+        (() => {
+          const target = phases.find((p) => p.id === pendingDeletePhaseId)
+          if (!target) return null
+          return (
+            <ConfirmDeletePhaseDialog
+              open
+              phase={target}
+              blocks={blocksInPhase(blocks, pendingDeletePhaseId)}
+              onConfirm={() => {
+                dispatch({ type: 'delete-phase', phaseId: pendingDeletePhaseId })
+                setPendingDeletePhaseId(null)
+              }}
+              onClose={() => setPendingDeletePhaseId(null)}
+            />
+          )
+        })()}
       <GeschiedenisDrawer open={historyOpen} onOpenChange={setHistoryOpen} pathwayId={pathway.id} />
       <PublishDialog open={publishOpen} onOpenChange={setPublishOpen} pathwayId={pathway.id} />
       <DeletePathwayDialog
