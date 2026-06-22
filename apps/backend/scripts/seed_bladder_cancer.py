@@ -361,7 +361,7 @@ def _build_payload() -> PathwayDefinitionReplace:
             PathwayBlockIn(
                 id=B_WOUND_CHECK,
                 phase_id=PHASE_FOLLOWUP_ID,
-                lane_id=LANE_EXTERNAL_ID,
+                lane_id=LANE_CAREGIVER_ID,
                 kind="appointment",
                 label="Afspraak: wondcontrole bij huisarts",
                 config={
