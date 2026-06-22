@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI-kansenkaart · ZAS</title>
+<style>
+  :root{
+    --ink:#101828; --muted:#667085; --line:#e4e7ec; --card:#ffffff;
+    --primary:#266b5e; --mint:#cfede8; --mint-soft:#f1f8f7; --accent:#6fc7b6;
+    --r-md:.5rem; --r-lg:.75rem; --shadow:0 1px 2px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);font-size:14px;line-height:1.5;letter-spacing:-.011em;
+    font-family:"Geist Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(ellipse 65% 55% at 100% 100%,rgba(111,199,182,.20) 0%,transparent 70%),
+      linear-gradient(180deg,#f6f8f7 0%,#eef2f0 100%);
+    background-attachment:fixed;min-height:100vh}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 56px}
+  h1{margin:0;font-size:24px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin:5px 0 22px;max-width:620px}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:0 0 10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;border:1px solid}
+  .sw.g{background:#e7f4f0;border-color:#bfe3da;border-left:3px solid var(--primary)}
+  .sw.o{background:#fff6e9;border-color:#f0c98a;border-left:3px solid #d98a00}
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+
+  .col{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .col-head{padding:16px 18px 14px;border-bottom:1px solid var(--line)}
+  .role{font-size:16px;font-weight:600}
+  .app{display:inline-flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;
+    color:var(--primary);background:var(--mint-soft);border:1px solid var(--mint);
+    padding:3px 9px;border-radius:999px;font-weight:500}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+  .col-body{padding:6px 18px 18px}
+  .grp{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+    color:var(--muted);padding:14px 0 7px}
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  li{padding:8px 11px;border-radius:var(--r-md);background:#e7f4f0;
+    border:1px solid #bfe3da;border-left:3px solid var(--primary)}
+  .t{font-weight:600;font-size:13px}
+  .n{color:#43615a;font-size:11.5px;margin-top:1px}
+
+  .grp.exp{color:#b26a00}
+  ul.exp{gap:5px}
+  ul.exp li{padding:6px 10px;background:#fff6e9;border:1px solid #f0c98a;border-left:3px solid #d98a00}
+  ul.exp .t{font-size:12px;font-weight:600}
+  ul.exp .n{color:#8a6a3a}
+  .warn{font-weight:700}
+  .warn1{color:#d98a00}
+  .warn2{color:#c4321b}
+  .chan{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    padding:1px 6px;border-radius:4px;display:inline-block;margin-top:5px}
+  .c-zorgplatform{color:#266b5e;background:#d7ece6}
+  .c-mobile{color:#1d6fb8;background:#dceaf6}
+  .c-mcp{color:#5b3fb0;background:#e9e3fb}
+  .c-other{color:#667085;background:#eceef1}
+
+  footer{color:var(--muted);font-size:12px;margin-top:24px}
+  footer b{color:var(--primary)}
+  code{background:var(--mint-soft);border:1px solid var(--mint);border-radius:4px;padding:1px 5px;font-size:11px;
+    font-family:"Geist Mono Variable",ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI-kansenkaart</h1>
+  <div class="sub">Per rol, per app: wat AI kan doen binnen het ZAS-platform.</div>
+  <div class="legend">
+    <span><span class="sw g"></span> Basis: solide, klaar om te bouwen</span>
+    <span><span class="sw o"></span> Experimenteel: gek / randgeval, kan interessant zijn</span>
+    <span><span class="warn warn1">⚠</span> MDR niveau 1: randzone, alleen met waarborgen</span>
+    <span><span class="warn warn2">⚠</span> MDR niveau 2+: klinische interpretatie, beslissing vereist</span>
+  </div>
+  <div class="legend">
+    <span><span class="chan c-zorgplatform">zorgplatform</span> ons zorgplatform</span>
+    <span><span class="chan c-mobile">mobiel</span> mobiele app voor patiënten</span>
+    <span><span class="chan c-mcp">mcp</span> ZAS bouwt het via onze MCP-laag</span>
+    <span><span class="chan c-other">overig</span> extern / toekomst</span>
+  </div>
+  <div class="cols" id="cols"></div>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+function el(tag,attrs,kids){
+  const n=document.createElement(tag);
+  if(attrs)for(const k in attrs){
+    if(k==="class")n.className=attrs[k];
+    else if(k==="text")n.textContent=attrs[k];
+    else n.setAttribute(k,attrs[k]);
+  }
+  (kids||[]).forEach(c=>n.appendChild(typeof c==="string"?document.createTextNode(c):c));
+  return n;
+}
+
+const COLS=[
+  {role:"Zorgverleners",app:"Zorgplatform",groups:[
+    {g:"Zorgpaden bouwen",items:[
+      {t:"Zorgpad uit tekst, PDF, foto of spraak",n:"Beschrijf het, sleep een protocol-PDF erin, fotografeer een whiteboard of dicteer het, en krijg een concept om te bewerken."},
+      {t:"Blokinhoud automatisch invullen",n:"Schrijft de tekst voor bericht, taak en afspraak per stap."},
+      {t:"Zorgpad-controle",n:"Vangt doodlopende paden en ontbrekende toestemmingsstappen."},
+      {t:"Proefdraai-simulator",n:"“Wat gebeurt er als ze de week-3-controle niet haalt?”"},
+    ]},
+    {g:"Uitvoeren & vragen",items:[
+      {t:"Praat me bij over een patiënt",n:"Laat zien waar ze in het zorgpad zitten."},
+      {t:"Bevraag het dossier",n:"“Welke medicatie? Laatste 3 afspraken?” Antwoord uit het dossier.",mdr:1},
+    ]},
+    {g:"Inbox opruimen",items:[
+      {t:"Vat mijn taken samen",n:"Groepeert je taken en markeert wat te laat is."},
+      {t:"Antwoorden & herinneringen opstellen",n:"AI schrijft het bericht, jij verstuurt het."},
+    ]},
+  ],exp:[
+    {t:"Zorgpad voorstellen bij inschrijving",n:"Beveelt het juiste zorgpad aan en vult de waarden vast in.",mdr:1},
+    {t:"Bulkbewerking in gewone taal",n:"“Zet alle herinneringen 2 dagen eerder.”"},
+    {t:"Stress-test mijn zorgpad",n:"Vindt waar een patiënt tussen wal en schip valt."},
+    {t:"“Waarom hangt dit?”-helper",n:"Legt uit waarom een stap nog niet is gestart."},
+    {t:"Impactanalyse",n:"“Wat breekt er als ik deze stap verwijder?”"},
+    {t:"Versieverschil in woorden",n:"Legt uit wat er tussen versies veranderde, helpt samenvoegen."},
+    {t:"Werklastvoorspelling",n:"Voorspelt hoeveel werk een zorgpad oplevert voor het personeel."},
+    {t:"Slecht-ontwerp-detector",n:"Markeert stappen die patiënten blijven overslaan: een ontwerpfout."},
+    {t:"Dienstoverdracht-notitie",n:"Stelt de overdracht aan het einde van de dienst automatisch op.",mdr:1},
+    {t:"Samenvatting zorgteam-draad",n:"In seconden bij met een lange discussie."},
+    {t:"MDO-notulist",n:"Luistert mee in het overleg, maakt er taken van.",mdr:1},
+    {t:"Afspraak-verschuif-cascade",n:"Verzet één afspraak, de rest schuift mee."},
+    {t:"No-show-voorspelling",n:"Voorspelt waarschijnlijke no-shows zodat je kunt herinneren.",mdr:1},
+    {t:"Uitval-risico",n:"Spot patiënten die dreigen af te haken, op basis van app-activiteit.",mdr:1},
+    {t:"Automatische naam + omschrijving",n:"Geeft het zorgpad een naam en omschrijving."},
+    {t:"Hergebruik tussen ziekenhuizen",n:"Pas het zorgpad van het ene ziekenhuis aan voor het andere."},
+  ]},
+  {role:"Patiënten",app:"Mobiele app",groups:[
+    {g:"Wegwijs blijven",items:[
+      {t:"Wat moet ik deze week doen?",n:"Hun volgende stappen, in gewone taal."},
+      {t:"Leg deze stap uit",n:"Zet medisch jargon om in gewone taal.",mdr:1},
+    ]},
+    {g:"Op koers blijven",items:[
+      {t:"Meertalige herinneringen",n:"Herinneringen voor toestemming, vragenlijsten en voorbereiding in nl/fr/en."},
+      {t:"Tweerichtings-taalbrug",n:"Patiënt schrijft in het Arabisch, zorgverlener leest net Nederlands, en terug.",mdr:1},
+      {t:"Bereik via het juiste kanaal",n:"Kiest het beste kanaal: e-mail, app, sms of bellen."},
+    ]},
+    {g:"Vragen",items:[
+      {t:"Workflow-assistent",n:"Beantwoordt vragen over planning & stappen; klinische vragen gaan naar het team.",mdr:1},
+    ]},
+  ],exp:[
+    {t:"Herschrijven op leesniveau",n:"Herschrijft toestemming naar eenvoudige taal."},
+    {t:"Spraakassistent",n:"Gesproken hulp voor laaggeletterde of oudere patiënten.",mdr:1},
+    {t:"Voorbereidingschecklist",n:"Bouwt een voorbereidingschecklist per afspraak."},
+    {t:"Slimme FAQ",n:"Bouwt automatisch een patiënt-FAQ uit het zorgpad."},
+    {t:"Automatische uitlegclips",n:"Maakt van een stap een korte audio- of videoclip.",mdr:1},
+    {t:"Slimme verzendtiming",n:"Stuurt herinneringen wanneer de patiënt ze echt leest."},
+    {t:"Adaptieve reeksen",n:"Motiverende reeksen die zich aanpassen aan de patiënt."},
+    {t:"Frustratie-detectie",n:"Markeert boze berichten voor het zorgteam."},
+    {t:"Toon-afgestemde berichten",n:"Past de woordkeuze aan op angstige vs nuchtere patiënten."},
+    {t:"Vrije-tekst-triage",n:"Sorteert een patiëntbericht en stuurt het naar de juiste persoon.",mdr:2},
+  ]},
+  {role:"Beheerders",app:"Zorgplatform",groups:[
+    {g:"Het systeem bevragen",items:[
+      {t:"Auditvraag in gewone taal",n:"“Wie heeft vorige week dossier X bekeken?”"},
+    ]},
+    {g:"Rapporteren",items:[
+      {t:"Compliance-rapporten",n:"AVG- / auditverslag op aanvraag."},
+    ]},
+  ],exp:[
+    {t:"Een rol opstellen",n:"Beschrijf het, AI stelt de rechten voor, jij keurt goed."},
+    {t:"Bulk gebruikers & rollen",n:"Vraag in woorden → bekijk de wijziging → pas toe."},
+    {t:"Ongebruikelijke toegang markeren",n:"Markeert ongebruikelijke toegang ter controle."},
+    {t:"AVG-verzoek-samensteller",n:"Verzamelt op verzoek alle gegevens van één patiënt."},
+    {t:"“Verklaar deze auditgebeurtenis”",n:"Vertaalt een ruwe logregel naar gewone taal."},
+    {t:"Analyse in gewone taal",n:"“Hoeveel patiënten rondden vorige maand af?”"},
+    {t:"Synthetische patiëntsimulatie",n:"Stuurt nepatiënten door een zorgpad vóór livegang."},
+    {t:"Zorgpad-controle over ziekenhuizen",n:"Scant alle zorgpaden op ontbrekende toestemming / AVG-gaten."},
+    {t:"Te-veel-rechten-detector",n:"Vindt accounts met meer toegang dan nodig."},
+    {t:"Rol-mining",n:"Stelt rollen voor op basis van hoe mensen echt werken."},
+    {t:"Slapende-account-detector",n:"Markeert accounts die niemand meer gebruikt."},
+    {t:"DPIA automatisch opstellen",n:"Stelt de privacytoets voor een zorgpad op."},
+    {t:"Wekelijks afwijkingsoverzicht",n:"Een “wat veranderde / wat is ongewoon”-samenvatting."},
+    {t:"Kosten- / werklast-ranglijst",n:"Welke zorgpaden kosten het meeste personeelstijd."},
+    {t:"Doorlooptijd-voorspelling",n:"Voorspelt hoe lang een zorgpad duurt, op basis van eerdere patiënten."},
+    {t:"Automatische release-notes",n:"Schrijft de changelog uit zorgpad-wijzigingen."},
+    {t:"Onboarding-copiloot ziekenhuis",n:"Een nieuw ziekenhuis richt zichzelf in via chat."},
+    {t:"Volledige lokalisatie",n:"Vertaalt de app en zorgpaden bij het opzetten."},
+    {t:"Planning rond Belgische feestdagen",n:"Verschuift de planning rond Belgische feestdagen."},
+    {t:"MCP-nachtwacht-agent",n:"Draait elk zorgpad 's nachts proef, meldt wat stuk is."},
+    {t:"Zelfherstellende koppelingen",n:"Spot een kapotte Luscii-koppeling en stelt een fix voor."},
+    {t:"Datalek-impactsimulatie",n:"Bij een lek: toont wie en wat is blootgesteld."},
+    {t:"Zorgpad-marktplaats",n:"Vind een kant-en-klaar zorgpad dat past bij je behoefte."},
+  ]},
+];
+
+// kanaal = waar/hoe het geleverd wordt. Standaard per kolom; uitzonderingen op titel.
+const CHAN_MCP=new Set(["Hergebruik tussen ziekenhuizen","Slecht-ontwerp-detector",
+  "Uitval-risico","No-show-voorspelling","Frustratie-detectie",
+  "MCP-nachtwacht-agent","Wekelijks afwijkingsoverzicht","AVG-verzoek-samensteller",
+  "Te-veel-rechten-detector","Rol-mining","Datalek-impactsimulatie","Analyse in gewone taal",
+  "Kosten- / werklast-ranglijst","Doorlooptijd-voorspelling"]);
+const CHAN_OTHER=new Set(["MDO-notulist","Planning rond Belgische feestdagen",
+  "Zelfherstellende koppelingen","Zorgpad-marktplaats"]);
+const CHAN_LABEL={zorgplatform:"zorgplatform",mobile:"mobiel",mcp:"mcp",other:"overig"};
+function chan(it,def){
+  if(CHAN_MCP.has(it.t))return"mcp";
+  if(CHAN_OTHER.has(it.t))return"other";
+  return def;
+}
+const MDR_TIP={1:"MDR niveau 1: randzone — raakt klinische data of uitleg, alleen toegestaan met waarborgen (verbatim, mens beslist, geen klinisch oordeel).",
+  2:"MDR niveau 2+: interpreteert klinische data of beslist/triageert klinisch — echte MDR-grens, beslissing vereist vóór bouw."};
+function row(it,def){
+  const title=el("div",{class:"t"},[it.t]);
+  if(it.mdr)title.appendChild(el("span",{class:"warn warn"+it.mdr,title:MDR_TIP[it.mdr],text:" ⚠"}));
+  const ch=chan(it,def);
+  return el("li",null,[title,el("div",{class:"n",text:it.n}),
+    el("span",{class:"chan c-"+ch,text:CHAN_LABEL[ch]})]);
+}
+
+const cols=document.getElementById("cols");
+COLS.forEach(c=>{
+  const def=c.app==="Mobiele app"?"mobile":"zorgplatform";
+  const body=el("div",{class:"col-body"});
+  c.groups.forEach(grp=>{
+    body.appendChild(el("div",{class:"grp",text:grp.g}));
+    body.appendChild(el("ul",null,grp.items.map(it=>row(it,def))));
+  });
+  if(c.exp&&c.exp.length){
+    body.appendChild(el("div",{class:"grp exp",text:"Experimenteel · randgevallen"}));
+    body.appendChild(el("ul",{class:"exp"},c.exp.map(it=>row(it,def))));
+  }
+  cols.appendChild(el("div",{class:"col"},[
+    el("div",{class:"col-head"},[
+      el("div",{class:"role",text:c.role}),
+      el("span",{class:"app"},[el("span",{class:"dot"}),c.app]),
+    ]),
+    body,
+  ]));
+});
+
+const ft=document.getElementById("footer");
+ft.appendChild(el("b",{text:"Altijd: "}));
+ft.appendChild(document.createTextNode("AI stelt voor, een mens beslist, elke actie gelogd. Bron "));
+ft.appendChild(el("code",{text:"docs/research/ai-opportunity-mapping.md"}));
+</script>
+</body>
+</html>
