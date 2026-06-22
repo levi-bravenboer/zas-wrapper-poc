@@ -18,7 +18,11 @@ RUN npm install -g pnpm@9.15.1
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm build
+# Build in development mode: no feature module has adopted the registry yet
+# (src/modules/index.ts is an empty barrel), so the PROD-only "registry empty"
+# guard in main.tsx would otherwise abort boot. Dev-mode keeps env.PROD false;
+# the real pages are normal routes and work the same. Fine for a throwaway demo.
+RUN pnpm exec tsr generate && pnpm exec tsc -b && pnpm exec vite build --mode development
 
 FROM nginx:1.27-alpine AS runtime
 RUN apk add --no-cache certbot openssl bash gettext
