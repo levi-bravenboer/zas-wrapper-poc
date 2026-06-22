@@ -112,7 +112,7 @@ def _gate_decision(decision: UUID, output_key: str) -> dict[str, object]:
 
 
 _UROLOGY = {"role": "physician", "specialty": "urologie"}
-_GP = {"role": "gp", "specialty": "huisartsgeneeskunde", "external": True}
+_GP = {"role": "gp", "specialty": "huisartsgeneeskunde"}
 
 
 def _build_payload() -> PathwayDefinitionReplace:
@@ -124,7 +124,9 @@ def _build_payload() -> PathwayDefinitionReplace:
             PathwayPhaseIn(id=PHASE_DIAG_ID, template_id="pre-op", label="Diagnostiek", ord=10),
             PathwayPhaseIn(id=PHASE_PREOP_ID, template_id="pre-op", label="Pre-operatief", ord=20),
             PathwayPhaseIn(id=PHASE_SURGERY_ID, template_id="surgery", label="Operatie", ord=30),
-            PathwayPhaseIn(id=PHASE_FOLLOWUP_ID, template_id="follow-up", label="Opvolging", ord=40),
+            PathwayPhaseIn(
+                id=PHASE_FOLLOWUP_ID, template_id="follow-up", label="Opvolging", ord=40
+            ),
         ],
         lanes=[
             PathwayLaneIn(
@@ -359,7 +361,7 @@ def _build_payload() -> PathwayDefinitionReplace:
             PathwayBlockIn(
                 id=B_WOUND_CHECK,
                 phase_id=PHASE_FOLLOWUP_ID,
-                lane_id=LANE_CAREGIVER_ID,
+                lane_id=LANE_EXTERNAL_ID,
                 kind="appointment",
                 label="Afspraak: wondcontrole bij huisarts",
                 config={
