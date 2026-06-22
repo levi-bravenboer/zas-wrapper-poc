@@ -34,7 +34,7 @@ export async function buildAndPush(registry: string, tag: string): Promise<void>
     "--build-arg",
     `VITE_API_BASE_URL=https://${config.apiHost}`,
     "--build-arg",
-    "VITE_API_MODE=live",
+    "VITE_API_MODE=real",
     "-f",
     resolve(REPO_ROOT, "apps/orchestrator/Dockerfile.deploy"),
     resolve(REPO_ROOT, "apps/orchestrator"),
