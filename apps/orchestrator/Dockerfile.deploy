@@ -9,8 +9,10 @@ WORKDIR /app
 # Build-time public config (inlined into the bundle by Vite).
 ARG VITE_API_BASE_URL
 ARG VITE_API_MODE=real
+ARG VITE_ALLOW_EMPTY_REGISTRY=true
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL} \
-    VITE_API_MODE=${VITE_API_MODE}
+    VITE_API_MODE=${VITE_API_MODE} \
+    VITE_ALLOW_EMPTY_REGISTRY=${VITE_ALLOW_EMPTY_REGISTRY}
 
 # Install pnpm directly — corepack in node:22.13 can't verify newer pnpm
 # signing keys ("Cannot find matching keyid").
@@ -18,11 +20,11 @@ RUN npm install -g pnpm@9.15.1
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-# Build in development mode: no feature module has adopted the registry yet
-# (src/modules/index.ts is an empty barrel), so the PROD-only "registry empty"
-# guard in main.tsx would otherwise abort boot. Dev-mode keeps env.PROD false;
-# the real pages are normal routes and work the same. Fine for a throwaway demo.
-RUN pnpm exec tsr generate && pnpm exec tsc -b && pnpm exec vite build --mode development
+# No feature module has adopted the registry yet (src/modules/index.ts is an
+# empty barrel), so the PROD "registry empty" guard would abort boot. The
+# VITE_ALLOW_EMPTY_REGISTRY=true build-arg opts this throwaway demo out; the
+# real pages are normal routes and work the same.
+RUN pnpm build
 
 FROM nginx:1.27-alpine AS runtime
 RUN apk add --no-cache certbot openssl bash gettext
