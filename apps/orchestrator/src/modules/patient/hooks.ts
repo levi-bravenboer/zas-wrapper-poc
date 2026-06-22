@@ -101,7 +101,11 @@ export function useLusciiData(patientId: string | null, options?: UseLusciiDataO
     // Live proxy against an external vendor: a failing Luscii must not be
     // hammered with automatic retries from every open patient view.
     retry: false,
-    refetchInterval: options?.pollMs ?? false,
+    // Poll only while healthy — a failing Luscii stops the interval (rather
+    // than re-polling every `pollMs`) until a manual refetch recovers it.
+    // Background polling stays off, so it also pauses on a hidden tab.
+    refetchInterval: (query) =>
+      query.state.status === 'error' ? false : (options?.pollMs ?? false),
     refetchIntervalInBackground: false,
   })
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { type LusciiWindowDays, useLusciiData } from '../../hooks'
-import type { LusciiMeasurementSeries } from '../charts/types'
+import { groupSeriesByInstrument, hasErrorCode, type InstrumentGroup } from '../charts/grouping'
 import { LusciiPanel } from '../LusciiPanel'
 
 import { ReplicaCard } from './ReplicaCard'
@@ -55,7 +55,7 @@ export function MeasurementReplica({ patientId }: MeasurementReplicaProps): Reac
   }
 
   const showError = dataQuery.isError && !isNotConfigured
-  const groups = orderGroups(groupByInstrument(data?.series ?? []))
+  const groups = orderGroups(groupSeriesByInstrument(data?.series ?? []))
 
   return (
     <div className="flex flex-col gap-4">
@@ -88,32 +88,6 @@ export function MeasurementReplica({ patientId }: MeasurementReplicaProps): Reac
   )
 }
 
-interface InstrumentGroup {
-  instrument_id: string
-  instrument_name: string | null
-  series: LusciiMeasurementSeries[]
-}
-
-function groupByInstrument(series: LusciiMeasurementSeries[]): InstrumentGroup[] {
-  const map = new Map<string, InstrumentGroup>()
-  for (const s of series) {
-    if (!s.points || s.points.length === 0) continue
-    const existing = map.get(s.instrument_id)
-    if (existing) {
-      existing.series.push(s)
-      if (!existing.instrument_name && s.instrument_name)
-        existing.instrument_name = s.instrument_name
-    } else {
-      map.set(s.instrument_id, {
-        instrument_id: s.instrument_id,
-        instrument_name: s.instrument_name ?? null,
-        series: [s],
-      })
-    }
-  }
-  return [...map.values()]
-}
-
 /** Apply the static dev-defined order; unlisted instruments keep API order. */
 function orderGroups(groups: InstrumentGroup[]): InstrumentGroup[] {
   if (INSTRUMENT_ORDER.length === 0) return groups
@@ -129,10 +103,4 @@ function orderGroups(groups: InstrumentGroup[]): InstrumentGroup[] {
       return ra !== rb ? ra - rb : a.index - b.index
     })
     .map((entry) => entry.group)
-}
-
-function hasErrorCode(error: unknown, code: string): boolean {
-  if (typeof error !== 'object' || error === null) return false
-  const candidate = (error as { code?: unknown }).code
-  return typeof candidate === 'string' && candidate === code
 }

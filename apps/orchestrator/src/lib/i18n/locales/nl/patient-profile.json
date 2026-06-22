@@ -260,7 +260,8 @@
       "custom_hint": "Aangepaste periode volgt later",
       "range_label": "Periode",
       "add": "Meting toevoegen",
-      "view": "Weergave"
+      "view": "Weergave",
+      "soon": "Binnenkort beschikbaar"
     },
     "stats": {
       "average": "Gemiddeld",

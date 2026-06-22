@@ -79,6 +79,7 @@ export function ReplicaFilterBar({ active, onChange }: ReplicaFilterBarProps): R
           type="button"
           disabled
           aria-label={t('replica.filter.add')}
+          title={t('replica.filter.soon')}
           className="inline-flex items-center rounded-md border border-border p-1.5 text-foreground-muted"
         >
           <Plus className="size-4" aria-hidden />
@@ -86,6 +87,7 @@ export function ReplicaFilterBar({ active, onChange }: ReplicaFilterBarProps): R
         <button
           type="button"
           disabled
+          title={t('replica.filter.soon')}
           className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-foreground-muted"
         >
           <Settings className="size-4" aria-hidden />

@@ -1,5 +1,5 @@
 import { MoreVertical } from 'lucide-react'
-import { type ReactElement } from 'react'
+import { type ReactElement, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,7 +22,7 @@ export interface ReplicaCardProps {
  */
 export function ReplicaCard({ title, series }: ReplicaCardProps): ReactElement {
   const { t } = useTranslation('patient-profile')
-  const stats = computeStats(series)
+  const stats = useMemo(() => computeStats(series), [series])
   return (
     <Card className="w-full">
       <CardContent className="flex flex-col gap-4 p-5">

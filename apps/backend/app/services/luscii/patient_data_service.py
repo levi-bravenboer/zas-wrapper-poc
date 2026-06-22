@@ -372,7 +372,13 @@ class LusciiPatientDataService:
         except LusciiApiError:
             logger.warning("luscii.alerts.fetch_failed")
             return {}
-        return {a.measurement_id: a.flag for a in alerts if a.measurement_id and a.flag}
+        # First flag wins per measurement — deterministic when Luscii raised
+        # more than one alert for the same measurement (we never rank severity).
+        flags: dict[str, str] = {}
+        for alert in alerts:
+            if alert.measurement_id and alert.flag:
+                flags.setdefault(alert.measurement_id, alert.flag)
+        return flags
 
     def _require_client(self) -> LusciiClient:
         if self._client is None:
