@@ -35,6 +35,9 @@ export class Compute extends Construct {
       securityGroup: props.securityGroup,
       role: this.role,
       userData: props.userData,
+      // A new imageTag changes UserData → replace the box so it re-bootstraps
+      // with the new images (default is in-place, which leaves it stale).
+      userDataCausesReplacement: true,
       blockDevices: [
         {
           deviceName: "/dev/xvda",
