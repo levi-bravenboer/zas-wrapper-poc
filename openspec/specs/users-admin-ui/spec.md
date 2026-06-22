@@ -126,6 +126,8 @@ Submit payload SHALL be built role-conditionally:
 - admin edit → `{ display_name }`
 - caregiver edit → `{ display_name: derived }` — but since clinical fields are locked, the only mutation surface is when the *admin's own* display_name is edited; caregiver display_name is server-derived from given/family on the Practitioner page.
 
+In **edit** mode the form SHALL hydrate from the live user before exposing inputs: it fetches the user via `GET /users/{user_id}` and, for caregivers (any non-admin role), the Practitioner via `GET /practitioners/{user_id}`, seeding `email` / `role` / `display_name` from the user and `given_name` / `family_name` / `qualification` from the Practitioner. The form MUST NOT seed from placeholder or mock defaults. While the user (or, for caregivers, the practitioner) query is pending, the page SHALL render `<EntityDetailSkeleton>`; a `404` on the user fetch SHALL render `<EntityNotFound>` (back link to the list) and any other fetch error SHALL render `<EntityErrorCard>` (retry). Create mode hydrates from empty defaults and performs no fetch. The practitioner fetch and its query key SHALL be shared with the detail page (single source), not re-declared per screen.
+
 Cancel SHALL navigate back to the source (detail for edit, list for create). On success: create POSTs `/users`, navigates to the new detail page, fires a success toast; edit PATCHes `/users/{id}`, navigates back to detail, fires a success toast. Both flows SHALL invalidate the `/users` list query key on success. API field-level errors SHALL surface inline against the relevant field (e.g. duplicate email → `email` field error). `useDirtyGuard` SHALL block in-app navigation while the form is dirty.
 
 #### Scenario: Name fields swap with role
@@ -142,6 +144,16 @@ Cancel SHALL navigate back to the source (detail for edit, list for create). On 
 
 - **WHEN** the edit page loads for a caregiver
 - **THEN** `email`, `role`, `given_name`, `family_name`, and `qualification` MUST render with a Lock icon + locked-helper copy AND MUST NOT render an asterisk; `display_name` is not exposed (caregiver display_name is server-derived)
+
+#### Scenario: Edit form hydrates from live user + practitioner
+
+- **WHEN** the edit page loads for a caregiver whose `GET /users/{id}` returns its `display_name` / `email` / `role` and `GET /practitioners/{id}` returns `given_name = "Sanne"`, `family_name = "Jansen"`, `qualification = "Huisarts"`
+- **THEN** the hero MUST show the real name + email (NOT the `Nieuwe gebruiker` / `naam@voorbeeld.nl` placeholder), and the `given_name` / `family_name` / `qualification` inputs MUST be populated from the Practitioner
+
+#### Scenario: Edit form loading and missing states
+
+- **WHEN** the user (or caregiver practitioner) query is pending
+- **THEN** `<EntityDetailSkeleton>` MUST render; AND WHEN `GET /users/{id}` resolves `404` THEN `<EntityNotFound>` MUST render with a back link to the list
 
 #### Scenario: Validation errors render localised copy
 
