@@ -27,6 +27,14 @@
     "open": "Open",
     "done": "Afgerond"
   },
+  "panel": {
+    "title": "Mijn taken",
+    "subtitle": "Open taken die aan jou zijn toegewezen voor deze patiënt",
+    "prev": "Vorige",
+    "next": "Volgende",
+    "count_one": "{{count}} taak",
+    "count_other": "{{count}} taken"
+  },
   "detail": {
     "due": "Deadline: {{date}}",
     "complete": "Markeer als afgerond",
