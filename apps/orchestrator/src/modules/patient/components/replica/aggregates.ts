@@ -21,7 +21,8 @@ export interface ReplicaStats {
  */
 export function computeStats(series: LusciiMeasurementSeries[]): ReplicaStats | null {
   const points = collectSparkPoints(series)
-  if (points.length === 0) return null
+  const last = points.at(-1)
+  if (!last) return null
   const values = points.map((p) => p.value)
   const sum = values.reduce((acc, v) => acc + v, 0)
   const average = sum / values.length
@@ -30,7 +31,7 @@ export function computeStats(series: LusciiMeasurementSeries[]): ReplicaStats | 
     average: formatNumber(Math.round(average * 10) / 10),
     minimum: formatNumber(Math.min(...values)),
     maximum: formatNumber(Math.max(...values)),
-    latest: formatNumber(points[points.length - 1].value),
+    latest: formatNumber(last.value),
     unit,
   }
 }
