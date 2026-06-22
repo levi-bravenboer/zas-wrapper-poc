@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI in het zorgplatform</title>
+<style>
+  :root{
+    --ink:#101828; --muted:#667085; --line:#e4e7ec; --card:#ffffff;
+    --primary:#266b5e; --mint:#cfede8; --mint-soft:#f1f8f7; --accent:#6fc7b6;
+    --r-md:.5rem; --r-lg:.75rem; --shadow:0 1px 2px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);font-size:14px;line-height:1.5;letter-spacing:-.011em;
+    font-family:"Geist Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(ellipse 65% 55% at 100% 100%,rgba(111,199,182,.20) 0%,transparent 70%),
+      linear-gradient(180deg,#f6f8f7 0%,#eef2f0 100%);
+    background-attachment:fixed;min-height:100vh}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 56px}
+  h1{margin:0;font-size:24px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin:5px 0 22px;max-width:620px}
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+
+  .col{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .col-head{padding:16px 18px 14px;border-bottom:1px solid var(--line)}
+  .role{font-size:16px;font-weight:600}
+  .app{display:inline-flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;
+    color:var(--primary);background:var(--mint-soft);border:1px solid var(--mint);
+    padding:3px 9px;border-radius:999px;font-weight:500}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+  .col-body{padding:12px 18px 18px}
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  li{padding:10px 12px;border-radius:var(--r-md);background:#e7f4f0;
+    border:1px solid #bfe3da;border-left:3px solid var(--primary)}
+  .t{font-weight:600;font-size:13.5px}
+  .n{color:#43615a;font-size:12px;margin-top:2px}
+
+  footer{color:var(--muted);font-size:12px;margin-top:24px}
+  footer b{color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI in het zorgplatform</h1>
+  <div class="sub">Per rol wat AI doet.</div>
+  <div class="cols" id="cols"></div>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+function el(tag,attrs,kids){
+  const n=document.createElement(tag);
+  if(attrs)for(const k in attrs){
+    if(k==="class")n.className=attrs[k];
+    else if(k==="text")n.textContent=attrs[k];
+    else n.setAttribute(k,attrs[k]);
+  }
+  (kids||[]).forEach(c=>n.appendChild(typeof c==="string"?document.createTextNode(c):c));
+  return n;
+}
+
+const COLS=[
+  {role:"Zorgverleners",app:"Zorgplatform",items:[
+    {t:"AI-schrijfhulp",n:"Stelt berichten, taken en antwoorden voor je op."},
+    {t:"Spraak-transcriptie & notulen",n:"Maakt samenvattingen/notities uit gesprekken met patiënt of collega."},
+    {t:"AI-samenvattingen",n:"Vat dossier, overleg of taken in seconden samen."},
+  ]},
+  {role:"Patiënten",app:"Mobiele app",items:[
+    {t:"AI-tolk",n:"Vertaalt live tussen patiënt en zorgverlener, elk in zijn eigen taal."},
+    {t:"AI Q&A-chat",n:"Beantwoordt vragen over planning en stappen; klinisch gaat naar het team."},
+    {t:"Na-consult samenvatting",n:"Gewone-taal terugblik na de afspraak: wat is besproken, wat moet je doen."},
+  ]},
+  {role:"Beheerders",app:"Zorgplatform",items:[
+    {t:"AI-zorgpadbouwer",n:"Bouw een zorgpad uit foto, bestand, spraak of chat."},
+    {t:"AI-auditrapporten",n:"Genereert compliance-/auditverslagen op aanvraag."},
+    {t:"AI-chat over audit",n:"“Wie zag dossier X vorige week?” in gewone taal."},
+  ]},
+];
+
+const cols=document.getElementById("cols");
+COLS.forEach(c=>{
+  cols.appendChild(el("div",{class:"col"},[
+    el("div",{class:"col-head"},[
+      el("div",{class:"role",text:c.role}),
+      el("span",{class:"app"},[el("span",{class:"dot"}),c.app]),
+    ]),
+    el("div",{class:"col-body"},[
+      el("ul",null,c.items.map(it=>
+        el("li",null,[el("div",{class:"t",text:it.t}),el("div",{class:"n",text:it.n})]))),
+    ]),
+  ]));
+});
+
+const ft=document.getElementById("footer");
+ft.appendChild(el("b",{text:"Altijd: "}));
+ft.appendChild(document.createTextNode("AI stelt voor, een mens beslist, elke actie gelogd."));
+</script>
+</body>
+</html>
