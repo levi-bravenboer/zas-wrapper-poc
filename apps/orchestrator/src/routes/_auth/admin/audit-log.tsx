@@ -5,5 +5,5 @@ import { AuditListPage } from '@/modules/audit/components/AuditListPage'
 
 export const Route = createFileRoute('/_auth/admin/audit-log')({
   component: AuditListPage,
-  staticData: { breadcrumb: 'Auditlog' },
+  staticData: { breadcrumb: 'header.crumb.auditLog' },
 })

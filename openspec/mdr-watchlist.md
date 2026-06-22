@@ -38,6 +38,12 @@ Stop. Add an entry. Propose a non-MDR alternative. Get a decision before proceed
 - **Non-MDR alternative:** already chosen — `qualification` is free text (not a registry credential we validate); `code` is a closed administrative enum; clinical reasoning stays out of this table. Widening to free `CodeableConcept` queued as BL-062.
 - **Decision:** chosen — landed as-is. Re-verify if `code` ever drives clinical authority (e.g. prescribing rights) or if `qualification` becomes a validated credential.
 
+### 2026-06-22 — caregivers questioning patient data via AI (source: conversation / docs/research/ai-opportunity-mapping.md)
+- **Trigger:** AI features that let caregivers ask natural-language questions about a patient and get answers synthesized from clinical data — deterioration questions over Luscii vitals, cross-source clinical summaries, cohort comparison, next-step recommendations, AI triage of a panel. All interpret clinical data rather than route/display it.
+- **Why wanted:** product direction wants these high-value caregiver use cases in the AI opportunity mapping for a hospital pitch; "forget the no-MDR rule" requested in conversation.
+- **Non-MDR alternative:** split the cluster by retrieval-vs-interpretation. **Verbatim ask-the-record** (returns source values + provenance, no synthesis, Luscii data display-only) stays non-MDR (`gate`). Anything that summarizes, trends, scores, compares, recommends, or triages from clinical signal is MDR `RISK` and stays out unless a per-item decision is recorded.
+- **Decision:** scoped into the mapping for ideation only. No `RISK`-tagged item ships without its own watchlist entry + recorded MDR decision (alternative shape / accepted-with-rationale / escalated to regulatory). Verbatim retrieval may proceed at MVP behind the passthrough + provenance guardrails.
+
 ### 2026-06-22 — Luscii alert-flag passthrough in Metingen replica (source: luscii-measurements-view)
 - **Trigger:** colouring measurement points/rows by Luscii's fired alert flag (red/orange) in the replica view — revisits the "no alerts" line of the 2026-06-10 decision.
 - **Why wanted:** the replica must visually match Luscii's own Metingen screen, where measurements that crossed a threshold show a red/orange status dot. Caregivers expect the same cue.

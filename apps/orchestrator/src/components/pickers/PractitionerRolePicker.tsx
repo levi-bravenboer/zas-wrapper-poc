@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import type { ListQuery } from '@/lib/query/paginated'
@@ -30,12 +31,13 @@ export function PractitionerRolePicker({
   value,
   onChange,
   disabled,
-  placeholder = 'Selecteer rol',
-  searchPlaceholder = 'Zoek rol',
-  emptyLabel = 'Geen rollen gevonden',
-  loadingLabel = 'Laden…',
+  placeholder,
+  searchPlaceholder,
+  emptyLabel,
+  loadingLabel,
   ariaLabel,
 }: PractitionerRolePickerProps): ReactElement {
+  const { t } = useTranslation('common')
   const [search, setSearch] = useState('')
 
   const query = useMemo(
@@ -74,7 +76,7 @@ export function PractitionerRolePicker({
 
   const getLabel = (role: PractitionerRoleRead): string => {
     const orgName = orgMap.get(role.organisation_id) ?? '…'
-    const primary = role.is_primary ? ' (Primair)' : ''
+    const primary = role.is_primary ? ` ${t('pickers.role.primarySuffix')}` : ''
     return `${role.code} @ ${orgName}${primary}`
   }
 
@@ -96,10 +98,10 @@ export function PractitionerRolePicker({
       search={search}
       onSearchChange={setSearch}
       onSelect={(r) => onChange(r.id, r)}
-      placeholder={placeholder}
-      searchPlaceholder={searchPlaceholder}
-      emptyLabel={emptyLabel}
-      loadingLabel={loadingLabel}
+      placeholder={placeholder ?? t('pickers.role.placeholder')}
+      searchPlaceholder={searchPlaceholder ?? t('pickers.role.search')}
+      emptyLabel={emptyLabel ?? t('pickers.role.empty')}
+      loadingLabel={loadingLabel ?? t('pickers.loading')}
       isLoading={isLoading}
       disabled={disabled || !practitionerId}
       ariaLabel={ariaLabel}

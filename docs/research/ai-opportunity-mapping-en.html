@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Opportunity Map · ZAS</title>
+<style>
+  :root{
+    --ink:#101828; --muted:#667085; --line:#e4e7ec; --card:#ffffff;
+    --primary:#266b5e; --mint:#cfede8; --mint-soft:#f1f8f7; --accent:#6fc7b6;
+    --r-md:.5rem; --r-lg:.75rem; --shadow:0 1px 2px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);font-size:14px;line-height:1.5;letter-spacing:-.011em;
+    font-family:"Geist Variable",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(ellipse 65% 55% at 100% 100%,rgba(111,199,182,.20) 0%,transparent 70%),
+      linear-gradient(180deg,#f6f8f7 0%,#eef2f0 100%);
+    background-attachment:fixed;min-height:100vh}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 56px}
+  h1{margin:0;font-size:24px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin:5px 0 22px;max-width:620px}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:0 0 10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;border:1px solid}
+  .sw.g{background:#e7f4f0;border-color:#bfe3da;border-left:3px solid var(--primary)}
+  .sw.o{background:#fff6e9;border-color:#f0c98a;border-left:3px solid #d98a00}
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+
+  .col{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .col-head{padding:16px 18px 14px;border-bottom:1px solid var(--line)}
+  .role{font-size:16px;font-weight:600}
+  .app{display:inline-flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;
+    color:var(--primary);background:var(--mint-soft);border:1px solid var(--mint);
+    padding:3px 9px;border-radius:999px;font-weight:500}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+  .col-body{padding:6px 18px 18px}
+  .grp{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+    color:var(--muted);padding:14px 0 7px}
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  li{padding:8px 11px;border-radius:var(--r-md);background:#e7f4f0;
+    border:1px solid #bfe3da;border-left:3px solid var(--primary)}
+  .t{font-weight:600;font-size:13px}
+  .n{color:#43615a;font-size:11.5px;margin-top:1px}
+
+  .grp.exp{color:#b26a00}
+  ul.exp{gap:5px}
+  ul.exp li{padding:6px 10px;background:#fff6e9;border:1px solid #f0c98a;border-left:3px solid #d98a00}
+  ul.exp .t{font-size:12px;font-weight:600}
+  ul.exp .n{color:#8a6a3a}
+  .warn{font-weight:700}
+  .warn1{color:#d98a00}
+  .warn2{color:#c4321b}
+  .chan{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    padding:1px 6px;border-radius:4px;display:inline-block;margin-top:5px}
+  .c-zorgplatform{color:#266b5e;background:#d7ece6}
+  .c-mobile{color:#1d6fb8;background:#dceaf6}
+  .c-mcp{color:#5b3fb0;background:#e9e3fb}
+  .c-other{color:#667085;background:#eceef1}
+
+  footer{color:var(--muted);font-size:12px;margin-top:24px}
+  footer b{color:var(--primary)}
+  code{background:var(--mint-soft);border:1px solid var(--mint);border-radius:4px;padding:1px 5px;font-size:11px;
+    font-family:"Geist Mono Variable",ui-monospace,Menlo,monospace}
+
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    h1{font-size:19px}
+    .sub{margin:3px 0 7px;font-size:11px}
+    .legend{margin-bottom:6px;font-size:10px;gap:12px}
+    /* all three roles side by side on a single tall page */
+    .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;align-items:start}
+    .col{box-shadow:none}
+    .col-head{padding:11px 13px 9px}
+    .col-body{padding:4px 13px 13px}
+    .grp{padding:9px 0 5px}
+    .grp:first-child{padding-top:2px}
+    ul{gap:5px}
+    ul.exp{gap:4px}
+    li{padding:5px 9px;break-inside:avoid}
+    .t{font-size:11.5px}
+    .n{font-size:10px}
+    ul.exp .t{font-size:11px}
+    .chan{font-size:8px;margin-top:3px}
+    footer{font-size:9px;margin-top:8px}
+  }
+  @page{size:340mm 600mm;margin:8mm}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI Opportunity Map</h1>
+  <div class="sub">Per role, per app: what AI can do across the ZAS platform.</div>
+  <div class="legend">
+    <span><span class="sw g"></span> Baseline: solid, build-first</span>
+    <span><span class="sw o"></span> Experimental: weird / edge, could be interesting</span>
+    <span><span class="warn warn1">⚠</span> MDR level 1: gray zone, only with safeguards</span>
+    <span><span class="warn warn2">⚠</span> MDR level 2+: clinical interpretation, decision required</span>
+  </div>
+  <div class="legend">
+    <span><span class="chan c-zorgplatform">platform</span> our care platform</span>
+    <span><span class="chan c-mobile">mobile</span> patient mobile app</span>
+    <span><span class="chan c-mcp">mcp</span> ZAS builds it via our MCP layer</span>
+    <span><span class="chan c-other">other</span> external / future</span>
+  </div>
+  <div class="cols" id="cols"></div>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+function el(tag,attrs,kids){
+  const n=document.createElement(tag);
+  if(attrs)for(const k in attrs){
+    if(k==="class")n.className=attrs[k];
+    else if(k==="text")n.textContent=attrs[k];
+    else n.setAttribute(k,attrs[k]);
+  }
+  (kids||[]).forEach(c=>n.appendChild(typeof c==="string"?document.createTextNode(c):c));
+  return n;
+}
+
+const COLS=[
+  {role:"Caregivers",app:"Care platform",groups:[
+    {g:"Build pathways",items:[
+      {t:"Pathway from text, PDF, photo or voice",n:"Describe it, drop a protocol PDF, photograph a whiteboard, or dictate it, and get a draft to edit."},
+      {t:"Autofill block content",n:"Writes the message, task and appointment text for each step."},
+      {t:"Pathway checker",n:"Catches dead ends and missing consent steps."},
+      {t:"Dry-run simulator",n:"“What happens if she fails the week-3 check?”"},
+    ]},
+    {g:"Run & ask",items:[
+      {t:"Catch me up on a patient",n:"Shows where they are in the pathway."},
+      {t:"Ask the record",n:"“What meds? Last 3 appointments?” Answered from the file.",mdr:1},
+    ]},
+    {g:"Clear the inbox",items:[
+      {t:"Summarize my tasks",n:"Groups your tasks and highlights what's overdue."},
+      {t:"Draft replies & reminders",n:"AI writes the message, you send it."},
+    ]},
+  ],exp:[
+    {t:"Suggest pathway at enrollment",n:"Recommends the right pathway and pre-fills its values.",mdr:1},
+    {t:"Natural-language bulk edit",n:"“Make all reminders 2 days earlier.”"},
+    {t:"Red-team my pathway",n:"Finds where a patient could fall through the cracks."},
+    {t:"“Why is this stuck?” helper",n:"Explains why a step hasn't started yet."},
+    {t:"Impact analysis",n:"“What breaks if I delete this step?”"},
+    {t:"Version diff in words",n:"Explains what changed between versions, helps merge."},
+    {t:"Workload forecast",n:"Predicts how much staff work a pathway will create."},
+    {t:"Bad-design detector",n:"Flags steps patients keep skipping: a design smell."},
+    {t:"Shift-handover note",n:"Auto-drafts the handover at end of shift.",mdr:1},
+    {t:"Care-team thread summary",n:"Catch up on a long discussion in seconds."},
+    {t:"MDT scribe",n:"Listens in the meeting, turns it into tasks.",mdr:1},
+    {t:"Appointment-move cascade",n:"Move one appointment, the rest reschedule."},
+    {t:"No-show prediction",n:"Predicts likely no-shows so you can remind them.",mdr:1},
+    {t:"Drop-out risk",n:"Spots patients likely to disengage, from app activity.",mdr:1},
+    {t:"Auto name + description",n:"Names and describes the pathway for you."},
+    {t:"Reuse across hospitals",n:"Adapt one hospital's pathway for another."},
+  ]},
+  {role:"Patients",app:"Mobile app",groups:[
+    {g:"Stay oriented",items:[
+      {t:"What do I do this week?",n:"Their next steps, in plain language."},
+      {t:"Explain this step",n:"Turns medical jargon into plain words.",mdr:1},
+    ]},
+    {g:"Stay on track",items:[
+      {t:"Multilingual reminders",n:"Reminders for consent, surveys and prep in nl/fr/en."},
+      {t:"Two-way language bridge",n:"Patient writes in Arabic, caregiver reads clean Dutch, and back.",mdr:1},
+      {t:"Reach the right channel",n:"Picks the best channel: email, app, SMS or call."},
+    ]},
+    {g:"Ask",items:[
+      {t:"Workflow assistant",n:"Answers planning & step questions; clinical ones go to the team.",mdr:1},
+    ]},
+  ],exp:[
+    {t:"Reading-level rewrite",n:"Rewrites consent into simple language."},
+    {t:"Voice assistant",n:"Spoken help for low-literacy or elderly patients.",mdr:1},
+    {t:"Prep checklist",n:"Builds a prep checklist for each appointment."},
+    {t:"Smart FAQ",n:"Auto-builds a patient Q&A from the pathway."},
+    {t:"Auto explainer clips",n:"Turns a step into a short audio or video clip.",mdr:1},
+    {t:"Smart delivery timing",n:"Sends reminders when the patient will actually read them."},
+    {t:"Adaptive streaks",n:"Motivating streaks that adapt to the patient."},
+    {t:"Frustration sensing",n:"Flags upset messages to the care team."},
+    {t:"Tone-matched messages",n:"Adapts wording to anxious vs pragmatic patients."},
+    {t:"Free-text triage",n:"Sorts a patient's message and routes it to the right person.",mdr:2},
+  ]},
+  {role:"Admins",app:"Care platform",groups:[
+    {g:"Ask the system",items:[
+      {t:"Plain-language audit query",n:"“Who accessed record X last week?”"},
+    ]},
+    {g:"Report",items:[
+      {t:"Compliance reports",n:"GDPR / audit narrative on demand."},
+    ]},
+  ],exp:[
+    {t:"Draft a role",n:"Describe it, AI proposes the permissions, you approve."},
+    {t:"Bulk user & role ops",n:"Ask in words → preview the change → apply."},
+    {t:"Flag unusual access",n:"Highlights unusual access for review."},
+    {t:"GDPR request assembler",n:"Gathers all of one patient's data on request."},
+    {t:"“Explain this audit event”",n:"Decodes a raw log line into plain words."},
+    {t:"Plain-language analytics",n:"“How many patients finished last month?”"},
+    {t:"Synthetic patient simulation",n:"Runs fake patients through a pathway before go-live."},
+    {t:"Cross-hospital pathway checker",n:"Scans every hospital's pathways for consent / GDPR gaps."},
+    {t:"Over-privilege detector",n:"Finds accounts with more access than they need."},
+    {t:"Role mining",n:"Suggests roles based on how people actually work."},
+    {t:"Dormant-user detector",n:"Flags accounts no one uses anymore."},
+    {t:"DPIA auto-draft",n:"Drafts the privacy assessment for a pathway."},
+    {t:"Weekly anomaly digest",n:"A “what changed / what's unusual” summary."},
+    {t:"Cost / workload ranking",n:"Which pathways burn the most staff time."},
+    {t:"Completion-time forecast",n:"Predicts how long a pathway takes, from past patients."},
+    {t:"Auto release notes",n:"Writes the changelog from pathway edits."},
+    {t:"Hospital onboarding copilot",n:"A new hospital sets itself up by chatting."},
+    {t:"Full-content localisation",n:"Translates the app and pathways at setup."},
+    {t:"Belgian-holiday scheduling",n:"Shifts scheduling around Belgian holidays."},
+    {t:"MCP night-watch agent",n:"Dry-runs every pathway nightly, flags what broke."},
+    {t:"Self-healing links",n:"Spots a broken Luscii link and suggests a fix."},
+    {t:"Breach blast-radius sim",n:"If data leaked, shows who and what is exposed."},
+    {t:"Pathway marketplace",n:"Find a ready-made pathway that fits your need."},
+  ]},
+];
+
+// channel = where/how it's delivered. Default per column; overrides by title.
+const CHAN_MCP=new Set(["Reuse across hospitals","Bad-design detector",
+  "Drop-out risk","No-show prediction","Frustration sensing",
+  "MCP night-watch agent","Weekly anomaly digest","GDPR request assembler",
+  "Over-privilege detector","Role mining","Breach blast-radius sim","Plain-language analytics",
+  "Cost / workload ranking","Completion-time forecast"]);
+const CHAN_OTHER=new Set(["MDT scribe","Belgian-holiday scheduling",
+  "Self-healing links","Pathway marketplace"]);
+const CHAN_LABEL={zorgplatform:"platform",mobile:"mobile",mcp:"mcp",other:"other"};
+function chan(it,def){
+  if(CHAN_MCP.has(it.t))return"mcp";
+  if(CHAN_OTHER.has(it.t))return"other";
+  return def;
+}
+const MDR_TIP={1:"MDR level 1: gray zone — touches clinical data or explanation, only allowed with safeguards (verbatim, human decides, no clinical judgement).",
+  2:"MDR level 2+: interprets clinical data or makes/triages a clinical decision — the real MDR line, decision required before build."};
+function row(it,def){
+  const title=el("div",{class:"t"},[it.t]);
+  if(it.mdr)title.appendChild(el("span",{class:"warn warn"+it.mdr,title:MDR_TIP[it.mdr],text:" ⚠"}));
+  const ch=chan(it,def);
+  return el("li",null,[title,el("div",{class:"n",text:it.n}),
+    el("span",{class:"chan c-"+ch,text:CHAN_LABEL[ch]})]);
+}
+
+const cols=document.getElementById("cols");
+COLS.forEach(c=>{
+  const def=c.app==="Mobile app"?"mobile":"zorgplatform";
+  const body=el("div",{class:"col-body"});
+  c.groups.forEach(grp=>{
+    body.appendChild(el("div",{class:"grp",text:grp.g}));
+    body.appendChild(el("ul",null,grp.items.map(it=>row(it,def))));
+  });
+  if(c.exp&&c.exp.length){
+    body.appendChild(el("div",{class:"grp exp",text:"Experimental · edge"}));
+    body.appendChild(el("ul",{class:"exp"},c.exp.map(it=>row(it,def))));
+  }
+  cols.appendChild(el("div",{class:"col"},[
+    el("div",{class:"col-head"},[
+      el("div",{class:"role",text:c.role}),
+      el("span",{class:"app"},[el("span",{class:"dot"}),c.app]),
+    ]),
+    body,
+  ]));
+});
+
+const ft=document.getElementById("footer");
+ft.appendChild(el("b",{text:"Always: "}));
+ft.appendChild(document.createTextNode("AI proposes, a human decides, every action logged. Source "));
+ft.appendChild(el("code",{text:"docs/research/ai-opportunity-mapping.md"}));
+</script>
+</body>
+</html>

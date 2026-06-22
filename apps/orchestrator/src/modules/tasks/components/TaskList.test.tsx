@@ -16,6 +16,10 @@ vi.mock('../hooks', () => ({
   useTasksQuery: useTasksQueryMock,
 }))
 
+vi.mock('@/modules/patient/hooks', () => ({
+  usePatient: () => ({ data: undefined }),
+}))
+
 vi.mock('@tanstack/react-router', () => ({
   useParams: useParamsMock,
   Link: ({ children, ...props }: { children?: React.ReactNode } & Record<string, unknown>) => {

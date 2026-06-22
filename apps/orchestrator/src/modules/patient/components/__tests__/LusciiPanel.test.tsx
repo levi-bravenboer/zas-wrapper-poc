@@ -222,7 +222,7 @@ describe('LusciiPanel', () => {
     })
     renderPanel()
     // No enrollments mocked → no program match → unassigned bucket.
-    expect(screen.getByText(/Niet aan zorgpad gekoppeld/)).toBeTruthy()
+    expect(screen.getByText(/Niet aan zorgtraject gekoppeld/)).toBeTruthy()
     expect(screen.getByText('Hartfalen programma')).toBeTruthy()
   })
 })

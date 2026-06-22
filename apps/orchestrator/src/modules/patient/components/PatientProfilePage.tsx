@@ -12,25 +12,24 @@ import {
 } from '@/components/entity'
 import { EmptyState } from '@/components/states/EmptyState'
 import { Badge } from '@/components/ui/badge'
+import { env } from '@/config/env'
 import { api } from '@/lib/api/client'
 import { isApiError } from '@/lib/api/errors'
 import { formatDateOrDash } from '@/lib/utils/datetime'
 import { PathwayTimeline } from '@/modules/patient-pathway/components/PathwayTimeline'
 import { ZorgpadTab } from '@/modules/patient-pathway/components/ZorgpadTab'
-
+import { PatientTasksPanel } from '@/modules/tasks/components/PatientTasksPanel'
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
-
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
-import { env } from '@/config/env'
 
 import { MeasurementCharts } from './MeasurementCharts'
-import { MeasurementReplica } from './replica/MeasurementReplica'
 import { PatientAppointmentsTab } from './PatientAppointmentsTab'
 import { PatientCollaborationTab } from './PatientCollaborationTab'
 import { PatientKebab } from './PatientKebab'
 import { PatientOverviewTab } from './PatientOverviewTab'
+import { MeasurementReplica } from './replica/MeasurementReplica'
 
 const ORG_CACHE_STALE_MS = 5 * 60_000
 
@@ -129,6 +128,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
       body={
         <>
           <PathwayTimeline patientId={patient.id} />
+          <PatientTasksPanel patientId={patient.id} />
           <EntityDetailTabs
             value={activeTab}
             onValueChange={setActiveTab}

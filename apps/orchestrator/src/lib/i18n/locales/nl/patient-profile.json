@@ -20,8 +20,8 @@
     "birthDate": "Geboortedatum",
     "organisation": "Organisatie",
     "insz": "INSZ",
-    "pathway": "Zorgpad",
-    "pathwayFallback": "Zorgpad",
+    "pathway": "Zorgtraject",
+    "pathwayFallback": "Zorgtraject",
     "treatingClinician": "Hoofdbehandelaar"
   },
   "header": {
@@ -33,7 +33,7 @@
   },
   "tabs": {
     "overview": "Overzicht",
-    "pathway": "Zorgpad",
+    "pathway": "Zorgtraject",
     "zorgteam": "Zorgteam",
     "measurements": "Metingen",
     "lab_results": "Labresultaten",
@@ -68,8 +68,8 @@
   "field": {
     "birthDate": "Geboortedatum",
     "treatingClinician": "Hoofdbehandelaar",
-    "pathway": "Zorgpad",
-    "pathwayFallback": "Zorgpad"
+    "pathway": "Zorgtraject",
+    "pathwayFallback": "Zorgtraject"
   },
   "timeline": {
     "state": {
@@ -166,11 +166,11 @@
       "noValues": "Geen waarden"
     },
     "groups": {
-      "currentTitle": "Huidig zorgpad",
+      "currentTitle": "Huidig zorgtraject",
       "historyTitle": "Historie",
-      "unassignedTitle": "Niet aan zorgpad gekoppeld",
+      "unassignedTitle": "Niet aan zorgtraject gekoppeld",
       "historyToggle": "Historie tonen",
-      "unassignedHint": "Programma niet teruggevonden in een zorgpad van deze patiënt."
+      "unassignedHint": "Programma niet teruggevonden in een zorgtraject van deze patiënt."
     },
     "connection": {
       "title": "Luscii-koppelingen",
