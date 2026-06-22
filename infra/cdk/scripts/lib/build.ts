@@ -11,9 +11,12 @@ export async function buildAndPush(registry: string, tag: string): Promise<void>
   const backend = `${registry}/${config.backendRepo}`;
   const orchestrator = `${registry}/${config.orchestratorRepo}`;
 
-  log.step("build backend image");
+  // EC2 is x86_64; build for linux/amd64 even on an arm64 dev machine.
+  log.step("build backend image (linux/amd64)");
   await sh("docker", [
     "build",
+    "--platform",
+    "linux/amd64",
     "-t",
     `${backend}:${tag}`,
     "-f",
@@ -21,9 +24,11 @@ export async function buildAndPush(registry: string, tag: string): Promise<void>
     resolve(REPO_ROOT, "apps/backend"),
   ]);
 
-  log.step("build orchestrator image");
+  log.step("build orchestrator image (linux/amd64)");
   await sh("docker", [
     "build",
+    "--platform",
+    "linux/amd64",
     "-t",
     `${orchestrator}:${tag}`,
     "--build-arg",
