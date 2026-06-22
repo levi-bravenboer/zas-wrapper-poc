@@ -79,7 +79,7 @@ B_OPERATION = _u("3d")
 B_POSTOP_MSG = _u("3e")
 B_PATHOLOGY = _u("3f")
 B_MDO_POSTOP = _u("40")
-B_DISCUSS2 = _u("41")
+B_WOUND_CHECK = _u("41")
 B_DECIDE_TREAT = _u("42")
 B_END_TREAT = _u("43")
 B_END_NOTHING = _u("44")
@@ -112,6 +112,7 @@ def _gate_decision(decision: UUID, output_key: str) -> dict[str, object]:
 
 
 _UROLOGY = {"role": "physician", "specialty": "urologie"}
+_GP = {"role": "gp", "specialty": "huisartsgeneeskunde", "external": True}
 
 
 def _build_payload() -> PathwayDefinitionReplace:
@@ -123,7 +124,7 @@ def _build_payload() -> PathwayDefinitionReplace:
             PathwayPhaseIn(id=PHASE_DIAG_ID, template_id="pre-op", label="Diagnostiek", ord=10),
             PathwayPhaseIn(id=PHASE_PREOP_ID, template_id="pre-op", label="Pre-operatief", ord=20),
             PathwayPhaseIn(id=PHASE_SURGERY_ID, template_id="surgery", label="Operatie", ord=30),
-            PathwayPhaseIn(id=PHASE_FOLLOWUP_ID, template_id="follow-up", label="Diagnose", ord=40),
+            PathwayPhaseIn(id=PHASE_FOLLOWUP_ID, template_id="follow-up", label="Opvolging", ord=40),
         ],
         lanes=[
             PathwayLaneIn(
@@ -356,15 +357,16 @@ def _build_payload() -> PathwayDefinitionReplace:
                 },
             ),
             PathwayBlockIn(
-                id=B_DISCUSS2,
+                id=B_WOUND_CHECK,
                 phase_id=PHASE_FOLLOWUP_ID,
                 lane_id=LANE_CAREGIVER_ID,
                 kind="appointment",
-                label="Afspraak: uitslag bespreken",
+                label="Afspraak: wondcontrole bij huisarts",
                 config={
-                    "title": "Uitslag bespreken",
-                    "participant": _UROLOGY,
-                    "input_logic": _gate_if_done(B_MDO_POSTOP),
+                    "title": "Wondcontrole",
+                    "location": "Huisartspraktijk (extern)",
+                    "participant": _GP,
+                    "input_logic": _gate_if_done(B_OPERATION),
                 },
             ),
             PathwayBlockIn(
@@ -377,7 +379,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                     "question": "Behandelen?",
                     "outputs": ["treatment", "nothing"],
                     "mode": "xor",
-                    "input_logic": _gate_if_done(B_DISCUSS2),
+                    "input_logic": _gate_if_done(B_MDO_POSTOP),
                 },
             ),
             PathwayBlockIn(
