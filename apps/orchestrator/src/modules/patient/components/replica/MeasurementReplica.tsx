@@ -15,6 +15,8 @@ import { ReplicaFilterBar } from './ReplicaFilterBar'
 
 const NOT_CONFIGURED_CODE = 'unavailable.luscii.not_configured'
 const POLL_MS = 5000
+// Default window — matches Luscii's own default active preset (3M).
+const DEFAULT_WINDOW_DAYS: LusciiWindowDays = 90
 
 // Dev-editable card order. Cards whose instrument name matches an entry render
 // in this order; anything not listed is appended in the order the API returns
@@ -33,7 +35,7 @@ export interface MeasurementReplicaProps {
  */
 export function MeasurementReplica({ patientId }: MeasurementReplicaProps): ReactElement {
   const { t } = useTranslation('patient-profile')
-  const [days, setDays] = useState<LusciiWindowDays>(90)
+  const [days, setDays] = useState<LusciiWindowDays>(DEFAULT_WINDOW_DAYS)
 
   const dataQuery = useLusciiData(patientId, { days, pollMs: POLL_MS })
   const data = dataQuery.data
