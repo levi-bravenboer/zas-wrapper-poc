@@ -56,7 +56,7 @@ describe('PathwayLinkInspector (8.2)', () => {
     renderInspector({ target_pathway_id: CHILD_ID, mode: 'blocking', context_mapping: {} })
 
     expect(screen.getByText('Subpath')).toBeInTheDocument()
-    expect(screen.getByText(/Doel-zorgpad/i)).toBeInTheDocument()
+    expect(screen.getByText(/Doel-zorgtraject/i)).toBeInTheDocument()
   })
 
   it('renders context-mapping rows for existing entries', () => {

@@ -13,7 +13,7 @@ import { useResolvedVersion } from '@/modules/pathway/hooks/useResolvedVersion'
 
 export const Route = createFileRoute('/_auth/pathways/$pathwayId/v/$versionId')({
   component: PathwayBuilderHistoricalPage,
-  staticData: { breadcrumb: 'Builder' },
+  staticData: { breadcrumb: 'header.crumb.builder' },
 })
 
 function PathwayBuilderHistoricalPage(): ReactElement {

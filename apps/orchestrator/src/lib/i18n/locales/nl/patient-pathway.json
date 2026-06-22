@@ -1,16 +1,16 @@
 {
   "tab": {
-    "label": "Zorgpad"
+    "label": "Zorgtraject"
   },
   "timeline": {
-    "title": "Zorgpad",
-    "manage": "Beheer zorgpad",
-    "controlsTitle": "Zorgpad beheer",
+    "title": "Zorgtraject",
+    "manage": "Beheer zorgtraject",
+    "controlsTitle": "Zorgtraject beheer",
     "fastForward": "Doorspoelen",
-    "fastForwardToast": "Zorgpad doorgespoeld tot volgende keuze",
+    "fastForwardToast": "Zorgtraject doorgespoeld tot volgende keuze",
     "fastForwardError": "Doorspoelen mislukt",
     "hide": "Verberg beheer",
-    "enrollAnother": "Nieuw zorgpad",
+    "enrollAnother": "Nieuw zorgtraject",
     "noSteps": "Nog geen stappen",
     "state": {
       "finished": "Afgerond",
@@ -19,19 +19,19 @@
     }
   },
   "empty": {
-    "title": "Geen actief zorgpad",
-    "body": "Deze patiënt volgt nog geen zorgpad. Schrijf de patiënt in om te beginnen.",
-    "enroll": "Inschrijven op zorgpad"
+    "title": "Geen actief zorgtraject",
+    "body": "Deze patiënt volgt nog geen zorgtraject. Schrijf de patiënt in om te beginnen.",
+    "enroll": "Inschrijven op zorgtraject"
   },
   "enroll": {
-    "title": "Inschrijven op zorgpad",
-    "description": "Kies een gepubliceerd zorgpad en stel de startdatum in.",
-    "pathwayLabel": "Zorgpad",
-    "pathwayPlaceholder": "Kies een zorgpad",
+    "title": "Inschrijven op zorgtraject",
+    "description": "Kies een gepubliceerd zorgtraject en stel de startdatum in.",
+    "pathwayLabel": "Zorgtraject",
+    "pathwayPlaceholder": "Kies een zorgtraject",
     "anchorLabel": "Startdatum",
     "participantPlaceholder": "Kies een zorgverlener",
     "earliestHint": "Vroegst haalbaar: {{date}}",
-    "noPublished": "Er zijn nog geen gepubliceerde zorgpaden om op in te schrijven.",
+    "noPublished": "Er zijn nog geen gepubliceerde zorgtrajecten om op in te schrijven.",
     "cancel": "Annuleren",
     "submit": "Inschrijven",
     "next": "Volgende",
@@ -42,17 +42,17 @@
     "locationLabel": "Locatie afspraak",
     "practitionerLabel": "Behandelaar",
     "step": {
-      "setup": "Zorgpad & data",
+      "setup": "Zorgtraject & data",
       "review": "Controleren"
     },
     "review": {
       "title": "Controleer en bevestig",
-      "pathway": "Zorgpad",
+      "pathway": "Zorgtraject",
       "anchor": "Startdatum",
       "unset": "—"
     },
     "toast": {
-      "success": "Patiënt ingeschreven op zorgpad",
+      "success": "Patiënt ingeschreven op zorgtraject",
       "error": "Inschrijven mislukt"
     },
     "validationTitle": "Inschrijven geblokkeerd"
@@ -61,19 +61,19 @@
     "pause": "Pauzeren",
     "resume": "Hervatten",
     "toast": {
-      "paused": "Zorgpad gepauzeerd",
-      "resumed": "Zorgpad hervat",
+      "paused": "Zorgtraject gepauzeerd",
+      "resumed": "Zorgtraject hervat",
       "error": "Actie mislukt"
     }
   },
   "cancel": {
     "action": "Annuleren",
-    "title": "Zorgpad annuleren?",
+    "title": "Zorgtraject annuleren?",
     "description": "De inschrijving wordt gestopt. Deze actie kan niet ongedaan worden gemaakt.",
     "dismiss": "Terug",
-    "confirm": "Zorgpad annuleren",
+    "confirm": "Zorgtraject annuleren",
     "toast": {
-      "success": "Zorgpad geannuleerd",
+      "success": "Zorgtraject geannuleerd",
       "error": "Annuleren mislukt"
     }
   },
@@ -149,5 +149,5 @@
       "failed": "Mislukt"
     }
   },
-  "loadError": "Zorgpad kon niet worden geladen"
+  "loadError": "Zorgtraject kon niet worden geladen"
 }
