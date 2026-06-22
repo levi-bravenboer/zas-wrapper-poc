@@ -74,7 +74,7 @@ SEED_STEPS: list[SeedStep] = [
 logger = logging.getLogger(__name__)
 
 
-async def _import_kratos_identities(session: AsyncSession) -> None:
+async def import_kratos_identities(session: AsyncSession) -> None:
     """Final step: link every seeded user to a Kratos identity.
 
     Skips with a warning when Kratos is unreachable (e.g. seeding while the
@@ -92,7 +92,7 @@ async def _import_kratos_identities(session: AsyncSession) -> None:
         )
 
 
-async def _reconcile_authz_tuples(session: AsyncSession) -> None:
+async def reconcile_authz_tuples(session: AsyncSession) -> None:
     """Converge Keto to the tuple set derived from the seeded rows.
 
     Without this, `AUTHZ_KETO_ENABLED` deployments seed care-team / org
@@ -115,10 +115,10 @@ async def _seed(session: AsyncSession) -> None:
     for step in SEED_STEPS:
         await step(session)
     # NB: Luscii catalogue snapshot import dropped (Luscii data seeding removed).
-    await _import_kratos_identities(session)
+    await import_kratos_identities(session)
     # Keto tuples last: derived from the rows seeded above, so the access
     # plane matches Postgres for `AUTHZ_KETO_ENABLED` deployments.
-    await _reconcile_authz_tuples(session)
+    await reconcile_authz_tuples(session)
 
 
 def main() -> None:
