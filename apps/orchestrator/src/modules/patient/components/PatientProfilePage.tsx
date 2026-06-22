@@ -23,7 +23,10 @@ import type { OrganisationOption, PatientIdentifierRow } from '../types'
 
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
+import { env } from '@/config/env'
+
 import { MeasurementCharts } from './MeasurementCharts'
+import { MeasurementReplica } from './replica/MeasurementReplica'
 import { PatientAppointmentsTab } from './PatientAppointmentsTab'
 import { PatientCollaborationTab } from './PatientCollaborationTab'
 import { PatientKebab } from './PatientKebab'
@@ -143,7 +146,11 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
               {
                 value: 'measurements',
                 label: t('tabs.measurements'),
-                content: <MeasurementCharts patientId={patient.id} />,
+                content: env.LUSCII_METINGEN_REPLICA ? (
+                  <MeasurementReplica patientId={patient.id} />
+                ) : (
+                  <MeasurementCharts patientId={patient.id} />
+                ),
               },
               {
                 value: 'lab_results',

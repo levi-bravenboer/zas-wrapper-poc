@@ -1,9 +1,9 @@
 import {
+  type QueryClient,
   useMutation,
   useQueries,
   useQuery,
   useQueryClient,
-  type QueryClient,
 } from '@tanstack/react-query'
 
 import { getPathwayVersion } from '@/modules/pathway/api'
@@ -76,10 +76,16 @@ export function useUpdatePatient() {
   })
 }
 
-export type LusciiWindowDays = 7 | 30 | 90 | 365
+// Luscii's own presets: 7D 14D 30D 3M(90) 6M(180) 12M(365). The backend
+// aggregation takes a single `days`-back window, so each preset is a day count.
+export type LusciiWindowDays = 7 | 14 | 30 | 90 | 180 | 365
 
 export interface UseLusciiDataOptions {
   days?: LusciiWindowDays
+  /** Poll interval in ms. The replica passes 5000 for a live refresh. When
+   *  unset, the query does not poll. Background polling stays off, so polling
+   *  pauses automatically while the tab/window is hidden. */
+  pollMs?: number
 }
 
 export function useLusciiData(patientId: string | null, options?: UseLusciiDataOptions) {
@@ -95,6 +101,8 @@ export function useLusciiData(patientId: string | null, options?: UseLusciiDataO
     // Live proxy against an external vendor: a failing Luscii must not be
     // hammered with automatic retries from every open patient view.
     retry: false,
+    refetchInterval: options?.pollMs ?? false,
+    refetchIntervalInBackground: false,
   })
 }
 
