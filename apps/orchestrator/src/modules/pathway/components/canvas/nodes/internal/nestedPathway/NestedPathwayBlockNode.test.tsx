@@ -161,14 +161,14 @@ describe('NestedPathwayBlockNode (8.2)', () => {
       expect(await screen.findByText('Hartfalen vervolgpad')).toBeInTheDocument()
       expect(screen.getByText('3')).toBeInTheDocument()
       expect(screen.getByText('12')).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: /open sub-zorgpad/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /open sub-zorgtraject/i })).toBeInTheDocument()
     })
 
     it('renders empty title when no target is configured', async () => {
       renderNode({ targetId: null, withSummary: false })
 
       expect(await screen.findByText(/geen doel/i)).toBeInTheDocument()
-      expect(screen.queryByRole('link', { name: /open sub-zorgpad/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: /open sub-zorgtraject/i })).not.toBeInTheDocument()
     })
   })
 
@@ -176,7 +176,7 @@ describe('NestedPathwayBlockNode (8.2)', () => {
     it('Open CTA points to /pathways/<child-id>', async () => {
       renderNode()
 
-      const link = await screen.findByRole('link', { name: /open sub-zorgpad/i })
+      const link = await screen.findByRole('link', { name: /open sub-zorgtraject/i })
       expect(link.getAttribute('href')).toContain(`/pathways/${CHILD_ID}`)
     })
   })
@@ -186,7 +186,7 @@ describe('NestedPathwayBlockNode (8.2)', () => {
       const flush = vi.fn()
       renderNode({ flush })
 
-      const link = await screen.findByRole('link', { name: /open sub-zorgpad/i })
+      const link = await screen.findByRole('link', { name: /open sub-zorgtraject/i })
       await userEvent.click(link)
 
       expect(flush).toHaveBeenCalledTimes(1)

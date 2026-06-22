@@ -136,7 +136,7 @@ describe('PatientProfilePage', () => {
     expect(await screen.findByRole('heading', { name: /Bos, Eva/ })).toBeTruthy()
     expect(screen.getAllByText(/80051203412/).length).toBeGreaterThan(0)
     expect(screen.getByRole('tab', { name: /Overzicht/ })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /Zorgpad/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Zorgtraject/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Metingen/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Labresultaten/ })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /Afspraken/ })).toBeTruthy()
