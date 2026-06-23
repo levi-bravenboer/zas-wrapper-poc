@@ -16,9 +16,7 @@ _PW = "changeme"
 
 
 async def _login(client: AsyncClient, email: str) -> None:
-    response = await client.post(
-        "/auth/login/password", json={"email": email, "password": _PW}
-    )
+    response = await client.post("/auth/login/password", json={"email": email, "password": _PW})
     assert response.status_code == 200, response.text
 
 

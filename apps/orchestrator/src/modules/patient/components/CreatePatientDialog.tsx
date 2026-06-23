@@ -36,7 +36,10 @@ export interface CreatePatientDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function CreatePatientDialog({ open, onOpenChange }: CreatePatientDialogProps): ReactElement {
+export function CreatePatientDialog({
+  open,
+  onOpenChange,
+}: CreatePatientDialogProps): ReactElement {
   const { t } = useTranslation('patient-profile')
   const canCrossOrg = useCan('patient.createCrossOrg')
 
@@ -58,11 +61,7 @@ export function CreatePatientDialog({ open, onOpenChange }: CreatePatientDialogP
         {orgQuery.isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{t('state.loading')}</p>
         ) : (
-          <CreatePatientForm
-            orgs={orgs}
-            showSelector={showSelector}
-            onOpenChange={onOpenChange}
-          />
+          <CreatePatientForm orgs={orgs} showSelector={showSelector} onOpenChange={onOpenChange} />
         )}
       </DialogContent>
     </Dialog>

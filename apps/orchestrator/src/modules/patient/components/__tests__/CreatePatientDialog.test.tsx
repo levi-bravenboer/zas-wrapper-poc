@@ -9,14 +9,19 @@ import { i18n } from '@/lib/i18n'
 
 import { CreatePatientDialog } from '../CreatePatientDialog'
 
-const { useCreatePatientMock, mutateAsync, useCanMock, useOrganisationsMock, useMyOrganisationsMock } =
-  vi.hoisted(() => ({
-    useCreatePatientMock: vi.fn(),
-    mutateAsync: vi.fn(),
-    useCanMock: vi.fn(),
-    useOrganisationsMock: vi.fn(),
-    useMyOrganisationsMock: vi.fn(),
-  }))
+const {
+  useCreatePatientMock,
+  mutateAsync,
+  useCanMock,
+  useOrganisationsMock,
+  useMyOrganisationsMock,
+} = vi.hoisted(() => ({
+  useCreatePatientMock: vi.fn(),
+  mutateAsync: vi.fn(),
+  useCanMock: vi.fn(),
+  useOrganisationsMock: vi.fn(),
+  useMyOrganisationsMock: vi.fn(),
+}))
 
 vi.mock('../../hooks', () => ({ useCreatePatient: useCreatePatientMock }))
 vi.mock('@/modules/auth/permissions', () => ({ useCan: useCanMock }))
