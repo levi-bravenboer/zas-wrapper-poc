@@ -26,6 +26,7 @@ from app.core.enums.patient import Gender, PatientSource
 from app.db.base import TenantOwnedEntity
 
 if TYPE_CHECKING:
+    from app.db.models.patient.observation import Observation
     from app.db.models.patient.patient_identifier import PatientIdentifier
     from app.db.models.patient.patient_luscii_connection import PatientLusciiConnection
 
@@ -118,5 +119,17 @@ class Patient(TenantOwnedEntity):
         primaryjoin=(
             "and_(Patient.id == PatientLusciiConnection.patient_id, "
             "PatientLusciiConnection.deleted_at.is_(None))"
+        ),
+    )
+
+    # Locally-entered measurements (manual log), distinct from the Luscii
+    # proxy. Soft-deleted rows stay out of API payloads.
+    observations: Mapped[list[Observation]] = relationship(
+        "Observation",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        primaryjoin=(
+            "and_(Patient.id == Observation.patient_id, Observation.deleted_at.is_(None))"
         ),
     )

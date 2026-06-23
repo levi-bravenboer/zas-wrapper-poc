@@ -1,3 +1,4 @@
+from app.schemas.patient.observation import ObservationCreate, ObservationView
 from app.schemas.patient.patient import (
     PatientCreate,
     PatientInlineSummary,
@@ -10,6 +11,8 @@ from app.schemas.patient.patient_identifier import (
 )
 
 __all__ = [
+    "ObservationCreate",
+    "ObservationView",
     "PatientCreate",
     "PatientIdentifierCreate",
     "PatientIdentifierRead",
