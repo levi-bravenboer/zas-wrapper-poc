@@ -78,7 +78,7 @@ export const addMeasurementFormSchema = z
     // Strings at form level so the numeric fields can stay empty before the
     // user types; coerced to numbers on submit via `Number(...)`.
     value: valueField,
-    value_secondary: z.string().trim().default(''),
+    value_secondary: z.string().trim(),
     // `<input type="datetime-local">` value (`YYYY-MM-DDTHH:mm`, local TZ).
     effective_date_time: z.string().trim().min(1, { message: 'form.error.required' }),
   })
