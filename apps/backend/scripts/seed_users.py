@@ -53,8 +53,11 @@ def admin_role_id(tenant_id: UUID) -> UUID:
     return uuid5(_ROLE_ID_NS, f"{tenant_id}:{ADMIN_ROLE_SLUG}")
 
 
-ADMIN_EMAIL = "admin@zas.local"
-ADMIN_DISPLAY_NAME = "ZAS Admin"
+# Admin identity is parameterizable so the AWS demo can seed a real operator
+# (e.g. the deployer) instead of the canned `admin@zas.local`. Resolved at
+# import so downstream seeds that reference ADMIN_EMAIL stay consistent.
+ADMIN_EMAIL = os.getenv("BACKEND_BOOTSTRAP_ADMIN_EMAIL", "admin@zas.local")
+ADMIN_DISPLAY_NAME = os.getenv("BACKEND_BOOTSTRAP_ADMIN_NAME", "ZAS Admin")
 ADMIN_PASSWORD_ENV = "BACKEND_BOOTSTRAP_ADMIN_PASSWORD"
 
 CAREGIVER_EMAIL = "caregiver@zas.local"
@@ -157,6 +160,13 @@ async def seed_users(session: AsyncSession) -> list[User]:
         session.info[SESSION_ACTOR_KEY] = admin_actor
         roles = await seed_roles(session, tenant_id=tenant.id)
         default_role = roles[DEFAULT_ROLE_SLUG]
+
+        # Minimal demo profile: seed the admin only — no caregiver / clinical
+        # cast. The bladder pathway is authored by the admin actor and needs
+        # no other users.
+        if os.getenv("SEED_PROFILE", "full") == "demo":
+            logger.info("SEED_PROFILE=demo — seeding admin only (skip caregiver + cast)")
+            return [admin]
 
         caregiver = await user_repo.get_by_email(tenant.id, CAREGIVER_EMAIL)
         if caregiver is None:

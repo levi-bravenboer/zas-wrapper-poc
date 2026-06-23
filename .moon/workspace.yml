@@ -6,6 +6,7 @@ projects:
   backend: "apps/backend"
   orchestrator: "apps/orchestrator"
   digital-front-door: "apps/digital-front-door"
+  deploy: "infra/cdk"
 
 vcs:
   defaultBranch: "main"

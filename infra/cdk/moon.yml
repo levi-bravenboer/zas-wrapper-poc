@@ -1,0 +1,78 @@
+$schema: "https://moonrepo.dev/schemas/project.json"
+
+layer: "application"
+language: "typescript"
+
+project:
+  name: "deploy"
+  description: "Ephemeral AWS demo deploy (CDK + lifecycle commands)."
+
+tasks:
+  install:
+    command: "pnpm install"
+    inputs:
+      - "package.json"
+    options:
+      cache: false
+
+  up:
+    command: "pnpm run deploy:up"
+    options:
+      cache: false
+      runInCI: false
+
+  images:
+    command: "pnpm run deploy:images"
+    options:
+      cache: false
+      runInCI: false
+
+  down:
+    command: "pnpm run deploy:down"
+    options:
+      cache: false
+      runInCI: false
+      interactive: true
+
+  status:
+    command: "pnpm run deploy:status"
+    options:
+      cache: false
+      runInCI: false
+
+  logs:
+    command: "pnpm run deploy:logs"
+    options:
+      cache: false
+      runInCI: false
+
+  ssh:
+    command: "pnpm run deploy:ssh"
+    options:
+      cache: false
+      runInCI: false
+      interactive: true
+
+  start:
+    command: "pnpm run deploy:start"
+    options:
+      cache: false
+      runInCI: false
+
+  stop:
+    command: "pnpm run deploy:stop"
+    options:
+      cache: false
+      runInCI: false
+
+  url:
+    command: "pnpm run deploy:url"
+    options:
+      cache: false
+      runInCI: false
+
+  preflight:
+    command: "pnpm run deploy:preflight"
+    options:
+      cache: false
+      runInCI: false
