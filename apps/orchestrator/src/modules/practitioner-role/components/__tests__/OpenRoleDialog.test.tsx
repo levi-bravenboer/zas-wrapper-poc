@@ -12,7 +12,7 @@ import { PRACTITIONER_ROLES_LIST_PATH } from '../../keys'
 import type { PractitionerRoleRead } from '../../schemas'
 import { OpenRoleDialog } from '../OpenRoleDialog'
 
-const { openMock } = vi.hoisted(() => ({ openMock: vi.fn() }))
+const { openMock, apiGetMock } = vi.hoisted(() => ({ openMock: vi.fn(), apiGetMock: vi.fn() }))
 
 vi.mock('../../api', () => ({
   openPractitionerRole: openMock,
@@ -20,12 +20,16 @@ vi.mock('../../api', () => ({
   closePractitionerRole: vi.fn(),
 }))
 
+// The dialog resolves the picked user id to a practitioner id via this client.
+vi.mock('@/lib/api/client', () => ({ api: { GET: apiGetMock } }))
+
 const ORG_ID = '4f3c5d1e-9b7a-4c2f-8e6d-1a2b3c4d5e6f'
+const USER_ID = '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
 const PRACT_ID = '7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
 
 vi.mock('@/components/pickers', () => ({
   PractitionerPicker: ({ onChange }: { onChange: (id: string | null) => void }) => (
-    <button type="button" onClick={() => onChange('7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d')}>
+    <button type="button" onClick={() => onChange('1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f')}>
       pick-practitioner
     </button>
   ),
@@ -62,6 +66,8 @@ function setup() {
 describe('OpenRoleDialog', () => {
   beforeEach(() => {
     openMock.mockReset()
+    apiGetMock.mockReset()
+    apiGetMock.mockResolvedValue({ data: { id: PRACT_ID } })
   })
 
   it('submits is_primary=true and invalidates the paginated list cache on success', async () => {
@@ -81,6 +87,10 @@ describe('OpenRoleDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: /toevoegen/i }))
 
     await waitFor(() => expect(openMock).toHaveBeenCalledTimes(1))
+    // Picked user id is resolved to a practitioner id before submit.
+    expect(apiGetMock).toHaveBeenCalledWith('/practitioners/{user_id}', {
+      params: { path: { user_id: USER_ID } },
+    })
     const payload = openMock.mock.calls[0]?.[0] as Record<string, unknown>
     expect(payload['practitioner_id']).toBe(PRACT_ID)
     expect(payload['organisation_id']).toBe(ORG_ID)
