@@ -76,12 +76,7 @@ export function BarChart({ series }: BarChartProps): ReactElement | null {
         >
           {rows.map((row) => {
             const flagged = alertColor(row.alert_flag)
-            return (
-              <Cell
-                key={row.observed_at}
-                {...(flagged ? { fill: flagged } : {})}
-              />
-            )
+            return <Cell key={row.observed_at} {...(flagged ? { fill: flagged } : {})} />
           })}
         </Bar>
       </RechartsBarChart>

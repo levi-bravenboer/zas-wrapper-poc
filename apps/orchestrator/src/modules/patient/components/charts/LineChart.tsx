@@ -63,13 +63,7 @@ function renderDot(colorVar: string | undefined, baseRadius: number) {
     const flagged = alertColor(typeof flag === 'string' ? flag : null)
     const r = flagged ? baseRadius + 1 : baseRadius
     return (
-      <circle
-        key={`${dataKey}-${index}`}
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill={flagged ?? seriesColor}
-      />
+      <circle key={`${dataKey}-${index}`} cx={cx} cy={cy} r={r} fill={flagged ?? seriesColor} />
     )
   }
 }
