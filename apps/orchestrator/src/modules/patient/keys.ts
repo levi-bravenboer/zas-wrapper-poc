@@ -9,4 +9,5 @@ export const patientKeys = {
     [PATIENT_KEYS_SCOPE, 'luscii-data', patientId, days ?? 30] as const,
   lusciiConnections: (patientId: string) =>
     [PATIENT_KEYS_SCOPE, 'luscii-connections', patientId] as const,
+  observations: (patientId: string) => [PATIENT_KEYS_SCOPE, 'observations', patientId] as const,
 }

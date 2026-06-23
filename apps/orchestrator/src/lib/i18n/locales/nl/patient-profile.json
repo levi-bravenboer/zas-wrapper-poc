@@ -141,7 +141,27 @@
   "form": {
     "error": {
       "required": "Verplicht veld.",
-      "too_long": "Te lang."
+      "too_long": "Te lang.",
+      "not_a_number": "Vul een geldig getal in."
+    }
+  },
+  "addMeasurement": {
+    "trigger": "Meting toevoegen",
+    "title": "Meting toevoegen",
+    "description": "Leg handmatig een meting vast voor deze patiënt.",
+    "fields": {
+      "type": "Type meting",
+      "value": "Waarde",
+      "effective_date_time": "Tijdstip"
+    },
+    "type": {
+      "heart_rate": "Hartslag (slagen/min)"
+    },
+    "cancel": "Annuleren",
+    "submit": "Opslaan",
+    "toast": {
+      "success": "Meting opgeslagen.",
+      "error": "Meting kon niet worden opgeslagen."
     }
   },
   "breakGlass": {
