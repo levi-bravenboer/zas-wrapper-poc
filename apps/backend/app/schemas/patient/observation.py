@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from app.core.enums.collaboration import OwnerType
 from app.services.patient.observation.types import MeasurementType
 
 
@@ -14,7 +15,9 @@ class ObservationCreate(BaseModel):
 
     `measurement_type` is the only typed selector — `code` / `code_system` /
     `unit` are resolved server-side from the allow-list. Effective time
-    defaults to the server's now() when omitted.
+    defaults to the server's now() when omitted. `owner_type`/`owner_id`
+    record where the measurement was entered (defaults to the patient
+    themselves); the patient activity feed uses them to render a source chip.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -22,6 +25,8 @@ class ObservationCreate(BaseModel):
     measurement_type: MeasurementType
     value: Decimal
     effective_date_time: datetime | None = None
+    owner_type: OwnerType | None = None
+    owner_id: UUID | None = None
 
 
 class ObservationView(BaseModel):
@@ -35,4 +40,11 @@ class ObservationView(BaseModel):
     unit: str
     effective_date_time: datetime
     performer_id: UUID
+    performer_display_name: str
+    owner_type: OwnerType
+    owner_id: UUID
+    # Where the measurement lives (appointment title / task title /
+    # pathway-step name). Resolved only in the patient aggregate; null for
+    # patient-owned observations.
+    owner_label: str | None = None
     created_at: datetime

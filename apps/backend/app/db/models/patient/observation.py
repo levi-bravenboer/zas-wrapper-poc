@@ -16,6 +16,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.enums.collaboration import OwnerType
 from app.db.base import TenantOwnedEntity
 
 if TYPE_CHECKING:
@@ -31,6 +32,12 @@ class Observation(TenantOwnedEntity):
     )
     __table_args__ = (
         sa.Index("ix_observations_patient_effective", "patient_id", "effective_date_time"),
+        sa.Index(
+            "ix_observations_owner_open",
+            "owner_type",
+            "owner_id",
+            postgresql_where=sa.text("deleted_at IS NULL"),
+        ),
     )
 
     patient_id: Mapped[UUID] = mapped_column(
@@ -39,6 +46,24 @@ class Observation(TenantOwnedEntity):
         nullable=False,
         index=True,
     )
+    # Owner the observation was recorded *on* — same polymorphic addressing as
+    # `Note`. Defaults to the patient when entered directly on the patient
+    # detail; an appointment/task entry surfaces with the source chip in the
+    # patient's aggregated activity feed.
+    owner_type: Mapped[OwnerType] = mapped_column(
+        sa.Enum(
+            OwnerType,
+            name="owner_type",
+            native_enum=True,
+            create_constraint=True,
+            values_callable=lambda enum_cls: [m.value for m in enum_cls],
+            # `owner_type` enum already exists from the notes table; reuse.
+            create_type=False,
+        ),
+        nullable=False,
+        server_default=sa.text("'patient'"),
+    )
+    owner_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     code: Mapped[str] = mapped_column(sa.String(64), nullable=False)
     code_system: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     value: Mapped[Decimal] = mapped_column(sa.Numeric(12, 3), nullable=False)

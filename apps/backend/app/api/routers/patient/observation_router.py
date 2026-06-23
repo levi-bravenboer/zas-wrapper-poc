@@ -26,8 +26,26 @@ _CREATE_ERRORS: dict[int | str, dict[str, Any]] = {
 }
 
 
-def _to_view(observation: Observation) -> ObservationView:
-    return ObservationView.model_validate(observation)
+def _to_view(
+    observation: Observation,
+    performer_display_name: str,
+    owner_label: str | None,
+) -> ObservationView:
+    return ObservationView(
+        id=observation.id,
+        patient_id=observation.patient_id,
+        code=observation.code,
+        code_system=observation.code_system,
+        value=observation.value,
+        unit=observation.unit,
+        effective_date_time=observation.effective_date_time,
+        performer_id=observation.performer_id,
+        performer_display_name=performer_display_name,
+        owner_type=observation.owner_type,
+        owner_id=observation.owner_id,
+        owner_label=owner_label,
+        created_at=observation.created_at,
+    )
 
 
 @router.post(
@@ -43,14 +61,16 @@ async def create_patient_observation(
     current_user: CurrentUserDep,
     service: ObservationServiceDep,
 ) -> ObservationView:
-    observation = await service.create(
+    observation, name, owner_label = await service.create(
         patient_id=patient.id,
         measurement_type=payload.measurement_type,
         value=payload.value,
         effective_date_time=payload.effective_date_time,
         performer_id=current_user.id,
+        owner_type=payload.owner_type,
+        owner_id=payload.owner_id,
     )
-    return _to_view(observation)
+    return _to_view(observation, name, owner_label)
 
 
 @router.get(
@@ -60,7 +80,8 @@ async def create_patient_observation(
 )
 async def list_patient_observations(
     patient: PatientAccessDep,  # AUTH-HARDEN: graduated — Keto `view` check when AUTHZ_KETO_ENABLED
+    current_user: CurrentUserDep,
     service: ObservationServiceDep,
 ) -> list[ObservationView]:
-    observations = await service.list_for_patient(patient.id)
-    return [_to_view(o) for o in observations]
+    rows = await service.list_for_patient(patient.id, current_user.tenant_id)
+    return [_to_view(obs, name, label) for obs, name, label in rows]

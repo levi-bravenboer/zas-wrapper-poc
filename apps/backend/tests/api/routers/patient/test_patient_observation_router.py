@@ -45,6 +45,7 @@ async def test_create_heart_rate_persists_with_server_derived_coding(
     assert body["value"] == "72.000"
     assert body["effective_date_time"]
     assert body["performer_id"]
+    assert body["performer_display_name"]
 
     persisted = (
         await db_session.execute(select(Observation).where(Observation.patient_id == patient.id))
