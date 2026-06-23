@@ -25,6 +25,7 @@ function TaskCard({ task }: { task: Task }): ReactElement {
     <Link
       to="/tasks/$taskId"
       params={{ taskId: task.id }}
+      search={{ hideList: true }}
       className="flex w-52 shrink-0 snap-start flex-col gap-2 rounded-md border border-border bg-background p-3 transition hover:border-border-strong hover:bg-surface-1"
     >
       <div className="flex items-center justify-between">
