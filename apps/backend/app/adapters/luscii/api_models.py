@@ -74,6 +74,22 @@ class LusciiMeasurement(_LusciiModel):
     details: str = ""
 
 
+class LusciiAlert(_LusciiModel):
+    """`GET /v1/alerts` row (org-wide; no patientId — join via measurementId).
+
+    Only the slice needed to colour measurements is modelled. `flag` is the
+    fired severity (e.g. ``red``/``orange``); the band ranges that produced it
+    are not exposed by the API.
+    """
+
+    id: str
+    measurement_id: str | None = None
+    instrument_id: str | None = None
+    flag: str | None = None
+    type: str | None = None
+    status: str | None = None
+
+
 class LusciiInstrumentLocalisation(_LusciiModel):
     """`GET /v1/instrument-localisations` row — instrument display name."""
 

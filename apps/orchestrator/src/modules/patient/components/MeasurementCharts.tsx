@@ -1,4 +1,4 @@
-import { Inbox, AlertCircle } from 'lucide-react'
+import { AlertCircle, Inbox } from 'lucide-react'
 import { type ReactElement, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,11 +8,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/style/cn'
 
-import { useLusciiData, type LusciiWindowDays } from '../hooks'
-
-import { InstrumentDetailDialog, type InstrumentDetail } from './charts/InstrumentDetailDialog'
+import { type LusciiWindowDays, useLusciiData } from '../hooks'
+import { groupSeriesByInstrument, hasErrorCode } from './charts/grouping'
+import { type InstrumentDetail, InstrumentDetailDialog } from './charts/InstrumentDetailDialog'
 import { MetricTile } from './charts/MetricTile'
-import type { LusciiMeasurementSeries } from './charts/types'
 import { LusciiPanel } from './LusciiPanel'
 
 const WINDOW_OPTIONS: LusciiWindowDays[] = [7, 30, 90, 365]
@@ -61,7 +60,7 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
   const programmeName = data?.program?.name ?? t('charts.programme.fallback')
   const showError = dataQuery.isError && !isNotConfigured
   const series = data?.series ?? []
-  const groups = groupByInstrument(series)
+  const groups = groupSeriesByInstrument(series, { sort: 'freshness' })
   const plannedCount =
     (data?.planned_actions?.length ?? 0) + (data?.unmatched_measurements?.length ?? 0)
 
@@ -152,40 +151,6 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
   )
 }
 
-interface InstrumentGroup {
-  instrument_id: string
-  instrument_name: string | null
-  series: LusciiMeasurementSeries[]
-  /** Most-recent point timestamp across this instrument's series — for sort. */
-  freshness: string
-}
-
-function groupByInstrument(series: LusciiMeasurementSeries[]): InstrumentGroup[] {
-  const map = new Map<string, InstrumentGroup>()
-  for (const s of series) {
-    const last = s.points?.at(-1)
-    if (!last) continue
-    const existing = map.get(s.instrument_id)
-    if (existing) {
-      existing.series.push(s)
-      if (last.observed_at > existing.freshness) existing.freshness = last.observed_at
-      if (!existing.instrument_name && s.instrument_name) {
-        existing.instrument_name = s.instrument_name
-      }
-    } else {
-      map.set(s.instrument_id, {
-        instrument_id: s.instrument_id,
-        instrument_name: s.instrument_name ?? null,
-        series: [s],
-        freshness: last.observed_at,
-      })
-    }
-  }
-  return [...map.values()].toSorted((a, b) =>
-    a.freshness < b.freshness ? 1 : a.freshness > b.freshness ? -1 : 0,
-  )
-}
-
 interface WindowSelectorProps {
   active: LusciiWindowDays
   onChange: (next: LusciiWindowDays) => void
@@ -217,10 +182,4 @@ function WindowSelector({ active, onChange }: WindowSelectorProps): ReactElement
       })}
     </div>
   )
-}
-
-function hasErrorCode(error: unknown, code: string): boolean {
-  if (typeof error !== 'object' || error === null) return false
-  const candidate = (error as { code?: unknown }).code
-  return typeof candidate === 'string' && candidate === code
 }

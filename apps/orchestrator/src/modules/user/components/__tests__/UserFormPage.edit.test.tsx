@@ -16,8 +16,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { i18n } from '@/lib/i18n'
 
+import { practitionerKeys, userKeys } from '../../keys'
 import { rolesKey, type Role } from '../../roles'
+import type { UserDetail } from '../../schemas'
 import { UserFormPage } from '../UserFormPage'
+
+const DEFAULT_ROLE_ID = 'd2222222-2222-4222-8222-2222222222d1'
 
 const ROLES: Role[] = [
   {
@@ -38,21 +42,44 @@ const ROLES: Role[] = [
   },
 ]
 
-const { createUserMock, updateUserDemographicsMock } = vi.hoisted(() => ({
+const USER_ID = 'u-care-1'
+
+const USER_DETAIL: UserDetail = {
+  id: USER_ID,
+  email: 'sanne.jansen@zas.demo',
+  display_name: 'Sanne Jansen',
+  role_id: DEFAULT_ROLE_ID,
+  is_active: true,
+  created_at: '2026-01-01T00:00:00Z',
+  external_idp: null,
+  external_subject: null,
+  updated_at: '2026-01-01T00:00:00Z',
+}
+
+const { createUserMock, updateUserDemographicsMock, fetchUserDetailMock } = vi.hoisted(() => ({
   createUserMock: vi.fn(),
   updateUserDemographicsMock: vi.fn(),
+  fetchUserDetailMock: vi.fn(),
 }))
 
 vi.mock('../../api', () => ({
   createUser: createUserMock,
   updateUserDemographics: updateUserDemographicsMock,
+  fetchUserDetail: fetchUserDetailMock,
 }))
-
-const USER_ID = 'u-care-1'
 
 function renderEdit(): { router: AnyRouter } {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   qc.setQueryData(rolesKey, ROLES)
+  qc.setQueryData(userKeys.detail(USER_ID), USER_DETAIL)
+  qc.setQueryData(practitionerKeys.detail(USER_ID), {
+    id: 'b1111111-1111-4111-8111-1111111111b1',
+    user_id: USER_ID,
+    given_name: 'Sanne',
+    family_name: 'Jansen',
+    qualification: 'Huisarts',
+    roles: [],
+  })
   const Wrap = ({ children }: { children: ReactNode }) => (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={qc}>{children}</QueryClientProvider>
@@ -92,6 +119,8 @@ describe('UserFormPage (edit mode)', () => {
   beforeEach(() => {
     createUserMock.mockReset()
     updateUserDemographicsMock.mockReset()
+    fetchUserDetailMock.mockReset()
+    fetchUserDetailMock.mockResolvedValue(USER_DETAIL)
   })
 
   it('locks email + role + given/family name inputs', async () => {

@@ -1,5 +1,6 @@
 import { api } from '@/lib/api/client'
 import { apiError, readErrorCode } from '@/lib/api/errors'
+import type { components } from '@/lib/api/schema'
 
 import {
   assignRoleRequestSchema,
@@ -13,6 +14,19 @@ import {
   type UserRow,
   type UserUpdatePayload,
 } from './schemas'
+
+export type PractitionerRead = components['schemas']['PractitionerRead']
+
+export async function fetchPractitioner(userId: string): Promise<PractitionerRead | null> {
+  const { data, response } = await api.GET('/practitioners/{user_id}', {
+    params: { path: { user_id: userId } },
+  })
+  if (response.status === 404) return null
+  if (!response.ok || !data) {
+    throw apiError('Practitioner fetch failed', response.status)
+  }
+  return data
+}
 
 export async function fetchUserDetail(userId: string): Promise<UserDetail> {
   const { data, response } = await api.GET('/users/{user_id}', {

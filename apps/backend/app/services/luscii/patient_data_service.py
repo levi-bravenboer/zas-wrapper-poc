@@ -15,7 +15,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Iterable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, TypeVar
 from uuid import UUID
 
@@ -262,6 +262,7 @@ class LusciiPatientDataService:
         id_set = set(luscii_ids)
         relevant = [m for m in measurements if m.patient_id in id_set]
         decoder = await self._build_decoder(relevant)
+        alert_flags = await self._fetch_alert_flags(start, end)
 
         groups = [
             _connection_group(
@@ -270,6 +271,7 @@ class LusciiPatientDataService:
                 planned_actions,
                 [m for m in relevant if m.patient_id == str(conn.luscii_patient_id)],
                 decoder,
+                alert_flags,
             )
             for conn, details, planned_actions in zip(
                 connections, details_list, actions_list, strict=True
@@ -357,6 +359,27 @@ class LusciiPatientDataService:
             )
         return _MeasurementDecoder(instrument_rows, item_rows, response_rows)
 
+    async def _fetch_alert_flags(self, start: date, end: date) -> dict[str, str]:
+        """Luscii's OWN fired alert flags keyed by measurementId.
+
+        Passthrough only — we echo the flag Luscii raised, never compute it
+        (see openspec/mdr-watchlist.md 2026-06-22). Non-fatal: an alerts
+        failure degrades to no flags rather than failing the whole payload.
+        """
+        client = self._require_client()
+        try:
+            alerts = await client.get_alerts(start, end)
+        except LusciiApiError:
+            logger.warning("luscii.alerts.fetch_failed")
+            return {}
+        # First flag wins per measurement — deterministic when Luscii raised
+        # more than one alert for the same measurement (we never rank severity).
+        flags: dict[str, str] = {}
+        for alert in alerts:
+            if alert.measurement_id and alert.flag:
+                flags.setdefault(alert.measurement_id, alert.flag)
+        return flags
+
     def _require_client(self) -> LusciiClient:
         if self._client is None:
             raise LusciiNotConfiguredError()
@@ -369,11 +392,16 @@ def _connection_group(
     planned_actions: list[LusciiPlannedAction],
     own_measurements: list[LusciiMeasurement],
     decoder: _MeasurementDecoder,
+    alert_flags: dict[str, str],
 ) -> ConnectionGroup:
     """Build one connection's group: decode its measurements, join planned
-    actions, project series. Pure given the decoder + live API objects."""
+    actions, project series. Pure given the decoder + live API objects.
+
+    `alert_flags` maps measurementId → Luscii's own fired flag; echoed onto
+    each decoded view verbatim (passthrough, never computed)."""
     decoded_pairs: list[tuple[LusciiMeasurement, LusciiMeasurementView]] = [
-        (raw, decoder.decode(raw)) for raw in own_measurements
+        (raw, decoder.decode(raw, alert_flags.get(raw.measurement_id or "")))
+        for raw in own_measurements
     ]
     by_planned_action: dict[str, LusciiMeasurementView] = {
         raw.planned_action_id: view for raw, view in decoded_pairs if raw.planned_action_id
@@ -478,7 +506,9 @@ class _MeasurementDecoder:
         for resp in response_locs:
             self._responses.setdefault(resp.item_response_id, {})[resp.locale] = resp.response_text
 
-    def decode(self, measurement: LusciiMeasurement) -> LusciiMeasurementView:
+    def decode(
+        self, measurement: LusciiMeasurement, alert_flag: str | None = None
+    ) -> LusciiMeasurementView:
         return LusciiMeasurementView(
             measurement_id=measurement.measurement_id,
             instrument_id=measurement.instrument_id,
@@ -486,6 +516,7 @@ class _MeasurementDecoder:
             created_at=measurement.created_at,
             processed_at=measurement.processed_at,
             values=self._decode_details(measurement.details, measurement.instrument_id),
+            alert_flag=alert_flag,
         )
 
     def _instrument_name(self, measurement: LusciiMeasurement) -> str | None:

@@ -105,7 +105,10 @@
     "customPhasePlaceholder": "Naam van fase",
     "customPhaseHint": "Druk Enter om toe te voegen",
     "phaseLabel": "Fase {{idx}}",
-    "navLabel": "Fasen"
+    "phaseJumpLabel": "Spring naar fase {{idx}}: {{label}}",
+    "navLabel": "Fasen",
+    "renamePhase": "Fase hernoemen",
+    "deletePhase": "Fase verwijderen"
   },
   "dock": {
     "toolbarLabel": "Blok-palet",
@@ -502,7 +505,15 @@
     "error": "Nieuwe versie aanmaken mislukt."
   },
   "deleteBlock": {
-    "title": "Blok verwijderen?"
+    "title": "Blok verwijderen?",
+    "unnamed": "(naamloos blok)"
+  },
+  "deletePhase": {
+    "title": "Fase verwijderen?",
+    "blocksIntro": "De volgende blokken staan in deze fase en worden mee verwijderd.",
+    "noBlocks": "Geen blokken in deze fase — veilig om te verwijderen.",
+    "confirm": "Verwijderen",
+    "confirmCascade": "Verwijderen + blokken"
   },
   "timingPolicy": {
     "kind": {

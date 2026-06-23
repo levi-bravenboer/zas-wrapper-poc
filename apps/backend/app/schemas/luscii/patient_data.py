@@ -44,6 +44,9 @@ class LusciiConnectionSummary(BaseModel):
     luscii_patient_id: UUID
     status: Literal["active", "inactive"]
     program_id: str | None = None
+    # Luscii's own fired alert flag for this point's measurement, verbatim
+    # passthrough (see openspec/mdr-watchlist.md 2026-06-22). None = no alert.
+    alert_flag: str | None = None
     program_name: str | None = None
 
 
@@ -86,6 +89,11 @@ class LusciiMeasurementView(BaseModel):
     created_at: datetime | None = None
     processed_at: datetime | None = None
     values: list[LusciiMeasurementValueView] = Field(default_factory=list)
+    # Luscii's OWN fired alert flag (e.g. "red"/"orange"), passed through
+    # verbatim from /v1/alerts joined on measurementId. NOT computed by us.
+    # See openspec/mdr-watchlist.md (2026-06-22). None when Luscii raised no
+    # alert for this measurement.
+    alert_flag: str | None = None
 
 
 class LusciiPlannedActionView(BaseModel):
@@ -114,6 +122,9 @@ class LusciiNumericPoint(BaseModel):
     archetype: Literal["numeric"] = "numeric"
     value: float
     program_id: str | None = None
+    # Luscii's own fired alert flag for this point's measurement, verbatim
+    # passthrough (see openspec/mdr-watchlist.md 2026-06-22). None = no alert.
+    alert_flag: str | None = None
 
 
 class LusciiOrdinalPoint(BaseModel):
@@ -123,6 +134,9 @@ class LusciiOrdinalPoint(BaseModel):
     archetype: Literal["ordinal"] = "ordinal"
     value: float
     program_id: str | None = None
+    # Luscii's own fired alert flag for this point's measurement, verbatim
+    # passthrough (see openspec/mdr-watchlist.md 2026-06-22). None = no alert.
+    alert_flag: str | None = None
 
 
 class LusciiCategoricalPoint(BaseModel):
@@ -132,6 +146,9 @@ class LusciiCategoricalPoint(BaseModel):
     archetype: Literal["categorical"] = "categorical"
     responses: list[str] = Field(default_factory=list)
     program_id: str | None = None
+    # Luscii's own fired alert flag for this point's measurement, verbatim
+    # passthrough (see openspec/mdr-watchlist.md 2026-06-22). None = no alert.
+    alert_flag: str | None = None
 
 
 class LusciiFreeTextPoint(BaseModel):
@@ -141,6 +158,9 @@ class LusciiFreeTextPoint(BaseModel):
     archetype: Literal["free_text"] = "free_text"
     text: str
     program_id: str | None = None
+    # Luscii's own fired alert flag for this point's measurement, verbatim
+    # passthrough (see openspec/mdr-watchlist.md 2026-06-22). None = no alert.
+    alert_flag: str | None = None
 
 
 class LusciiUnknownPoint(BaseModel):
@@ -150,6 +170,9 @@ class LusciiUnknownPoint(BaseModel):
     archetype: Literal["unknown"] = "unknown"
     raw: str | None = None
     program_id: str | None = None
+    # Luscii's own fired alert flag for this point's measurement, verbatim
+    # passthrough (see openspec/mdr-watchlist.md 2026-06-22). None = no alert.
+    alert_flag: str | None = None
 
 
 LusciiMeasurementPoint = Annotated[

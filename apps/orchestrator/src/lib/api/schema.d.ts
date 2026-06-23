@@ -3104,6 +3104,8 @@ export interface components {
             responses?: string[];
             /** Program Id */
             program_id?: string | null;
+            /** Alert Flag */
+            alert_flag?: string | null;
         };
         /**
          * LusciiConnectionSummary
@@ -3129,6 +3131,8 @@ export interface components {
             status: "active" | "inactive";
             /** Program Id */
             program_id?: string | null;
+            /** Alert Flag */
+            alert_flag?: string | null;
             /** Program Name */
             program_name?: string | null;
         };
@@ -3151,6 +3155,8 @@ export interface components {
             text: string;
             /** Program Id */
             program_id?: string | null;
+            /** Alert Flag */
+            alert_flag?: string | null;
         };
         /**
          * LusciiInstrument
@@ -3352,6 +3358,8 @@ export interface components {
             processed_at?: string | null;
             /** Values */
             values?: components["schemas"]["LusciiMeasurementValueView"][];
+            /** Alert Flag */
+            alert_flag?: string | null;
         };
         /**
          * LusciiNumericPoint
@@ -3372,6 +3380,8 @@ export interface components {
             value: number;
             /** Program Id */
             program_id?: string | null;
+            /** Alert Flag */
+            alert_flag?: string | null;
         };
         /**
          * LusciiOrdinalPoint
@@ -3392,6 +3402,8 @@ export interface components {
             value: number;
             /** Program Id */
             program_id?: string | null;
+            /** Alert Flag */
+            alert_flag?: string | null;
         };
         /**
          * LusciiPatientData
@@ -3567,6 +3579,8 @@ export interface components {
             raw?: string | null;
             /** Program Id */
             program_id?: string | null;
+            /** Alert Flag */
+            alert_flag?: string | null;
         };
         /** MdoBlockOut */
         MdoBlockOut: {
