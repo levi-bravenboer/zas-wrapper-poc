@@ -77,11 +77,18 @@ describe('_auth/ index route (home overview)', () => {
   })
 
   it('shows live KPI counts and no messages tile', async () => {
-    paginated(
-      { data: { total: 7, items: [] } },
-      { data: { total: 3, items: [] } },
-    )
-    appointments({ data: [{ id: 'a1', title: 'X', starts_at: '2999-01-01T10:00:00Z', status: 'booked', patient: { id: 'p1' } }] })
+    paginated({ data: { total: 7, items: [] } }, { data: { total: 3, items: [] } })
+    appointments({
+      data: [
+        {
+          id: 'a1',
+          title: 'X',
+          starts_at: '2999-01-01T10:00:00Z',
+          status: 'booked',
+          patient: { id: 'p1' },
+        },
+      ],
+    })
     renderHome()
     expect(await screen.findByText('7')).toBeTruthy()
     expect(screen.getByText('3')).toBeTruthy()
@@ -100,7 +107,20 @@ describe('_auth/ index route (home overview)', () => {
   it('renders pending tasks that drill down to the patient', async () => {
     paginated(
       { data: { total: 1, items: [] } },
-      { data: { total: 1, items: [{ id: 't1', title: 'Bloeddruk controleren', patient_id: 'p9', status: 'open', due_at: '2999-01-01T09:00:00Z' }] } },
+      {
+        data: {
+          total: 1,
+          items: [
+            {
+              id: 't1',
+              title: 'Bloeddruk controleren',
+              patient_id: 'p9',
+              status: 'open',
+              due_at: '2999-01-01T09:00:00Z',
+            },
+          ],
+        },
+      },
     )
     appointments({ data: [] })
     renderHome()
