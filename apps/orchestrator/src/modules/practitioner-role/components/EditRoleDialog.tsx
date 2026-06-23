@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -22,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { useEntityForm } from '@/hooks/entity'
 
-import { ROLE_CODES } from '../constants'
+import { ROLE_CODES, SPECIALTY_CODES } from '../constants'
 import { useUpdatePractitionerRole } from '../hooks'
 import type { PractitionerRoleRead, PractitionerRoleUpdatePayload } from '../schemas'
 
@@ -110,13 +109,22 @@ export function EditRoleDialog({ open, role, onOpenChange }: EditRoleDialogProps
             {(field) => (
               <div className="flex flex-col gap-1">
                 <Label htmlFor={field.name}>{t('field.specialty')}</Label>
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  placeholder={t('field.specialty_placeholder')}
-                />
+                <Select
+                  value={field.state.value === '' ? 'none' : field.state.value}
+                  onValueChange={(v) => field.handleChange(v === 'none' ? '' : v)}
+                >
+                  <SelectTrigger id={field.name}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('specialty_option.none')}</SelectItem>
+                    {SPECIALTY_CODES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {t(`specialty_option.${s}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </form.Field>

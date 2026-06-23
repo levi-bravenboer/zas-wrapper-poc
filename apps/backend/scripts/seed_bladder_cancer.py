@@ -17,6 +17,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.enums import SpecialtyCode
 from app.services.access.rbac.resolver import build_session_user
 from app.db.audit import SESSION_ACTOR_KEY
 from app.db.models.pathway import Pathway, PathwayVersion
@@ -111,8 +112,8 @@ def _gate_decision(decision: UUID, output_key: str) -> dict[str, object]:
     }
 
 
-_UROLOGY = {"role": "physician", "specialty": "urologie"}
-_GP = {"role": "gp", "specialty": "huisartsgeneeskunde"}
+_UROLOGY = {"role": "physician", "specialty": SpecialtyCode.UROLOGIE.value}
+_GP = {"role": "gp", "specialty": SpecialtyCode.HUISARTSGENEESKUNDE.value}
 
 
 def _build_payload() -> PathwayDefinitionReplace:

@@ -40,6 +40,15 @@
     "physician": "Arts",
     "other": "Anders"
   },
+  "specialty_option": {
+    "none": "— Geen —",
+    "urologie": "Urologie",
+    "huisartsgeneeskunde": "Huisartsgeneeskunde",
+    "radiologie": "Radiologie",
+    "pathologie": "Pathologie",
+    "oncologie": "Oncologie",
+    "cardiologie": "Cardiologie"
+  },
   "primary": {
     "yes": "Ja",
     "no": "Nee"
