@@ -131,6 +131,12 @@ describe('UserFormPage (edit mode)', () => {
     expect((screen.getByLabelText(/achternaam/i) as HTMLInputElement).disabled).toBe(true)
   })
 
+  it('does not render a password field in edit mode', async () => {
+    renderEdit()
+    await screen.findByLabelText(/email/i)
+    expect(screen.queryByLabelText(/wachtwoord/i)).toBeNull()
+  })
+
   it('submits PATCH with derived display_name and navigates to detail', async () => {
     updateUserDemographicsMock.mockResolvedValue({
       id: USER_ID,

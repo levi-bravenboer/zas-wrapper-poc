@@ -99,6 +99,28 @@ describe('UserFormPage (create mode)', () => {
     expect(await screen.findByLabelText(/kwalificatie/i)).toBeTruthy()
   })
 
+  it('renders a password field in create mode', async () => {
+    renderPage()
+    const password = await screen.findByLabelText(/wachtwoord/i)
+    expect(password).toBeTruthy()
+    expect(password.getAttribute('type')).toBe('password')
+  })
+
+  it('blocks submit and shows an error when password is too short', async () => {
+    const { router } = renderPage()
+    const user = userEvent.setup()
+
+    await user.type(await screen.findByLabelText(/voornaam/i), 'Eva')
+    await user.type(screen.getByLabelText(/achternaam/i), 'Bos')
+    await user.type(screen.getByLabelText(/email/i), 'eva@zas.demo')
+    await user.type(screen.getByLabelText(/wachtwoord/i), 'short')
+    await user.click(screen.getByRole('button', { name: /aanmaken|opslaan/i }))
+
+    await screen.findByText(/minimaal 8 tekens/i)
+    expect(createUserMock).not.toHaveBeenCalled()
+    expect(router.state.location.pathname).toBe('/')
+  })
+
   it('surfaces 409 duplicate-email inline and keeps route mounted', async () => {
     createUserMock.mockRejectedValue(apiError('Email exists', 409, 'conflict.user.email_exists'))
 
@@ -108,6 +130,7 @@ describe('UserFormPage (create mode)', () => {
     await user.type(await screen.findByLabelText(/voornaam/i), 'Eva')
     await user.type(screen.getByLabelText(/achternaam/i), 'Bos')
     await user.type(screen.getByLabelText(/email/i), 'dup@zas.demo')
+    await user.type(screen.getByLabelText(/wachtwoord/i), 's3cret-pw')
     await user.click(screen.getByRole('button', { name: /aanmaken|opslaan/i }))
 
     await waitFor(() => expect(createUserMock).toHaveBeenCalled())
@@ -115,7 +138,7 @@ describe('UserFormPage (create mode)', () => {
     expect(router.state.location.pathname).toBe('/')
   })
 
-  it('navigates to detail page on successful create', async () => {
+  it('includes the password in the create payload and navigates on success', async () => {
     createUserMock.mockResolvedValue({
       id: 'new-id',
       email: 'eva@zas.demo',
@@ -130,8 +153,11 @@ describe('UserFormPage (create mode)', () => {
     await user.type(await screen.findByLabelText(/voornaam/i), 'Eva')
     await user.type(screen.getByLabelText(/achternaam/i), 'Bos')
     await user.type(screen.getByLabelText(/email/i), 'eva@zas.demo')
+    await user.type(screen.getByLabelText(/wachtwoord/i), 's3cret-pw')
     await user.click(screen.getByRole('button', { name: /aanmaken|opslaan/i }))
 
+    await waitFor(() => expect(createUserMock).toHaveBeenCalled())
+    expect(createUserMock.mock.calls[0]?.[0]).toMatchObject({ password: 's3cret-pw' })
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/users/new-id'))
   })
 })

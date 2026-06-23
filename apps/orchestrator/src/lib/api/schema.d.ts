@@ -5625,6 +5625,9 @@ export interface components {
          *
          *     Patients are NOT created here — they have no clinical fields and carry a
          *     `patient_id`, set only by the seeding / enrollment flow.
+         *
+         *     `password` is the credential the admin sets for the new user; the service
+         *     hashes it and imports it into Kratos as the login credential.
          */
         UserCreate: {
             /** Email */
@@ -5634,6 +5637,8 @@ export interface components {
              * Format: uuid
              */
             role_id: string;
+            /** Password */
+            password: string;
             /** Display Name */
             display_name?: string | null;
             /** Given Name */
