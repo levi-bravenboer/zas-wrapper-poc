@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { OrganisationPicker, PractitionerPicker } from '@/components/pickers'
+import { api } from '@/lib/api/client'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -63,15 +64,20 @@ export function OpenRoleDialog({
     schema: openRoleFormSchema,
     defaultValues: defaults,
     onSubmit: async (value) => {
-      const payload: PractitionerRoleCreatePayload = {
-        practitioner_id: value.practitioner_id,
-        organisation_id: value.organisation_id,
-        code: value.code,
-        specialty: value.specialty.trim() === '' ? null : value.specialty.trim(),
-        is_primary: value.is_primary,
-        period_start: new Date(value.period_start).toISOString(),
-      }
       try {
+        // The picker yields a User id; PractitionerRole binds a Practitioner id.
+        const { data: practitioner } = await api.GET('/practitioners/{user_id}', {
+          params: { path: { user_id: value.practitioner_id } },
+        })
+        if (!practitioner) throw new Error('practitioner not found for user')
+        const payload: PractitionerRoleCreatePayload = {
+          practitioner_id: practitioner.id,
+          organisation_id: value.organisation_id,
+          code: value.code,
+          specialty: value.specialty.trim() === '' ? null : value.specialty.trim(),
+          is_primary: value.is_primary,
+          period_start: new Date(value.period_start).toISOString(),
+        }
         await mutation.mutateAsync(payload)
       } catch (err) {
         toast.error(t('toast.open_failed'))
