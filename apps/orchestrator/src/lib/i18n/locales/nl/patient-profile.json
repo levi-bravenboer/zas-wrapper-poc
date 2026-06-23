@@ -45,8 +45,7 @@
     "collaboration": "Notities & documenten",
     "empty": {
       "lab_results": {
-        "title": "Nog geen labresultaten gekoppeld",
-        "body": "Wordt geleverd door de HiX-koppeling."
+        "title": "Nog geen labresultaten gekoppeld"
       },
       "appointments": {
         "title": "Geen afspraken",

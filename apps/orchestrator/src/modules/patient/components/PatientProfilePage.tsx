@@ -156,11 +156,7 @@ export function PatientProfilePage({ patientId }: PatientProfilePageProps): Reac
                 value: 'lab_results',
                 label: t('tabs.lab_results'),
                 content: (
-                  <EmptyState
-                    icon={FlaskConical}
-                    title={t('tabs.empty.lab_results.title')}
-                    body={t('tabs.empty.lab_results.body')}
-                  />
+                  <EmptyState icon={FlaskConical} title={t('tabs.empty.lab_results.title')} />
                 ),
               },
               {
