@@ -38,13 +38,16 @@ export type ActivityFeedProps = {
   /** Patient context for measurement entry + observation rendering. When set,
    *  surfaces the "Meting" composer button and interleaves the patient's
    *  observations into the feed. */
-  patientId?: string
+  patientId?: string | undefined
 }
 
 /** Coding → display key. Mirrors the server-side allow-list in
- *  `app/services/patient/observation/types.py::SUPPORTED_MEASUREMENT_TYPES`. */
+ *  `app/services/patient/observation/types.py::SUPPORTED_MEASUREMENT_TYPES`.
+ *  Blood pressure uses the systolic component code (8480-6) as the row's
+ *  primary `code`; the diastolic value is on `value_secondary`. */
 const MEASUREMENT_KIND_BY_CODE: Record<string, string> = {
   '8867-4': 'heart_rate',
+  '8480-6': 'blood_pressure',
 }
 
 function formatValue(value: string | number): string {
@@ -95,7 +98,9 @@ function ObservationItem({
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-              {formatValue(obs.value)}
+              {obs.value_secondary != null
+                ? `${formatValue(obs.value)}/${formatValue(obs.value_secondary)}`
+                : formatValue(obs.value)}
             </span>
             <span className="text-sm text-foreground-muted">{unit}</span>
           </div>
@@ -132,13 +137,7 @@ function SourceChip({ note }: { note: Note }): ReactElement | null {
   return <OwnerChip ownerType={note.owner_type} label={note.owner_label} />
 }
 
-function OwnerChip({
-  ownerType,
-  label,
-}: {
-  ownerType: OwnerType
-  label: string
-}): ReactElement {
+function OwnerChip({ ownerType, label }: { ownerType: OwnerType; label: string }): ReactElement {
   const Icon = OWNER_ICON[ownerType] ?? MessageSquareText
   return (
     <span
@@ -268,7 +267,9 @@ interface NoteGroup {
   notes: Note[]
 }
 
-type FeedEntry = { kind: 'note'; note: Note; at: number } | { kind: 'obs'; obs: ObservationRow; at: number }
+type FeedEntry =
+  | { kind: 'note'; note: Note; at: number }
+  | { kind: 'obs'; obs: ObservationRow; at: number }
 
 function mergeFeed(notes: Note[], observations: ObservationRow[]): FeedEntry[] {
   const entries: FeedEntry[] = [
@@ -309,11 +310,7 @@ function groupBySource(notes: Note[]): NoteGroup[] {
  *  patient's manual measurements interleaved newest-first. Composer posts a
  *  text note, attaches a file (each a file note), or opens the measurement
  *  dialog (each a typed observation row). */
-export function ActivityFeed({
-  ownerType,
-  ownerId,
-  patientId,
-}: ActivityFeedProps): ReactElement {
+export function ActivityFeed({ ownerType, ownerId, patientId }: ActivityFeedProps): ReactElement {
   const { t } = useTranslation(['collaboration'])
   const notes = useNotes(ownerType, ownerId)
   const addNote = useAddNote(ownerType, ownerId)

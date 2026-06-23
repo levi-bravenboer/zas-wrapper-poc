@@ -11,7 +11,7 @@ export type CollaborationColumnProps = {
    *  "Meting toevoegen" affordance and to interleave the patient's
    *  observations into the feed. When omitted (e.g. tasks without a patient,
    *  pathway-step notes) the measurement affordance is hidden. */
-  patientId?: string
+  patientId?: string | undefined
 }
 
 /** Activity area for an owner entity — a single feed of notes, files, and

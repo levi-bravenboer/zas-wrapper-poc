@@ -40,8 +40,8 @@ export interface AddMeasurementDialogProps {
   /** Owner the measurement is recorded *on* — defaults to the patient when
    *  omitted. Set to the surrounding appointment/task when the dialog is
    *  opened from those contexts so the patient activity feed can tag it. */
-  ownerType?: OwnerType
-  ownerId?: string
+  ownerType?: OwnerType | undefined
+  ownerId?: string | undefined
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -57,6 +57,7 @@ function toDefaults(): AddMeasurementFormValues {
   return {
     measurement_type: 'heart_rate',
     value: '',
+    value_secondary: '',
     effective_date_time: nowLocalIso(),
   }
 }
@@ -66,9 +67,11 @@ function toPayload(
   ownerType: OwnerType | undefined,
   ownerId: string | undefined,
 ): ObservationCreatePayload {
+  const meta = MEASUREMENT_TYPE_META[values.measurement_type]
   return {
     measurement_type: values.measurement_type,
     value: Number(values.value),
+    ...(meta.secondary ? { value_secondary: Number(values.value_secondary) } : {}),
     // Convert the form's local-time string to a UTC ISO string the API expects.
     effective_date_time: new Date(values.effective_date_time).toISOString(),
     ...(ownerType && ownerId ? { owner_type: ownerType, owner_id: ownerId } : {}),
@@ -154,42 +157,83 @@ export function AddMeasurementDialog({
             {(type) => {
               const meta = MEASUREMENT_TYPE_META[type as MeasurementTypeKey]
               return (
-                <form.Field name="value">
-                  {(field) => {
-                    const errorMsg = firstError(field.state.meta.errors, t)
-                    return (
-                      <FieldRow
-                        htmlFor="measurement-value"
-                        label={t('addMeasurement.fields.value')}
-                        error={errorMsg}
-                        hint={errorMsg ? undefined : meta.hint}
-                      >
-                        <div className="relative">
-                          <Input
-                            id="measurement-value"
-                            type="number"
-                            inputMode="decimal"
-                            step="any"
-                            min={meta.min}
-                            max={meta.max}
-                            placeholder={meta.placeholder}
-                            value={field.state.value}
-                            onChange={(e) => field.handleChange(e.target.value)}
-                            onBlur={field.handleBlur}
-                            aria-invalid={field.state.meta.errors.length > 0}
-                            className="pr-16 text-2xl font-medium tabular-nums tracking-tight"
-                          />
-                          <span
-                            className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
-                            aria-hidden
+                <>
+                  <form.Field name="value">
+                    {(field) => {
+                      const errorMsg = firstError(field.state.meta.errors, t)
+                      return (
+                        <FieldRow
+                          htmlFor="measurement-value"
+                          label={meta.primaryLabel ?? t('addMeasurement.fields.value')}
+                          error={errorMsg}
+                          hint={errorMsg ? undefined : meta.hint}
+                        >
+                          <div className="relative">
+                            <Input
+                              id="measurement-value"
+                              type="number"
+                              inputMode="decimal"
+                              step="any"
+                              min={meta.min}
+                              max={meta.max}
+                              placeholder={meta.placeholder}
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              aria-invalid={field.state.meta.errors.length > 0}
+                              className="pr-16 text-2xl font-medium tabular-nums tracking-tight"
+                            />
+                            <span
+                              className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
+                              aria-hidden
+                            >
+                              {meta.unit}
+                            </span>
+                          </div>
+                        </FieldRow>
+                      )
+                    }}
+                  </form.Field>
+                  {meta.secondary ? (
+                    <form.Field name="value_secondary">
+                      {(field) => {
+                        const errorMsg = firstError(field.state.meta.errors, t)
+                        const sec = meta.secondary!
+                        return (
+                          <FieldRow
+                            htmlFor="measurement-value-secondary"
+                            label={sec.label}
+                            error={errorMsg}
+                            hint={errorMsg ? undefined : sec.hint}
                           >
-                            {meta.unit}
-                          </span>
-                        </div>
-                      </FieldRow>
-                    )
-                  }}
-                </form.Field>
+                            <div className="relative">
+                              <Input
+                                id="measurement-value-secondary"
+                                type="number"
+                                inputMode="decimal"
+                                step="any"
+                                min={sec.min}
+                                max={sec.max}
+                                placeholder={sec.placeholder}
+                                value={field.state.value}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                onBlur={field.handleBlur}
+                                aria-invalid={field.state.meta.errors.length > 0}
+                                className="pr-16 text-2xl font-medium tabular-nums tracking-tight"
+                              />
+                              <span
+                                className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
+                                aria-hidden
+                              >
+                                {sec.unit}
+                              </span>
+                            </div>
+                          </FieldRow>
+                        )
+                      }}
+                    </form.Field>
+                  ) : null}
+                </>
               )
             }}
           </form.Subscribe>

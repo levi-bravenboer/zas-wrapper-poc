@@ -3676,7 +3676,7 @@ export interface components {
          * MeasurementType
          * @enum {string}
          */
-        MeasurementType: "heart_rate";
+        MeasurementType: "heart_rate" | "blood_pressure";
         /** MessageBlockOut */
         MessageBlockOut: {
             /**
@@ -3845,6 +3845,8 @@ export interface components {
             measurement_type: components["schemas"]["MeasurementType"];
             /** Value */
             value: number | string;
+            /** Value Secondary */
+            value_secondary?: number | string | null;
             /** Effective Date Time */
             effective_date_time?: string | null;
             owner_type?: components["schemas"]["OwnerType"] | null;
@@ -3871,6 +3873,12 @@ export interface components {
             value: string;
             /** Unit */
             unit: string;
+            /** Value Secondary */
+            value_secondary?: string | null;
+            /** Secondary Code */
+            secondary_code?: string | null;
+            /** Secondary Unit */
+            secondary_unit?: string | null;
             /**
              * Effective Date Time
              * Format: date-time
@@ -10337,7 +10345,7 @@ export const lusciiOrdinalPointArchetypeValues: ReadonlyArray<FlattenedDeepRequi
 export const lusciiPatientDataStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiPatientData"]["state"]> = ["linked", "not_linked"];
 export const lusciiUnknownPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiUnknownPoint"]["archetype"]> = ["unknown"];
 export const mdoBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MdoBlockOut"]["kind"]> = ["mdo"];
-export const measurementTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MeasurementType"]> = ["heart_rate"];
+export const measurementTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MeasurementType"]> = ["heart_rate", "blood_pressure"];
 export const messageBlockOutChannelValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["channel"]> = ["email", "sms", "push", "in_app"];
 export const messageBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["kind"]> = ["message"];
 export const ownerTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["OwnerType"]> = ["appointment", "task", "patient", "pathway_step"];

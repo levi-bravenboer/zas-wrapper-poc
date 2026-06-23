@@ -1,13 +1,6 @@
 // surface-opt-out: app-only
 import { Link, createFileRoute } from '@tanstack/react-router'
-import {
-  CalendarClock,
-  ChevronRight,
-  Inbox,
-  ListTodo,
-  type LucideIcon,
-  Users,
-} from 'lucide-react'
+import { CalendarClock, ChevronRight, Inbox, ListTodo, type LucideIcon, Users } from 'lucide-react'
 import { type ReactElement, type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

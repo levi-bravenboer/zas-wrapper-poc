@@ -154,7 +154,8 @@
       "effective_date_time": "Tijdstip"
     },
     "type": {
-      "heart_rate": "Hartfrequentie"
+      "heart_rate": "Hartfrequentie",
+      "blood_pressure": "Bloeddruk"
     },
     "unit": {
       "heart_rate": "/min"
@@ -166,7 +167,9 @@
       "heart_rate": "Normaal in rust: 60–100/min"
     },
     "error": {
-      "out_of_range_heart_rate": "Waarde moet tussen 20 en 250 liggen."
+      "out_of_range_heart_rate": "Waarde moet tussen 20 en 250 liggen.",
+      "out_of_range_systolic": "Systolisch moet tussen 40 en 300 liggen.",
+      "out_of_range_diastolic": "Diastolisch moet tussen 10 en 200 liggen."
     },
     "cancel": "Annuleren",
     "submit": "Opslaan",

@@ -19,10 +19,12 @@
   "measurement": {
     "add": "Meting",
     "type": {
-      "heart_rate": "Hartfrequentie"
+      "heart_rate": "Hartfrequentie",
+      "blood_pressure": "Bloeddruk"
     },
     "unit": {
-      "heart_rate": "/min"
+      "heart_rate": "/min",
+      "blood_pressure": "mmHg"
     },
     "recordedBy": "Vastgelegd door {{name}}"
   },
