@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { envSchema } from './env'
 
@@ -39,5 +39,33 @@ describe('envSchema', () => {
 
   it('requires PROD and DEV booleans', () => {
     expect(() => envSchema.parse({})).toThrow()
+  })
+})
+
+describe('env.LUSCII_METINGEN_REPLICA flag', () => {
+  async function loadEnv() {
+    vi.resetModules()
+    return (await import('./env')).env
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('enables the replica only when the flag is exactly "true"', async () => {
+    vi.stubEnv('VITE_LUSCII_METINGEN_REPLICA', 'true')
+    expect((await loadEnv()).LUSCII_METINGEN_REPLICA).toBe(true)
+  })
+
+  it('keeps the replica off for any other value', async () => {
+    vi.stubEnv('VITE_LUSCII_METINGEN_REPLICA', 'false')
+    expect((await loadEnv()).LUSCII_METINGEN_REPLICA).toBe(false)
+    vi.stubEnv('VITE_LUSCII_METINGEN_REPLICA', '1')
+    expect((await loadEnv()).LUSCII_METINGEN_REPLICA).toBe(false)
+  })
+
+  it('defaults the replica off when the flag is unset', async () => {
+    vi.stubEnv('VITE_LUSCII_METINGEN_REPLICA', '')
+    expect((await loadEnv()).LUSCII_METINGEN_REPLICA).toBe(false)
   })
 })

@@ -292,6 +292,10 @@
     },
     "card": {
       "menu": "Meer opties"
+    },
+    "alert": {
+      "critical": "Kritieke melding",
+      "warning": "Melding"
     }
   }
 }
