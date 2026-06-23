@@ -14,6 +14,7 @@ from app.core.enums.organisation import ORGANISATION_TYPE_SYSTEM, OrganisationTy
 from app.core.enums.patient import Gender, PatientSource
 from app.core.enums.permission import CROWN_PERMISSIONS, Permission
 from app.core.enums.practitioner_role import PractitionerRoleCode
+from app.core.enums.specialty import SpecialtyCode
 
 __all__ = [
     "CROWN_PERMISSIONS",
@@ -33,4 +34,5 @@ __all__ = [
     "PractitionerRoleCode",
     "PurposeOfUse",
     "RoleInCare",
+    "SpecialtyCode",
 ]
