@@ -2,6 +2,7 @@ import { type ReactElement } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 
+import { AlertDot } from './AlertDot'
 import { shortDateTime } from './dateLabel'
 import type { CategoricalSeries } from './types'
 
@@ -27,6 +28,7 @@ export function ChipStreamTimeline({ series }: ChipStreamTimelineProps): ReactEl
           key={`${point.observed_at}-${index}`}
           className="flex flex-wrap items-start gap-3 text-sm"
         >
+          <AlertDot flag={point.alert_flag} />
           <time className="w-28 shrink-0 font-mono text-xs text-foreground-muted">
             {shortDateTime(point.observed_at)}
           </time>

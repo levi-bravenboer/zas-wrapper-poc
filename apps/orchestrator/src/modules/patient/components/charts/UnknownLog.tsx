@@ -1,6 +1,7 @@
 import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AlertDot } from './AlertDot'
 import { shortDateTime } from './dateLabel'
 import type { UnknownSeries } from './types'
 
@@ -27,6 +28,7 @@ export function UnknownLog({ series }: UnknownLogProps): ReactElement {
           key={`${point.observed_at}-${index}`}
           className="flex flex-wrap items-start gap-3 text-sm"
         >
+          <AlertDot flag={point.alert_flag} />
           <time className="w-28 shrink-0 font-mono text-xs text-foreground-muted">
             {shortDateTime(point.observed_at)}
           </time>

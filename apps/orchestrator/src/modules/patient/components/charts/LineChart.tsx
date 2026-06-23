@@ -10,6 +10,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
+import { alertColor } from './alertFlag'
 import { shortDate, shortDateTime } from './dateLabel'
 import type { NumericSeries } from './types'
 
@@ -34,7 +35,43 @@ export interface LineChartProps {
 interface ChartRow {
   observed_at: string
   // Keyed by series_id; value is number | undefined to allow missing samples.
+  // A sibling `<series_id>__alert` key (see `alertKey`) carries the optional
+  // Luscii alert flag string for that point.
   [seriesId: string]: number | string | undefined
+}
+
+const alertKey = (seriesId: string): string => `${seriesId}__alert`
+
+// Loosely mirrors Recharts' dot-render props (the exported type is internal).
+// Fields are `T | undefined` rather than optional so the function is assignable
+// to Recharts' `DotType` under `exactOptionalPropertyTypes`.
+interface DotRenderProps {
+  cx?: number
+  cy?: number
+  payload?: ChartRow
+  dataKey?: string | number | ((obj: unknown) => unknown) | undefined
+  index?: number
+}
+
+/** Per-point dot coloured by the Luscii alert flag (passthrough) when present,
+ *  else the series colour. Hidden when the sample is missing at this row. */
+function renderDot(colorVar: string | undefined, baseRadius: number) {
+  const seriesColor = `var(--${colorVar ?? 'color-chart-1'})`
+  return function Dot({ cx, cy, payload, dataKey, index }: DotRenderProps): ReactElement | null {
+    if (cx == null || cy == null || typeof dataKey !== 'string') return null
+    const flag = payload?.[alertKey(dataKey)]
+    const flagged = alertColor(typeof flag === 'string' ? flag : null)
+    const r = flagged ? baseRadius + 1 : baseRadius
+    return (
+      <circle
+        key={`${dataKey}-${index}`}
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill={flagged ?? seriesColor}
+      />
+    )
+  }
 }
 
 /**
@@ -90,11 +127,7 @@ export function LineChart({ series }: LineChartProps): ReactElement | null {
               type="monotone"
               stroke={`var(--${colorVar})`}
               strokeWidth={2}
-              dot={
-                dotsOnly
-                  ? { r: 4, fill: `var(--${colorVar})`, strokeWidth: 0 }
-                  : { r: 2, fill: `var(--${colorVar})`, strokeWidth: 0 }
-              }
+              dot={renderDot(colorVar, dotsOnly ? 4 : 2)}
               activeDot={{ r: 5 }}
               connectNulls={false}
               isAnimationActive={false}
@@ -132,6 +165,9 @@ function buildChartData(series: NumericSeries[]): BuiltChart {
       totalPoints += 1
       const row = rowMap.get(point.observed_at) ?? { observed_at: point.observed_at }
       row[s.series_id] = point.value
+      // Alert flag rides alongside the value under a sibling key so the custom
+      // dot renderer can colour the point without a second data structure.
+      if (point.alert_flag) row[alertKey(s.series_id)] = point.alert_flag
       rowMap.set(point.observed_at, row)
     }
   })

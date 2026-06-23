@@ -1,5 +1,5 @@
 import { type ReactElement, useMemo } from 'react'
-import { Bar, CartesianGrid, BarChart as RechartsBarChart, XAxis, YAxis } from 'recharts'
+import { Bar, CartesianGrid, Cell, BarChart as RechartsBarChart, XAxis, YAxis } from 'recharts'
 
 import {
   ChartContainer,
@@ -8,6 +8,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
+import { alertColor } from './alertFlag'
 import { shortDate, shortDateTime } from './dateLabel'
 import type { OrdinalSeries } from './types'
 
@@ -18,6 +19,7 @@ export interface BarChartProps {
 interface ChartRow {
   observed_at: string
   value: number
+  alert_flag: string | null
 }
 
 /**
@@ -71,7 +73,17 @@ export function BarChart({ series }: BarChartProps): ReactElement | null {
           fill="var(--color-chart-1)"
           isAnimationActive={false}
           radius={[3, 3, 0, 0]}
-        />
+        >
+          {rows.map((row) => {
+            const flagged = alertColor(row.alert_flag)
+            return (
+              <Cell
+                key={row.observed_at}
+                {...(flagged ? { fill: flagged } : {})}
+              />
+            )
+          })}
+        </Bar>
       </RechartsBarChart>
     </ChartContainer>
   )
@@ -95,6 +107,7 @@ function buildChartData(series: OrdinalSeries): BuiltBar {
   const rows: ChartRow[] = series.points.map((p) => ({
     observed_at: p.observed_at,
     value: p.value,
+    alert_flag: p.alert_flag ?? null,
   }))
   const values = rows.map((r) => r.value)
   // Bars grow from a zero baseline (or below, for negative scores) so a single

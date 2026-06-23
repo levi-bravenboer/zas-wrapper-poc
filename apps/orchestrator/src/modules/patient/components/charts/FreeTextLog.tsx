@@ -1,6 +1,7 @@
 import { type ReactElement, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AlertDot } from './AlertDot'
 import { shortDateTime } from './dateLabel'
 import type { FreeTextSeries } from './types'
 
@@ -27,6 +28,7 @@ export function FreeTextLog({ series }: FreeTextLogProps): ReactElement {
           key={`${point.observed_at}-${index}`}
           text={point.text}
           observedAt={point.observed_at}
+          alertFlag={point.alert_flag}
         />
       ))}
     </ol>
@@ -36,9 +38,10 @@ export function FreeTextLog({ series }: FreeTextLogProps): ReactElement {
 interface FreeTextEntryProps {
   text: string
   observedAt: string
+  alertFlag: string | null | undefined
 }
 
-function FreeTextEntry({ text, observedAt }: FreeTextEntryProps): ReactElement {
+function FreeTextEntry({ text, observedAt, alertFlag }: FreeTextEntryProps): ReactElement {
   const { t } = useTranslation('patient-profile')
   const [expanded, setExpanded] = useState(false)
 
@@ -47,6 +50,7 @@ function FreeTextEntry({ text, observedAt }: FreeTextEntryProps): ReactElement {
 
   return (
     <li className="flex flex-wrap items-start gap-3 text-sm">
+      <AlertDot flag={alertFlag} />
       <time className="w-28 shrink-0 font-mono text-xs text-foreground-muted">
         {shortDateTime(observedAt)}
       </time>
