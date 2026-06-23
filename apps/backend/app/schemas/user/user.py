@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class UserRow(BaseModel):
@@ -55,12 +55,16 @@ class UserCreate(BaseModel):
 
     Patients are NOT created here — they have no clinical fields and carry a
     `patient_id`, set only by the seeding / enrollment flow.
+
+    `password` is the credential the admin sets for the new user; the service
+    hashes it and imports it into Kratos as the login credential.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     email: str
     role_id: UUID
+    password: str = Field(min_length=8)
     display_name: str | None = None
     given_name: str | None = None
     family_name: str | None = None

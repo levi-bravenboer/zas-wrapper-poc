@@ -139,12 +139,18 @@
         "placeholder": "Bijv. Huisarts, Verpleegkundige",
         "hint": "Wordt gebruikt op de Praktijk-pagina.",
         "locked": "Bewerk via de Praktijk-pagina."
+      },
+      "password": {
+        "label": "Wachtwoord",
+        "placeholder": "Minimaal 8 tekens",
+        "hint": "Het wachtwoord waarmee de gebruiker inlogt."
       }
     },
     "error": {
       "required": "Verplicht veld.",
       "email_invalid": "Vul een geldig e-mailadres in.",
       "too_long": "Te lang.",
+      "password_too_short": "Wachtwoord moet minimaal 8 tekens zijn.",
       "email_exists": "Dit e-mailadres bestaat al in dit tenant.",
       "cross_tenant": "Geen toegang tot deze gebruiker."
     }

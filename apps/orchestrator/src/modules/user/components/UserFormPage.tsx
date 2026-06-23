@@ -43,17 +43,23 @@ import { practitionerKeys } from '../keys'
 import { useRoleMap, useRoles } from '../roles'
 import type { UserCreatePayload } from '../schemas'
 
-import { userFormSchema, type UserFormValues } from './userForm.schema'
+import {
+  createUserFormSchema,
+  userFormSchema,
+  type CreateUserFormValues,
+  type UserFormValues,
+} from './userForm.schema'
 
 function isApiError(e: unknown): e is ApiError {
   return typeof e === 'object' && e !== null && 'status' in e && 'message' in e
 }
 
-function buildCreatePayload(values: UserFormValues): UserCreatePayload {
+function buildCreatePayload(values: CreateUserFormValues): UserCreatePayload {
   if (!values.is_clinician) {
     return {
       email: values.email,
       role_id: values.role_id,
+      password: values.password,
       display_name: values.display_name,
     }
   }
@@ -61,15 +67,17 @@ function buildCreatePayload(values: UserFormValues): UserCreatePayload {
   return {
     email: values.email,
     role_id: values.role_id,
+    password: values.password,
     given_name: values.given_name,
     family_name: values.family_name,
     ...(qualification ? { qualification } : {}),
   }
 }
 
-const CREATE_DEFAULTS: UserFormValues = {
+const CREATE_DEFAULTS: CreateUserFormValues = {
   email: '',
   role_id: '',
+  password: '',
   is_clinician: true,
   display_name: '',
   given_name: '',
@@ -92,8 +100,8 @@ function CreateUserForm(): ReactElement {
   const qc = useQueryClient()
   const createdIdRef = useRef<string | null>(null)
 
-  const formApi = useEntityForm<UserFormValues>({
-    schema: userFormSchema,
+  const formApi = useEntityForm<CreateUserFormValues>({
+    schema: createUserFormSchema,
     defaultValues: CREATE_DEFAULTS,
     onSubmit: async (values) => {
       try {
@@ -128,6 +136,32 @@ function CreateUserForm(): ReactElement {
   })
   const dirtyGuard = useDirtyGuard({ isDirty: formApi.isDirty })
 
+  const passwordSlot = (
+    <formApi.form.Field name="password">
+      {(field) => (
+        <FieldRow
+          htmlFor="user-password"
+          icon={Lock}
+          label={t('form.field.password.label')}
+          hint={t('form.field.password.hint')}
+          required
+          error={firstError(field.state.meta.errors, t)}
+        >
+          <Input
+            id="user-password"
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('form.field.password.placeholder')}
+            value={field.state.value}
+            onChange={(e) => field.handleChange(e.target.value)}
+            onBlur={field.handleBlur}
+            aria-invalid={field.state.meta.errors.length > 0}
+          />
+        </FieldRow>
+      )}
+    </formApi.form.Field>
+  )
+
   return (
     <UserFormShell
       mode="create"
@@ -135,7 +169,8 @@ function CreateUserForm(): ReactElement {
       subtitle={t('form.create.sub')}
       submitLabel={t('form.create.submit')}
       back={{ to: '/admin/users' }}
-      formApi={formApi}
+      formApi={formApi as unknown as UseEntityFormResult<UserFormValues>}
+      passwordSlot={passwordSlot}
       dirtyGuard={dirtyGuard}
       onCancel={() => {
         dirtyGuard.dismiss()
@@ -247,6 +282,7 @@ interface ShellProps {
   submitLabel: string
   back: { to: string; params?: Record<string, string> }
   formApi: UseEntityFormResult<UserFormValues>
+  passwordSlot?: ReactNode
   dirtyGuard: ReturnType<typeof useDirtyGuard>
   onCancel: () => void
 }
@@ -258,6 +294,7 @@ function UserFormShell({
   submitLabel,
   back,
   formApi,
+  passwordSlot,
   dirtyGuard,
   onCancel,
 }: ShellProps): ReactElement {
@@ -515,6 +552,8 @@ function UserFormShell({
                     </div>
                   )}
                 </formApi.form.Field>
+
+                {passwordSlot}
               </CardContent>
             </Card>
 
