@@ -10,5 +10,5 @@ import { CollaborationColumn } from '@/modules/collaboration/components'
  * documents), and also let staff add patient-owned items.
  */
 export function PatientCollaborationTab({ patientId }: { patientId: string }): ReactElement {
-  return <CollaborationColumn ownerType="patient" ownerId={patientId} />
+  return <CollaborationColumn ownerType="patient" ownerId={patientId} patientId={patientId} />
 }

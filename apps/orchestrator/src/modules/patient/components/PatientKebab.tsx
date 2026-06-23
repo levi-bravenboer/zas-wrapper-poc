@@ -17,7 +17,6 @@ import { tasksListKeyPrefix } from '@/modules/tasks/keys'
 import { patientsListKeyPrefix, softDeletePatient } from '../api'
 import type { PatientRow } from '../types'
 
-import { AddMeasurementDialog } from './AddMeasurementDialog'
 import { EditPatientDialog } from './EditPatientDialog'
 import { PatientHistoryPanel } from './PatientHistoryPanel'
 
@@ -36,7 +35,6 @@ export function PatientKebab({ patient }: PatientKebabProps): ReactElement {
   const queryClient = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [addMeasurementOpen, setAddMeasurementOpen] = useState(false)
 
   const fullName = `${patient.family_name}, ${patient.given_name}`
   const deleteAction = useEntityDelete({
@@ -69,9 +67,6 @@ export function PatientKebab({ patient }: PatientKebabProps): ReactElement {
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               {t('edit.trigger')}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setAddMeasurementOpen(true)}>
-              {t('addMeasurement.trigger')}
-            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
               {t('kebab.history')}
             </DropdownMenuItem>
@@ -86,11 +81,6 @@ export function PatientKebab({ patient }: PatientKebabProps): ReactElement {
       </div>
 
       <EditPatientDialog patient={patient} open={editOpen} onOpenChange={setEditOpen} />
-      <AddMeasurementDialog
-        patientId={patient.id}
-        open={addMeasurementOpen}
-        onOpenChange={setAddMeasurementOpen}
-      />
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent>
           <DialogHeader>

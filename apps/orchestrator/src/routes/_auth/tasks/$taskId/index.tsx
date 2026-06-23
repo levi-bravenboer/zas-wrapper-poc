@@ -101,7 +101,11 @@ function TaskDetailRoute(): ReactElement {
             </DetailRow>
           </DetailCard>
 
-          <CollaborationColumn ownerType="task" ownerId={task.id} />
+          <CollaborationColumn
+            ownerType="task"
+            ownerId={task.id}
+            patientId={task.patient_id ?? undefined}
+          />
         </div>
       }
     />

@@ -155,7 +155,19 @@
       "effective_date_time": "Tijdstip"
     },
     "type": {
-      "heart_rate": "Hartslag (slagen/min)"
+      "heart_rate": "Hartfrequentie"
+    },
+    "unit": {
+      "heart_rate": "/min"
+    },
+    "placeholder": {
+      "heart_rate": "bv. 72"
+    },
+    "hint": {
+      "heart_rate": "Normaal in rust: 60–100/min"
+    },
+    "error": {
+      "out_of_range_heart_rate": "Waarde moet tussen 20 en 250 liggen."
     },
     "cancel": "Annuleren",
     "submit": "Opslaan",

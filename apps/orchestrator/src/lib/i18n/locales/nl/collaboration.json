@@ -16,6 +16,16 @@
     "noPreview": "Geen voorbeeld beschikbaar voor dit bestandstype.",
     "delete": "Verwijderen"
   },
+  "measurement": {
+    "add": "Meting",
+    "type": {
+      "heart_rate": "Hartfrequentie"
+    },
+    "unit": {
+      "heart_rate": "/min"
+    },
+    "recordedBy": "Vastgelegd door {{name}}"
+  },
   "owner": {
     "appointment": "Op afspraak",
     "task": "Op taak",

@@ -416,6 +416,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients/{patient_id}/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Observations */
+        get: operations["list_patient_observations"];
+        put?: never;
+        /** Create Patient Observation */
+        post: operations["create_patient_observation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/appointments": {
         parameters: {
             query?: never;
@@ -3654,6 +3672,11 @@ export interface components {
              */
             kind: "mdo";
         };
+        /**
+         * MeasurementType
+         * @enum {string}
+         */
+        MeasurementType: "heart_rate";
         /** MessageBlockOut */
         MessageBlockOut: {
             /**
@@ -3807,6 +3830,72 @@ export interface components {
             note: components["schemas"]["NoteRead"];
             /** Upload Url */
             upload_url?: string | null;
+        };
+        /**
+         * ObservationCreate
+         * @description `POST /patients/{patient_id}/observations` payload.
+         *
+         *     `measurement_type` is the only typed selector — `code` / `code_system` /
+         *     `unit` are resolved server-side from the allow-list. Effective time
+         *     defaults to the server's now() when omitted. `owner_type`/`owner_id`
+         *     record where the measurement was entered (defaults to the patient
+         *     themselves); the patient activity feed uses them to render a source chip.
+         */
+        ObservationCreate: {
+            measurement_type: components["schemas"]["MeasurementType"];
+            /** Value */
+            value: number | string;
+            /** Effective Date Time */
+            effective_date_time?: string | null;
+            owner_type?: components["schemas"]["OwnerType"] | null;
+            /** Owner Id */
+            owner_id?: string | null;
+        };
+        /** ObservationView */
+        ObservationView: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Patient Id
+             * Format: uuid
+             */
+            patient_id: string;
+            /** Code */
+            code: string;
+            /** Code System */
+            code_system: string;
+            /** Value */
+            value: string;
+            /** Unit */
+            unit: string;
+            /**
+             * Effective Date Time
+             * Format: date-time
+             */
+            effective_date_time: string;
+            /**
+             * Performer Id
+             * Format: uuid
+             */
+            performer_id: string;
+            /** Performer Display Name */
+            performer_display_name: string;
+            owner_type: components["schemas"]["OwnerType"];
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Label */
+            owner_label?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** OrganisationCreate */
         OrganisationCreate: {
@@ -6856,6 +6945,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_observations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_patient_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationView"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -10182,6 +10337,7 @@ export const lusciiOrdinalPointArchetypeValues: ReadonlyArray<FlattenedDeepRequi
 export const lusciiPatientDataStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiPatientData"]["state"]> = ["linked", "not_linked"];
 export const lusciiUnknownPointArchetypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LusciiUnknownPoint"]["archetype"]> = ["unknown"];
 export const mdoBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MdoBlockOut"]["kind"]> = ["mdo"];
+export const measurementTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MeasurementType"]> = ["heart_rate"];
 export const messageBlockOutChannelValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["channel"]> = ["email", "sms", "push", "in_app"];
 export const messageBlockOutKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageBlockOut"]["kind"]> = ["message"];
 export const ownerTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["OwnerType"]> = ["appointment", "task", "patient", "pathway_step"];

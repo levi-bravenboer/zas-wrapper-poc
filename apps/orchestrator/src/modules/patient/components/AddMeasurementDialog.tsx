@@ -22,17 +22,26 @@ import {
 } from '@/components/ui/select'
 import { useEntityForm } from '@/hooks/entity'
 
+import type { OwnerType } from '@/modules/collaboration/types'
+
 import { useCreateObservation } from '../hooks'
 import type { MeasurementType, ObservationCreatePayload } from '../types'
 
 import {
   addMeasurementFormSchema,
   measurementTypeEnum,
+  MEASUREMENT_TYPE_META,
   type AddMeasurementFormValues,
+  type MeasurementTypeKey,
 } from './addMeasurementForm.schema'
 
 export interface AddMeasurementDialogProps {
   patientId: string
+  /** Owner the measurement is recorded *on* — defaults to the patient when
+   *  omitted. Set to the surrounding appointment/task when the dialog is
+   *  opened from those contexts so the patient activity feed can tag it. */
+  ownerType?: OwnerType
+  ownerId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -52,17 +61,24 @@ function toDefaults(): AddMeasurementFormValues {
   }
 }
 
-function toPayload(values: AddMeasurementFormValues): ObservationCreatePayload {
+function toPayload(
+  values: AddMeasurementFormValues,
+  ownerType: OwnerType | undefined,
+  ownerId: string | undefined,
+): ObservationCreatePayload {
   return {
     measurement_type: values.measurement_type,
     value: Number(values.value),
     // Convert the form's local-time string to a UTC ISO string the API expects.
     effective_date_time: new Date(values.effective_date_time).toISOString(),
+    ...(ownerType && ownerId ? { owner_type: ownerType, owner_id: ownerId } : {}),
   }
 }
 
 export function AddMeasurementDialog({
   patientId,
+  ownerType,
+  ownerId,
   open,
   onOpenChange,
 }: AddMeasurementDialogProps): ReactElement {
@@ -74,7 +90,10 @@ export function AddMeasurementDialog({
     defaultValues: toDefaults(),
     onSubmit: async (values) => {
       try {
-        await mutation.mutateAsync({ patientId, payload: toPayload(values) })
+        await mutation.mutateAsync({
+          patientId,
+          payload: toPayload(values, ownerType, ownerId),
+        })
       } catch (e) {
         toast.error(t('addMeasurement.toast.error'))
         throw e
@@ -131,26 +150,49 @@ export function AddMeasurementDialog({
             )}
           </form.Field>
 
-          <form.Field name="value">
-            {(field) => (
-              <FieldRow
-                htmlFor="measurement-value"
-                label={t('addMeasurement.fields.value')}
-                error={firstError(field.state.meta.errors, t)}
-              >
-                <Input
-                  id="measurement-value"
-                  type="number"
-                  inputMode="decimal"
-                  step="any"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  aria-invalid={field.state.meta.errors.length > 0}
-                />
-              </FieldRow>
-            )}
-          </form.Field>
+          <form.Subscribe selector={(s) => s.values.measurement_type}>
+            {(type) => {
+              const meta = MEASUREMENT_TYPE_META[type as MeasurementTypeKey]
+              return (
+                <form.Field name="value">
+                  {(field) => {
+                    const errorMsg = firstError(field.state.meta.errors, t)
+                    return (
+                      <FieldRow
+                        htmlFor="measurement-value"
+                        label={t('addMeasurement.fields.value')}
+                        error={errorMsg}
+                        hint={errorMsg ? undefined : meta.hint}
+                      >
+                        <div className="relative">
+                          <Input
+                            id="measurement-value"
+                            type="number"
+                            inputMode="decimal"
+                            step="any"
+                            min={meta.min}
+                            max={meta.max}
+                            placeholder={meta.placeholder}
+                            value={field.state.value}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            onBlur={field.handleBlur}
+                            aria-invalid={field.state.meta.errors.length > 0}
+                            className="pr-16 text-2xl font-medium tabular-nums tracking-tight"
+                          />
+                          <span
+                            className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
+                            aria-hidden
+                          >
+                            {meta.unit}
+                          </span>
+                        </div>
+                      </FieldRow>
+                    )
+                  }}
+                </form.Field>
+              )
+            }}
+          </form.Subscribe>
 
           <form.Field name="effective_date_time">
             {(field) => (
@@ -198,10 +240,11 @@ interface FieldRowProps {
   htmlFor: string
   label: string
   error?: string | undefined
+  hint?: string | undefined
   children: ReactElement
 }
 
-function FieldRow({ htmlFor, label, error, children }: FieldRowProps): ReactElement {
+function FieldRow({ htmlFor, label, error, hint, children }: FieldRowProps): ReactElement {
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
@@ -210,6 +253,8 @@ function FieldRow({ htmlFor, label, error, children }: FieldRowProps): ReactElem
         <p className="text-xs text-destructive" role="alert">
           {error}
         </p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   )

@@ -1,4 +1,5 @@
 import {
+  Activity,
   Calendar,
   Download,
   Eye,
@@ -21,6 +22,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/style/cn'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 import { useSession } from '@/modules/auth/hooks'
+import { AddMeasurementDialog } from '@/modules/patient/components/AddMeasurementDialog'
+import { useObservations } from '@/modules/patient/hooks'
+import type { ObservationRow } from '@/modules/patient/types'
 
 import { getNoteFileUrl } from '../api'
 import { useAddNote, useDeleteNote, useNotes, useUploadFileNote } from '../hooks'
@@ -31,6 +35,74 @@ import { FilePreviewDialog } from './FilePreviewDialog'
 export type ActivityFeedProps = {
   ownerType: OwnerType
   ownerId: string
+  /** Patient context for measurement entry + observation rendering. When set,
+   *  surfaces the "Meting" composer button and interleaves the patient's
+   *  observations into the feed. */
+  patientId?: string
+}
+
+/** Coding → display key. Mirrors the server-side allow-list in
+ *  `app/services/patient/observation/types.py::SUPPORTED_MEASUREMENT_TYPES`. */
+const MEASUREMENT_KIND_BY_CODE: Record<string, string> = {
+  '8867-4': 'heart_rate',
+}
+
+function formatValue(value: string | number): string {
+  const n = typeof value === 'string' ? Number(value) : value
+  if (!Number.isFinite(n)) return String(value)
+  // Trim trailing decimal zeros: 72.000 → 72, 36.5 → 36,5 (NL locale).
+  return new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 3 }).format(n)
+}
+
+function ObservationItem({
+  obs,
+  showSource,
+}: {
+  obs: ObservationRow
+  showSource: boolean
+}): ReactElement {
+  const { t } = useTranslation(['collaboration'])
+  const kind = MEASUREMENT_KIND_BY_CODE[obs.code] ?? obs.code
+  const typeLabel = t(`collaboration:measurement.type.${kind}`, { defaultValue: kind })
+  const unit = t(`collaboration:measurement.unit.${kind}`, { defaultValue: obs.unit })
+  const showOwner = showSource && obs.owner_type !== 'patient' && !!obs.owner_label
+
+  return (
+    <li className="flex items-start gap-3">
+      <PersonAvatar
+        size="sm"
+        name={obs.performer_display_name}
+        tintId={obs.performer_id}
+        person={{ kind: 'user', id: obs.performer_id }}
+        className="mt-0.5"
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-medium text-foreground">
+              {obs.performer_display_name}
+            </span>
+            {showOwner ? <OwnerChip ownerType={obs.owner_type} label={obs.owner_label!} /> : null}
+          </div>
+          <span className="shrink-0 whitespace-nowrap text-[11px] text-foreground-muted">
+            {formatDateTimeOrDash(obs.effective_date_time, 'nl')}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 rounded-2xl rounded-tl-sm border border-border/60 bg-surface-1 px-3 py-2">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">
+            <Activity className="size-3 shrink-0 text-primary" aria-hidden />
+            {typeLabel}
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+              {formatValue(obs.value)}
+            </span>
+            <span className="text-sm text-foreground-muted">{unit}</span>
+          </div>
+        </div>
+      </div>
+    </li>
+  )
 }
 
 const OWNER_ICON: Record<OwnerType, LucideIcon> = {
@@ -57,14 +129,24 @@ type ItemActions = {
 
 function SourceChip({ note }: { note: Note }): ReactElement | null {
   if (!note.owner_label) return null
-  const Icon = OWNER_ICON[note.owner_type] ?? MessageSquareText
+  return <OwnerChip ownerType={note.owner_type} label={note.owner_label} />
+}
+
+function OwnerChip({
+  ownerType,
+  label,
+}: {
+  ownerType: OwnerType
+  label: string
+}): ReactElement {
+  const Icon = OWNER_ICON[ownerType] ?? MessageSquareText
   return (
     <span
       className="inline-flex min-w-0 items-center gap-1 rounded-full bg-primary-soft/50 px-2 py-0.5 text-[11px] font-medium text-primary"
-      title={note.owner_label}
+      title={label}
     >
       <Icon className="size-3 shrink-0" aria-hidden />
-      <span className="truncate">{note.owner_label}</span>
+      <span className="truncate">{label}</span>
     </span>
   )
 }
@@ -186,6 +268,24 @@ interface NoteGroup {
   notes: Note[]
 }
 
+type FeedEntry = { kind: 'note'; note: Note; at: number } | { kind: 'obs'; obs: ObservationRow; at: number }
+
+function mergeFeed(notes: Note[], observations: ObservationRow[]): FeedEntry[] {
+  const entries: FeedEntry[] = [
+    ...notes.map<FeedEntry>((note) => ({
+      kind: 'note',
+      note,
+      at: new Date(note.created_at).getTime(),
+    })),
+    ...observations.map<FeedEntry>((obs) => ({
+      kind: 'obs',
+      obs,
+      at: new Date(obs.effective_date_time).getTime(),
+    })),
+  ]
+  return entries.sort((a, b) => b.at - a.at)
+}
+
 function groupBySource(notes: Note[]): NoteGroup[] {
   const map = new Map<string, NoteGroup>()
   for (const note of notes) {
@@ -205,23 +305,35 @@ function groupBySource(notes: Note[]): NoteGroup[] {
   return [...map.values()].sort((a, b) => newest(b) - newest(a))
 }
 
-/** Single activity feed for an owner entity: text notes and file notes
- *  interleaved, grouped by source on the patient aggregate. Composer posts a
- *  text note or attaches files (each a file note). */
-export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactElement {
+/** Single activity feed for an owner entity: text notes, file notes, and the
+ *  patient's manual measurements interleaved newest-first. Composer posts a
+ *  text note, attaches a file (each a file note), or opens the measurement
+ *  dialog (each a typed observation row). */
+export function ActivityFeed({
+  ownerType,
+  ownerId,
+  patientId,
+}: ActivityFeedProps): ReactElement {
   const { t } = useTranslation(['collaboration'])
   const notes = useNotes(ownerType, ownerId)
   const addNote = useAddNote(ownerType, ownerId)
   const uploadFile = useUploadFileNote(ownerType, ownerId)
   const removeNote = useDeleteNote(ownerType, ownerId)
+  const observations = useObservations(patientId ?? null)
   const session = useSession()
   const fileRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState('')
   const [preview, setPreview] = useState<{ note: FileNote; url: string } | null>(null)
+  const [measurementOpen, setMeasurementOpen] = useState(false)
 
   const items = notes.data ?? []
-  // The patient view aggregates notes across owners — group them by source.
-  const groups = ownerType === 'patient' ? groupBySource(items) : null
+  const observationItems = observations.data ?? []
+  // Observation cards interleave into the activity feed. Their presence
+  // disables the patient-only source grouping (groups don't apply to
+  // observations cleanly — they're patient-scoped by definition).
+  const groups =
+    ownerType === 'patient' && observationItems.length === 0 ? groupBySource(items) : null
+  const totalCount = items.length + observationItems.length
 
   const actionsFor = (note: Note): ItemActions => ({
     canDelete: note.author_user_id === session.data?.id,
@@ -260,15 +372,15 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
             <MessageSquareText className="size-4" aria-hidden />
           </span>
           {t('collaboration:notes.title')}
-          {items.length > 0 ? (
+          {totalCount > 0 ? (
             <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-foreground-muted tabular-nums">
-              {items.length}
+              {totalCount}
             </span>
           ) : null}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {items.length === 0 ? (
+        {totalCount === 0 ? (
           <p className="text-sm text-foreground-muted">{t('collaboration:notes.empty')}</p>
         ) : groups ? (
           <div className="flex flex-col gap-5">
@@ -297,14 +409,22 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
-            {items.map((note) => (
-              <ActivityItem
-                key={note.id}
-                note={note}
-                showSource={true}
-                actions={actionsFor(note)}
-              />
-            ))}
+            {mergeFeed(items, observationItems).map((entry) =>
+              entry.kind === 'note' ? (
+                <ActivityItem
+                  key={`n-${entry.note.id}`}
+                  note={entry.note}
+                  showSource={ownerType === 'patient'}
+                  actions={actionsFor(entry.note)}
+                />
+              ) : (
+                <ObservationItem
+                  key={`o-${entry.obs.id}`}
+                  obs={entry.obs}
+                  showSource={ownerType === 'patient'}
+                />
+              ),
+            )}
           </ul>
         )}
 
@@ -327,19 +447,33 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
             placeholder={t('collaboration:notes.placeholder')}
           />
           <div className="flex items-center justify-between gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={cn('gap-1.5', uploadFile.isPending && 'opacity-70')}
-              disabled={uploadFile.isPending}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Paperclip className="size-4" />
-              {uploadFile.isPending
-                ? t('collaboration:files.uploading')
-                : t('collaboration:files.attach')}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn('gap-1.5', uploadFile.isPending && 'opacity-70')}
+                disabled={uploadFile.isPending}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Paperclip className="size-4" />
+                {uploadFile.isPending
+                  ? t('collaboration:files.uploading')
+                  : t('collaboration:files.attach')}
+              </Button>
+              {patientId ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setMeasurementOpen(true)}
+                >
+                  <Activity className="size-4" />
+                  {t('collaboration:measurement.add')}
+                </Button>
+              ) : null}
+            </div>
             <div className="flex items-center gap-2">
               <span className="hidden text-[11px] text-foreground-muted sm:inline">
                 {t('collaboration:notes.hint')}
@@ -357,6 +491,16 @@ export function ActivityFeed({ ownerType, ownerId }: ActivityFeedProps): ReactEl
         url={preview?.url ?? null}
         onClose={() => setPreview(null)}
       />
+
+      {patientId ? (
+        <AddMeasurementDialog
+          patientId={patientId}
+          ownerType={ownerType}
+          ownerId={ownerId}
+          open={measurementOpen}
+          onOpenChange={setMeasurementOpen}
+        />
+      ) : null}
     </Card>
   )
 }
