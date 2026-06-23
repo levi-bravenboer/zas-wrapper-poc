@@ -1,11 +1,10 @@
-import { AlertCircle, Inbox } from 'lucide-react'
+import { AlertCircle, Inbox, Loader2 } from 'lucide-react'
 import { type ReactElement, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/states/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/style/cn'
 
 import { type LusciiWindowDays, useLusciiData } from '../hooks'
@@ -40,10 +39,8 @@ export function MeasurementCharts({ patientId }: MeasurementChartsProps): ReactE
 
   if (dataQuery.isLoading) {
     return (
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-9 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 aria-hidden className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
