@@ -16,6 +16,7 @@ export const config = {
   hostedZone: "zas.lebba.nl",
   appHost: "app.zas.lebba.nl",
   apiHost: "api.zas.lebba.nl",
+  filesHost: "files.zas.lebba.nl",
   leEmail: "levi.bravenboer@reaktor.com",
   instanceType: "t3.large",
   volumeSizeGb: 30,

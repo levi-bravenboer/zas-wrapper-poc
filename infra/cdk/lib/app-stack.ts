@@ -38,6 +38,7 @@ export class ZasAppStack extends Stack {
       imageTag: props.imageTag,
       appHost: config.appHost,
       apiHost: config.apiHost,
+      filesHost: config.filesHost,
       leEmail: config.leEmail,
       bucketName: configBucket.bucket.bucketName,
     });
@@ -65,6 +66,7 @@ export class ZasAppStack extends Stack {
       zoneName: config.hostedZone,
       appHost: config.appHost,
       apiHost: config.apiHost,
+      filesHost: config.filesHost,
       ip: compute.eip.ref,
     });
 

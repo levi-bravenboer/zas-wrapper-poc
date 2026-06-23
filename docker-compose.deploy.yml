@@ -111,6 +111,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      # Allow browser presigned PUT/GET from the SPA origin (CORS preflight).
+      MINIO_API_CORS_ALLOW_ORIGIN: https://${APP_HOST}
     volumes:
       - zas_minio_data:/data
     healthcheck:
@@ -186,7 +188,7 @@ services:
       BACKEND_PATHWAY_RUNTIME_ENGINE: temporal
       BACKEND_TEMPORAL_ADDRESS: temporal:7233
       BACKEND_S3_ENDPOINT_URL: http://minio:9000
-      BACKEND_S3_PUBLIC_URL: http://minio:9000
+      BACKEND_S3_PUBLIC_URL: https://${FILES_HOST}
       BACKEND_S3_BUCKET: zas-attachments
       BACKEND_S3_REGION: eu-west-1
       BACKEND_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
@@ -235,9 +237,11 @@ services:
     environment:
       APP_HOST: ${APP_HOST}
       API_HOST: ${API_HOST}
+      FILES_HOST: ${FILES_HOST}
       LE_EMAIL: ${LE_EMAIL}
       BACKEND_UPSTREAM: http://backend:8000
       KRATOS_PUBLIC_UPSTREAM: http://kratos:4433
+      MINIO_UPSTREAM: http://minio:9000
     ports:
       - "80:80"
       - "443:443"

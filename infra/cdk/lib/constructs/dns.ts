@@ -5,6 +5,7 @@ export interface DnsProps {
   readonly zoneName: string;
   readonly appHost: string;
   readonly apiHost: string;
+  readonly filesHost: string;
   readonly ip: string;
 }
 
@@ -27,6 +28,11 @@ export class Dns extends Construct {
     new route53.ARecord(this, "ApiA", {
       zone,
       recordName: props.apiHost,
+      target,
+    });
+    new route53.ARecord(this, "FilesA", {
+      zone,
+      recordName: props.filesHost,
       target,
     });
   }

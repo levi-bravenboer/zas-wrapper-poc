@@ -6,6 +6,7 @@ export interface UserDataParams {
   readonly imageTag: string;
   readonly appHost: string;
   readonly apiHost: string;
+  readonly filesHost: string;
   readonly leEmail: string;
   readonly bucketName: string;
 }
@@ -34,6 +35,7 @@ export function buildUserData(p: UserDataParams): ec2.UserData {
     `IMAGE_TAG=${p.imageTag}`,
     `APP_HOST=${p.appHost}`,
     `API_HOST=${p.apiHost}`,
+    `FILES_HOST=${p.filesHost}`,
     `LE_EMAIL=${p.leEmail}`,
     "EOF",
     "if [ -f /opt/zas/secrets.env ]; then cat /opt/zas/secrets.env >> /opt/zas/.env; fi",

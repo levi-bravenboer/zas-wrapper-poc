@@ -22,7 +22,11 @@ if TYPE_CHECKING:
 class S3Storage:
     def __init__(self, settings: Settings) -> None:
         self._bucket = settings.s3_bucket
-        config = Config(signature_version="s3v4")
+        # Path-style addressing: presigned URLs against a custom public host
+        # (e.g. MinIO behind nginx at files.<domain>) must be
+        # host/bucket/key, not virtual-host bucket.host/key which a single
+        # nginx server_name can't serve.
+        config = Config(signature_version="s3v4", s3={"addressing_style": "path"})
         common = {
             "service_name": "s3",
             "region_name": settings.s3_region,
