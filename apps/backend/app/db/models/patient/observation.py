@@ -68,6 +68,12 @@ class Observation(TenantOwnedEntity):
     code_system: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     value: Mapped[Decimal] = mapped_column(sa.Numeric(12, 3), nullable=False)
     unit: Mapped[str] = mapped_column(sa.String(32), nullable=False)
+    # Optional second component for composite measurements (e.g. blood
+    # pressure: `value` is systolic, `value_secondary` is diastolic;
+    # `secondary_code` carries the LOINC code for the second component).
+    value_secondary: Mapped[Decimal | None] = mapped_column(sa.Numeric(12, 3), nullable=True)
+    secondary_code: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
+    secondary_unit: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
     effective_date_time: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), nullable=False
     )

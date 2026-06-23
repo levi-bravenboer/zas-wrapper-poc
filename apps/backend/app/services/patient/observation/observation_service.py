@@ -20,7 +20,11 @@ from app.db.models.appointment.appointment import Appointment
 from app.db.models.patient.observation import Observation
 from app.db.models.task.task import Task
 from app.db.models.user import User
-from app.services.patient.observation.errors import UnsupportedObservationTypeError
+from app.services.patient.observation.errors import (
+    MissingSecondaryValueError,
+    UnexpectedSecondaryValueError,
+    UnsupportedObservationTypeError,
+)
 from app.services.patient.observation.types import (
     SUPPORTED_MEASUREMENT_TYPES,
     MeasurementType,
@@ -37,6 +41,7 @@ class ObservationService:
         patient_id: UUID,
         measurement_type: MeasurementType,
         value: Decimal,
+        value_secondary: Decimal | None,
         effective_date_time: datetime | None,
         performer_id: UUID,
         owner_type: OwnerType | None,
@@ -45,6 +50,10 @@ class ObservationService:
         spec = SUPPORTED_MEASUREMENT_TYPES.get(measurement_type)
         if spec is None:
             raise UnsupportedObservationTypeError()
+        if spec.secondary_code is not None and value_secondary is None:
+            raise MissingSecondaryValueError()
+        if spec.secondary_code is None and value_secondary is not None:
+            raise UnexpectedSecondaryValueError()
         resolved_owner_type = owner_type or OwnerType.PATIENT
         resolved_owner_id = owner_id or patient_id
         observation = Observation(
@@ -55,6 +64,9 @@ class ObservationService:
             code_system=spec.code_system,
             value=value,
             unit=spec.unit,
+            value_secondary=value_secondary,
+            secondary_code=spec.secondary_code,
+            secondary_unit=spec.secondary_unit,
             effective_date_time=effective_date_time or datetime.now(UTC),
             performer_id=performer_id,
         )
@@ -101,9 +113,7 @@ class ObservationService:
         out: dict[UUID, str] = {}
         appointments = ids_by_type.get(OwnerType.APPOINTMENT)
         if appointments:
-            stmt = select(Appointment.id, Appointment.title).where(
-                Appointment.id.in_(appointments)
-            )
+            stmt = select(Appointment.id, Appointment.title).where(Appointment.id.in_(appointments))
             if tenant_id is not None:
                 stmt = stmt.where(Appointment.tenant_id == tenant_id)
             for owner_id, title in await self._session.execute(stmt):

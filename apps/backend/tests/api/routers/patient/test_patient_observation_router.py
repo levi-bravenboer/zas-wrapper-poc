@@ -63,7 +63,7 @@ async def test_create_unsupported_type_returns_422(
     patient = seeded_zas_patients[0]
     response = await async_client.post(
         _url(patient),
-        json={"measurement_type": "blood_pressure", "value": "120"},
+        json={"measurement_type": "temperature", "value": "37"},
     )
     assert response.status_code == 422
     # `measurement_type` is a StrEnum on the schema, so an unknown value is

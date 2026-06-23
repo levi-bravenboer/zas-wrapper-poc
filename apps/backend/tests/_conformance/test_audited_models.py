@@ -24,6 +24,8 @@ _EXPECTED = {
     "Note",
     "Appointment",
     "Role",
+    # Manually-entered patient measurements (add-manual-measurement-entry).
+    "Observation",
 }
 
 # Audited models whose rows do NOT concern a single patient (no patient axis).

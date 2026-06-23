@@ -24,6 +24,10 @@ class ObservationCreate(BaseModel):
 
     measurement_type: MeasurementType
     value: Decimal
+    # Second component for composite measurements (diastolic on blood
+    # pressure). Required by the server when the chosen type is composite;
+    # rejected when the type is single-value.
+    value_secondary: Decimal | None = None
     effective_date_time: datetime | None = None
     owner_type: OwnerType | None = None
     owner_id: UUID | None = None
@@ -38,6 +42,9 @@ class ObservationView(BaseModel):
     code_system: str
     value: Decimal
     unit: str
+    value_secondary: Decimal | None = None
+    secondary_code: str | None = None
+    secondary_unit: str | None = None
     effective_date_time: datetime
     performer_id: UUID
     performer_display_name: str
