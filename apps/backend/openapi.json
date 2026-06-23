@@ -1505,6 +1505,104 @@
         }
       }
     },
+    "/patients/{patient_id}/observations": {
+      "post": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Create Patient Observation",
+        "operationId": "create_patient_observation",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObservationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "List Patient Observations",
+        "operationId": "list_patient_observations",
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ObservationView"
+                  },
+                  "title": "Response List Patient Observations"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/appointments": {
       "get": {
         "tags": [
@@ -10920,6 +11018,14 @@
         ],
         "title": "MdoBlockOut"
       },
+      "MeasurementType": {
+        "type": "string",
+        "enum": [
+          "heart_rate",
+          "blood_pressure"
+        ],
+        "title": "MeasurementType"
+      },
       "MessageBlockOut": {
         "properties": {
           "id": {
@@ -11343,6 +11449,201 @@
           "note"
         ],
         "title": "NoteUploadResponse"
+      },
+      "ObservationCreate": {
+        "properties": {
+          "measurement_type": {
+            "$ref": "#/components/schemas/MeasurementType"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Value"
+          },
+          "value_secondary": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Secondary"
+          },
+          "effective_date_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date Time"
+          },
+          "owner_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnerType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "measurement_type",
+          "value"
+        ],
+        "title": "ObservationCreate",
+        "description": "`POST /patients/{patient_id}/observations` payload.\n\n`measurement_type` is the only typed selector \u2014 `code` / `code_system` /\n`unit` are resolved server-side from the allow-list. Effective time\ndefaults to the server's now() when omitted. `owner_type`/`owner_id`\nrecord where the measurement was entered (defaults to the patient\nthemselves); the patient activity feed uses them to render a source chip."
+      },
+      "ObservationView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Patient Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "code_system": {
+            "type": "string",
+            "title": "Code System"
+          },
+          "value": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "value_secondary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Secondary"
+          },
+          "secondary_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Code"
+          },
+          "secondary_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Unit"
+          },
+          "effective_date_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Effective Date Time"
+          },
+          "performer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Performer Id"
+          },
+          "performer_display_name": {
+            "type": "string",
+            "title": "Performer Display Name"
+          },
+          "owner_type": {
+            "$ref": "#/components/schemas/OwnerType"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Owner Id"
+          },
+          "owner_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Label"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "patient_id",
+          "code",
+          "code_system",
+          "value",
+          "unit",
+          "effective_date_time",
+          "performer_id",
+          "performer_display_name",
+          "owner_type",
+          "owner_id",
+          "created_at"
+        ],
+        "title": "ObservationView"
       },
       "OrganisationCreate": {
         "properties": {

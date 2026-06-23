@@ -7,6 +7,8 @@ import type {
   CareTeamRow,
   LusciiConnectionSummary,
   LusciiPatientData,
+  ObservationCreatePayload,
+  ObservationRow,
   PatientCreatePayload,
   PatientRow,
   PatientUpdatePayload,
@@ -154,4 +156,34 @@ export async function deactivateLusciiConnection(
   if (!response.ok) {
     return lusciiError('Luscii connection deactivate failed', response)
   }
+}
+
+export async function fetchObservations(patientId: string): Promise<ObservationRow[]> {
+  const { data, response } = await api.GET('/patients/{patient_id}/observations', {
+    params: { path: { patient_id: patientId } },
+  })
+  if (!response.ok || !data) {
+    throw apiError('Observations fetch failed', response.status)
+  }
+  return data
+}
+
+export async function createObservation(
+  patientId: string,
+  payload: ObservationCreatePayload,
+): Promise<ObservationRow> {
+  const { data, response } = await api.POST('/patients/{patient_id}/observations', {
+    params: { path: { patient_id: patientId } },
+    body: payload,
+  })
+  if (!response.ok || !data) {
+    const body = await readErrorBody(response)
+    throw apiError(
+      body?.message ?? 'Observation create failed',
+      response.status,
+      body?.code,
+      body?.details,
+    )
+  }
+  return data
 }

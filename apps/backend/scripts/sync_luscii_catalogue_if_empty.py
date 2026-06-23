@@ -31,7 +31,9 @@ async def _run(session: AsyncSession) -> None:
         logger.info("luscii catalogue sync: no token configured — skipped")
         return
 
-    existing = await session.scalar(select(func.count()).select_from(LusciiInstrumentLocalisationRow))
+    existing = await session.scalar(
+        select(func.count()).select_from(LusciiInstrumentLocalisationRow)
+    )
     if (existing or 0) > 0:
         logger.info("luscii catalogue sync: table already populated (%s rows) — skipped", existing)
         return

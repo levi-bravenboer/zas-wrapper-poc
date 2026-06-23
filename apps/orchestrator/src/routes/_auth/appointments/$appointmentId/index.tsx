@@ -117,7 +117,7 @@ function AppointmentDetailRoute(): ReactElement {
             </DetailRow>
           </DetailCard>
 
-          <CollaborationColumn ownerType="appointment" ownerId={appt.id} />
+          <CollaborationColumn ownerType="appointment" ownerId={appt.id} patientId={patient.id} />
         </div>
       }
     />

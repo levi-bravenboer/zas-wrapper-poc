@@ -68,12 +68,12 @@ describe('_auth/ index route (home overview)', () => {
     vi.clearAllMocks()
   })
 
-  it('renders the Overzicht PageHeader and the KPI heading', async () => {
+  it('renders the Overzicht PageHeader and a panel heading', async () => {
     paginated({ isLoading: true }, { isLoading: true })
     appointments({ isLoading: true })
     renderHome()
     expect(await screen.findByRole('heading', { level: 1, name: 'Overzicht' })).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 2, name: 'Vandaag' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Mijn taken' })).toBeTruthy()
   })
 
   it('shows live KPI counts and no messages tile', async () => {

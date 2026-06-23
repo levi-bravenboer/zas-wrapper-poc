@@ -16,6 +16,7 @@ from app.api.routers.organisation import router as organisation_router
 from app.api.routers.pathway import router as pathway_router
 from app.api.routers.pathway.enrollment_router import router as enrollment_router
 from app.api.routers.patient import luscii_data_router as patient_luscii_router
+from app.api.routers.patient import observation_router as patient_observation_router
 from app.api.routers.patient import router as patient_router
 from app.api.routers.practitioner import router as practitioner_router
 from app.api.routers.practitioner_role import router as practitioner_role_router
@@ -31,6 +32,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(organisation_router)
     app.include_router(patient_router)
     app.include_router(patient_luscii_router)
+    app.include_router(patient_observation_router)
     app.include_router(appointment_router)
     for collaboration_router in collaboration_routers:
         app.include_router(collaboration_router)

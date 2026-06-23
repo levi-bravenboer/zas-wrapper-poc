@@ -11,10 +11,12 @@ import { usePatientEnrollments } from '@/modules/patient-pathway/hooks'
 
 import {
   addLusciiConnection,
+  createObservation,
   createPatient,
   deactivateLusciiConnection,
   fetchLusciiConnections,
   fetchLusciiData,
+  fetchObservations,
   fetchPatient,
   fetchPatientCareTeams,
   patientsListKeyPrefix,
@@ -27,6 +29,8 @@ import type {
   CareTeamRow,
   LusciiConnectionSummary,
   LusciiPatientData,
+  ObservationCreatePayload,
+  ObservationRow,
   PatientCreatePayload,
   PatientRow,
   PatientUpdatePayload,
@@ -172,6 +176,32 @@ export function useUnlinkLuscii() {
   return useMutation<void, Error, string>({
     mutationFn: (patientId) => unlinkLuscii(patientId),
     onSuccess: (_void, patientId) => invalidateLusciiCaches(qc, patientId),
+  })
+}
+
+export function useObservations(patientId: string | null) {
+  return useQuery<ObservationRow[]>({
+    queryKey: patientKeys.observations(patientId ?? ''),
+    queryFn: () => {
+      if (!patientId) return Promise.resolve([])
+      return fetchObservations(patientId)
+    },
+    enabled: !!patientId,
+    staleTime: PATIENT_STALE_MS,
+  })
+}
+
+export interface CreateObservationVariables {
+  patientId: string
+  payload: ObservationCreatePayload
+}
+
+export function useCreateObservation() {
+  const qc = useQueryClient()
+  return useMutation<ObservationRow, Error, CreateObservationVariables>({
+    mutationFn: ({ patientId, payload }) => createObservation(patientId, payload),
+    onSuccess: (_row, { patientId }) =>
+      qc.invalidateQueries({ queryKey: patientKeys.observations(patientId) }),
   })
 }
 
