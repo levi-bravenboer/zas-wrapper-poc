@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
-import { type ReactElement, useMemo } from 'react'
+import { Plus } from 'lucide-react'
+import { type ReactElement, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -11,18 +12,24 @@ import {
 } from '@/components/data-table'
 import { FilterableListPage } from '@/components/list/FilterableListPage'
 import { PersonAvatar } from '@/components/PersonAvatar'
+import { Button } from '@/components/ui/button'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
 import { formatDateOrDash } from '@/lib/utils/datetime'
+import { useCan } from '@/modules/auth/permissions'
 
 import { PATIENTS_PATH } from '../api'
 import type { PatientRow } from '../types'
+
+import { CreatePatientDialog } from './CreatePatientDialog'
 
 export function PatientListPage(): ReactElement {
   const { t, i18n } = useTranslation('patient-profile')
   const { t: tTable } = useTranslation('data-table')
   const navigate = useNavigate()
   const [state, dispatch] = useRouteSearchTableState()
+  const canCreate = useCan('patient.create')
+  const [createOpen, setCreateOpen] = useState(false)
 
   const query = {
     page: state.page,
@@ -91,38 +98,49 @@ export function PatientListPage(): ReactElement {
     />
   )
 
+  const primaryAction = canCreate ? (
+    <Button onClick={() => setCreateOpen(true)}>
+      <Plus className="size-4" aria-hidden />
+      {t('create.trigger')}
+    </Button>
+  ) : undefined
+
   return (
-    <FilterableListPage<PatientRow>
-      title={t('list.title')}
-      description={t('list.sub')}
-      filters={filters}
-      isEmpty={isEmpty}
-      table={
-        <>
-          <DataTable<PatientRow>
-            data={rows}
-            columns={columns}
-            getRowId={(r) => r.id}
-            isLoading={isLoading}
-            isFetching={isFetching}
-            error={displayError}
-            onRetry={() => void refetch()}
-            selectable={false}
-            state={state}
-            onStateChange={(next) => dispatch.reset(next)}
-            onRowClick={(row) =>
-              void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
-            }
-          />
-          <DataTablePagination
-            page={state.page}
-            pageSize={state.pageSize}
-            totalPages={data?.total_pages ?? 1}
-            onPageChange={(page) => dispatch.setPage(page)}
-            onPageSizeChange={(pageSize) => dispatch.setPageSize(pageSize)}
-          />
-        </>
-      }
-    />
+    <>
+      <FilterableListPage<PatientRow>
+        title={t('list.title')}
+        description={t('list.sub')}
+        primaryAction={primaryAction}
+        filters={filters}
+        isEmpty={isEmpty}
+        table={
+          <>
+            <DataTable<PatientRow>
+              data={rows}
+              columns={columns}
+              getRowId={(r) => r.id}
+              isLoading={isLoading}
+              isFetching={isFetching}
+              error={displayError}
+              onRetry={() => void refetch()}
+              selectable={false}
+              state={state}
+              onStateChange={(next) => dispatch.reset(next)}
+              onRowClick={(row) =>
+                void navigate({ to: '/patients/$patientId', params: { patientId: row.id } })
+              }
+            />
+            <DataTablePagination
+              page={state.page}
+              pageSize={state.pageSize}
+              totalPages={data?.total_pages ?? 1}
+              onPageChange={(page) => dispatch.setPage(page)}
+              onPageSizeChange={(pageSize) => dispatch.setPageSize(pageSize)}
+            />
+          </>
+        }
+      />
+      {canCreate && <CreatePatientDialog open={createOpen} onOpenChange={setCreateOpen} />}
+    </>
   )
 }

@@ -70,7 +70,10 @@ class PatientCreate(BaseModel):
     PATCH route rejects the field outright (see `PatientUpdate`).
     """
 
-    primary_organisation_id: UUID
+    # Optional: the service resolves the caller's own organisation when omitted
+    # and enforces the cross-org rule (see `patients-base`). Cross-org holders
+    # may target any in-tenant org; others may only use one of their own.
+    primary_organisation_id: UUID | None = None
     given_name: str
     family_name: str
     birth_date: date | None = None

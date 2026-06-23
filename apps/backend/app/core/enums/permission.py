@@ -68,6 +68,14 @@ class Permission(StrEnum):
     # guard, see app/services/access/rbac).
     PATIENT_ACCESS_ALL = "patient.accessAll"
 
+    # Patient onboarding (app function, not data access). `patient.create`
+    # guards POST /patients; `patient.createCrossOrg` lets a caller target an
+    # organisation other than their own affiliated org(s). Neither is crown nor
+    # grants patient-data visibility — the create flow adds the creator to the
+    # new patient's care team for that one patient.
+    PATIENT_CREATE = "patient.create"
+    PATIENT_CREATE_CROSS_ORG = "patient.createCrossOrg"
+
 
 # Crown permissions: only an admin-role holder may grant these to a role or
 # assign a role holding them (privilege-escalation guard D7/D7a). `role.*`

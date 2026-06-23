@@ -20,6 +20,14 @@ export async function fetchOrganisations(): Promise<OrganisationRead[]> {
   return organisationListSchema.parse(data).items
 }
 
+export async function fetchMyOrganisations(): Promise<OrganisationRead[]> {
+  const { data, response } = await api.GET('/me/organisations', {})
+  if (!response.ok || !data) {
+    throw apiError('Own organisation list failed', response.status)
+  }
+  return organisationListSchema.parse(data).items
+}
+
 export async function createOrganisation(
   payload: OrganisationCreatePayload,
 ): Promise<OrganisationRead> {
