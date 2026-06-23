@@ -7,6 +7,7 @@ import type {
   CareTeamRow,
   LusciiConnectionSummary,
   LusciiPatientData,
+  PatientCreatePayload,
   PatientRow,
   PatientUpdatePayload,
 } from './types'
@@ -41,6 +42,14 @@ export async function updatePatient(
   })
   if (!response.ok || !data) {
     throw apiError('Patient update failed', response.status)
+  }
+  return data
+}
+
+export async function createPatient(payload: PatientCreatePayload): Promise<PatientRow> {
+  const { data, response } = await api.POST('/patients', { body: payload })
+  if (!response.ok || !data) {
+    throw apiError('Patient create failed', response.status)
   }
   return data
 }

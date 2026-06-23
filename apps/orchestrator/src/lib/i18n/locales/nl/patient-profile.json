@@ -100,6 +100,27 @@
       "error": "Bijwerken is niet gelukt"
     }
   },
+  "create": {
+    "trigger": "Patiënt aanmaken",
+    "title": "Nieuwe patiënt",
+    "description": "Registreer een nieuwe patiënt in het systeem.",
+    "submit": "Aanmaken",
+    "cancel": "Annuleren",
+    "fields": {
+      "given_name": "Voornaam",
+      "family_name": "Achternaam",
+      "birth_date": "Geboortedatum",
+      "gender": "Geslacht",
+      "primary_organisation_id": "Organisatie"
+    },
+    "org": {
+      "placeholder": "Kies een organisatie"
+    },
+    "toast": {
+      "success": "Patiënt aangemaakt",
+      "error": "Aanmaken is niet gelukt"
+    }
+  },
   "delete": {
     "trigger": "Verwijderen",
     "title": "{{name}} verwijderen?",

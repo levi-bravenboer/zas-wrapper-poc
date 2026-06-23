@@ -13,11 +13,14 @@ from app.schemas.organisation import (
     OrganisationTreeUpdate,
     OrganisationUpdate,
 )
+from app.db.engine import SessionDep
+from app.services.access.identity.deps import CurrentUserDep
 from app.services.access.rbac.deps import require_permission
 from app.services.organisation.deps import (
     OrganisationServiceDep,
     OrganisationTreeServiceDep,
 )
+from app.services.practitioner_role.predicates import affiliated_org_ids_for
 
 router = APIRouter(tags=["organisations"])
 
@@ -41,6 +44,24 @@ async def list_organisations(
     # their own root subtree, plus their delegated-care patient roots).
     orgs = await service.list_in_tenant(current_user.tenant_id)
     return OrganisationListResponse(items=[OrganisationRead.model_validate(o) for o in orgs])
+
+
+@router.get(
+    "/me/organisations",
+    operation_id="list_my_organisations",
+    response_model=OrganisationListResponse,
+)
+async def list_my_organisations(
+    service: OrganisationServiceDep,
+    session: SessionDep,
+    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only — returns the caller's own orgs
+) -> OrganisationListResponse:
+    # The caller's own organisations come from their open `practitioner_roles`
+    # rows; no extra RBAC permission since it exposes only their affiliations.
+    own_ids = await affiliated_org_ids_for(session, current_user)
+    orgs = await service.list_in_tenant(current_user.tenant_id)
+    items = [OrganisationRead.model_validate(o) for o in orgs if o.id in own_ids]
+    return OrganisationListResponse(items=items)
 
 
 # AUTH-HARDEN: write gated on `organisation.create` via require_permission.

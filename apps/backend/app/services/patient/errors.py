@@ -15,3 +15,21 @@ class PatientIdentifiersImmutableError(AppError):
     code = "invalid.patient.identifiers_immutable"
     status_code = 422
     message = "Identifiers cannot be mutated via PATCH; use the dedicated endpoint when available."
+
+
+class PatientCreateCrossOrgForbiddenError(AppError):
+    """POST /patients: caller without `patient.createCrossOrg` targeted an
+    organisation that is not one of their own affiliated orgs."""
+
+    code = "forbidden.patient.create_cross_org"
+    status_code = 403
+    message = "You may only create a patient in one of your own organisations."
+
+
+class PatientOrganisationUnresolvedError(AppError):
+    """POST /patients: no `primary_organisation_id` given and the caller's own
+    organisation cannot be resolved unambiguously (none, or more than one)."""
+
+    code = "invalid.patient.organisation_unresolved"
+    status_code = 422
+    message = "An organisation is required: none could be derived from your affiliations."

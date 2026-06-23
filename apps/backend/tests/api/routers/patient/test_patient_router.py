@@ -12,7 +12,7 @@ from app.core.identifiers import INSZ_SYSTEM
 from app.db.models.patient import Patient
 from app.db.models.tenant import Tenant
 from scripts.seed_organisations import RUGREVAL_TEAM_ORG_ID
-from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
+from scripts.seed_users import ADMIN_EMAIL
 
 _DEFAULT_PASSWORD = "changeme"
 
@@ -175,7 +175,9 @@ async def test_create_patient_returns_201_with_audit_columns(
     async_client: AsyncClient, seeded_zas_patients: list[Patient]
 ) -> None:
     del seeded_zas_patients
-    await _login(async_client, CAREGIVER_EMAIL)
+    # Admin holds patient.create + patient.createCrossOrg, so it may target any
+    # in-tenant org (the caregiver default role no longer holds patient.create).
+    await _login(async_client, ADMIN_EMAIL)
     response = await async_client.post(
         "/patients",
         json={

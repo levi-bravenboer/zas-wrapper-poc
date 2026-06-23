@@ -25,6 +25,26 @@ from app.db.models.practitioner import Practitioner, PractitionerRole
 from app.schemas.auth.auth import SessionUser
 
 
+async def affiliated_org_ids_for(session: AsyncSession, user: SessionUser) -> set[UUID]:
+    """Return the org ids the user is directly affiliated with via open
+    `PractitionerRole` rows (no tree-walk to roots). This is the caller's
+    "own organisations" used by patient-create org resolution and the
+    `GET /me/organisations` read."""
+
+    result = await session.execute(
+        select(PractitionerRole.organisation_id)
+        .join(Practitioner, Practitioner.id == PractitionerRole.practitioner_id)
+        .where(
+            Practitioner.user_id == user.id,
+            PractitionerRole.tenant_id == user.tenant_id,
+            PractitionerRole.period_end.is_(None),
+            PractitionerRole.deleted_at.is_(None),
+        )
+        .distinct()
+    )
+    return set(result.scalars().all())
+
+
 async def practitioner_root_orgs_for(session: AsyncSession, user: SessionUser) -> set[UUID]:
     result = await session.execute(
         select(PractitionerRole.organisation_id)

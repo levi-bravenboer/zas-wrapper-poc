@@ -11,6 +11,7 @@ import { usePatientEnrollments } from '@/modules/patient-pathway/hooks'
 
 import {
   addLusciiConnection,
+  createPatient,
   deactivateLusciiConnection,
   fetchLusciiConnections,
   fetchLusciiData,
@@ -26,6 +27,7 @@ import type {
   CareTeamRow,
   LusciiConnectionSummary,
   LusciiPatientData,
+  PatientCreatePayload,
   PatientRow,
   PatientUpdatePayload,
 } from './types'
@@ -73,6 +75,14 @@ export function useUpdatePatient() {
   return useMutation<PatientRow, Error, UpdatePatientVariables>({
     mutationFn: ({ patientId, payload }) => updatePatient(patientId, payload),
     onSuccess: (_row, { patientId }) => invalidatePatientCaches(qc, patientId),
+  })
+}
+
+export function useCreatePatient() {
+  const qc = useQueryClient()
+  return useMutation<PatientRow, Error, PatientCreatePayload>({
+    mutationFn: createPatient,
+    onSuccess: () => qc.invalidateQueries({ queryKey: patientsListKeyPrefix }),
   })
 }
 

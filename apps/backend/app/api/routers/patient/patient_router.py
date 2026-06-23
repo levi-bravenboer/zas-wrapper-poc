@@ -6,10 +6,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import ListQueryParamsDep
+from app.core.enums import Permission
 from app.db.models.patient.patient import Patient
 from app.schemas._list.page import Page
+from app.schemas.auth.auth import SessionUser
 from app.schemas.patient.patient import PatientCreate, PatientRead, PatientUpdate
 from app.services.access.identity.deps import CurrentUserDep
+from app.services.access.rbac.deps import require_permission
 from app.services.audit.access import record_patient_read
 from app.services.patient.deps import (
     PatientAccessDep,
@@ -93,7 +96,9 @@ async def get_patient(
 async def create_patient(
     payload: PatientCreate,
     service: PatientServiceDep,
-    current_user: CurrentUserDep,  # AUTH-HARDEN: authenticated only; Keto gates patient data (D12)
+    current_user: Annotated[
+        SessionUser, Depends(require_permission(Permission.PATIENT_CREATE))
+    ],  # AUTH-HARDEN: patient.create gates onboarding; org/cross-org enforced in the service
 ) -> PatientRead:
     patient = await service.create(current_user, payload)
     return PatientRead.model_validate(patient)

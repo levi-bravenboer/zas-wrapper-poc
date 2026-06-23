@@ -6,6 +6,7 @@ import {
   createOrganisation,
   deleteOrganisation,
   fetchAffiliatedPractitionerRoles,
+  fetchMyOrganisations,
   fetchOrganisations,
   patchOrganisationTree,
   updateOrganisation,
@@ -32,11 +33,21 @@ export function useAffiliatedPractitionerRoles(organisationId: string | null) {
   })
 }
 
-export function useOrganisations() {
+export function useOrganisations(options?: { enabled?: boolean }) {
   return useQuery<OrganisationRead[]>({
     queryKey: organisationKeys.list(),
     queryFn: fetchOrganisations,
     staleTime: ORGANISATION_STALE_MS,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useMyOrganisations(options?: { enabled?: boolean }) {
+  return useQuery<OrganisationRead[]>({
+    queryKey: organisationKeys.myList(),
+    queryFn: fetchMyOrganisations,
+    staleTime: ORGANISATION_STALE_MS,
+    enabled: options?.enabled ?? true,
   })
 }
 

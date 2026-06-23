@@ -18,10 +18,13 @@ from app.services.organisation.errors import (
     OrganisationNotFoundError,
 )
 from app.services.patient.errors import (
+    PatientCreateCrossOrgForbiddenError,
     PatientIdentifiersImmutableError,
     PatientNotFoundError,
+    PatientOrganisationUnresolvedError,
 )
 from app.services.practitioner_role.predicates import (
+    affiliated_org_ids_for,
     patient_ids_under_roots,
     practitioner_root_orgs_for,
 )
@@ -81,9 +84,11 @@ class PatientService:
         return await self._repo.get_by_id(tenant_id, patient_id)
 
     async def create(self, actor: SessionUser, payload: PatientCreate) -> Patient:
-        await self._assert_organisation_in_tenant(actor.tenant_id, payload.primary_organisation_id)
+        organisation_id = await self._resolve_create_organisation(
+            actor, payload.primary_organisation_id
+        )
         patient = Patient(
-            primary_organisation_id=payload.primary_organisation_id,
+            primary_organisation_id=organisation_id,
             given_name=payload.given_name,
             family_name=payload.family_name,
             birth_date=payload.birth_date,
@@ -97,7 +102,36 @@ class PatientService:
             PatientIdentifier(system=i.system, value=i.value, use=i.use)
             for i in payload.identifiers
         ]
-        return await self._repo.add(patient)
+        created = await self._repo.add(patient)
+        # The creator joins the new patient's care team so they can see it
+        # immediately under the existing care-team visibility rules.
+        await self._care_team_service.ensure_membership(actor, created.id)
+        return created
+
+    async def _resolve_create_organisation(
+        self, actor: SessionUser, requested: UUID | None
+    ) -> UUID:
+        """Resolve + authorise the patient's primary organisation for create.
+
+        - Cross-org holders may target any in-tenant org.
+        - Others may only use one of their own affiliated orgs; an omitted org
+          auto-fills when they have exactly one, and is rejected otherwise.
+        """
+
+        cross_org = actor.has_permission(Permission.PATIENT_CREATE_CROSS_ORG)
+        if requested is not None:
+            await self._assert_organisation_in_tenant(actor.tenant_id, requested)
+            if not cross_org:
+                own = await affiliated_org_ids_for(self._session, actor)
+                if requested not in own:
+                    raise PatientCreateCrossOrgForbiddenError()
+            return requested
+        if cross_org:
+            raise PatientOrganisationUnresolvedError()
+        own = await affiliated_org_ids_for(self._session, actor)
+        if len(own) != 1:
+            raise PatientOrganisationUnresolvedError()
+        return next(iter(own))
 
     async def update(self, actor: SessionUser, patient_id: UUID, payload: PatientUpdate) -> Patient:
         # Defensive: `PatientUpdate` already rejects extras (422 via FastAPI),

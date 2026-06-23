@@ -679,6 +679,27 @@
         }
       }
     },
+    "/me/organisations": {
+      "get": {
+        "tags": [
+          "organisations"
+        ],
+        "summary": "List My Organisations",
+        "operationId": "list_my_organisations",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organisations/{organisation_id}": {
       "patch": {
         "tags": [
@@ -13727,8 +13748,15 @@
       "PatientCreate": {
         "properties": {
           "primary_organisation_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Primary Organisation Id"
           },
           "given_name": {
@@ -13802,7 +13830,6 @@
         },
         "type": "object",
         "required": [
-          "primary_organisation_id",
           "given_name",
           "family_name",
           "gender"

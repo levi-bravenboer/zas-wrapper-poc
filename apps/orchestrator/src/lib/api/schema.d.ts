@@ -257,6 +257,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/organisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Organisations */
+        get: operations["list_my_organisations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organisations/{organisation_id}": {
         parameters: {
             query?: never;
@@ -4792,11 +4809,8 @@ export interface components {
          *     PATCH route rejects the field outright (see `PatientUpdate`).
          */
         PatientCreate: {
-            /**
-             * Primary Organisation Id
-             * Format: uuid
-             */
-            primary_organisation_id: string;
+            /** Primary Organisation Id */
+            primary_organisation_id?: string | null;
             /** Given Name */
             given_name: string;
             /** Family Name */
@@ -6284,6 +6298,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_organisations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationListResponse"];
                 };
             };
         };
