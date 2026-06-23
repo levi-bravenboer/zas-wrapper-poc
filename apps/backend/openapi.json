@@ -15626,6 +15626,11 @@
             "format": "uuid",
             "title": "Role Id"
           },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password"
+          },
           "display_name": {
             "anyOf": [
               {
@@ -15675,10 +15680,11 @@
         "type": "object",
         "required": [
           "email",
-          "role_id"
+          "role_id",
+          "password"
         ],
         "title": "UserCreate",
-        "description": "Admin-create payload for a staff user (`dynamic-rbac-roles-permissions`).\n\n`role_id` is the RBAC role to bind. Identity-type is derived from data, so\nthe payload is discriminated by the *clinical* fields, not the role:\n\n- clinician branch (a `Practitioner` row will be created): requires\n  `given_name` + `family_name`; rejects `display_name` (derived from\n  given+family). `qualification` optional.\n- non-clinician branch (e.g. an admin user): requires `display_name`;\n  rejects clinical fields.\n\nPatients are NOT created here \u2014 they have no clinical fields and carry a\n`patient_id`, set only by the seeding / enrollment flow."
+        "description": "Admin-create payload for a staff user (`dynamic-rbac-roles-permissions`).\n\n`role_id` is the RBAC role to bind. Identity-type is derived from data, so\nthe payload is discriminated by the *clinical* fields, not the role:\n\n- clinician branch (a `Practitioner` row will be created): requires\n  `given_name` + `family_name`; rejects `display_name` (derived from\n  given+family). `qualification` optional.\n- non-clinician branch (e.g. an admin user): requires `display_name`;\n  rejects clinical fields.\n\nPatients are NOT created here \u2014 they have no clinical fields and carry a\n`patient_id`, set only by the seeding / enrollment flow.\n\n`password` is the credential the admin sets for the new user; the service\nhashes it and imports it into Kratos as the login credential."
       },
       "UserDetail": {
         "properties": {

@@ -15,6 +15,7 @@ from scripts.seed_users import ADMIN_EMAIL, CAREGIVER_EMAIL
 from tests._rbac import ensure_roles
 
 _DEFAULT_PASSWORD = "changeme"
+_NEW_PASSWORD = "s3cret-pw"
 
 
 @pytest.fixture
@@ -438,6 +439,7 @@ async def test_create_user_admin_branch(
             "email": "new.admin@zas.local",
             "role_id": str(admin_role_id),
             "display_name": "New Admin",
+            "password": _NEW_PASSWORD,
         },
     )
 
@@ -446,6 +448,74 @@ async def test_create_user_admin_branch(
     assert body["email"] == "new.admin@zas.local"
     assert body["display_name"] == "New Admin"
     assert body["role_id"] == str(admin_role_id)
+
+
+async def test_create_user_login_with_typed_password(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    create = await async_client.post(
+        "/users",
+        json={
+            "email": "login.me@zas.local",
+            "role_id": str(admin.role_id),
+            "display_name": "Login Me",
+            "password": _NEW_PASSWORD,
+        },
+    )
+    assert create.status_code == 201, create.text
+
+    login = await async_client.post(
+        "/auth/login/password",
+        json={"email": "login.me@zas.local", "password": _NEW_PASSWORD},
+    )
+    assert login.status_code == 200, login.text
+
+
+async def test_create_user_rejects_short_password(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": "short.pw@zas.local",
+            "role_id": str(admin.role_id),
+            "display_name": "Short PW",
+            "password": "short",
+        },
+    )
+
+    assert response.status_code == 422
+
+    listing = await async_client.get("/users")
+    assert all(u["email"] != "short.pw@zas.local" for u in listing.json()["items"])
+
+
+async def test_create_user_response_excludes_password(
+    async_client: AsyncClient, seeded_zas_users: list[User]
+) -> None:
+    admin = next(u for u in seeded_zas_users if u.email == ADMIN_EMAIL)
+    await _login(async_client, ADMIN_EMAIL)
+
+    response = await async_client.post(
+        "/users",
+        json={
+            "email": "no.echo@zas.local",
+            "role_id": str(admin.role_id),
+            "display_name": "No Echo",
+            "password": _NEW_PASSWORD,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert "password" not in body
+    assert "password_hash" not in body
 
 
 async def test_create_user_caregiver_materialises_practitioner(
@@ -463,6 +533,7 @@ async def test_create_user_caregiver_materialises_practitioner(
             "given_name": "Eva",
             "family_name": "Bos",
             "qualification": "Verpleegkundige",
+            "password": _NEW_PASSWORD,
         },
     )
 
@@ -493,6 +564,7 @@ async def test_create_user_rejects_mixed_branch_payload(
             "display_name": "Mixed",
             "given_name": "Should",
             "family_name": "Fail",
+            "password": _NEW_PASSWORD,
         },
     )
 
@@ -511,6 +583,7 @@ async def test_create_user_rejects_duplicate_email(
             "email": ADMIN_EMAIL,
             "role_id": str(admin.role_id),
             "display_name": "Dup",
+            "password": _NEW_PASSWORD,
         },
     )
 
@@ -530,6 +603,7 @@ async def test_create_user_rejects_caregiver_caller(
             "email": "denied@zas.local",
             "role_id": str(admin.role_id),
             "display_name": "Denied",
+            "password": _NEW_PASSWORD,
         },
     )
 

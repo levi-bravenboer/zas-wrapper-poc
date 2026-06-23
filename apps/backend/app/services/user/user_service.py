@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import secrets
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,26 +107,22 @@ class UserService:
             assert payload.display_name is not None
             display_name = payload.display_name.strip()
 
-        # Placeholder credential — admin onboards real auth via separate flow.
-        # Random URL-safe token hashed with the standard hasher means the row
-        # satisfies the `ck_users_credential_present` CHECK constraint without
-        # being usable for login.
-        placeholder_password = secrets.token_urlsafe(32)
-
-        placeholder_hash = self._password_hasher.hash(placeholder_password)
+        # Admin-set credential: hash the typed password and import that hash
+        # into Kratos verbatim, so the new user can log in with it immediately.
+        password_hash = self._password_hasher.hash(payload.password)
         # Kratos is the credential system of record: create the identity
-        # first (placeholder hash — unusable for login since the random
-        # secret is discarded), then persist the projection columns.
+        # first, then persist the projection columns.
         schema_id: KratosSchemaId = "practitioner" if payload.is_clinician else "default"
         # One human = one Kratos identity (REQ-NON-3): a second role row for
         # an existing email links to the existing identity instead of
-        # importing a duplicate (Kratos enforces email uniqueness anyway).
+        # importing a duplicate. First credential wins — the typed password is
+        # not re-applied to an already-existing identity.
         identity = await self._kratos.find_identity_by_email(email=payload.email)
         if identity is None:
             identity = await self._kratos.import_identity(
                 schema_id=schema_id,
                 email=payload.email,
-                hashed_password=placeholder_hash,
+                hashed_password=password_hash,
             )
 
         user = User(
@@ -136,7 +131,7 @@ class UserService:
             display_name=display_name,
             role_id=payload.role_id,
             is_active=True,
-            password_hash=placeholder_hash,
+            password_hash=password_hash,
             external_idp=KRATOS_IDP,
             external_subject=identity.id,
         )
