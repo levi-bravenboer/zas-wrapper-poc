@@ -185,6 +185,10 @@ services:
       BACKEND_KETO_WRITE_URL: http://keto:4467
       BACKEND_AUTHZ_KETO_ENABLED: "true"
       BACKEND_LUSCII_FIXTURES: "true"
+      # Luscii client: token-presence drives live vs stub; pass through from
+      # secrets.env. Default mode=live for the hosted demo (real Luscii data).
+      BACKEND_LUSCII_MODE: live
+      BACKEND_LUSCII_API_TOKEN: ${BACKEND_LUSCII_API_TOKEN:-}
       BACKEND_PATHWAY_RUNTIME_ENGINE: temporal
       BACKEND_TEMPORAL_ADDRESS: temporal:7233
       BACKEND_S3_ENDPOINT_URL: http://minio:9000
@@ -223,6 +227,9 @@ services:
       BACKEND_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-zas}:${POSTGRES_PASSWORD:-zas}@db:5432/zas
       BACKEND_LOG_LEVEL: INFO
       BACKEND_TEMPORAL_ADDRESS: temporal:7233
+      # Temporal activities may call Luscii — same token/mode as backend.
+      BACKEND_LUSCII_MODE: live
+      BACKEND_LUSCII_API_TOKEN: ${BACKEND_LUSCII_API_TOKEN:-}
     depends_on:
       backend:
         condition: service_healthy
