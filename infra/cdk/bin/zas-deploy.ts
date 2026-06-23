@@ -6,12 +6,11 @@ import { ZasEcrStack } from "../lib/ecr-stack";
 
 const app = new App();
 
-const imageTag = app.node.tryGetContext("imageTag") ?? "latest";
 const allowedCidr =
   app.node.tryGetContext("allowedCidr") ?? config.defaultAllowedCidr;
 
 new ZasEcrStack(app, "ZasEcrStack", { env: cdkEnv });
-new ZasAppStack(app, "ZasAppStack", { env: cdkEnv, imageTag, allowedCidr });
+new ZasAppStack(app, "ZasAppStack", { env: cdkEnv, allowedCidr });
 
 for (const [k, v] of Object.entries(config.tags)) {
   Tags.of(app).add(k, v);

@@ -3,6 +3,7 @@ import { buildAndPush, stageAssets } from "./lib/build";
 import { log } from "./lib/log";
 import { REGION } from "./lib/paths";
 import { preflight } from "./lib/preflight";
+import { bucketName, rollout } from "./lib/rollout";
 import { main, sh, shOut } from "./lib/sh";
 
 await main("deploy:up", async () => {
@@ -30,18 +31,17 @@ await main("deploy:up", async () => {
   });
 
   await buildAndPush(registry, tag);
-  stageAssets();
+  stageAssets(tag);
 
-  log.step(`deploy app stack (imageTag=${tag})`);
-  await sh("npx", [
-    "cdk",
-    "deploy",
-    "ZasAppStack",
-    "--require-approval",
-    "never",
-    "-c",
-    `imageTag=${tag}`,
-  ]);
+  // App stack no longer carries the image tag — the box pulls it from the
+  // S3-synced tag.env (staged above), so a tag bump never changes UserData.
+  log.step("deploy app stack");
+  await sh("npx", ["cdk", "deploy", "ZasAppStack", "--require-approval", "never"]);
+
+  // Roll the new images onto the running box in-place (no replacement). On a
+  // first/replaced boot the box self-deploys via UserData; this is idempotent.
+  const bucket = await bucketName();
+  await rollout({ bucket, registry, tag });
 
   await sh("npx", ["tsx", "scripts/url.ts"]).catch(() => {});
 });

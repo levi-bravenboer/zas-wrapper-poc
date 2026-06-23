@@ -11,8 +11,6 @@ import { Networking } from "./constructs/networking";
 import { buildUserData } from "./user-data";
 
 export interface ZasAppStackProps extends StackProps {
-  /** git sha tag of the pushed images (from `-c imageTag=...`). */
-  readonly imageTag: string;
   /** CIDR allowed on 80/443 (from `-c allowedCidr=...`). */
   readonly allowedCidr: string;
 }
@@ -35,7 +33,6 @@ export class ZasAppStack extends Stack {
     const userData = buildUserData({
       region,
       ecrRegistry,
-      imageTag: props.imageTag,
       appHost: config.appHost,
       apiHost: config.apiHost,
       filesHost: config.filesHost,
@@ -49,6 +46,7 @@ export class ZasAppStack extends Stack {
       userData,
       instanceType: config.instanceType,
       volumeSizeGb: config.volumeSizeGb,
+      dataVolumeSizeGb: config.dataVolumeSizeGb,
     });
 
     // Box boots only after configs + secrets are uploaded.
@@ -74,6 +72,7 @@ export class ZasAppStack extends Stack {
     new CfnOutput(this, "ApiUrl", { value: `https://${config.apiHost}` });
     new CfnOutput(this, "PublicIp", { value: compute.eip.ref });
     new CfnOutput(this, "InstanceId", { value: compute.instance.instanceId });
+    new CfnOutput(this, "DataVolumeId", { value: compute.dataVolume.ref });
     new CfnOutput(this, "SsmConnect", {
       value: `aws ssm start-session --target ${compute.instance.instanceId} --region ${region}`,
     });

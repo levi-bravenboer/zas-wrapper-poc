@@ -1,4 +1,11 @@
-import { copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import { config } from "../../config/env";
 import { log } from "./log";
@@ -49,14 +56,17 @@ export async function buildAndPush(registry: string, tag: string): Promise<void>
   await sh("docker", ["push", `${orchestrator}:${tag}`]);
 }
 
-// Stage compose + ory/nginx configs + the secret .env into assets/ for the
-// BucketDeployment. secrets.env never leaves the box's S3 bucket.
-export function stageAssets(): void {
-  log.step("stage assets (compose + ory configs + secrets.env)");
+// Stage compose + ory/nginx configs + the secret .env + the image tag into
+// assets/ for the BucketDeployment. tag.env is the source of truth for the
+// running image tag: the box reads it on boot and on every in-place rollout.
+// secrets.env never leaves the box's S3 bucket.
+export function stageAssets(tag: string): void {
+  log.step("stage assets (compose + ory configs + secrets.env + tag.env)");
   // clean prior staging (keep .gitignore/.gitkeep)
   rmSync(resolve(ASSETS_DIR, "infra"), { recursive: true, force: true });
   rmSync(resolve(ASSETS_DIR, "docker-compose.deploy.yml"), { force: true });
   rmSync(resolve(ASSETS_DIR, "secrets.env"), { force: true });
+  rmSync(resolve(ASSETS_DIR, "tag.env"), { force: true });
 
   mkdirSync(ASSETS_DIR, { recursive: true });
   copyFileSync(
@@ -72,4 +82,5 @@ export function stageAssets(): void {
     throw new Error("apps/backend/.env missing — fill from .env.deploy.example");
   }
   copyFileSync(env, resolve(ASSETS_DIR, "secrets.env"));
+  writeFileSync(resolve(ASSETS_DIR, "tag.env"), `IMAGE_TAG=${tag}\n`);
 }

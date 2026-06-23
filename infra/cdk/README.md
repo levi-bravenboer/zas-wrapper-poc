@@ -7,6 +7,13 @@ then one command to kill it. Not production infra.
   (Postgres, Temporal, Kratos, Keto, MinIO, backend, worker, orchestrator).
 - Custom images (`zas-backend`, `zas-orchestrator`) built locally → ECR; the
   box only pulls. Compose + ory/nginx configs + secrets come from S3.
+- **Durable data**: a dedicated, RETAINED EBS volume (`Name=zas-data`) backs
+  Docker's `data-root`, so Postgres/MinIO/LE certs survive instance
+  replacement *and* `deploy:down`. The deploy flow cannot wipe the database.
+- **Code rollouts are in-place**: `deploy:up` / `deploy:images` build+push, then
+  pull+recompose on the running box via SSM (the image tag lives in S3
+  `tag.env`, never in UserData). The instance is only replaced on genuine
+  boot-script changes — and even then the data volume reattaches.
 - HTTPS via Let's Encrypt on the box; Route53 `app.`/`api.zas.lebba.nl` → one
   Elastic IP. No ALB.
 - Seeds a single admin (you) + the bladder-cancer pathway (`SEED_PROFILE=demo`).
@@ -69,4 +76,8 @@ Stop overnight to roughly halve it.
 
 This box is meant to live ~1 week. **Run `moon run deploy:down` when the demo
 ends** so it doesn't linger and bill. Verify the console shows no residual
-EC2 / EBS / EIP / ECR / S3 afterwards.
+EC2 / EIP / ECR / S3 afterwards.
+
+`deploy:down` deliberately **keeps** the `zas-data` EBS volume (RETAIN) so a
+teardown can never lose the database. It's ~30 GB gp3 (~$2.4/mo) until you
+delete it by hand — `deploy:down` prints the exact `delete-volume` command.

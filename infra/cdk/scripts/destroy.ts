@@ -13,5 +13,10 @@ await main("deploy:down", async () => {
   }
   log.step("destroying ZasAppStack + ZasEcrStack");
   await sh("npx", ["cdk", "destroy", "ZasAppStack", "ZasEcrStack", "--force"]);
-  log.step("destroyed — verify no residual EC2/EBS/EIP/ECR/S3 in the console");
+  log.step("destroyed — verify no residual EC2/EIP/ECR/S3 in the console");
+  log.warn(
+    "the data volume (tag Name=zas-data) is RETAINED by design and survives teardown. " +
+      "To delete it too (irreversible): `aws ec2 delete-volume --region eu-west-1 --volume-id <id>` " +
+      "(find it via `aws ec2 describe-volumes --region eu-west-1 --filters Name=tag:Name,Values=zas-data`).",
+  );
 });

@@ -19,7 +19,10 @@ export const config = {
   filesHost: "files.zas.lebba.nl",
   leEmail: "levi.bravenboer@reaktor.com",
   instanceType: "t3.large",
+  // OS-only root volume (disposable). Durable state lives on the data volume.
   volumeSizeGb: 30,
+  // Dedicated, retained volume backing Docker's data-root (DB/MinIO/LE certs).
+  dataVolumeSizeGb: 30,
   backendRepo: "zas-backend",
   orchestratorRepo: "zas-orchestrator",
   // SG source for 80/443. Lock to a CIDR via `-c allowedCidr=1.2.3.4/32`;

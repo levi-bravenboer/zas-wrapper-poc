@@ -3,9 +3,11 @@ import { buildAndPush, stageAssets } from "./lib/build";
 import { log } from "./lib/log";
 import { REGION } from "./lib/paths";
 import { preflight } from "./lib/preflight";
+import { bucketName, rollout, syncAssets } from "./lib/rollout";
 import { main, shOut } from "./lib/sh";
 
-// Build + push images only (no infra change). Re-stages assets too.
+// Build + push images, then roll them onto the running box in-place via SSM —
+// no infra change, no instance replacement, data volume untouched.
 await main("deploy:images", async () => {
   await preflight();
 
@@ -28,6 +30,9 @@ await main("deploy:images", async () => {
   });
 
   await buildAndPush(registry, tag);
-  stageAssets();
-  log.step(`pushed ${tag} — redeploy app stack to roll out: \`npx cdk deploy ZasAppStack -c imageTag=${tag}\``);
+  stageAssets(tag);
+
+  const bucket = await bucketName();
+  await syncAssets(bucket);
+  await rollout({ bucket, registry, tag });
 });
