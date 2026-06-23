@@ -1,4 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
+import { config } from "../../config/env";
 import { log } from "./log";
 import { ASSETS_DIR, REGION } from "./paths";
 import { sh } from "./sh";
@@ -20,9 +21,11 @@ export async function syncAssets(bucket: string): Promise<void> {
   await sh("aws", ["s3", "sync", ASSETS_DIR, `s3://${bucket}`, "--region", REGION]);
 }
 
-// In-place rollout: tell the running box (via SSM) to re-sync configs, pin the
-// new image tag, re-login to ECR, and recompose. No instance replacement, so
-// the data volume is never touched.
+// In-place rollout: tell the running box (via SSM) to re-sync configs, fully
+// rebuild `.env` (static context + tag + secrets), re-login to ECR, and
+// recompose. The rebuild is mandatory — `.env` was originally assembled by
+// UserData on first boot, so updates to secrets.env on S3 don't propagate
+// unless we regenerate the file every rollout. No instance replacement.
 export async function rollout(opts: {
   bucket: string;
   registry: string;
@@ -33,7 +36,16 @@ export async function rollout(opts: {
     "set -eu",
     "cd /opt/zas",
     `aws s3 sync s3://${opts.bucket} /opt/zas`,
-    `if grep -q '^IMAGE_TAG=' .env; then sed -i 's#^IMAGE_TAG=.*#IMAGE_TAG=${opts.tag}#' .env; else echo 'IMAGE_TAG=${opts.tag}' >> .env; fi`,
+    // Reassemble .env from authoritative sources every rollout.
+    "cat > /opt/zas/.env <<EOF",
+    `ECR_REGISTRY=${opts.registry}`,
+    `IMAGE_TAG=${opts.tag}`,
+    `APP_HOST=${config.appHost}`,
+    `API_HOST=${config.apiHost}`,
+    `FILES_HOST=${config.filesHost}`,
+    `LE_EMAIL=${config.leEmail}`,
+    "EOF",
+    "if [ -f /opt/zas/secrets.env ]; then cat /opt/zas/secrets.env >> /opt/zas/.env; fi",
     `aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${opts.registry}`,
     "docker compose -f docker-compose.deploy.yml pull",
     "docker compose -f docker-compose.deploy.yml up -d",

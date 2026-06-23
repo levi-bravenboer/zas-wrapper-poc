@@ -218,7 +218,13 @@ function CreatePatientForm({
               label={t('create.fields.primary_organisation_id')}
               error={firstError(field.state.meta.errors, t)}
             >
-              <Select value={field.state.value} onValueChange={(v) => field.handleChange(v)}>
+              <Select
+                value={field.state.value}
+                onValueChange={(v) => {
+                  field.handleChange(v)
+                  field.handleBlur()
+                }}
+              >
                 <SelectTrigger id="create-patient-organisation">
                   <SelectValue placeholder={t('create.org.placeholder')} />
                 </SelectTrigger>

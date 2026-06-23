@@ -36,5 +36,10 @@ else
   uv run python -m scripts.seed_all
 fi
 
+# Populate the Luscii localisation catalogue on first boot (per fresh DB).
+# Cheap probe inside the script: skips when already populated or unconfigured.
+echo "==> ensuring Luscii catalogue (no-op if already synced)"
+uv run python -m scripts.sync_luscii_catalogue_if_empty
+
 echo "==> starting backend"
 exec "$@"
