@@ -37,6 +37,8 @@ export async function buildAndPush(registry: string, tag: string): Promise<void>
     "VITE_API_MODE=real",
     "--build-arg",
     "VITE_ALLOW_EMPTY_REGISTRY=true",
+    "--build-arg",
+    "VITE_LUSCII_METINGEN_REPLICA=true",
     "-f",
     resolve(REPO_ROOT, "apps/orchestrator/Dockerfile.deploy"),
     resolve(REPO_ROOT, "apps/orchestrator"),
