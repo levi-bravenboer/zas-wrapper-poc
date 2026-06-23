@@ -5,15 +5,20 @@
     "heading": "Vandaag",
     "patients": "Actieve patiënten",
     "tasks": "Open taken",
-    "appointments": "Afspraken",
-    "messages": "Nieuwe berichten"
+    "appointments": "Afspraken"
   },
   "tasks": {
     "heading": "Mijn taken",
-    "sub": "Laatst toegekend"
+    "sub": "Op deadline",
+    "empty": "Geen openstaande taken",
+    "error": "Taken konden niet worden geladen",
+    "viewAll": "Bekijk alle taken"
   },
-  "patients": {
-    "heading": "Recente patiënten",
-    "sub": "Door jou geopend"
+  "appointments": {
+    "heading": "Afspraken",
+    "sub": "Vandaag en gepland",
+    "empty": "Geen geplande afspraken",
+    "error": "Afspraken konden niet worden geladen",
+    "viewAll": "Bekijk alle afspraken"
   }
 }
