@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from scripts._db import run_script
 from scripts.seed_all import import_kratos_identities, reconcile_authz_tuples
 from scripts.seed_bladder_cancer import seed_bladder_cancer
+from scripts.seed_bladder_cancer_v2 import seed_bladder_cancer_v2
 from scripts.seed_pathway import seed_lane_kinds
 from scripts.seed_tenant import seed_zas_tenant
 from scripts.seed_users import seed_users
@@ -32,6 +33,7 @@ SEED_STEPS: list[SeedStep] = [
     seed_users,
     seed_lane_kinds,
     seed_bladder_cancer,
+    seed_bladder_cancer_v2,
 ]
 
 
