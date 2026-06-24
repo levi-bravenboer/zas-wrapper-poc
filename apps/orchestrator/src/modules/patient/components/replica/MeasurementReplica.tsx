@@ -18,10 +18,12 @@ const POLL_MS = 5000
 // Default window — matches Luscii's own default active preset (3M).
 const DEFAULT_WINDOW_DAYS: LusciiWindowDays = 90
 
-// Dev-editable card order. Cards whose instrument name matches an entry render
-// in this order; anything not listed is appended in the order the API returns
-// it. Reorder by editing this array — there is no in-UI ordering control.
-const INSTRUMENT_ORDER: string[] = []
+// Dev-editable card priority. Cards whose instrument name matches an earlier
+// pattern render first; unmatched cards keep the order the API returns them
+// in. Patterns are case-insensitive substring regexes so variant Luscii names
+// (Bloeddruk / Bloeddrukmeting / Hartslag / Pols / ...) all collapse to the
+// same rank.
+const INSTRUMENT_ORDER: RegExp[] = [/bloeddruk/i, /hartslag|pols/i, /temperatuur/i]
 
 export interface MeasurementReplicaProps {
   patientId: string
@@ -94,7 +96,8 @@ export function MeasurementReplica({ patientId }: MeasurementReplicaProps): Reac
 function orderGroups(groups: InstrumentGroup[]): InstrumentGroup[] {
   if (INSTRUMENT_ORDER.length === 0) return groups
   const rank = (name: string | null): number => {
-    const idx = name ? INSTRUMENT_ORDER.indexOf(name) : -1
+    if (!name) return Number.MAX_SAFE_INTEGER
+    const idx = INSTRUMENT_ORDER.findIndex((pattern) => pattern.test(name))
     return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
   }
   return groups
