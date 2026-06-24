@@ -93,9 +93,6 @@ function TaskDetailRoute(): ReactElement {
                 {t(`tasks:status.${task.status}`, { defaultValue: task.status })}
               </Badge>
             </DetailRow>
-            {task.source_ref ? (
-              <DetailRow label={t('tasks:detail.source')}>{task.source_ref}</DetailRow>
-            ) : null}
             <DetailRow label={t('tasks:detail.created')}>
               {formatDateTimeOrDash(task.created_at, i18n.language)}
             </DetailRow>
