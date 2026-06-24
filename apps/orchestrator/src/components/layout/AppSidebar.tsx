@@ -37,6 +37,7 @@ import {
 import { cn } from '@/lib/style/cn'
 import { initials } from '@/lib/utils/initials'
 import { useLogout, useSelectRole, useSession, useSessionRoles } from '@/modules/auth/hooks'
+import { can, type Capability } from '@/modules/auth/permissions'
 import type { Role } from '@/modules/auth/schemas'
 import { getFeaturesForSurface } from '@/platform/embed/defineFeature'
 
@@ -48,9 +49,18 @@ function passesRole(role: Role | undefined, required: readonly Role[] | undefine
   return required.includes(role)
 }
 
+function passesPermission(
+  permissions: readonly string[] | undefined,
+  required: Capability | undefined,
+): boolean {
+  if (!required) return true
+  return can(permissions, required)
+}
+
 function useResolvedNavGroups(): readonly NavGroup[] {
   const { data: session } = useSession()
   const role = session?.role_slug
+  const permissions = session?.permissions
 
   return useMemo(() => {
     // Feature-registered items still inject into the top group, preserving
@@ -70,15 +80,17 @@ function useResolvedNavGroups(): readonly NavGroup[] {
 
     return navGroups
       .filter((group) => passesRole(role, group.requiresRole))
+      .filter((group) => passesPermission(permissions, group.requiresPermission))
       .map((group) => {
         const baseItems = group.id === 'top' ? [...group.items, ...featureItems] : [...group.items]
         const items = baseItems
           .filter((item) => passesRole(role, item.requiresRole))
+          .filter((item) => passesPermission(permissions, item.requiresPermission))
           .toSorted((a, b) => a.order - b.order)
         return { ...group, items }
       })
       .filter((group) => group.items.length > 0)
-  }, [role])
+  }, [role, permissions])
 }
 
 export function AppSidebar(): ReactElement {

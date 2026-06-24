@@ -13,6 +13,7 @@ import {
   Workflow,
 } from 'lucide-react'
 
+import type { Capability } from '@/modules/auth/permissions'
 import type { Role } from '@/modules/auth/schemas'
 
 // labelKey is a fully-qualified i18next key in `namespace:path.to.key` form so
@@ -26,6 +27,8 @@ export type NavItem = {
   readonly icon: LucideIcon
   readonly order: number
   readonly requiresRole?: readonly Role[]
+  /** Hide when the session lacks this RBAC permission slug. */
+  readonly requiresPermission?: Capability
 }
 
 export type NavGroup = {
@@ -34,6 +37,7 @@ export type NavGroup = {
   readonly collapsible?: boolean
   readonly placement: 'main' | 'footer'
   readonly requiresRole?: readonly Role[]
+  readonly requiresPermission?: Capability
   readonly items: readonly NavItem[]
 }
 
@@ -49,7 +53,13 @@ export const navGroups: readonly NavGroup[] = [
       { to: '/patients', labelKey: 'nav:patients', icon: Contact, order: 12 },
       { to: '/appointments', labelKey: 'nav:appointments', icon: Calendar, order: 15 },
       { to: '/tasks', labelKey: 'nav:tasks', icon: Inbox, order: 20 },
-      { to: '/pathways', labelKey: 'nav:pathways', icon: Workflow, order: 40 },
+      {
+        to: '/pathways',
+        labelKey: 'nav:pathways',
+        icon: Workflow,
+        order: 40,
+        requiresPermission: 'pathway.read',
+      },
     ],
   },
   {
