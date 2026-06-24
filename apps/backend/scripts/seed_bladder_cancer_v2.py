@@ -114,6 +114,10 @@ def _gate_decision(decision: UUID, output_key: str) -> dict[str, object]:
 
 
 _UROLOGY = {"role": "physician", "specialty": SpecialtyCode.UROLOGIE.value}
+# Wound-check is intentionally open to any affiliate — the enroll dialog
+# filter falls back to the full caregiver list when no candidate matches the
+# slot's role, so a generic `caregiver` marker surfaces everyone.
+_ANY_CAREGIVER = {"role": "caregiver"}
 
 
 # Task body — visible to the assigned caregiver. Short, clinical, action-oriented.
@@ -380,6 +384,7 @@ def _build_payload() -> PathwayDefinitionReplace:
                 config={
                     "title": "Wondcontrole: foto wond + bloeddruk meten",
                     "assignee": "caregiver",
+                    "participant": _ANY_CAREGIVER,
                     "notes": _WOUND_CHECK_NOTES,
                     "requires_completion": True,
                     "input_logic": _gate_if_done(B_OPERATION),
