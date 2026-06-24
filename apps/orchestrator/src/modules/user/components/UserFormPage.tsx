@@ -318,6 +318,18 @@ function UserFormShell({
       formApi.form.setFieldValue('role_id', defaultRoleId)
     }
   }, [roleId, defaultRoleId, formApi.form])
+
+  // Admin role cannot carry a Practitioner row (backend rule
+  // `invalid.practitioner.user_not_caregiver`). Force the clinician toggle off
+  // and disable it whenever the selected role is admin so the form can't
+  // produce an inherently-rejected payload.
+  const selectedRoleSlug = roles.find((r) => r.id === roleId)?.slug ?? null
+  const adminRoleSelected = selectedRoleSlug === 'admin'
+  useEffect(() => {
+    if (adminRoleSelected && isClinician) {
+      formApi.form.setFieldValue('is_clinician', false)
+    }
+  }, [adminRoleSelected, isClinician, formApi.form])
   const derivedName = isClinician
     ? [givenName, familyName].filter((s) => s?.trim()).join(' ')
     : displayName
@@ -547,7 +559,7 @@ function UserFormShell({
                         id="user-clinician"
                         checked={field.state.value}
                         onCheckedChange={(v) => field.handleChange(v)}
-                        disabled={editing}
+                        disabled={editing || adminRoleSelected}
                       />
                     </div>
                   )}
