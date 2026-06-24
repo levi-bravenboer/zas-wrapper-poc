@@ -231,7 +231,10 @@ services:
       BACKEND_LUSCII_MODE: live
       BACKEND_LUSCII_API_TOKEN: ${BACKEND_LUSCII_API_TOKEN:-}
     depends_on:
-      backend:
+      # Worker only needs the DB + temporal. Gating on backend health blocks
+      # worker startup whenever backend boot is slow (e.g. catalogue sync on a
+      # fresh deploy), which leaves pathway completion hanging silently.
+      db:
         condition: service_healthy
       temporal:
         condition: service_healthy

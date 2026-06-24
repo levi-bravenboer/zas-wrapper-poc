@@ -38,8 +38,11 @@ fi
 
 # Populate the Luscii localisation catalogue on first boot (per fresh DB).
 # Cheap probe inside the script: skips when already populated or unconfigured.
-echo "==> ensuring Luscii catalogue (no-op if already synced)"
-uv run python -m scripts.sync_luscii_catalogue_if_empty
+# Runs in the background — sync takes minutes and would otherwise keep the
+# backend out of `healthy` long enough for compose to give up on dependents
+# (e.g. the temporal worker). Names show up in the UI once it lands.
+echo "==> ensuring Luscii catalogue (background; no-op if already synced)"
+uv run python -m scripts.sync_luscii_catalogue_if_empty &
 
 echo "==> starting backend"
 exec "$@"
