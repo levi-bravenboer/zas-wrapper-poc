@@ -7,6 +7,7 @@ import { GroupedList, GroupedListSection, RailRow } from '@/components/rail'
 import { EmptyState } from '@/components/states/EmptyState'
 import { RowSkeleton } from '@/components/states/Skeleton'
 import { intlLocale } from '@/lib/i18n'
+import { formatTime } from '@/lib/utils/datetime'
 import { groupConsecutiveByDay } from '@/lib/utils/grouping'
 
 import { useAppointmentsQuery } from '../hooks'
@@ -26,9 +27,6 @@ const dayFmt = (): Intl.DateTimeFormat =>
     day: 'numeric',
     month: 'short',
   })
-const timeFmt = (): Intl.DateTimeFormat =>
-  new Intl.DateTimeFormat(intlLocale(), { hour: '2-digit', minute: '2-digit' })
-
 function AppointmentListBody({ selectedId }: { selectedId: string | undefined }): ReactElement {
   const { t } = useTranslation(['appointment'])
   const query = useAppointmentsQuery()
@@ -74,7 +72,7 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
           >
             {group.items.map((appt) => {
               const KindIcon = KIND_ICON[appt.kind] ?? Calendar
-              const secondary = [timeFmt().format(new Date(appt.starts_at)), appt.location_text]
+              const secondary = [formatTime(appt.starts_at), appt.location_text]
                 .filter(Boolean)
                 .join(' · ')
               return (

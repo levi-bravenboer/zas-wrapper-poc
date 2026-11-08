@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   DEFAULT_LOCALE,
@@ -12,9 +12,9 @@ const nlFiles = import.meta.glob<{ default: object }>('./locales/nl/*.json', { e
 const enFiles = import.meta.glob<{ default: object }>('./locales/en/*.json', { eager: true })
 
 function keyPaths(node: object, prefix = ''): string[] {
-  return Object.entries(node).flatMap(([key, value]) =>
+  return Object.entries(node).flatMap(([key, value]: [string, unknown]) =>
     typeof value === 'object' && value !== null
-      ? keyPaths(value as object, `${prefix}${key}.`)
+      ? keyPaths(value, `${prefix}${key}.`)
       : [`${prefix}${key}`],
   )
 }
@@ -54,10 +54,14 @@ describe('locale files', () => {
 })
 
 describe('locale persistence', () => {
+  afterEach(async () => {
+    await i18n.changeLanguage(DEFAULT_LOCALE)
+    localStorage.removeItem(LOCALE_STORAGE_KEY)
+  })
+
   it('remembers the chosen language in localStorage', async () => {
     await i18n.changeLanguage('en')
     expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('en')
     expect(document.documentElement.lang).toBe('en')
-    await i18n.changeLanguage(DEFAULT_LOCALE)
   })
 })

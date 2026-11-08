@@ -20,3 +20,9 @@ export const AUDIT_RESULTS: readonly AuditResult[] = ['success', 'failure']
 
 /** Resource types currently emitted into the trail (drives the resource filter). */
 export const AUDITED_RESOURCE_TYPES = ['Pathway', 'User', 'Patient'] as const
+
+export function isAuditedResourceType(
+  value: string,
+): value is (typeof AUDITED_RESOURCE_TYPES)[number] {
+  return (AUDITED_RESOURCE_TYPES as readonly string[]).includes(value)
+}

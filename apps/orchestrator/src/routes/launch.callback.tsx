@@ -55,8 +55,9 @@ export function LaunchCallbackPage({
         const to = resolveDestination()
         void navigate({ to, replace: true })
       })
-      .catch(() => {
+      .catch((cause: unknown) => {
         if (cancelled) return
+        console.error('SMART token exchange failed:', cause)
         setError(t('exchange_failed'))
       })
     return () => {

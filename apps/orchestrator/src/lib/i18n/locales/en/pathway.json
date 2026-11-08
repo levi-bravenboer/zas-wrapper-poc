@@ -467,10 +467,12 @@
       "ariaNamed": "Luscii program: {{name}}",
       "unknown": "unknown",
       "headerEmpty": "Luscii program · Pick one",
+      "headerFallback": "Luscii program",
       "pickProgram": "Pick a Luscii program",
       "badge": "Luscii"
     },
     "nestedPathway": {
+      "headerFallback": "Sub-pathway",
       "badge": "Path",
       "start": "START"
     }
@@ -638,6 +640,7 @@
     },
     "extraPlaceholder": {
       "decision_output": "outcome (e.g. good)",
+      "event": "event type",
       "if_not_done_within": "P14D"
     }
   }

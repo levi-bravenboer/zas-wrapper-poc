@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, type Dispatch } from 'react'
 
-import { i18n } from '@/lib/i18n'
+import { DEFAULT_LOCALE, i18n } from '@/lib/i18n'
 import { sortByOrd } from '@/lib/utils/ordinal'
 
 import { HISTORY_LIMIT } from './constants/limits'
@@ -290,7 +290,7 @@ function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinitio
     id: crypto.randomUUID(),
     pathway_lane_kind_id: crypto.randomUUID(),
     lane_kind_code: entry.code,
-    label: i18n.t(`pathway:lane.${entry.code}`),
+    label: i18n.t(`pathway:lane.${entry.code}`, { lng: DEFAULT_LOCALE }),
     ord: maxOrd + (i + 1) * 10,
     is_default: existing.length === 0 && entry.is_default,
     height_px: 180,

@@ -36,7 +36,7 @@ export function LusciiProgramHeader({ programName, subLine, empty }: Props): Rea
         <div className="truncate text-[12.5px] font-semibold tracking-tight text-foreground">
           {empty
             ? t('canvas.luscii.headerEmpty')
-            : (programName ?? t('inspector.lusciiProgram.program'))}
+            : (programName ?? t('canvas.luscii.headerFallback'))}
         </div>
         {!empty && subLine && (
           <div className="truncate font-mono text-[10px] text-muted-foreground">{subLine}</div>

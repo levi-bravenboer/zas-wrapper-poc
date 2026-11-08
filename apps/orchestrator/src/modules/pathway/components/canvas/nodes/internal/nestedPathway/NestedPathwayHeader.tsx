@@ -33,7 +33,7 @@ export function NestedPathwayHeader({
       </span>
       <div className="min-w-0 leading-[1.15]">
         <div className="truncate text-[12.5px] font-semibold tracking-tight text-foreground">
-          {empty ? emptyLabel : (pathwayName ?? t('inspector.pathwayLink.headerLabel'))}
+          {empty ? emptyLabel : (pathwayName ?? t('canvas.nestedPathway.headerFallback'))}
         </div>
         {!empty && subLine && (
           <div className="truncate font-mono text-[10px] text-muted-foreground">{subLine}</div>

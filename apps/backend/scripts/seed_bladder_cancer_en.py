@@ -7,8 +7,6 @@
 
 """Idempotent seed of the English bladder-cancer demo pathway."""
 
-from __future__ import annotations
-
 import logging
 from uuid import UUID
 

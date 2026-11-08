@@ -467,10 +467,12 @@
       "ariaNamed": "Luscii-programma: {{name}}",
       "unknown": "onbekend",
       "headerEmpty": "Luscii-programma · Kies er één",
+      "headerFallback": "Luscii-programma",
       "pickProgram": "Kies een Luscii-programma",
       "badge": "Luscii"
     },
     "nestedPathway": {
+      "headerFallback": "Subpad",
       "badge": "Pad",
       "start": "START"
     }
@@ -638,6 +640,7 @@
     },
     "extraPlaceholder": {
       "decision_output": "uitkomst (bv. goed)",
+      "event": "type gebeurtenis",
       "if_not_done_within": "P14D"
     }
   }

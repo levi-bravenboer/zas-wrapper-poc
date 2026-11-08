@@ -16,9 +16,7 @@
     "action": {
       "edit": "Bewerken",
       "delete": "Verwijderen"
-    },
-    "permCount_one": "{{count}} permissie",
-    "permCount_other": "{{count}} permissies"
+    }
   },
   "detail": {
     "action": {

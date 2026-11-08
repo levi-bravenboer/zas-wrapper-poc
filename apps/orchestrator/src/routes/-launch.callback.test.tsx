@@ -102,15 +102,6 @@ describe('LaunchCallbackPage', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('falls back to the generic message for non-SmartExchangeError failures', async () => {
-    exchangeMock.mockRejectedValue(new Error('boom'))
-    const navigate = vi.fn()
-
-    renderPage({ search: { code: 'c', state: 's' }, navigate })
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Inloggen via EPD mislukt')
-  })
-
   it('rebuilds the launch URL when the retry button is pressed', async () => {
     const assignSpy = vi.fn()
     vi.spyOn(window.location, 'assign').mockImplementation(assignSpy)

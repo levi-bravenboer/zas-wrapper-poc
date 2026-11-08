@@ -16,8 +16,7 @@ import { PersonAvatar } from '@/components/PersonAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isApiError } from '@/lib/api/errors'
-import { intlLocale } from '@/lib/i18n'
-import { formatDateTimeOrDash } from '@/lib/utils/datetime'
+import { formatDateTimeOrDash, formatTime } from '@/lib/utils/datetime'
 import { useAppointmentQuery } from '@/modules/appointment/hooks'
 import { CollaborationColumn } from '@/modules/collaboration/components'
 import { PatientSummaryCard } from '@/modules/patient/components/PatientSummaryCard'
@@ -25,9 +24,6 @@ import { PatientSummaryCard } from '@/modules/patient/components/PatientSummaryC
 export const Route = createFileRoute('/_auth/appointments/$appointmentId/')({
   component: AppointmentDetailRoute,
 })
-
-const timeFmt = (): Intl.DateTimeFormat =>
-  new Intl.DateTimeFormat(intlLocale(), { hour: '2-digit', minute: '2-digit' })
 
 function AppointmentDetailRoute(): ReactElement {
   const { t } = useTranslation(['appointment'])
@@ -46,7 +42,7 @@ function AppointmentDetailRoute(): ReactElement {
   if (!appt) return <EntityNotFound backTo={{ to: '/appointments' }} />
 
   const patient = appt.patient
-  const when = `${formatDateTimeOrDash(appt.starts_at, intlLocale())} – ${timeFmt().format(new Date(appt.ends_at))}`
+  const when = `${formatDateTimeOrDash(appt.starts_at)} – ${formatTime(appt.ends_at)}`
 
   const subtitle = (
     <div className="flex flex-wrap items-center gap-2">
@@ -54,7 +50,7 @@ function AppointmentDetailRoute(): ReactElement {
         {t(`appointment:kind.${appt.kind}`, { defaultValue: appt.kind })}
       </Badge>
       <span className="text-sm text-muted-foreground">
-        {formatDateTimeOrDash(appt.starts_at, intlLocale())}
+        {formatDateTimeOrDash(appt.starts_at)}
         {appt.location_text ? ` · ${appt.location_text}` : ''}
       </span>
     </div>

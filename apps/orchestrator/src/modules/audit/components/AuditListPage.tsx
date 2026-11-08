@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge'
 import type { ListFilter } from '@/hooks/use-data-table-state'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
-import { intlLocale } from '@/lib/i18n'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 
 import { AUDIT_EVENTS_LIST_PATH } from '../keys'
@@ -22,6 +21,7 @@ import {
   AUDIT_ACTIONS,
   AUDIT_RESULTS,
   AUDITED_RESOURCE_TYPES,
+  isAuditedResourceType,
   type AuditEventRead,
 } from '../schemas'
 
@@ -71,7 +71,7 @@ export function AuditListPage(): ReactElement {
         sticky: true,
         cell: (row) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {formatDateTimeOrDash(row.created_at, intlLocale())}
+            {formatDateTimeOrDash(row.created_at)}
           </span>
         ),
       }),
@@ -110,7 +110,9 @@ export function AuditListPage(): ReactElement {
         cell: (row) =>
           row.resource_type ? (
             <span className="text-muted-foreground">
-              {t(`enum.resource_type.${row.resource_type}`, { defaultValue: row.resource_type })}
+              {isAuditedResourceType(row.resource_type)
+                ? t(`enum.resource_type.${row.resource_type}`)
+                : row.resource_type}
               {row.resource_id ? (
                 <span className="text-xs"> ·{shortId(row.resource_id)}</span>
               ) : null}

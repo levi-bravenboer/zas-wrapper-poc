@@ -17,7 +17,7 @@ export function formatDate(value: string | number | Date, locale?: string): stri
 
 const EM_DASH = '—'
 
-export function formatDateOrDash(value: string | null | undefined, locale: string): string {
+export function formatDateOrDash(value: string | null | undefined, locale?: string): string {
   if (!value) return EM_DASH
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
@@ -28,7 +28,7 @@ export function formatDateOrDash(value: string | null | undefined, locale: strin
   })
 }
 
-export function formatDateTimeOrDash(value: string | null | undefined, locale: string): string {
+export function formatDateTimeOrDash(value: string | null | undefined, locale?: string): string {
   if (!value) return EM_DASH
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value

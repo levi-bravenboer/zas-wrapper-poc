@@ -54,7 +54,6 @@ const MEASUREMENT_KIND_BY_CODE: Record<string, string> = {
 function formatValue(value: string | number): string {
   const n = typeof value === 'string' ? Number(value) : value
   if (!Number.isFinite(n)) return String(value)
-  // Trim trailing decimal zeros: 72.000 → 72, 36.5 → 36,5 (NL locale).
   return new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 3 }).format(n)
 }
 
@@ -89,7 +88,7 @@ function ObservationItem({
             {showOwner ? <OwnerChip ownerType={obs.owner_type} label={obs.owner_label!} /> : null}
           </div>
           <span className="shrink-0 whitespace-nowrap text-[11px] text-foreground-muted">
-            {formatDateTimeOrDash(obs.effective_date_time, intlLocale())}
+            {formatDateTimeOrDash(obs.effective_date_time)}
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-2xl rounded-tl-sm border border-border/60 bg-surface-1 px-3 py-2">
@@ -248,7 +247,7 @@ function ActivityItem({
             {showSource ? <SourceChip note={note} /> : null}
           </div>
           <span className="shrink-0 whitespace-nowrap text-[11px] text-foreground-muted">
-            {formatDateTimeOrDash(note.created_at, intlLocale())}
+            {formatDateTimeOrDash(note.created_at)}
           </span>
         </div>
         {isFileNote(note) ? (

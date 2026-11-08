@@ -22,7 +22,6 @@ import type { ListFilter } from '@/hooks/use-data-table-state'
 import type { Page } from '@/hooks/use-paginated-query'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
 import { useRouteSearchTableState } from '@/hooks/use-route-search-table-state'
-import { intlLocale } from '@/lib/i18n'
 import { formatDate } from '@/lib/utils/datetime'
 import { useOrganisations } from '@/modules/organisation/hooks'
 import type { OrganisationRead } from '@/modules/organisation/schemas'
@@ -171,8 +170,8 @@ export function PractitionerRoleListPage(): ReactElement {
         sortKey: 'period_start',
         cell: (row) => (
           <span className="text-xs text-muted-foreground">
-            {formatDate(row.period_start, intlLocale())} →{' '}
-            {row.period_end ? formatDate(row.period_end, intlLocale()) : t('period.open')}
+            {formatDate(row.period_start)} →{' '}
+            {row.period_end ? formatDate(row.period_end) : t('period.open')}
           </span>
         ),
       }),

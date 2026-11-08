@@ -34,6 +34,7 @@
     "loading": "Laden…"
   },
   "a11y": {
+    "breadcrumb": "Kruimelpad",
     "more": "Meer",
     "close": "Sluiten"
   },
