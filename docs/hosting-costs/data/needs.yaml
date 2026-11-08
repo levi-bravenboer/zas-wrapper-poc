@@ -1,0 +1,152 @@
+# ZAS hosting needs — single source for the cost calculator (calc.py).
+# Format:
+#   tiers:       named projection years; `given` numbers come from the product
+#                projection table (2026-08-06, Levi); `derived` numbers are
+#                calculated assumptions — each carries `confirmed: false` until
+#                signed off. Pricing MUST NOT use unconfirmed values silently.
+#   components:  everything we host, from docker-compose.deploy.yml, with
+#                resource needs per tier and the managed-service slot per provider.
+#   cross_cutting: needs that are not a container but still cost money.
+#   Unknowns live in ../open-questions.md — referenced by id where they bite.
+
+meta:
+  captured: 2026-08-06
+  source: product projection table (2027/2030/2036) + baseline Q&A with Levi
+  tenancy: single hospital (ZAS), one prod stack
+  patient_app: native only (Expo -> app stores); no hosted patient web
+  residency:
+    preference: [belgium, france, netherlands]
+    regions:
+      gcp: europe-west1        # St. Ghislain, BE — best fit
+      aws: eu-west-3           # Paris; no BE region exists
+      azure: francecentral     # Paris; alt: westeurope (NL)
+  compliance:
+    - ISO 27001                # certification path required of provider+setup
+    - NEN 7510                 # if NL scope ever applies
+    - GDPR art. 9 (health data)
+    - NIS2 supplier flow-down  # ZAS hospital = essential entity (BE/CCB, CyberFundamentals)
+    - "retention: HiX is record of truth (OQ3 answered 2026-08-06) — ZAS operational data only, 5yr online, no 30yr archive; 30yr record duty sits in HiX"
+  ops_model: ops capacity exists/planned — self-managed viable, still compare managed
+  pathway_durations:   # OQ7 answered 2026-08-06 (Levi)
+    short_term_avg_months: 1
+    long_term: "70% close within 1 yr (avg ~9 mo), 30% run 1+ yr (avg ~2.5 yr assumed)"
+    concurrent_formula: "long_starts × (0.7×0.75 + 0.3×2.5) + short_starts × (1/12)"
+  comms:               # OQ4 answered: assumption accepted
+    email_per_patient_month: 2
+    sms: none
+  sla_rationale:       # OQ6 final (2026-08-06, via Levi's colleague)
+    commitment: "99.9% all tiers, incl MVP"
+    ceiling: "Luscii SDK (messaging, video, questionnaires) reused as-is; Luscii's own SLA is 99.9% and 'not designed for urgent/critical care' — can't credibly promise tighter than the component supplier"
+    tender: "checklist row 11.2.1 (uptime) is non-mandatory (min Eis = NEE), still unanswered"
+    nis2: "no fixed %, requires proportionate continuity: defined RTO/RPO + tested plan; quarterly DR drills with ZAS earmarked in scope"
+    means: "multi-AZ redundancy, standby DB replica, standard monitoring/alerting + on-call from MVP"
+    note_video: "video runs on Luscii infra — NOT in our hosting bill (no media/TURN servers)"
+  environments:
+    prod: 1.0        # sized at tier
+    staging: 0.25    # fraction of prod
+    dev_demo: minimal  # current demo shape, one small VM equivalent
+
+tiers:
+  t2027:
+    label: "2027 — MVP production"
+    given:
+      monthly_active_users: 55000
+      unique_app_users_per_year: 170000
+      care_pathways_in_production: 4
+      patients_in_pathway_per_year: 20000
+      long_term_pathway_starts_per_year: 5000
+      short_term_pathway_starts_per_year: 15000
+    derived:
+      active_caregiver_accounts: {value: 300, confirmed: true}   # OQ5 accepted
+      peak_api_rps: {value: 100, confirmed: false}   # 55k MAU × ~8 light sessions/mo × ~30 calls, 15-20× peak factor
+      postgres_gb: {value: 75, confirmed: false}
+      object_storage_gb: {value: 250, confirmed: false}  # ~10 MB photos+docs per pathway patient, cumulative yr 1
+      concurrent_open_workflows: {value: 8000, confirmed: true}  # 5k×1.275 + 15k/12 (meta.pathway_durations)
+      egress_gb_month: {value: 250, confirmed: false}
+    availability: "99.9% from day 1 (OQ6 superseded 2026-08-06): multi-AZ DB + standby replica, monitoring + on-call, quarterly DR drills — see meta.sla_rationale"
+
+  t2030:
+    label: "2030 — full production"
+    given:
+      monthly_active_users: 80000
+      unique_app_users_per_year: 240000
+      care_pathways_in_production: 15   # "> 15"
+      patients_in_pathway_per_year: 60000
+      long_term_pathway_starts_per_year: 15000
+      short_term_pathway_starts_per_year: 45000
+    derived:
+      active_caregiver_accounts: {value: 600, confirmed: true}   # OQ5 accepted
+      peak_api_rps: {value: 150, confirmed: false}
+      postgres_gb: {value: 350, confirmed: false}   # 5yr rolling retention (OQ3)
+      object_storage_gb: {value: 1200, confirmed: false}
+      concurrent_open_workflows: {value: 23000, confirmed: true}  # 15k×1.275 + 45k/12
+      egress_gb_month: {value: 750, confirmed: false}
+    availability: "99.9%, multi-AZ DB, PITR, RPO minutes — OQ2/OQ6 confirmed"
+
+  t2036:
+    label: "2036 — full production, scaled"
+    given:
+      monthly_active_users: 155000
+      unique_app_users_per_year: 500000
+      care_pathways_in_production: 50   # "> 50"
+      patients_in_pathway_per_year: 250000
+      long_term_pathway_starts_per_year: 75000
+      short_term_pathway_starts_per_year: 175000
+    derived:
+      active_caregiver_accounts: {value: 1200, confirmed: true}   # OQ5 accepted
+      peak_api_rps: {value: 300, confirmed: false}
+      postgres_gb: {value: 2000, confirmed: false}  # 5yr rolling retention (OQ3 answered): covers ~2031-2036 cohorts
+      object_storage_gb: {value: 8000, confirmed: false}
+      concurrent_open_workflows: {value: 110000, confirmed: true}  # 75k×1.275 + 175k/12
+      egress_gb_month: {value: 3000, confirmed: false}
+    availability: "99.9%, multi-AZ DB, PITR — OQ2/OQ6 confirmed"
+
+components:
+  postgres:
+    what: "Postgres 17 — app + kratos + keto + temporal + temporal_visibility DBs"
+    ha: multi-az from t2030
+    managed_slot: {aws: RDS PostgreSQL, azure: Azure Database for PostgreSQL Flexible, gcp: Cloud SQL for PostgreSQL}
+  backend:
+    what: "FastAPI app (zas-backend image); serves SSE — long-lived connections"
+    scaling: horizontal by rps
+    sse_constraint: "always-allocated CPU, min-replicas >= 1, raised LB idle timeouts (stack-choices.md #4)"
+    managed_slot: {aws: ECS Fargate, azure: Container Apps, gcp: Cloud Run}
+  worker:
+    what: "background worker for the custom pathway engine (timers/polling/retries) — same backend image, separate process"
+    scaling: by open enrollments + activity rate
+    managed_slot: {aws: ECS Fargate, azure: Container Apps, gcp: Cloud Run (always-on)}
+  temporal:
+    in_base: false   # DECIDED 2026-08-06 (Levi): MVP pathway engine will be custom-built — no Temporal
+    what: "OPTIONAL add-on line only: Temporal server + 2 extra PG DBs, if custom engine gets replaced later"
+    note: "open-enrollment counts (8k/23k/110k) still size the custom engine's DB tables + worker throughput"
+  identity:
+    what: "Keycloak (DECIDED 2026-08-06, MVP rebuild): auth for patients + practitioners, eHealth OIDC brokered upstream (OQ8). Replaces PoC Kratos+Keto; authz becomes app-level RBAC in backend"
+    resources: "1 container, ~2 vCPU/2-4 GB (JVM), own PG database in shared instance"
+    note: "provider IdPs (Cognito/Entra) rejected: per-MAU cost at 155k MAU + lock-in; Ory Network same trap"
+  object_storage:
+    what: "attachments (wound photos, documents) — native provider object storage in BOTH shapes (DECIDED 2026-08-06); MinIO dev-only"
+    note: "MVP rebuild includes thin storage abstraction so Azure Blob is first-class (no S3-compat constraint)"
+    managed_slot: {aws: S3, azure: Blob Storage, gcp: GCS}
+  reverse_proxy:
+    what: "nginx: TLS, host routing, serves orchestrator SPA"
+    managed_slot: {aws: ALB + ACM + S3/CloudFront, azure: Front Door, gcp: HTTPS LB + GCS}
+
+cross_cutting:
+  hix_vpn:
+    what: "site-to-site VPN to hospital network for HiX (shape unknown — OQ1)"
+    treatment: separate optional line item, both shapes
+  luscii:
+    what: "Luscii SDK reused as-is: messaging, video, questionnaires run on Luscii infra; our side = outbound HTTPS API calls"
+    cost: "egress only — video/media servers explicitly NOT our hosting"
+    sla_dependency: "Luscii commits 99.9% — caps our own credible SLA (meta.sla_rationale)"
+  push_notifications:
+    what: "patient app push via FCM/APNs (Expo)"
+    cost: "~0 infra; note EAS/send-service if used"
+  email_sms:
+    what: "transactional email + SMS (invites, login)"
+    managed_slot: {aws: SES + SNS, azure: ACS, gcp: third-party (SendGrid/Twilio)}
+    volume: unknown (OQ4)
+  backups: {what: "DB + object storage backups, PITR from t2030", retention: OQ3}
+  monitoring: {what: "provider-native logs + metrics + alerting"}
+  registry: {what: "container registry (ECR/ACR/Artifact Registry)"}
+  dns_tls: {what: "DNS zone + certificates"}

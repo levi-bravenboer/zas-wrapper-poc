@@ -1,0 +1,43 @@
+{
+  "provider": "AWS",
+  "region": "eu-west-3 (Paris)",
+  "currency_note": "USD list prices converted at 0.8663 EUR/USD",
+  "retrieved": "2026-08-07",
+  "verified": true,
+  "source_note": "EC2 (m6i), RDS Multi-AZ (db.m6i incl storage $0.266/GB) and S3 verified 2026-08-07 via AWS pricing feed; Fargate verified via calculator.aws (1vCPU/2GB always-on = $43.22/mo, Paris). EBS/egress/ALB/misc \u00b110% estimates. USD->EUR 0.8663",
+  "unit_prices": {
+    "vm_2x8": 71.0,
+    "vm_4x16": 142.0,
+    "vm_8x32": 283.0,
+    "vm_16x64": 567.0,
+    "disk_gb": 0.08,
+    "snapshot_gb": 0.045,
+    "pg_4x16_ha": 521.0,
+    "pg_8x32_ha": 1042.0,
+    "pg_16x64_ha": 2084.0,
+    "pg_storage_gb_ha": 0.23,
+    "pg_backup_gb": 0.082,
+    "ct_vcpu_hr": 0.0421,
+    "ct_gb_hr": 0.00465,
+    "lb_month": 28.0,
+    "obj_gb": 0.0208,
+    "egress_gb": 0.078,
+    "egress_free_gb": 100,
+    "vpn_month": 31.6,
+    "nat_month": 40.0,
+    "registry_month": 1.0,
+    "monitoring_month": 30.0,
+    "dns_month": 0.43,
+    "commit_1yr_pct_compute": 27,
+    "commit_1yr_pct_db": 30
+  },
+  "skus": {
+    "vm": "m6i.* Linux on-demand",
+    "db": "RDS PostgreSQL db.m6i.* Multi-AZ (compute 2x, storage 2x incl.)",
+    "containers": "ECS Fargate",
+    "lb": "ALB incl. modest LCU",
+    "obj": "S3 Standard",
+    "vpn": "Site-to-Site VPN 1 connection",
+    "monitoring": "CloudWatch logs 20GB + alarms"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "provider": "Azure",
+  "region": "France Central",
+  "currency_note": "native EUR from Azure Retail Prices API",
+  "retrieved": "2026-08-07",
+  "verified": true,
+  "source_note": "prices.azure.com retail API; PG Flexible verified 2026-08-07 via Azure calculator (D4ds_v5 zone-redundant HA + 100GiB, France Central = $628.12/mo)",
+  "unit_prices": {
+    "vm_2x8": 71.76,
+    "vm_4x16": 143.52,
+    "vm_8x32": 287.04,
+    "vm_16x64": 574.0,
+    "disk_gb": 0.081,
+    "snapshot_gb": 0.0465,
+    "pg_4x16_ha": 521.0,
+    "pg_8x32_ha": 1042.0,
+    "pg_16x64_ha": 2084.0,
+    "pg_storage_gb_ha": 0.2304,
+    "pg_backup_gb": 0.0878,
+    "ct_vcpu_hr": 0.0758,
+    "ct_gb_hr": 0.0095,
+    "lb_month": 25.0,
+    "obj_gb": 0.0168,
+    "egress_gb": 0.0763,
+    "egress_free_gb": 100,
+    "vpn_month": 121.69,
+    "nat_month": 33.0,
+    "registry_month": 4.45,
+    "monitoring_month": 45.0,
+    "dns_month": 0.44,
+    "commit_1yr_pct_compute": 38,
+    "commit_1yr_pct_db": 40
+  },
+  "skus": {
+    "vm": "Standard_D*s_v5 Linux PAYG",
+    "db": "PostgreSQL Flexible Server D*ds_v5 zone-redundant HA (compute 2x, storage 2x incl.)",
+    "containers": "Container Apps consumption, always-active",
+    "lb": "Application Gateway Basic v2 (Standard_v2 = ~165 if WAF/scale needed)",
+    "obj": "Blob Hot LRS",
+    "vpn": "VPN Gateway VpnGw1 (Basic = 23 if feature set suffices)",
+    "monitoring": "Log Analytics 20GB/mo + alerts"
+  }
+}
