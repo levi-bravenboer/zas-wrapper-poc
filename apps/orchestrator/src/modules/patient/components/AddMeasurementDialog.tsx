@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useEntityForm } from '@/hooks/entity'
-
 import type { OwnerType } from '@/modules/collaboration/types'
 
 import { useCreateObservation } from '../hooks'
@@ -164,9 +163,9 @@ export function AddMeasurementDialog({
                       return (
                         <FieldRow
                           htmlFor="measurement-value"
-                          label={meta.primaryLabel ?? t('addMeasurement.fields.value')}
+                          label={t(meta.primaryLabelKey ?? 'addMeasurement.fields.value')}
                           error={errorMsg}
-                          hint={errorMsg ? undefined : meta.hint}
+                          hint={errorMsg ? undefined : t(meta.hintKey)}
                         >
                           <div className="relative">
                             <Input
@@ -176,7 +175,7 @@ export function AddMeasurementDialog({
                               step="any"
                               min={meta.min}
                               max={meta.max}
-                              placeholder={meta.placeholder}
+                              placeholder={t(meta.placeholderKey)}
                               value={field.state.value}
                               onChange={(e) => field.handleChange(e.target.value)}
                               onBlur={field.handleBlur}
@@ -202,9 +201,9 @@ export function AddMeasurementDialog({
                         return (
                           <FieldRow
                             htmlFor="measurement-value-secondary"
-                            label={sec.label}
+                            label={t(sec.labelKey)}
                             error={errorMsg}
-                            hint={errorMsg ? undefined : sec.hint}
+                            hint={errorMsg ? undefined : t(sec.hintKey)}
                           >
                             <div className="relative">
                               <Input
@@ -214,7 +213,7 @@ export function AddMeasurementDialog({
                                 step="any"
                                 min={sec.min}
                                 max={sec.max}
-                                placeholder={sec.placeholder}
+                                placeholder={t(sec.placeholderKey)}
                                 value={field.state.value}
                                 onChange={(e) => field.handleChange(e.target.value)}
                                 onBlur={field.handleBlur}

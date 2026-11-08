@@ -2,11 +2,11 @@ import { type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
 
 import { BlockNode, type BlockFlowNode } from './BlockNode'
+import { EndBlockNode, type EndFlowNode } from './EndBlockNode'
 import { LusciiProgramBlockNode } from './external/luscii'
 import type { LusciiProgramFlowNode } from './external/luscii/LusciiProgramBlockNode'
 import { NestedPathwayBlockNode } from './internal/nestedPathway'
 import type { NestedPathwayFlowNode } from './internal/nestedPathway/NestedPathwayBlockNode'
-import { EndBlockNode, type EndFlowNode } from './EndBlockNode'
 import { StartBlockNode, type StartFlowNode } from './StartBlockNode'
 
 /**

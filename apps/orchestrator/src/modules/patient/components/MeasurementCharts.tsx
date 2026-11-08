@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/style/cn'
 
 import { type LusciiWindowDays, useLusciiData } from '../hooks'
+
 import { groupSeriesByInstrument, hasErrorCode } from './charts/grouping'
 import { type InstrumentDetail, InstrumentDetailDialog } from './charts/InstrumentDetailDialog'
 import { MetricTile } from './charts/MetricTile'

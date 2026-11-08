@@ -1,0 +1,17 @@
+{
+  "nav": {
+    "users": "Users",
+    "roles": "Roles",
+    "organisations": "Organizations",
+    "practitionerRoles": "Practitioner roles",
+    "auditLog": "Audit log",
+    "settings": "Settings"
+  },
+  "group": {
+    "beheer": "Administration"
+  },
+  "placeholder": {
+    "body": "Coming soon — delivered by {{spec}}",
+    "back": "Back to overview"
+  }
+}

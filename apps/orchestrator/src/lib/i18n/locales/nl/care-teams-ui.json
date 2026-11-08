@@ -32,7 +32,7 @@
   "createDialog": {
     "title": "Nieuw zorgteam",
     "name": "Naam",
-    "namePlaceholder": "bijv. Hartfalen team",
+    "namePlaceholder": "bijv. Hartfalenteam",
     "category": "Categorie",
     "categoryPlaceholder": "bijv. Multidisciplinair",
     "submit": "Aanmaken",

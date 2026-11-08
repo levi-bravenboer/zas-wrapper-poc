@@ -77,10 +77,12 @@ export function PatientSummaryCard({ patientId }: { patientId: string }): ReactE
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Fact label={t('field.birthDate')}>
             {age !== null
-              ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
+              ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${t('field.ageYears', { count: age })})`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
           </Fact>
-          <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
+          <Fact label={t('header.insz')}>
+            {insz ? <span className="font-mono">{insz}</span> : '—'}
+          </Fact>
           {lead ? (
             <Fact label={t('field.treatingClinician')}>
               <span className="inline-flex min-w-0 items-center gap-1.5">

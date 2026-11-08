@@ -68,7 +68,9 @@
     "birthDate": "Geboortedatum",
     "treatingClinician": "Hoofdbehandelaar",
     "pathway": "Zorgtraject",
-    "pathwayFallback": "Zorgtraject"
+    "pathwayFallback": "Zorgtraject",
+    "ageYears_one": "{{count}} j.",
+    "ageYears_other": "{{count}} j."
   },
   "timeline": {
     "state": {
@@ -123,7 +125,7 @@
   "delete": {
     "trigger": "Verwijderen",
     "title": "{{name}} verwijderen?",
-    "message": "Patiënt wordt soft-deleted. Deze actie kan niet ongedaan worden gemaakt.",
+    "message": "De patiënt wordt verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
     "confirm": "Verwijderen",
     "cancel": "Annuleren",
     "toast": {
@@ -176,6 +178,20 @@
     "toast": {
       "success": "Meting opgeslagen.",
       "error": "Meting kon niet worden opgeslagen."
+    },
+    "meta": {
+      "heart_rate": {
+        "placeholder": "bv. 72",
+        "hint": "Normaal in rust: 60–100/min"
+      },
+      "blood_pressure": {
+        "primaryLabel": "Systolisch",
+        "placeholder": "bv. 120",
+        "hint": "Normaal: 90–140 mmHg",
+        "secondaryLabel": "Diastolisch",
+        "secondaryPlaceholder": "bv. 80",
+        "secondaryHint": "Normaal: 60–90 mmHg"
+      }
     }
   },
   "breakGlass": {

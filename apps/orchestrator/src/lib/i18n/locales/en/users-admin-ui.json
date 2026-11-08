@@ -1,0 +1,181 @@
+{
+  "list": {
+    "title": "Users",
+    "sub": "Manage users, roles and activation within your tenant.",
+    "cta": {
+      "create": "Add user"
+    },
+    "empty": "No users in this tenant yet.",
+    "search": {
+      "placeholder": "Search by name or email"
+    },
+    "filter": {
+      "role": "Role",
+      "is_active": "Active",
+      "all": "All"
+    },
+    "column": {
+      "display_name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "is_active": "Active",
+      "created_at": "Created"
+    },
+    "row": {
+      "action": {
+        "edit": "Edit",
+        "deactivate": "Deactivate"
+      }
+    }
+  },
+  "detail": {
+    "back": "Back to users",
+    "action": {
+      "edit": "Edit",
+      "deactivate": "Deactivate"
+    },
+    "card": {
+      "demographics": {
+        "title": "Demographics",
+        "field": {
+          "display_name": "Name",
+          "email": "Email",
+          "role": "Role",
+          "is_active": "Active",
+          "created_at": "Created"
+        }
+      },
+      "practitioner": {
+        "title": "Practice",
+        "field": {
+          "family_name": "Last name",
+          "given_name": "First name",
+          "qualification": "Qualification"
+        },
+        "roles": {
+          "title": "Roles",
+          "empty": "No roles.",
+          "column": {
+            "code": "Code",
+            "organisation": "Organization",
+            "period": "Period",
+            "primary": "Primary"
+          },
+          "open": "—",
+          "closed_chip": "Ended",
+          "primary_chip": "Primary"
+        }
+      }
+    },
+    "notFound": "User not found."
+  },
+  "form": {
+    "create": {
+      "title": "Add user",
+      "sub": "Create a new user within this tenant.",
+      "submit": "Create"
+    },
+    "edit": {
+      "title": "Edit user",
+      "sub": "Update the details of {{name}}.",
+      "submit": "Save changes"
+    },
+    "cancel": "Cancel",
+    "hero": {
+      "placeholder_name": "New user",
+      "placeholder_email": "name@example.com",
+      "new_chip": "New"
+    },
+    "section": {
+      "identity": {
+        "title": "Identity",
+        "sub": "Basic details and access."
+      },
+      "practitioner": {
+        "title": "Practice",
+        "sub": "Practice details for caregivers."
+      }
+    },
+    "field": {
+      "email": {
+        "label": "Email",
+        "placeholder": "name@example.com",
+        "hint": "Used to sign in.",
+        "locked": "Cannot be changed after creation."
+      },
+      "display_name": {
+        "label": "Name",
+        "placeholder": "Full name",
+        "hint": "Visible to other users."
+      },
+      "given_name": {
+        "label": "First name",
+        "placeholder": "First name",
+        "hint": "As on the ID document.",
+        "locked": "Edit via the Practice page."
+      },
+      "family_name": {
+        "label": "Last name",
+        "placeholder": "Last name",
+        "hint": "As on the ID document.",
+        "locked": "Edit via the Practice page."
+      },
+      "role": {
+        "label": "Role",
+        "placeholder": "Choose a role",
+        "hint": "Administrators can do everything; caregivers can only access patient data.",
+        "locked": "Change role via a separate action.",
+        "option": {
+          "admin": "Administrator",
+          "caregiver": "Caregiver"
+        }
+      },
+      "clinician": {
+        "label": "Caregiver",
+        "hint": "Creates a practitioner with first and last name."
+      },
+      "qualification": {
+        "label": "Qualification",
+        "placeholder": "E.g. General practitioner, Nurse",
+        "hint": "Used on the Practice page.",
+        "locked": "Edit via the Practice page."
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "At least 8 characters",
+        "hint": "The password the user signs in with."
+      }
+    },
+    "error": {
+      "required": "Required field.",
+      "email_invalid": "Enter a valid email address.",
+      "too_long": "Too long.",
+      "password_too_short": "Password must be at least 8 characters.",
+      "email_exists": "This email address already exists in this tenant.",
+      "cross_tenant": "No access to this user."
+    }
+  },
+  "role": {
+    "admin": "Administrator",
+    "caregiver": "Caregiver"
+  },
+  "active": {
+    "true": "Yes",
+    "false": "No"
+  },
+  "deactivate": {
+    "title": "Deactivate user?",
+    "description": "This user can no longer sign in. You can undo this later.",
+    "confirm": "Deactivate",
+    "cancel": "Cancel",
+    "self_disabled": "You cannot deactivate your own account."
+  },
+  "toast": {
+    "created": "User created",
+    "updated": "User updated",
+    "deactivated": "User deactivated",
+    "error": "Action failed",
+    "create_failed": "Creation failed",
+    "update_failed": "Update failed"
+  }
+}

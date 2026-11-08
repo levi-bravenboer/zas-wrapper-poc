@@ -1,0 +1,351 @@
+{
+  "list": {
+    "title": "Patients",
+    "sub": "Patients in your care teams",
+    "search": "Search by name",
+    "column": {
+      "name": "Name",
+      "birth_date": "Date of birth",
+      "gender": "Gender"
+    }
+  },
+  "overview": {
+    "info": "Patient details",
+    "measurements": "Latest measurements",
+    "appointments": "Recent appointments",
+    "notes": "Latest notes",
+    "notesEmpty": "No notes yet",
+    "viewAll": "View all",
+    "gender": "Gender",
+    "birthDate": "Date of birth",
+    "organisation": "Organization",
+    "insz": "INSZ",
+    "pathway": "Care pathway",
+    "pathwayFallback": "Care pathway",
+    "treatingClinician": "Lead clinician"
+  },
+  "header": {
+    "insz": "INSZ",
+    "noInsz": "No INSZ",
+    "born": "Born {{date}}",
+    "unknownOrg": "Unknown organization",
+    "actions": "Actions"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "pathway": "Care pathway",
+    "zorgteam": "Care team",
+    "measurements": "Measurements",
+    "lab_results": "Lab results",
+    "appointments": {
+      "label": "Appointments",
+      "about": "About patient",
+      "with": "With patient"
+    },
+    "collaboration": "Notes & documents",
+    "empty": {
+      "lab_results": {
+        "title": "No lab results linked yet"
+      },
+      "appointments": {
+        "title": "No appointments",
+        "body": "Appointments about or with this patient appear here."
+      }
+    }
+  },
+  "kebab": {
+    "history": "History",
+    "historyDialogTitle": "History"
+  },
+  "gender": {
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "unknown": "Unknown"
+  },
+  "openPatient": "Open patient",
+  "field": {
+    "birthDate": "Date of birth",
+    "treatingClinician": "Lead clinician",
+    "pathway": "Care pathway",
+    "pathwayFallback": "Care pathway",
+    "ageYears_one": "{{count}} yr",
+    "ageYears_other": "{{count}} yrs"
+  },
+  "timeline": {
+    "state": {
+      "paused": "Paused"
+    }
+  },
+  "history": {
+    "title": "History",
+    "created": "Created on {{date}} by {{by}}",
+    "updated": "Last edited on {{date}} by {{by}}",
+    "deleted": "Deleted on {{date}} by {{by}}",
+    "unknownUser": "—"
+  },
+  "edit": {
+    "trigger": "Edit",
+    "title": "Edit patient",
+    "description": "Update demographic details. INSZ cannot be changed here.",
+    "submit": "Save",
+    "cancel": "Cancel",
+    "fields": {
+      "given_name": "First name",
+      "family_name": "Last name",
+      "birth_date": "Date of birth",
+      "gender": "Gender"
+    },
+    "toast": {
+      "success": "Patient updated",
+      "error": "Update failed"
+    }
+  },
+  "create": {
+    "trigger": "Create patient",
+    "title": "New patient",
+    "description": "Register a new patient in the system.",
+    "submit": "Create",
+    "cancel": "Cancel",
+    "fields": {
+      "given_name": "First name",
+      "family_name": "Last name",
+      "birth_date": "Date of birth",
+      "gender": "Gender",
+      "primary_organisation_id": "Organization"
+    },
+    "org": {
+      "placeholder": "Choose an organization"
+    },
+    "toast": {
+      "success": "Patient created",
+      "error": "Creation failed"
+    }
+  },
+  "delete": {
+    "trigger": "Delete",
+    "title": "Delete {{name}}?",
+    "message": "The patient will be deleted. This action cannot be undone.",
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "toast": {
+      "success": "Patient deleted",
+      "error": "Deletion failed"
+    }
+  },
+  "state": {
+    "loading": "Loading…",
+    "notFound": "Patient not found",
+    "error": "Patient could not be loaded",
+    "retry": "Try again"
+  },
+  "form": {
+    "error": {
+      "required": "Required field.",
+      "too_long": "Too long.",
+      "not_a_number": "Enter a valid number."
+    }
+  },
+  "addMeasurement": {
+    "trigger": "Add measurement",
+    "title": "Add measurement",
+    "description": "Manually record a measurement for this patient.",
+    "fields": {
+      "type": "Measurement type",
+      "value": "Value",
+      "effective_date_time": "Time"
+    },
+    "type": {
+      "heart_rate": "Heart rate",
+      "blood_pressure": "Blood pressure"
+    },
+    "unit": {
+      "heart_rate": "/min"
+    },
+    "placeholder": {
+      "heart_rate": "e.g. 72"
+    },
+    "hint": {
+      "heart_rate": "Normal at rest: 60–100/min"
+    },
+    "error": {
+      "out_of_range_heart_rate": "Value must be between 20 and 250.",
+      "out_of_range_systolic": "Systolic must be between 40 and 300.",
+      "out_of_range_diastolic": "Diastolic must be between 10 and 200."
+    },
+    "cancel": "Cancel",
+    "submit": "Save",
+    "toast": {
+      "success": "Measurement saved.",
+      "error": "Measurement could not be saved."
+    },
+    "meta": {
+      "heart_rate": {
+        "placeholder": "e.g. 72",
+        "hint": "Normal at rest: 60–100/min"
+      },
+      "blood_pressure": {
+        "primaryLabel": "Systolic",
+        "placeholder": "e.g. 120",
+        "hint": "Normal: 90–140 mmHg",
+        "secondaryLabel": "Diastolic",
+        "secondaryPlaceholder": "e.g. 80",
+        "secondaryHint": "Normal: 60–90 mmHg"
+      }
+    }
+  },
+  "breakGlass": {
+    "title": "No access to this patient",
+    "description": "You have no treatment relationship with this patient. Request temporary emergency access (covering for a colleague or emergency).",
+    "reasonLabel": "Reason (required)",
+    "reasonPlaceholder": "e.g. covering for Dr. Janssens, urgent consult",
+    "submit": "Request emergency access",
+    "submitting": "Working…",
+    "waiting": "Activating access…",
+    "error": "Request failed, please try again",
+    "auditNote": "Every emergency access is logged and visible to the administrator. Access expires automatically."
+  },
+  "luscii": {
+    "title": "Luscii monitoring",
+    "notConfigured": "Luscii integration is not configured in this environment.",
+    "error": "Luscii data could not be loaded.",
+    "retry": "Try again",
+    "unlink": "Unlink",
+    "noProgram": "No program",
+    "window": "Last {{days}} days",
+    "link": {
+      "empty": "This patient is not yet linked to a Luscii patient. Enter the Luscii patient ID (UUID) to link.",
+      "placeholder": "Luscii patient ID (UUID)",
+      "inputLabel": "Luscii patient ID",
+      "submit": "Link",
+      "submitting": "Linking…",
+      "errorNotFound": "Luscii patient not found or not accessible with our token.",
+      "errorAlreadyLinked": "This Luscii ID is already linked to another patient.",
+      "errorInvalid": "Invalid Luscii patient ID.",
+      "errorUpstream": "Linking failed: Luscii is unreachable."
+    },
+    "plannedActions": {
+      "title": "Planned actions",
+      "empty": "No planned actions in this period.",
+      "completed": "Completed",
+      "open": "Open",
+      "dueBy": "Due by {{date}}"
+    },
+    "measurements": {
+      "title": "Other measurements",
+      "unknownInstrument": "Unknown instrument",
+      "noValues": "No values"
+    },
+    "groups": {
+      "currentTitle": "Current care pathway",
+      "historyTitle": "History",
+      "unassignedTitle": "Not linked to a care pathway",
+      "historyToggle": "Show history",
+      "unassignedHint": "Program not found in any of this patient's care pathways."
+    },
+    "connection": {
+      "title": "Luscii links",
+      "empty": "No Luscii links yet.",
+      "setViaEdit": "Manage Luscii links via Edit.",
+      "add": "Add link",
+      "addLabel": "Luscii patient ID",
+      "addPlaceholder": "Luscii patient ID (UUID)",
+      "deactivate": "Deactivate",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "programLabel": "Program"
+    },
+    "archetype": {
+      "numeric": "Numeric",
+      "ordinal": "Scale score",
+      "categorical": "Choice",
+      "free_text": "Free text",
+      "unknown": "Unknown"
+    },
+    "instrumentType": {
+      "numerical": "Measurement",
+      "questionnaire": "Questionnaire",
+      "knowledge": "Education",
+      "bloodpressure": "Blood pressure",
+      "scripted": "Script"
+    },
+    "itemType": {
+      "numeric": "Number",
+      "text": "Text",
+      "multiple-choice-single-select": "Multiple choice (single answer)",
+      "multiple-choice-multi-select": "Multiple choice (multiple answers)",
+      "file-picker": "File",
+      "external": "External",
+      "result": "Result"
+    }
+  },
+  "charts": {
+    "trend": {
+      "since_previous": "vs. previous measurement"
+    },
+    "programme": {
+      "label": "Program",
+      "fallback": "No program",
+      "transition_label": "Program change"
+    },
+    "overview": {
+      "aria_label": "Overview of latest measurements",
+      "column": {
+        "item": "Measurement",
+        "value": "Latest value",
+        "time": "Time"
+      }
+    },
+    "window": {
+      "label": "Window",
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days",
+      "365d": "365 days"
+    },
+    "empty": {
+      "title": "No measurements in this period",
+      "body": "No measurements were recorded within the selected time window.",
+      "widen_cta": "View 90 days"
+    },
+    "planned_actions": {
+      "toggle_show": "Show planned actions ({{count}})",
+      "toggle_hide": "Hide planned actions ({{count}})"
+    },
+    "unknown_instrument": "Unknown instrument",
+    "unknown_format": "Unknown format",
+    "last_value": "Latest measurement",
+    "error": {
+      "title": "Luscii data could not be loaded",
+      "body": "Try again, or refresh the page.",
+      "retry": "Try again"
+    },
+    "free_text": {
+      "show_more": "show more",
+      "show_less": "show less"
+    }
+  },
+  "replica": {
+    "filter": {
+      "custom": "Custom",
+      "custom_hint": "Custom period coming later",
+      "range_label": "Period",
+      "add": "Add measurement",
+      "view": "View",
+      "soon": "Coming soon"
+    },
+    "stats": {
+      "average": "Average",
+      "minimum": "Minimum",
+      "maximum": "Maximum",
+      "latest": "Latest"
+    },
+    "card": {
+      "menu": "More options"
+    },
+    "alert": {
+      "critical": "Critical alert",
+      "warning": "Alert"
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "list": {
+    "title": "Practitioner roles",
+    "sub": "Manage caregiver affiliations with organizations.",
+    "cta": {
+      "create": "New affiliation"
+    },
+    "empty": "No affiliations yet."
+  },
+  "column": {
+    "practitioner": "Caregiver",
+    "organisation": "Organization",
+    "code": "Role",
+    "specialty": "Specialty",
+    "is_primary": "Primary",
+    "period": "Period"
+  },
+  "filter": {
+    "practitioner": "Caregiver",
+    "organisation": "Organization",
+    "code": "Role",
+    "open_only": "Open only",
+    "all": "All",
+    "search_placeholder": "Search…"
+  },
+  "field": {
+    "practitioner": "Caregiver",
+    "organisation": "Organization",
+    "code": "Role",
+    "specialty": "Specialty",
+    "specialty_placeholder": "E.g. Cardiology",
+    "is_primary": "Primary affiliation",
+    "period_start": "Start date"
+  },
+  "code": {
+    "gp": "General practitioner",
+    "physiotherapist": "Physiotherapist",
+    "psychologist": "Psychologist",
+    "nurse": "Nurse",
+    "physician": "Physician",
+    "other": "Other"
+  },
+  "specialty_option": {
+    "none": "— None —",
+    "urologie": "Urology",
+    "huisartsgeneeskunde": "General practice",
+    "radiologie": "Radiology",
+    "pathologie": "Pathology",
+    "oncologie": "Oncology",
+    "cardiologie": "Cardiology"
+  },
+  "primary": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "period": {
+    "open": "—"
+  },
+  "open": {
+    "title": "New affiliation",
+    "sub": "Add a new role for a caregiver within an organization.",
+    "submit": "Add"
+  },
+  "edit": {
+    "title": "Edit affiliation",
+    "submit": "Save"
+  },
+  "close": {
+    "title": "End affiliation?",
+    "description": "The role will be closed and cannot be reopened. Create a new role to open it again.",
+    "confirm": "End"
+  },
+  "actions": {
+    "edit": "Edit",
+    "close": "End",
+    "view": "View",
+    "cancel": "Cancel"
+  },
+  "toast": {
+    "opened": "Affiliation opened",
+    "updated": "Affiliation updated",
+    "closed": "Affiliation ended",
+    "open_failed": "Could not create affiliation",
+    "update_failed": "Update failed",
+    "close_failed": "Could not end affiliation",
+    "error": "Action failed"
+  },
+  "form": {
+    "error": {
+      "required": "Required field.",
+      "too_long": "Too long."
+    }
+  }
+}

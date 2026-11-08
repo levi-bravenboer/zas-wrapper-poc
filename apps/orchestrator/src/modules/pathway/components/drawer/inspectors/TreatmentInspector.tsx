@@ -19,36 +19,23 @@ export function TreatmentInspector({ config, onChange }: Props): ReactElement {
   const { t } = useTranslation('pathway')
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.treatment.title', { defaultValue: 'Titel' })}
-        htmlFor="treatment-title"
-      >
+      <InspectorField label={t('inspector.treatment.title')} htmlFor="treatment-title">
         <Input
           id="treatment-title"
           value={config.title ?? ''}
           onChange={(e) => onChange({ ...config, title: e.target.value || undefined })}
-          placeholder={t('inspector.treatment.titlePlaceholder', {
-            defaultValue: 'Bijv. Lumbale spinale fusie',
-          })}
+          placeholder={t('inspector.treatment.titlePlaceholder')}
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.treatment.location', { defaultValue: 'Locatie' })}
-        htmlFor="treatment-location"
-      >
+      <InspectorField label={t('inspector.treatment.location')} htmlFor="treatment-location">
         <Input
           id="treatment-location"
           value={config.location ?? ''}
           onChange={(e) => onChange({ ...config, location: e.target.value || undefined })}
-          placeholder={t('inspector.treatment.locationPlaceholder', {
-            defaultValue: 'Bijv. OK 3, campus Zuid',
-          })}
+          placeholder={t('inspector.treatment.locationPlaceholder')}
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.treatment.duration', { defaultValue: 'Duur (minuten)' })}
-        htmlFor="treatment-duration"
-      >
+      <InspectorField label={t('inspector.treatment.duration')} htmlFor="treatment-duration">
         <Input
           id="treatment-duration"
           type="number"
@@ -62,17 +49,12 @@ export function TreatmentInspector({ config, onChange }: Props): ReactElement {
           }
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.treatment.notes', { defaultValue: 'Behandelnotities (SOP)' })}
-        htmlFor="treatment-notes"
-      >
+      <InspectorField label={t('inspector.treatment.notes')} htmlFor="treatment-notes">
         <Textarea
           id="treatment-notes"
           value={config.notes ?? ''}
           onChange={(e) => onChange({ ...config, notes: e.target.value || undefined })}
-          placeholder={t('inspector.treatment.notesPlaceholder', {
-            defaultValue: 'Voorbereiding, instructies, nazorg…',
-          })}
+          placeholder={t('inspector.treatment.notesPlaceholder')}
         />
       </InspectorField>
     </div>

@@ -59,7 +59,7 @@ export function ConfirmDeletePhaseDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            {t('blockDialog.cancel', { defaultValue: 'Annuleren' })}
+            {t('blockDialog.cancel')}
           </Button>
           <Button type="button" variant="danger" onClick={onConfirm}>
             {blocks.length > 0 ? t('deletePhase.confirmCascade') : t('deletePhase.confirm')}

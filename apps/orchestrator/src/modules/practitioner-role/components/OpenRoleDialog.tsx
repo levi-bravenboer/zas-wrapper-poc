@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { OrganisationPicker, PractitionerPicker } from '@/components/pickers'
-import { api } from '@/lib/api/client'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -24,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useEntityForm } from '@/hooks/entity'
+import { api } from '@/lib/api/client'
 
 import { ROLE_CODES, SPECIALTY_CODES } from '../constants'
 import { useOpenPractitionerRole } from '../hooks'

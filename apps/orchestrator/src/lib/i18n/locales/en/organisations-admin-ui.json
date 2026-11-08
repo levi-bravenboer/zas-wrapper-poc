@@ -1,0 +1,104 @@
+{
+  "page": {
+    "title": "Organizations",
+    "sub": "Manage your tenant's organization tree.",
+    "cta": {
+      "add": "New organization"
+    },
+    "empty": "No organizations in this tenant yet."
+  },
+  "tree": {
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "actions": "Actions",
+    "no_children": "No sub-organizations",
+    "edit": {
+      "handle": "Drag {{name}}",
+      "bar": {
+        "count": {
+          "one": "{{count}} change",
+          "other": "{{count}} changes"
+        },
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "hint": "Drag with the mouse, or use space + arrow keys",
+        "save_success": "Tree structure updated.",
+        "too_many": "At most {{max}} changes at a time."
+      },
+      "discard": {
+        "title": "Discard changes?",
+        "description": "Your pending moves will be removed.",
+        "confirm": "Discard",
+        "cancel": "Keep editing"
+      },
+      "error": {
+        "cycle": "Move rejected: this would create a cycle."
+      }
+    }
+  },
+  "node": {
+    "action": {
+      "edit": "Edit",
+      "create_child": "New sub-organization",
+      "archive": "Archive"
+    }
+  },
+  "create": {
+    "title_root": "New root organization",
+    "title_child": "New sub-organization",
+    "submit": "Create",
+    "cancel": "Cancel",
+    "success": "Organization created.",
+    "field": {
+      "name": "Name",
+      "type_code": "Type code",
+      "type_system": "Type system",
+      "type_display": "Type description",
+      "parent": "Parent organization"
+    }
+  },
+  "edit": {
+    "title": "Edit organization",
+    "submit": "Save",
+    "cancel": "Cancel",
+    "success": "Organization updated."
+  },
+  "archive": {
+    "title": "Archive organization",
+    "description": "The organization will be hidden from lists. This is only possible if no sub-organizations, patients or open practitioner roles are linked to it.",
+    "confirm": "Archive",
+    "cancel": "Cancel",
+    "success": "Organization archived.",
+    "in_use": "Cannot archive — still linked to: {{references}}",
+    "ref": {
+      "organisations": "sub-organizations",
+      "patients": "patients",
+      "practitioner_roles": "practitioner roles"
+    }
+  },
+  "sheet": {
+    "title": "Organization details",
+    "demographics": "Details",
+    "field": {
+      "name": "Name",
+      "type": "Type",
+      "parent": "Parent"
+    },
+    "affiliated": {
+      "title": "Affiliated caregivers",
+      "empty": "No affiliated caregivers yet."
+    },
+    "close": "Close"
+  },
+  "error": {
+    "cross_tenant": "This organization does not belong to your tenant.",
+    "not_found": "Organization not found.",
+    "generic": "Something went wrong."
+  },
+  "form": {
+    "error": {
+      "required": "Required field.",
+      "too_long": "Too long."
+    }
+  }
+}

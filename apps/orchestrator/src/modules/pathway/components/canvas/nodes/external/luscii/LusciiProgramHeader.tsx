@@ -1,5 +1,6 @@
 import { Activity, ChevronsUpDown } from 'lucide-react'
 import { type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type Props = {
   programName: string | null
@@ -15,6 +16,7 @@ type Props = {
  * is null. Otherwise the program name + sub-line (protocol · mode) render.
  */
 export function LusciiProgramHeader({ programName, subLine, empty }: Props): ReactElement {
+  const { t } = useTranslation('pathway')
   return (
     <div
       data-slot="luscii-program-header"
@@ -32,7 +34,9 @@ export function LusciiProgramHeader({ programName, subLine, empty }: Props): Rea
       </span>
       <div className="min-w-0 leading-[1.15]">
         <div className="truncate text-[12.5px] font-semibold tracking-tight text-foreground">
-          {empty ? 'Luscii Program · Pick one' : (programName ?? 'Luscii Program')}
+          {empty
+            ? t('canvas.luscii.headerEmpty')
+            : (programName ?? t('inspector.lusciiProgram.program'))}
         </div>
         {!empty && subLine && (
           <div className="truncate font-mono text-[10px] text-muted-foreground">{subLine}</div>

@@ -1,0 +1,11 @@
+{
+  "dashboard": "Overview",
+  "users": "Users",
+  "patients": "Patients",
+  "appointments": "Appointments",
+  "tasks": "Tasks",
+  "pathways": "Care pathways",
+  "settings": "Settings",
+  "placeholder": "This section is not available yet. Coming soon.",
+  "loading": "Loading…"
+}

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/style/cn'
 
@@ -12,16 +14,12 @@ export interface SelectionHeaderProps {
   label?: string
 }
 
-export function SelectionHeader({
-  state,
-  onToggle,
-  sticky = true,
-  label = 'Select page',
-}: SelectionHeaderProps) {
+export function SelectionHeader({ state, onToggle, sticky = true, label }: SelectionHeaderProps) {
+  const { t } = useTranslation('data-table')
   return (
     <HeaderCell className={cn('w-10', sticky && stickyFirst)}>
       <Checkbox
-        aria-label={label}
+        aria-label={label ?? t('selection.page')}
         checked={state === 'all' ? true : state === 'some' ? 'indeterminate' : false}
         onCheckedChange={() => onToggle()}
       />
@@ -44,10 +42,11 @@ export function SelectionCell({
   sticky = true,
   label,
 }: SelectionCellProps) {
+  const { t } = useTranslation('data-table')
   return (
     <Cell data-stop-row-click="" className={cn(sticky && stickyFirst)}>
       <Checkbox
-        aria-label={label ?? `Select row ${rowId}`}
+        aria-label={label ?? t('selection.row', { id: rowId })}
         checked={checked}
         onCheckedChange={() => onToggle(rowId)}
         onClick={(e) => e.stopPropagation()}

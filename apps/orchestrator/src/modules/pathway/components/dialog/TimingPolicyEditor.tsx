@@ -17,7 +17,6 @@ type PolicyMeta = {
   isoField: 'duration_iso' | 'offset_iso' | 'window_iso' | null
   defaultIso: string | null
   placeholder: string
-  labelFallback: string
 }
 
 const POLICY_META = {
@@ -25,37 +24,31 @@ const POLICY_META = {
     isoField: null,
     defaultIso: null,
     placeholder: '',
-    labelFallback: 'Geen timing',
   },
   fixed_duration: {
     isoField: 'duration_iso',
     defaultIso: 'P1D',
     placeholder: 'P1D',
-    labelFallback: 'Vaste duur',
   },
   wait_after: {
     isoField: 'offset_iso',
     defaultIso: 'PT0S',
     placeholder: 'PT0S',
-    labelFallback: 'Wacht na startmoment',
   },
   due_within: {
     isoField: 'window_iso',
     defaultIso: 'P7D',
     placeholder: 'P1D',
-    labelFallback: 'Af te ronden binnen',
   },
   at_enrollment_picked_date: {
     isoField: null,
     defaultIso: null,
     placeholder: '',
-    labelFallback: 'Datum gekozen bij inschrijving',
   },
   relative_to_date: {
     isoField: 'offset_iso',
     defaultIso: 'PT0S',
     placeholder: 'P2D',
-    labelFallback: 'Relatief tot klinische datum',
   },
 } as const satisfies Record<string, PolicyMeta>
 
@@ -121,7 +114,7 @@ export function TimingPolicyEditor({ value, onChange }: Props): ReactElement {
 
   const kindOptions = POLICY_KINDS.map((option) => ({
     value: option,
-    label: t(`timingPolicy.kind.${option}`, { defaultValue: POLICY_META[option].labelFallback }),
+    label: t(`timingPolicy.kind.${option}`),
   }))
 
   return (

@@ -1,0 +1,153 @@
+{
+  "tab": {
+    "label": "Care pathway"
+  },
+  "timeline": {
+    "title": "Care pathway",
+    "manage": "Manage care pathway",
+    "controlsTitle": "Care pathway controls",
+    "fastForward": "Fast-forward",
+    "fastForwardToast": "Care pathway fast-forwarded to next choice",
+    "fastForwardError": "Fast-forward failed",
+    "hide": "Hide controls",
+    "enrollAnother": "New care pathway",
+    "noSteps": "No steps yet",
+    "state": {
+      "finished": "Completed",
+      "next": "Now",
+      "upcoming": "Scheduled"
+    }
+  },
+  "empty": {
+    "title": "No active care pathway",
+    "body": "This patient is not following a care pathway yet. Enroll the patient to get started.",
+    "enroll": "Enroll in care pathway"
+  },
+  "enroll": {
+    "title": "Enroll in care pathway",
+    "description": "Choose a published care pathway and set the start date.",
+    "pathwayLabel": "Care pathway",
+    "pathwayPlaceholder": "Choose a care pathway",
+    "anchorLabel": "Start date",
+    "participantPlaceholder": "Choose a caregiver",
+    "earliestHint": "Earliest possible: {{date}}",
+    "noPublished": "There are no published care pathways to enroll in yet.",
+    "cancel": "Cancel",
+    "submit": "Enroll",
+    "next": "Next",
+    "back": "Back",
+    "stepIndicator": "Step {{current}} of {{total}}",
+    "earlierSteps": "earlier",
+    "laterSteps": "later",
+    "locationLabel": "Appointment location",
+    "practitionerLabel": "Clinician",
+    "step": {
+      "setup": "Care pathway & dates",
+      "review": "Review"
+    },
+    "review": {
+      "title": "Review and confirm",
+      "pathway": "Care pathway",
+      "anchor": "Start date",
+      "unset": "—"
+    },
+    "toast": {
+      "success": "Patient enrolled in care pathway",
+      "error": "Enrollment failed"
+    },
+    "validationTitle": "Enrollment blocked"
+  },
+  "pause": {
+    "pause": "Pause",
+    "resume": "Resume",
+    "toast": {
+      "paused": "Care pathway paused",
+      "resumed": "Care pathway resumed",
+      "error": "Action failed"
+    }
+  },
+  "cancel": {
+    "action": "Cancel",
+    "title": "Cancel care pathway?",
+    "description": "The enrollment will be stopped. This action cannot be undone.",
+    "dismiss": "Back",
+    "confirm": "Cancel care pathway",
+    "toast": {
+      "success": "Care pathway cancelled",
+      "error": "Cancellation failed"
+    }
+  },
+  "card": {
+    "anchor": "Start date",
+    "state": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "summary": {
+    "phase": "Phase {{phase}}",
+    "progress": "{{done}}/{{total}} completed",
+    "done": "completed",
+    "toGo": "to go",
+    "overdueDays_one": "{{count}} day overdue",
+    "overdueDays_other": "{{count}} days overdue"
+  },
+  "values": {
+    "header": "Values",
+    "save": "Save",
+    "locked": "Locked",
+    "toast": {
+      "success": "Value updated",
+      "error": "Update failed"
+    }
+  },
+  "buckets": {
+    "upcoming": "Upcoming",
+    "next": "To do now",
+    "finished": "Completed",
+    "emptyUpcoming": "No upcoming steps",
+    "emptyNext": "No open steps",
+    "emptyFinished": "Nothing completed yet"
+  },
+  "step": {
+    "readyOn": "Ready on {{date}}",
+    "scheduledFor": "Scheduled for {{date}}",
+    "completedOn": "Completed on {{date}}",
+    "unknownBlock": "Unknown step",
+    "done": "Done",
+    "doneToast": {
+      "success": "Step completed",
+      "error": "Completing step failed"
+    },
+    "mdo": {
+      "open": "Complete MDT meeting",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Discussed and decided…",
+      "outcomeLabel": "Outcome",
+      "outcomePlaceholder": "Choose an outcome",
+      "confirm": "Complete"
+    },
+    "appointment": {
+      "perform": "Mark as performed"
+    },
+    "treatment": {
+      "open": "Record result",
+      "performedAt": "Performed on",
+      "notes": "Notes",
+      "notesPlaceholder": "Course of treatment…",
+      "complications": "Complications",
+      "complicationsPlaceholder": "If applicable…",
+      "confirm": "Record"
+    },
+    "stateBadge": {
+      "active": "In progress",
+      "eligible": "Available",
+      "completed": "Completed",
+      "skipped": "Skipped",
+      "failed": "Failed"
+    }
+  },
+  "loadError": "Care pathway could not be loaded"
+}

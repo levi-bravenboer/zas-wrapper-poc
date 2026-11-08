@@ -1,7 +1,9 @@
+import { intlLocale } from '@/lib/i18n'
+
 export function formatTimestamp(value: string): string {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleString('nl-NL', {
+  return parsed.toLocaleString(intlLocale(), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

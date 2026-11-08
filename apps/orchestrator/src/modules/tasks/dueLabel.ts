@@ -1,17 +1,21 @@
 import type { TFunction } from 'i18next'
 
+import { intlLocale } from '@/lib/i18n'
+
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
-const timeFormatter = new Intl.DateTimeFormat('nl-BE', {
-  hour: '2-digit',
-  minute: '2-digit',
-})
+const timeFormatter = (): Intl.DateTimeFormat =>
+  new Intl.DateTimeFormat(intlLocale(), {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
-const dayFormatter = new Intl.DateTimeFormat('nl-BE', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-})
+const dayFormatter = (): Intl.DateTimeFormat =>
+  new Intl.DateTimeFormat(intlLocale(), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
 
 function localDateOnly(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -35,13 +39,13 @@ export function dueLabel(t: TFunction, dueAtIso: string, now: Date = new Date())
   const delta = deltaDays(dueAtIso, now)
 
   if (delta < 0) {
-    return t('tasks:due.overdue', { time: timeFormatter.format(due) })
+    return t('tasks:due.overdue', { time: timeFormatter().format(due) })
   }
   if (delta === 0) {
-    return t('tasks:due.today', { time: timeFormatter.format(due) })
+    return t('tasks:due.today', { time: timeFormatter().format(due) })
   }
   if (delta === 1) {
-    return t('tasks:due.tomorrow', { time: timeFormatter.format(due) })
+    return t('tasks:due.tomorrow', { time: timeFormatter().format(due) })
   }
   return t('tasks:due.in_days', { count: delta })
 }
@@ -58,5 +62,5 @@ export function dayGroupLabel(t: TFunction, dueAtIso: string, now: Date = new Da
   if (delta < 0) return t('tasks:group.overdue')
   if (delta === 0) return t('tasks:group.today')
   if (delta === 1) return t('tasks:group.tomorrow')
-  return dayFormatter.format(new Date(dueAtIso))
+  return dayFormatter().format(new Date(dueAtIso))
 }

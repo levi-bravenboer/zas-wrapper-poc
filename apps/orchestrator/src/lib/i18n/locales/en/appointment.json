@@ -1,0 +1,58 @@
+{
+  "title": "Appointments",
+  "subtitle": "Scheduled appointments",
+  "openPatient": "Open patient",
+  "kind": {
+    "consultation": "Consultation",
+    "lab": "Lab",
+    "imaging": "Imaging",
+    "procedure": "Procedure",
+    "other": "Other"
+  },
+  "modality": {
+    "online": "Online",
+    "on_site": "On site"
+  },
+  "selection": {
+    "title": "Select an appointment",
+    "body": "Choose an appointment on the left to view its details."
+  },
+  "empty": {
+    "title": "No appointments",
+    "body": "Scheduled appointments will appear here."
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "Loading failed."
+  },
+  "detail": {
+    "title": "Details"
+  },
+  "field": {
+    "patient": "Patient",
+    "modality": "Modality",
+    "lead": "Lead clinician",
+    "status": "Status",
+    "reason": "Reason",
+    "kind": "Type",
+    "when": "When",
+    "participants": "Participants"
+  },
+  "role": {
+    "lead": "Lead",
+    "support": "Support",
+    "observer": "Observer"
+  },
+  "status": {
+    "proposed": "Proposed",
+    "pending": "Pending",
+    "booked": "Booked",
+    "arrived": "Arrived",
+    "fulfilled": "Completed",
+    "cancelled": "Cancelled",
+    "noshow": "No-show",
+    "entered_in_error": "Entered in error",
+    "checked_in": "Checked in",
+    "waitlist": "Waitlist"
+  }
+}

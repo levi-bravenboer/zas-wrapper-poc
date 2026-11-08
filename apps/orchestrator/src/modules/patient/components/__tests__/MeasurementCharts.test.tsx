@@ -2,8 +2,8 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { renderWithProviders } from '@/test/renderWithProviders'
 import type { LusciiPatientData } from '@/modules/patient/types'
+import { renderWithProviders } from '@/test/renderWithProviders'
 
 import { MeasurementCharts } from '../MeasurementCharts'
 

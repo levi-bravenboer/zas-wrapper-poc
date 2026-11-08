@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { GroupedList, GroupedListSection, RailRow } from '@/components/rail'
 import { EmptyState } from '@/components/states/EmptyState'
 import { RowSkeleton } from '@/components/states/Skeleton'
+import { intlLocale } from '@/lib/i18n'
 import { groupConsecutiveByDay } from '@/lib/utils/grouping'
 
 import { useAppointmentsQuery } from '../hooks'
@@ -19,12 +20,14 @@ const KIND_ICON: Record<AppointmentKind, ComponentType<{ className?: string }>> 
   other: Calendar,
 }
 
-const dayFmt = new Intl.DateTimeFormat('nl-BE', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-})
-const timeFmt = new Intl.DateTimeFormat('nl-BE', { hour: '2-digit', minute: '2-digit' })
+const dayFmt = (): Intl.DateTimeFormat =>
+  new Intl.DateTimeFormat(intlLocale(), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
+const timeFmt = (): Intl.DateTimeFormat =>
+  new Intl.DateTimeFormat(intlLocale(), { hour: '2-digit', minute: '2-digit' })
 
 function AppointmentListBody({ selectedId }: { selectedId: string | undefined }): ReactElement {
   const { t } = useTranslation(['appointment'])
@@ -67,11 +70,11 @@ function AppointmentListBody({ selectedId }: { selectedId: string | undefined })
         return (
           <GroupedListSection
             key={group.key}
-            label={first ? dayFmt.format(new Date(first.starts_at)) : ''}
+            label={first ? dayFmt().format(new Date(first.starts_at)) : ''}
           >
             {group.items.map((appt) => {
               const KindIcon = KIND_ICON[appt.kind] ?? Calendar
-              const secondary = [timeFmt.format(new Date(appt.starts_at)), appt.location_text]
+              const secondary = [timeFmt().format(new Date(appt.starts_at)), appt.location_text]
                 .filter(Boolean)
                 .join(' · ')
               return (

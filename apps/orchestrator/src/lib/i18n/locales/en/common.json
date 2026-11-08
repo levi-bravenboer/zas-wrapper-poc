@@ -1,0 +1,44 @@
+{
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "The app did not respond as expected. Please try again.",
+    "retry": "Try again"
+  },
+  "appShell": {
+    "welcome": "Welcome",
+    "placeholderDescription": "The content of this screen will follow in a later change."
+  },
+  "toasts": {
+    "genericError": "Something went wrong. Please try again."
+  },
+  "masterDetail": {
+    "openMaster": "Show list"
+  },
+  "pickers": {
+    "organisation": {
+      "placeholder": "Select organization",
+      "search": "Search organization",
+      "empty": "No organizations found"
+    },
+    "practitioner": {
+      "placeholder": "Select caregiver",
+      "search": "Search caregiver",
+      "empty": "No caregivers found"
+    },
+    "role": {
+      "placeholder": "Select role",
+      "search": "Search role",
+      "empty": "No roles found",
+      "primarySuffix": "(Primary)"
+    },
+    "loading": "Loading…"
+  },
+  "a11y": {
+    "more": "More",
+    "close": "Close"
+  },
+  "commandPalette": {
+    "title": "Command palette",
+    "description": "Search for a command to run"
+  }
+}

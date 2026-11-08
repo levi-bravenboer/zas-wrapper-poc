@@ -1,4 +1,5 @@
 import { type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { LusciiLaneKind, LusciiLayout, LusciiLayoutNode, LusciiProgramData } from './types'
 
@@ -185,6 +186,7 @@ export function LusciiProgramThumbnailFake({ data, width, height }: Props): Reac
 }
 
 function LusciiEmptyState({ width, height }: { width: number; height: number }): ReactElement {
+  const { t } = useTranslation('pathway')
   return (
     <svg
       data-slot="luscii-program-thumbnail-empty"
@@ -201,7 +203,7 @@ function LusciiEmptyState({ width, height }: { width: number; height: number }):
         className="fill-muted-foreground"
         style={{ font: '500 12px system-ui, -apple-system, sans-serif' }}
       >
-        Pick a Luscii program
+        {t('canvas.luscii.pickProgram')}
       </text>
     </svg>
   )

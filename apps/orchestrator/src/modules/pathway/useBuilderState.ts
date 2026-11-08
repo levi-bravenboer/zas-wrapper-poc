@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef, type Dispatch } from 'react'
 
+import { i18n } from '@/lib/i18n'
 import { sortByOrd } from '@/lib/utils/ordinal'
 
 import { HISTORY_LIMIT } from './constants/limits'
@@ -266,13 +267,12 @@ export function cascadeDeletePhase(
 
 const DEFAULT_LANE_SCAFFOLD: Array<{
   code: PathwayLane['lane_kind_code']
-  label: string
   is_default: boolean
 }> = [
-  { code: 'patient', label: 'Patiënt', is_default: true },
-  { code: 'caregiver', label: 'Zorgteam', is_default: false },
-  { code: 'system', label: 'Systeem', is_default: false },
-  { code: 'external', label: 'Extern', is_default: false },
+  { code: 'patient', is_default: true },
+  { code: 'caregiver', is_default: false },
+  { code: 'system', is_default: false },
+  { code: 'external', is_default: false },
 ]
 
 /** Ensure every kind in `DEFAULT_LANE_SCAFFOLD` has a corresponding lane row.
@@ -290,7 +290,7 @@ function ensureLanes(version: PathwayVersionDefinition): PathwayVersionDefinitio
     id: crypto.randomUUID(),
     pathway_lane_kind_id: crypto.randomUUID(),
     lane_kind_code: entry.code,
-    label: entry.label,
+    label: i18n.t(`pathway:lane.${entry.code}`),
     ord: maxOrd + (i + 1) * 10,
     is_default: existing.length === 0 && entry.is_default,
     height_px: 180,

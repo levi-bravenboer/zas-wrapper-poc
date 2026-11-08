@@ -4,6 +4,7 @@ import { type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/states/EmptyState'
+import { intlLocale } from '@/lib/i18n'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 import { usePatientAppointmentsQuery } from '@/modules/appointment/hooks'
 import type { PatientAppointmentEntry } from '@/modules/appointment/types'
@@ -29,7 +30,7 @@ function Group({
             >
               <span className="truncate font-medium text-foreground">{appointment.title}</span>
               <span className="shrink-0 text-xs tabular-nums text-foreground-muted">
-                {formatDateTimeOrDash(appointment.starts_at, 'nl')}
+                {formatDateTimeOrDash(appointment.starts_at, intlLocale())}
               </span>
             </Link>
           </li>

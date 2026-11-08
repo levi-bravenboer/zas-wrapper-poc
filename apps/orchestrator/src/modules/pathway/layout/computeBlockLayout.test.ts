@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
+import type { PathwayLane } from '../types'
+
+import { computeBlockLayout, visibleLanes } from './computeBlockLayout'
 import {
   LAYOUT_CELL_X_PAD,
   LAYOUT_CELL_Y_PAD,
   LAYOUT_COLUMN_GUTTER,
   LAYOUT_ROW_GUTTER,
 } from './constants'
-import { computeBlockLayout, visibleLanes } from './computeBlockLayout'
-import type { PathwayLane } from '../types'
 
 const PHASE_A = 'phase-a'
 const LANE_SYS = 'lane-system'

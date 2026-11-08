@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { beginLaunch, SmartLaunchError } from '@/modules/smart-launch/api'
+import { beginLaunch } from '@/modules/smart-launch/api'
 import { launchSearchSchema } from '@/modules/smart-launch/schemas'
 
 export const Route = createFileRoute('/launch')({
@@ -17,9 +17,9 @@ function LaunchPage() {
 
   useEffect(() => {
     let cancelled = false
-    beginLaunch(search).catch((cause: unknown) => {
+    beginLaunch(search).catch(() => {
       if (cancelled) return
-      setError(cause instanceof SmartLaunchError ? cause.message : t('launch_failed'))
+      setError(t('launch_failed'))
     })
     return () => {
       cancelled = true

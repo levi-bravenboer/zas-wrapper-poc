@@ -37,7 +37,7 @@ export function BlockIdentityFields({
             htmlFor="block-dialog-name"
             className="mb-1 block text-[12px] font-medium text-foreground"
           >
-            {t('blockDialog.name', { defaultValue: 'Naam' })}
+            {t('blockDialog.name')}
           </label>
           <Input
             id="block-dialog-name"
@@ -52,14 +52,14 @@ export function BlockIdentityFields({
           htmlFor="block-dialog-phase"
           className="mb-1 block text-[12px] font-medium text-foreground"
         >
-          {t('blockDialog.phase', { defaultValue: 'Fase' })}
+          {t('blockDialog.phase')}
         </label>
         <OptionsSelect
           triggerId="block-dialog-phase"
           value={phaseId}
           options={sortByOrd(phases).map((phase) => ({ value: phase.id, label: phase.label }))}
           onChange={onChangePhase}
-          placeholder={t('blockDialog.phasePlaceholder', { defaultValue: 'Kies fase' })}
+          placeholder={t('blockDialog.phasePlaceholder')}
         />
       </div>
     </section>

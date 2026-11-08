@@ -10,6 +10,7 @@ import { RowSkeleton } from '@/components/states/Skeleton'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePaginatedQuery } from '@/hooks/use-paginated-query'
+import { intlLocale } from '@/lib/i18n'
 import { formatDateTimeOrDash } from '@/lib/utils/datetime'
 import { useAppointmentsQuery } from '@/modules/appointment/hooks'
 import { PATIENTS_PATH } from '@/modules/patient/api'
@@ -17,7 +18,6 @@ import { TASKS_PATH } from '@/modules/tasks/keys'
 import type { Task, TaskStatus } from '@/modules/tasks/types'
 
 const PANEL_LIMIT = 5
-const LOCALE = 'nl-BE'
 const EM_DASH = '—'
 
 const rowClassName =
@@ -132,7 +132,7 @@ function HomePage(): ReactElement {
               >
                 <span className="truncate text-sm text-foreground">{appt.title}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatDateTimeOrDash(appt.starts_at, LOCALE)}
+                  {formatDateTimeOrDash(appt.starts_at, intlLocale())}
                 </span>
               </Link>
             ))}
@@ -227,7 +227,7 @@ function Panel({
 }
 
 function TaskRow({ task }: { task: Task }): ReactElement {
-  const due = task.due_at ? formatDateTimeOrDash(task.due_at, LOCALE) : EM_DASH
+  const due = task.due_at ? formatDateTimeOrDash(task.due_at, intlLocale()) : EM_DASH
   const body = (
     <>
       <span className="truncate text-sm text-foreground">{task.title}</span>

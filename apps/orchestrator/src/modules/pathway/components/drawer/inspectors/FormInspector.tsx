@@ -74,17 +74,12 @@ export function FormInspector({ config, onChange }: Props): ReactElement {
 
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.form.title', { defaultValue: 'Titel' })}
-        htmlFor="form-title"
-      >
+      <InspectorField label={t('inspector.form.title')} htmlFor="form-title">
         <Input
           id="form-title"
           value={config.title ?? ''}
           onChange={(e) => onChange({ ...config, title: e.target.value || undefined })}
-          placeholder={t('inspector.form.titlePlaceholder', {
-            defaultValue: 'Bijv. Intake vragenlijst',
-          })}
+          placeholder={t('inspector.form.titlePlaceholder')}
         />
       </InspectorField>
       <div className="flex items-center justify-between">

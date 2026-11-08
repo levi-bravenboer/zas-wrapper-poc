@@ -1,0 +1,7 @@
+{
+  "launching": "Starting SMART launch…",
+  "launch_failed": "SMART launch failed",
+  "exchanging": "Signing in…",
+  "exchange_failed": "Sign-in via EHR failed",
+  "retry": "Try again"
+}

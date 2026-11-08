@@ -5,7 +5,7 @@
     "cta": {
       "add": "Nieuwe organisatie"
     },
-    "empty": "Nog geen organisaties in dit tenant."
+    "empty": "Nog geen organisaties in deze tenant."
   },
   "tree": {
     "expand": "Uitklappen",
@@ -44,7 +44,7 @@
     }
   },
   "create": {
-    "title_root": "Nieuwe root organisatie",
+    "title_root": "Nieuwe hoofdorganisatie",
     "title_child": "Nieuwe sub-organisatie",
     "submit": "Aanmaken",
     "cancel": "Annuleren",
@@ -54,7 +54,7 @@
       "type_code": "Type-code",
       "type_system": "Type-systeem",
       "type_display": "Type-omschrijving",
-      "parent": "Parent organisatie"
+      "parent": "Bovenliggende organisatie"
     }
   },
   "edit": {
@@ -82,7 +82,7 @@
     "field": {
       "name": "Naam",
       "type": "Type",
-      "parent": "Parent"
+      "parent": "Bovenliggende organisatie"
     },
     "affiliated": {
       "title": "Aangesloten zorgverleners",

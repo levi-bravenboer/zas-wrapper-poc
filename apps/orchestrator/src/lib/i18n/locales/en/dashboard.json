@@ -1,0 +1,24 @@
+{
+  "title": "Overview",
+  "sub": "Today at a glance",
+  "stats": {
+    "heading": "Today",
+    "patients": "Active patients",
+    "tasks": "Open tasks",
+    "appointments": "Appointments"
+  },
+  "tasks": {
+    "heading": "My tasks",
+    "sub": "By deadline",
+    "empty": "No open tasks",
+    "error": "Tasks could not be loaded",
+    "viewAll": "View all tasks"
+  },
+  "appointments": {
+    "heading": "Appointments",
+    "sub": "Today and upcoming",
+    "empty": "No scheduled appointments",
+    "error": "Appointments could not be loaded",
+    "viewAll": "View all appointments"
+  }
+}

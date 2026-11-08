@@ -125,7 +125,7 @@ describe('UserFormPage (edit mode)', () => {
 
   it('locks email + role + given/family name inputs', async () => {
     renderEdit()
-    const email = await screen.findByLabelText(/email/i)
+    const email = await screen.findByLabelText(/e-mail/i)
     expect((email as HTMLInputElement).disabled).toBe(true)
     expect((screen.getByLabelText(/voornaam/i) as HTMLInputElement).disabled).toBe(true)
     expect((screen.getByLabelText(/achternaam/i) as HTMLInputElement).disabled).toBe(true)
@@ -133,7 +133,7 @@ describe('UserFormPage (edit mode)', () => {
 
   it('does not render a password field in edit mode', async () => {
     renderEdit()
-    await screen.findByLabelText(/email/i)
+    await screen.findByLabelText(/e-mail/i)
     expect(screen.queryByLabelText(/wachtwoord/i)).toBeNull()
   })
 

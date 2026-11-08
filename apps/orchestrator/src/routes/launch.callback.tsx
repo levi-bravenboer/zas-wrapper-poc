@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { z } from 'zod'
 
-import { exchangeAuthCode, SmartExchangeError } from '@/modules/smart-launch/api'
+import { exchangeAuthCode } from '@/modules/smart-launch/api'
 import { callbackSearchSchema } from '@/modules/smart-launch/schemas'
 import { useLaunchStore } from '@/modules/smart-launch/store'
 import { SURFACES } from '@/platform/surface/registry'
@@ -55,9 +55,9 @@ export function LaunchCallbackPage({
         const to = resolveDestination()
         void navigate({ to, replace: true })
       })
-      .catch((cause: unknown) => {
+      .catch(() => {
         if (cancelled) return
-        setError(cause instanceof SmartExchangeError ? cause.message : t('exchange_failed'))
+        setError(t('exchange_failed'))
       })
     return () => {
       cancelled = true

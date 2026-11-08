@@ -1,6 +1,7 @@
 import { ChevronRight, MoreHorizontal } from 'lucide-react'
 import { Slot } from 'radix-ui'
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/style/cn'
 
@@ -77,6 +78,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
 }
 
 function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
+  const { t } = useTranslation('common')
   return (
     <span
       data-slot="breadcrumb-ellipsis"
@@ -86,7 +88,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{t('a11y.more')}</span>
     </span>
   )
 }

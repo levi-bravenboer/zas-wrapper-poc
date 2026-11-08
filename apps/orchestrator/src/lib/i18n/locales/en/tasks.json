@@ -1,0 +1,57 @@
+{
+  "title": "Tasks",
+  "subtitle": "Upcoming tasks",
+  "empty": {
+    "title": "No tasks",
+    "body": "New tasks appear automatically"
+  },
+  "error": {
+    "title": "Tasks could not be loaded",
+    "body": "Try refreshing the page"
+  },
+  "due": {
+    "overdue": "overdue {{time}}",
+    "today": "today {{time}}",
+    "tomorrow": "tomorrow {{time}}",
+    "none": "No date",
+    "in_days_one": "in {{count}} day",
+    "in_days_other": "in {{count}} days"
+  },
+  "group": {
+    "overdue": "Overdue",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "none": "No date"
+  },
+  "status": {
+    "open": "Open",
+    "done": "Completed"
+  },
+  "panel": {
+    "title": "My tasks",
+    "subtitle": "Open tasks assigned to you for this patient",
+    "prev": "Previous",
+    "next": "Next",
+    "count_one": "{{count}} task",
+    "count_other": "{{count}} tasks"
+  },
+  "detail": {
+    "due": "Deadline: {{date}}",
+    "complete": "Mark as completed",
+    "reopen": "Reopen",
+    "noDescription": "No description.",
+    "openPatient": "Open patient",
+    "tabs": {
+      "info": "Details"
+    },
+    "reason": "Reason",
+    "deadline": "Deadline",
+    "status": "Status",
+    "source": "Source",
+    "created": "Created"
+  },
+  "selection": {
+    "title": "Select a task",
+    "body": "Choose a task on the left to view its details."
+  }
+}

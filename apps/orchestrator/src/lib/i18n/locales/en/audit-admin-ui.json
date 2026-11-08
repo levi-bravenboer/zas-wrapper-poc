@@ -1,0 +1,70 @@
+{
+  "list": {
+    "title": "Audit log",
+    "sub": "All system events: who did what, and when.",
+    "empty": "No audit events found."
+  },
+  "column": {
+    "created_at": "When",
+    "actor": "Who",
+    "action": "Action",
+    "event_code": "Event",
+    "resource": "Resource",
+    "result": "Result"
+  },
+  "filter": {
+    "action": "Action",
+    "result": "Result",
+    "resource_type": "Resource type",
+    "created_at": "Period"
+  },
+  "actor": {
+    "system": "(system)",
+    "anonymous": "(anonymous)"
+  },
+  "enum": {
+    "action": {
+      "created": "Created",
+      "read": "Read",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "execute": "Executed",
+      "login": "Sign-in"
+    },
+    "event_code": {
+      "pathway": {
+        "published": "Published"
+      },
+      "runtime": {
+        "enrolled": "Enrolled",
+        "block_executed": "Step executed",
+        "deferred_value_resolved": "Value filled in"
+      },
+      "patient": {
+        "dossier_viewed": "Record viewed"
+      },
+      "auth": {
+        "login": "Sign-in"
+      }
+    },
+    "result": {
+      "success": "Succeeded",
+      "failure": "Failed"
+    },
+    "resource_type": {
+      "Pathway": "Care pathway",
+      "User": "User",
+      "Patient": "Patient"
+    }
+  },
+  "detail": {
+    "resource": "Resource",
+    "request_id": "Request ID",
+    "changes": "Changes",
+    "context": "Context",
+    "none": "—"
+  },
+  "toast": {
+    "error": "Audit log could not be loaded."
+  }
+}

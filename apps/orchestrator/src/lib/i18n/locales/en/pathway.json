@@ -1,0 +1,644 @@
+{
+  "participant": {
+    "role": "Role",
+    "rolePlaceholder": "e.g. physician",
+    "specialty": "Specialty",
+    "specialtyPlaceholder": "e.g. urology"
+  },
+  "blockDialog": {
+    "participantHeader": "Participant",
+    "addTitle": "New block — {{type}}",
+    "editTitle": "Edit block — {{type}}",
+    "configHeader": "Block settings",
+    "logicHeader": "Business logic",
+    "timingHeader": "Timing",
+    "cancel": "Cancel",
+    "add": "Add",
+    "save": "Save",
+    "name": "Name",
+    "phase": "Phase",
+    "phasePlaceholder": "Choose phase"
+  },
+  "overview": {
+    "title": "Care pathways",
+    "sub": "Manage and design clinical care pathways.",
+    "createButton": "New care pathway",
+    "empty": {
+      "title": "No care pathways yet",
+      "body": "Create your first care pathway to get started.",
+      "action": "New care pathway"
+    },
+    "table": {
+      "name": "Name",
+      "status": "Status",
+      "blocks": "Blocks",
+      "clinicalGoal": "Clinical goal",
+      "lastPublished": "Last published",
+      "lastEdited": "Last edited",
+      "empty": "—"
+    },
+    "status": {
+      "published": "Published v.{{n}}",
+      "concept": "Draft",
+      "conceptOnPublished": "Draft on v.{{n}}",
+      "draft": "No version"
+    },
+    "toolbar": {
+      "searchPlaceholder": "Search by name or goal…",
+      "filter": {
+        "status": {
+          "label": "Status",
+          "concept": "Draft",
+          "conceptOnPublished": "Draft on version",
+          "published": "Published",
+          "draft": "No version"
+        }
+      }
+    },
+    "loadError": "Could not load care pathways."
+  },
+  "create": {
+    "title": "New care pathway",
+    "sub": "Name your care pathway and describe the clinical and patient goals.",
+    "nameLabel": "Name",
+    "namePlaceholder": "E.g. Back rehabilitation",
+    "clinicalGoalLabel": "Clinical goal",
+    "clinicalGoalPlaceholder": "What does the care team want to achieve medically?",
+    "patientGoalLabel": "Patient goal",
+    "patientGoalPlaceholder": "What does the patient want to achieve?",
+    "submit": "Create",
+    "cancel": "Cancel",
+    "error": "Creation failed."
+  },
+  "crumbRoot": "CARE PATHWAYS",
+  "stubTitle": "Builder arrives in phase 3",
+  "stubBody": "The care pathway has been created. The canvas editor follows in a later phase.",
+  "clinicalGoal": "Clinical goal",
+  "patientGoal": "Patient goal",
+  "blocks": "Blocks",
+  "phases": "Phases",
+  "editedAt": "edited {{time}}",
+  "loading": "Loading care pathway…",
+  "notFound": {
+    "title": "Care pathway not found",
+    "body": "This care pathway does not exist or has been deleted.",
+    "back": "Back to overview"
+  },
+  "error": {
+    "title": "Cannot load care pathway",
+    "body": "Something went wrong while loading this care pathway.",
+    "retry": "Try again",
+    "back": "Back to overview"
+  },
+  "topbar": {
+    "renameLabel": "Rename",
+    "undo": "Undo",
+    "redo": "Redo",
+    "history": "History",
+    "publish": "Publish version",
+    "delete": "Delete care pathway"
+  },
+  "status": {
+    "clean": "Saved automatically",
+    "dirty": "Unsaved",
+    "saving": "Saving changes…",
+    "error": "Save failed"
+  },
+  "subbar": {
+    "jumpTo": "JUMP TO",
+    "addPhase": "Phase",
+    "customPhase": "Custom phase",
+    "customPhasePlaceholder": "Phase name",
+    "customPhaseHint": "Press Enter to add",
+    "phaseLabel": "Phase {{idx}}",
+    "phaseJumpLabel": "Jump to phase {{idx}}: {{label}}",
+    "navLabel": "Phases",
+    "renamePhase": "Rename phase",
+    "deletePhase": "Delete phase"
+  },
+  "dock": {
+    "toolbarLabel": "Block palette",
+    "addLabel": "Add {{label}}",
+    "groupNative": "Standard blocks",
+    "groupProvider": {
+      "luscii": "Luscii programs"
+    }
+  },
+  "drawer": {
+    "title": "Edit block",
+    "labelInput": "Block name",
+    "delete": "Delete",
+    "done": "Done",
+    "close": "Close",
+    "deleteConfirmTitle": "Delete block?",
+    "deleteConfirmBody": "This deletes the block and its connections.",
+    "configHeader": "Configuration",
+    "parseError": {
+      "title": "Configuration cannot be read",
+      "reset": "Reset to default"
+    },
+    "edgeTitle": "Edit connection",
+    "edgeKindHeader": "Timing"
+  },
+  "inspector": {
+    "appointment": {
+      "kind": "Appointment type",
+      "kindPlaceholder": "E.g. consultation",
+      "location": "Location",
+      "locationPlaceholder": "E.g. AZ Sint-Maarten",
+      "title": "Title",
+      "titlePlaceholder": "E.g. Intake consultation",
+      "mode": "Type",
+      "modePlaceholder": "Choose type",
+      "duration": "Duration (minutes)",
+      "notes": "Notes",
+      "modeOption": {
+        "in_person": "In person",
+        "video": "Video",
+        "phone": "Phone"
+      }
+    },
+    "task": {
+      "assignee": "Assigned to",
+      "assigneePlaceholder": "Choose a role",
+      "assigneeOption": {
+        "caregiver": "Caregiver",
+        "admin": "Administrator"
+      },
+      "description": "Description",
+      "descriptionPlaceholder": "What needs to happen?",
+      "title": "Title",
+      "titlePlaceholder": "E.g. Call patient",
+      "dueOffset": "Complete within (days)",
+      "notes": "Notes"
+    },
+    "structural": {
+      "noConfig": "This block has no settings — only a name."
+    },
+    "mdo": {
+      "topic": "Topic",
+      "topicPlaceholder": "E.g. Pathology result review",
+      "attendeesNote": "Expected attendees",
+      "attendeesNotePlaceholder": "E.g. oncologist + radiologist + surgeon (advisory, free text)",
+      "outcomes": "Outcomes",
+      "outcomesHint": "Optional — the chair picks one outcome when closing.",
+      "removeOutcome": "Remove outcome",
+      "newOutcome": "New outcome",
+      "newOutcomePlaceholder": "e.g. surgery",
+      "leadingHint": "The patient's lead clinician chairs and closes the MDT; additional caregivers can contribute without limit."
+    },
+    "message": {
+      "channel": "Channel",
+      "channelPlaceholder": "Choose a channel",
+      "channelOption": {
+        "email": "Email",
+        "sms": "SMS",
+        "push": "Push",
+        "in_app": "In-app"
+      },
+      "subject": "Subject",
+      "subjectPlaceholder": "Short title",
+      "body": "Text",
+      "bodyPlaceholder": "What does the message say?",
+      "ctaLabel": "Button text",
+      "ctaLabelPlaceholder": "E.g. Confirm",
+      "ctaTarget": "Button target",
+      "ctaTargetPlaceholder": "URL or path"
+    },
+    "form": {
+      "questions": "Questions",
+      "addQuestion": "Add question",
+      "empty": "No questions added yet.",
+      "questionN": "Question {{n}}",
+      "label": "Label",
+      "labelPlaceholder": "What should the patient see?",
+      "type": "Question type",
+      "typeOption": {
+        "text": "Short text",
+        "long_text": "Long text",
+        "single_choice": "Single choice",
+        "multi_choice": "Multiple choice",
+        "scale": "Scale",
+        "date": "Date",
+        "file": "File"
+      },
+      "options": "Options",
+      "optionsHint": "Comma-separated",
+      "optionsPlaceholder": "E.g. yes, no, don't know",
+      "required": "Required",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove question",
+      "title": "Title",
+      "titlePlaceholder": "E.g. Intake questionnaire"
+    },
+    "decision": {
+      "criterion": "Criterion",
+      "criterionHint": "Free text for PoC; runtime evaluation follows later.",
+      "criterionPlaceholder": "E.g. pain score >= 4",
+      "branches": "Branches",
+      "noBranches": "No branches defined yet.",
+      "question": "Question",
+      "questionPlaceholder": "E.g. Is recovery going according to plan?",
+      "outputs": "Outcomes",
+      "outputsHint": "Subsequent blocks refer to these outcomes through their business logic.",
+      "removeOutput": "Remove outcome",
+      "newOutput": "New outcome",
+      "newOutputPlaceholder": "e.g. good",
+      "mode": "Mode",
+      "modeOption": {
+        "xor": "XOR — exactly one outcome fires",
+        "and": "AND — outcomes can fire together"
+      }
+    },
+    "milestone": {
+      "note": "Note",
+      "notePlaceholder": "Why is this a milestone?"
+    },
+    "wait": {
+      "eventType": "Wait for",
+      "eventTypePlaceholder": "Choose an event",
+      "timeoutDays": "Timeout (days)",
+      "onTimeout": "On timeout",
+      "onTimeoutPlaceholder": "Choose action",
+      "onTimeoutOption": {
+        "advance": "Continue",
+        "escalate": "Escalate"
+      },
+      "sourceBlock": "Source block",
+      "sourceBlockHint": "Optional: link to the block that triggers the event.",
+      "sourceBlockPlaceholder": "Choose a block",
+      "noOtherBlocks": "No other blocks available."
+    },
+    "pathwayLink": {
+      "headerLabel": "Sub-pathway",
+      "target": "Target care pathway",
+      "targetPlaceholder": "Choose a care pathway",
+      "noPublishedPathways": "No published care pathways available.",
+      "mode": "Mode",
+      "modePlaceholder": "Choose mode",
+      "modeOption": {
+        "blocking": "Blocking",
+        "fire_and_forget": "Fire and forget"
+      },
+      "emptyAria": "Nested sub-pathway, no target yet",
+      "emptyTitle": "Sub-pathway · no target",
+      "emptyHint": "Choose a target care pathway in the right panel.",
+      "summaryLoading": "Loading summary…",
+      "summaryError": "Could not load summary.",
+      "summary": {
+        "lanes": "Lanes",
+        "blocks": "Blocks",
+        "publishedId": "Latest publication"
+      },
+      "openChild": "Open sub-pathway",
+      "contextMapping": "Context mapping",
+      "contextMappingHint": "Key-value pairs passed to the sub-pathway.",
+      "contextMappingEmpty": "No mappings yet.",
+      "contextKeyPlaceholder": "Key",
+      "contextValuePlaceholder": "Value",
+      "contextRemove": "Remove mapping",
+      "addMapping": "Add mapping"
+    },
+    "lusciiProgram": {
+      "program": "Luscii program",
+      "programPlaceholder": "Choose a program",
+      "programLoading": "Loading programs…",
+      "programError": "Could not load programs.",
+      "programEmpty": "No programs available.",
+      "protocol": "Protocol",
+      "protocolPlaceholder": "Choose a protocol",
+      "protocolLoading": "Loading program details…",
+      "mode": "Mode",
+      "modePlaceholder": "Choose mode",
+      "modeOption": {
+        "blocking": "Blocking",
+        "fire_and_forget": "Fire and forget"
+      },
+      "metadata": {
+        "version": "Version",
+        "enrolledCount": "Enrolled patients",
+        "twoWay": "Two-way messaging",
+        "twoWayYes": "On",
+        "twoWayNo": "Off",
+        "instruments": "Instruments"
+      },
+      "idStrip": {
+        "ariaLabel": "Program identifier",
+        "copy": "Copy program identifier",
+        "copied": "Copied"
+      },
+      "contents": {
+        "heading": "Program contents",
+        "luscii_authored": "Thresholds and cadence are part of the Luscii program — manage them in Luscii Builder.",
+        "instrumentsHeader": "Instruments",
+        "instrumentsEmpty": "No instruments in this program.",
+        "thresholdsHeader": "Alert thresholds",
+        "thresholdsEmpty": "No thresholds defined.",
+        "careNetworkHeader": "Care network",
+        "careNetworkEmpty": "No care network specified."
+      },
+      "perPatientHint": "Patient-specific values (INSZ, contact details) are filled in at enrollment — not here."
+    },
+    "edge": {
+      "title": "Connection",
+      "kindCompletion": "On completion",
+      "kindMarker": "At time marker",
+      "kindImmediate": "Immediately",
+      "kindBranch": "On branch",
+      "delayValue": "Delay",
+      "delayValuePlaceholder": "Choose a value",
+      "marker": "Time marker",
+      "markerPlaceholder": "Choose a marker",
+      "offsetValue": "Offset",
+      "offsetValuePlaceholder": "Choose a value",
+      "offsetDirection": "Direction",
+      "noTimingValues": "No timing values available.",
+      "noMarkers": "No time markers available.",
+      "noBranches": "No branches on source block",
+      "branch": "Branch",
+      "branchPlaceholder": "Choose a branch",
+      "immediateHint": "Next block starts immediately after completion.",
+      "delete": "Delete connection"
+    },
+    "informedConsent": {
+      "question": "Consent question",
+      "questionPlaceholder": "I give consent",
+      "channels": "Channels",
+      "reminderOffset": "Remind every",
+      "reminderMax": "Max reminders",
+      "expiresAt": "Expires after",
+      "expiresAtPlaceholder": "E.g. P30D — empty = never",
+      "lifecycleHint": "ISO 8601 duration (P3D = 3 days, PT4H = 4 hours). Reminders stop as soon as the patient signs; on expiry the block closes with \"no consent\"."
+    },
+    "treatment": {
+      "title": "Title",
+      "titlePlaceholder": "E.g. Lumbar spinal fusion",
+      "location": "Location",
+      "locationPlaceholder": "E.g. OR 3, South campus",
+      "duration": "Duration (minutes)",
+      "notes": "Treatment notes (SOP)",
+      "notesPlaceholder": "Preparation, instructions, aftercare…"
+    }
+  },
+  "minimap": {
+    "fit": "Fit to view",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "label": "Overview"
+  },
+  "blockType": {
+    "appointment": "Appointment",
+    "decision": "Decision",
+    "milestone": "Milestone",
+    "wait": "Wait",
+    "task": "Task",
+    "message": "Message",
+    "form": "Form",
+    "pathway_link": "Sub-pathway",
+    "end_pathway": "End",
+    "start": "Start",
+    "treatment": "Treatment",
+    "mdo": "MDT",
+    "informed_consent": "Informed consent",
+    "luscii": {
+      "program": "External program"
+    }
+  },
+  "blockTypeDescription": {
+    "appointment": "Clinical appointment with the patient.",
+    "decision": "Split the path into two branches.",
+    "milestone": "Mark an important moment.",
+    "wait": "Wait for an event or time before the next block.",
+    "task": "Action for the care team.",
+    "message": "Message to the patient or caregiver (email, SMS, push, in-app).",
+    "form": "Questionnaire for the patient.",
+    "pathway_link": "Link to another care pathway."
+  },
+  "edgeTiming": {
+    "completion": {
+      "label": "On completion"
+    },
+    "marker": {
+      "label": "At time marker"
+    },
+    "immediate": {
+      "label": "Immediately"
+    },
+    "branch": {
+      "label": "On branch"
+    }
+  },
+  "edgeOffsetDirection": {
+    "before": "Before",
+    "after": "After"
+  },
+  "eventType": {
+    "pathology_report": "Pathology report",
+    "scan_report": "Imaging report",
+    "lab_result": "Lab result",
+    "external_data": "External data"
+  },
+  "lane": {
+    "patient": "Patient",
+    "caregiver": "Care team",
+    "system": "System",
+    "external": "External"
+  },
+  "canvas": {
+    "label": "Care pathway canvas",
+    "emptyTitle": "Start with a block",
+    "emptyBody": "Click a block in the palette below to add one.",
+    "emptyNoScaffoldTitle": "Add a phase",
+    "emptyNoScaffold": "Click + Phase at the top to build your care pathway.",
+    "needPhaseFirst": "Add a phase before placing a block.",
+    "invalidLaneDrop": "This block does not fit in this lane.",
+    "handle": {
+      "in": "Connection in",
+      "branchYes": "Connection yes branch",
+      "branchNo": "Connection no branch",
+      "out": "Connection out"
+    },
+    "resizeLane": "Resize lane {{label}}",
+    "resizePhase": "Widen phase {{label}}",
+    "laneLabel": "Lane {{label}}, {{count}} blocks",
+    "luscii": {
+      "ariaEmpty": "Luscii program — pick a program",
+      "ariaNamed": "Luscii program: {{name}}",
+      "unknown": "unknown",
+      "headerEmpty": "Luscii program · Pick one",
+      "pickProgram": "Pick a Luscii program",
+      "badge": "Luscii"
+    },
+    "nestedPathway": {
+      "badge": "Path",
+      "start": "START"
+    }
+  },
+  "save": {
+    "error": "Save failed.",
+    "saving": "saving…",
+    "fieldError": "Save failed — {{field}}: {{reason}}"
+  },
+  "delete": {
+    "success": "Block deleted.",
+    "pathwaySuccess": "Care pathway \"{{name}}\" deleted.",
+    "confirmTitle": "Delete care pathway \"{{name}}\"?",
+    "confirmDescription": "This action cannot be undone.",
+    "blockedTitle": "Care pathway cannot be deleted",
+    "blockedDescription": "\"{{name}}\" is used as a sub-pathway by other care pathways. Remove those links first.",
+    "checking": "Checking references…",
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "close": "Close",
+    "deleting": "Deleting…",
+    "openReferrer": "Open ↗"
+  },
+  "version": {
+    "status": {
+      "concept": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "label": "v.{{n}}",
+    "switch": {
+      "triggerLabel": "Choose version",
+      "groupConcept": "Draft",
+      "groupPublished": "Published",
+      "emptyConcept": "No draft yet.",
+      "emptyPublished": "No published versions yet.",
+      "footer": "All versions in history"
+    },
+    "crumb": {
+      "concept": "draft",
+      "published": "published",
+      "historical": "historical"
+    }
+  },
+  "banner": {
+    "publishedFallback": {
+      "body": "You are viewing the latest published version. Create a new version to make changes.",
+      "cta": "Create new version"
+    },
+    "historical": {
+      "body": "You are viewing a historical version (v.{{n}}).",
+      "cta": "Restore as new draft",
+      "backToCurrent": "Back to current"
+    }
+  },
+  "history": {
+    "drawer": {
+      "title": "History",
+      "close": "Close",
+      "empty": "No versions yet.",
+      "loadError": "Could not load versions.",
+      "rowView": "View",
+      "rowRestore": "Restore",
+      "rowCurrent": "Current version"
+    },
+    "restore": {
+      "title": "Restore version?",
+      "body": "This creates a new draft based on v.{{n}}. The current draft is kept.",
+      "confirm": "Restore",
+      "cancel": "Cancel",
+      "success": "Version restored as new draft.",
+      "error": "Failed to restore version."
+    },
+    "conceptExists": {
+      "title": "Existing draft",
+      "body": "A draft (v.{{n}}) already exists. Do you want to open it?",
+      "cancel": "Cancel",
+      "open": "Open existing draft"
+    }
+  },
+  "publish": {
+    "modal": {
+      "title": "Publish version",
+      "labelLabel": "Label (optional)",
+      "labelPlaceholder": "E.g. Q3 release",
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "What changed?",
+      "approval": "I confirm that this version has been clinically validated.",
+      "cancel": "Cancel",
+      "confirm": "Publish",
+      "success": "Version v.{{n}} published.",
+      "error": "Publishing failed."
+    }
+  },
+  "duplicate": {
+    "action": "Duplicate",
+    "title": "Duplicate care pathway",
+    "sub": "Choose a version to duplicate as a new draft.",
+    "versionLabel": "Version",
+    "versionPlaceholder": "Choose a version",
+    "submit": "Duplicate",
+    "cancel": "Cancel",
+    "success": "Care pathway duplicated.",
+    "error": "Duplication failed."
+  },
+  "forkOnEdit": {
+    "title": "New version required",
+    "body": "This version is published and can no longer be edited. Create a new draft to make changes.",
+    "cancel": "Cancel",
+    "confirm": "Create new version",
+    "error": "Failed to create new version."
+  },
+  "deleteBlock": {
+    "title": "Delete block?",
+    "unnamed": "(unnamed block)",
+    "dependentsIntro": "The following blocks refer to it — their logic rules will be cleaned up.",
+    "noDependents": "No dependent blocks — safe to delete.",
+    "confirmCascade": "Delete + clean up",
+    "confirm": "Delete"
+  },
+  "deletePhase": {
+    "title": "Delete phase?",
+    "blocksIntro": "The following blocks are in this phase and will be deleted with it.",
+    "noBlocks": "No blocks in this phase — safe to delete.",
+    "confirm": "Delete",
+    "confirmCascade": "Delete + blocks"
+  },
+  "timingPolicy": {
+    "kind": {
+      "none": "No timing",
+      "fixed_duration": "Fixed duration",
+      "wait_after": "Wait after start",
+      "due_within": "Complete within",
+      "at_enrollment_picked_date": "Date picked at enrollment",
+      "relative_to_date": "Relative to clinical date"
+    },
+    "direction": {
+      "before": "before",
+      "after": "after"
+    },
+    "isoLabel": "ISO 8601 duration",
+    "dateNameLabel": "Clinical date",
+    "dateNamePlaceholder": "operation_date",
+    "hint": "ISO 8601 duration: P1D = 1 day, PT4H = 4 hours, P2W = 2 weeks."
+  },
+  "inputLogic": {
+    "aggregator": {
+      "all_of": "all rules (AND)",
+      "any_of": "at least one (OR)"
+    },
+    "hint": "When does this block become active? Rules refer to placed blocks.",
+    "addRule": "Add rule",
+    "removeRule": "Remove rule",
+    "pickBlock": "Choose block",
+    "predicate": {
+      "if_done": "is done",
+      "decision_output": "has outcome",
+      "if_not_done_within": "not done within",
+      "event": "after event"
+    },
+    "extra": {
+      "decision_output": "Outcome",
+      "if_not_done_within": "Period",
+      "event": "Event type"
+    },
+    "extraPlaceholder": {
+      "decision_output": "outcome (e.g. good)",
+      "if_not_done_within": "P14D"
+    }
+  }
+}

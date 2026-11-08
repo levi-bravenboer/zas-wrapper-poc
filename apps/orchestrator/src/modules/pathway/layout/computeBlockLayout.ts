@@ -4,14 +4,15 @@
 // per (phase, lane). Cycles fall to a trailing column — never drop a
 // block.
 
+import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
+import type { PathwayBlock, PathwayLane } from '../types'
+
 import {
   LAYOUT_CELL_X_PAD,
   LAYOUT_CELL_Y_PAD,
   LAYOUT_COLUMN_GUTTER,
   LAYOUT_ROW_GUTTER,
 } from './constants'
-import { BLOCK_HEIGHT, BLOCK_WIDTH } from '../canvasLayout'
-import type { PathwayBlock, PathwayLane } from '../types'
 
 export type BlockPosition = { x: number; y: number }
 
