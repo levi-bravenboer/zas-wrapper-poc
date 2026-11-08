@@ -16,7 +16,7 @@ Frontend app: clinician composer surface. Inherits all rules from the root `AGEN
 - Tailwind v4 (`@tailwindcss/vite`) + shadcn/ui primitives + lucide-react + sonner
 - Brand: ZAS Antwerpen teal (`#266b5e`) primary, Linear-flavour restraint (light theme only, single accent, tight neutrals)
 - Typography: Geist Variable + Geist Mono Variable, self-hosted via `@fontsource-variable/geist*` (no Google Fonts CDN)
-- i18next + react-i18next (single `nl` locale)
+- i18next + react-i18next (`nl` default + `en`, picker in the sidebar user menu, choice persisted in localStorage `zas.locale`)
 - Vitest + Testing Library + jsdom + MSW + Playwright
 - Biome (format + import sort) + ESLint 10 flat config
 
@@ -82,7 +82,7 @@ src/
     query/      createQueryKeys helper
     form/       TanStack Form + Zod adapters
     fhir/       FHIR-ready helpers (returns at `[mvp]`)
-    i18n/       i18next bootstrap + locales/nl/<ns>.json
+    i18n/       i18next bootstrap + locales/{nl,en}/<ns>.json
     style/      cn()
     utils/
   config/       env parsing, feature flags
@@ -161,13 +161,15 @@ Pick the **lowest tier that fits**. Promote up only when the type genuinely need
 
 - TypeScript `strict: true`. No `any` without a one-line `// reason:` comment.
 - No `enum` — use `as const` object + derived union.
-- **Never hardcode user-facing text.** All copy goes through i18n (`useTranslation` / `t('<key>')`); keys live in `lib/i18n/locales/nl/<namespace>.json`. No literal UI strings (labels, placeholders, button text, option labels) in components — not even as a `t()` `defaultValue`. Add the key to the locale file instead.
+- **Never hardcode user-facing text.** All copy goes through i18n (`useTranslation` / `t('<key>')`); keys live in `lib/i18n/locales/nl/<namespace>.json` and MUST be mirrored in `locales/en/<namespace>.json` (key parity enforced by `lib/i18n/index.test.ts`). No literal UI strings (labels, placeholders, button text, option labels) in components — not even as a `t()` `defaultValue`. Add the key to the locale file instead.
 - Function components only. `function` declarations, not arrows, for top-level components.
 - All HTTP through `lib/api/client.ts`. Never raw `fetch` in modules outside `api.ts`.
 - All server reads via `useQuery`; writes via `useMutation`. No `useState` for server data, no `useEffect` for fetching.
 - All forms via TanStack Form + Zod resolver.
 - Validate at boundaries: HTTP payloads, route search params, env.
 - Every user-visible string goes through `t('namespace.key')`. Namespaces = module names.
+- Dates and numbers format through `intlLocale()` from `@/lib/i18n` (or the `lib/utils/datetime` helpers, which call it). Never hardcode `'nl-BE'` / `'nl'` in `Intl.*` or `toLocale*String`; create `Intl` formatters at call time so they follow a language switch.
+- Never render a raw `error.message` — thrown messages are developer English. Show a translated key instead.
 - No `console.log` in committed code. Use `lib/utils/log.ts` when added.
 
 ## Code style
@@ -561,7 +563,7 @@ Authoring surface for `F3` care pathways. Module: `src/modules/pathway/`.
 
 ### i18n
 
-- Dutch only at this tier — keys under `pathway.*` in `lib/i18n/locales/nl/pathway.json`. Sidebar entry: `nav.pathways`. New inspectors register copy under `pathway.inspector.<semantics>.*`.
+- Keys under `pathway.*` in `lib/i18n/locales/{nl,en}/pathway.json`. Sidebar entry: `nav.pathways`. New inspectors register copy under `pathway.inspector.<semantics>.*`.
 
 ### Block dimensions (variable-size blocks)
 
