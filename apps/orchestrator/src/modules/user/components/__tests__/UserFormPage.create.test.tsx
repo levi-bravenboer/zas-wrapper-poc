@@ -112,7 +112,7 @@ describe('UserFormPage (create mode)', () => {
 
     await user.type(await screen.findByLabelText(/voornaam/i), 'Eva')
     await user.type(screen.getByLabelText(/achternaam/i), 'Bos')
-    await user.type(screen.getByLabelText(/email/i), 'eva@zas.demo')
+    await user.type(screen.getByLabelText(/e-mail/i), 'eva@zas.demo')
     await user.type(screen.getByLabelText(/wachtwoord/i), 'short')
     await user.click(screen.getByRole('button', { name: /aanmaken|opslaan/i }))
 
@@ -129,7 +129,7 @@ describe('UserFormPage (create mode)', () => {
 
     await user.type(await screen.findByLabelText(/voornaam/i), 'Eva')
     await user.type(screen.getByLabelText(/achternaam/i), 'Bos')
-    await user.type(screen.getByLabelText(/email/i), 'dup@zas.demo')
+    await user.type(screen.getByLabelText(/e-mail/i), 'dup@zas.demo')
     await user.type(screen.getByLabelText(/wachtwoord/i), 's3cret-pw')
     await user.click(screen.getByRole('button', { name: /aanmaken|opslaan/i }))
 
@@ -152,7 +152,7 @@ describe('UserFormPage (create mode)', () => {
     const user = userEvent.setup()
     await user.type(await screen.findByLabelText(/voornaam/i), 'Eva')
     await user.type(screen.getByLabelText(/achternaam/i), 'Bos')
-    await user.type(screen.getByLabelText(/email/i), 'eva@zas.demo')
+    await user.type(screen.getByLabelText(/e-mail/i), 'eva@zas.demo')
     await user.type(screen.getByLabelText(/wachtwoord/i), 's3cret-pw')
     await user.click(screen.getByRole('button', { name: /aanmaken|opslaan/i }))
 

@@ -170,8 +170,8 @@ export function PractitionerRoleListPage(): ReactElement {
         sortKey: 'period_start',
         cell: (row) => (
           <span className="text-xs text-muted-foreground">
-            {formatDate(row.period_start, 'nl-NL')} →{' '}
-            {row.period_end ? formatDate(row.period_end, 'nl-NL') : t('period.open')}
+            {formatDate(row.period_start)} →{' '}
+            {row.period_end ? formatDate(row.period_end) : t('period.open')}
           </span>
         ),
       }),

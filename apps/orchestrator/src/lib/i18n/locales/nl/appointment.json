@@ -37,5 +37,22 @@
     "kind": "Soort",
     "when": "Wanneer",
     "participants": "Deelnemers"
+  },
+  "role": {
+    "lead": "Hoofdbehandelaar",
+    "support": "Ondersteunend",
+    "observer": "Observator"
+  },
+  "status": {
+    "proposed": "Voorgesteld",
+    "pending": "In afwachting",
+    "booked": "Gepland",
+    "arrived": "Aangekomen",
+    "fulfilled": "Afgerond",
+    "cancelled": "Geannuleerd",
+    "noshow": "Niet verschenen",
+    "entered_in_error": "Foutief ingevoerd",
+    "checked_in": "Ingecheckt",
+    "waitlist": "Wachtlijst"
   }
 }

@@ -15,7 +15,7 @@ describe('PageHeader', () => {
     render(wrap(<PageHeader title="Dashboard" />))
 
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).toBeNull()
+    expect(screen.queryByRole('navigation', { name: /kruimelpad/i })).toBeNull()
   })
 
   it('renders eyebrow, sub, actions, and tabs slots when provided', () => {

@@ -14,13 +14,6 @@ type Props = {
 
 type Channel = (typeof INFORMED_CONSENT_CHANNELS)[number]
 
-const CHANNEL_LABELS: Record<Channel, string> = {
-  email: 'Email',
-  sms: 'SMS',
-  push: 'Push',
-  in_app: 'In-app',
-}
-
 // Pathway-completion § A8: two-actor consent lifecycle. The questions
 // list defaults to a single yes/no consent question server-side; PoC
 // authors edit only the first question's label here. Reminder + expiry
@@ -41,16 +34,11 @@ export function InformedConsentInspector({ config, onChange }: Props): ReactElem
 
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.informedConsent.question', { defaultValue: 'Toestemmingsvraag' })}
-        htmlFor="consent-question"
-      >
+      <InspectorField label={t('inspector.informedConsent.question')} htmlFor="consent-question">
         <Input
           id="consent-question"
           value={firstQuestion?.label ?? ''}
-          placeholder={t('inspector.informedConsent.questionPlaceholder', {
-            defaultValue: 'Ik geef toestemming',
-          })}
+          placeholder={t('inspector.informedConsent.questionPlaceholder')}
           onChange={(e) =>
             onChange({
               ...config,
@@ -67,7 +55,7 @@ export function InformedConsentInspector({ config, onChange }: Props): ReactElem
         />
       </InspectorField>
 
-      <InspectorField label={t('inspector.informedConsent.channels', { defaultValue: 'Kanalen' })}>
+      <InspectorField label={t('inspector.informedConsent.channels')}>
         <div className="flex flex-wrap gap-1.5">
           {INFORMED_CONSENT_CHANNELS.map((channel) => {
             const active = channels.includes(channel)
@@ -83,7 +71,7 @@ export function InformedConsentInspector({ config, onChange }: Props): ReactElem
                     : 'rounded-full border px-2.5 py-0.5 text-[11px] text-muted-foreground hover:border-primary'
                 }
               >
-                {CHANNEL_LABELS[channel]}
+                {t(`inspector.message.channelOption.${channel}`)}
               </button>
             )
           })}
@@ -92,9 +80,7 @@ export function InformedConsentInspector({ config, onChange }: Props): ReactElem
 
       <div className="grid grid-cols-2 gap-3">
         <InspectorField
-          label={t('inspector.informedConsent.reminderOffset', {
-            defaultValue: 'Herinnering elke',
-          })}
+          label={t('inspector.informedConsent.reminderOffset')}
           htmlFor="consent-reminder-offset"
         >
           <Input
@@ -107,7 +93,7 @@ export function InformedConsentInspector({ config, onChange }: Props): ReactElem
           />
         </InspectorField>
         <InspectorField
-          label={t('inspector.informedConsent.reminderMax', { defaultValue: 'Max herinneringen' })}
+          label={t('inspector.informedConsent.reminderMax')}
           htmlFor="consent-reminder-max"
         >
           <Input
@@ -126,24 +112,16 @@ export function InformedConsentInspector({ config, onChange }: Props): ReactElem
         </InspectorField>
       </div>
 
-      <InspectorField
-        label={t('inspector.informedConsent.expiresAt', { defaultValue: 'Verloopt na' })}
-        htmlFor="consent-expires"
-      >
+      <InspectorField label={t('inspector.informedConsent.expiresAt')} htmlFor="consent-expires">
         <Input
           id="consent-expires"
           value={config.expires_at_iso ?? ''}
-          placeholder={t('inspector.informedConsent.expiresAtPlaceholder', {
-            defaultValue: 'Bijv. P30D — leeg = nooit',
-          })}
+          placeholder={t('inspector.informedConsent.expiresAtPlaceholder')}
           onChange={(e) => onChange({ ...config, expires_at_iso: e.target.value || null })}
         />
       </InspectorField>
       <p className="text-[11px] text-muted-foreground">
-        {t('inspector.informedConsent.lifecycleHint', {
-          defaultValue:
-            'ISO 8601 duur (P3D = 3 dagen, PT4H = 4 uur). Herinneringen stoppen zodra de patiënt tekent; bij verlopen sluit het blok met "geen toestemming".',
-        })}
+        {t('inspector.informedConsent.lifecycleHint')}
       </p>
     </div>
   )

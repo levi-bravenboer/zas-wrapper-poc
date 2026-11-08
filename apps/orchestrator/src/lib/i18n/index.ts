@@ -1,94 +1,62 @@
-import i18next from 'i18next'
+import i18next, { type Resource, type ResourceLanguage } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
-import appointment from './locales/nl/appointment.json'
-import auditAdminUi from './locales/nl/audit-admin-ui.json'
-import auth from './locales/nl/auth.json'
-import careTeamsUi from './locales/nl/care-teams-ui.json'
-import caregiverShell from './locales/nl/caregiver-shell.json'
-import collaboration from './locales/nl/collaboration.json'
-import common from './locales/nl/common.json'
-import dashboard from './locales/nl/dashboard.json'
-import dataTable from './locales/nl/data-table.json'
-import entityPage from './locales/nl/entity-page.json'
-import nav from './locales/nl/nav.json'
-import organisationsAdminUi from './locales/nl/organisations-admin-ui.json'
-import pathway from './locales/nl/pathway.json'
-import patientPathway from './locales/nl/patient-pathway.json'
-import patientProfile from './locales/nl/patient-profile.json'
-import practitionerRolesAdminUi from './locales/nl/practitioner-roles-admin-ui.json'
-import rolesAdminUi from './locales/nl/roles-admin-ui.json'
-import shell from './locales/nl/shell.json'
-import smart from './locales/nl/smart.json'
-import tasks from './locales/nl/tasks.json'
-import usersAdminUi from './locales/nl/users-admin-ui.json'
-import users from './locales/nl/users.json'
-
-export const SUPPORTED_LOCALES = ['nl', 'fr', 'en'] as const
+export const SUPPORTED_LOCALES = ['nl', 'en'] as const
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
 
 export const DEFAULT_LOCALE: SupportedLocale = 'nl'
+
+const INTL_LOCALES = { nl: 'nl-BE', en: 'en-GB' } as const satisfies Record<SupportedLocale, string>
+export const LOCALE_STORAGE_KEY = 'zas.locale'
 
 export function isSupportedLocale(value: string): value is SupportedLocale {
   return (SUPPORTED_LOCALES as readonly string[]).includes(value)
 }
 
+const localeFiles = import.meta.glob<{ default: ResourceLanguage[string] }>('./locales/*/*.json', {
+  eager: true,
+})
+
+const resources: Resource = {}
+for (const [path, file] of Object.entries(localeFiles)) {
+  const [, locale, namespace] = /\.\/locales\/([^/]+)\/([^/]+)\.json$/.exec(path) ?? []
+  if (!locale || !namespace) continue
+  resources[locale] ??= {}
+  resources[locale][namespace] = file.default
+}
+
+// localStorage throws SecurityError when storage is blocked (sandboxed HiX embed iframe)
+function storedLocale(): SupportedLocale {
+  try {
+    const stored = globalThis.localStorage?.getItem(LOCALE_STORAGE_KEY) ?? ''
+    return isSupportedLocale(stored) ? stored : DEFAULT_LOCALE
+  } catch {
+    return DEFAULT_LOCALE
+  }
+}
+
+i18next.on('languageChanged', (locale) => {
+  try {
+    globalThis.localStorage?.setItem(LOCALE_STORAGE_KEY, locale)
+  } catch {
+    // storage blocked: choice lasts for this session only
+  }
+  if (typeof document !== 'undefined') document.documentElement.lang = locale
+})
+
 void i18next.use(initReactI18next).init({
-  lng: DEFAULT_LOCALE,
+  lng: storedLocale(),
   fallbackLng: DEFAULT_LOCALE,
+  supportedLngs: SUPPORTED_LOCALES,
   defaultNS: 'common',
-  ns: [
-    'common',
-    'appointment',
-    'audit-admin-ui',
-    'auth',
-    'care-teams-ui',
-    'caregiver-shell',
-    'collaboration',
-    'dashboard',
-    'data-table',
-    'entity-page',
-    'nav',
-    'organisations-admin-ui',
-    'pathway',
-    'patient-pathway',
-    'patient-profile',
-    'practitioner-roles-admin-ui',
-    'roles-admin-ui',
-    'shell',
-    'smart',
-    'tasks',
-    'users',
-    'users-admin-ui',
-  ],
-  resources: {
-    nl: {
-      common,
-      appointment,
-      'audit-admin-ui': auditAdminUi,
-      auth,
-      'care-teams-ui': careTeamsUi,
-      'caregiver-shell': caregiverShell,
-      collaboration,
-      dashboard,
-      'data-table': dataTable,
-      'entity-page': entityPage,
-      nav,
-      'organisations-admin-ui': organisationsAdminUi,
-      pathway,
-      'patient-pathway': patientPathway,
-      'patient-profile': patientProfile,
-      'practitioner-roles-admin-ui': practitionerRolesAdminUi,
-      'roles-admin-ui': rolesAdminUi,
-      shell,
-      smart,
-      tasks,
-      users,
-      'users-admin-ui': usersAdminUi,
-    },
-  },
+  ns: Object.keys(resources[DEFAULT_LOCALE] ?? {}),
+  resources,
   interpolation: { escapeValue: false },
   returnNull: false,
 })
 
 export const i18n = i18next
+
+export function intlLocale(locale: string = i18next.language): string {
+  return isSupportedLocale(locale) ? INTL_LOCALES[locale] : locale
+}

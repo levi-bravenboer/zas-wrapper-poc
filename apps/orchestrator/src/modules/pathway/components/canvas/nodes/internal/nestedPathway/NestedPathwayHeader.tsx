@@ -1,5 +1,6 @@
 import { ChevronsUpDown, Link2 } from 'lucide-react'
 import type { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type Props = {
   pathwayName: string | null
@@ -14,6 +15,7 @@ export function NestedPathwayHeader({
   empty,
   emptyLabel,
 }: Props): ReactElement {
+  const { t } = useTranslation('pathway')
   return (
     <div
       data-slot="nested-pathway-header"
@@ -31,7 +33,7 @@ export function NestedPathwayHeader({
       </span>
       <div className="min-w-0 leading-[1.15]">
         <div className="truncate text-[12.5px] font-semibold tracking-tight text-foreground">
-          {empty ? emptyLabel : (pathwayName ?? 'Subpath')}
+          {empty ? emptyLabel : (pathwayName ?? t('canvas.nestedPathway.headerFallback'))}
         </div>
         {!empty && subLine && (
           <div className="truncate font-mono text-[10px] text-muted-foreground">{subLine}</div>

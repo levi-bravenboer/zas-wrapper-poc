@@ -15,6 +15,7 @@ import {
   type ListFilter,
   type ListFilterPrimitive,
 } from '@/hooks/use-data-table-state'
+import { intlLocale } from '@/lib/i18n'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { CreatePathwayDialog } from '@/modules/pathway/components/CreatePathwayDialog'
 import { DuplicatePathwayDialog } from '@/modules/pathway/components/DuplicatePathwayDialog'
@@ -87,11 +88,11 @@ function PathwayOverviewPage(): ReactElement {
   )
 
   const columns = useMemo(() => {
-    const dateTime = new Intl.DateTimeFormat(locale, {
+    const dateTime = new Intl.DateTimeFormat(intlLocale(locale), {
       dateStyle: 'medium',
       timeStyle: 'short',
     })
-    const dateOnly = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' })
+    const dateOnly = new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' })
     const empty = t('overview.table.empty')
 
     return [

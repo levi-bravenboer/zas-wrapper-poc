@@ -15,7 +15,7 @@ export function StartBlockNode(props: NodeProps<StartFlowNode>): ReactElement {
       {...props}
       fallbackIcon="play"
       handle="source"
-      ariaLabel={t('blockType.start', { defaultValue: 'Start' })}
+      ariaLabel={t('blockType.start')}
       handleAriaLabel={t('canvas.handle.out')}
     />
   )

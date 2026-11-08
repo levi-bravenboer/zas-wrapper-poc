@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { type Node, type NodeProps } from '@xyflow/react'
 import { memo, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ConfigForSemantics } from '../../../../../configSchemas'
 import { legacyBlockConfig } from '../../../../../types'
@@ -39,6 +40,7 @@ function LusciiProgramBlockNodeImpl({
   data,
   selected,
 }: NodeProps<LusciiProgramFlowNode>): ReactElement {
+  const { t } = useTranslation('pathway')
   // reason: `block.config` is the union of all per-semantics configs at the
   // generic site; narrow to the Luscii-shaped variant here. The runtime
   // contract is enforced by `CONFIG_SCHEMAS.external_program` at the
@@ -68,8 +70,10 @@ function LusciiProgramBlockNodeImpl({
       tabIndex={0}
       aria-label={
         empty
-          ? 'Luscii Program — pick a program'
-          : `Luscii Program: ${program?.name ?? config.program_id ?? 'unknown'}`
+          ? t('canvas.luscii.ariaEmpty')
+          : t('canvas.luscii.ariaNamed', {
+              name: program?.name ?? config.program_id ?? t('canvas.luscii.unknown'),
+            })
       }
       data-slot="luscii-program-block"
       data-selected={selected || undefined}
@@ -105,7 +109,7 @@ function LusciiProgramBlockNodeImpl({
           className="absolute -right-px -top-px z-[5] inline-flex items-center gap-[3px] rounded-bl-[8px] rounded-tr-[10px] px-1.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.09em] text-white"
           style={{ background: 'oklch(0.45 0.18 250)' }}
         >
-          Luscii
+          {t('canvas.luscii.badge')}
         </span>
       </div>
       {/* Edge handles — Luscii programs never branch (sub-flow lives in

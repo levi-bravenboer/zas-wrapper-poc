@@ -1,0 +1,43 @@
+{
+  "provider": "GCP",
+  "region": "europe-west1 (St. Ghislain, Belgium)",
+  "currency_note": "USD list prices converted at 0.8663 EUR/USD (2026-08-06)",
+  "retrieved": "2026-08-07",
+  "verified": true,
+  "source_note": "cloud.google.com pricing pages via research agent; Cloud SQL verified 2026-08-07 via GCP calculator (4vCPU/16GB Enterprise regional HA + 100GB SSD, europe-west1 = $438.71/mo \u2014 baseline rates, no region uplift). N2 prices include 20% SUD",
+  "unit_prices": {
+    "vm_2x8": 54.1,
+    "vm_4x16": 108.12,
+    "vm_8x32": 216.25,
+    "vm_16x64": 432.5,
+    "disk_gb": 0.147,
+    "snapshot_gb": 0.043,
+    "pg_4x16_ha": 351.0,
+    "pg_8x32_ha": 701.0,
+    "pg_16x64_ha": 1403.0,
+    "pg_storage_gb_ha": 0.294,
+    "pg_backup_gb": 0.076,
+    "ct_vcpu_hr": 0.0561,
+    "ct_gb_hr": 0.00624,
+    "lb_month": 15.81,
+    "obj_gb": 0.0173,
+    "egress_gb": 0.104,
+    "egress_free_gb": 200,
+    "vpn_month": 63.24,
+    "nat_month": 8.0,
+    "registry_month": 1.0,
+    "monitoring_month": 5.0,
+    "dns_month": 0.18,
+    "commit_1yr_pct_compute": 37,
+    "commit_1yr_pct_db": 25
+  },
+  "skus": {
+    "vm": "n2-standard-* (SUD incl.)",
+    "db": "Cloud SQL Enterprise PG, regional HA (compute 2x, storage 2x incl.)",
+    "containers": "Cloud Run, CPU always-allocated, Tier 1",
+    "lb": "External HTTPS LB (5 fwd rules)",
+    "obj": "GCS Standard single-region",
+    "vpn": "HA VPN 2 tunnels",
+    "monitoring": "Cloud Logging/Monitoring (50GiB free tier)"
+  }
+}

@@ -5,12 +5,19 @@
   "sidebar": {
     "collapse": "Zijbalk inklappen",
     "expand": "Zijbalk uitklappen",
-    "toggle": "Zijbalk wisselen"
+    "toggle": "Zijbalk wisselen",
+    "mobileTitle": "Zijbalk",
+    "mobileDescription": "Toont de mobiele zijbalk."
   },
   "user": {
     "roleFallback": "Zorgverlener",
     "profile": "Profiel",
-    "settings": "Instellingen"
+    "settings": "Instellingen",
+    "language": "Taal",
+    "languages": {
+      "nl": "Nederlands",
+      "en": "English"
+    }
   },
   "palette": {
     "placeholder": "Zoek of navigeer…",

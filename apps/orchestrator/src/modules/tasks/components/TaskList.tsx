@@ -10,6 +10,7 @@ import { groupConsecutiveByDay } from '@/lib/utils/grouping'
 
 import { dayGroupLabel } from '../dueLabel'
 import { useTasksQuery } from '../hooks'
+
 import { TaskRow } from './TaskRow'
 
 function TaskListBody({ selectedTaskId }: { selectedTaskId: string | undefined }): ReactElement {

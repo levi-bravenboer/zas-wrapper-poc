@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { BlockTypeIcon } from '../../../../../blockCatalogue'
 import { blockOrigin, buildCanvasGeometry, type BlockFitInput } from '../../../../../canvasLayout'
@@ -232,6 +233,7 @@ type CardProps = {
 }
 
 function MiniBlockCard({ block, blockType, accent, geometry, isEntry }: CardProps): ReactElement {
+  const { t } = useTranslation('pathway')
   const dim = getBlockDimensions(block, blockType)
   const pos = blockOrigin(block, geometry, dim)
   const name = block.name?.trim() || blockType?.label || legacyBlockType(block)
@@ -278,7 +280,7 @@ function MiniBlockCard({ block, blockType, accent, geometry, isEntry }: CardProp
             borderBottomRightRadius: 6,
           }}
         >
-          START
+          {t('canvas.nestedPathway.start')}
         </span>
       )}
     </div>

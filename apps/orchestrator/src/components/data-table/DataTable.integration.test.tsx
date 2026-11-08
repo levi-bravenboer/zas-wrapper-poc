@@ -433,7 +433,7 @@ describe('DataTable — end-to-end integration (MSW + mocked SSE)', () => {
     })
 
     // --- selection: tick a row checkbox → BulkBar appears ----------------
-    const charlieRowCheckbox = screen.getByRole('checkbox', { name: /Select row 3/i })
+    const charlieRowCheckbox = screen.getByRole('checkbox', { name: /Selecteer rij 3/i })
     await user.click(charlieRowCheckbox)
 
     await waitFor(() => {

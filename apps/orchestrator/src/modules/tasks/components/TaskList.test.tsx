@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { i18n } from '@/lib/i18n'
 
-import { TaskList } from './TaskList'
 import type { Task } from '../types'
+
+import { TaskList } from './TaskList'
 
 const { useTasksQueryMock, useParamsMock } = vi.hoisted(() => ({
   useTasksQueryMock: vi.fn(),

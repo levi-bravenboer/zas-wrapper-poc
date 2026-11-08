@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import type { components } from '@/lib/api/schema'
+
 import { legacyBlockConfig, type BlockSemantics, type PathwayBlock } from './types'
 
 type Schemas = components['schemas']

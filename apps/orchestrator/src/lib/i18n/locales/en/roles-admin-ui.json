@@ -1,0 +1,80 @@
+{
+  "list": {
+    "title": "Roles",
+    "sub": "Manage roles and their permissions.",
+    "cta": {
+      "create": "New role"
+    },
+    "loading": "Loading…",
+    "empty": "No roles.",
+    "systemBadge": "system",
+    "column": {
+      "name": "Name",
+      "slug": "Slug",
+      "permissions": "Permissions"
+    },
+    "action": {
+      "edit": "Edit",
+      "delete": "Delete"
+    }
+  },
+  "detail": {
+    "action": {
+      "edit": "Edit"
+    },
+    "card": {
+      "role": {
+        "title": "Role",
+        "name": "Name",
+        "slug": "Slug",
+        "type": "Type",
+        "system": "System role",
+        "custom": "Custom",
+        "permCount": "Number of permissions"
+      },
+      "permissions": {
+        "title": "Permissions",
+        "granted": "Granted",
+        "none": "No permissions."
+      }
+    }
+  },
+  "delete": {
+    "title": "Delete role?",
+    "description": "This is only possible if no user has this role.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
+  "form": {
+    "create": {
+      "title": "New role"
+    },
+    "edit": {
+      "title": "Edit role"
+    },
+    "sub": "Grant permissions to this role.",
+    "field": {
+      "name": "Name",
+      "namePlaceholder": "E.g. Nurse",
+      "slug": "Slug"
+    },
+    "slugPlaceholder": "nurse",
+    "permissions": {
+      "title": "Permissions",
+      "locked": "locked"
+    },
+    "systemNote": "System role — the slug is fixed and the role cannot be deleted.",
+    "error": {
+      "required": "Required",
+      "slug": "Lowercase letters, numbers and hyphens only"
+    },
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "toast": {
+    "created": "Role created",
+    "saved": "Role saved",
+    "deleted": "Role deleted",
+    "error": "Something went wrong"
+  }
+}

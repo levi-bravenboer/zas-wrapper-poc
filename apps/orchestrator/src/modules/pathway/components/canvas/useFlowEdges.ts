@@ -11,6 +11,7 @@ import {
   type PathwayBlockType,
   type PathwayTimingValue,
 } from '../../types'
+
 import type { SmoothstepEdgeData } from './edges/SmoothstepEdge'
 
 type Params = {

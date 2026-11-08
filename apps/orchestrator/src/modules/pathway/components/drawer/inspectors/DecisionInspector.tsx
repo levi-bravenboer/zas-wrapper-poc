@@ -45,25 +45,18 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
 
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.decision.question', { defaultValue: 'Vraag' })}
-        htmlFor="decision-question"
-      >
+      <InspectorField label={t('inspector.decision.question')} htmlFor="decision-question">
         <Textarea
           id="decision-question"
           value={config.question ?? ''}
           onChange={(e) => onChange({ ...config, question: e.target.value || undefined })}
-          placeholder={t('inspector.decision.questionPlaceholder', {
-            defaultValue: 'Bijv. Verloopt het herstel volgens plan?',
-          })}
+          placeholder={t('inspector.decision.questionPlaceholder')}
         />
       </InspectorField>
 
       <InspectorField
-        label={t('inspector.decision.outputs', { defaultValue: 'Uitkomsten' })}
-        hint={t('inspector.decision.outputsHint', {
-          defaultValue: 'Volgende blokken verwijzen naar deze uitkomsten via hun bedrijfslogica.',
-        })}
+        label={t('inspector.decision.outputs')}
+        hint={t('inspector.decision.outputsHint')}
       >
         <div className="flex flex-col gap-2">
           {outputs.length > 0 && (
@@ -76,9 +69,7 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
                   {output}
                   <button
                     type="button"
-                    aria-label={t('inspector.decision.removeOutput', {
-                      defaultValue: 'Uitkomst verwijderen',
-                    })}
+                    aria-label={t('inspector.decision.removeOutput')}
                     onClick={() => removeOutput(output)}
                     className="text-muted-foreground hover:text-destructive"
                   >
@@ -90,13 +81,9 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
           )}
           <div className="flex items-center gap-1.5">
             <Input
-              aria-label={t('inspector.decision.newOutput', {
-                defaultValue: 'Nieuwe uitkomst',
-              })}
+              aria-label={t('inspector.decision.newOutput')}
               value={pendingOutput}
-              placeholder={t('inspector.decision.newOutputPlaceholder', {
-                defaultValue: 'bijv. goed',
-              })}
+              placeholder={t('inspector.decision.newOutputPlaceholder')}
               onChange={(e) => setPendingOutput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -119,7 +106,7 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
         </div>
       </InspectorField>
 
-      <InspectorField label={t('inspector.decision.mode', { defaultValue: 'Modus' })}>
+      <InspectorField label={t('inspector.decision.mode')}>
         <Select
           value={config.mode ?? 'xor'}
           onValueChange={(mode) =>
@@ -130,16 +117,8 @@ export function DecisionInspector({ config, onChange }: Props): ReactElement {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="xor">
-              {t('inspector.decision.modeOption.xor', {
-                defaultValue: 'XOR — precies één uitkomst vuurt',
-              })}
-            </SelectItem>
-            <SelectItem value="and">
-              {t('inspector.decision.modeOption.and', {
-                defaultValue: 'AND — uitkomsten kunnen samen vuren',
-              })}
-            </SelectItem>
+            <SelectItem value="xor">{t('inspector.decision.modeOption.xor')}</SelectItem>
+            <SelectItem value="and">{t('inspector.decision.modeOption.and')}</SelectItem>
           </SelectContent>
         </Select>
       </InspectorField>

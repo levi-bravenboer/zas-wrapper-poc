@@ -35,18 +35,18 @@ describe('buildSubLine', () => {
 
   it('renders protocol name, mode label, and version when all parts are present', () => {
     expect(buildSubLine(program(), 'proto-std-12w', 'blocking')).toBe(
-      'Standaard 12 weken · Blocking · v4.2',
+      'Standaard 12 weken · Blokkerend · v4.2',
     )
   })
 
-  it('renders the fire-and-forget mode label as "Fire-and-forget"', () => {
+  it('renders the translated fire-and-forget mode label', () => {
     expect(buildSubLine(program(), 'proto-std-12w', 'fire_and_forget')).toBe(
-      'Standaard 12 weken · Fire-and-forget · v4.2',
+      'Standaard 12 weken · Vuren en vergeten · v4.2',
     )
   })
 
   it('skips the protocol segment when protocolId does not resolve', () => {
-    expect(buildSubLine(program(), 'proto-missing', 'blocking')).toBe('Blocking · v4.2')
+    expect(buildSubLine(program(), 'proto-missing', 'blocking')).toBe('Blokkerend · v4.2')
   })
 
   it('skips the mode segment when mode is unknown', () => {

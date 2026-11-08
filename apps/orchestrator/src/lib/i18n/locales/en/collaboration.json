@@ -1,0 +1,36 @@
+{
+  "notes": {
+    "title": "Activity",
+    "empty": "No activity yet.",
+    "placeholder": "Add a note…",
+    "add": "Post",
+    "delete": "Delete",
+    "directOnPatient": "Directly on patient",
+    "hint": "⌘/Ctrl + Enter to send"
+  },
+  "files": {
+    "attach": "File",
+    "uploading": "Uploading…",
+    "download": "Download",
+    "preview": "View",
+    "noPreview": "No preview available for this file type.",
+    "delete": "Delete"
+  },
+  "measurement": {
+    "add": "Measurement",
+    "type": {
+      "heart_rate": "Heart rate",
+      "blood_pressure": "Blood pressure"
+    },
+    "unit": {
+      "heart_rate": "/min",
+      "blood_pressure": "mmHg"
+    },
+    "recordedBy": "Recorded by {{name}}"
+  },
+  "owner": {
+    "appointment": "On appointment",
+    "task": "On task",
+    "patient": "On patient"
+  }
+}

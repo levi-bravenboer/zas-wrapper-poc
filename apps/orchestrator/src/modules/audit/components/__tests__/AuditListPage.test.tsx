@@ -115,7 +115,7 @@ describe('AuditListPage', () => {
     // Actor label for the publish
     expect(screen.getByText('Dr. Lee')).toBeInTheDocument()
     // Resource type shown for the pathway, em-dash for the login
-    expect(screen.getByText('Pathway')).toBeInTheDocument()
+    expect(screen.getByText('Zorgtraject')).toBeInTheDocument()
   })
 
   it('expanding a row reveals the raw context JSON', async () => {

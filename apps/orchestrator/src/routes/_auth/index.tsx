@@ -17,7 +17,6 @@ import { TASKS_PATH } from '@/modules/tasks/keys'
 import type { Task, TaskStatus } from '@/modules/tasks/types'
 
 const PANEL_LIMIT = 5
-const LOCALE = 'nl-BE'
 const EM_DASH = '—'
 
 const rowClassName =
@@ -132,7 +131,7 @@ function HomePage(): ReactElement {
               >
                 <span className="truncate text-sm text-foreground">{appt.title}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatDateTimeOrDash(appt.starts_at, LOCALE)}
+                  {formatDateTimeOrDash(appt.starts_at)}
                 </span>
               </Link>
             ))}
@@ -227,7 +226,7 @@ function Panel({
 }
 
 function TaskRow({ task }: { task: Task }): ReactElement {
-  const due = task.due_at ? formatDateTimeOrDash(task.due_at, LOCALE) : EM_DASH
+  const due = task.due_at ? formatDateTimeOrDash(task.due_at) : EM_DASH
   const body = (
     <>
       <span className="truncate text-sm text-foreground">{task.title}</span>

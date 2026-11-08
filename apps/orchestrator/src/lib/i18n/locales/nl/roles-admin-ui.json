@@ -2,16 +2,26 @@
   "list": {
     "title": "Rollen",
     "sub": "Beheer rollen en hun permissies.",
-    "cta": { "create": "Nieuwe rol" },
+    "cta": {
+      "create": "Nieuwe rol"
+    },
     "loading": "Laden…",
     "empty": "Geen rollen.",
     "systemBadge": "systeem",
-    "permCount": "{{count}} permissies",
-    "column": { "name": "Naam", "slug": "Slug", "permissions": "Permissies" },
-    "action": { "edit": "Bewerken", "delete": "Verwijderen" }
+    "column": {
+      "name": "Naam",
+      "slug": "Slug",
+      "permissions": "Permissies"
+    },
+    "action": {
+      "edit": "Bewerken",
+      "delete": "Verwijderen"
+    }
   },
   "detail": {
-    "action": { "edit": "Bewerken" },
+    "action": {
+      "edit": "Bewerken"
+    },
     "card": {
       "role": {
         "title": "Rol",
@@ -22,7 +32,11 @@
         "custom": "Aangepast",
         "permCount": "Aantal permissies"
       },
-      "permissions": { "title": "Permissies", "granted": "Toegekend", "none": "Geen permissies." }
+      "permissions": {
+        "title": "Permissies",
+        "granted": "Toegekend",
+        "none": "Geen permissies."
+      }
     }
   },
   "delete": {
@@ -32,8 +46,12 @@
     "confirm": "Verwijderen"
   },
   "form": {
-    "create": { "title": "Nieuwe rol" },
-    "edit": { "title": "Rol bewerken" },
+    "create": {
+      "title": "Nieuwe rol"
+    },
+    "edit": {
+      "title": "Rol bewerken"
+    },
     "sub": "Geef permissies aan deze rol.",
     "field": {
       "name": "Naam",
@@ -41,9 +59,15 @@
       "slug": "Slug"
     },
     "slugPlaceholder": "verpleegkundige",
-    "permissions": { "title": "Permissies", "locked": "vergrendeld" },
+    "permissions": {
+      "title": "Permissies",
+      "locked": "vergrendeld"
+    },
     "systemNote": "Systeemrol — slug ligt vast en de rol is niet verwijderbaar.",
-    "error": { "required": "Verplicht", "slug": "Alleen kleine letters, cijfers en koppeltekens" },
+    "error": {
+      "required": "Verplicht",
+      "slug": "Alleen kleine letters, cijfers en koppeltekens"
+    },
     "cancel": "Annuleren",
     "save": "Opslaan"
   },

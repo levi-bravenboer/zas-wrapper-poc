@@ -73,5 +73,9 @@
   "error": {
     "title": "Fout",
     "retry": "Opnieuw proberen"
+  },
+  "selection": {
+    "page": "Selecteer pagina",
+    "row": "Selecteer rij {{id}}"
   }
 }

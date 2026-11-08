@@ -95,7 +95,7 @@ describe('ReadOnlyBanner', () => {
       wrapper: Wrapper,
     })
     await userEvent.click(screen.getByText(/herstel als nieuw concept/i))
-    expect(screen.getByText(/open bestaande concept/i)).toBeInTheDocument()
+    expect(screen.getByText(/open bestaand concept/i)).toBeInTheDocument()
     expect(screen.getByText(/v\.5/i)).toBeInTheDocument()
     expect(restoreMock).not.toHaveBeenCalled()
   })

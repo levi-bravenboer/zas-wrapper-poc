@@ -11,7 +11,13 @@
     "editTitle": "Blok bewerken — {{type}}",
     "configHeader": "Blok-instellingen",
     "logicHeader": "Bedrijfslogica",
-    "timingHeader": "Timing"
+    "timingHeader": "Timing",
+    "cancel": "Annuleren",
+    "add": "Voeg toe",
+    "save": "Opslaan",
+    "name": "Naam",
+    "phase": "Fase",
+    "phasePlaceholder": "Kies fase"
   },
   "overview": {
     "title": "Zorgtrajecten",
@@ -139,7 +145,18 @@
       "kind": "Type afspraak",
       "kindPlaceholder": "Bijv. consult",
       "location": "Locatie",
-      "locationPlaceholder": "Bijv. AZ Sint-Maarten"
+      "locationPlaceholder": "Bijv. AZ Sint-Maarten",
+      "title": "Titel",
+      "titlePlaceholder": "Bijv. Intakegesprek",
+      "mode": "Type",
+      "modePlaceholder": "Kies type",
+      "duration": "Duur (minuten)",
+      "notes": "Notities",
+      "modeOption": {
+        "in_person": "Fysiek",
+        "video": "Video",
+        "phone": "Telefonisch"
+      }
     },
     "task": {
       "assignee": "Toegewezen aan",
@@ -211,14 +228,28 @@
       "required": "Verplicht",
       "moveUp": "Omhoog",
       "moveDown": "Omlaag",
-      "remove": "Verwijder vraag"
+      "remove": "Verwijder vraag",
+      "title": "Titel",
+      "titlePlaceholder": "Bijv. Intakevragenlijst"
     },
     "decision": {
       "criterion": "Criterium",
       "criterionHint": "Vrije tekst voor PoC; runtime-evaluatie volgt later.",
       "criterionPlaceholder": "Bijv. pijnscore >= 4",
       "branches": "Takken",
-      "noBranches": "Nog geen takken gedefinieerd."
+      "noBranches": "Nog geen takken gedefinieerd.",
+      "question": "Vraag",
+      "questionPlaceholder": "Bijv. Verloopt het herstel volgens plan?",
+      "outputs": "Uitkomsten",
+      "outputsHint": "Volgende blokken verwijzen naar deze uitkomsten via hun bedrijfslogica.",
+      "removeOutput": "Uitkomst verwijderen",
+      "newOutput": "Nieuwe uitkomst",
+      "newOutputPlaceholder": "bijv. goed",
+      "mode": "Modus",
+      "modeOption": {
+        "xor": "XOR — precies één uitkomst vuurt",
+        "and": "AND — uitkomsten kunnen samen vuren"
+      }
     },
     "milestone": {
       "note": "Notitie",
@@ -240,7 +271,7 @@
       "noOtherBlocks": "Geen andere blokken beschikbaar."
     },
     "pathwayLink": {
-      "headerLabel": "Subpath",
+      "headerLabel": "Subpad",
       "target": "Doel-zorgtraject",
       "targetPlaceholder": "Kies een zorgtraject",
       "noPublishedPathways": "Geen gepubliceerde zorgtrajecten beschikbaar.",
@@ -307,7 +338,7 @@
         "careNetworkHeader": "Zorgnetwerk",
         "careNetworkEmpty": "Geen zorgnetwerk gespecificeerd."
       },
-      "perPatientHint": "Patiëntspecifieke waarden (BSN, contactgegevens) worden bij inschrijving ingevuld — niet hier."
+      "perPatientHint": "Patiëntspecifieke waarden (INSZ, contactgegevens) worden bij inschrijving ingevuld — niet hier."
     },
     "edge": {
       "title": "Verbinding",
@@ -324,11 +355,30 @@
       "offsetDirection": "Richting",
       "noTimingValues": "Geen timing-waardes beschikbaar.",
       "noMarkers": "Geen tijdmarkers beschikbaar.",
-      "noBranches": "Geen branches op bronblok",
+      "noBranches": "Geen takken op bronblok",
       "branch": "Tak",
       "branchPlaceholder": "Kies een tak",
       "immediateHint": "Volgend blok start direct na voltooiing.",
       "delete": "Verbinding verwijderen"
+    },
+    "informedConsent": {
+      "question": "Toestemmingsvraag",
+      "questionPlaceholder": "Ik geef toestemming",
+      "channels": "Kanalen",
+      "reminderOffset": "Herinnering elke",
+      "reminderMax": "Max herinneringen",
+      "expiresAt": "Verloopt na",
+      "expiresAtPlaceholder": "Bijv. P30D — leeg = nooit",
+      "lifecycleHint": "ISO 8601 duur (P3D = 3 dagen, PT4H = 4 uur). Herinneringen stoppen zodra de patiënt tekent; bij verlopen sluit het blok met \"geen toestemming\"."
+    },
+    "treatment": {
+      "title": "Titel",
+      "titlePlaceholder": "Bijv. Lumbale spinale fusie",
+      "location": "Locatie",
+      "locationPlaceholder": "Bijv. OK 3, campus Zuid",
+      "duration": "Duur (minuten)",
+      "notes": "Behandelnotities (SOP)",
+      "notesPlaceholder": "Voorbereiding, instructies, nazorg…"
     }
   },
   "minimap": {
@@ -345,7 +395,15 @@
     "task": "Taak",
     "message": "Bericht",
     "form": "Formulier",
-    "pathway_link": "Subpad"
+    "pathway_link": "Subpad",
+    "end_pathway": "Einde",
+    "start": "Start",
+    "treatment": "Behandeling",
+    "mdo": "MDO",
+    "informed_consent": "Informed consent",
+    "luscii": {
+      "program": "Extern programma"
+    }
   },
   "blockTypeDescription": {
     "appointment": "Klinische afspraak met de patiënt.",
@@ -358,10 +416,18 @@
     "pathway_link": "Koppel naar een ander zorgtraject."
   },
   "edgeTiming": {
-    "completion": { "label": "Bij voltooiing" },
-    "marker": { "label": "Bij tijdmarker" },
-    "immediate": { "label": "Direct" },
-    "branch": { "label": "Bij vertakking" }
+    "completion": {
+      "label": "Bij voltooiing"
+    },
+    "marker": {
+      "label": "Bij tijdmarker"
+    },
+    "immediate": {
+      "label": "Direct"
+    },
+    "branch": {
+      "label": "Bij vertakking"
+    }
   },
   "edgeOffsetDirection": {
     "before": "Voor",
@@ -395,11 +461,26 @@
     },
     "resizeLane": "Vergroot baan {{label}}",
     "resizePhase": "Verbreed fase {{label}}",
-    "laneLabel": "Baan {{label}}, {{count}} blokken"
+    "laneLabel": "Baan {{label}}, {{count}} blokken",
+    "luscii": {
+      "ariaEmpty": "Luscii-programma — kies een programma",
+      "ariaNamed": "Luscii-programma: {{name}}",
+      "unknown": "onbekend",
+      "headerEmpty": "Luscii-programma · Kies er één",
+      "headerFallback": "Luscii-programma",
+      "pickProgram": "Kies een Luscii-programma",
+      "badge": "Luscii"
+    },
+    "nestedPathway": {
+      "headerFallback": "Subpad",
+      "badge": "Pad",
+      "start": "START"
+    }
   },
   "save": {
     "error": "Opslaan mislukt.",
-    "saving": "opslaan…"
+    "saving": "opslaan…",
+    "fieldError": "Opslaan mislukt — {{field}}: {{reason}}"
   },
   "delete": {
     "success": "Blok verwijderd.",
@@ -455,7 +536,7 @@
       "loadError": "Kon versies niet laden.",
       "rowView": "Bekijken",
       "rowRestore": "Herstellen",
-      "rowCurrent": "Huidige resolutie"
+      "rowCurrent": "Huidige versie"
     },
     "restore": {
       "title": "Versie herstellen?",
@@ -467,9 +548,9 @@
     },
     "conceptExists": {
       "title": "Bestaande werkversie",
-      "body": "Er bestaat al een concept-versie (v.{{n}}). Wil je dat openen?",
+      "body": "Er bestaat al een werkversie (v.{{n}}). Wil je die openen?",
       "cancel": "Annuleren",
-      "open": "Open bestaande concept"
+      "open": "Open bestaand concept"
     }
   },
   "publish": {
@@ -506,7 +587,11 @@
   },
   "deleteBlock": {
     "title": "Blok verwijderen?",
-    "unnamed": "(naamloos blok)"
+    "unnamed": "(naamloos blok)",
+    "dependentsIntro": "De volgende blokken verwijzen ernaar — hun logica-regels worden opgeschoond.",
+    "noDependents": "Geen afhankelijke blokken — veilig om te verwijderen.",
+    "confirmCascade": "Verwijderen + opschonen",
+    "confirm": "Verwijderen"
   },
   "deletePhase": {
     "title": "Fase verwijderen?",
@@ -532,5 +617,31 @@
     "dateNameLabel": "Klinische datum",
     "dateNamePlaceholder": "operation_date",
     "hint": "ISO 8601 duur: P1D = 1 dag, PT4H = 4 uur, P2W = 2 weken."
+  },
+  "inputLogic": {
+    "aggregator": {
+      "all_of": "alle regels (EN)",
+      "any_of": "minstens één (OF)"
+    },
+    "hint": "Wanneer wordt dit blok actief? Regels verwijzen naar geplaatste blokken.",
+    "addRule": "Voeg regel toe",
+    "removeRule": "Regel verwijderen",
+    "pickBlock": "Kies blok",
+    "predicate": {
+      "if_done": "is afgerond",
+      "decision_output": "heeft uitkomst",
+      "if_not_done_within": "niet afgerond binnen",
+      "event": "na gebeurtenis"
+    },
+    "extra": {
+      "decision_output": "Uitkomst",
+      "if_not_done_within": "Termijn",
+      "event": "Type gebeurtenis"
+    },
+    "extraPlaceholder": {
+      "decision_output": "uitkomst (bv. goed)",
+      "event": "type gebeurtenis",
+      "if_not_done_within": "P14D"
+    }
   }
 }

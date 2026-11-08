@@ -86,10 +86,12 @@ function PatientHover({ patientId, name }: { patientId: string; name: string }):
         <div className="grid grid-cols-2 gap-2">
           <Fact label={t('field.birthDate')}>
             {age !== null
-              ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${age} j.)`
+              ? `${formatDateOrDash(patient.birth_date ?? null, i18n.language)} (${t('field.ageYears', { count: age })})`
               : formatDateOrDash(patient.birth_date ?? null, i18n.language)}
           </Fact>
-          <Fact label="INSZ">{insz ? <span className="font-mono">{insz}</span> : '—'}</Fact>
+          <Fact label={t('header.insz')}>
+            {insz ? <span className="font-mono">{insz}</span> : '—'}
+          </Fact>
         </div>
       ) : null}
       <Button asChild variant="outline" size="sm" className="w-full">

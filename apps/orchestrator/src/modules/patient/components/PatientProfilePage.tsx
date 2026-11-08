@@ -19,11 +19,12 @@ import { formatDateOrDash } from '@/lib/utils/datetime'
 import { PathwayTimeline } from '@/modules/patient-pathway/components/PathwayTimeline'
 import { ZorgpadTab } from '@/modules/patient-pathway/components/ZorgpadTab'
 import { PatientTasksPanel } from '@/modules/tasks/components/PatientTasksPanel'
+
 import { usePatient } from '../hooks'
 import type { OrganisationOption, PatientIdentifierRow } from '../types'
+
 import { BreakGlassPrompt } from './BreakGlassPrompt'
 import { CareTeamSlot } from './CareTeamSlot'
-
 import { MeasurementCharts } from './MeasurementCharts'
 import { PatientAppointmentsTab } from './PatientAppointmentsTab'
 import { PatientCollaborationTab } from './PatientCollaborationTab'

@@ -1,12 +1,6 @@
-import { LUSCII_PROGRAM_MODES, type LusciiProgramData, type LusciiProgramMode } from './types'
+import { i18n } from '@/lib/i18n'
 
-// Lookup table for user-facing mode labels — replaces a brittle ternary
-// chain so adding a future mode is a single-line entry. Typed against
-// LusciiProgramMode so TS forces exhaustive coverage when the enum grows.
-const MODE_LABELS = {
-  blocking: 'Blocking',
-  fire_and_forget: 'Fire-and-forget',
-} as const satisfies Record<LusciiProgramMode, string>
+import { LUSCII_PROGRAM_MODES, type LusciiProgramData, type LusciiProgramMode } from './types'
 
 // Tuple-membership predicate matching the repo convention (see
 // `isLaneKindCode` in `pathway/types.ts`, `isSupportedLocale` in
@@ -26,7 +20,8 @@ export function buildSubLine(
   const protocol = protocolId ? program.protocols.find((p) => p.id === protocolId) : null
   const parts: string[] = []
   if (protocol) parts.push(protocol.name)
-  if (isLusciiProgramMode(mode)) parts.push(MODE_LABELS[mode])
+  if (isLusciiProgramMode(mode))
+    parts.push(i18n.t(`pathway:inspector.lusciiProgram.modeOption.${mode}`))
   parts.push(program.version)
   return parts.join(' · ')
 }

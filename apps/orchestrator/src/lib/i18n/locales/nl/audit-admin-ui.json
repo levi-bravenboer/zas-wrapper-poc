@@ -50,6 +50,11 @@
     "result": {
       "success": "Gelukt",
       "failure": "Mislukt"
+    },
+    "resource_type": {
+      "Pathway": "Zorgtraject",
+      "User": "Gebruiker",
+      "Patient": "Patiënt"
     }
   },
   "detail": {

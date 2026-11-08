@@ -27,20 +27,15 @@ export function AppointmentInspector({ config, onChange }: Props): ReactElement 
   const { t } = useTranslation('pathway')
   return (
     <div className="flex flex-col gap-3">
-      <InspectorField
-        label={t('inspector.appointment.title', { defaultValue: 'Titel' })}
-        htmlFor="appt-title"
-      >
+      <InspectorField label={t('inspector.appointment.title')} htmlFor="appt-title">
         <Input
           id="appt-title"
           value={config.title ?? ''}
           onChange={(e) => onChange({ ...config, title: e.target.value || undefined })}
-          placeholder={t('inspector.appointment.titlePlaceholder', {
-            defaultValue: 'Bijv. Intake gesprek',
-          })}
+          placeholder={t('inspector.appointment.titlePlaceholder')}
         />
       </InspectorField>
-      <InspectorField label={t('inspector.appointment.mode', { defaultValue: 'Type' })}>
+      <InspectorField label={t('inspector.appointment.mode')}>
         <Select
           value={config.mode ?? ''}
           onValueChange={(mode) =>
@@ -48,19 +43,12 @@ export function AppointmentInspector({ config, onChange }: Props): ReactElement 
           }
         >
           <SelectTrigger>
-            <SelectValue
-              placeholder={t('inspector.appointment.modePlaceholder', {
-                defaultValue: 'Kies type',
-              })}
-            />
+            <SelectValue placeholder={t('inspector.appointment.modePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {APPOINTMENT_MODES.map((mode) => (
               <SelectItem key={mode} value={mode}>
-                {t(`inspector.appointment.modeOption.${mode}`, {
-                  defaultValue:
-                    mode === 'in_person' ? 'Fysiek' : mode === 'video' ? 'Video' : 'Telefonisch',
-                })}
+                {t(`inspector.appointment.modeOption.${mode}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -74,10 +62,7 @@ export function AppointmentInspector({ config, onChange }: Props): ReactElement 
           placeholder={t('inspector.appointment.locationPlaceholder')}
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.appointment.duration', { defaultValue: 'Duur (minuten)' })}
-        htmlFor="appt-duration"
-      >
+      <InspectorField label={t('inspector.appointment.duration')} htmlFor="appt-duration">
         <Input
           id="appt-duration"
           type="number"
@@ -91,10 +76,7 @@ export function AppointmentInspector({ config, onChange }: Props): ReactElement 
           }
         />
       </InspectorField>
-      <InspectorField
-        label={t('inspector.appointment.notes', { defaultValue: 'Notities' })}
-        htmlFor="appt-notes"
-      >
+      <InspectorField label={t('inspector.appointment.notes')} htmlFor="appt-notes">
         <Textarea
           id="appt-notes"
           value={config.notes ?? ''}

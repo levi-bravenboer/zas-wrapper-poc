@@ -1,4 +1,5 @@
 import type { ListFilter, ListFilterOperator } from '@/hooks/use-data-table-state'
+import { i18n } from '@/lib/i18n'
 
 import type { DataTableFilter } from './Toolbar'
 
@@ -66,8 +67,8 @@ export function summariseFilter<T>(
       const f = findOp(value, 'eq')
       if (!f) return null
       const truthy = f.value === true || f.value === 'true'
-      const trueLabel = def.trueLabel ?? 'Yes'
-      const falseLabel = def.falseLabel ?? 'No'
+      const trueLabel = def.trueLabel ?? i18n.t('data-table:toolbar.filters.boolean.true')
+      const falseLabel = def.falseLabel ?? i18n.t('data-table:toolbar.filters.boolean.false')
       return { display: truthy ? trueLabel : falseLabel }
     }
   }

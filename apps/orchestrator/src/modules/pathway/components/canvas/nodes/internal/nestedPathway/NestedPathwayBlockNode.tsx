@@ -7,8 +7,8 @@ import { useTranslation } from 'react-i18next'
 
 import { getPathway, getPathwaySummary } from '../../../../../api'
 import type { ConfigForSemantics } from '../../../../../configSchemas'
-import { legacyBlockConfig } from '../../../../../types'
 import { pathwayKeys } from '../../../../../keys'
+import { legacyBlockConfig } from '../../../../../types'
 import { useBuilderFlush } from '../../../useBuilderFlush'
 import type { BlockNodeData } from '../../BlockNode'
 import { BlockNodeHandles } from '../../BlockNodeHandles'
@@ -127,7 +127,7 @@ function NestedPathwayBlockNodeImpl({
           className="absolute -right-px -top-px z-[5] inline-flex items-center gap-[3px] rounded-bl-[8px] rounded-tr-[10px] px-1.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.09em] text-white"
           style={{ background: 'var(--lane-system)' }}
         >
-          Pad
+          {t('canvas.nestedPathway.badge')}
         </span>
 
         {/* Bottom meta chip — counts + Open CTA */}

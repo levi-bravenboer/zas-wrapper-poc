@@ -1,0 +1,81 @@
+{
+  "empty": {
+    "title": "No results",
+    "body": "Adjust your filters or search."
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "indicator": "{{page}} / {{total}}",
+    "pageSize": "Per page"
+  },
+  "toolbar": {
+    "search": {
+      "placeholder": "Search…"
+    },
+    "filters": {
+      "clear": "Clear filters",
+      "more": "+{{count}} more",
+      "pill": {
+        "empty": "{{label}}",
+        "active": "{{label}}: {{value}}",
+        "clearAria": "Remove filter {{label}}"
+      },
+      "dateRange": {
+        "from": "{{label}} — from",
+        "to": "{{label}} — to"
+      },
+      "boolean": {
+        "all": "All",
+        "true": "Yes",
+        "false": "No"
+      },
+      "typeahead": {
+        "selected": "Selected"
+      },
+      "list": {
+        "search": "Search {{label}}…",
+        "empty": "No options",
+        "selectedCount_one": "{{count}} selected",
+        "selectedCount_other": "{{count}} selected"
+      }
+    }
+  },
+  "sort": {
+    "ariaAscending": "Sorted ascending",
+    "ariaDescending": "Sorted descending",
+    "ariaNone": "Not sorted"
+  },
+  "bulk": {
+    "count": {
+      "one": "{{count}} selected",
+      "other": "{{count}} selected"
+    },
+    "count_one": "{{count}} selected",
+    "count_other": "{{count}} selected",
+    "cancel": "Cancel"
+  },
+  "expand": {
+    "toggle": "Expand row"
+  },
+  "actions": {
+    "menu": {
+      "aria": "Row actions"
+    }
+  },
+  "realtime": {
+    "offline": "Live updates paused — refresh to update."
+  },
+  "confirm": {
+    "ok": "Confirm",
+    "cancel": "Cancel"
+  },
+  "error": {
+    "title": "Error",
+    "retry": "Try again"
+  },
+  "selection": {
+    "page": "Select page",
+    "row": "Select row {{id}}"
+  }
+}

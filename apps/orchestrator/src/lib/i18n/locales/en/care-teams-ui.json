@@ -1,0 +1,87 @@
+{
+  "title": "Care teams",
+  "empty": "No care team for this patient yet.",
+  "newTeam": "New care team",
+  "history": "History",
+  "showHistory": "Show past participants",
+  "hideHistory": "Hide past participants",
+  "loading": "Loading…",
+  "loadFailed": "Care teams could not be loaded",
+  "team": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "edit": "Edit",
+    "close": "Close"
+  },
+  "participant": {
+    "name": "Name",
+    "role": "Role",
+    "actingAs": "On behalf of",
+    "period": "Period",
+    "actions": "Actions",
+    "changeRole": "Change role",
+    "remove": "Remove",
+    "addParticipant": "Add participant",
+    "noActingAs": "—"
+  },
+  "roleInCare": {
+    "primary": "Primary",
+    "consulting": "Consulting",
+    "observer": "Observing"
+  },
+  "createDialog": {
+    "title": "New care team",
+    "name": "Name",
+    "namePlaceholder": "e.g. Heart failure team",
+    "category": "Category",
+    "categoryPlaceholder": "e.g. Multidisciplinary",
+    "submit": "Create",
+    "cancel": "Cancel",
+    "toast": {
+      "success": "Care team created",
+      "error": "Could not create care team"
+    }
+  },
+  "addDialog": {
+    "title": "Add participant",
+    "user": "Caregiver",
+    "role": "Role in care team",
+    "actingAs": "On behalf of (practitioner role)",
+    "submit": "Add",
+    "cancel": "Cancel",
+    "toast": {
+      "success": "Participant added",
+      "error": "Could not add participant"
+    }
+  },
+  "changeRoleDialog": {
+    "title": "Change role",
+    "role": "New role",
+    "submit": "Change",
+    "cancel": "Cancel",
+    "toast": {
+      "success": "Role changed",
+      "error": "Could not change role"
+    }
+  },
+  "removeConfirm": {
+    "title": "Remove participant?",
+    "message": "{{name}} will be removed from the care team. This cannot be undone.",
+    "confirm": "Remove",
+    "cancel": "Cancel",
+    "toast": {
+      "success": "Participant removed",
+      "error": "Could not remove participant"
+    }
+  },
+  "closeConfirm": {
+    "title": "Close care team?",
+    "message": "\"{{name}}\" will be closed and moved to history.",
+    "confirm": "Close",
+    "cancel": "Cancel",
+    "toast": {
+      "success": "Care team closed",
+      "error": "Could not close care team"
+    }
+  }
+}

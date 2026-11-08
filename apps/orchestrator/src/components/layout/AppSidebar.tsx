@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
+  Languages,
   LogOut,
   Settings,
   User,
@@ -17,7 +18,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -34,6 +40,8 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { SUPPORTED_LOCALES, isSupportedLocale } from '@/lib/i18n'
+import { useLocale } from '@/lib/i18n/useLocale'
 import { cn } from '@/lib/style/cn'
 import { initials } from '@/lib/utils/initials'
 import { useLogout, useSelectRole, useSession, useSessionRoles } from '@/modules/auth/hooks'
@@ -266,6 +274,7 @@ function UserBlock(): ReactElement {
   const logout = useLogout()
   const selectRole = useSelectRole()
   const { data: sessionRoles } = useSessionRoles()
+  const { locale, changeLocale } = useLocale()
   const displayName = session?.display_name ?? session?.email ?? '—'
   const role = session?.role_slug ?? t('shell:user.roleFallback')
   // multi-role humans can re-bind the session without re-login (REQ-NON-3)
@@ -323,6 +332,26 @@ function UserBlock(): ReactElement {
               <Settings aria-hidden="true" className="size-4" />
               {t('shell:user.settings')}
             </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Languages aria-hidden="true" className="size-4" />
+                {t('shell:user.language')}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={locale}
+                  onValueChange={(next) => {
+                    if (isSupportedLocale(next)) void changeLocale(next)
+                  }}
+                >
+                  {SUPPORTED_LOCALES.map((code) => (
+                    <DropdownMenuRadioItem key={code} value={code}>
+                      {t(`shell:user.languages.${code}`)}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             {switchableRoles.length > 0 && <DropdownMenuSeparator />}
             {switchableRoles.map((target) => (
               <DropdownMenuItem

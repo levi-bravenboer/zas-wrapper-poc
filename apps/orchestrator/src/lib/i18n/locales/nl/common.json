@@ -32,5 +32,14 @@
       "primarySuffix": "(Primair)"
     },
     "loading": "Laden…"
+  },
+  "a11y": {
+    "breadcrumb": "Kruimelpad",
+    "more": "Meer",
+    "close": "Sluiten"
+  },
+  "commandPalette": {
+    "title": "Opdrachtenpalet",
+    "description": "Zoek een opdracht om uit te voeren"
   }
 }

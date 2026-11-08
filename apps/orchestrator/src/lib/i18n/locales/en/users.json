@@ -1,0 +1,73 @@
+{
+  "title": "Users",
+  "sub": "Manage users and roles within your tenant.",
+  "search": {
+    "placeholder": "Search by name or email address"
+  },
+  "columns": {
+    "display_name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "is_active": "Status",
+    "created_at": "Created"
+  },
+  "filters": {
+    "role": "Role",
+    "is_active": "Status"
+  },
+  "role": {
+    "admin": "Administrator",
+    "caregiver": "Caregiver"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "view": "View",
+    "promote_to_admin": "Make administrator",
+    "demote_to_caregiver": "Make caregiver",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "detail": {
+    "title": "User",
+    "back": "Back to users",
+    "section": {
+      "identity": "Identity",
+      "access": "Access",
+      "audit": "Audit"
+    },
+    "field": {
+      "id": "ID",
+      "email": "Email",
+      "display_name": "Name",
+      "role": "Role",
+      "is_active": "Status",
+      "external_idp": "External provider",
+      "external_subject": "External subject",
+      "created_at": "Created",
+      "updated_at": "Updated"
+    },
+    "empty": "—",
+    "notFound": "User not found."
+  },
+  "toast": {
+    "role_updated": "Role updated",
+    "activated": "User activated",
+    "deactivated": "User deactivated",
+    "error": "Action failed"
+  },
+  "confirm": {
+    "deactivate": {
+      "title": "Deactivate user?",
+      "description": "This user will no longer be able to sign in. You can undo this later.",
+      "confirmLabel": "Deactivate"
+    },
+    "demote": {
+      "title": "Revoke administrator rights?",
+      "description": "This user will lose administrator rights and become a caregiver.",
+      "confirmLabel": "Make caregiver"
+    }
+  }
+}

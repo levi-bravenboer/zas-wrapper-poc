@@ -90,23 +90,16 @@ describe('LaunchCallbackPage', () => {
     )
   })
 
-  it('surfaces the SmartExchangeError message when exchange fails', async () => {
+  it('shows the translated message instead of the technical SmartExchangeError text', async () => {
     exchangeMock.mockRejectedValue(new SmartExchangeError('token response missing', null))
     const navigate = vi.fn()
 
     renderPage({ search: { code: 'c', state: 's' }, navigate })
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('token response missing')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Inloggen via EPD mislukt')
+    expect(alert).not.toHaveTextContent('token response missing')
     expect(navigate).not.toHaveBeenCalled()
-  })
-
-  it('falls back to the generic message for non-SmartExchangeError failures', async () => {
-    exchangeMock.mockRejectedValue(new Error('boom'))
-    const navigate = vi.fn()
-
-    renderPage({ search: { code: 'c', state: 's' }, navigate })
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Inloggen via EPD mislukt')
   })
 
   it('rebuilds the launch URL when the retry button is pressed', async () => {

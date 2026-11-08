@@ -50,7 +50,7 @@ describe('CreateOrganisationDialog', () => {
         <CreateOrganisationDialog open parent={null} onOpenChange={() => {}} />
       </Wrap>,
     )
-    expect(screen.getByText(/nieuwe root organisatie/i)).toBeTruthy()
+    expect(screen.getByText(/nieuwe hoofdorganisatie/i)).toBeTruthy()
   })
 
   it('uses child title and submits with parent_organisation_id', async () => {

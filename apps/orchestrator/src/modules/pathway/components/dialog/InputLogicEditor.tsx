@@ -22,27 +22,13 @@ type PredicateMeta = {
    *  `output_key` for decision_output). `null` when the predicate
    *  carries no extra (if_done). */
   extraField: 'output_key' | 'offset_iso' | 'event_type' | null
-  placeholderI18nKey: string | null
-  placeholderDefault: string
 }
 
 const PREDICATE_META = {
-  if_done: { extraField: null, placeholderI18nKey: null, placeholderDefault: '' },
-  decision_output: {
-    extraField: 'output_key',
-    placeholderI18nKey: 'inputLogic.extraPlaceholder.output',
-    placeholderDefault: 'output (bv. goed)',
-  },
-  if_not_done_within: {
-    extraField: 'offset_iso',
-    placeholderI18nKey: null,
-    placeholderDefault: 'P14D',
-  },
-  event: {
-    extraField: 'event_type',
-    placeholderI18nKey: 'inputLogic.extraPlaceholder.event',
-    placeholderDefault: 'event type',
-  },
+  if_done: { extraField: null },
+  decision_output: { extraField: 'output_key' },
+  if_not_done_within: { extraField: 'offset_iso' },
+  event: { extraField: 'event_type' },
 } as const satisfies Record<string, PredicateMeta>
 
 type ComposerPredicate = keyof typeof PREDICATE_META
@@ -108,23 +94,18 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
   const aggregatorOptions = [
     {
       value: 'all_of',
-      label: t('inputLogic.aggregator.all_of', { defaultValue: 'alle regels (EN)' }),
+      label: t('inputLogic.aggregator.all_of'),
     },
     {
       value: 'any_of',
-      label: t('inputLogic.aggregator.any_of', { defaultValue: 'minstens één (OF)' }),
+      label: t('inputLogic.aggregator.any_of'),
     },
   ]
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] text-muted-foreground">
-          {t('inputLogic.hint', {
-            defaultValue:
-              'Wanneer wordt dit blok actief? Regels verwijzen naar geplaatste blokken.',
-          })}
-        </p>
+        <p className="text-[11px] text-muted-foreground">{t('inputLogic.hint')}</p>
         {rules.length > 1 && (
           <OptionsSelect
             value={value.aggregator ?? 'all_of'}
@@ -177,7 +158,7 @@ export function InputLogicEditor({ value, upstreamBlocks, onChange }: Props): Re
         className="self-start"
       >
         <Plus className="size-3.5" />
-        {t('inputLogic.addRule', { defaultValue: 'Voeg regel toe' })}
+        {t('inputLogic.addRule')}
       </Button>
     </div>
   )
@@ -192,7 +173,7 @@ function RemoveRuleButton({ onClick }: RemoveButtonProps): ReactElement {
       type="button"
       variant="ghost"
       size="icon"
-      aria-label={t('inputLogic.removeRule', { defaultValue: 'Regel verwijderen' })}
+      aria-label={t('inputLogic.removeRule')}
       onClick={onClick}
     >
       <Trash2 className="size-3.5" />
@@ -245,13 +226,10 @@ function EditableRule({
 }: EditableRuleProps): ReactElement {
   const { t } = useTranslation('pathway')
   const meta = PREDICATE_META[predicate]
-  const placeholder = meta.placeholderI18nKey
-    ? t(meta.placeholderI18nKey, { defaultValue: meta.placeholderDefault })
-    : meta.placeholderDefault
 
   const predicateOptions = COMPOSER_PREDICATES.map((p) => ({
     value: p,
-    label: t(`inputLogic.predicate.${p}`, { defaultValue: p }),
+    label: t(`inputLogic.predicate.${p}`),
   }))
   const upstreamOptions = upstreamBlocks.map((b) => ({
     value: b.id,
@@ -270,14 +248,14 @@ function EditableRule({
         value={afterBlock}
         options={upstreamOptions}
         onChange={(blockId) => onChange(predicate, blockId, extra)}
-        placeholder={t('inputLogic.pickBlock', { defaultValue: 'Kies blok' })}
+        placeholder={t('inputLogic.pickBlock')}
         triggerClassName="h-8 flex-1 text-[12px]"
       />
       {meta.extraField && (
         <Input
-          aria-label={t(`inputLogic.extra.${predicate}`, { defaultValue: 'detail' })}
+          aria-label={t(`inputLogic.extra.${predicate}`)}
           value={extra}
-          placeholder={placeholder}
+          placeholder={t(`inputLogic.extraPlaceholder.${predicate}`)}
           onChange={(e) => onChange(predicate, afterBlock, e.target.value)}
           className="h-8 w-[130px] text-[12px]"
         />

@@ -5,7 +5,7 @@
     "cta": {
       "create": "Gebruiker toevoegen"
     },
-    "empty": "Nog geen gebruikers in dit tenant.",
+    "empty": "Nog geen gebruikers in deze tenant.",
     "search": {
       "placeholder": "Zoek op naam of e-mail"
     },
@@ -16,7 +16,7 @@
     },
     "column": {
       "display_name": "Naam",
-      "email": "Email",
+      "email": "E-mail",
       "role": "Rol",
       "is_active": "Actief",
       "created_at": "Aangemaakt"
@@ -39,7 +39,7 @@
         "title": "Demografie",
         "field": {
           "display_name": "Naam",
-          "email": "Email",
+          "email": "E-mail",
           "role": "Rol",
           "is_active": "Actief",
           "created_at": "Aangemaakt"
@@ -72,7 +72,7 @@
   "form": {
     "create": {
       "title": "Gebruiker toevoegen",
-      "sub": "Maak een nieuwe gebruiker aan binnen dit tenant.",
+      "sub": "Maak een nieuwe gebruiker aan binnen deze tenant.",
       "submit": "Aanmaken"
     },
     "edit": {
@@ -98,7 +98,7 @@
     },
     "field": {
       "email": {
-        "label": "Email",
+        "label": "E-mail",
         "placeholder": "naam@voorbeeld.nl",
         "hint": "Wordt gebruikt om in te loggen.",
         "locked": "Niet aanpasbaar na aanmaken."
@@ -112,13 +112,13 @@
         "label": "Voornaam",
         "placeholder": "Voornaam",
         "hint": "Zoals op het identiteitsbewijs.",
-        "locked": "Bewerk via de Praktijk-pagina."
+        "locked": "Bewerk via de Praktijkpagina."
       },
       "family_name": {
         "label": "Achternaam",
         "placeholder": "Achternaam",
         "hint": "Zoals op het identiteitsbewijs.",
-        "locked": "Bewerk via de Praktijk-pagina."
+        "locked": "Bewerk via de Praktijkpagina."
       },
       "role": {
         "label": "Rol",
@@ -132,13 +132,13 @@
       },
       "clinician": {
         "label": "Zorgverlener",
-        "hint": "Maakt een practitioner aan met voor- en achternaam."
+        "hint": "Maakt een zorgverlenersprofiel aan met voor- en achternaam."
       },
       "qualification": {
         "label": "Kwalificatie",
         "placeholder": "Bijv. Huisarts, Verpleegkundige",
-        "hint": "Wordt gebruikt op de Praktijk-pagina.",
-        "locked": "Bewerk via de Praktijk-pagina."
+        "hint": "Wordt gebruikt op de Praktijkpagina.",
+        "locked": "Bewerk via de Praktijkpagina."
       },
       "password": {
         "label": "Wachtwoord",
@@ -151,7 +151,7 @@
       "email_invalid": "Vul een geldig e-mailadres in.",
       "too_long": "Te lang.",
       "password_too_short": "Wachtwoord moet minimaal 8 tekens zijn.",
-      "email_exists": "Dit e-mailadres bestaat al in dit tenant.",
+      "email_exists": "Dit e-mailadres bestaat al in deze tenant.",
       "cross_tenant": "Geen toegang tot deze gebruiker."
     }
   },

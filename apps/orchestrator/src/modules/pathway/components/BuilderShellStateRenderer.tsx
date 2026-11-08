@@ -63,7 +63,7 @@ export function BuilderShellStateRenderer(props: Props): ReactElement {
     return (
       <CenteredCard
         title={t('error.title')}
-        body={props.error.message || t('error.body')}
+        body={t('error.body')}
         actions={
           <>
             <Button type="button" variant="ghost" asChild>

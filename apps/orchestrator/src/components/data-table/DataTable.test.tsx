@@ -149,7 +149,8 @@ describe('DataTable — state composition', () => {
     )
 
     const alert = await screen.findByRole('alert')
-    expect(within(alert).getByText('boom')).toBeInTheDocument()
+    expect(within(alert).getByText('Fout')).toBeInTheDocument()
+    expect(within(alert).queryByText('boom')).toBeNull()
 
     // No `<table>` rendered when in error state.
     expect(screen.queryByRole('table')).toBeNull()

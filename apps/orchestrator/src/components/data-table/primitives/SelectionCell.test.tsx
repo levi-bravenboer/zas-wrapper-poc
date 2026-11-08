@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+
+import { renderWithProviders } from '@/test/renderWithProviders'
 
 import { SelectionCell, SelectionHeader } from './SelectionCell'
 
@@ -8,7 +10,7 @@ describe('SelectionCell / SelectionHeader', () => {
   it('SelectionHeader renders checkbox reflecting indeterminate and calls onToggle', async () => {
     const onToggle = vi.fn()
     const user = userEvent.setup()
-    render(
+    renderWithProviders(
       <table>
         <thead>
           <tr>
@@ -17,7 +19,7 @@ describe('SelectionCell / SelectionHeader', () => {
         </thead>
       </table>,
     )
-    const cb = screen.getByRole('checkbox', { name: /select page/i })
+    const cb = await screen.findByRole('checkbox', { name: /selecteer pagina/i })
     expect(cb).toHaveAttribute('data-state', 'indeterminate')
     await user.click(cb)
     expect(onToggle).toHaveBeenCalledTimes(1)
@@ -26,7 +28,7 @@ describe('SelectionCell / SelectionHeader', () => {
   it('SelectionCell renders row checkbox and calls onToggle with id', async () => {
     const onToggle = vi.fn()
     const user = userEvent.setup()
-    render(
+    renderWithProviders(
       <table>
         <tbody>
           <tr>
@@ -35,7 +37,7 @@ describe('SelectionCell / SelectionHeader', () => {
         </tbody>
       </table>,
     )
-    await user.click(screen.getByRole('checkbox', { name: /select row r-1/i }))
+    await user.click(await screen.findByRole('checkbox', { name: /selecteer rij r-1/i }))
     expect(onToggle).toHaveBeenCalledWith('r-1')
   })
 })

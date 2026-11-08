@@ -45,7 +45,7 @@
       "role": "Rol",
       "is_active": "Status",
       "external_idp": "Externe provider",
-      "external_subject": "Extern onderwerp",
+      "external_subject": "Externe subject-ID",
       "created_at": "Aangemaakt",
       "updated_at": "Bijgewerkt"
     },
@@ -65,7 +65,7 @@
       "confirmLabel": "Deactiveren"
     },
     "demote": {
-      "title": "Beheerderrechten intrekken?",
+      "title": "Beheerdersrechten intrekken?",
       "description": "Deze gebruiker verliest beheerdersrechten en wordt zorgverlener.",
       "confirmLabel": "Maak zorgverlener"
     }

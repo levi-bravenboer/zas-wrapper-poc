@@ -16,7 +16,7 @@ export function EndBlockNode(props: NodeProps<EndFlowNode>): ReactElement {
       fallbackIcon="square"
       handle="target"
       emphasis="strong"
-      ariaLabel={t('blockType.end_pathway', { defaultValue: 'Einde' })}
+      ariaLabel={t('blockType.end_pathway')}
       handleAriaLabel={t('canvas.handle.in')}
     />
   )

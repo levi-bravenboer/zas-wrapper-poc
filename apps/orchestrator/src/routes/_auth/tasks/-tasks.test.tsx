@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string -- inline test fixtures, not user copy. */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   RouterProvider,
@@ -16,6 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/lib/i18n'
 
 import { Route as TaskDetailRoute } from './$taskId/index'
+
 import { Route as TasksIndexRoute } from './index'
 
 const { useTaskQueryMock, useTasksQueryMock, useSetTaskStatusMock } = vi.hoisted(() => ({

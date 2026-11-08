@@ -12,9 +12,9 @@ export type MeasurementTypeKey = z.infer<typeof measurementTypeEnum>
 // certainly a typo. The server allow-list is authoritative for code/unit;
 // this map only drives the input UX.
 export interface SecondaryMeta {
-  label: string
-  placeholder: string
-  hint: string
+  labelKey: string
+  placeholderKey: string
+  hintKey: string
   unit: string
   min: number
   max: number
@@ -23,8 +23,8 @@ export interface SecondaryMeta {
 
 export interface MeasurementTypeMeta {
   unit: string
-  placeholder: string
-  hint: string
+  placeholderKey: string
+  hintKey: string
   min: number
   max: number
   rangeErrorKey: string
@@ -34,31 +34,31 @@ export interface MeasurementTypeMeta {
   secondary?: SecondaryMeta
   /** Override the primary input's UI label when the type is composite —
    *  `Waarde` reads oddly for "systolisch" / "diastolisch". */
-  primaryLabel?: string
+  primaryLabelKey?: string
 }
 
 export const MEASUREMENT_TYPE_META: Record<MeasurementTypeKey, MeasurementTypeMeta> = {
   heart_rate: {
     unit: '/min',
-    placeholder: 'bv. 72',
-    hint: 'Normaal in rust: 60–100/min',
+    placeholderKey: 'addMeasurement.meta.heart_rate.placeholder',
+    hintKey: 'addMeasurement.meta.heart_rate.hint',
     min: 20,
     max: 250,
     rangeErrorKey: 'addMeasurement.error.out_of_range_heart_rate',
   },
   blood_pressure: {
-    primaryLabel: 'Systolisch',
+    primaryLabelKey: 'addMeasurement.meta.blood_pressure.primaryLabel',
     unit: 'mmHg',
-    placeholder: 'bv. 120',
-    hint: 'Normaal: 90–140 mmHg',
+    placeholderKey: 'addMeasurement.meta.blood_pressure.placeholder',
+    hintKey: 'addMeasurement.meta.blood_pressure.hint',
     min: 40,
     max: 300,
     rangeErrorKey: 'addMeasurement.error.out_of_range_systolic',
     secondary: {
-      label: 'Diastolisch',
+      labelKey: 'addMeasurement.meta.blood_pressure.secondaryLabel',
       unit: 'mmHg',
-      placeholder: 'bv. 80',
-      hint: 'Normaal: 60–90 mmHg',
+      placeholderKey: 'addMeasurement.meta.blood_pressure.secondaryPlaceholder',
+      hintKey: 'addMeasurement.meta.blood_pressure.secondaryHint',
       min: 10,
       max: 200,
       rangeErrorKey: 'addMeasurement.error.out_of_range_diastolic',

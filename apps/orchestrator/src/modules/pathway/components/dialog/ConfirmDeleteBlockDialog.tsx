@@ -39,18 +39,13 @@ export function ConfirmDeleteBlockDialog({
         <DialogHero
           tone="destructive"
           icon={<TriangleAlert className="size-4" />}
-          title={t('deleteBlock.title', { defaultValue: 'Blok verwijderen?' })}
-          description={block.name || t('deleteBlock.unnamed', { defaultValue: '(naamloos blok)' })}
+          title={t('deleteBlock.title')}
+          description={block.name || t('deleteBlock.unnamed')}
         />
 
         {dependents.length > 0 ? (
           <div className="space-y-2">
-            <p className="text-[12px] text-muted-foreground">
-              {t('deleteBlock.dependentsIntro', {
-                defaultValue:
-                  'De volgende blokken verwijzen ernaar — hun logica-regels worden opgeschoond.',
-              })}
-            </p>
+            <p className="text-[12px] text-muted-foreground">{t('deleteBlock.dependentsIntro')}</p>
             <ul className="space-y-1.5">
               {dependents.map((dep) => {
                 const bt = typesByCode.get(legacyBlockType(dep))
@@ -72,22 +67,16 @@ export function ConfirmDeleteBlockDialog({
           </div>
         ) : (
           <p className="rounded-md border border-dashed px-2.5 py-3 text-center text-[12px] text-muted-foreground">
-            {t('deleteBlock.noDependents', {
-              defaultValue: 'Geen afhankelijke blokken — veilig om te verwijderen.',
-            })}
+            {t('deleteBlock.noDependents')}
           </p>
         )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            {t('blockDialog.cancel', { defaultValue: 'Annuleren' })}
+            {t('blockDialog.cancel')}
           </Button>
           <Button type="button" variant="danger" onClick={onConfirm}>
-            {dependents.length > 0
-              ? t('deleteBlock.confirmCascade', {
-                  defaultValue: 'Verwijderen + opschonen',
-                })
-              : t('deleteBlock.confirm', { defaultValue: 'Verwijderen' })}
+            {dependents.length > 0 ? t('deleteBlock.confirmCascade') : t('deleteBlock.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -43,12 +43,10 @@ export function BlockDialogFooter({
         </Button>
       )}
       <Button type="button" variant="outline" onClick={onCancel}>
-        {t('blockDialog.cancel', { defaultValue: 'Annuleren' })}
+        {t('blockDialog.cancel')}
       </Button>
       <Button type="button" disabled={!canSubmit} onClick={onSubmit}>
-        {mode === 'add'
-          ? t('blockDialog.add', { defaultValue: 'Voeg toe' })
-          : t('blockDialog.save', { defaultValue: 'Opslaan' })}
+        {mode === 'add' ? t('blockDialog.add') : t('blockDialog.save')}
       </Button>
     </DialogFooter>
   )

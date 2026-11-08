@@ -1,0 +1,43 @@
+{
+  "brand": {
+    "name": "ZAS"
+  },
+  "sidebar": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "toggle": "Toggle sidebar",
+    "mobileTitle": "Sidebar",
+    "mobileDescription": "Displays the mobile sidebar."
+  },
+  "user": {
+    "roleFallback": "Caregiver",
+    "profile": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "languages": {
+      "nl": "Nederlands",
+      "en": "English"
+    }
+  },
+  "palette": {
+    "placeholder": "Search or navigate…",
+    "description": "Search for an action or page to navigate to",
+    "empty": "No results",
+    "groups": {
+      "routes": "Navigation"
+    }
+  },
+  "header": {
+    "crumb": {
+      "home": "Home",
+      "pathways": "Care pathways",
+      "builder": "Builder",
+      "organisations": "Organizations",
+      "affiliations": "Practitioner roles",
+      "auditLog": "Audit log",
+      "roles": "Roles",
+      "role": "Role",
+      "users": "Users"
+    }
+  }
+}

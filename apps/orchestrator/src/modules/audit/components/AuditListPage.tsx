@@ -21,6 +21,7 @@ import {
   AUDIT_ACTIONS,
   AUDIT_RESULTS,
   AUDITED_RESOURCE_TYPES,
+  isAuditedResourceType,
   type AuditEventRead,
 } from '../schemas'
 
@@ -70,7 +71,7 @@ export function AuditListPage(): ReactElement {
         sticky: true,
         cell: (row) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {formatDateTimeOrDash(row.created_at, 'nl-NL')}
+            {formatDateTimeOrDash(row.created_at)}
           </span>
         ),
       }),
@@ -109,7 +110,9 @@ export function AuditListPage(): ReactElement {
         cell: (row) =>
           row.resource_type ? (
             <span className="text-muted-foreground">
-              {row.resource_type}
+              {isAuditedResourceType(row.resource_type)
+                ? t(`enum.resource_type.${row.resource_type}`)
+                : row.resource_type}
               {row.resource_id ? (
                 <span className="text-xs"> ·{shortId(row.resource_id)}</span>
               ) : null}
@@ -149,7 +152,10 @@ export function AuditListPage(): ReactElement {
         type: 'select',
         key: 'resource_type',
         label: t('filter.resource_type'),
-        options: AUDITED_RESOURCE_TYPES.map((r) => ({ value: r, label: r })),
+        options: AUDITED_RESOURCE_TYPES.map((r) => ({
+          value: r,
+          label: t(`enum.resource_type.${r}`),
+        })),
       },
       {
         type: 'date-range',

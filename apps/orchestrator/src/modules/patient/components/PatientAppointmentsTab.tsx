@@ -29,7 +29,7 @@ function Group({
             >
               <span className="truncate font-medium text-foreground">{appointment.title}</span>
               <span className="shrink-0 text-xs tabular-nums text-foreground-muted">
-                {formatDateTimeOrDash(appointment.starts_at, 'nl')}
+                {formatDateTimeOrDash(appointment.starts_at)}
               </span>
             </Link>
           </li>
