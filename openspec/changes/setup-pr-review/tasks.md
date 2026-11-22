@@ -5,7 +5,7 @@
 - [ ] 1.1 **Blocking.** Request Reaktor vendor sign-off for Greptile (source-code access, retention terms) and budget for seats; verify the approval is recorded in `docs/repo-security.md` before starting 1.2
 - [ ] 1.2 Install the Greptile GitHub app on `reaktor/zas-poc` (repo admin, manual) with auto-review on PR open only; verify the app shows under Settings → GitHub Apps
 - [ ] 1.3 Add `greptile.json` at repo root (field names checked against current Greptile docs):
-  - `triggerOnUpdates: false`
+  - `autoReview: ["open"]` (replaces legacy `triggerOnUpdates: false`)
   - `customContext` → `AGENTS.md` + `apps/*/AGENTS.md`
   - custom rules:
     - no real patient data in fixtures, screenshots or logs

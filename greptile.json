@@ -1,0 +1,23 @@
+{
+  "autoReview": ["open"],
+  "triggerOnDrafts": false,
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax", "style"],
+  "ignorePatterns": "apps/backend/openapi.json\napps/orchestrator/src/lib/api/schema.d.ts\n**/pnpm-lock.yaml\n**/uv.lock\nopenspec/changes/archive/**",
+  "customContext": {
+    "files": [
+      { "path": "AGENTS.md", "description": "Repo-wide conventions: moon task runner, docker naming, scope discipline, MDR rule, git rules" },
+      { "path": "apps/backend/AGENTS.md", "description": "Backend conventions", "scope": ["apps/backend/**"] },
+      { "path": "apps/orchestrator/AGENTS.md", "description": "Orchestrator conventions and code style", "scope": ["apps/orchestrator/**"] },
+      { "path": "apps/digital-front-door/AGENTS.md", "description": "Mobile app conventions", "scope": ["apps/digital-front-door/**"] }
+    ],
+    "rules": [
+      { "rule": "No real patient data in fixtures, screenshots, seeds or logs. Flag anything that looks like a real name, Belgian national register number (RRN/INSZ), address or FHIR payload with real identifiers. Logging FHIR payloads counts as logging PHI." },
+      { "rule": "Every docker container, volume, network and built image must be prefixed `zas_`.", "scope": ["**/docker-compose*.yml", "**/Dockerfile*"] },
+      { "rule": "Scripts, CI, docs and moon.yml must invoke tasks via `moon run …`, not raw `uv run`, `pnpm exec`, `docker compose run` or env-prefixed commands, when a moon task exists." },
+      { "rule": "Every proposal.md must contain a `**Tier**:` line citing exactly one of `[poc]`, `[mvp]`, `[product]`.", "scope": ["openspec/changes/**/proposal.md"] },
+      { "rule": "A new clinical view must declare its surfaces (`app`, `smart`, `embed`) via `defineFeature`. Pages under `/_auth/admin/*`, `/_auth/settings` and `/_auth/pathways/*` must not call `defineFeature`.", "scope": ["apps/orchestrator/src/**"] },
+      { "rule": "Flag MDR drift: clinical decision logic, diagnostic output, automated dosing, or interpreting Luscii measurements ourselves. We must never become an MDR medical device." }
+    ]
+  }
+}
