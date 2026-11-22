@@ -1,3 +1,4 @@
+# POC ONLY: remove this fixture after the Greptile smoke check
 SAMPLE_PATIENT = {
     "given_name": "Marie",
     "family_name": "Peeters",
