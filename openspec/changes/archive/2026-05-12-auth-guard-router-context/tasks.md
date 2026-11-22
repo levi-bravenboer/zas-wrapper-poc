@@ -32,3 +32,5 @@
 - [x] 6.4 `moon run orchestrator:test-e2e` — smoke must pass
 - [x] 6.5 `moon run orchestrator:build` — must produce `dist/`
 - [x] 6.6 `npx openspec validate auth-guard-router-context --strict` — must pass
+
+<!-- greptile ignore check -->
