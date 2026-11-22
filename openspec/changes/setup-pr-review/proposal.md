@@ -13,7 +13,7 @@ Agents now open most of our PRs, and every line still waits for a human to read 
   - It points Greptile at `AGENTS.md` and `apps/*/AGENTS.md`.
   - It adds custom rules taken from those files: no real patient data in fixtures, screenshots or logs; the `zas_` prefix on docker resources; moon tasks over raw `uv`/`pnpm`; a cited tier on every `proposal.md`; the surface-gating rule for new clinical views; flag anything that drifts toward MDR (clinical decision logic, interpreting Luscii measurements).
   - It ignores generated output (`openapi.json`, generated TS types, lockfiles, `openspec/changes/archive/`).
-- **`pr-babysit` skill** (`.claude/skills/pr-babysit/SKILL.md`) is versioned in the repo so the whole team runs the same version. The developer runs it by hand after opening the PR. Each round:
+- **`pr-babysit` skill** (`.agents/skills/pr-babysit/SKILL.md`, symlinked from `.claude/skills/pr-babysit` so Claude Code discovers it) is versioned in the repo so the whole team runs the same version. The developer runs it by hand after opening the PR. Each round:
   1. Fetch open review comments from Greptile **and from humans** (people review in parallel), plus CI status.
   2. Show a triage table. Fix each comment that has a clear answer. List the ones that need a human decision instead of guessing.
   3. Commit, push, then poll CI every ~5 min and fix failures.
@@ -40,7 +40,7 @@ None.
 
 - **New third-party service: Greptile. Install is blocked until approved.** Greptile reads the full repo source and PR diffs. The repo holds only synthetic fixtures and no PHI, so no patient data leaves. Reaktor vendor sign-off, a check of data-retention terms, and budget (paid per seat) must be in place before install. Flagged per AGENTS.md "do not introduce third-party services without flagging it".
 - **Workflow change**: developers lose direct push to `main`. Every change goes through a PR with an approval and a green `pr gate`.
-- **Files**: `greptile.json`, `.claude/skills/pr-babysit/SKILL.md`, `AGENTS.md`, `docs/repo-security.md`, `.github/CODEOWNERS`. `ci.yml` does not change.
+- **Files**: `greptile.json`, `.agents/skills/pr-babysit/SKILL.md` (symlinked from `.claude/skills/pr-babysit` so Claude Code discovers it), `AGENTS.md`, `docs/repo-security.md`, `.github/CODEOWNERS`. `ci.yml` does not change.
 - **GitHub plan**: rulesets and branch protection need GitHub Team or Enterprise for a private repo. This is a second blocking request, next to the Greptile one.
 - **GitHub settings** (manual, repo admin): Greptile app install and creating the `protect-main` ruleset (it does not exist yet).
 - **Out of scope**: Linear (not used on this project; the summary goes in a PR comment), the intake skill, Sentry → auto-fix, and deploy gates.

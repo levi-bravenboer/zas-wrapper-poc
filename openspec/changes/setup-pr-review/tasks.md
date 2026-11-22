@@ -22,7 +22,7 @@
 
 ## 2. `pr-babysit` skill
 
-- [ ] 2.1 Create `.claude/skills/pr-babysit/SKILL.md` with frontmatter and a "run by hand after PR open" trigger; verify the skill shows in the Claude Code skill list
+- [x] 2.1 Create `.agents/skills/pr-babysit/SKILL.md` (symlinked from `.claude/skills/pr-babysit` so Claude Code discovers it) with frontmatter and a "run by hand after PR open" trigger; verify the skill shows in the Claude Code skill list
 - [ ] 2.2 Add the fetch-and-triage step: open Greptile and human review comments plus `gh pr checks`, shown as a table (fix / needs-human: architecture, scope, naming, product, clinical); verify the table renders on the test PR
 - [ ] 2.3 Add the fix-and-push step with these rules: semantic commits with no AI attribution, never weaken or delete assertions, never merge. Poll CI every ~5 min with Monitor and fix failures; verify a planted lint error gets fixed and CI goes green
 - [ ] 2.4 Add the thread step: reply to each fixed thread with the commit SHA, resolve it, then post `@greptileai review`; verify on the test PR that the threads are resolved with SHAs and Greptile re-reviews
